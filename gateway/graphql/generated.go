@@ -2494,7 +2494,7 @@ type MarketDepth {
     # Sell side price levels (if available)
     sell: [PriceLevel!]
 
-    # Last trade for the given market (if availabe)
+    # Last trade for the given market (if available)
     lastTrade: Trade
 }
 
@@ -2517,7 +2517,7 @@ type PriceLevel {
 # Candle stick representation of trading
 type Candle {
 
-    # Unix epoch+nanoseconds for when the candle ocurred
+    # Unix epoch+nanoseconds for when the candle occurred
     timestamp: String!
 
     # ISO-8601 RFC3339+Nano formatted data and time for the candle
@@ -2703,13 +2703,13 @@ type Trade {
   # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
   size: String!
 
-  # Unix epoch+nanoseconds for when the trade occured
+  # Unix epoch+nanoseconds for when the trade occurred
   timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occurred (timestamp)
   datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-  # RFC3339Nano for when th trade occured
+  # RFC3339Nano for when the trade occurred
   createdAt: String!
 }
 

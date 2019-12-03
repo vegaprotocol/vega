@@ -53,6 +53,7 @@ type PartyBuf interface {
 	Flush() error
 }
 
+// SettlementBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
 type SettlementBuf interface {
 	Add([]events.SettlePosition)
@@ -148,7 +149,7 @@ func NewEngine(
 	//  create collateral
 	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, now)
 	if err != nil {
-		log.Error("unable to initialize collateral", logging.Error(err))
+		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
 	}
 

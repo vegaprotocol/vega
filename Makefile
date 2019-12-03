@@ -40,8 +40,11 @@ endif
 all: build
 
 lint: ## Lint the files
-	@go install golang.org/x/lint/golint
-	@go list ./... | xargs -r golint -set_exit_status | sed -e "s#^$$GOPATH/src/##"
+	@t="$$(mktemp)" ; \
+	go list ./... | xargs -r golint | grep -vE '(and that stutters|blank import should be|should have comment|which can be annoying to use)' | tee "$$t" ; \
+	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
+	rm -f "$$t" ; \
+	exit "$$code"
 
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
@@ -105,6 +108,10 @@ build: ## install the binaries in cmd/{progname}/
 			|| exit 1 ; \
 	done
 
+.PHONY: gofmtsimplify
+gofmtsimplify:
+	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
+
 install: ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
@@ -127,7 +134,7 @@ gqlgen_check: ## GraphQL: Check committed files match just-generated files
 
 ineffectassign: ## Check for ineffectual assignments
 	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
-	if test "$$(echo "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" | sed -e "s#^$$GOPATH/src/##" ; exit 1 ; fi
+	if test "$$(echo -n "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" ; exit 1 ; fi
 
 .PHONY: proto
 proto: deps ## build proto definitions

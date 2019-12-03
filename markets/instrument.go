@@ -38,7 +38,7 @@ type TradableInstrument struct {
 	RiskModel        risk.Model
 }
 
-// NewTradableInstrument will instanciate a new tradable instrument
+// NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument
 func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
 	instrument, err := NewInstrument(pti.Instrument)
@@ -60,12 +60,12 @@ func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (
 	}, nil
 }
 
-// NewInstrument will instanciate a new instrument
+// NewInstrument will instantiate a new instrument
 // using a market framework configuration for a instrument
 func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 	product, err := products.New(pi.Product)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instanciate product from instrument configuration")
+		return nil, errors.Wrap(err, "unable to instantiate product from instrument configuration")
 	}
 	return &Instrument{
 		ID:               pi.Id,

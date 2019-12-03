@@ -18,10 +18,10 @@ func TempDir(prefix string) (string, func(), error) {
 		if err == nil {
 			dir, err := ioutil.TempDir(baseTempDir, prefix)
 			if err != nil {
-				return "", noop, fmt.Errorf("Could not create tmp dir in %s", baseTempDir)
+				return "", noop, fmt.Errorf("could not create tmp dir in %s", baseTempDir)
 			}
 			return dir, func() { os.RemoveAll(dir) }, nil
 		}
 	}
-	return "", noop, fmt.Errorf("Could not find a temp dir")
+	return "", noop, fmt.Errorf("could not find a temp dir")
 }

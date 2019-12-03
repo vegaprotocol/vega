@@ -27,7 +27,7 @@ message RiskFactor {
 message RiskResult {
   // timestamp when these risk factors were generated
   int64 updatedTimestamp = 1;
-  // risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market
+  // risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market
   map<string, RiskFactor> riskFactors = 2;
   // time when risk factors are expected to change (or empty if risk factors are continually updated)
   int64 nextUpdateTimestamp = 3;
@@ -256,7 +256,7 @@ message OrderSubmission {
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
   // do not enforce as not always required
-  // altho at least check it's not a negative integer, would be not that very handy to create a time.Time with it
+  // althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
   int64 expiresAt = 8;
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
 }

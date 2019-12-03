@@ -33,5 +33,5 @@ func (tc *TimeCounter) EngineTimeCounterAdd() {
 	if engineTime == nil {
 		return
 	}
-	engineTime.WithLabelValues(tc.labelValues...).Add(time.Now().Sub(tc.start).Seconds())
+	engineTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
 }

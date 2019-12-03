@@ -8,11 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
 )
 
-// Order is a package internal data struct that implements the OrderStore interface.
+// NoopOrder is a package internal data struct that implements the OrderStore interface.
 type NoopOrder struct {
 	Config
 
@@ -68,7 +66,7 @@ func (os *NoopOrder) Subscribe(orders chan<- []types.Order) uint64 {
 	return os.subscriberID
 }
 
-func (a *NoopOrder) SaveBatch(accs []types.Order) error {
+func (os *NoopOrder) SaveBatch(accs []types.Order) error {
 	return nil
 }
 
@@ -89,7 +87,7 @@ func (os *NoopOrder) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Orders subscriber does not exist with id: %d", id))
+	return fmt.Errorf("Orders subscriber does not exist with id: %d", id)
 }
 
 func (os *NoopOrder) Post(order types.Order) error {

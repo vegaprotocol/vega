@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -17,21 +16,21 @@ var ErrNotifyTraderAccountMissing = errors.New("notify trader account is missing
 type Collateral interface {
 	CreatePartyGeneralAccount(partyID, asset string) string
 	IncrementBalance(id string, amount int64) error
-	GetAccountByID(id string) (*proto.Account, error)
+	GetAccountByID(id string) (*types.Account, error)
 }
 
 // Party holds the list of parties in the system
 type Party struct {
 	log           *logging.Logger
 	collateral    Collateral
-	markets       []proto.Market
+	markets       []types.Market
 	partyBuf      PartyBuf
 	partyByMarket map[string]map[string]struct{}
 	mu            sync.Mutex
 }
 
 // NewParty instantiates a new party
-func NewParty(log *logging.Logger, col Collateral, markets []proto.Market, partyBuf PartyBuf) *Party {
+func NewParty(log *logging.Logger, col Collateral, markets []types.Market, partyBuf PartyBuf) *Party {
 	partyByMarket := map[string]map[string]struct{}{}
 	for _, v := range markets {
 		partyByMarket[v.Id] = map[string]struct{}{}
@@ -65,13 +64,13 @@ func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error)
 
 // NotifyTraderAccountWithTopUpAmount will create a new party in the system
 // and top-up it general account with the given amount
-func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *proto.NotifyTraderAccount, amount int64) error {
+func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *types.NotifyTraderAccount, amount int64) error {
 	return p.notifyTraderAccount(notify, amount)
 }
 
 // NotifyTraderAccount will create a new party in the system
 // and top-up it general account with the default amount
-func (p *Party) NotifyTraderAccount(notify *proto.NotifyTraderAccount) error {
+func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	if notify == nil {
 		return ErrNotifyTraderAccountMissing
 	}
@@ -81,7 +80,7 @@ func (p *Party) NotifyTraderAccount(notify *proto.NotifyTraderAccount) error {
 	return p.notifyTraderAccount(notify, int64(notify.Amount))
 }
 
-func (p *Party) addMarket(market proto.Market) {
+func (p *Party) addMarket(market types.Market) {
 	p.mu.Lock()
 	if _, found := p.partyByMarket[market.Id]; !found {
 		p.markets = append(p.markets, market)
@@ -94,7 +93,7 @@ func (p *Party) addParty(ptyID, mktID string) {
 	p.partyByMarket[mktID][ptyID] = struct{}{}
 }
 
-func (p *Party) notifyTraderAccount(notify *proto.NotifyTraderAccount, amount int64) error {
+func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount int64) error {
 	if notify == nil {
 		return ErrNotifyTraderAccountMissing
 	}

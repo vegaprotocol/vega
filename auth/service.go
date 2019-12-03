@@ -127,9 +127,7 @@ func (s *Svc) Get() []PartyInfo {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := make([]PartyInfo, 0, len(s.parties))
-	for _, v := range s.parties {
-		out = append(out, v)
-	}
+	out = append(out, s.parties...)
 	return out
 }
 

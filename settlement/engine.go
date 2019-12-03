@@ -28,6 +28,7 @@ type Product interface {
 	GetAsset() string
 }
 
+// Buffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buffer_mock.go -package mocks code.vegaprotocol.io/vega/settlement Buffer
 type Buffer interface {
 	Add([]events.SettlePosition)
@@ -47,7 +48,7 @@ type Engine struct {
 	buf     Buffer
 }
 
-// New instanciate a new instance of the settlement engine
+// New instantiates a new instance of the settlement engine
 func New(log *logging.Logger, conf Config, product Product, market string, buf Buffer) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)

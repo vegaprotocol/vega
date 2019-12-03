@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const marketId string = "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
+const hardCodedMarketID string = "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
 
 func TestSubmitOrderAndReadStores(t *testing.T) {
 
@@ -47,7 +47,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    hardCodedMarketID,
 				PartyID:     party1,
 				Price:       100,
 				Size:        3,
@@ -63,7 +63,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    hardCodedMarketID,
 				PartyID:     party1,
 				Price:       100,
 				Size:        2,
@@ -92,7 +92,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 		t.Fatal(err)
 	}
 	result, err := runner.ProcessInstructions(instructionSet)
-
+	assert.NoError(t, err)
 	assert.True(t, len(result.FinalState.Parties) > 0)
 
 	anyOrders := false
@@ -111,12 +111,12 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 
 // TODO (WG 08/11/2019) The tests below are integration tests used during development. They should be moved to where we keep integration tests and executed with dependencies injected from outside.
 func TestProcessInstructionsAll(t *testing.T) {
-	instructions, err := getExecutionEngineInstructions(marketId, "party1")
+	instructions, err := getExecutionEngineInstructions(hardCodedMarketID, "party1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	instructions2, err := getInternalInstructions(marketId)
+	instructions2, err := getInternalInstructions(hardCodedMarketID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestProcessInstructionsAll(t *testing.T) {
 }
 
 func TestProcessInstructionsExecution(t *testing.T) {
-	instructions, err := getExecutionEngineInstructions(marketId, "party1")
+	instructions, err := getExecutionEngineInstructions(hardCodedMarketID, "party1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestProcessInstructionsExecution(t *testing.T) {
 
 func TestProcessInstructionsInternal(t *testing.T) {
 
-	instructions, err := getInternalInstructions(marketId)
+	instructions, err := getInternalInstructions(hardCodedMarketID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,12 +184,12 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 	assert.EqualValues(t, len(instructionSet.Instructions), len(result.Results))
 }
 
-func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.Instruction, error) {
+func getExecutionEngineInstructions(marketID string, trader1ID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&protoapi.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
-				TraderID: trader1Id,
+				TraderID: trader1ID,
 				Amount:   1000,
 			},
 		},
@@ -203,8 +203,8 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
-				PartyID:     trader1Id,
+				MarketID:    marketID,
+				PartyID:     trader1ID,
 				Price:       100,
 				Size:        3,
 				Side:        sell,
@@ -223,8 +223,8 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	//	&protoapi.CancelOrderRequest{
 	//		Cancellation: &types.OrderCancellation{
 	//			OrderID:  "",
-	//			MarketID: marketId,
-	//			PartyID:  trader1Id,
+	//			MarketID: marketID,
+	//			PartyID:  trader1ID,
 	//		},
 	//	},
 	//)
@@ -251,7 +251,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     trader2,
 				Price:       100,
 				Size:        3,
@@ -311,7 +311,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     "trader3",
 				Price:       100,
 				Size:        3,
@@ -341,7 +341,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     "trader4",
 				Price:       100,
 				Size:        3,
@@ -373,7 +373,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	return instructions, nil
 }
 
-func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
+func getInternalInstructions(marketID string) ([]*core.Instruction, error) {
 	ts, err := ptypes.TimestampProto(time.Date(2019, 1, 1, 9, 0, 0, 0, time.UTC))
 	if err != nil {
 		return nil, err
@@ -411,7 +411,7 @@ func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 	instr4, err := core.NewInstruction(
 		core.RequestType_MARKET_SUMMARY,
 		&core.MarketSummaryRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {

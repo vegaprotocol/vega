@@ -22,13 +22,13 @@ const (
 
 var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
-	// collateral engine have not been initialized properly
+	// collateral engine have not been initialised properly
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
 	ErrAccountDoesNotExist = errors.New("account do not exists")
-	// ErrNoGeneralAccountWhenCreateMarginAccount
+
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 )
 
@@ -179,7 +179,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
-// return ledger move stuff here, too (seperate return value, because we need to stream those)
+// return ledger move stuff here, too (separate return value, because we need to stream those)
 func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]events.Margin, []*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
@@ -638,8 +638,8 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 	return marginID, nil
 }
 
-// CreatePartyMarginAccount will create trader accounts for a given market
-// basically one account per market, per asset for each trader
+// CreatePartyGeneralAccount creates trader accounts for a given market
+// one account per market, per asset for each trader
 func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)

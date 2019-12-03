@@ -19,7 +19,7 @@ type Party struct {
 func NewParties(config Config) (*Party, error) {
 	return &Party{
 		Config: config,
-		db:     make(map[string]types.Party, 0),
+		db:     make(map[string]types.Party),
 	}, nil
 }
 

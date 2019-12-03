@@ -104,7 +104,7 @@ func (ts *Trade) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Trades subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to Trades store does not exist with id: %d", id)
 }
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to

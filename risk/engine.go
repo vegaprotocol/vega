@@ -37,7 +37,7 @@ type Engine struct {
 	ob               Orderbook
 }
 
-// NewEngine instanciate a new risk engine
+// NewEngine instantiate a new risk engine
 func NewEngine(
 	log *logging.Logger,
 	config Config,

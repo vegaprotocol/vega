@@ -377,9 +377,9 @@ func testProcessBoth(t *testing.T) {
 
 	// next up, updating the balance of the traders' general accounts
 	eng.buf.EXPECT().Add(gomock.Any()).Times(8).Do(func(acc types.Account) {
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
-			// assert.Equal(t, int64(3000), acc.Balance)
-		}
+		// if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
+		// 	assert.Equal(t, int64(3000), acc.Balance)
+		// }
 		if acc.Owner == moneyTrader && acc.Type == types.AccountType_GENERAL {
 			assert.Equal(t, int64(2000), acc.Balance)
 		}
@@ -463,14 +463,15 @@ func testProcessBothProRated(t *testing.T) {
 	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
-	resp := responses[0]
-	// total balance of settlement account should be 3 times price
-	for _, bal := range resp.Balances {
-		if bal.Account.Type == types.AccountType_SETTLEMENT {
-			// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
-			// assert.Equal(t, int64(1), bal.Account.Balance)
-		}
-	}
+	// resp := responses[0]
+	// // total balance of settlement account should be 3 times price
+	// for _, bal := range resp.Balances {
+	// 	if bal.Account.Type == types.AccountType_SETTLEMENT {
+	// 		// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
+	// 		assert.Equal(t, int64(1), bal.Account.Balance)
+	// 	}
+	// }
+
 	// there should be 3 ledger moves -> settle to trader 1, settle to trader 2, insurance to trader 2
 	assert.Equal(t, 1, len(responses[1].Transfers))
 }
@@ -543,14 +544,15 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err, "was error")
 	assert.NotEmpty(t, raw)
-	resp := raw[0]
-	// total balance of settlement account should be 3 times price
-	for _, bal := range resp.Balances {
-		if bal.Account.Type == types.AccountType_SETTLEMENT {
-			// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
-			// assert.Equal(t, int64(1), bal.Account.Balance)
-		}
-	}
+	// resp := raw[0]
+	// // total balance of settlement account should be 3 times price
+	// for _, bal := range resp.Balances {
+	// 	if bal.Account.Type == types.AccountType_SETTLEMENT {
+	// 		// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
+	// 		assert.Equal(t, int64(1), bal.Account.Balance)
+	// 	}
+	// }
+
 	// there should be 3 ledger moves -> settle to trader 1, settle to trader 2, insurance to trader 2
 	assert.Equal(t, 1, len(raw[1].Transfers))
 }

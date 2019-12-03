@@ -105,7 +105,7 @@ func (os *Order) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Orders subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to Orders does not exist with id: %d", id)
 }
 
 // Close our connection to the badger database

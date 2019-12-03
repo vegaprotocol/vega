@@ -28,7 +28,7 @@ http:
       get: '/markets/{marketID}/depth'
     - selector: api.trading_data.OrdersByMarket
       get: '/markets/{marketID}/orders'
-    - selector: api.trading_data.OrderByMarketAndId
+    - selector: api.trading_data.OrderByMarketAndID
       get: '/markets/{marketID}/orders/{orderID}'
     - selector: api.trading_data.TradesByMarket
       get: '/markets/{marketID}/trades'

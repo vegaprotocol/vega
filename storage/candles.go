@@ -127,7 +127,7 @@ func (c *Candle) Unsubscribe(id uint64) error {
 	c.log.Warn("Un-subscribe called in candle store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return errors.New(fmt.Sprintf("Candle store subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to Candle store does not exist with id: %d", id)
 }
 
 // Close can be called to clean up and close any storage

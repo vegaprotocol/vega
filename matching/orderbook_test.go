@@ -1549,6 +1549,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	// Act
@@ -1588,6 +1589,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	// Act
@@ -1618,6 +1620,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	orderAdded.MarketID = "invalid" // Bad market, malformed?
@@ -1644,6 +1647,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	_, err = book.CancelOrder(orderAdded)
