@@ -130,34 +130,6 @@ func (ts *NoopTrade) Close() error {
 	return nil
 }
 
-func (ts *NoopTrade) notify(items []types.Trade) error {
-	if len(items) == 0 {
-		return nil
-	}
-	if len(ts.subscribers) == 0 {
-		ts.log.Debug("No subscribers connected in trade store")
-		return nil
-	}
-
-	var ok bool
-	for id, sub := range ts.subscribers {
-		select {
-		case sub <- items:
-			ok = true
-		default:
-			ok = false
-		}
-		if ok {
-			ts.log.Debug("Trades channel updated for subscriber successfully",
-				logging.Uint64("id", id))
-		} else {
-			ts.log.Debug("Trades channel could not be updated for subscriber",
-				logging.Uint64("id", id))
-		}
-	}
-	return nil
-}
-
 func (ts *NoopTrade) GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket {
 	return map[string]*MarketBucket{}
 }

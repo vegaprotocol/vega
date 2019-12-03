@@ -176,10 +176,6 @@ func (bs *badgerStore) orderPrefix(order string, descending bool) (keyPrefix []b
 	return bs.getPrefix("O", order, descending)
 }
 
-func (bs *badgerStore) assetPrefix(asset string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
-	return bs.getPrefix("A", asset, descending)
-}
-
 func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("%s:%s_", modifier, prefix))
 	keyPrefix = validForPrefix

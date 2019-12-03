@@ -214,36 +214,3 @@ func (os *NoopOrder) GetMarketDepth(ctx context.Context, market string) (*types.
 		Sell:     sellPtr,
 	}, nil
 }
-
-// notify sends order updates to all subscribers.
-func (os *NoopOrder) notify(items []types.Order) error {
-	if len(items) == 0 {
-		return nil
-	}
-
-	os.mu.Lock()
-	if os.subscribers == nil || len(os.subscribers) == 0 {
-		os.mu.Unlock()
-		os.log.Debug("No subscribers connected in order store")
-		return nil
-	}
-
-	var ok bool
-	for id, sub := range os.subscribers {
-		select {
-		case sub <- items:
-			ok = true
-		default:
-			ok = false
-		}
-		if ok {
-			os.log.Debug("Orders channel updated for subscriber successfully",
-				logging.Uint64("id", id))
-		} else {
-			os.log.Debug("Orders channel could not be updated for subscriber",
-				logging.Uint64("id", id))
-		}
-	}
-	os.mu.Unlock()
-	return nil
-}

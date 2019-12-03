@@ -266,14 +266,6 @@ func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 	return e.positionsCpy
 }
 
-// iterate over all open positions, for mark to market based on new market price
-func (e *Engine) updatePositions(trade *types.Trade) {
-	for _, pos := range e.positions {
-		// just set the price for all positions here (this shouldn't actually be required, but we'll cross that bridge when we get there
-		pos.price = trade.Price
-	}
-}
-
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy
