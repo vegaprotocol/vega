@@ -6,7 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/pkg/errors"
 )
 
 // TransferResponse is responsible for storing the ledger entries
@@ -120,7 +119,7 @@ func (t *TransferResponse) Unsubscribe(id uint64) error {
 	t.log.Warn("Un-subscribe called in transfer response store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return errors.New(fmt.Sprintf("TransferResponse store subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to TransferResponse store does not exist with id: %d", id)
 }
 
 // SaveBatch save a new batch of transfer response

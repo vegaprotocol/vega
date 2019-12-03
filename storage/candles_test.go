@@ -229,7 +229,7 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	assert.Nil(t, err)
 
 	err = candleStore.Unsubscribe(1)
-	assert.Equal(t, "Candle store subscriber does not exist with id: 1", err.Error())
+	assert.Equal(t, "subscriber to Candle store does not exist with id: 1", err.Error())
 
 	err = candleStore.Unsubscribe(2)
 	assert.Nil(t, err)
