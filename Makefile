@@ -144,7 +144,7 @@ proto_check: ## proto: Check committed files match just-generated files
 proto_clean:
 	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
 		| xargs -r rm
-	@find proto/doc -name index.md \
+	@find proto/doc -name index.html -o -name index.md \
 		| xargs -r rm
 
 .PHONY: rest_check
