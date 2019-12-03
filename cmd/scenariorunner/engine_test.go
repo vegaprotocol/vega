@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,16 +91,13 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = runner.ProcessInstructions(instructionSet)
-	assert.NoError(t, err)
+	result, err := runner.ProcessInstructions(instructionSet)
 
-	result, err := runner.ExtractData()
-	assert.NoError(t, err)
-	assert.True(t, len(result.Summary.Parties) > 0)
+	assert.True(t, len(result.FinalState.Parties) > 0)
 
 	anyOrders := false
 	anyTrades := false
-	for _, mkt := range result.Summary.Markets {
+	for _, mkt := range result.FinalState.Markets {
 		if len(mkt.Orders) > 0 {
 			anyOrders = true
 		}
@@ -111,90 +107,21 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 	}
 	assert.True(t, anyOrders)
 	assert.True(t, anyTrades)
-}
-
-func TestExtractData(t *testing.T) {
-
-	instructions, err := getExecutionEngineInstructions(marketID, "trader1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructionSet := core.InstructionSet{
-		Instructions: instructions,
-		Description:  "Executing a trade",
-	}
-	log := logging.NewTestLogger()
-	storageConfig, err := storage.NewTestConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer storage.FlushStores(log, storageConfig)
-	runner, err := NewEngine(log, NewDefaultConfig(), storageConfig, "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = runner.ProcessInstructions(instructionSet)
-	assert.NoError(t, err)
-
-	result, err := runner.ExtractData()
-	assert.NoError(t, err)
-	assert.True(t, len(result.Summary.Parties) > 0)
-
-	anyOrders := false
-	anyTrades := false
-	for _, mkt := range result.Summary.Markets {
-		if len(mkt.Orders) > 0 {
-			anyOrders = true
-		}
-		if len(mkt.Trades) > 0 {
-			anyTrades = true
-		}
-	}
-	assert.True(t, anyOrders)
-	assert.True(t, anyTrades)
-
 }
 
 // TODO (WG 08/11/2019) The tests below are integration tests used during development. They should be moved to where we keep integration tests and executed with dependencies injected from outside.
 func TestProcessInstructionsAll(t *testing.T) {
-
-	partyID := "party1"
-	orderID := "order1"
-	instructions1, err := getExecutionEngineInstructions(marketID, partyID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions2, err := getTradingDataInstructions(marketID, partyID, orderID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions3, err := getInternalInstructions(marketID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions4, err := getAccountInstructions(marketID, partyID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions5, err := getCandleInstructions(marketID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions6, err := getPositionInstructions(marketID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions7, err := getPositionInstructions(marketID)
+	instructions, err := getExecutionEngineInstructions(marketId, "party1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	instructions := append(instructions1, instructions2...)
-	instructions = append(instructions, instructions3...)
-	instructions = append(instructions, instructions4...)
-	instructions = append(instructions, instructions5...)
-	instructions = append(instructions, instructions6...)
-	instructions = append(instructions, instructions7...)
+	instructions2, err := getInternalInstructions(marketId)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	instructions = append(instructions, instructions2...)
 
 	instructionSet := core.InstructionSet{
 		Instructions: instructions,
@@ -216,37 +143,6 @@ func TestProcessInstructionsExecution(t *testing.T) {
 	}
 
 	testInstructionSet(t, instructionSet)
-}
-
-func TestProcessInstructionsTradingData(t *testing.T) {
-
-	instructions, err := getTradingDataInstructions(marketID, "party1", "order1")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	instructionSet := core.InstructionSet{
-		Instructions: instructions,
-		Description:  "Test instructions",
-	}
-
-	testInstructionSet(t, instructionSet)
-}
-
-func TestProcessInstructionsTime(t *testing.T) {
-
-	instructions, err := getInternalInstructions(marketID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	instructionSet := core.InstructionSet{
-		Instructions: instructions,
-		Description:  "Test instructions",
-	}
-
-	testInstructionSet(t, instructionSet)
-
 }
 
 func TestProcessInstructionsInternal(t *testing.T) {
@@ -284,7 +180,6 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 	assert.NotNil(t, result.Metadata)
 	assert.EqualValues(t, len(instructionSet.Instructions), result.Metadata.InstructionsProcessed)
 	assert.EqualValues(t, 0, result.Metadata.InstructionsOmitted)
-	assert.NotNil(t, result.Metadata.FinalMarketDepth)
 	assert.True(t, result.Metadata.ProcessingTime.GetNanos() > 0)
 	assert.EqualValues(t, len(instructionSet.Instructions), len(result.Results))
 }
@@ -478,135 +373,7 @@ func getExecutionEngineInstructions(marketID string, trader1ID string) ([]*core.
 	return instructions, nil
 }
 
-func getTradingDataInstructions(marketID string, partyID string, orderID string) ([]*core.Instruction, error) {
-	instr1, err := core.NewInstruction(
-		core.RequestType_MARKET_DEPTH,
-		&protoapi.MarketDepthRequest{
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr2, err := core.NewInstruction(
-		core.RequestType_MARKET_BY_ID,
-		&protoapi.MarketByIDRequest{
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr3, err := core.NewInstruction(
-		core.RequestType_MARKETS,
-		&empty.Empty{},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr4, err := core.NewInstruction(
-		core.RequestType_ORDERS_BY_MARKET,
-		&protoapi.OrdersByMarketRequest{
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr5, err := core.NewInstruction(
-		core.RequestType_ORDERS_BY_PARTY,
-		&protoapi.OrdersByPartyRequest{
-			PartyID: partyID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr6, err := core.NewInstruction(
-		core.RequestType_ORDER_BY_MARKET_AND_ID,
-		&protoapi.OrderByMarketAndIdRequest{
-			MarketID: marketID,
-			OrderID:  orderID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr7, err := core.NewInstruction(
-		core.RequestType_ORDER_BY_REFERENCE,
-		&protoapi.OrderByReferenceRequest{
-			Reference: "testReference",
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr8, err := core.NewInstruction(
-		core.RequestType_TRADES_BY_MARKET,
-		&protoapi.TradesByMarketRequest{
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr9, err := core.NewInstruction(
-		core.RequestType_TRADES_BY_PARTY,
-		&protoapi.TradesByPartyRequest{
-			PartyID:  partyID,
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr10, err := core.NewInstruction(
-		core.RequestType_TRADES_BY_ORDER,
-		&protoapi.TradesByOrderRequest{
-			OrderID: orderID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr11, err := core.NewInstruction(
-		core.RequestType_LAST_TRADE,
-		&protoapi.LastTradeRequest{
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instructions := []*core.Instruction{
-		instr1,
-		instr2,
-		instr3,
-		instr4,
-		instr5,
-		instr6,
-		instr7,
-		instr8,
-		instr9,
-		instr10,
-		instr11,
-	}
-
-	return instructions, nil
-}
-
-func getInternalInstructions(marketID string) ([]*core.Instruction, error) {
+func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 	ts, err := ptypes.TimestampProto(time.Date(2019, 1, 1, 9, 0, 0, 0, time.UTC))
 	if err != nil {
 		return nil, err
@@ -664,122 +431,6 @@ func getInternalInstructions(marketID string) ([]*core.Instruction, error) {
 		instr3,
 		instr4,
 		instr5,
-	}
-
-	return instructions, nil
-}
-
-func getAccountInstructions(marketID string, partyID string) ([]*core.Instruction, error) {
-	instr1, err := core.NewInstruction(
-		core.RequestType_ACCOUNTS_BY_PARTY,
-		&protoapi.AccountsByPartyRequest{
-			PartyID: partyID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr2, err := core.NewInstruction(
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_ASSET,
-		&protoapi.AccountsByPartyAndAssetRequest{
-			PartyID: partyID,
-			Asset:   "",
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr3, err := core.NewInstruction(
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_MARKET,
-		&protoapi.AccountsByPartyAndMarketRequest{
-			PartyID:  partyID,
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instr4, err := core.NewInstruction(
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_TYPE,
-		&protoapi.AccountsByPartyAndTypeRequest{
-			PartyID: partyID,
-			Type:    types.AccountType_GENERAL,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instructions := []*core.Instruction{
-		instr1,
-		instr2,
-		instr3,
-		instr4,
-	}
-
-	return instructions, nil
-}
-
-func getCandleInstructions(marketID string) ([]*core.Instruction, error) {
-	instr1, err := core.NewInstruction(
-		core.RequestType_CANDLES,
-		&protoapi.CandlesRequest{
-			MarketID: marketID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instructions := []*core.Instruction{
-		instr1,
-	}
-
-	return instructions, nil
-}
-
-func getPositionInstructions(partyID string) ([]*core.Instruction, error) {
-	instr1, err := core.NewInstruction(
-		core.RequestType_POSITIONS_BY_PARTY,
-		&protoapi.PositionsByPartyRequest{
-			PartyID: partyID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instructions := []*core.Instruction{
-		instr1,
-	}
-
-	return instructions, nil
-}
-
-func getPartyInstructions(partyID string) ([]*core.Instruction, error) {
-	instr1, err := core.NewInstruction(
-		core.RequestType_PARTY_BY_ID,
-		&protoapi.PartyByIDRequest{
-			PartyID: partyID,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	instr2, err := core.NewInstruction(
-		core.RequestType_PARTIES,
-		&empty.Empty{},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	instructions := []*core.Instruction{
-		instr1,
-		instr2,
 	}
 
 	return instructions, nil

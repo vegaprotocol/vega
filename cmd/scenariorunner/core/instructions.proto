@@ -31,7 +31,6 @@ message Metadata {
     uint64 instructionsOmitted = 2;
     uint64 tradesGenerated = 3;
     google.protobuf.Duration processingTime = 5;
-    repeated vega.MarketDepth finalMarketDepth = 6;
 }
 
 message ResultSet {
@@ -42,10 +41,6 @@ message ResultSet {
     Config config = 5;
     string version = 6;
     
-}
-
-message SummaryResponse {
-    Summary summary = 1;
 }
 
 message Summary {
@@ -62,18 +57,6 @@ message Config {
     repeated vega.Market markets = 6;
 }
 
-message MarketSummaryResponse {
-    MarketSummary summary = 1;
-}
-
-message SummaryRequest {
-    api.Pagination pagination = 1;
-}
-message MarketSummaryRequest {
-    string marketID = 1;
-    api.Pagination pagination = 2;
-}
-
 message MarketSummary {
     vega.Market market = 1;
     repeated vega.Trade trades = 3;
@@ -87,39 +70,39 @@ message PartySummary {
 }
 
 enum RequestType {
-    SET_TIME = 0;
-    ADVANCE_TIME = 1;
-    MARKET_SUMMARY = 2;
-    SUMMARY = 3;
+    UNSPECIFIED = 0;
+    SET_TIME = 1;
+    ADVANCE_TIME = 2;
+    MARKET_SUMMARY = 3;
+    SUMMARY = 4;
     SUBMIT_ORDER = 100;
     CANCEL_ORDER = 101;
     AMEND_ORDER = 102;
     NOTIFY_TRADER_ACCOUNT = 103;
     WITHDRAW  = 104;
-    // orders
-    ORDERS_BY_MARKET = 200;
-    ORDERS_BY_PARTY = 201;
-    ORDER_BY_MARKET_AND_ID = 202;
-    ORDER_BY_REFERENCE = 203;
-    // markets
-    MARKET_BY_ID = 210;
-    MARKETS = 211;
-    MARKET_DEPTH = 212;
-    LAST_TRADE = 213;
-    // parties
-    PARTY_BY_ID = 220;
-    PARTIES = 221;
-    // trades
-    TRADES_BY_MARKET = 230;
-    TRADES_BY_PARTY = 231;
-    TRADES_BY_ORDER = 232;
-    // positions
-    POSITIONS_BY_PARTY = 240;
-    // candles
-    CANDLES = 250;
-      // accounts
-    ACCOUNTS_BY_PARTY = 260;
-    ACCOUNTS_BY_PARTY_AND_MARKET = 261;
-    ACCOUNTS_BY_PARTY_AND_TYPE = 262;
-    ACCOUNTS_BY_PARTY_AND_ASSET = 263;
+}
+
+message SummaryRequest {
+    api.Pagination pagination = 1;
+}
+
+message SummaryResponse {
+    Summary summary = 1;
+}
+
+message MarketSummaryRequest {
+    string marketID = 1;
+    api.Pagination pagination = 2;
+}
+
+message MarketSummaryResponse {
+    MarketSummary summary = 1;
+}
+
+message SetTimeRequest {
+    google.protobuf.Timestamp time = 1;
+}
+
+message AdvanceTimeRequest {
+    google.protobuf.Duration timeDelta = 1;
 }

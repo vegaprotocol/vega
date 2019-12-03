@@ -21,13 +21,13 @@ var (
 	Version = "unknown"
 	// Revision specifies app variation that was built to work with the VEGA version above.
 	Revision = "0.0.1"
+	// Logger
+	log = logging.NewProdLogger()
 )
-
-var log = logging.NewProdLogger()
 
 func main() {
 	app := cli.NewApp()
-	runner := scenariorunner{}
+	runner := scenarioRunner{}
 	info(app)
 	commands(app, &runner)
 	if err := app.Run(os.Args); err != nil {
@@ -42,9 +42,8 @@ func info(app *cli.App) {
 	app.Version = fmt.Sprintf("%v for VEGA v.%v (%v)", Revision, Version, VersionHash)
 }
 
-func commands(app *cli.App, runner *scenariorunner) {
+func commands(app *cli.App, runner *scenarioRunner) {
 	var optionalResultSetFile string
-	var optionalProtocolSummaryFile string
 	var configFile string
 
 	var submit = "submit"
@@ -60,11 +59,6 @@ func commands(app *cli.App, runner *scenariorunner) {
 					Destination: &optionalResultSetFile,
 				},
 				cli.StringFlag{
-					Name:        "extract, e",
-					Usage:       "Save protocol summary after successful execution of all instruction sets.",
-					Destination: &optionalProtocolSummaryFile,
-				},
-				cli.StringFlag{
 					Name:        "config, c",
 					Usage:       "Specify config file. Default config used if omitted.",
 					Destination: &configFile,
@@ -75,7 +69,7 @@ func commands(app *cli.App, runner *scenariorunner) {
 				if err != nil {
 					log.Fatal(err.Error())
 				}
-				fmt.Println(dir)
+				log.Info(dir)
 				if c.NArg() > 0 {
 					instrSet, err := ProcessFiles(c.Args())
 					if err != nil {
@@ -99,14 +93,6 @@ func commands(app *cli.App, runner *scenariorunner) {
 							Output(res, fileName)
 						}
 					}
-					if optionalProtocolSummaryFile != "" {
-						summary, err := runner.engine.ExtractData()
-						if err != nil {
-							log.Fatal(err.Error())
-						}
-						Output(summary, optionalProtocolSummaryFile)
-					}
-
 				} else {
 					cli.ShowCommandHelp(c, submit)
 				}
@@ -115,13 +101,13 @@ func commands(app *cli.App, runner *scenariorunner) {
 	}
 }
 
-type scenariorunner struct {
+type scenarioRunner struct {
 	engineOnce    sync.Once
 	engine        *Engine
 	storageConfig storage.Config
 }
 
-func (s *scenariorunner) lazyInit(configFileWithPath string) {
+func (s *scenarioRunner) lazyInit(configFileWithPath string) {
 	s.engineOnce.Do(func() {
 		config := NewDefaultConfig()
 
@@ -135,7 +121,7 @@ func (s *scenariorunner) lazyInit(configFileWithPath string) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			err = unmarshall(f, &config)
+			err = unmarshal(f, &config)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -148,6 +134,6 @@ func (s *scenariorunner) lazyInit(configFileWithPath string) {
 	})
 }
 
-func (s *scenariorunner) cleanUp() {
+func (s *scenarioRunner) cleanUp() {
 	storage.FlushStores(log, s.storageConfig)
 }
