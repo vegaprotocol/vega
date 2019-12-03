@@ -1,0 +1,81 @@
+{
+  "description": "Example set of instructions with three parties. Two of them submit matching orders on the same market followed by query retrieving trades from that market - expecting one trade.\n Final trader makes an order which should stay in the orderbook as it isn't matched by anything yet.",
+  "instructions": [
+    {
+      "request": "SET_TIME",
+      "message": {
+        "@type": "core.SetTimeRequest",
+        "Time": "2019-01-02T08:00:00Z"
+      }
+    },
+    {
+      "request": "ADVANCE_TIME",
+      "message": {
+        "@type": "core.AdvanceTimeRequest",
+        "TimeDelta": "0.1s"
+      }
+    },
+    {
+      "request": "NOTIFY_TRADER_ACCOUNT",
+      "message": {
+        "@type": "api.NotifyTraderAccountRequest",
+        "notif": {
+          "traderID": "trader1",
+          "amount": 1000
+        }
+      }
+    },
+    {
+      "request": "SUBMIT_ORDER",
+      "message": {
+        "@type": "api.SubmitOrderRequest",
+        "submission": {
+          "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+          "partyID": "trader1",
+          "price": 100,
+          "size": 3,
+          "side": "Sell",
+          "TimeInForce": "GTC",
+          "expiresAt": 1924991999000000000
+        }
+      }
+    },
+    {
+      "description": "Please note it's currently to possible to submit a successful order cancelation request.",
+      "request": "CANCEL_ORDER",
+      "message": {
+        "@type": "api.CancelOrderRequest",
+        "cancellation": {
+          "orderID": "order1",
+          "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+          "partyID": "trader1"
+        }
+      }
+    },
+    {
+      "description": "Please note it's currently to possible to submit a successful order cancelation request.",
+      "request": "WITHDRAW",
+      "message": {
+        "@type": "api.WithdrawRequest",
+        "withdraw": {
+          "partyID": "trader1",
+          "amount": 10,
+          "asset": "BTC"
+        }
+      }
+    },
+    {
+      "request": "MARKET_SUMMARY",
+      "message": {
+        "@type": "core.MarketSummaryRequest",
+        "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
+      }
+    },
+    {
+      "request": "SUMMARY",
+      "message": {
+        "@type": "core.SummaryRequest"
+      }
+    }
+  ]
+}
