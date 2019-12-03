@@ -14,12 +14,11 @@ import (
 type NoopTrade struct {
 	Config
 
-	cfgMu           sync.Mutex
-	log             *logging.Logger
-	subscribers     map[uint64]chan<- []types.Trade
-	subscriberID    uint64
-	mu              sync.Mutex
-	onCriticalError func()
+	cfgMu        sync.Mutex
+	log          *logging.Logger
+	subscribers  map[uint64]chan<- []types.Trade
+	subscriberID uint64
+	mu           sync.Mutex
 }
 
 func NewNoopTrades(log *logging.Logger, c Config) *NoopTrade {

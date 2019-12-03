@@ -145,9 +145,9 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 			return nil, err
 		}
 		// unmarshal fetched candle
-		var candleFromDb types.Candle
+		var candleFromDB types.Candle
 		itemCopy, _ := item.ValueCopy(nil)
-		err = proto.Unmarshal(itemCopy, &candleFromDb)
+		err = proto.Unmarshal(itemCopy, &candleFromDB)
 		if err != nil {
 			c.log.Error("Failed to unmarshal candle value from badger in candle store (fetchCandle)",
 				logging.Error(err),
@@ -156,7 +156,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 
 			return nil, errors.Wrap(err, "failed to unmarshal from badger (fetchCandle)")
 		}
-		return &candleFromDb, nil
+		return &candleFromDB, nil
 	}
 
 	insertNewCandle := func(wb *badger.WriteBatch, badgerKey []byte, candle types.Candle) error {
@@ -177,8 +177,8 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 		return nil
 	}
 
-	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *types.Candle) error {
-		candleBuf, err := proto.Marshal(candleDb)
+	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDB *types.Candle) error {
+		candleBuf, err := proto.Marshal(candleDB)
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 
 	for _, candle := range buf {
 		badgerKey := c.badger.candleKey(marketID, candle.Interval, candle.Timestamp)
-		candleDb, err := fetchCandle(readTxn, badgerKey)
+		candleDB, err := fetchCandle(readTxn, badgerKey)
 		if err == badger.ErrKeyNotFound {
 			// Do not overwrite err var, it is used below.
 			subErr := insertNewCandle(writeBatch, badgerKey, candle)
@@ -219,23 +219,23 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 
 		if err == nil && candle.Volume != uint64(0) {
 			// update fetched candle with new trade
-			mergeCandles(candleDb, candle)
-			err = updateCandle(writeBatch, badgerKey, candleDb)
+			mergeCandles(candleDB, candle)
+			err = updateCandle(writeBatch, badgerKey, candleDB)
 			if err != nil {
 				c.log.Error("Failed to update candle in candle store",
 					logging.Candle(candle),
-					logging.CandleWithTag(*candleDb, "existing-candle"),
+					logging.CandleWithTag(*candleDB, "existing-candle"),
 					logging.Error(err))
 			} else {
 				if c.log.GetLevel() == logging.DebugLevel {
 					c.log.Debug("Candle updated in candle store",
 						logging.Candle(candle),
-						logging.CandleWithTag(*candleDb, "existing-candle"),
+						logging.CandleWithTag(*candleDB, "existing-candle"),
 						logging.String("badger-key", string(badgerKey)))
 				}
 			}
 
-			c.queueEvent(marketID, *candleDb)
+			c.queueEvent(marketID, *candleDB)
 		}
 
 		// add the lastCandle index

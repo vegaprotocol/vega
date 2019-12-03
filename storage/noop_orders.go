@@ -14,13 +14,12 @@ import (
 type NoopOrder struct {
 	Config
 
-	cfgMu           sync.Mutex
-	log             *logging.Logger
-	subscribers     map[uint64]chan<- []types.Order
-	subscriberID    uint64
-	depth           map[string]*Depth
-	mu              sync.Mutex
-	onCriticalError func()
+	cfgMu        sync.Mutex
+	log          *logging.Logger
+	subscribers  map[uint64]chan<- []types.Order
+	subscriberID uint64
+	depth        map[string]*Depth
+	mu           sync.Mutex
 }
 
 func NewNoopOrders(log *logging.Logger, c Config) *NoopOrder {
@@ -87,7 +86,7 @@ func (os *NoopOrder) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return fmt.Errorf("Orders subscriber does not exist with id: %d", id)
+	return fmt.Errorf("subscriber to Orders store does not exist with id: %d", id)
 }
 
 func (os *NoopOrder) Post(order types.Order) error {
