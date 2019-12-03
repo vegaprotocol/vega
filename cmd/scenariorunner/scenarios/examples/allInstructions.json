@@ -5,14 +5,14 @@
       "request": "SET_TIME",
       "message": {
         "@type": "core.SetTimeRequest",
-        "Time": "2019-01-02T08:00:00Z"
+        "time": "2019-01-02T08:00:00Z"
       }
     },
     {
       "request": "ADVANCE_TIME",
       "message": {
         "@type": "core.AdvanceTimeRequest",
-        "TimeDelta": "0.1s"
+        "timeDelta": "0.1s"
       }
     },
     {

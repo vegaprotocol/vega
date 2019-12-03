@@ -140,7 +140,7 @@ Below is an example of an instruction with all of those fields populated:
     "request": "SET_TIME",
     "message": {
         "@type": "core.SetTimeRequest",
-        "Time": "2019-01-02T08:00:00Z"
+        "time": "2019-01-02T08:00:00Z"
     }
 }
 
@@ -157,7 +157,7 @@ The reminder of this subsection lists all the available requests along with thei
     "request": "SET_TIME",
     "message": {
         "@type": "core.SetTimeRequest",
-        "Time": "2019-01-02T08:00:00Z"
+        "time": "2019-01-02T08:00:00Z"
     }
 }
 
@@ -173,7 +173,7 @@ The reminder of this subsection lists all the available requests along with thei
     "request": "ADVANCE_TIME",
     "message": {
     "@type": "core.AdvanceTimeRequest",
-    "TimeDelta": "0.1s"
+    "timeDelta": "0.1s"
     }
 }
 
