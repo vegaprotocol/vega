@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -94,28 +93,28 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	}
 }
 
-func getMarkets(closingAt time.Time) []proto.Market {
-	mkt := proto.Market{
+func getMarkets(closingAt time.Time) []types.Market {
+	mkt := types.Market{
 		Name: "ETHUSD/DEC19",
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
 				Code:      "CRYPTO:ETHUSD/DEC19",
 				Name:      "December 2019 ETH vs USD future",
 				BaseName:  "ETH",
 				QuoteName: "USD",
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
 					},
 				},
 				InitialMarkPrice: 99,
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
+				Product: &types.Instrument_Future{
+					Future: &types.Future{
 						Maturity: closingAt.Format(time.RFC3339),
-						Oracle: &proto.Future_EthereumEvent{
-							EthereumEvent: &proto.EthereumEvent{
+						Oracle: &types.Future_EthereumEvent{
+							EthereumEvent: &types.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 							},
@@ -124,29 +123,29 @@ func getMarkets(closingAt time.Time) []proto.Market {
 					},
 				},
 			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
 					SearchLevel:       1.1,
 					InitialMargin:     1.2,
 					CollateralRelease: 1.4,
 				},
 			},
-			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
-				SimpleRiskModel: &proto.SimpleRiskModel{
-					Params: &proto.SimpleModelParams{
+			RiskModel: &types.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &types.SimpleRiskModel{
+					Params: &types.SimpleModelParams{
 						FactorLong:  0.15,
 						FactorShort: 0.25,
 					},
 				},
 			},
 		},
-		TradingMode: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{},
+		TradingMode: &types.Market_Continuous{
+			Continuous: &types.ContinuousTrading{},
 		},
 	}
 
 	execution.SetMarketID(&mkt, 0)
-	return []proto.Market{mkt}
+	return []types.Market{mkt}
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -498,31 +497,31 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 func TestSetMarketID(t *testing.T) {
 	t.Run("nil market config", func(t *testing.T) {
-		marketcfg := &proto.Market{}
+		marketcfg := &types.Market{}
 		err := execution.SetMarketID(marketcfg, 0)
 		assert.Error(t, err)
 	})
 
 	t.Run("good market config", func(t *testing.T) {
-		marketcfg := &proto.Market{
+		marketcfg := &types.Market{
 			Id:   "", // ID will be generated
 			Name: "ETH/DEC19",
-			TradableInstrument: &proto.TradableInstrument{
-				Instrument: &proto.Instrument{
+			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
 					Id:   "Crypto/ETHUSD/Futures/Dec19",
 					Code: "FX:ETHUSD/DEC19",
 					Name: "December 2019 ETH vs USD future",
-					Metadata: &proto.InstrumentMetadata{
+					Metadata: &types.InstrumentMetadata{
 						Tags: []string{
 							"asset_class:fx/crypto",
 							"product:futures",
 						},
 					},
-					Product: &proto.Instrument_Future{
-						Future: &proto.Future{
+					Product: &types.Instrument_Future{
+						Future: &types.Future{
 							Maturity: "2019-12-31T23:59:59Z",
-							Oracle: &proto.Future_EthereumEvent{
-								EthereumEvent: &proto.EthereumEvent{
+							Oracle: &types.Future_EthereumEvent{
+								EthereumEvent: &types.EthereumEvent{
 									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 									Event:      "price_changed",
 								},
@@ -531,11 +530,11 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &proto.ForwardRiskModel{
+				RiskModel: &types.TradableInstrument_ForwardRiskModel{
+					ForwardRiskModel: &types.ForwardRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.ModelParamsBS{
+						Params: &types.ModelParamsBS{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,
@@ -543,8 +542,8 @@ func TestSetMarketID(t *testing.T) {
 					},
 				},
 			},
-			TradingMode: &proto.Market_Continuous{
-				Continuous: &proto.ContinuousTrading{},
+			TradingMode: &types.Market_Continuous{
+				Continuous: &types.ContinuousTrading{},
 			},
 		}
 

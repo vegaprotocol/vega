@@ -102,7 +102,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 	defer watcher.Close()
 	for {
 		select {
-		case event, _ := <-watcher.Events:
+		case event := <-watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				if event.Op&fsnotify.Rename == fsnotify.Rename {
 					// add a small sleep here in order to handle vi
@@ -121,7 +121,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 				}
 				w.notifyCfgUpdate()
 			}
-		case err, _ := <-watcher.Errors:
+		case err := <-watcher.Errors:
 			w.log.Error("config watcher received error event", logging.Error(err))
 		case <-ctx.Done():
 			w.log.Error("config watcher ctx done")

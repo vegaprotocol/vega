@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/markets"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -23,12 +22,12 @@ func getValidInstrumentProto() *types.Instrument {
 				"product:futures",
 			},
 		},
-		Product: &proto.Instrument_Future{
+		Product: &types.Instrument_Future{
 			Future: &types.Future{
 				Maturity: "2019-12-31T00:00:00Z",
 				Asset:    "Ethereum/Ether",
-				Oracle: &proto.Future_EthereumEvent{
-					EthereumEvent: &proto.EthereumEvent{
+				Oracle: &types.Future_EthereumEvent{
+					EthereumEvent: &types.EthereumEvent{
 						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 						Event:      "price_changed",
 					},
@@ -48,12 +47,12 @@ func TestInstrument(t *testing.T) {
 
 	t.Run("Invalid future maturity", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		pinst.Product = &proto.Instrument_Future{
+		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
 				Maturity: "notavaliddate",
 				Asset:    "Ethereum/Ether",
-				Oracle: &proto.Future_EthereumEvent{
-					EthereumEvent: &proto.EthereumEvent{
+				Oracle: &types.Future_EthereumEvent{
+					EthereumEvent: &types.EthereumEvent{
 						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 						Event:      "price_changed",
 					},
@@ -76,7 +75,7 @@ func TestInstrument(t *testing.T) {
 
 	t.Run("nil oracle", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		pinst.Product = &proto.Instrument_Future{
+		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
 				Maturity: "2019-12-31T00:00:00Z",
 				Asset:    "Ethereum/Ether",

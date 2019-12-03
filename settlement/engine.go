@@ -28,6 +28,7 @@ type Product interface {
 	GetAsset() string
 }
 
+// Buffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buffer_mock.go -package mocks code.vegaprotocol.io/vega/settlement Buffer
 type Buffer interface {
 	Add([]events.SettlePosition)
