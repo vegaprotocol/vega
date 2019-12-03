@@ -35,7 +35,7 @@ func TestReadFiles(t *testing.T) {
 	assert.EqualValues(t, instrSet[0], instrSet[1])
 }
 
-func TestUnmarshallApiTypes(t *testing.T) {
+func TestUnmarshalApiTypes(t *testing.T) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&api.NotifyTraderAccountRequest{
@@ -102,13 +102,13 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	]
 	}`)
 	actual := &core.InstructionSet{}
-	err = unmarshall(data, actual)
+	err = unmarshal(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
 }
 
-func TestUnmarshallInternalTypes(t *testing.T) {
+func TestUnmarshalInternalTypes(t *testing.T) {
 
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
@@ -171,7 +171,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 	  }`)
 
 	actual := &core.InstructionSet{}
-	err = unmarshall(data, actual)
+	err = unmarshal(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
@@ -388,7 +388,7 @@ func TestMarshal(t *testing.T) {
 		},
 	}
 	out := strings.Builder{}
-	err = marshall(&resultSet, &out)
+	err = marshal(&resultSet, &out)
 	assert.NoError(t, err)
 
 	actual := out.String()
