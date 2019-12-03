@@ -42,6 +42,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
 	accountBuf := buffer.NewAccount(accounts)
+	settleBuf := buffer.NewSettlement()
 	transferResponse := mocks.NewMockTransferBuf(ctrl)
 	marginLevelsBuf := mocks.NewMockMarginLevelsBuf(ctrl)
 	executionConfig := execution.NewDefaultConfig("")
@@ -59,6 +60,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		transferResponse,
 		marketdata,
 		marginLevelsBuf,
+		settleBuf,
 		[]types.Market{},
 	)
 	return &execEngine{

@@ -35,6 +35,7 @@ type testMarket struct {
 	partyStore            *mocks.MockPartyBuf
 	tradeStore            *mocks.MockTradeBuf
 	transferResponseStore *mocks.MockTransferBuf
+	settleBuf             *mocks.MockSettlementBuf
 
 	now time.Time
 }
@@ -52,6 +53,9 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	partyStore := mocks.NewMockPartyBuf(ctrl)
 	tradeStore := mocks.NewMockTradeBuf(ctrl)
 	transferResponseStore := mocks.NewMockTransferBuf(ctrl)
+	settleBuf := mocks.NewMockSettlementBuf(ctrl)
+	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	settleBuf.EXPECT().Flush().AnyTimes()
 	marginLevelsBuf := buffer.NewMarginLevels()
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
@@ -64,7 +68,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
-		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, now, execution.NewIDGen())
+		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, settleBuf, now, execution.NewIDGen())
 
 	asset, err := mkts[0].GetAsset()
 	assert.Nil(t, err)
@@ -85,6 +89,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		partyStore:            partyStore,
 		tradeStore:            tradeStore,
 		transferResponseStore: transferResponseStore,
+		settleBuf:             settleBuf,
 		now:                   now,
 	}
 }

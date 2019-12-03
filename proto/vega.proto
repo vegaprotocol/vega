@@ -155,6 +155,21 @@ message MarketPosition {
     int64 minimumMargin = 7;
 }
 
+message Position {
+    string marketID = 1;
+    string partyID = 2;
+    int64 openVolume = 3;
+    int64 realisedPNL  = 4;
+    int64 unrealisedPNL = 6;
+    uint64 averageEntryPrice = 7;
+    repeated PositionTrade fifoQueue = 8;
+}
+
+message PositionTrade {
+  int64 volume = 1;
+  uint64 price = 2;
+}
+
 message Statistics {
   uint64 blockHeight = 1;
   uint64 backlogLength = 2;

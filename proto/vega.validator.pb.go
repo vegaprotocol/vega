@@ -110,6 +110,19 @@ func (this *MarketDepth) Validate() error {
 func (this *MarketPosition) Validate() error {
 	return nil
 }
+func (this *Position) Validate() error {
+	for _, item := range this.FifoQueue {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("FifoQueue", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *PositionTrade) Validate() error {
+	return nil
+}
 func (this *Statistics) Validate() error {
 	return nil
 }
