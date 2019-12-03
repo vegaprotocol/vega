@@ -68,11 +68,9 @@ The instruction set doesn't need to contin any instructions for the tool to be a
 
 * The output file can be examined by calling:
 
-```bash
-
-cat example1Results.json
-
-```
+    ```bash
+    cat example1Results.json
+    ```
 
 Let's finish this subsection with the discussion of flags used in a call to the `submit` command specified above - note that a list of available subcommands can be obtained by calling:
 
