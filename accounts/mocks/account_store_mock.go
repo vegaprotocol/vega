@@ -93,6 +93,21 @@ func (mr *MockAccountStoreMockRecorder) GetByPartyAndType(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndType", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndType), arg0, arg1)
 }
 
+// GetPartyAccounts mocks base method
+func (m *MockAccountStore) GetPartyAccounts(arg0, arg1, arg2 string, arg3 proto.AccountType) ([]*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartyAccounts", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartyAccounts indicates an expected call of GetPartyAccounts
+func (mr *MockAccountStoreMockRecorder) GetPartyAccounts(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetPartyAccounts), arg0, arg1, arg2, arg3)
+}
+
 // Subscribe mocks base method
 func (m *MockAccountStore) Subscribe(arg0 chan []*proto.Account) uint64 {
 	m.ctrl.T.Helper()

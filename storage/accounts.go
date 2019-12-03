@@ -20,6 +20,8 @@ var (
 	// ErrOwnerNotFound signals that the owner related to the
 	// account we were looking for does not exists
 	ErrOwnerNotFound = errors.New("no accounts found for party")
+	// ErrMissingPartyID ...
+	ErrMissingPartyID = errors.New("missing party id")
 )
 
 // Account represents a collateral account store
@@ -114,6 +116,37 @@ func (a *Account) GetByPartyAndType(partyID string, accType types.AccountType) (
 func (a *Account) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
 	keyPrefix, validFor := a.badger.accountPartyAssetPrefix(partyID, asset, false)
 	return a.getAccountsForPrefix(keyPrefix, validFor, true)
+}
+
+func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
+	if len(partyID) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	// first we get all accounts
+	// Read all GENERAL accounts for party
+	keyPrefix, validFor := a.badger.accountPartyPrefix(types.AccountType_GENERAL, partyID, false)
+	generalAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for party: %s", partyID))
+	}
+	// Read all MARGIN accounts for party
+	keyPrefix, validFor = a.badger.accountPartyPrefix(types.AccountType_MARGIN, partyID, false)
+	marginAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading margin accounts for party: %s", partyID))
+	}
+
+	accounts := append(generalAccounts, marginAccounts...)
+	out := []*types.Account{}
+	for _, v := range accounts {
+		if (len(marketID) <= 0 || marketID == v.MarketID) &&
+			(len(asset) <= 0 || asset == v.Asset) &&
+			(ty == types.AccountType_NO_ACC || ty == v.Type) {
+			out = append(out, v)
+		}
+	}
+	return out, nil
 }
 
 // getAccountsForPartyPrefix does the work of querying the badger store for key prefixes

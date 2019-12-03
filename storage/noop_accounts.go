@@ -60,6 +60,10 @@ func (a *NoopAccount) GetByPartyAndAsset(partyID string, asset string) ([]*types
 	return []*types.Account{}, nil
 }
 
+func (a *NoopAccount) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
+	return []*types.Account{}, nil
+}
+
 func (a *NoopAccount) SaveBatch(accs []*types.Account) error {
 	return nil
 }

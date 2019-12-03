@@ -17,6 +17,7 @@ type AccountStore interface {
 	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
 	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
 	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
+	GetPartyAccounts(string, string, string, types.AccountType) ([]*types.Account, error)
 
 	Subscribe(c chan []*types.Account) uint64
 	Unsubscribe(id uint64) error
@@ -94,6 +95,10 @@ func (s *Svc) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Acc
 		return nil, err
 	}
 	return accounts, nil
+}
+
+func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
+	return s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
 }
 
 // GetByPartyAndType returns all accounts for a given type (on all markets)

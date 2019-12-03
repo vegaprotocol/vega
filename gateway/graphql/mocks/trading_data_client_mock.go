@@ -37,86 +37,6 @@ func (m *MockTradingDataClient) EXPECT() *MockTradingDataClientMockRecorder {
 	return m.recorder
 }
 
-// AccountsByParty mocks base method
-func (m *MockTradingDataClient) AccountsByParty(arg0 context.Context, arg1 *api.AccountsByPartyRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AccountsByParty", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AccountsByParty indicates an expected call of AccountsByParty
-func (mr *MockTradingDataClientMockRecorder) AccountsByParty(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsByParty", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsByParty), varargs...)
-}
-
-// AccountsByPartyAndAsset mocks base method
-func (m *MockTradingDataClient) AccountsByPartyAndAsset(arg0 context.Context, arg1 *api.AccountsByPartyAndAssetRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndAssetResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AccountsByPartyAndAsset", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyAndAssetResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AccountsByPartyAndAsset indicates an expected call of AccountsByPartyAndAsset
-func (mr *MockTradingDataClientMockRecorder) AccountsByPartyAndAsset(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsByPartyAndAsset", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsByPartyAndAsset), varargs...)
-}
-
-// AccountsByPartyAndMarket mocks base method
-func (m *MockTradingDataClient) AccountsByPartyAndMarket(arg0 context.Context, arg1 *api.AccountsByPartyAndMarketRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndMarketResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AccountsByPartyAndMarket", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyAndMarketResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AccountsByPartyAndMarket indicates an expected call of AccountsByPartyAndMarket
-func (mr *MockTradingDataClientMockRecorder) AccountsByPartyAndMarket(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsByPartyAndMarket", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsByPartyAndMarket), varargs...)
-}
-
-// AccountsByPartyAndType mocks base method
-func (m *MockTradingDataClient) AccountsByPartyAndType(arg0 context.Context, arg1 *api.AccountsByPartyAndTypeRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndTypeResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AccountsByPartyAndType", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyAndTypeResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AccountsByPartyAndType indicates an expected call of AccountsByPartyAndType
-func (mr *MockTradingDataClientMockRecorder) AccountsByPartyAndType(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsByPartyAndType", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsByPartyAndType), varargs...)
-}
-
 // AccountsSubscribe mocks base method
 func (m *MockTradingDataClient) AccountsSubscribe(arg0 context.Context, arg1 *api.AccountsSubscribeRequest, arg2 ...grpc.CallOption) (api.TradingData_AccountsSubscribeClient, error) {
 	m.ctrl.T.Helper()
@@ -255,6 +175,26 @@ func (mr *MockTradingDataClientMockRecorder) MarginLevelsSubscribe(arg0, arg1 in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarginLevelsSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).MarginLevelsSubscribe), varargs...)
+}
+
+// MarketAccounts mocks base method
+func (m *MockTradingDataClient) MarketAccounts(arg0 context.Context, arg1 *api.MarketAccountsRequest, arg2 ...grpc.CallOption) (*api.MarketAccountsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarketAccounts", varargs...)
+	ret0, _ := ret[0].(*api.MarketAccountsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarketAccounts indicates an expected call of MarketAccounts
+func (mr *MockTradingDataClientMockRecorder) MarketAccounts(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketAccounts", reflect.TypeOf((*MockTradingDataClient)(nil).MarketAccounts), varargs...)
 }
 
 // MarketByID mocks base method
@@ -495,6 +435,26 @@ func (mr *MockTradingDataClientMockRecorder) Parties(arg0, arg1 interface{}, arg
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parties", reflect.TypeOf((*MockTradingDataClient)(nil).Parties), varargs...)
+}
+
+// PartyAccounts mocks base method
+func (m *MockTradingDataClient) PartyAccounts(arg0 context.Context, arg1 *api.PartyAccountsRequest, arg2 ...grpc.CallOption) (*api.PartyAccountsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PartyAccounts", varargs...)
+	ret0, _ := ret[0].(*api.PartyAccountsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PartyAccounts indicates an expected call of PartyAccounts
+func (mr *MockTradingDataClientMockRecorder) PartyAccounts(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyAccounts", reflect.TypeOf((*MockTradingDataClient)(nil).PartyAccounts), varargs...)
 }
 
 // PartyByID mocks base method

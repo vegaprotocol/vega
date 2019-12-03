@@ -130,6 +130,7 @@ type BlockchainClient interface {
 // AccountsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/api AccountsService
 type AccountsService interface {
+	GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error)
 	GetByParty(partyID string) ([]*types.Account, error)
 	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
 	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
@@ -1157,46 +1158,16 @@ func (h *tradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
-// AccountsByParty provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
-	accs, err := h.AccountsService.GetByParty(req.PartyID)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyResponse{
-		Accounts: accs,
-	}, nil
+func (h *tradingDataService) MarketAccounts(_ context.Context, req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	return nil, nil
 }
 
-// AccountsByPartyAndMarket provides a list of accounts for the given party and market.
-func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
+func (h *tradingDataService) PartyAccounts(_ context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
+	accs, err := h.AccountsService.GetPartyAccounts(req.PartyID, req.MarketID, req.Asset, req.Type)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyAndMarketResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndType provides a list of accounts of the given type for the given party.
-func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndTypeResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndAsset provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndAssetResponse{
+	return &protoapi.PartyAccountsResponse{
 		Accounts: accs,
 	}, nil
 }
