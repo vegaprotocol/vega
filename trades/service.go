@@ -221,7 +221,6 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 						logging.Int("retries", retries),
 					)
 					cancel()
-					break
 				}
 
 			}

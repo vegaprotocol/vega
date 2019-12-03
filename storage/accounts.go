@@ -242,7 +242,6 @@ func (a *Account) notify(accs []*types.Account) {
 		select {
 		case sub <- accs:
 			ok = true
-			break
 		default:
 			ok = false
 		}

@@ -233,7 +233,6 @@ func (os *NoopOrder) notify(items []types.Order) error {
 		select {
 		case sub <- items:
 			ok = true
-			break
 		default:
 			ok = false
 		}

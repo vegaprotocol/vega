@@ -144,7 +144,6 @@ func (ts *NoopTrade) notify(items []types.Trade) error {
 		select {
 		case sub <- items:
 			ok = true
-			break
 		default:
 			ok = false
 		}

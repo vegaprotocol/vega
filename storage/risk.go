@@ -159,7 +159,6 @@ func (r *Risk) notify(batch []types.MarginLevels) {
 		select {
 		case sub <- batch:
 			ok = true
-			break
 		default:
 			ok = false
 		}
