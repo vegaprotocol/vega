@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/cmd/scenariorunner/core"
@@ -35,13 +34,13 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	if err != nil {
 		return nil, err
 	}
-	timeControl := core.NewTimeControl(d.vegaTime)
-	time := core.NewTime(timeControl)
+	coreTimeControl := core.NewTimeControl(d.vegaTime)
+	coreTime := core.NewTime(coreTimeControl)
 	initialTime, err := ptypes.Timestamp(engineConfig.InitialTime)
 	if err != nil {
 		return nil, err
 	}
-	timeControl.SetTime(initialTime)
+	coreTimeControl.SetTime(initialTime)
 
 	for _, mkt := range engineConfig.Markets {
 		err = d.execution.SubmitMarket(mkt)
@@ -50,19 +49,10 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 		}
 	}
 
-	execution := core.NewExecution(d.execution)
-
-	markets := core.NewMarkets(d.ctx, d.marketStore)
-	orders := core.NewOrders(d.ctx, d.orderStore)
-	trades := core.NewTrades(d.ctx, d.tradeStore)
-	accounts := core.NewAccounts(d.ctx, d.accountStore)
-	candles := core.NewCandles(d.ctx, d.candleStore)
-	positions := core.NewPositions(d.ctx, d.tradeService)
-	parties := core.NewParties(d.ctx, d.partyStore)
-
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService, d.execution)
 	summary := core.NewSummary(summaryGenerator)
 
+	ex := core.NewExecution(d.execution)
 	err = d.execution.Generate()
 	if err != nil {
 		return nil, err
@@ -72,18 +62,11 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 		Config:           engineConfig,
 		Version:          version,
 		summaryGenerator: summaryGenerator,
-		timeControl:      timeControl,
+		timeControl:      coreTimeControl,
 		providers: []core.PreProcessorProvider{
-			execution,
-			markets,
-			orders,
-			trades,
-			accounts,
-			candles,
-			positions,
-			parties,
+			ex,
 			summary,
-			time,
+			coreTime,
 		},
 		Execution: d.execution,
 	}, nil
@@ -110,7 +93,9 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	if durErr != nil {
 		return nil, durErr
 	}
-	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid, check if instruction processed w/o errors) to fail early
+
+	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid,
+	// check if instruction processed w/o errors) to fail early
 	for i, instr := range instrSet.Instructions {
 		preProcessor, ok := preProcessors[instr.Request]
 		if !ok {
@@ -140,7 +125,7 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 			continue
 		}
 		if len(res.Error) > 0 {
-			fmt.Println("ERROR: " + res.Error)
+			log.Error(res.Error)
 		}
 		results[i] = res
 		processed++
