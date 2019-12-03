@@ -24,6 +24,5 @@ CMD ["node"]
 EXPOSE 3002/tcp 3003/tcp 3004/tcp 26658/tcp
 COPY --from=builder /go/bin/dummyriskmodel /
 COPY --from=builder /go/bin/vega /
-COPY --from=builder /go/bin/vegabench /
 COPY --from=builder /go/bin/vegaccount /
 COPY --from=builder /go/bin/vegastream /
