@@ -54,7 +54,7 @@ The instruction set doesn't need to contin any instructions for the tool to be a
 
 * Navigate to the `scneariorunner` subfolder (the only effect of this step is to shorten the paths used in calls to the `scenario-runner-cli`. The `scenariorunner` command can be called from any directory)
 
-    ```b
+    ```bash
     cd cmd/scenariorunner
     ```
 
@@ -69,7 +69,7 @@ The instruction set doesn't need to contin any instructions for the tool to be a
 Let's finish this subsection with the discussion of flags used in a call to the `submit` command specified above - note that a list of available subcommands can be obtained by calling:
 
 ```bash
-scenariorunner submit --help`.
+scenariorunner submit --help
 ```
 
 We used:
