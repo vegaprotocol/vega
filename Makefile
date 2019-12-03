@@ -49,6 +49,9 @@ bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 test: ## Run unit tests
 	@go test ./...
 
+integrationtest: ## run integration tests, showing ledger movements and full scenario output
+	@go test -v ./integration/... -godog.format=pretty
+
 race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
 
