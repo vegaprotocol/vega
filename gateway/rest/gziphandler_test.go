@@ -11,6 +11,30 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
+	res := x.Result()
+	h, found := res.Header[key]
+	if found || len(h) > 0 {
+		t.Fatalf("Unexpected header: %s", key)
+	}
+}
+
+func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expected []string) {
+	res := x.Result()
+	h, found := res.Header[key]
+	if !found || len(h) == 0 {
+		t.Fatalf("Missing header: %s", key)
+	}
+	if len(h) != len(expected) {
+		t.Fatalf("Unexpected number of headers for \"%s\": expected %d, got %d", key, len(expected), len(h))
+	}
+	for i := range h {
+		if h[i] != expected[i] {
+			t.Fatalf("Unexpected header for \"%s\": #%d, expected \"%s\", got \"%s\"", key, i, expected[i], h[i])
+		}
+	}
+}
+
 func TestNoGzip(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://example.com/", nil)
 	if err != nil {
@@ -29,9 +53,7 @@ func TestNoGzip(t *testing.T) {
 		t.Fatalf("expected 200 got %d", rec.Code)
 	}
 
-	if rec.HeaderMap.Get("Content-Encoding") != "" {
-		t.Fatalf(`expected Content-Encoding: "" got %s`, rec.HeaderMap.Get("Content-Encoding"))
-	}
+	headerNotPresent(t, rec, "Content-Encoding")
 
 	if rec.Body.String() != "test" {
 		t.Fatalf(`expected "test" go "%s"`, rec.Body.String())
@@ -64,15 +86,9 @@ func TestGzip(t *testing.T) {
 		t.Fatalf("expected 200 got %d", rec.Code)
 	}
 
-	if rec.HeaderMap.Get("Content-Encoding") != "gzip" {
-		t.Fatalf("expected Content-Encoding: gzip got %s", rec.HeaderMap.Get("Content-Encoding"))
-	}
-	if rec.HeaderMap.Get("Content-Length") != "" {
-		t.Fatalf(`expected Content-Length: "" got %s`, rec.HeaderMap.Get("Content-Length"))
-	}
-	if rec.HeaderMap.Get("Content-Type") != "text/test" {
-		t.Fatalf(`expected Content-Type: "text/test" got %s`, rec.HeaderMap.Get("Content-Type"))
-	}
+	headerPresent(t, rec, "Content-Encoding", []string{"gzip"})
+	headerNotPresent(t, rec, "Content-Length")
+	headerPresent(t, rec, "Content-Type", []string{"text/test"})
 
 	r, err := gzip.NewReader(rec.Body)
 	if err != nil {
@@ -113,9 +129,7 @@ func TestNoBody(t *testing.T) {
 		t.Fatalf("expected %d got %d", http.StatusNoContent, rec.Code)
 	}
 
-	if rec.HeaderMap.Get("Content-Encoding") != "" {
-		t.Fatalf(`expected Content-Encoding: "" got %s`, rec.HeaderMap.Get("Content-Encoding"))
-	}
+	headerNotPresent(t, rec, "Content-Encoding")
 
 	if rec.Body.Len() > 0 {
 		t.Logf("%q", rec.Body.String())

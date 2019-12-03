@@ -80,7 +80,7 @@ func (ts *NoopTrade) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Trades subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to Trades store does not exist with id: %d", id)
 }
 
 func (ts *NoopTrade) Post(trade *types.Trade) error {
@@ -127,7 +127,7 @@ func (ts *NoopTrade) GetMarkPrice(ctx context.Context, market string) (uint64, e
 }
 
 func (ts *NoopTrade) Close() error {
-	return nil // return ts.badger.db.Close()
+	return nil
 }
 
 func (ts *NoopTrade) notify(items []types.Trade) error {

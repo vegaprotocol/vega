@@ -7,15 +7,14 @@ import (
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 // RiskStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/risk RiskStore
 type RiskStore interface {
-	GetMarginLevelsByID(partyID string, marketID string) ([]proto.MarginLevels, error)
-	Subscribe(c chan []proto.MarginLevels) uint64
+	GetMarginLevelsByID(partyID string, marketID string) ([]types.MarginLevels, error)
+	Subscribe(c chan []types.MarginLevels) uint64
 	Unsubscribe(id uint64) error
 }
 
@@ -52,17 +51,17 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-// GetMarginLevels returns the margin levels for a given party
-func (r *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
-	return r.store.GetMarginLevelsByID(partyID, marketID)
+// GetMarginLevelsByID returns the margin levels for a given party
+func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
+	return s.store.GetMarginLevelsByID(partyID, marketID)
 }
 
 func (s *Svc) ObserveMarginLevels(
 	ctx context.Context, retries int, partyID, marketID string,
-) (accountCh <-chan []proto.MarginLevels, ref uint64) {
+) (accountCh <-chan []types.MarginLevels, ref uint64) {
 
-	margins := make(chan []proto.MarginLevels)
-	internal := make(chan []proto.MarginLevels)
+	margins := make(chan []types.MarginLevels)
+	internal := make(chan []types.MarginLevels)
 	ref = s.store.Subscribe(internal)
 
 	var cancel func()
@@ -94,7 +93,7 @@ func (s *Svc) ObserveMarginLevels(
 				close(margins)
 				return
 			case accs := <-internal:
-				filtered := make([]proto.MarginLevels, 0, len(accs))
+				filtered := make([]types.MarginLevels, 0, len(accs))
 				for _, acc := range accs {
 					acc := acc
 					if (len(marketID) <= 0 || marketID == acc.MarketID) &&

@@ -8,11 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
 )
 
-// Candle is a package internal data struct that implements the CandleStore interface.
+// NoopCandle is a package internal data struct that implements the CandleStore interface.
 type NoopCandle struct {
 	Config
 
@@ -91,7 +89,7 @@ func (c *NoopCandle) Unsubscribe(id uint64) error {
 	c.log.Warn("Un-subscribe called in candle store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return errors.New(fmt.Sprintf("Candle store subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to Candle store does not exist with id: %d", id)
 }
 
 func (c *NoopCandle) Close() error {

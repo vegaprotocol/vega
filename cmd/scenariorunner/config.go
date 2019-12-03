@@ -18,7 +18,7 @@ func NewDefaultConfig() core.Config {
 		OmitUnsupportedInstructions: true,
 		OmitInvalidInstructions:     true,
 		Markets: []*types.Market{
-			&types.Market{
+			{
 				Id:   "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
 				Name: "ETHBTC/DEC19",
 				TradableInstrument: &types.TradableInstrument{

@@ -1180,7 +1180,7 @@
 | ----------- | ------------ | ------------- | ------------|
 | OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get Market Orders |
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get Party Orders |
-| OrderByMarketAndId | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get Market Order by OrderID |
+| OrderByMarketAndID | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get Market Order by OrderID |
 | OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
 | MarketByID | [MarketByIDRequest](#api.MarketByIDRequest) | [MarketByIDResponse](#api.MarketByIDResponse) | Get Market by ID |
 | Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.MarketsResponse) | Get a list of Markets |
@@ -1814,7 +1814,7 @@
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  | make sur for both that they are non nil and the value is part of the respective enums. |
 | TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | do not enforce as not always required altho at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
+| expiresAt | [int64](#int64) |  | do not enforce as not always required althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 
 
@@ -1943,7 +1943,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | updatedTimestamp | [int64](#int64) |  | timestamp when these risk factors were generated |
-| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market |
+| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market |
 | nextUpdateTimestamp | [int64](#int64) |  | time when risk factors are expected to change (or empty if risk factors are continually updated) |
 | predictedNextRiskFactors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | predicted risk factors at next change (what they&#39;d be if the change occurred now) |
 

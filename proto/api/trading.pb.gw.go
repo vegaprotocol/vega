@@ -272,7 +272,7 @@ func request_TradingData_OrdersByParty_0(ctx context.Context, marshaler runtime.
 
 }
 
-func request_TradingData_OrderByMarketAndId_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingData_OrderByMarketAndID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq OrderByMarketAndIdRequest
 	var metadata runtime.ServerMetadata
 
@@ -305,7 +305,7 @@ func request_TradingData_OrderByMarketAndId_0(ctx context.Context, marshaler run
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
 	}
 
-	msg, err := client.OrderByMarketAndId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.OrderByMarketAndID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
@@ -1040,7 +1040,7 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_OrderByMarketAndId_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingData_OrderByMarketAndID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1049,14 +1049,14 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_OrderByMarketAndId_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingData_OrderByMarketAndID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_OrderByMarketAndId_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingData_OrderByMarketAndID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1428,7 +1428,7 @@ var (
 
 	pattern_TradingData_OrdersByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "orders"}, ""))
 
-	pattern_TradingData_OrderByMarketAndId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"markets", "marketID", "orders", "orderID"}, ""))
+	pattern_TradingData_OrderByMarketAndID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"markets", "marketID", "orders", "orderID"}, ""))
 
 	pattern_TradingData_OrderByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"orders", "reference"}, ""))
 
@@ -1472,7 +1472,7 @@ var (
 
 	forward_TradingData_OrdersByParty_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_OrderByMarketAndId_0 = runtime.ForwardResponseMessage
+	forward_TradingData_OrderByMarketAndID_0 = runtime.ForwardResponseMessage
 
 	forward_TradingData_OrderByReference_0 = runtime.ForwardResponseMessage
 

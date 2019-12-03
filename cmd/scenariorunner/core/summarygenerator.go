@@ -104,8 +104,8 @@ func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryRes
 	}, nil
 }
 
-func (s *SummaryGenerator) MarketSummary(marketId string, pagination *protoapi.Pagination) (*MarketSummaryResponse, error) {
-	summary, err := s.marketSummary(marketId, getMaxPagination(pagination))
+func (s *SummaryGenerator) MarketSummary(marketID string, pagination *protoapi.Pagination) (*MarketSummaryResponse, error) {
+	summary, err := s.marketSummary(marketID, getMaxPagination(pagination))
 	if err != nil {
 		return nil, err
 	}
@@ -115,27 +115,27 @@ func (s *SummaryGenerator) MarketSummary(marketId string, pagination *protoapi.P
 
 }
 
-func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pagination) (*MarketSummary, error) {
+func (s *SummaryGenerator) marketSummary(marketID string, pagination protoapi.Pagination) (*MarketSummary, error) {
 
 	err := s.execution.Generate()
 	if err != nil {
 		return nil, err
 	}
 
-	market, err := s.marketStore.GetByID(marketId)
+	market, err := s.marketStore.GetByID(marketID)
 	if err != nil {
 		return nil, err
 	}
 
-	depth, err := s.orderStore.GetMarketDepth(s.context, marketId)
+	depth, err := s.orderStore.GetMarketDepth(s.context, marketID)
 	if err != nil {
 		return nil, err
 	}
-	trades, err := s.tradeStore.GetByMarket(s.context, marketId, pagination.Skip, pagination.Limit, pagination.Descending)
+	trades, err := s.tradeStore.GetByMarket(s.context, marketID, pagination.Skip, pagination.Limit, pagination.Descending)
 	if err != nil {
 		return nil, err
 	}
-	orders, err := s.orderStore.GetByMarket(s.context, marketId, pagination.Skip, pagination.Limit, pagination.Descending, nil)
+	orders, err := s.orderStore.GetByMarket(s.context, marketID, pagination.Skip, pagination.Limit, pagination.Descending, nil)
 	if err != nil {
 		return nil, err
 	}

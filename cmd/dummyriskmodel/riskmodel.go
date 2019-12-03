@@ -52,13 +52,13 @@ func (rm *RiskModel) calculateRiskFactors(w http.ResponseWriter, r *http.Request
 	if current == nil {
 		current = &types.RiskResult{
 			RiskFactors: map[string]*types.RiskFactor{
-				"Ethereum/Ether": &types.RiskFactor{
+				"Ethereum/Ether": {
 					Long:  0.15,
 					Short: 0.25,
 				},
 			},
 			PredictedNextRiskFactors: map[string]*types.RiskFactor{
-				"Ethereum/Ether": &types.RiskFactor{
+				"Ethereum/Ether": {
 					Long:  0.15,
 					Short: 0.25,
 				},

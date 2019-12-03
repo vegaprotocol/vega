@@ -45,7 +45,7 @@ type Svc struct {
 	tradeSubscribersCnt     int32
 }
 
-// NewService instanciate a new Trades service
+// NewService instantiate a new Trades service
 func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)

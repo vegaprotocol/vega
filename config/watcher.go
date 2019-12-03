@@ -27,7 +27,7 @@ type Watcher struct {
 	mu                 sync.Mutex
 }
 
-// NewFromFile instanciate a new watcher from the vega config files
+// NewFromFile instantiate a new watcher from the vega config files
 func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
 	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
@@ -102,7 +102,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 	defer watcher.Close()
 	for {
 		select {
-		case event, _ := <-watcher.Events:
+		case event := <-watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				if event.Op&fsnotify.Rename == fsnotify.Rename {
 					// add a small sleep here in order to handle vi
@@ -121,7 +121,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 				}
 				w.notifyCfgUpdate()
 			}
-		case err, _ := <-watcher.Errors:
+		case err := <-watcher.Errors:
 			w.log.Error("config watcher received error event", logging.Error(err))
 		case <-ctx.Done():
 			w.log.Error("config watcher ctx done")

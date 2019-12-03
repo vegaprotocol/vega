@@ -495,7 +495,7 @@ func (m *RiskFactor) GetLong() float64 {
 type RiskResult struct {
 	// timestamp when these risk factors were generated
 	UpdatedTimestamp int64 `protobuf:"varint,1,opt,name=updatedTimestamp,proto3" json:"updatedTimestamp,omitempty"`
-	// risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market
+	// risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market
 	RiskFactors map[string]*RiskFactor `protobuf:"bytes,2,rep,name=riskFactors,proto3" json:"riskFactors,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// time when risk factors are expected to change (or empty if risk factors are continually updated)
 	NextUpdateTimestamp int64 `protobuf:"varint,3,opt,name=nextUpdateTimestamp,proto3" json:"nextUpdateTimestamp,omitempty"`
@@ -1978,7 +1978,7 @@ type OrderSubmission struct {
 	Side        Side              `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
 	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=TimeInForce,proto3,enum=vega.Order_TimeInForce" json:"TimeInForce,omitempty"`
 	// do not enforce as not always required
-	// altho at least check it's not a negative integer, would be not that very handy to create a time.Time with it
+	// althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
 	ExpiresAt            int64      `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
 	Type                 Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`

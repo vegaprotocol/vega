@@ -255,7 +255,6 @@ func (a *Account) notify(accs []*types.Account) {
 		}
 	}
 	a.mu.Unlock()
-	return
 }
 
 // parseBatch takes a list of accounts and outputs the necessary badger keys and values
@@ -266,7 +265,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 
 		// Validate marketID as only MARGIN accounts should have a marketID specified
 		if acc.MarketID == "" && acc.Type != types.AccountType_GENERAL {
-			err := errors.New(fmt.Sprintf("general account should not have a market"))
+			err := fmt.Errorf("general account should not have a market")
 			a.log.Error(err.Error(), logging.Account(*acc))
 			return nil, err
 		}
@@ -340,5 +339,5 @@ func (a *Account) Unsubscribe(id uint64) error {
 	a.log.Warn("Un-subscribe called in account store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return errors.New(fmt.Sprintf("Account store subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to Account store does not exist with id: %d", id)
 }

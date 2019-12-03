@@ -118,6 +118,6 @@ type dependencies struct {
 	tradeStore   *storage.Trade
 	marketStore  *storage.Market
 	accountStore *storage.Account
-	candleStore  *storage.Candle
+	// candleStore  *storage.Candle
 	tradeService *trades.Svc
 }

@@ -52,7 +52,7 @@ type CalculateRiskFactorsResponse struct {
 	Result     *types.RiskResult `json:"result"`
 }
 
-// NewExternal instanciate a new connection with an external risk model
+// NewExternal instantiate a new connection with an external risk model
 func NewExternal(log *logging.Logger, pe *types.ExternalRiskModel) (*External, error) {
 	tr := &http.Transport{
 		Dial: func(proto, addr string) (conn net.Conn, err error) {

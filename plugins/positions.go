@@ -15,13 +15,14 @@ var (
 	ErrPartyNotFound  = errors.New("party not found")
 )
 
+// PosBuffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/pos_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PosBuffer
 type PosBuffer interface {
 	Subscribe() (<-chan []events.SettlePosition, int)
 	Unsubscribe(int)
 }
 
-// Positions - plugin taking settlement data to build positions API data
+// Positions plugin taking settlement data to build positions API data
 type Positions struct {
 	mu   *sync.RWMutex
 	buf  PosBuffer
@@ -61,7 +62,7 @@ func (p *Positions) Stop() {
 	p.mu.Unlock()
 }
 
-// consume - keep reading the channel for as long as we need to
+// consume keep reading the channel for as long as we need to
 func (p *Positions) consume(ctx context.Context) {
 	for {
 		select {
@@ -104,7 +105,7 @@ func (p *Positions) updateData(raw []events.SettlePosition) {
 	}
 }
 
-// GetPositionsByMarketAndParty - get the position of a single trader in a given market
+// GetPositionsByMarketAndParty get the position of a single trader in a given market
 func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
@@ -121,7 +122,7 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	return &pos, nil
 }
 
-// GetPositionsByParty - get all positions for a given trader
+// GetPositionsByParty get all positions for a given trader
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
 	// at most, trader is active in all markets
@@ -138,7 +139,7 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	return positions, nil
 }
 
-// GetPositionsByMarket - get all trader positions in a given market
+// GetPositionsByMarket get all trader positions in a given market
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
@@ -183,7 +184,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		}
 	}
 	p.AverageEntryPrice = totPrice / absUint64(totVolume)
-	// MTM price * open volume == total value of current pos - the entry price/cost of said position
+	// MTM price * open volume == total value of current pos the entry price/cost of said position
 	p.UnrealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
 }
 
