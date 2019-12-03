@@ -68,9 +68,10 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
 		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, settleBuf, now, execution.NewIDGen())
+	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	// ignore response ids here + this cannot fail
