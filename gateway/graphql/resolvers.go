@@ -584,8 +584,29 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 
 type myMarginLevelsResolver VegaResolverRoot
 
-func (r *myMarginLevelsResolver) PartyID(_ context.Context, m *types.MarginLevels) (string, error) {
-	return m.PartyID, nil
+func (r *myMarginLevelsResolver) Market(ctx context.Context, m *types.MarginLevels) (*Market, error) {
+	req := protoapi.MarketByIDRequest{MarketID: m.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	return market, nil
+}
+
+func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevels) (*Party, error) {
+	if m == nil {
+		return nil, errors.New("nil order")
+	}
+	return &Party{
+		ID: m.PartyID,
+	}, nil
 }
 
 func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -625,23 +646,41 @@ func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketDa
 func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidVolume, 10), nil
 }
+
 func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferPrice, 10), nil
 }
+
 func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferVolume, 10), nil
 }
+
 func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MidPrice, 10), nil
 }
+
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MarkPrice, 10), nil
 }
-func (r *myMarketDataResolver) MarketID(_ context.Context, m *types.MarketData) (string, error) {
-	return m.Market, nil
-}
+
 func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
+func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) (*Market, error) {
+	req := protoapi.MarketByIDRequest{MarketID: m.Market}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	return market, nil
 }
 
 // END: MarketData resolver
@@ -699,6 +738,54 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 // BEGIN: Order Resolver
 
 type myOrderResolver VegaResolverRoot
+
+func RejectionReasonFromProtoOrderError(o proto.OrderError) (RejectionReason, error) {
+	switch o {
+	case proto.OrderError_INVALID_MARKET_ID:
+		return RejectionReasonInvalidMarketID, nil
+	case proto.OrderError_INVALID_ORDER_ID:
+		return RejectionReasonInvalidOrderID, nil
+	case proto.OrderError_ORDER_OUT_OF_SEQUENCE:
+		return RejectionReasonOrderOutOfSequence, nil
+	case proto.OrderError_INVALID_REMAINING_SIZE:
+		return RejectionReasonInvalidRemainingSize, nil
+	case proto.OrderError_TIME_FAILURE:
+		return RejectionReasonTimeFailure, nil
+	case proto.OrderError_ORDER_REMOVAL_FAILURE:
+		return RejectionReasonOrderRemovalFailure, nil
+	case proto.OrderError_INVALID_EXPIRATION_DATETIME:
+		return RejectionReasonInvalidExpirationTime, nil
+	case proto.OrderError_INVALID_ORDER_REFERENCE:
+		return RejectionReasonInvalidOrderReference, nil
+	case proto.OrderError_EDIT_NOT_ALLOWED:
+		return RejectionReasonEditNotAllowed, nil
+	case proto.OrderError_ORDER_AMEND_FAILURE:
+		return RejectionReasonOrderAmendFailure, nil
+	case proto.OrderError_ORDER_NOT_FOUND:
+		return RejectionReasonOrderNotFound, nil
+	case proto.OrderError_INVALID_PARTY_ID:
+		return RejectionReasonInvalidPartyID, nil
+	case proto.OrderError_MARKET_CLOSED:
+		return RejectionReasonMarketClosed, nil
+	case proto.OrderError_MARGIN_CHECK_FAILED:
+		return RejectionReasonMarginCheckFailed, nil
+	case proto.OrderError_INTERNAL_ERROR:
+		return RejectionReasonInternalError, nil
+	default:
+		return RejectionReason(""), fmt.Errorf("Invalid RejectionReason: %v", o)
+	}
+}
+
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *proto.Order) (*RejectionReason, error) {
+	if o.Reason == proto.OrderError_NONE {
+		return nil, nil
+	}
+	reason, err := RejectionReasonFromProtoOrderError(o.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &reason, nil
+}
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Price, 10), nil

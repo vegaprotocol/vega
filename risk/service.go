@@ -58,7 +58,7 @@ func (r *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevel
 }
 
 func (s *Svc) ObserveMarginLevels(
-	ctx context.Context, retries int, party, marketID string,
+	ctx context.Context, retries int, partyID, marketID string,
 ) (accountCh <-chan []proto.MarginLevels, ref uint64) {
 
 	margins := make(chan []proto.MarginLevels)
@@ -97,7 +97,8 @@ func (s *Svc) ObserveMarginLevels(
 				filtered := make([]proto.MarginLevels, 0, len(accs))
 				for _, acc := range accs {
 					acc := acc
-					if len(marketID) <= 0 || marketID == acc.MarketID {
+					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
+						partyID == acc.PartyID {
 						filtered = append(filtered, acc)
 					}
 				}

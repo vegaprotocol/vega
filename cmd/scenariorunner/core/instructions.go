@@ -9,24 +9,24 @@ import (
 )
 
 var (
-	ErrInstructionNotSupported error = errors.New("Instruction not supported")
-	ErrInstructionInvalid      error = errors.New("Instruction invalid")
+	ErrInstructionNotSupported error = errors.New("instruction not supported")
+	ErrInstructionInvalid      error = errors.New("instruction invalid")
 )
 
 // NewInstruction returns a new instruction from the request and proto message.
 func NewInstruction(request RequestType, message proto.Message) (*Instruction, error) {
-	any, err := marshalAny(message)
+	anyMsg, err := marshalAny(message)
 	if err != nil {
 		return nil, err
 	}
 	return &Instruction{
 		Request: request,
-		Message: any,
+		Message: anyMsg,
 	}, nil
 }
 
 // NewResult wraps a response and an error in InstructionResult.
-func (instr Instruction) NewResult(response proto.Message, err error) (*InstructionResult, error) {
+func (m Instruction) NewResult(response proto.Message, err error) (*InstructionResult, error) {
 	errText := ""
 	if err != nil {
 		errText = err.Error()
@@ -38,15 +38,15 @@ func (instr Instruction) NewResult(response proto.Message, err error) (*Instruct
 		response = &empty.Empty{}
 	}
 
-	any, err := marshalAny(response)
+	anyResp, err := marshalAny(response)
 	if err != nil {
 		return nil, err
 	}
 
 	return &InstructionResult{
-		Response:    any,
+		Response:    anyResp,
 		Error:       errText,
-		Instruction: &instr,
+		Instruction: &m,
 	}, nil
 }
 
@@ -58,9 +58,9 @@ func marshalAny(pb proto.Message) (*any.Any, error) {
 	return &any.Any{TypeUrl: proto.MessageName(pb), Value: value}, nil
 }
 
-func (instr *Instruction) PreProcess(deliver func() (proto.Message, error)) (*PreProcessedInstruction, error) {
+func (m *Instruction) PreProcess(deliver func() (proto.Message, error)) (*PreProcessedInstruction, error) {
 	return &PreProcessedInstruction{
-		instruction: instr,
+		instruction: m,
 		deliver:     deliver,
 	}, nil
 }

@@ -76,6 +76,8 @@ func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 		return types.Order_Cancelled, nil
 	case OrderStatusFilled:
 		return types.Order_Filled, nil
+	case OrderStatusRejected:
+		return types.Order_Rejected, nil
 	default:
 		return types.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
 	}

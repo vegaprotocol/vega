@@ -35,7 +35,7 @@ func TestReadFiles(t *testing.T) {
 	assert.EqualValues(t, instrSet[0], instrSet[1])
 }
 
-func TestUnmarshallApiTypes(t *testing.T) {
+func TestUnmarshalApiTypes(t *testing.T) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&api.NotifyTraderAccountRequest{
@@ -102,13 +102,13 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	]
 	}`)
 	actual := &core.InstructionSet{}
-	err = unmarshall(data, actual)
+	err = unmarshal(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
 }
 
-func TestUnmarshallInternalTypes(t *testing.T) {
+func TestUnmarshalInternalTypes(t *testing.T) {
 
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
@@ -171,7 +171,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 	  }`)
 
 	actual := &core.InstructionSet{}
-	err = unmarshall(data, actual)
+	err = unmarshal(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
@@ -184,28 +184,7 @@ func TestMarshal(t *testing.T) {
 			  "instructionsProcessed": "2",
 			  "instructionsOmitted": "0",
 			  "tradesGenerated": "1",
-			  "processingTime": "3s",
-			  "finalMarketDepth": [
-				{
-				  "marketID": "Market1",
-				  "buy": [
-					{
-					  "price": "100",
-					  "numberOfOrders": "1",
-					  "volume": "3",
-					  "cumulativeVolume": "3"
-					}
-				  ],
-				  "sell": [
-					{
-					  "price": "100",
-					  "numberOfOrders": "1",
-					  "volume": "3",
-					  "cumulativeVolume": "3"
-					}
-				  ]
-				}
-			  ]
+			  "processingTime": "3s"
 			},
 			"results": [
 			  {
@@ -360,27 +339,6 @@ func TestMarshal(t *testing.T) {
 			ProcessingTime: &duration.Duration{
 				Seconds: 3,
 			},
-			FinalMarketDepth: []*types.MarketDepth{
-				{
-					MarketID: "Market1",
-					Buy: []*types.PriceLevel{
-						&types.PriceLevel{
-							Price:            100,
-							NumberOfOrders:   1,
-							Volume:           3,
-							CumulativeVolume: 3,
-						},
-					},
-					Sell: []*types.PriceLevel{
-						&types.PriceLevel{
-							Price:            100,
-							NumberOfOrders:   1,
-							Volume:           3,
-							CumulativeVolume: 3,
-						},
-					},
-				},
-			},
 		},
 		Results: []*core.InstructionResult{
 			result1,
@@ -388,7 +346,7 @@ func TestMarshal(t *testing.T) {
 		},
 	}
 	out := strings.Builder{}
-	err = marshall(&resultSet, &out)
+	err = marshal(&resultSet, &out)
 	assert.NoError(t, err)
 
 	actual := out.String()
