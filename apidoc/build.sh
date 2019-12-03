@@ -26,24 +26,27 @@ EOZ
 }
 
 generate_graphql() {
+	echo "GraphQL: start"
 	graphql_dir="$dest_dir/graphql"
 	mkdir -p "$graphql_dir"
-	pushd apidoc 1>/dev/null || exit 1
 	yarn install
 	yarn build
-	popd 1>/dev/null || exit 1
+	echo "GraphQL: done"
 }
 
 generate_grpc() {
+	echo "gRPC: start"
 	grpc_dir="$dest_dir/grpc"
 	mkdir "$grpc_dir"
-	cp -a proto/doc/index.html "$grpc_dir/"
+	cp -a ../proto/doc/index.html "$grpc_dir/"
+	echo "gRPC: done"
 }
 
 generate_rest() {
+	echo "REST: start"
 	rest_dir="$dest_dir/rest"
 	mkdir -p "$rest_dir"
-	cp -a proto/api/trading.swagger.json "$rest_dir/swagger.json"
+	cp -a ../proto/api/trading.swagger.json "$rest_dir/swagger.json"
 
 	cat >"$rest_dir/index.html" <<EOZ
 <!DOCTYPE html>
@@ -61,11 +64,17 @@ body { margin: 0; padding: 0; }
 </body>
 </html>
 EOZ
+	echo "REST: done"
 }
 
 # # #
 
-dest_dir=apidoc/public
+if test -z "$NETLIFY" ; then
+	# Not running on Netlify.
+	cd "$(realpath "$(dirname "$0")")" || exit 1
+fi
+
+dest_dir=public
 
 rm -rf "$dest_dir"
 mkdir -p "$dest_dir"
