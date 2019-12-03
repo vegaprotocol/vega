@@ -157,7 +157,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* ADVANCE_TIME
+* **ADVANCE_TIME**
 
     Advances the time within the execution engine by a specified amount. Please note config file has options to automatically advance time after each instruction.
 
@@ -173,7 +173,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* NOTIFY_TRADER_ACCOUNT
+* **NOTIFY_TRADER_ACCOUNT**
 
     Creates an account for a specified trader and adds funds to it.
 
@@ -192,7 +192,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* SUBMIT_ORDER
+* **SUBMIT_ORDER**
 
     Submits an order to the execution enginge. Market IDs are specified in the config file. The expiry time needs to be specified as the Unix time, see the [time package](https://golang.org/pkg/time/#Time.UnixNano) documentation for details.
 
@@ -216,7 +216,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* CANCEL_ORDER
+* **CANCEL_ORDER**
 
     Cancels an order - please note it's not currently possible to submit a successful order cancellation request.
 
@@ -235,7 +235,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* AMEND_ORDER
+* **AMEND_ORDER**
 
     Amends an order - please note it's not currently possible to submit a successful order amendment request.
 
@@ -257,7 +257,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* WITHDRAW
+* **WITHDRAW**
 
     Withdraws a specified amount from party's account.
 
@@ -277,7 +277,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* MARKET_SUMMARY
+* **MARKET_SUMMARY**
 
     Provides a summary for the specified market.
 
@@ -293,7 +293,7 @@ The reminder of this subsection lists all the available requests along with thei
 
 ```
 
-* SUMMARY
+* **SUMMARY**
 
     Provides a summary for all markets and parties
 
@@ -312,27 +312,27 @@ The reminder of this subsection lists all the available requests along with thei
 
 When invoking the `submit` command with the `--result` flag along with the output file name an output file gets generated per each instruction set specified. It contain the following elements:
 
-* metadata
+* **Metadata**
 
     Specifies the number of instructions that were processed and omitted, number of trades generated and the time it took to process a given instruction set.
 
-* Results
+* **Results**
 
     Displays an array of results. Each result displays the instruction that was submitted, an error (if it occurred) and a request received (unless an error occurred) - please note some instructions result in empty resposes - it is an expected behavior.
 
-* Initial state
+* **Initial state**
 
     Displays the summary of all markets and parties prior to processing any instructions from a current set.
 
-* Final state
+* **Final state**
 
     Displays the summary of all markets and parties after all instructions from a current set have been processed.
 
-* Config
+* **Config**
 
     Displays the configuration used during the execution of a given instruction set.
 
-* Version
+* **Version**
 
     Displays information on the version used for the processing of the specified instruction set.
 
