@@ -44,7 +44,6 @@ func info(app *cli.App) {
 
 func commands(app *cli.App, runner *scenarioRunner) {
 	var optionalResultSetFile string
-	var optionalProtocolSummaryFile string
 	var configFile string
 
 	var submit = "submit"
@@ -58,11 +57,6 @@ func commands(app *cli.App, runner *scenarioRunner) {
 					Name:        "result, r",
 					Usage:       "Save instruction results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted.",
 					Destination: &optionalResultSetFile,
-				},
-				cli.StringFlag{
-					Name:        "extract, e",
-					Usage:       "Save protocol summary after successful execution of all instruction sets.",
-					Destination: &optionalProtocolSummaryFile,
 				},
 				cli.StringFlag{
 					Name:        "config, c",
@@ -99,14 +93,6 @@ func commands(app *cli.App, runner *scenarioRunner) {
 							Output(res, fileName)
 						}
 					}
-					if optionalProtocolSummaryFile != "" {
-						summary, err := runner.engine.ExtractData()
-						if err != nil {
-							log.Fatal(err.Error())
-						}
-						Output(summary, optionalProtocolSummaryFile)
-					}
-
 				} else {
 					cli.ShowCommandHelp(c, submit)
 				}

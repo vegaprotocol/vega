@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/scenariorunner/core"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
@@ -145,18 +144,13 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	if err != nil {
 		return nil, err
 	}
-	summary, err := e.ExtractData()
-	if err != nil {
-		return nil, err
-	}
 
-	totalTrades := sumTrades(*summary)
+	totalTrades := sumTrades(*finalState)
 
 	md := &core.Metadata{
 		InstructionsProcessed: processed,
 		InstructionsOmitted:   omitted,
 		TradesGenerated:       totalTrades - e.tradesGenerated,
-		FinalMarketDepth:      marketDepths(*summary),
 		ProcessingTime:        ptypes.DurationProto(time.Since(start)),
 	}
 
@@ -172,10 +166,6 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	}, errs.ErrorOrNil()
 }
 
-func (e Engine) ExtractData() (*core.SummaryResponse, error) {
-	return e.summaryGenerator.Summary(nil)
-}
-
 func sumTrades(response core.SummaryResponse) uint64 {
 	var trades int
 	for _, mkt := range response.Summary.Markets {
@@ -186,16 +176,6 @@ func sumTrades(response core.SummaryResponse) uint64 {
 	}
 
 	return uint64(trades)
-}
-
-func marketDepths(response core.SummaryResponse) []*proto.MarketDepth {
-	d := make([]*proto.MarketDepth, len(response.Summary.Markets))
-	for i, mkt := range response.Summary.Markets {
-		if mkt != nil {
-			d[i] = mkt.MarketDepth
-		}
-	}
-	return d
 }
 
 func (e *Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
