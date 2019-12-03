@@ -93,6 +93,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = runner.ProcessInstructions(instructionSet)
+	assert.NoError(t, err)
 
 	result, err := runner.ExtractData()
 	assert.NoError(t, err)
@@ -133,6 +134,7 @@ func TestExtractData(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = runner.ProcessInstructions(instructionSet)
+	assert.NoError(t, err)
 
 	result, err := runner.ExtractData()
 	assert.NoError(t, err)

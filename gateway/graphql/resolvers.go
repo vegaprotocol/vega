@@ -452,9 +452,7 @@ func (r *myPartyResolver) Margins(ctx context.Context, party *Party, marketID *s
 		return nil, err
 	}
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
-	for _, v := range res.MarginLevels {
-		out = append(out, v)
-	}
+	out = append(out, res.MarginLevels...)
 	return out, nil
 }
 
@@ -772,7 +770,7 @@ func RejectionReasonFromProtoOrderError(o proto.OrderError) (RejectionReason, er
 	case proto.OrderError_INTERNAL_ERROR:
 		return RejectionReasonInternalError, nil
 	default:
-		return RejectionReason(""), fmt.Errorf("Invalid RejectionReason: %v", o)
+		return RejectionReason(""), fmt.Errorf("invalid RejectionReason: %v", o)
 	}
 }
 

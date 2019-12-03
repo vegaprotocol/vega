@@ -5,14 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-
 	"code.vegaprotocol.io/vega/gateway"
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -70,22 +68,22 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 func getTestMarket() *types.Market {
 	return &types.Market{
 		Id: "BTC/DEC19",
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
 				Id:   "Crypto/BTCUSD/Futures/Dec19",
 				Code: "FX:BTCUSD/DEC19",
 				Name: "December 2019 BTC vs USD future",
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
 					},
 				},
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
+				Product: &types.Instrument_Future{
+					Future: &types.Future{
 						Maturity: "2019-12-31",
-						Oracle: &proto.Future_EthereumEvent{
-							EthereumEvent: &proto.EthereumEvent{
+						Oracle: &types.Future_EthereumEvent{
+							EthereumEvent: &types.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 							},
@@ -94,11 +92,11 @@ func getTestMarket() *types.Market {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-				ForwardRiskModel: &proto.ForwardRiskModel{
+			RiskModel: &types.TradableInstrument_ForwardRiskModel{
+				ForwardRiskModel: &types.ForwardRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
+					Params: &types.ModelParamsBS{
 						Mu:    0,
 						R:     0.016,
 						Sigma: 0.09,
@@ -106,8 +104,8 @@ func getTestMarket() *types.Market {
 				},
 			},
 		},
-		TradingMode: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{},
+		TradingMode: &types.Market_Continuous{
+			Continuous: &types.ContinuousTrading{},
 		},
 	}
 }

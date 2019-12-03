@@ -25,7 +25,7 @@ type CandleStore interface {
 type Svc struct {
 	log *logging.Logger
 	Config
-	tradesBuffer  map[string][]*types.Trade
+	// tradesBuffer  map[string][]*types.Trade
 	candleStore   CandleStore
 	subscriberCnt int32
 }
