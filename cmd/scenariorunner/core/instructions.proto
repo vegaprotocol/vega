@@ -43,10 +43,6 @@ message ResultSet {
     
 }
 
-message SummaryResponse {
-    Summary summary = 1;
-}
-
 message Summary {
     repeated MarketSummary markets = 1;
     repeated PartySummary parties = 2;
@@ -59,18 +55,6 @@ message Config {
 	bool omitUnsupportedInstructions = 4; 
     bool omitInvalidInstructions = 5;
     repeated vega.Market markets = 6;
-}
-
-message MarketSummaryResponse {
-    MarketSummary summary = 1;
-}
-
-message SummaryRequest {
-    api.Pagination pagination = 1;
-}
-message MarketSummaryRequest {
-    string marketID = 1;
-    api.Pagination pagination = 2;
 }
 
 message MarketSummary {
@@ -121,4 +105,29 @@ enum RequestType {
     ACCOUNTS_BY_PARTY_AND_MARKET = 261;
     ACCOUNTS_BY_PARTY_AND_TYPE = 262;
     ACCOUNTS_BY_PARTY_AND_ASSET = 263;
+}
+
+message SummaryRequest {
+    api.Pagination pagination = 1;
+}
+
+message SummaryResponse {
+    Summary summary = 1;
+}
+
+message MarketSummaryRequest {
+    string marketID = 1;
+    api.Pagination pagination = 2;
+}
+
+message MarketSummaryResponse {
+    MarketSummary summary = 1;
+}
+
+message SetTimeRequest {
+    google.protobuf.Timestamp time = 1;
+}
+
+message AdvanceTimeRequest {
+    google.protobuf.Duration timeDelta = 1;
 }
