@@ -111,12 +111,12 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 
 // TODO (WG 08/11/2019) The tests below are integration tests used during development. They should be moved to where we keep integration tests and executed with dependencies injected from outside.
 func TestProcessInstructionsAll(t *testing.T) {
-	instructions, err := getExecutionEngineInstructions(marketId, "party1")
+	instructions, err := getExecutionEngineInstructions(marketID, "party1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	instructions2, err := getInternalInstructions(marketId)
+	instructions2, err := getInternalInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
