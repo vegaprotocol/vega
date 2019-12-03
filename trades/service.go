@@ -279,7 +279,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				close(positions)
 				return
 			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
-				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party)
+				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party, "")
 				if err != nil {
 					s.log.Error(
 						"Failed to get positions for subscriber (getPositionsByParty)",
@@ -375,11 +375,11 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 	}
 	ret := make([]*types.MarketPosition, 0, len(positions))
 	for _, pos := range positions {
-		// @TODO sum unrealised using FIFO queue
 		ret = append(ret, &types.MarketPosition{
 			MarketID:          pos.MarketID,
 			UnrealisedVolume:  pos.OpenVolume,
 			UnrealisedPNL:     pos.UnrealisedPNL,
+			RealisedPNL:       pos.RealisedPNL,
 			AverageEntryPrice: pos.AverageEntryPrice,
 		})
 	}

@@ -1690,10 +1690,6 @@
         "averageEntryPrice": {
           "type": "string",
           "format": "uint64"
-        },
-        "minimumMargin": {
-          "type": "string",
-          "format": "int64"
         }
       }
     },

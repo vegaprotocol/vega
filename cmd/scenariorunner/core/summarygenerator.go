@@ -68,7 +68,7 @@ func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryRes
 
 	partySummaries := make([]*PartySummary, len(parties))
 	for i, party := range parties {
-		positions, err := s.tradeService.GetPositionsByParty(s.context, party.Id)
+		positions, err := s.tradeService.GetPositionsByParty(s.context, party.Id, "")
 		if err != nil {
 			return nil, err
 		}

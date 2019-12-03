@@ -77,7 +77,7 @@ type TradeService interface {
 	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.MarketPosition, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	GetTradeSubscribersCount() int32

@@ -1679,7 +1679,6 @@
 | unrealisedVolume | [int64](#int64) |  |  |
 | unrealisedPNL | [int64](#int64) |  |  |
 | averageEntryPrice | [uint64](#uint64) |  |  |
-| minimumMargin | [int64](#int64) |  |  |
 
 
 
