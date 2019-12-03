@@ -72,6 +72,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 	partyBuffer := buffer.NewParty(partyStore)
 	accountBuffer := buffer.NewAccount(accountStore)
 	transferResponseBuffer := buffer.NewTransferResponse(transferResponseStore)
+	settleBuf := buffer.NewSettlement()
 	marketDataBuffer := buffer.NewMarketData()
 	marginLevelsBuffer := buffer.NewMarginLevels()
 
@@ -90,6 +91,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		transferResponseBuffer,
 		marketDataBuffer,
 		marginLevelsBuffer,
+		settleBuf,
 		[]types.Market{}, // WG (21/11/2019): Please note these get added from config in scenariorunner/engine.go/NewEngine just now, but can definitely be moved here.
 	)
 

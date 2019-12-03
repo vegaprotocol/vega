@@ -22,6 +22,12 @@ type pos struct {
 	newSize int64 // track this so we can determine when a trader switches between long <> short
 }
 
+type settlePos struct {
+	events.MarketPosition
+	marketID string
+	trades   []*pos
+}
+
 type mtmTransfer struct {
 	events.MarketPosition
 	transfer *types.Transfer
@@ -67,4 +73,18 @@ func (p pos) Price() uint64 {
 // Transfer - part of the Transfer interface
 func (m mtmTransfer) Transfer() *types.Transfer {
 	return m.transfer
+}
+
+// Trades - implements events.SettlePosition event
+func (s settlePos) Trades() []events.TradeSettlement {
+	r := make([]events.TradeSettlement, 0, len(s.trades))
+	for _, t := range s.trades {
+		r = append(r, t)
+	}
+	return r
+}
+
+// MarketID - market ID for this event
+func (s settlePos) MarketID() string {
+	return s.marketID
 }

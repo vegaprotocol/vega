@@ -169,6 +169,7 @@ func (l *NodeCommand) setupBuffers() {
 
 	l.marginLevelsBuf = buffer.NewMarginLevels()
 	l.marginLevelsBuf.Register(l.riskStore)
+	l.settleBuf = buffer.NewSettlement()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -250,6 +251,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.transferBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
+		l.settleBuf,
 		l.mktscfg,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })

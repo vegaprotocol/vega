@@ -116,6 +116,8 @@
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
     - [PendingOrder](#vega.PendingOrder)
+    - [Position](#vega.Position)
+    - [PositionTrade](#vega.PositionTrade)
     - [PriceLevel](#vega.PriceLevel)
     - [RiskFactor](#vega.RiskFactor)
     - [RiskResult](#vega.RiskResult)
@@ -1854,6 +1856,43 @@
 | status | [Order.Status](#vega.Order.Status) |  |  |
 | id | [string](#string) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
+
+
+
+
+
+
+<a name="vega.Position"></a>
+
+### Position
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| openVolume | [int64](#int64) |  |  |
+| realisedPNL | [int64](#int64) |  |  |
+| unrealisedPNL | [int64](#int64) |  |  |
+| averageEntryPrice | [uint64](#uint64) |  |  |
+| fifoQueue | [PositionTrade](#vega.PositionTrade) | repeated |  |
+
+
+
+
+
+
+<a name="vega.PositionTrade"></a>
+
+### PositionTrade
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| volume | [int64](#int64) |  |  |
+| price | [uint64](#uint64) |  |  |
 
 
 
