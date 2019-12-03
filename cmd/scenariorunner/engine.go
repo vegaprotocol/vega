@@ -159,12 +159,8 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	if err != nil {
 		return nil, err
 	}
-	summary, err := e.ExtractData()
-	if err != nil {
-		return nil, err
-	}
 
-	totalTrades := sumTrades(*summary)
+	totalTrades := sumTrades(*finalState)
 
 	md := &core.Metadata{
 		InstructionsProcessed: processed,
@@ -183,10 +179,6 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		Config:       &e.Config,
 		Version:      e.Version,
 	}, errs.ErrorOrNil()
-}
-
-func (e Engine) ExtractData() (*core.SummaryResponse, error) {
-	return e.summaryGenerator.Summary(nil)
 }
 
 func sumTrades(response core.SummaryResponse) uint64 {

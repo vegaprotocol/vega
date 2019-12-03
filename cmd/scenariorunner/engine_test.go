@@ -92,15 +92,13 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = runner.ProcessInstructions(instructionSet)
+	result, err := runner.ProcessInstructions(instructionSet)
 
-	result, err := runner.ExtractData()
-	assert.NoError(t, err)
-	assert.True(t, len(result.Summary.Parties) > 0)
+	assert.True(t, len(result.FinalState.Parties) > 0)
 
 	anyOrders := false
 	anyTrades := false
-	for _, mkt := range result.Summary.Markets {
+	for _, mkt := range result.FinalState.Markets {
 		if len(mkt.Orders) > 0 {
 			anyOrders = true
 		}
@@ -110,47 +108,6 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 	}
 	assert.True(t, anyOrders)
 	assert.True(t, anyTrades)
-}
-
-func TestExtractData(t *testing.T) {
-
-	instructions, err := getExecutionEngineInstructions(marketId, "trader1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructionSet := core.InstructionSet{
-		Instructions: instructions,
-		Description:  "Executing a trade",
-	}
-	log := logging.NewTestLogger()
-	storageConfig, err := storage.NewTestConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer storage.FlushStores(log, storageConfig)
-	runner, err := NewEngine(log, NewDefaultConfig(), storageConfig, "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = runner.ProcessInstructions(instructionSet)
-
-	result, err := runner.ExtractData()
-	assert.NoError(t, err)
-	assert.True(t, len(result.Summary.Parties) > 0)
-
-	anyOrders := false
-	anyTrades := false
-	for _, mkt := range result.Summary.Markets {
-		if len(mkt.Orders) > 0 {
-			anyOrders = true
-		}
-		if len(mkt.Trades) > 0 {
-			anyTrades = true
-		}
-	}
-	assert.True(t, anyOrders)
-	assert.True(t, anyTrades)
-
 }
 
 // TODO (WG 08/11/2019) The tests below are integration tests used during development. They should be moved to where we keep integration tests and executed with dependencies injected from outside.
