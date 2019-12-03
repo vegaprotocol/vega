@@ -467,7 +467,7 @@ func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *sto
 		if thresholdController <= ClosedContracts {
 			buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
 		} else {
-			if thresholdReached == false {
+			if !thresholdReached {
 				thresholdReached = true
 				buyAggregateEntryPriceForClosed +=
 					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
@@ -545,7 +545,7 @@ func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *st
 		if thresholdController <= ClosedContracts {
 			sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
 		} else {
-			if thresholdReached == false {
+			if !thresholdReached {
 				thresholdReached = true
 				sellAggregateEntryPriceForClosed +=
 					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
