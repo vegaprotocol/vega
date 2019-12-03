@@ -184,28 +184,7 @@ func TestMarshal(t *testing.T) {
 			  "instructionsProcessed": "2",
 			  "instructionsOmitted": "0",
 			  "tradesGenerated": "1",
-			  "processingTime": "3s",
-			  "finalMarketDepth": [
-				{
-				  "marketID": "Market1",
-				  "buy": [
-					{
-					  "price": "100",
-					  "numberOfOrders": "1",
-					  "volume": "3",
-					  "cumulativeVolume": "3"
-					}
-				  ],
-				  "sell": [
-					{
-					  "price": "100",
-					  "numberOfOrders": "1",
-					  "volume": "3",
-					  "cumulativeVolume": "3"
-					}
-				  ]
-				}
-			  ]
+			  "processingTime": "3s"
 			},
 			"results": [
 			  {
@@ -359,27 +338,6 @@ func TestMarshal(t *testing.T) {
 			TradesGenerated:       1,
 			ProcessingTime: &duration.Duration{
 				Seconds: 3,
-			},
-			FinalMarketDepth: []*types.MarketDepth{
-				{
-					MarketID: "Market1",
-					Buy: []*types.PriceLevel{
-						&types.PriceLevel{
-							Price:            100,
-							NumberOfOrders:   1,
-							Volume:           3,
-							CumulativeVolume: 3,
-						},
-					},
-					Sell: []*types.PriceLevel{
-						&types.PriceLevel{
-							Price:            100,
-							NumberOfOrders:   1,
-							Volume:           3,
-							CumulativeVolume: 3,
-						},
-					},
-				},
 			},
 		},
 		Results: []*core.InstructionResult{
