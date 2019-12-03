@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	MarketNotFoundErr = errors.New("could not find market")
-	PartyNotFoundErr  = errors.New("party not found")
+	ErrMarketNotFound = errors.New("could not find market")
+	ErrPartyNotFound  = errors.New("party not found")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/pos_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PosBuffer
@@ -110,12 +110,12 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	mp, ok := p.data[market]
 	if !ok {
 		p.mu.RUnlock()
-		return nil, MarketNotFoundErr
+		return nil, ErrMarketNotFound
 	}
 	pos, ok := mp[party]
 	if !ok {
 		p.mu.RUnlock()
-		return nil, PartyNotFoundErr
+		return nil, ErrPartyNotFound
 	}
 	p.mu.RUnlock()
 	return &pos, nil
@@ -133,7 +133,7 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	}
 	p.mu.RUnlock()
 	if len(positions) == 0 {
-		return nil, PartyNotFoundErr
+		return nil, ErrPartyNotFound
 	}
 	return positions, nil
 }
@@ -144,7 +144,7 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	mp, ok := p.data[market]
 	if !ok {
 		p.mu.RUnlock()
-		return nil, MarketNotFoundErr
+		return nil, ErrMarketNotFound
 	}
 	s := make([]*types.Position, 0, len(mp))
 	for _, tp := range mp {
