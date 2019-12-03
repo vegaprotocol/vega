@@ -25,7 +25,7 @@ done
 # Generate proto/doc/
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
-echo -e "html html\nmarkdown md" | while read -r fileformat fileextension
+echo -e 'html html\nmarkdown md' | while read -r fileformat fileextension
 do
 	outputfile="proto/doc/index.$fileextension"
 	rm -f "$outputfile"
