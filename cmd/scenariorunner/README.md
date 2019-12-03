@@ -405,7 +405,7 @@ The config is a JSON file with a structure outlined below:
 
 ```
 
-A standard config file can be found in [`cmd/scenariorunner/configs/standard.json`](/configs/standard.json)
+A standard config file can be found in [`cmd/scenariorunner/configs/standard.json`](cmd/scenariorunner/configs/standard.json)
 
 ## Current limitations
 
