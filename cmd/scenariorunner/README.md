@@ -401,13 +401,11 @@ The config is a JSON file with a structure outlined below:
 
 A standard config file can be found in [`cmd/scenariorunner/configs/standard.json`](/configs/standard.json)
 
-## Current limitations and planned modifications
+## Current limitations
 
 ### State
 
 Currently the tool doesn't hold or track any state which makes it impossible to use results of preceding instructions in new instructions (e.g. cancel/amend order). It also prevents a more complex analysis of impact of particular instructions on the state of the protocol.
-
-Work is underway to address this issue.
 
 ### Assertions
 
@@ -417,6 +415,6 @@ Currently the tool doesn't support built-in assertions which prevents encoding a
 
 Currently the available instructions and their syntax are closely coupled with the public API types exposed by the `trading-core`.
 
-This document will get updated with a proposed API for the scenario runner. Once it's in place it will be easier to assure forward comaptibility and move to calling the core API directly once it's available. It should also simplfy the instruction syntax.
+This document will get updated with a proposed API for the scenario runner.
 
 As the project matures the plan is to move it to a separate repository.
