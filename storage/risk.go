@@ -172,7 +172,6 @@ func (r *Risk) notify(batch []types.MarginLevels) {
 		}
 	}
 	r.mu.Unlock()
-	return
 }
 
 // Subscribe to account store updates, any changes will be pushed out on this channel.

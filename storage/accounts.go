@@ -255,7 +255,6 @@ func (a *Account) notify(accs []*types.Account) {
 		}
 	}
 	a.mu.Unlock()
-	return
 }
 
 // parseBatch takes a list of accounts and outputs the necessary badger keys and values

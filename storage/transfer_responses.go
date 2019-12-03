@@ -79,7 +79,6 @@ func (t *TransferResponse) notify(trs []*types.TransferResponse) {
 		}
 	}
 	t.mu.Unlock()
-	return
 }
 
 // Subscribe add a new subscriber to the transfer response updates stream
