@@ -53,7 +53,6 @@
       }
     },
     {
-      "description": "Please note it's currently to possible to submit a successful order cancelation request.",
       "request": "WITHDRAW",
       "message": {
         "@type": "api.WithdrawRequest",
