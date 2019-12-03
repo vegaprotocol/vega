@@ -33,33 +33,18 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 	return m.recorder
 }
 
-// AddTraderToMarket mocks base method
-func (m *MockCollateral) AddTraderToMarket(arg0, arg1, arg2 string) error {
+// CreatePartyGeneralAccount mocks base method
+func (m *MockCollateral) CreatePartyGeneralAccount(arg0, arg1 string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddTraderToMarket", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
+	ret := m.ctrl.Call(m, "CreatePartyGeneralAccount", arg0, arg1)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// AddTraderToMarket indicates an expected call of AddTraderToMarket
-func (mr *MockCollateralMockRecorder) AddTraderToMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+// CreatePartyGeneralAccount indicates an expected call of CreatePartyGeneralAccount
+func (mr *MockCollateralMockRecorder) CreatePartyGeneralAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTraderToMarket", reflect.TypeOf((*MockCollateral)(nil).AddTraderToMarket), arg0, arg1, arg2)
-}
-
-// CreateTraderAccount mocks base method
-func (m *MockCollateral) CreateTraderAccount(arg0, arg1, arg2 string) (string, string) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTraderAccount", arg0, arg1, arg2)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	return ret0, ret1
-}
-
-// CreateTraderAccount indicates an expected call of CreateTraderAccount
-func (mr *MockCollateralMockRecorder) CreateTraderAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTraderAccount", reflect.TypeOf((*MockCollateral)(nil).CreateTraderAccount), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).CreatePartyGeneralAccount), arg0, arg1)
 }
 
 // GetAccountByID mocks base method

@@ -34,7 +34,7 @@ func (m *MockBuffer) EXPECT() *MockBufferMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockBuffer) Add(arg0 events.SettlePosition) {
+func (m *MockBuffer) Add(arg0 []events.SettlePosition) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Add", arg0)
 }

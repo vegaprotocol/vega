@@ -40,13 +40,15 @@ func NewSettlement(opts ...settleConf) *Settlement {
 }
 
 // Add - add position data to the buffer
-func (s *Settlement) Add(p events.SettlePosition) {
+func (s *Settlement) Add(pos []events.SettlePosition) {
 	s.mu.Lock()
-	mID := p.MarketID()
-	if _, ok := s.buf[mID]; !ok {
-		s.buf[mID] = map[string]events.SettlePosition{}
+	for _, p := range pos {
+		mID := p.MarketID()
+		if _, ok := s.buf[mID]; !ok {
+			s.buf[mID] = map[string]events.SettlePosition{}
+		}
+		s.buf[mID][p.Party()] = p
 	}
-	s.buf[mID][p.Party()] = p
 	s.mu.Unlock()
 }
 
@@ -81,7 +83,7 @@ func (s *Settlement) Flush() {
 }
 
 // Subscribe - get a channel to get the data from this buffer on flush
-func (s *Settlement) Subscirbe() (<-chan []events.SettlePosition, int) {
+func (s *Settlement) Subscribe() (<-chan []events.SettlePosition, int) {
 	s.mu.Lock()
 	k := s.getKey()
 	ch := make(chan []events.SettlePosition, s.chBuf)

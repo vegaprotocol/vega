@@ -55,7 +55,7 @@ type PartyBuf interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
 type SettlementBuf interface {
-	Add(events.SettlePosition)
+	Add([]events.SettlePosition)
 	Flush()
 }
 

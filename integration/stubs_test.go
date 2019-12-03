@@ -263,8 +263,8 @@ func NewSettlementStub() *SettleStub {
 	}
 }
 
-func (p *SettleStub) Add(e events.SettlePosition) {
-	p.data = append(p.data, e)
+func (p *SettleStub) Add(e []events.SettlePosition) {
+	p.data = append(p.data, e...)
 }
 
 func (p *SettleStub) Flush() {}
