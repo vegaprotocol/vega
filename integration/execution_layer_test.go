@@ -491,8 +491,8 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
 	return proto.Market{
-		Id:            fmt.Sprintf("%s", val(row, 0)),
-		Name:          fmt.Sprintf("%s", val(row, 0)),
+		Id:            val(row, 0),
+		Name:          val(row, 0),
 		DecimalPlaces: 2,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
