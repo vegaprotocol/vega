@@ -51,7 +51,7 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (bool, error)
+	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (bool, error)
 	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 

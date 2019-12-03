@@ -1,6 +1,8 @@
 package stats
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -12,6 +14,7 @@ type Stats struct {
 	version      string
 	versionHash  string
 	chainVersion string
+	uptime       time.Time
 }
 
 // New instantiates a new Stats
@@ -21,6 +24,7 @@ func New(logger *logging.Logger, version string, versionHash string) *Stats {
 		Blockchain:  blockchain.NewStats(),
 		version:     version,
 		versionHash: versionHash,
+		uptime:      time.Now(),
 	}
 }
 
@@ -43,4 +47,8 @@ func (s *Stats) GetVersion() string {
 // binary was compiled from.
 func (s *Stats) GetVersionHash() string {
 	return s.versionHash
+}
+
+func (s *Stats) GetUptime() time.Time {
+	return s.uptime
 }

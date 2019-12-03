@@ -53,10 +53,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		errs = multierror.Append(errs, err)
 	}
 
-	riskStore, err := storage.NewRisks(config)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
+	riskStore := storage.NewRisks(log, config)
 
 	tradeService, err := trades.NewService(log, trades.NewDefaultConfig(), tradeStore, riskStore)
 	if err != nil {
@@ -76,6 +73,8 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 	accountBuffer := buffer.NewAccount(accountStore)
 	transferResponseBuffer := buffer.NewTransferResponse(transferResponseStore)
 	settleBuf := buffer.NewSettlement()
+	marketDataBuffer := buffer.NewMarketData()
+	marginLevelsBuffer := buffer.NewMarginLevels()
 
 	executionConfig := execution.NewDefaultConfig("")
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
@@ -90,6 +89,8 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		partyBuffer,
 		accountBuffer,
 		transferResponseBuffer,
+		marketDataBuffer,
+		marginLevelsBuffer,
 		settleBuf,
 		[]types.Market{}, // WG (21/11/2019): Please note these get added from config in scenariorunner/engine.go/NewEngine just now, but can definitely be moved here.
 	)
@@ -98,18 +99,11 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		ctx:          ctx,
 		vegaTime:     timeService,
 		execution:    engine,
-		orderBuf:     orderBuffer,
-		tradeBuf:     tradeBuffer,
-		partyBuf:     partyBuffer,
-		marketBuf:    marketBuffer,
-		accountBuf:   accountBuffer,
-		candleBuf:    candleBuffer,
 		partyStore:   partyStore,
 		orderStore:   orderStore,
 		tradeStore:   tradeStore,
 		marketStore:  marketStore,
 		accountStore: accountStore,
-		candleStore:  candleStore,
 		tradeService: tradeService,
 	}, nil
 }
@@ -118,13 +112,6 @@ type dependencies struct {
 	ctx       context.Context
 	vegaTime  *vegatime.Svc
 	execution *execution.Engine
-
-	orderBuf   *buffer.Order
-	tradeBuf   *buffer.Trade
-	partyBuf   *buffer.Party
-	marketBuf  *buffer.Market
-	accountBuf *buffer.Account
-	candleBuf  *buffer.Candle
 
 	partyStore   *storage.Party
 	orderStore   *storage.Order

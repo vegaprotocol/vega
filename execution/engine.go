@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
@@ -81,6 +80,20 @@ type AccountBuf interface {
 	Flush() error
 }
 
+// MarketDataBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketDataBuf
+type MarketDataBuf interface {
+	Add(types.MarketData)
+	Flush()
+}
+
+// MarginLevelsBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
+type MarginLevelsBuf interface {
+	Add(types.MarginLevels)
+	Flush()
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -91,14 +104,16 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	orderBuf    OrderBuf
-	tradeBuf    TradeBuf
-	candleBuf   CandleBuf
-	marketBuf   MarketBuf
-	partyBuf    PartyBuf
-	accountBuf  AccountBuf
-	transferBuf TransferBuf
-	settleBuf   SettlementBuf
+	orderBuf        OrderBuf
+	tradeBuf        TradeBuf
+	candleBuf       CandleBuf
+	marketBuf       MarketBuf
+	partyBuf        PartyBuf
+	accountBuf      AccountBuf
+	transferBuf     TransferBuf
+	marketDataBuf   MarketDataBuf
+	marginLevelsBuf MarginLevelsBuf
+	settleBuf       SettlementBuf
 
 	time TimeService
 }
@@ -116,6 +131,8 @@ func NewEngine(
 	partyBuf PartyBuf,
 	accountBuf AccountBuf,
 	transferBuf TransferBuf,
+	marketDataBuf MarketDataBuf,
+	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
 	pmkts []types.Market,
 ) *Engine {
@@ -136,21 +153,23 @@ func NewEngine(
 	}
 
 	e := &Engine{
-		log:         log,
-		Config:      executionConfig,
-		markets:     map[string]*Market{},
-		candleBuf:   candleBuf,
-		orderBuf:    orderBuf,
-		tradeBuf:    tradeBuf,
-		marketBuf:   marketBuf,
-		partyBuf:    partyBuf,
-		time:        time,
-		collateral:  cengine,
-		party:       NewParty(log, cengine, pmkts, partyBuf),
-		accountBuf:  accountBuf,
-		transferBuf: transferBuf,
-		settleBuf:   settleBuf,
-		idgen:       NewIDGen(),
+		log:             log,
+		Config:          executionConfig,
+		markets:         map[string]*Market{},
+		candleBuf:       candleBuf,
+		orderBuf:        orderBuf,
+		tradeBuf:        tradeBuf,
+		marketBuf:       marketBuf,
+		partyBuf:        partyBuf,
+		time:            time,
+		collateral:      cengine,
+		party:           NewParty(log, cengine, pmkts, partyBuf),
+		accountBuf:      accountBuf,
+		transferBuf:     transferBuf,
+		marketDataBuf:   marketDataBuf,
+		marginLevelsBuf: marginLevelsBuf,
+		settleBuf:       settleBuf,
+		idgen:           NewIDGen(),
 	}
 
 	// Add initial markets and flush to stores (if they're configured)
@@ -195,14 +214,14 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
-func (e *Engine) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
-	return e.party.NotifyTraderAccount(notif)
+func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
+	return e.party.NotifyTraderAccount(notify)
 }
 
 func (e *Engine) Withdraw(w *types.Withdraw) error {
 	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
 	if err != nil {
-		e.log.Error("something happend durinmg withdrawal",
+		e.log.Error("An error occurred during withdrawal",
 			logging.String("party-id", w.PartyID),
 			logging.Uint64("amount", w.Amount),
 			logging.Error(err),
@@ -212,10 +231,10 @@ func (e *Engine) Withdraw(w *types.Withdraw) error {
 }
 
 // SubmitMarket will submit a new market configuration to the network
-func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
+func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 
 	// TODO: Check for existing market in MarketStore by Name.
-	// if __TBC_MarketExists__(mktconfig.Name) {
+	// if __TBC_MarketExists__(marketConfig.Name) {
 	// 	return ErrMarketAlreadyExist
 	// }
 
@@ -231,46 +250,46 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.Config.Matching,
 		e.collateral,
 		e.party,
-		mktconfig,
+		marketConfig,
 		e.candleBuf,
 		e.orderBuf,
 		e.partyBuf,
 		e.tradeBuf,
 		e.transferBuf,
+		e.marginLevelsBuf,
 		e.settleBuf,
 		now,
 		e.idgen,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
-			logging.String("market-name", mktconfig.Name),
+			logging.String("market-name", marketConfig.GetName()),
 			logging.Error(err),
 		)
 	}
 
-	e.markets[mktconfig.Id] = mkt
+	e.markets[marketConfig.Id] = mkt
 
 	// create market accounts
-	asset, err := mktconfig.GetAsset()
+	asset, err := marketConfig.GetAsset()
 	if err != nil {
 		return err
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, int64(e.Config.InsurancePoolInitialBalance))
+	_, _ = e.collateral.CreateMarketAccounts(marketConfig.Id, asset, int64(e.Config.InsurancePoolInitialBalance))
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
 	e.markets[mkt.mkt.Id].partyEngine = e.party
 
 	// Save to market proto to buffer
-	e.marketBuf.Add(*mktconfig)
+	e.marketBuf.Add(*marketConfig)
 	return nil
 }
 
-// SubmitOrder submit a new order to the vega trading core
+// SubmitOrder checks the incoming order and submits it to a Vega market.
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	// order.MarketID may or may not be valid.
 	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -279,31 +298,53 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
+		t, err := e.time.GetTimeNow()
+		if err != nil {
+			order.CreatedAt = t.UnixNano()
+		}
+		e.idgen.SetID(order)
+
+		// adding rejected order to the buf
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INVALID_MARKET_ID
+		e.orderBuf.Add(*order)
+
 		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
 	if order.Status == types.Order_Active {
-		// we're submitting an active order
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
+
 	conf, err := mkt.SubmitOrder(order)
 	if err != nil {
 		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
-	// order was filled by submitting it to the market -> the matching engine worked
+
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
+
 	timer.EngineTimeCounterAdd()
 	return conf, nil
 }
 
-// AmendOrder take order amendment details and attempts to amend the order
-// if it exists and is in a state to be edited.
+// AmendOrder takes order amendment details and attempts to amend the order
+// if it exists and is in a editable state.
 func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
-	e.log.Debug("Amend order")
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Amend order",
+			logging.String("order-id", orderAmendment.GetOrderID()),
+			logging.String("party-id", orderAmendment.GetPartyID()),
+			logging.String("market-id", orderAmendment.GetMarketID()),
+			logging.Uint64("price", orderAmendment.GetPrice()),
+			logging.Uint64("size", orderAmendment.GetSize()),
+			logging.String("side", orderAmendment.GetSide().String()),
+			logging.Int64("expires-at", orderAmendment.GetExpiresAt()),
+		)
+	}
 
 	mkt, ok := e.markets[orderAmendment.MarketID]
 	if !ok {
@@ -325,13 +366,13 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
-	e.log.Debug("Cancel order")
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Cancel order", logging.Order(*order))
+	}
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
-
-	// Cancel order in matching engine
 	conf, err := mkt.CancelOrder(order)
 	if err != nil {
 		return nil, err
@@ -379,62 +420,70 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 		e.log.Debug("Removing expiring orders from matching engine")
 	}
 	expiringOrders := []types.Order{}
-	tnano := t.UnixNano()
+	timeNow := t.UnixNano()
 	for _, mkt := range e.markets {
-		ordrs, err := mkt.RemoveExpiredOrders(tnano)
+		orders, err := mkt.RemoveExpiredOrders(timeNow)
 		if err != nil {
 			e.log.Error("unable to get remove expired orders",
 				logging.String("market-id", mkt.GetID()),
 				logging.Error(err))
 		}
 		expiringOrders = append(
-			expiringOrders, ordrs...)
+			expiringOrders, orders...)
 	}
-
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Removed expired orders from matching engine",
 			logging.Int("orders-removed", len(expiringOrders)))
 	}
-
 	for _, order := range expiringOrders {
 		order := order
 		e.orderBuf.Add(order)
-		// order expired, decrement gauge
-		metrics.OrderGaugeAdd(-1, order.MarketID)
+		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
 	}
-
-	e.log.Debug("Updated expired orders in stores",
-		logging.Int("orders-removed", len(expiringOrders)))
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Updated expired orders in stores",
+			logging.Int("orders-removed", len(expiringOrders)))
+	}
 	timer.EngineTimeCounterAdd()
 }
 
-// Generate creates any data (including storing state changes) in the underlying stores.
-// TODO(): maybe call this in onChainTimeUpdate, when the chain time is updated
+// Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
+	// Accounts
 	err := e.accountBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
+		return errors.Wrap(err, "Failed to flush accounts buffer")
 	}
-	err = e.orderBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to commit orders"))
-	}
+	// Trades
 	err = e.tradeBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
+		return errors.Wrap(err, "Failed to flush trades buffer")
 	}
-	// do not check errors here as they only happened when a party is created
-	// twice, which should not be a problem
-	_ = e.partyBuf.Flush()
-
+	// Orders
+	err = e.orderBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, "Failed to flush orders buffer")
+	}
+	// Transfers
 	err = e.transferBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to commit transfers"))
+		return errors.Wrap(err, "Failed to flush transfers buffer")
 	}
+	// Markets
 	err = e.marketBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to commit markets"))
+		return errors.Wrap(err, "Failed to flush markets buffer")
 	}
+	// Market data is added to buffer on Generate
+	for _, v := range e.markets {
+		e.marketDataBuf.Add(v.GetMarketData())
+	}
+	e.marketDataBuf.Flush()
+	// Parties
+	_ = e.partyBuf.Flush() // JL: do not check errors here as they only happened when a party is created
+
+	// margins levels
+	e.marginLevelsBuf.Flush()
 
 	return nil
 }

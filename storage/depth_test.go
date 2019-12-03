@@ -644,3 +644,44 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	assert.Equal(t, 0, len(marketDepth.Buy))
 	assert.Equal(t, 2, len(marketDepth.Sell))
 }
+
+func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
+	depth := storage.NewMarketDepth(testMarket)
+	invalidOrders := []types.Order{
+		types.Order{
+			Id:        "98",
+			Side:      types.Side_Buy,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     1337,
+			Remaining: 1337,
+			Status:    types.Order_Rejected,
+		},
+		types.Order{
+			Id:          "99",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_IOC,
+		},
+		types.Order{
+			Id:          "99",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_FOK,
+		},
+	}
+
+	// add all orders
+	for _, v := range invalidOrders {
+		depth.Update(v)
+	}
+	assert.Len(t, depth.Buy, 0)
+	assert.Len(t, depth.Sell, 0)
+
+}

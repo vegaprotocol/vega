@@ -71,6 +71,46 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
+func (this *MarginLevelsSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *MarginLevelsRequest) Validate() error {
+	return nil
+}
+func (this *MarginLevelsResponse) Validate() error {
+	for _, item := range this.MarginLevels {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("MarginLevels", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *MarketsDataSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *MarketDataByIDRequest) Validate() error {
+	return nil
+}
+func (this *MarketDataByIDResponse) Validate() error {
+	if this.MarketData != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarketData); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarketData", err)
+		}
+	}
+	return nil
+}
+func (this *MarketsDataResponse) Validate() error {
+	for _, item := range this.MarketsData {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("MarketsData", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *LastTradeRequest) Validate() error {
 	return nil
 }

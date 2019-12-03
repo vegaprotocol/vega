@@ -21,13 +21,14 @@ const marketID = "BTC/DEC19"
 
 type execEngine struct {
 	*execution.Engine
-	ctrl   *gomock.Controller
-	time   *mocks.MockTimeService
-	order  *mocks.MockOrderBuf
-	trade  *mocks.MockTradeBuf
-	candle *mocks.MockCandleBuf
-	market *mocks.MockMarketBuf
-	party  *mocks.MockPartyBuf
+	ctrl         *gomock.Controller
+	time         *mocks.MockTimeService
+	order        *mocks.MockOrderBuf
+	trade        *mocks.MockTradeBuf
+	candle       *mocks.MockCandleBuf
+	market       *mocks.MockMarketBuf
+	party        *mocks.MockPartyBuf
+	marginLevels *mocks.MockMarginLevelsBuf
 }
 
 func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
@@ -37,11 +38,13 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	trade := mocks.NewMockTradeBuf(ctrl)
 	candle := mocks.NewMockCandleBuf(ctrl)
 	market := mocks.NewMockMarketBuf(ctrl)
+	marketdata := mocks.NewMockMarketDataBuf(ctrl)
 	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
 	accountBuf := buffer.NewAccount(accounts)
 	settleBuf := buffer.NewSettlement()
 	transferResponse := mocks.NewMockTransferBuf(ctrl)
+	marginLevelsBuf := mocks.NewMockMarginLevelsBuf(ctrl)
 	executionConfig := execution.NewDefaultConfig("")
 
 	engine := execution.NewEngine(
@@ -55,6 +58,8 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		party,
 		accountBuf,
 		transferResponse,
+		marketdata,
+		marginLevelsBuf,
 		settleBuf,
 		[]types.Market{},
 	)

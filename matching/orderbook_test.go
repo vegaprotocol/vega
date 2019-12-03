@@ -52,6 +52,116 @@ func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Market order price - Buy", testGetMarketOrderPriceBuy)
 	t.Run("Get Market order price - Sell", testGetMarketOrderPriceSell)
 	t.Run("Get Market order price - empty book", testGetMarketOrderPriceEmptyBook)
+	t.Run("Get Best bid price and volume", testBestBidPriceAndVolume)
+	t.Run("Get Best offer price and volume", testBestOfferPriceAndVolume)
+}
+
+func testBestBidPriceAndVolume(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_Buy,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Buy,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Buy,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "d",
+			Side:        types.Side_Buy,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+
+	price, volume := book.BestBidPriceAndVolume()
+	assert.Equal(t, uint64(300), price)
+	assert.Equal(t, uint64(15), volume)
+}
+
+func testBestOfferPriceAndVolume(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_Sell,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Sell,
+			Price:       10,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Sell,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "d",
+			Side:        types.Side_Sell,
+			Price:       10,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+
+	price, volume := book.BestOfferPriceAndVolume()
+	assert.Equal(t, uint64(10), price)
+	assert.Equal(t, uint64(15), volume)
 }
 
 func testGetMarketOrderPriceBuy(t *testing.T) {

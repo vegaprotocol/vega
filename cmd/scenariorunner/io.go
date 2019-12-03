@@ -25,9 +25,9 @@ func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
 
 	for i, fileContents := range contents {
 		instrSet := &core.InstructionSet{}
-		unmarshall(fileContents, instrSet)
-		if err != nil {
-			errs = multierror.Append(errs, err)
+		marshallErr := unmarshal(fileContents, instrSet)
+		if marshallErr != nil {
+			errs = multierror.Append(errs, marshallErr)
 		}
 		instructionSets[i] = instrSet
 	}
@@ -41,7 +41,7 @@ func Output(result proto.Message, outputFileWithPath string) error {
 	if err != nil {
 		return err
 	}
-	return marshall(result, f)
+	return marshal(result, f)
 }
 
 func openFiles(filesWithPath []string) ([]*os.File, error) {
@@ -59,11 +59,11 @@ func openFiles(filesWithPath []string) ([]*os.File, error) {
 	return readers, errs.ErrorOrNil()
 }
 
-func unmarshall(r io.Reader, msg proto.Message) error {
+func unmarshal(r io.Reader, msg proto.Message) error {
 	return jsonpb.Unmarshal(r, msg)
 }
 
-func marshall(result proto.Message, out io.Writer) error {
+func marshal(result proto.Message, out io.Writer) error {
 	m := jsonpb.Marshaler{Indent: indent, EmitDefaults: true}
 	return m.Marshal(out, result)
 }

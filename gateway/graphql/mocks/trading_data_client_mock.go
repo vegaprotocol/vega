@@ -217,6 +217,46 @@ func (mr *MockTradingDataClientMockRecorder) LastTrade(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastTrade", reflect.TypeOf((*MockTradingDataClient)(nil).LastTrade), varargs...)
 }
 
+// MarginLevels mocks base method
+func (m *MockTradingDataClient) MarginLevels(arg0 context.Context, arg1 *api.MarginLevelsRequest, arg2 ...grpc.CallOption) (*api.MarginLevelsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarginLevels", varargs...)
+	ret0, _ := ret[0].(*api.MarginLevelsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarginLevels indicates an expected call of MarginLevels
+func (mr *MockTradingDataClientMockRecorder) MarginLevels(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarginLevels", reflect.TypeOf((*MockTradingDataClient)(nil).MarginLevels), varargs...)
+}
+
+// MarginLevelsSubscribe mocks base method
+func (m *MockTradingDataClient) MarginLevelsSubscribe(arg0 context.Context, arg1 *api.MarginLevelsSubscribeRequest, arg2 ...grpc.CallOption) (api.TradingData_MarginLevelsSubscribeClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarginLevelsSubscribe", varargs...)
+	ret0, _ := ret[0].(api.TradingData_MarginLevelsSubscribeClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarginLevelsSubscribe indicates an expected call of MarginLevelsSubscribe
+func (mr *MockTradingDataClientMockRecorder) MarginLevelsSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarginLevelsSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).MarginLevelsSubscribe), varargs...)
+}
+
 // MarketByID mocks base method
 func (m *MockTradingDataClient) MarketByID(arg0 context.Context, arg1 *api.MarketByIDRequest, arg2 ...grpc.CallOption) (*api.MarketByIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -235,6 +275,26 @@ func (mr *MockTradingDataClientMockRecorder) MarketByID(arg0, arg1 interface{}, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketByID", reflect.TypeOf((*MockTradingDataClient)(nil).MarketByID), varargs...)
+}
+
+// MarketDataByID mocks base method
+func (m *MockTradingDataClient) MarketDataByID(arg0 context.Context, arg1 *api.MarketDataByIDRequest, arg2 ...grpc.CallOption) (*api.MarketDataByIDResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarketDataByID", varargs...)
+	ret0, _ := ret[0].(*api.MarketDataByIDResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarketDataByID indicates an expected call of MarketDataByID
+func (mr *MockTradingDataClientMockRecorder) MarketDataByID(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketDataByID", reflect.TypeOf((*MockTradingDataClient)(nil).MarketDataByID), varargs...)
 }
 
 // MarketDepth mocks base method
@@ -295,6 +355,26 @@ func (mr *MockTradingDataClientMockRecorder) Markets(arg0, arg1 interface{}, arg
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Markets", reflect.TypeOf((*MockTradingDataClient)(nil).Markets), varargs...)
+}
+
+// MarketsDataSubscribe mocks base method
+func (m *MockTradingDataClient) MarketsDataSubscribe(arg0 context.Context, arg1 *api.MarketsDataSubscribeRequest, arg2 ...grpc.CallOption) (api.TradingData_MarketsDataSubscribeClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarketsDataSubscribe", varargs...)
+	ret0, _ := ret[0].(api.TradingData_MarketsDataSubscribeClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarketsDataSubscribe indicates an expected call of MarketsDataSubscribe
+func (mr *MockTradingDataClientMockRecorder) MarketsDataSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketsDataSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).MarketsDataSubscribe), varargs...)
 }
 
 // OrderByMarketAndId mocks base method

@@ -11,7 +11,6 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() uint64
-	ClearPotentials()
 }
 
 // TradeSettlement Part of the SettlePosition interface -> traces trades as they happened

@@ -149,6 +149,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.parties,
 		mktsetup.trades,
 		mktsetup.transfer,
+		mktsetup.marginLevelsBuf,
 		NewSettlementStub(),
 		time.Now(),
 		execution.NewIDGen(),
@@ -203,7 +204,8 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		asset, _ := mktsetup.market.GetAsset()
 		// get the account balance, ensure we can set the margin balance in this step if we want to
 		// and get the account ID's so we can keep track of the state correctly
-		margin, general := mktsetup.colE.CreateTraderAccount(row.Cells[0].Value, market, asset)
+		general := mktsetup.colE.CreatePartyGeneralAccount(row.Cells[0].Value, asset)
+		margin, _ := mktsetup.colE.CreatePartyMarginAccount(row.Cells[0].Value, market, asset)
 		_ = mktsetup.colE.IncrementBalance(margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
@@ -339,8 +341,10 @@ func hasNotBeenAddedToTheMarket(trader string) error {
 
 func theMarkPriceIs(markPrice string) error {
 	price, _ := strconv.ParseUint(markPrice, 10, 64)
-	if mktsetup.core.GetMarkPrice() != price {
-		return fmt.Errorf("expected mark price of %d instead saw %d", price, mktsetup.core.GetMarkPrice())
+	marketMarkPrice := mktsetup.core.GetMarketData().MarkPrice
+	if marketMarkPrice != price {
+		return fmt.Errorf("expected mark price of %d instead saw %d", price, marketMarkPrice)
 	}
+
 	return nil
 }

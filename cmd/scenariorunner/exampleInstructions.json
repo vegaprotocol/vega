@@ -53,13 +53,6 @@
       }
     },
     {
-      "request": "TRADES_BY_MARKET",
-      "message": {
-        "@type": "api.TradesByMarketRequest",
-        "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
-      }
-    },
-    {
       "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
         "@type": "api.NotifyTraderAccountRequest",
