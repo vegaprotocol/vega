@@ -31,7 +31,6 @@ message Metadata {
     uint64 instructionsOmitted = 2;
     uint64 tradesGenerated = 3;
     google.protobuf.Duration processingTime = 5;
-    repeated vega.MarketDepth finalMarketDepth = 6;
 }
 
 message ResultSet {
@@ -42,10 +41,6 @@ message ResultSet {
     Config config = 5;
     string version = 6;
     
-}
-
-message SummaryResponse {
-    Summary summary = 1;
 }
 
 message Summary {
@@ -60,18 +55,6 @@ message Config {
 	bool omitUnsupportedInstructions = 4; 
     bool omitInvalidInstructions = 5;
     repeated vega.Market markets = 6;
-}
-
-message MarketSummaryResponse {
-    MarketSummary summary = 1;
-}
-
-message SummaryRequest {
-    api.Pagination pagination = 1;
-}
-message MarketSummaryRequest {
-    string marketID = 1;
-    api.Pagination pagination = 2;
 }
 
 message MarketSummary {
@@ -97,4 +80,29 @@ enum RequestType {
     AMEND_ORDER = 102;
     NOTIFY_TRADER_ACCOUNT = 103;
     WITHDRAW  = 104;
+}
+
+message SummaryRequest {
+    api.Pagination pagination = 1;
+}
+
+message SummaryResponse {
+    Summary summary = 1;
+}
+
+message MarketSummaryRequest {
+    string marketID = 1;
+    api.Pagination pagination = 2;
+}
+
+message MarketSummaryResponse {
+    MarketSummary summary = 1;
+}
+
+message SetTimeRequest {
+    google.protobuf.Timestamp time = 1;
+}
+
+message AdvanceTimeRequest {
+    google.protobuf.Duration timeDelta = 1;
 }
