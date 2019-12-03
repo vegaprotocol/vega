@@ -167,7 +167,6 @@ func (o *orderStub) Get(id string) *proto.Order {
 type transferStub struct {
 	data []*proto.TransferResponse
 	mu   *sync.Mutex
-	err  error // still not convinced about this one
 }
 
 func NewTransferStub() *transferStub {

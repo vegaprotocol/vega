@@ -21,14 +21,13 @@ const marketID = "BTC/DEC19"
 
 type execEngine struct {
 	*execution.Engine
-	ctrl         *gomock.Controller
-	time         *mocks.MockTimeService
-	order        *mocks.MockOrderBuf
-	trade        *mocks.MockTradeBuf
-	candle       *mocks.MockCandleBuf
-	market       *mocks.MockMarketBuf
-	party        *mocks.MockPartyBuf
-	marginLevels *mocks.MockMarginLevelsBuf
+	ctrl   *gomock.Controller
+	time   *mocks.MockTimeService
+	order  *mocks.MockOrderBuf
+	trade  *mocks.MockTradeBuf
+	candle *mocks.MockCandleBuf
+	market *mocks.MockMarketBuf
+	party  *mocks.MockPartyBuf
 }
 
 func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {

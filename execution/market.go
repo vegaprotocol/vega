@@ -48,10 +48,7 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	riskConfig       risk.Config
-	positionConfig   positions.Config
-	settlementConfig settlement.Config
-	matchingConfig   matching.Config
+	matchingConfig matching.Config
 
 	mkt         *types.Market
 	closingAt   time.Time
@@ -804,7 +801,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		}
 		m.transferBuf.Add(transferResps)
 
-		if 0 != len(closePositions) {
+		if len(closePositions) > 0 {
 
 			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
