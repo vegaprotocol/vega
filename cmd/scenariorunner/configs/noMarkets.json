@@ -1,0 +1,8 @@
+{
+  "initialTime": "2019-01-02T08:00:00Z",
+  "advanceTimeAfterInstruction": true,
+  "timeDelta": "0.000000001s",
+  "omitUnsupportedInstructions": true,
+  "omitInvalidInstructions": true,
+  "markets": []
+}
