@@ -35,18 +35,26 @@ type RiskStore interface {
 	GetByMarket(market string) (*types.RiskFactor, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_plugin_mock.go -package mocks code.vegaprotocol.io/vega/trades PositionsPlugin
+type PositionsPlugin interface {
+	GetPositionsByMarket(market string) ([]*types.Position, error)
+	GetPositionsByParty(party string) ([]*types.Position, error)
+	GetPositionsByMarketAndParty(market, party string) (*types.Position, error)
+}
+
 // Svc is the service handling trades
 type Svc struct {
 	Config
 	log                     *logging.Logger
 	tradeStore              TradeStore
 	riskStore               RiskStore
+	positions               PositionsPlugin
 	positionsSubscribersCnt int32
 	tradeSubscribersCnt     int32
 }
 
 // NewService instanciate a new Trades service
-func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore, posPlug PositionsPlugin) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -56,6 +64,7 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskS
 		Config:     config,
 		tradeStore: tradeStore,
 		riskStore:  riskStore,
+		positions:  posPlug,
 	}, nil
 }
 
@@ -325,103 +334,56 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 }
 
 // GetPositionsByParty returns a list of positions for a given party
-func (s *Svc) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
+func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*types.MarketPosition, error) {
 
 	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
 
-	marketBuckets := s.tradeStore.GetTradesBySideBuckets(ctx, party)
-
-	var (
-		OpenVolumeSign                int8
-		ClosedContracts               int64
-		OpenContracts                 int64
-		deltaAverageEntryPrice        float64
-		avgEntryPriceForOpenContracts float64
-		markPrice                     uint64
-		riskFactor                    float64
-		forwardRiskMargin             float64
-	)
-
-	s.log.Debug("Loaded market buckets for party",
-		logging.String("party-id", party),
-		logging.Int("total-buckets", len(marketBuckets)))
-
-	for market, marketBucket := range marketBuckets {
-		if marketBucket.BuyVolume > marketBucket.SellVolume {
-			OpenVolumeSign = 1
-			ClosedContracts = marketBucket.SellVolume
-			OpenContracts = marketBucket.BuyVolume - marketBucket.SellVolume
-		}
-
-		if marketBucket.BuyVolume == marketBucket.SellVolume {
-			OpenVolumeSign = 0
-			ClosedContracts = marketBucket.SellVolume
-			OpenContracts = 0
-		}
-
-		if marketBucket.BuyVolume < marketBucket.SellVolume {
-			OpenVolumeSign = -1
-			ClosedContracts = marketBucket.BuyVolume
-			OpenContracts = marketBucket.BuyVolume - marketBucket.SellVolume
-		}
-
-		// long
-		if OpenVolumeSign == 1 {
-			//// calculate avg entry price for closed and open contracts when position is long
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				s.calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket, OpenContracts, ClosedContracts)
-		}
-
-		// net
-		if OpenVolumeSign == 0 {
-			//// calculate avg entry price for closed and open contracts when position is net
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				s.calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket, OpenContracts, ClosedContracts)
-		}
-
-		// short
-		if OpenVolumeSign == -1 {
-			//// calculate avg entry price for closed and open contracts when position is short
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				s.calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket, OpenContracts, ClosedContracts)
-		}
-
-		markPrice, _ = s.tradeStore.GetMarkPrice(ctx, market)
-		if markPrice == 0 {
-			continue
-		}
-
-		riskFactor, err = s.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
+	var positions []*types.Position
+	if party != "" && marketID != "" {
+		pos, err := s.positions.GetPositionsByMarketAndParty(marketID, party)
 		if err != nil {
+			s.log.Error("Error getting position for party and market",
+				logging.String("party-id", party),
+				logging.String("market-id", marketID),
+				logging.Error(err))
 			return nil, err
 		}
-
-		marketPositions := &types.MarketPosition{}
-		marketPositions.MarketID = market
-		marketPositions.RealisedVolume = int64(ClosedContracts)
-		marketPositions.UnrealisedVolume = int64(OpenContracts)
-		marketPositions.RealisedPNL = int64(float64(ClosedContracts) * deltaAverageEntryPrice)
-		marketPositions.UnrealisedPNL = int64(float64(OpenContracts) * (float64(markPrice) - avgEntryPriceForOpenContracts))
-		marketPositions.AverageEntryPrice = uint64(avgEntryPriceForOpenContracts)
-
-		forwardRiskMargin = float64(marketPositions.UnrealisedVolume) * float64(markPrice) *
-			riskFactor * float64(marketBucket.MinimumContractSize)
-
-		// deliberately loose precision for minimum margin requirement to operate on int64 on the API
-
-		//if minimumMargin is a negative number it means that trader is in credit towards vega
-		//if minimumMargin is a positive number it means that trader is in debit towards vega
-		marketPositions.MinimumMargin = -marketPositions.UnrealisedPNL + int64(math.Abs(forwardRiskMargin))
-
-		positions = append(positions, marketPositions)
+		positions = []*types.Position{pos}
 	}
-
-	s.log.Debug("Positions for party calculated",
-		logging.String("party-id", party),
-		logging.Int("total-buckets", len(positions)))
-
-	return positions, nil
+	// either trader or market == ""
+	if party == "" {
+		pos, err := s.positions.GetPositionsByMarket(marketID)
+		if err != nil {
+			s.log.Error("Error getting positions for market",
+				logging.String("market-id", marketID),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		positions = pos
+	} else {
+		pos, err := s.positions.GetPositionsByParty(party)
+		if err != nil {
+			s.log.Error("Error getting positions for market",
+				logging.String("party-id", party),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		positions = pos
+	}
+	ret := make([]*types.MarketPosition, 0, len(positions))
+	for _, pos := range positions {
+		// @TODO sum unrealised using FIFO queue
+		ret = append(ret, &types.MarketPosition{
+			MarketID:          pos.MarketID,
+			UnrealisedVolume:  pos.OpenVolume,
+			UnrealisedPNL:     pos.UnrealisedPNL,
+			AverageEntryPrice: pos.AverageEntryPrice,
+		})
+	}
+	return ret, nil
 }
 
 func (s *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {

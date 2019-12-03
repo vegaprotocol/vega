@@ -354,7 +354,7 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
-	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID)
+	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err
 	}

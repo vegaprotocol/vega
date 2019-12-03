@@ -337,6 +337,7 @@ message TradesByMarketResponse {
 
 message PositionsByPartyRequest{
   string partyID = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 2;
 }
 
 message PositionsByPartyResponse{
