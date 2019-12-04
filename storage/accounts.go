@@ -20,6 +20,10 @@ var (
 	// ErrOwnerNotFound signals that the owner related to the
 	// account we were looking for does not exists
 	ErrOwnerNotFound = errors.New("no accounts found for party")
+	// ErrMissingPartyID ...
+	ErrMissingPartyID = errors.New("missing party id")
+	// ErrMissingMarketID ...
+	ErrMissingMarketID = errors.New("missing market id")
 )
 
 // Account represents a collateral account store
@@ -76,8 +80,42 @@ func (a *Account) Close() error {
 	return a.badger.db.Close()
 }
 
-// GetByParty returns all accounts for a given party, including MARGIN and GENERAL accounts
-func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
+func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
+	if len(marketID) <= 0 {
+		return nil, ErrMissingMarketID
+	}
+
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_INSURANCE, marketID, false)
+	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for market: %s", marketID))
+	}
+
+	if len(asset) <= 0 {
+		return accs, nil
+	}
+
+	out := []*types.Account{}
+	for _, v := range accs {
+		if asset == v.Asset {
+			out = append(out, v)
+			break
+		}
+	}
+
+	return out, nil
+}
+
+func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
+	if len(partyID) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	if ty != types.AccountType_GENERAL && ty != types.AccountType_MARGIN && ty != types.AccountType_NO_ACC {
+		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
+	}
+
+	// first we get all accounts
 	// Read all GENERAL accounts for party
 	keyPrefix, validFor := a.badger.accountPartyPrefix(types.AccountType_GENERAL, partyID, false)
 	generalAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
@@ -90,30 +128,18 @@ func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading margin accounts for party: %s", partyID))
 	}
-	return append(generalAccounts, marginAccounts...), nil
-}
 
-// GetByPartyAndMarket will return all accounts (if available) relating to the provided party and market.
-//  - Only MARGIN accounts are returned by this call, as they have market scope.
-func (a *Account) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountPartyMarketPrefix(types.AccountType_MARGIN, partyID, marketID, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, false)
-}
-
-// GetByPartyAndType will return all accounts (if available) relating to the provided party and account type.
-//  - GENERAL and MARGIN accounts are supported by this call, will return all MARGIN accounts for all markets.
-func (a *Account) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
-	if accType != types.AccountType_GENERAL && accType != types.AccountType_MARGIN {
-		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
+	accounts := append(generalAccounts, marginAccounts...)
+	out := []*types.Account{}
+	for _, acc := range accounts {
+		if (len(marketID) <= 0 || marketID == acc.MarketID) &&
+			(len(asset) <= 0 || asset == acc.Asset) &&
+			(ty == types.AccountType_NO_ACC || ty == acc.Type) {
+			// ensure there's no duplicate
+			out = append(out, acc)
+		}
 	}
-	keyPrefix, validFor := a.badger.accountPartyPrefix(accType, partyID, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, false)
-}
-
-// GetByPartyAndAsset will return all accounts (if available) relating to the provided party and asset.
-func (a *Account) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountPartyAssetPrefix(partyID, asset, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, true)
+	return out, nil
 }
 
 // getAccountsForPartyPrefix does the work of querying the badger store for key prefixes
@@ -261,7 +287,10 @@ func (a *Account) notify(accs []*types.Account) {
 func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, error) {
 	batch := make(map[string][]byte)
 	for _, acc := range accounts {
-
+		if acc.Type == types.AccountType_SETTLEMENT {
+			// do not save settlement account
+			continue
+		}
 		// Validate marketID as only MARGIN accounts should have a marketID specified
 		if acc.MarketID == "" && acc.Type != types.AccountType_GENERAL {
 			err := fmt.Errorf("general account should not have a market")
@@ -279,6 +308,10 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			return nil, err
 		}
 
+		if acc.Type == types.AccountType_INSURANCE {
+			insuranceIDKey := a.badger.accountInsuranceIDKey(acc.MarketID, acc.Asset)
+			batch[string(insuranceIDKey)] = buf
+		}
 		// Check the type of account and write only the data required for GENERAL accounts.
 		if acc.Type == types.AccountType_GENERAL {
 			// General accounts have no scope of an individual market, they span all markets.

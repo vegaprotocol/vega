@@ -41,7 +41,7 @@ all: build
 
 lint: ## Lint the files
 	@t="$$(mktemp)" ; \
-	go list ./... | xargs -r golint | grep -vE '(and that stutters|blank import should be|should have comment|which can be annoying to use)' | tee "$$t" ; \
+	go list ./... | xargs golint | grep -vE '(and that stutters|blank import should be|should have comment|which can be annoying to use)' | tee "$$t" ; \
 	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
 	rm -f "$$t" ; \
 	exit "$$code"

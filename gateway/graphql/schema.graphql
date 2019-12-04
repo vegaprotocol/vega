@@ -504,10 +504,10 @@ type Market {
     last: Int
   ): [Order!]
 
-  # Get accounts for a party or market
+  # Get account for a party or market
   accounts(
-    # Specify the account type to get a specific account
-    type: AccountType
+    # Id of the party to get the margin account for
+    partyId: String
   ): [Account!]
 
   # Trades on a market

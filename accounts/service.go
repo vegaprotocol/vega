@@ -13,11 +13,8 @@ import (
 // AccountStore represents a store for the accounts
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/accounts AccountStore
 type AccountStore interface {
-	GetByParty(partyID string) ([]*types.Account, error)
-	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
-	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
-	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
-
+	GetPartyAccounts(string, string, string, types.AccountType) ([]*types.Account, error)
+	GetMarketAccounts(string, string) ([]*types.Account, error)
 	Subscribe(c chan []*types.Account) uint64
 	Unsubscribe(id uint64) error
 }
@@ -77,43 +74,12 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 	return s.chain.Withdraw(ctx, w)
 }
 
-// GetByParty returns details of all accounts for a given party (if they have placed orders on VEGA).
-func (s *Svc) GetByParty(partyID string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByParty(partyID)
-	if err != nil {
-		return nil, err
-	}
-	return accounts, nil
+func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
+	return s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
 }
 
-// GetByPartyAndMarket returns all accounts for a given market
-// and party (if they have placed orders on that market on VEGA).
-func (s *Svc) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByPartyAndMarket(partyID, marketID)
-	if err != nil {
-		return nil, err
-	}
-	return accounts, nil
-}
-
-// GetByPartyAndType returns all accounts for a given type (on all markets)
-// and party (if they have placed orders on that market on VEGA).
-func (s *Svc) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByPartyAndType(partyID, accType)
-	if err != nil {
-		return nil, err
-	}
-	return accounts, nil
-}
-
-// GetByPartyAndAsset returns all accounts for a given asset (on all markets)
-// and party (if they have placed orders on that market on VEGA).
-func (s *Svc) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByPartyAndAsset(partyID, asset)
-	if err != nil {
-		return nil, err
-	}
-	return accounts, nil
+func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
+	return s.storage.GetMarketAccounts(marketID, asset)
 }
 
 // ObserveAccounts is used by streaming subscribers to be notified when changes
