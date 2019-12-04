@@ -156,11 +156,11 @@ func decodeNonProtoField(d *json.Decoder, v interface{}) error {
 		if err := d.Decode(&repr); err != nil {
 			return err
 		}
-		switch repr.(type) {
+		switch repr := repr.(type) {
 		case string:
-			return fmt.Errorf("unmarshaling of symbolic enum %q not supported: %T", repr, rv.Interface())
+			return fmt.Errorf("unmarshaling of symbolic enum %s not supported: %T", repr, rv.Interface())
 		case float64:
-			rv.Set(reflect.ValueOf(int32(repr.(float64))).Convert(rv.Type()))
+			rv.Set(reflect.ValueOf(int32(repr)).Convert(rv.Type()))
 			return nil
 		default:
 			return fmt.Errorf("cannot assign %#v into Go type %T", repr, rv.Interface())

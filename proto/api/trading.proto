@@ -81,7 +81,7 @@ service trading_data {
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
   // Get Market Order by OrderID
-  rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+  rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
 
   // Get an Order by Pending Order reference (UUID)
   rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);

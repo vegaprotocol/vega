@@ -15,7 +15,7 @@ type TransferResponse struct {
 	trs   []*types.TransferResponse
 }
 
-// NewTransferResponse instanciate a new buffer
+// NewTransferResponse instantiate a new buffer
 func NewTransferResponse(store TransferResponseStore) *TransferResponse {
 	return &TransferResponse{
 		store: store,

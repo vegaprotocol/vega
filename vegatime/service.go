@@ -17,7 +17,7 @@ type Svc struct {
 	mu        sync.Mutex
 }
 
-// New instanciate a new vegatime service
+// New instantiate a new vegatime service
 func New(conf Config) *Svc {
 	return &Svc{config: conf}
 }

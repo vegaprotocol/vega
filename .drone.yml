@@ -105,7 +105,7 @@ steps:
     commands:
       # More small checks. Run all, instead of exitng after first failure.
       - failed=""
-      - for target in print_check proto_check rest_check vet vetshadow ; do
+      - for target in lint print_check proto_check rest_check vet vetshadow ; do
           echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
       - python3 script/diff_bot.py
           --token "$$GITLAB_API_TOKEN"
@@ -115,7 +115,6 @@ steps:
           --slack-recipient "#uidev"
           print_diff slack_notify || failed="$$failed diff_bot"
       - /usr/local/bin/multilint || failed="$$failed multilint"
-      - make lint || true  # Ignore lint failure for now (see #196)
       - make staticcheck || true  # Ignore failures until they're all fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:

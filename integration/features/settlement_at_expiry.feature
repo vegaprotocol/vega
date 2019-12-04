@@ -19,7 +19,7 @@ Feature: Test mark to market settlement
       | trader  | id        | type | volume | price | resulting trades | error           |
       | trader1 | ETH/DEC19 | sell |      1 |  1000 |                0 | OrderError: Invalid Market ID   |
 
-  Scenario: Settlement happend when market is beeing closed
+  Scenario: Settlement happened when market is being closed
     Given the following traders:
       | name    | amount |
       | trader1 |  10000 |

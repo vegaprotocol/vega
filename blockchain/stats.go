@@ -22,7 +22,7 @@ type Stats struct {
 	blockDuration         uint64 // nanoseconds
 }
 
-// NewStats instanciate a new Stats
+// NewStats instantiate a new Stats
 func NewStats() *Stats {
 	return &Stats{
 		height:                0,

@@ -33,6 +33,7 @@ func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	assert.Nil(t, err)
 
 	decodeBytes, cmd, err := txDecode(resultBytes)
+	assert.NoError(t, err)
 	assert.Equal(t, SubmitOrderCommand, cmd)
 
 	resultOrder := &types.Order{}

@@ -17,14 +17,14 @@ type Settlement struct {
 	free []int
 }
 
-// ChannelBuffer - set default channel buffers to b (default 1)
+// ChannelBuffer set default channel buffers to b (default 1)
 func ChannelBuffer(b int) settleConf {
 	return func(s *Settlement) {
 		s.chBuf = b
 	}
 }
 
-// New - create new settlement buffer
+// NewSettlement create new settlement buffer
 func NewSettlement(opts ...settleConf) *Settlement {
 	s := &Settlement{
 		mu:    &sync.Mutex{},
@@ -39,7 +39,7 @@ func NewSettlement(opts ...settleConf) *Settlement {
 	return s
 }
 
-// Add - add position data to the buffer
+// Add add position data to the buffer
 func (s *Settlement) Add(pos []events.SettlePosition) {
 	s.mu.Lock()
 	for _, p := range pos {
@@ -52,7 +52,7 @@ func (s *Settlement) Add(pos []events.SettlePosition) {
 	s.mu.Unlock()
 }
 
-// Flush - Clear buffer, passing all channels the data
+// Flush Clear buffer, passing all channels the data
 func (s *Settlement) Flush() {
 	s.mu.Lock()
 	buf := s.buf
@@ -82,7 +82,7 @@ func (s *Settlement) Flush() {
 	s.mu.Unlock()
 }
 
-// Subscribe - get a channel to get the data from this buffer on flush
+// Subscribe get a channel to get the data from this buffer on flush
 func (s *Settlement) Subscribe() (<-chan []events.SettlePosition, int) {
 	s.mu.Lock()
 	k := s.getKey()
@@ -92,7 +92,7 @@ func (s *Settlement) Subscribe() (<-chan []events.SettlePosition, int) {
 	return ch, k
 }
 
-// Unsubscribe - close channel and remove from active duty
+// Unsubscribe close channel and remove from active duty
 func (s *Settlement) Unsubscribe(k int) {
 	s.mu.Lock()
 	if ch, ok := s.chans[k]; ok {

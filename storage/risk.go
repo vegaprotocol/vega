@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -21,10 +20,10 @@ type Risk struct {
 	Config
 	log *logging.Logger
 	// party to market to margin levels
-	margins   map[string]map[string]proto.MarginLevels
+	margins   map[string]map[string]types.MarginLevels
 	marginsMu sync.RWMutex
 
-	subscribers  map[uint64]chan []proto.MarginLevels
+	subscribers  map[uint64]chan []types.MarginLevels
 	subscriberID uint64
 	mu           sync.Mutex
 }
@@ -37,8 +36,8 @@ func NewRisks(log *logging.Logger, c Config) *Risk {
 	return &Risk{
 		Config:      c,
 		log:         log,
-		margins:     map[string]map[string]proto.MarginLevels{},
-		subscribers: map[uint64]chan []proto.MarginLevels{},
+		margins:     map[string]map[string]types.MarginLevels{},
+		subscribers: map[uint64]chan []types.MarginLevels{},
 	}
 }
 
@@ -173,7 +172,6 @@ func (r *Risk) notify(batch []types.MarginLevels) {
 		}
 	}
 	r.mu.Unlock()
-	return
 }
 
 // Subscribe to account store updates, any changes will be pushed out on this channel.

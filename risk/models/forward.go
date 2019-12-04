@@ -41,13 +41,13 @@ func (f *Forward) CalculateRiskFactors(
 	rawrf := riskmodelbs.RiskFactorsForward(f.riskAversionParameter, f.tau, f.params)
 	rf := &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			f.asset: &types.RiskFactor{
+			f.asset: {
 				Long:  rawrf.Long,
 				Short: rawrf.Short,
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			f.asset: &types.RiskFactor{
+			f.asset: {
 				Long:  rawrf.Long,
 				Short: rawrf.Short,
 			},

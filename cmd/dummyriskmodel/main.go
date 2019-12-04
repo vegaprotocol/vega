@@ -62,8 +62,6 @@ func waitSig() {
 	signal.Notify(gracefulStop, syscall.SIGINT)
 	log.Printf("waiting for exit signals")
 
-	select {
-	case sig := <-gracefulStop:
-		log.Printf("caught signal %v", fmt.Sprintf("%+v", sig))
-	}
+	sig := <-gracefulStop
+	log.Printf("caught signal %v", fmt.Sprintf("%+v", sig))
 }

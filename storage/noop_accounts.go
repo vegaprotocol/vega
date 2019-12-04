@@ -6,8 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
 )
 
 type NoopAccount struct {
@@ -104,5 +102,5 @@ func (a *NoopAccount) Unsubscribe(id uint64) error {
 	a.log.Warn("Un-subscribe called in account store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return errors.New(fmt.Sprintf("NoopAccount store subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to NoopAccount does not exist with id: %d", id)
 }

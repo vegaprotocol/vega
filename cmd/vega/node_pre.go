@@ -174,7 +174,7 @@ func (l *NodeCommand) setupBuffers() {
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
-	// always enbled market,parties etc stores as they are in memory or boths use them
+	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
 		return
 	}
@@ -195,7 +195,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
-	// if stores are not enbled, initialize the noop stores and do nothing else
+	// if stores are not enabled, initialise the noop stores and do nothing else
 	if !l.conf.StoresEnabled {
 		l.orderStore = storage.NewNoopOrders(l.Log, l.conf.Storage)
 		l.tradeStore = storage.NewNoopTrades(l.Log, l.conf.Storage)
@@ -238,7 +238,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
 
-	// instanciate the execution engine
+	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
 		l.conf.Execution,

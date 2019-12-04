@@ -123,7 +123,7 @@ func (log *Logger) GetName() string {
 	return log.name
 }
 
-// Named instanciate a new logger by cloning it first
+// Named instantiate a new logger by cloning it first
 // and name it with the string specified
 func (log *Logger) Named(name string) *Logger {
 	c := log.Clone()
@@ -138,7 +138,7 @@ func (log *Logger) Named(name string) *Logger {
 	return c
 }
 
-// New instanciate a new logger
+// New instantiate a new logger
 func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string) *Logger {
 	return &Logger{
 		Logger:      zaplogger,

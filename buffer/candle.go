@@ -37,7 +37,7 @@ type Candle struct {
 	lastTrade types.Trade
 }
 
-// NewCandle instanciate a new candles buffer
+// NewCandle instantiate a new candles buffer
 func NewCandle(store CandleStore) *Candle {
 	candl := &Candle{
 		buf:   map[string]map[string]types.Candle{},
