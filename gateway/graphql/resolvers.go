@@ -75,10 +75,8 @@ type TradingDataClient interface {
 	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
 	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
 	// accounts
-	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
-	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
-	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
-	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
+	PartyAccounts(ctx context.Context, req *protoapi.PartyAccountsRequest, opts ...grpc.CallOption) (*protoapi.PartyAccountsResponse, error)
+	MarketAccounts(ctx context.Context, req *protoapi.MarketAccountsRequest, opts ...grpc.CallOption) (*protoapi.MarketAccountsResponse, error)
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 }
@@ -404,8 +402,41 @@ func (r *myMarketResolver) OrderByReference(ctx context.Context, market *Market,
 	return res.Order, nil
 }
 
-func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, accType *AccountType) ([]*types.Account, error) {
-	return nil, errors.New("not implemented yet")
+// Accounts ...
+// if partyID specified get margin account for the given market
+// if nil return the insurance pool for the market
+func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID *string) ([]*types.Account, error) {
+	// get margin account for a party
+	if partyID != nil {
+		req := protoapi.PartyAccountsRequest{
+			PartyID:  *partyID,
+			MarketID: market.ID,
+			Type:     types.AccountType_MARGIN,
+			Asset:    "",
+		}
+		res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
+		if err != nil {
+			r.log.Error("unable to get PartyAccounts",
+				logging.Error(err),
+				logging.String("market-id", market.ID),
+				logging.String("party-id", *partyID))
+			return []*types.Account{}, err
+		}
+		return res.Accounts, nil
+	}
+	// get accounts for the market
+	req := protoapi.MarketAccountsRequest{
+		MarketID: market.ID,
+		Asset:    "", // all assets
+	}
+	res, err := r.tradingDataClient.MarketAccounts(ctx, &req)
+	if err != nil {
+		r.log.Error("unable to get MarketAccounts",
+			logging.Error(err),
+			logging.String("market-id", market.ID))
+		return []*types.Account{}, err
+	}
+	return res.Accounts, nil
 }
 
 // END: Market Resolver
@@ -514,64 +545,61 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.M
 	return res.Positions, nil
 }
 
+func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
+	switch acc {
+	case AccountTypeGeneral:
+		return types.AccountType_GENERAL, nil
+	case AccountTypeMargin:
+		return types.AccountType_MARGIN, nil
+	case AccountTypeInsurance:
+		return types.AccountType_INSURANCE, nil
+	case AccountTypeSettlement:
+		return types.AccountType_SETTLEMENT, nil
+	default:
+		return types.AccountType_NO_ACC, fmt.Errorf("invalid account type %v", acc)
+	}
+}
+
 func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
 	if pty == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
-	// Ensure default account types values
-	general := AccountTypeGeneral
-	margin := AccountTypeMargin
-	if accType == nil {
-		if marketID != nil {
-			accType = &margin
-		} else {
-			accType = &general
+	var (
+		mktid = ""
+		asst  = ""
+		accTy = types.AccountType_NO_ACC
+		err   error
+	)
+
+	if marketID != nil {
+		mktid = *marketID
+	}
+	if asset != nil {
+		asst = *asset
+	}
+	if accType != nil {
+		accTy, err = AccountTypeToProto(*accType)
+		if err != nil || (accTy != types.AccountType_GENERAL && accTy != types.AccountType_MARGIN) {
+			return nil, fmt.Errorf("inalid account type for party %v", accType)
 		}
 	}
-	// Depending on Accounts params, select the correct gRPC call
-	switch *accType {
-	case AccountTypeMargin:
-		if marketID == nil {
-			return nil, errors.New("a market must be specified when querying for a margin account")
-		}
-		req := protoapi.AccountsByPartyAndMarketRequest{
-			PartyID:  pty.ID,
-			MarketID: *marketID,
-			Type:     types.AccountType_MARGIN,
-		}
-		resp, err := r.tradingDataClient.AccountsByPartyAndMarket(ctx, &req)
-		if err != nil {
-			return nil, err
-		}
-		accounts := make([]*types.Account, 0, len(resp.Accounts))
-		for _, acc := range resp.Accounts {
-			if asset == nil || acc.Asset == *asset {
-				accounts = append(accounts, acc)
-			}
-		}
-		return accounts, nil
-	case AccountTypeGeneral:
-		req := protoapi.AccountsByPartyRequest{
-			PartyID: pty.ID,
-			Type:    types.AccountType_GENERAL,
-		}
-		resp, err := r.tradingDataClient.AccountsByParty(ctx, &req)
-		if err != nil {
-			return nil, err
-		}
-		accounts := make([]*types.Account, 0, len(resp.Accounts))
-		for _, acc := range resp.Accounts {
-			acc := acc
-			if asset == nil || acc.Asset == *asset {
-				accounts = append(accounts, acc)
-			}
-		}
-		return accounts, nil
+	req := protoapi.PartyAccountsRequest{
+		PartyID:  pty.ID,
+		MarketID: mktid,
+		Asset:    asst,
+		Type:     accTy,
 	}
-	//Note: there's currently no read store for the following account types
-	// AccountTypeInsurance
-	// AccountTypeSettlement
-	return nil, errors.New("account type specified is not supported")
+	res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
+	if err != nil {
+		r.log.Error("unable to get Party account",
+			logging.Error(err),
+			logging.String("party-id", pty.ID),
+			logging.String("market-id", mktid),
+			logging.String("asset", asst),
+			logging.String("type", accTy.String()))
+		return nil, err
+	}
+	return res.Accounts, nil
 }
 
 // END: Party Resolver
