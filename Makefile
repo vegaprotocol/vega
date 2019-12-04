@@ -1,4 +1,4 @@
-APPS := dummyriskmodel scenariorunner vega vegaccount vegastream
+APPS := dummyriskmodel vega vegaccount vegastream
 
 ifeq ($(CI),)
 	# Not in CI
