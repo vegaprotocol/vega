@@ -48,7 +48,7 @@ func (a *NoopAccount) GetPartyAccounts(partyID, marketID, asset string, ty types
 	return []*types.Account{}, nil
 }
 
-func (s *NoopAccount) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
+func (a *NoopAccount) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
 	return []*types.Account{}, nil
 }
 
