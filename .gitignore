@@ -1,7 +1,6 @@
 # Vega specific entries
 cmd/*/*-dbg
 cmd/dummyriskmodel/dummyriskmodel
-cmd/vegabench/vegabench
 cmd/vegaccount/vegaccount
 cmd/vegastream/vegastream
 cmd/vega/vega

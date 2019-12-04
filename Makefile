@@ -1,4 +1,4 @@
-APPS := dummyriskmodel scenariorunner vega vegabench vegaccount vegastream
+APPS := dummyriskmodel vega vegaccount vegastream
 
 ifeq ($(CI),)
 	# Not in CI
@@ -45,9 +45,6 @@ lint: ## Lint the files
 	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
 	rm -f "$$t" ; \
 	exit "$$code"
-
-bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
-	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
 test: ## Run unit tests
 	@go test ./...
