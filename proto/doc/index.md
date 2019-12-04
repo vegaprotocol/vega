@@ -4,14 +4,6 @@
 ## Table of Contents
 
 - [proto/api/trading.proto](#proto/api/trading.proto)
-    - [AccountsByPartyAndAssetRequest](#api.AccountsByPartyAndAssetRequest)
-    - [AccountsByPartyAndAssetResponse](#api.AccountsByPartyAndAssetResponse)
-    - [AccountsByPartyAndMarketRequest](#api.AccountsByPartyAndMarketRequest)
-    - [AccountsByPartyAndMarketResponse](#api.AccountsByPartyAndMarketResponse)
-    - [AccountsByPartyAndTypeRequest](#api.AccountsByPartyAndTypeRequest)
-    - [AccountsByPartyAndTypeResponse](#api.AccountsByPartyAndTypeResponse)
-    - [AccountsByPartyRequest](#api.AccountsByPartyRequest)
-    - [AccountsByPartyResponse](#api.AccountsByPartyResponse)
     - [AccountsSubscribeRequest](#api.AccountsSubscribeRequest)
     - [AmendOrderRequest](#api.AmendOrderRequest)
     - [CancelOrderRequest](#api.CancelOrderRequest)
@@ -25,6 +17,8 @@
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
     - [MarginLevelsResponse](#api.MarginLevelsResponse)
     - [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest)
+    - [MarketAccountsRequest](#api.MarketAccountsRequest)
+    - [MarketAccountsResponse](#api.MarketAccountsResponse)
     - [MarketByIDRequest](#api.MarketByIDRequest)
     - [MarketByIDResponse](#api.MarketByIDResponse)
     - [MarketDataByIDRequest](#api.MarketDataByIDRequest)
@@ -49,6 +43,8 @@
     - [OrdersSubscribeRequest](#api.OrdersSubscribeRequest)
     - [Pagination](#api.Pagination)
     - [PartiesResponse](#api.PartiesResponse)
+    - [PartyAccountsRequest](#api.PartyAccountsRequest)
+    - [PartyAccountsResponse](#api.PartyAccountsResponse)
     - [PartyByIDRequest](#api.PartyByIDRequest)
     - [PartyByIDResponse](#api.PartyByIDResponse)
     - [PositionsByPartyRequest](#api.PositionsByPartyRequest)
@@ -68,12 +64,12 @@
     - [VegaTimeResponse](#api.VegaTimeResponse)
     - [WithdrawRequest](#api.WithdrawRequest)
     - [WithdrawResponse](#api.WithdrawResponse)
-
-
-
+  
+  
+  
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
-
+  
 
 - [proto/markets.proto](#proto/markets.proto)
     - [ContinuousTrading](#vega.ContinuousTrading)
@@ -92,10 +88,10 @@
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
-
-
-
-
+  
+  
+  
+  
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
@@ -131,7 +127,7 @@
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
     - [Withdraw](#vega.Withdraw)
-
+  
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
@@ -141,9 +137,9 @@
     - [OrderError](#vega.OrderError)
     - [Side](#vega.Side)
     - [TransferType](#vega.TransferType)
-
-
-
+  
+  
+  
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -153,131 +149,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/api/trading.proto
-
-
-
-<a name="api.AccountsByPartyAndAssetRequest"></a>
-
-### AccountsByPartyAndAssetRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndAssetResponse"></a>
-
-### AccountsByPartyAndAssetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndMarketRequest"></a>
-
-### AccountsByPartyAndMarketRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndMarketResponse"></a>
-
-### AccountsByPartyAndMarketResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndTypeRequest"></a>
-
-### AccountsByPartyAndTypeRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndTypeResponse"></a>
-
-### AccountsByPartyAndTypeResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyRequest"></a>
-
-### AccountsByPartyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyResponse"></a>
-
-### AccountsByPartyResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
 
 
 
@@ -481,6 +352,37 @@
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.MarketAccountsRequest"></a>
+
+### MarketAccountsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.MarketAccountsResponse"></a>
+
+### MarketAccountsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated |  |
 
 
 
@@ -858,6 +760,39 @@
 
 
 
+<a name="api.PartyAccountsRequest"></a>
+
+### PartyAccountsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| type | [vega.AccountType](#vega.AccountType) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.PartyAccountsResponse"></a>
+
+### PartyAccountsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated |  |
+
+
+
+
+
+
 <a name="api.PartyByIDRequest"></a>
 
 ### PartyByIDRequest
@@ -1148,11 +1083,11 @@
 
 
 
+ 
 
+ 
 
-
-
-
+ 
 
 
 <a name="api.trading"></a>
@@ -1207,12 +1142,10 @@
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream |  |
 | MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream |  |
 | MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream |  |
-| AccountsByParty | [AccountsByPartyRequest](#api.AccountsByPartyRequest) | [AccountsByPartyResponse](#api.AccountsByPartyResponse) | Get Party Accounts by Account Type |
-| AccountsByPartyAndMarket | [AccountsByPartyAndMarketRequest](#api.AccountsByPartyAndMarketRequest) | [AccountsByPartyAndMarketResponse](#api.AccountsByPartyAndMarketResponse) | Get Party Accounts by Market |
-| AccountsByPartyAndType | [AccountsByPartyAndTypeRequest](#api.AccountsByPartyAndTypeRequest) | [AccountsByPartyAndTypeResponse](#api.AccountsByPartyAndTypeResponse) | Get Party Accounts by Account Type (dup) |
-| AccountsByPartyAndAsset | [AccountsByPartyAndAssetRequest](#api.AccountsByPartyAndAssetRequest) | [AccountsByPartyAndAssetResponse](#api.AccountsByPartyAndAssetResponse) | Get Party Accounts by Asset |
+| PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get Party accounts |
+| MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get Market accounts |
 
-
+ 
 
 
 
@@ -1492,13 +1425,13 @@
 
 
 
+ 
 
+ 
 
+ 
 
-
-
-
-
+ 
 
 
 
@@ -2155,7 +2088,7 @@
 
 
 
-
+ 
 
 
 <a name="vega.AccountType"></a>
@@ -2300,11 +2233,11 @@
 | MARGIN_HIGH | 6 |  |
 
 
+ 
 
+ 
 
-
-
-
+ 
 
 
 

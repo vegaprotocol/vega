@@ -606,13 +606,13 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "Get Party Accounts by Account Type",
-        "operationId": "AccountsByParty",
+        "summary": "Get Party accounts",
+        "operationId": "PartyAccounts",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiAccountsByPartyResponse"
+              "$ref": "#/definitions/apiPartyAccountsResponse"
             }
           }
         },
@@ -621,6 +621,12 @@
             "name": "partyID",
             "in": "path",
             "required": true,
+            "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "query",
+            "required": false,
             "type": "string"
           },
           {
@@ -636,6 +642,12 @@
               "GENERAL"
             ],
             "default": "NO_ACC"
+          },
+          {
+            "name": "asset",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -895,50 +907,6 @@
       ],
       "default": "GTC"
     },
-    "apiAccountsByPartyAndAssetResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyAndMarketResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyAndTypeResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -985,6 +953,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaMarginLevels"
+          }
+        }
+      }
+    },
+    "apiMarketAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
           }
         }
       }
@@ -1140,6 +1119,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaParty"
+          }
+        }
+      }
+    },
+    "apiPartyAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
           }
         }
       }
