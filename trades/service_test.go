@@ -26,6 +26,7 @@ type testService struct {
 	ctrl  *gomock.Controller
 	trade *mocks.MockTradeStore
 	risk  *mocks.MockRiskStore
+	pos   *mocks.MockPositionsPlugin
 }
 
 func getTestService(t *testing.T) *testService {
@@ -33,12 +34,14 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	trade := mocks.NewMockTradeStore(ctrl)
 	risk := mocks.NewMockRiskStore(ctrl)
+	pos := mocks.NewMockPositionsPlugin(ctrl)
 	log := logging.NewTestLogger()
 	svc, err := trades.NewService(
 		log,
 		trades.NewDefaultConfig(),
 		trade,
 		risk,
+		pos,
 	)
 	assert.NoError(t, err)
 	return &testService{

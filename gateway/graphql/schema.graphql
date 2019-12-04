@@ -678,9 +678,6 @@ type Position {
 
     # Average entry price for this position
     averageEntryPrice: String!
-
-    # Minimum margin for this position
-    minimumMargin: String!
 }
 
 # An order in Vega, if active it will be on the OrderBoook for the market
