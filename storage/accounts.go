@@ -22,6 +22,8 @@ var (
 	ErrOwnerNotFound = errors.New("no accounts found for party")
 	// ErrMissingPartyID ...
 	ErrMissingPartyID = errors.New("missing party id")
+	// ErrMissingMarketID ...
+	ErrMissingMarketID = errors.New("missing market id")
 )
 
 // Account represents a collateral account store
@@ -76,6 +78,32 @@ func (a *Account) ReloadConf(cfg Config) {
 // ensuring errors will be returned up the stack.
 func (a *Account) Close() error {
 	return a.badger.db.Close()
+}
+
+func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
+	if len(marketID) <= 0 {
+		return nil, ErrMissingMarketID
+	}
+
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_INSURANCE, marketID, false)
+	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for market: %s", marketID))
+	}
+
+	if len(asset) <= 0 {
+		return accs, nil
+	}
+
+	out := []*types.Account{}
+	for _, v := range accs {
+		if asset == v.Asset {
+			out = append(out, v)
+			break
+		}
+	}
+
+	return out, nil
 }
 
 func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
@@ -260,7 +288,10 @@ func (a *Account) notify(accs []*types.Account) {
 func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, error) {
 	batch := make(map[string][]byte)
 	for _, acc := range accounts {
-
+		if acc.Type == types.AccountType_SETTLEMENT {
+			// do not save settlement account
+			continue
+		}
 		// Validate marketID as only MARGIN accounts should have a marketID specified
 		if acc.MarketID == "" && acc.Type != types.AccountType_GENERAL {
 			err := fmt.Errorf("general account should not have a market")
@@ -278,6 +309,10 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			return nil, err
 		}
 
+		if acc.Type == types.AccountType_INSURANCE {
+			insuranceIDKey := a.badger.accountInsuranceIDKey(acc.MarketID, acc.Asset)
+			batch[string(insuranceIDKey)] = buf
+		}
 		// Check the type of account and write only the data required for GENERAL accounts.
 		if acc.Type == types.AccountType_GENERAL {
 			// General accounts have no scope of an individual market, they span all markets.

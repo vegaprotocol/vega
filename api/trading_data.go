@@ -131,6 +131,7 @@ type BlockchainClient interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/api AccountsService
 type AccountsService interface {
 	GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error)
+	GetMarketAccounts(marketID, asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -1155,7 +1156,13 @@ func (h *tradingDataService) LastTrade(
 }
 
 func (h *tradingDataService) MarketAccounts(_ context.Context, req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
-	return nil, nil
+	accs, err := h.AccountsService.GetMarketAccounts(req.MarketID, req.Asset)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.MarketAccountsResponse{
+		Accounts: accs,
+	}, nil
 }
 
 func (h *tradingDataService) PartyAccounts(_ context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {

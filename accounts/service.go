@@ -14,6 +14,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/accounts AccountStore
 type AccountStore interface {
 	GetPartyAccounts(string, string, string, types.AccountType) ([]*types.Account, error)
+	GetMarketAccounts(string, string) ([]*types.Account, error)
 	Subscribe(c chan []*types.Account) uint64
 	Unsubscribe(id uint64) error
 }
@@ -75,6 +76,10 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
 	return s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
+}
+
+func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
+	return s.storage.GetMarketAccounts(marketID, asset)
 }
 
 // ObserveAccounts is used by streaming subscribers to be notified when changes
