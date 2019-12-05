@@ -120,7 +120,6 @@ func (s *Svc) ObserveTransferResponses(
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries))
 					cancel()
-					break
 				}
 			}
 		}

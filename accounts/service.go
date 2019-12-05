@@ -169,7 +169,6 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries))
 					cancel()
-					break
 				}
 
 			}
