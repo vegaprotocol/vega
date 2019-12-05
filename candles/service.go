@@ -134,7 +134,6 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 						logging.Int("retries", retries),
 					)
 					cancel()
-					break
 				}
 			}
 		}

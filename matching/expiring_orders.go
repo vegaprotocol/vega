@@ -10,13 +10,13 @@ type ExpiringOrders struct {
 	orders *btree.BTree
 }
 
-type ordersAtTs struct {
+type ordersAtTS struct {
 	ts     int64
 	orders []types.Order
 }
 
-func (a *ordersAtTs) Less(b btree.Item) bool {
-	return a.ts < b.(*ordersAtTs).ts
+func (a *ordersAtTS) Less(b btree.Item) bool {
+	return a.ts < b.(*ordersAtTS).ts
 }
 
 func NewExpiringOrders() *ExpiringOrders {
@@ -26,9 +26,9 @@ func NewExpiringOrders() *ExpiringOrders {
 }
 
 func (a *ExpiringOrders) Insert(order types.Order) {
-	item := &ordersAtTs{ts: order.ExpiresAt}
+	item := &ordersAtTS{ts: order.ExpiresAt}
 	if item := a.orders.Get(item); item != nil {
-		item.(*ordersAtTs).orders = append(item.(*ordersAtTs).orders, order)
+		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, order)
 		return
 	}
 	item.orders = []types.Order{order}
@@ -36,9 +36,9 @@ func (a *ExpiringOrders) Insert(order types.Order) {
 }
 
 func (a *ExpiringOrders) RemoveOrder(order types.Order) bool {
-	item := &ordersAtTs{ts: order.ExpiresAt}
+	item := &ordersAtTS{ts: order.ExpiresAt}
 	if item := a.orders.Get(item); item != nil {
-		oat := item.(*ordersAtTs)
+		oat := item.(*ordersAtTS)
 		for i := 0; i < len(oat.orders); i++ {
 			if oat.orders[i].Id == order.Id {
 				oat.orders = oat.orders[:i+copy(oat.orders[i:], oat.orders[i+1:])]
@@ -55,13 +55,13 @@ func (a *ExpiringOrders) Expire(ts int64) []types.Order {
 	}
 	orders := []types.Order{}
 	toDelete := []int64{}
-	item := &ordersAtTs{ts: ts + 1}
+	item := &ordersAtTS{ts: ts + 1}
 	a.orders.AscendLessThan(item, func(i btree.Item) bool {
-		if ts < i.(*ordersAtTs).ts {
+		if ts < i.(*ordersAtTS).ts {
 			return false
 		}
-		orders = append(orders, i.(*ordersAtTs).orders...)
-		toDelete = append(toDelete, i.(*ordersAtTs).ts)
+		orders = append(orders, i.(*ordersAtTS).orders...)
+		toDelete = append(toDelete, i.(*ordersAtTS).ts)
 		return true
 	})
 

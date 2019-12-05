@@ -185,9 +185,9 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	defer root.Finish()
 	ctx := context.Background()
 
-	marketId := "BTC/DEC19"
+	marketID := "BTC/DEC19"
 	market := &gql.Market{
-		ID: marketId,
+		ID: marketID,
 	}
 
 	root.tradingDataClient.EXPECT().OrdersByMarket(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.OrdersByMarketResponse{Orders: []*types.Order{

@@ -199,7 +199,6 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 						logging.Int("retries", retries),
 					)
 					cancel()
-					break
 				}
 			}
 		}
@@ -281,7 +280,6 @@ func (s *Svc) ObserveMarketsData(
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries))
 					cancel()
-					break
 				}
 
 			}

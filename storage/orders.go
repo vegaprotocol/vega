@@ -441,7 +441,6 @@ func (os *Order) notify(items []types.Order) error {
 		select {
 		case sub <- items:
 			ok = true
-			break
 		default:
 			ok = false
 		}

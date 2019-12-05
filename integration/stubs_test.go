@@ -14,6 +14,7 @@ import (
 type marginsStub struct {
 	data map[string]map[string]proto.MarginLevels
 	mu   sync.Mutex
+	err  error // for future use
 }
 
 func NewMarginsStub() *marginsStub {
@@ -167,7 +168,6 @@ func (o *orderStub) Get(id string) *proto.Order {
 type transferStub struct {
 	data []*proto.TransferResponse
 	mu   *sync.Mutex
-	err  error // still not convinced about this one
 }
 
 func NewTransferStub() *transferStub {

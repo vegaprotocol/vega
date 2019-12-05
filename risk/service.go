@@ -131,7 +131,6 @@ func (s *Svc) ObserveMarginLevels(
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries))
 					cancel()
-					break
 				}
 
 			}

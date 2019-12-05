@@ -17,13 +17,12 @@ import (
 
 type testService struct {
 	*markets.Svc
-	ctx        context.Context
-	cfunc      context.CancelFunc
-	log        *logging.Logger
-	ctrl       *gomock.Controller
-	order      *mocks.MockOrderStore
-	market     *mocks.MockMarketStore
-	marketdata *mocks.MockMarketDataStore
+	ctx    context.Context
+	cfunc  context.CancelFunc
+	log    *logging.Logger
+	ctrl   *gomock.Controller
+	order  *mocks.MockOrderStore
+	market *mocks.MockMarketStore
 }
 
 func getTestService(t *testing.T) *testService {

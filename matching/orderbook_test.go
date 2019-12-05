@@ -844,7 +844,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 
 	timestamps := []int64{0, 1, 2}
 	for _, timestamp := range timestamps {
-		for index, _ := range m[timestamp] {
+		for index := range m[timestamp] {
 			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
 			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors
@@ -2041,7 +2041,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 
 	timestamps := []int64{0, 1}
 	for _, timestamp := range timestamps {
-		for index, _ := range m[timestamp] {
+		for index := range m[timestamp] {
 			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
 			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors

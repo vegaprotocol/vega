@@ -66,7 +66,6 @@ func (t *TransferResponse) notify(trs []*types.TransferResponse) {
 		select {
 		case sub <- trs:
 			ok = true
-			break
 		default:
 			ok = false
 		}

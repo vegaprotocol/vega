@@ -14,13 +14,12 @@ import (
 type NoopOrder struct {
 	Config
 
-	cfgMu           sync.Mutex
-	log             *logging.Logger
-	subscribers     map[uint64]chan<- []types.Order
-	subscriberID    uint64
-	depth           map[string]*Depth
-	mu              sync.Mutex
-	onCriticalError func()
+	cfgMu        sync.Mutex
+	log          *logging.Logger
+	subscribers  map[uint64]chan<- []types.Order
+	subscriberID uint64
+	depth        map[string]*Depth
+	mu           sync.Mutex
 }
 
 func NewNoopOrders(log *logging.Logger, c Config) *NoopOrder {
@@ -87,7 +86,7 @@ func (os *NoopOrder) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return fmt.Errorf("Orders subscriber does not exist with id: %d", id)
+	return fmt.Errorf("subscriber to Orders store does not exist with id: %d", id)
 }
 
 func (os *NoopOrder) Post(order types.Order) error {
@@ -213,38 +212,4 @@ func (os *NoopOrder) GetMarketDepth(ctx context.Context, market string) (*types.
 		Buy:      buyPtr,
 		Sell:     sellPtr,
 	}, nil
-}
-
-// notify sends order updates to all subscribers.
-func (os *NoopOrder) notify(items []types.Order) error {
-	if len(items) == 0 {
-		return nil
-	}
-
-	os.mu.Lock()
-	if os.subscribers == nil || len(os.subscribers) == 0 {
-		os.mu.Unlock()
-		os.log.Debug("No subscribers connected in order store")
-		return nil
-	}
-
-	var ok bool
-	for id, sub := range os.subscribers {
-		select {
-		case sub <- items:
-			ok = true
-			break
-		default:
-			ok = false
-		}
-		if ok {
-			os.log.Debug("Orders channel updated for subscriber successfully",
-				logging.Uint64("id", id))
-		} else {
-			os.log.Debug("Orders channel could not be updated for subscriber",
-				logging.Uint64("id", id))
-		}
-	}
-	os.mu.Unlock()
-	return nil
 }
