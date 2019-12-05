@@ -399,6 +399,7 @@ func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*pr
 	mds := h.MarketService.GetMarketsData()
 	mdptrs := make([]*types.MarketData, 0, len(mds))
 	for _, v := range mds {
+		v := v
 		mdptrs = append(mdptrs, &v)
 	}
 	return &protoapi.MarketsDataResponse{
@@ -648,6 +649,7 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 				return err
 			}
 			for _, ml := range mls {
+				ml := ml
 				err = srv.Send(&ml)
 				if err != nil {
 					h.log.Error("Margin levels data subscriber - rpc stream error",
