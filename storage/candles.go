@@ -64,12 +64,12 @@ func NewCandles(log *logging.Logger, c Config, onCriticalError func()) (*Candle,
 	}
 	bs := badgerStore{db: db}
 	return &Candle{
-		log:         log,
-		Config:      c,
-		badger:      &bs,
-		subscribers: make(map[uint64]*InternalTransport),
-		queue:       make([]marketCandle, 0),
-		onCriticalError: onCriticalError, 
+		log:         	 log,
+		Config:      	 c,
+		badger:      	 &bs,
+		subscribers: 	 make(map[uint64]*InternalTransport),
+		queue:       	 make([]marketCandle, 0),
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
