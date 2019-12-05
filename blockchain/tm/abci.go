@@ -32,7 +32,7 @@ type AbciApplication struct {
 	processor Processor
 	service   ApplicationService
 	appHash   []byte
-	size      int64
+	size      uint64
 	txSizes   []int
 	txTotals  []int
 
@@ -242,7 +242,7 @@ func (a *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
 //
 func (a *AbciApplication) Commit() types.ResponseCommit {
 	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, a.size)
+	binary.BigEndian.PutUint64(appHash, uint64(a.size))
 	a.appHash = appHash
 	a.stats.IncHeight()
 
