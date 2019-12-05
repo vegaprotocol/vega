@@ -15,8 +15,8 @@ import (
 type Market struct {
 	Config
 
-	log    *logging.Logger
-	badger *badgerStore
+	log             *logging.Logger
+	badger          *badgerStore
 	onCriticalError func()
 }
 
@@ -36,9 +36,9 @@ func NewMarkets(log *logging.Logger, c Config, onCriticalError func()) (*Market,
 	}
 	bs := badgerStore{db: db}
 	return &Market{
-		log:    log,
-		Config: c,
-		badger: &bs,
+		log:             log,
+		Config:          c,
+		badger:          &bs,
 		onCriticalError: onCriticalError,
 	}, nil
 }

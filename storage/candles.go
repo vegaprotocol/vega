@@ -24,13 +24,13 @@ var minSinceTime = vegatime.UnixNano(minSinceTimestamp)
 type Candle struct {
 	Config
 
-	cfgMu        sync.Mutex
-	log          *logging.Logger
-	badger       *badgerStore
-	subscribers  map[uint64]*InternalTransport
-	subscriberID uint64
-	queue        []marketCandle
-	mu           sync.Mutex
+	cfgMu           sync.Mutex
+	log             *logging.Logger
+	badger          *badgerStore
+	subscribers     map[uint64]*InternalTransport
+	subscriberID    uint64
+	queue           []marketCandle
+	mu              sync.Mutex
 	onCriticalError func()
 }
 
@@ -64,11 +64,11 @@ func NewCandles(log *logging.Logger, c Config, onCriticalError func()) (*Candle,
 	}
 	bs := badgerStore{db: db}
 	return &Candle{
-		log:         	 log,
-		Config:      	 c,
-		badger:      	 &bs,
-		subscribers: 	 make(map[uint64]*InternalTransport),
-		queue:       	 make([]marketCandle, 0),
+		log:             log,
+		Config:          c,
+		badger:          &bs,
+		subscribers:     make(map[uint64]*InternalTransport),
+		queue:           make([]marketCandle, 0),
 		onCriticalError: onCriticalError,
 	}, nil
 }
