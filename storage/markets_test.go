@@ -29,7 +29,7 @@ func TestMarkets(t *testing.T) {
 		Markets:        storage.DefaultMarketStoreOptions(),
 		MarketsDirPath: dir,
 	}
-	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config)
+	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config, func() {})
 	assert.NoError(t, err)
 	assert.NotNil(t, marketStore)
 	if marketStore == nil {
