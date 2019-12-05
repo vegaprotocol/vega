@@ -209,7 +209,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 				c.log.Error("Failed to insert new candle in candle store",
 					logging.Candle(candle),
 					logging.Error(subErr))
-					c.onCriticalError()
+				c.onCriticalError()
 			} else {
 				if c.log.GetLevel() == logging.DebugLevel {
 					c.log.Debug("New candle inserted in candle store",
@@ -229,7 +229,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 					logging.Candle(candle),
 					logging.CandleWithTag(*candleDb, "existing-candle"),
 					logging.Error(err))
-					c.onCriticalError()
+				c.onCriticalError()
 			} else {
 				if c.log.GetLevel() == logging.DebugLevel {
 					c.log.Debug("Candle updated in candle store",
