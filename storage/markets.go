@@ -17,10 +17,11 @@ type Market struct {
 
 	log    *logging.Logger
 	badger *badgerStore
+	onCriticalError func()
 }
 
 // NewMarkets returns a concrete implementation of MarketStore.
-func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
+func NewMarkets(log *logging.Logger, c Config, onCriticalError func()) (*Market, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
@@ -38,6 +39,7 @@ func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
 		log:    log,
 		Config: c,
 		badger: &bs,
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
@@ -78,6 +80,7 @@ func (m *Market) Post(market *types.Market) error {
 			logging.Error(err),
 			logging.String("market-id", market.Id),
 		)
+		m.onCriticalError()
 	}
 
 	return err
