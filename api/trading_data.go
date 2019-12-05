@@ -371,8 +371,10 @@ func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 	}
 	levels := make([]*types.MarginLevels, 0, len(mls))
 	for _, v := range mls {
+		v := v
 		levels = append(levels, &v)
 	}
+
 	return &protoapi.MarginLevelsResponse{
 		MarginLevels: levels,
 	}, nil
