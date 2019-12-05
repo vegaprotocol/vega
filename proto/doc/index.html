@@ -179,38 +179,6 @@
             <ul>
 
                 <li>
-                  <a href="#api.AccountsByPartyAndAssetRequest"><span class="badge">M</span>AccountsByPartyAndAssetRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyAndAssetResponse"><span class="badge">M</span>AccountsByPartyAndAssetResponse</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyAndMarketRequest"><span class="badge">M</span>AccountsByPartyAndMarketRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyAndMarketResponse"><span class="badge">M</span>AccountsByPartyAndMarketResponse</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyAndTypeRequest"><span class="badge">M</span>AccountsByPartyAndTypeRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyAndTypeResponse"><span class="badge">M</span>AccountsByPartyAndTypeResponse</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyRequest"><span class="badge">M</span>AccountsByPartyRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.AccountsByPartyResponse"><span class="badge">M</span>AccountsByPartyResponse</a>
-                </li>
-
-                <li>
                   <a href="#api.AccountsSubscribeRequest"><span class="badge">M</span>AccountsSubscribeRequest</a>
                 </li>
 
@@ -260,6 +228,14 @@
 
                 <li>
                   <a href="#api.MarginLevelsSubscribeRequest"><span class="badge">M</span>MarginLevelsSubscribeRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.MarketAccountsRequest"><span class="badge">M</span>MarketAccountsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.MarketAccountsResponse"><span class="badge">M</span>MarketAccountsResponse</a>
                 </li>
 
                 <li>
@@ -356,6 +332,14 @@
 
                 <li>
                   <a href="#api.PartiesResponse"><span class="badge">M</span>PartiesResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.PartyAccountsRequest"><span class="badge">M</span>PartyAccountsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.PartyAccountsResponse"><span class="badge">M</span>PartyAccountsResponse</a>
                 </li>
 
                 <li>
@@ -601,6 +585,14 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Position"><span class="badge">M</span>Position</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PositionTrade"><span class="badge">M</span>PositionTrade</a>
+                </li>
+
+                <li>
                   <a href="#vega.PriceLevel"><span class="badge">M</span>PriceLevel</a>
                 </li>
 
@@ -704,341 +696,6 @@
         <h2 id="proto/api/trading.proto">proto/api/trading.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
-
-
-        <h3 id="api.AccountsByPartyAndAssetRequest">AccountsByPartyAndAssetRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>asset</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyAndAssetResponse">AccountsByPartyAndAssetResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>accounts</td>
-                  <td><a href="#vega.Account">vega.Account</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyAndMarketRequest">AccountsByPartyAndMarketRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>marketID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>type</td>
-                  <td><a href="#vega.AccountType">vega.AccountType</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyAndMarketResponse">AccountsByPartyAndMarketResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>accounts</td>
-                  <td><a href="#vega.Account">vega.Account</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyAndTypeRequest">AccountsByPartyAndTypeRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>type</td>
-                  <td><a href="#vega.AccountType">vega.AccountType</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyAndTypeResponse">AccountsByPartyAndTypeResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>accounts</td>
-                  <td><a href="#vega.Account">vega.Account</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyRequest">AccountsByPartyRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>type</td>
-                  <td><a href="#vega.AccountType">vega.AccountType</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="api.AccountsByPartyResponse">AccountsByPartyResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>accounts</td>
-                  <td><a href="#vega.Account">vega.Account</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
 
 
         <h3 id="api.AccountsSubscribeRequest">AccountsSubscribeRequest</h3>
@@ -1496,6 +1153,61 @@
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.MarketAccountsRequest">MarketAccountsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.MarketAccountsResponse">MarketAccountsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>accounts</td>
+                  <td><a href="#vega.Account">vega.Account</a></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -2278,6 +1990,75 @@
 
 
 
+        <h3 id="api.PartyAccountsRequest">PartyAccountsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.AccountType">vega.AccountType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PartyAccountsResponse">PartyAccountsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>accounts</td>
+                  <td><a href="#vega.Account">vega.Account</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.PartyByIDRequest">PartyByIDRequest</h3>
         <p></p>
 
@@ -2920,7 +2701,7 @@
               </tr>
 
               <tr>
-                <td>OrderByMarketAndId</td>
+                <td>OrderByMarketAndID</td>
                 <td><a href="#api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</a></td>
                 <td><a href="#api.OrderByMarketAndIdResponse">OrderByMarketAndIdResponse</a></td>
                 <td><p>Get Market Order by OrderID</p></td>
@@ -3109,31 +2890,17 @@
               </tr>
 
               <tr>
-                <td>AccountsByParty</td>
-                <td><a href="#api.AccountsByPartyRequest">AccountsByPartyRequest</a></td>
-                <td><a href="#api.AccountsByPartyResponse">AccountsByPartyResponse</a></td>
-                <td><p>Get Party Accounts by Account Type</p></td>
+                <td>PartyAccounts</td>
+                <td><a href="#api.PartyAccountsRequest">PartyAccountsRequest</a></td>
+                <td><a href="#api.PartyAccountsResponse">PartyAccountsResponse</a></td>
+                <td><p>Get Party accounts</p></td>
               </tr>
 
               <tr>
-                <td>AccountsByPartyAndMarket</td>
-                <td><a href="#api.AccountsByPartyAndMarketRequest">AccountsByPartyAndMarketRequest</a></td>
-                <td><a href="#api.AccountsByPartyAndMarketResponse">AccountsByPartyAndMarketResponse</a></td>
-                <td><p>Get Party Accounts by Market</p></td>
-              </tr>
-
-              <tr>
-                <td>AccountsByPartyAndType</td>
-                <td><a href="#api.AccountsByPartyAndTypeRequest">AccountsByPartyAndTypeRequest</a></td>
-                <td><a href="#api.AccountsByPartyAndTypeResponse">AccountsByPartyAndTypeResponse</a></td>
-                <td><p>Get Party Accounts by Account Type (dup)</p></td>
-              </tr>
-
-              <tr>
-                <td>AccountsByPartyAndAsset</td>
-                <td><a href="#api.AccountsByPartyAndAssetRequest">AccountsByPartyAndAssetRequest</a></td>
-                <td><a href="#api.AccountsByPartyAndAssetResponse">AccountsByPartyAndAssetResponse</a></td>
-                <td><p>Get Party Accounts by Asset</p></td>
+                <td>MarketAccounts</td>
+                <td><a href="#api.MarketAccountsRequest">MarketAccountsRequest</a></td>
+                <td><a href="#api.MarketAccountsResponse">MarketAccountsResponse</a></td>
+                <td><p>Get Market accounts</p></td>
               </tr>
 
           </tbody>
@@ -4755,7 +4522,7 @@
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>do not enforce as not always required
-altho at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it </p></td>
+althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it </p></td>
                 </tr>
 
                 <tr>
@@ -5010,6 +4777,103 @@ altho at least check it&#39;s not a negative integer, would be not that very han
 
 
 
+        <h3 id="vega.Position">Position</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>openVolume</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>realisedPNL</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>unrealisedPNL</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>averageEntryPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>fifoQueue</td>
+                  <td><a href="#vega.PositionTrade">PositionTrade</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PositionTrade">PositionTrade</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>volume</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>price</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.PriceLevel">PriceLevel</h3>
         <p></p>
 
@@ -5114,7 +4978,7 @@ altho at least check it&#39;s not a negative integer, would be not that very han
                   <td>riskFactors</td>
                   <td><a href="#vega.RiskResult.RiskFactorsEntry">RiskResult.RiskFactorsEntry</a></td>
                   <td>repeated</td>
-                  <td><p>risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market </p></td>
+                  <td><p>risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market </p></td>
                 </tr>
 
                 <tr>

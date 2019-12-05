@@ -64,12 +64,12 @@
     - [VegaTimeResponse](#api.VegaTimeResponse)
     - [WithdrawRequest](#api.WithdrawRequest)
     - [WithdrawResponse](#api.WithdrawResponse)
-  
-  
-  
+
+
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
-  
+
 
 - [proto/markets.proto](#proto/markets.proto)
     - [ContinuousTrading](#vega.ContinuousTrading)
@@ -88,10 +88,10 @@
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
-  
-  
-  
-  
+
+
+
+
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
@@ -127,7 +127,7 @@
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
     - [Withdraw](#vega.Withdraw)
-  
+
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
@@ -137,9 +137,9 @@
     - [OrderError](#vega.OrderError)
     - [Side](#vega.Side)
     - [TransferType](#vega.TransferType)
-  
-  
-  
+
+
+
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -1083,11 +1083,11 @@
 
 
 
- 
 
- 
 
- 
+
+
+
 
 
 <a name="api.trading"></a>
@@ -1145,7 +1145,7 @@
 | PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get Party accounts |
 | MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get Market accounts |
 
- 
+
 
 
 
@@ -1425,13 +1425,13 @@
 
 
 
- 
 
- 
 
- 
 
- 
+
+
+
+
 
 
 
@@ -2088,7 +2088,7 @@
 
 
 
- 
+
 
 
 <a name="vega.AccountType"></a>
@@ -2233,11 +2233,11 @@
 | MARGIN_HIGH | 6 |  |
 
 
- 
 
- 
 
- 
+
+
+
 
 
 
