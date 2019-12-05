@@ -49,7 +49,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	} // set asset, reassign the product
 	mkt.TradableInstrument.Instrument.InitialMarkPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
 
-	// wheter it's lambd/tau or short/long depends on the risk model
+	// whether it's lambd/tau or short/long depends on the risk model
 	lambdShort, _ := strconv.ParseFloat(row.Cells[3].Value, 64)
 	tauLong, _ := strconv.ParseFloat(row.Cells[4].Value, 64)
 	// we'll always need to use these
@@ -150,6 +150,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.trades,
 		mktsetup.transfer,
 		mktsetup.marginLevelsBuf,
+		NewSettlementStub(),
 		time.Now(),
 		execution.NewIDGen(),
 	)

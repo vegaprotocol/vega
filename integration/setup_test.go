@@ -55,6 +55,7 @@ type marketTestSetup struct {
 	transfer        *mocks.MockTransferBuf
 	accounts        *accStub
 	marginLevelsBuf *marginsStub
+	settle          *SettleStub
 	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
 	traderAccs map[string]map[proto.AccountType]*proto.Account
@@ -103,6 +104,7 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		transfer:        transfer,
 		accounts:        accounts,
 		marginLevelsBuf: marginLevelsBuf,
+		settle:          NewSettlementStub(),
 		accountIDs:      map[string]struct{}{},
 		traderAccs:      map[string]map[proto.AccountType]*proto.Account{},
 		colE:            colE,
@@ -127,6 +129,7 @@ type executionTestSetup struct {
 	timesvc         *timeStub
 	marketdata      *mocks.MockMarketDataBuf
 	marginLevelsBuf *marginsStub
+	settle          *SettleStub
 
 	// save trader accounts state
 	accs map[string][]account
@@ -160,6 +163,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
 	execsetup.orders = NewOrderStub()
 	execsetup.trades = NewTradeStub()
+	execsetup.settle = NewSettlementStub()
 	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
 	execsetup.transfers = NewTransferStub()
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
@@ -178,7 +182,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, execsetup.marginLevelsBuf, mkts)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, mkts)
 	return execsetup
 }
 

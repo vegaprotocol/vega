@@ -81,7 +81,7 @@ service trading_data {
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
   // Get Market Order by OrderID
-  rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+  rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
 
   // Get an Order by Pending Order reference (UUID)
   rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
@@ -145,17 +145,11 @@ service trading_data {
   rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
   rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream vega.MarginLevels);
 
-  // Get Party Accounts by Account Type
-  rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
+  // Get Party accounts
+  rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
 
-  // Get Party Accounts by Market
-  rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
-
-  // Get Party Accounts by Account Type (dup)
-  rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
-
-  // Get Party Accounts by Asset
-  rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsByPartyAndAssetResponse);
+  // Get Market accounts
+  rpc MarketAccounts(MarketAccountsRequest) returns (MarketAccountsResponse);
 }
 
 message MarginLevelsSubscribeRequest {
@@ -361,40 +355,23 @@ message TradesStream {
   repeated vega.Trade trades = 1;
 }
 
-message AccountsByPartyRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true}];
-  vega.AccountType type = 2;
-}
-
-message AccountsByPartyResponse {
-  repeated vega.Account accounts = 1;
-}
-
-message AccountsByPartyAndMarketRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true}];
+message PartyAccountsRequest {
+  string partyID = 1;
   string marketID = 2;
   vega.AccountType type = 3;
+  string asset = 4;
 }
 
-message AccountsByPartyAndMarketResponse {
+message PartyAccountsResponse {
   repeated vega.Account accounts = 1;
 }
 
-message AccountsByPartyAndTypeRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true}];
-  vega.AccountType type = 2;
-}
-
-message AccountsByPartyAndTypeResponse {
-  repeated vega.Account accounts = 1;
-}
-
-message AccountsByPartyAndAssetRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true}];
+message MarketAccountsRequest {
+  string marketID = 1;
   string asset = 2;
 }
 
-message AccountsByPartyAndAssetResponse {
+message MarketAccountsResponse {
   repeated vega.Account accounts = 1;
 }
 

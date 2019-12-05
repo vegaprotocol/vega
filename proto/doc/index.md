@@ -4,14 +4,6 @@
 ## Table of Contents
 
 - [proto/api/trading.proto](#proto/api/trading.proto)
-    - [AccountsByPartyAndAssetRequest](#api.AccountsByPartyAndAssetRequest)
-    - [AccountsByPartyAndAssetResponse](#api.AccountsByPartyAndAssetResponse)
-    - [AccountsByPartyAndMarketRequest](#api.AccountsByPartyAndMarketRequest)
-    - [AccountsByPartyAndMarketResponse](#api.AccountsByPartyAndMarketResponse)
-    - [AccountsByPartyAndTypeRequest](#api.AccountsByPartyAndTypeRequest)
-    - [AccountsByPartyAndTypeResponse](#api.AccountsByPartyAndTypeResponse)
-    - [AccountsByPartyRequest](#api.AccountsByPartyRequest)
-    - [AccountsByPartyResponse](#api.AccountsByPartyResponse)
     - [AccountsSubscribeRequest](#api.AccountsSubscribeRequest)
     - [AmendOrderRequest](#api.AmendOrderRequest)
     - [CancelOrderRequest](#api.CancelOrderRequest)
@@ -25,6 +17,8 @@
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
     - [MarginLevelsResponse](#api.MarginLevelsResponse)
     - [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest)
+    - [MarketAccountsRequest](#api.MarketAccountsRequest)
+    - [MarketAccountsResponse](#api.MarketAccountsResponse)
     - [MarketByIDRequest](#api.MarketByIDRequest)
     - [MarketByIDResponse](#api.MarketByIDResponse)
     - [MarketDataByIDRequest](#api.MarketDataByIDRequest)
@@ -49,6 +43,8 @@
     - [OrdersSubscribeRequest](#api.OrdersSubscribeRequest)
     - [Pagination](#api.Pagination)
     - [PartiesResponse](#api.PartiesResponse)
+    - [PartyAccountsRequest](#api.PartyAccountsRequest)
+    - [PartyAccountsResponse](#api.PartyAccountsResponse)
     - [PartyByIDRequest](#api.PartyByIDRequest)
     - [PartyByIDResponse](#api.PartyByIDResponse)
     - [PositionsByPartyRequest](#api.PositionsByPartyRequest)
@@ -68,12 +64,12 @@
     - [VegaTimeResponse](#api.VegaTimeResponse)
     - [WithdrawRequest](#api.WithdrawRequest)
     - [WithdrawResponse](#api.WithdrawResponse)
-
-
-
+  
+  
+  
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
-
+  
 
 - [proto/markets.proto](#proto/markets.proto)
     - [ContinuousTrading](#vega.ContinuousTrading)
@@ -92,10 +88,10 @@
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
-
-
-
-
+  
+  
+  
+  
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
@@ -116,6 +112,8 @@
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
     - [PendingOrder](#vega.PendingOrder)
+    - [Position](#vega.Position)
+    - [PositionTrade](#vega.PositionTrade)
     - [PriceLevel](#vega.PriceLevel)
     - [RiskFactor](#vega.RiskFactor)
     - [RiskResult](#vega.RiskResult)
@@ -129,7 +127,7 @@
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
     - [Withdraw](#vega.Withdraw)
-
+  
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
@@ -139,9 +137,9 @@
     - [OrderError](#vega.OrderError)
     - [Side](#vega.Side)
     - [TransferType](#vega.TransferType)
-
-
-
+  
+  
+  
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -151,131 +149,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/api/trading.proto
-
-
-
-<a name="api.AccountsByPartyAndAssetRequest"></a>
-
-### AccountsByPartyAndAssetRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndAssetResponse"></a>
-
-### AccountsByPartyAndAssetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndMarketRequest"></a>
-
-### AccountsByPartyAndMarketRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndMarketResponse"></a>
-
-### AccountsByPartyAndMarketResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndTypeRequest"></a>
-
-### AccountsByPartyAndTypeRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyAndTypeResponse"></a>
-
-### AccountsByPartyAndTypeResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyRequest"></a>
-
-### AccountsByPartyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="api.AccountsByPartyResponse"></a>
-
-### AccountsByPartyResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
-
-
-
 
 
 
@@ -479,6 +352,37 @@
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.MarketAccountsRequest"></a>
+
+### MarketAccountsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.MarketAccountsResponse"></a>
+
+### MarketAccountsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated |  |
 
 
 
@@ -856,6 +760,39 @@
 
 
 
+<a name="api.PartyAccountsRequest"></a>
+
+### PartyAccountsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| type | [vega.AccountType](#vega.AccountType) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.PartyAccountsResponse"></a>
+
+### PartyAccountsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated |  |
+
+
+
+
+
+
 <a name="api.PartyByIDRequest"></a>
 
 ### PartyByIDRequest
@@ -1146,11 +1083,11 @@
 
 
 
+ 
 
+ 
 
-
-
-
+ 
 
 
 <a name="api.trading"></a>
@@ -1178,7 +1115,7 @@
 | ----------- | ------------ | ------------- | ------------|
 | OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get Market Orders |
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get Party Orders |
-| OrderByMarketAndId | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get Market Order by OrderID |
+| OrderByMarketAndID | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get Market Order by OrderID |
 | OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
 | MarketByID | [MarketByIDRequest](#api.MarketByIDRequest) | [MarketByIDResponse](#api.MarketByIDResponse) | Get Market by ID |
 | Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.MarketsResponse) | Get a list of Markets |
@@ -1205,12 +1142,10 @@
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream |  |
 | MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream |  |
 | MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream |  |
-| AccountsByParty | [AccountsByPartyRequest](#api.AccountsByPartyRequest) | [AccountsByPartyResponse](#api.AccountsByPartyResponse) | Get Party Accounts by Account Type |
-| AccountsByPartyAndMarket | [AccountsByPartyAndMarketRequest](#api.AccountsByPartyAndMarketRequest) | [AccountsByPartyAndMarketResponse](#api.AccountsByPartyAndMarketResponse) | Get Party Accounts by Market |
-| AccountsByPartyAndType | [AccountsByPartyAndTypeRequest](#api.AccountsByPartyAndTypeRequest) | [AccountsByPartyAndTypeResponse](#api.AccountsByPartyAndTypeResponse) | Get Party Accounts by Account Type (dup) |
-| AccountsByPartyAndAsset | [AccountsByPartyAndAssetRequest](#api.AccountsByPartyAndAssetRequest) | [AccountsByPartyAndAssetResponse](#api.AccountsByPartyAndAssetResponse) | Get Party Accounts by Asset |
+| PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get Party accounts |
+| MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get Market accounts |
 
-
+ 
 
 
 
@@ -1490,13 +1425,13 @@
 
 
 
+ 
 
+ 
 
+ 
 
-
-
-
-
+ 
 
 
 
@@ -1812,7 +1747,7 @@
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  | make sur for both that they are non nil and the value is part of the respective enums. |
 | TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | do not enforce as not always required altho at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
+| expiresAt | [int64](#int64) |  | do not enforce as not always required althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 
 
@@ -1854,6 +1789,43 @@
 | status | [Order.Status](#vega.Order.Status) |  |  |
 | id | [string](#string) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
+
+
+
+
+
+
+<a name="vega.Position"></a>
+
+### Position
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| openVolume | [int64](#int64) |  |  |
+| realisedPNL | [int64](#int64) |  |  |
+| unrealisedPNL | [int64](#int64) |  |  |
+| averageEntryPrice | [uint64](#uint64) |  |  |
+| fifoQueue | [PositionTrade](#vega.PositionTrade) | repeated |  |
+
+
+
+
+
+
+<a name="vega.PositionTrade"></a>
+
+### PositionTrade
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| volume | [int64](#int64) |  |  |
+| price | [uint64](#uint64) |  |  |
 
 
 
@@ -1904,7 +1876,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | updatedTimestamp | [int64](#int64) |  | timestamp when these risk factors were generated |
-| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market |
+| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market |
 | nextUpdateTimestamp | [int64](#int64) |  | time when risk factors are expected to change (or empty if risk factors are continually updated) |
 | predictedNextRiskFactors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | predicted risk factors at next change (what they&#39;d be if the change occurred now) |
 
@@ -2116,7 +2088,7 @@
 
 
 
-
+ 
 
 
 <a name="vega.AccountType"></a>
@@ -2261,11 +2233,11 @@
 | MARGIN_HIGH | 6 |  |
 
 
+ 
 
+ 
 
-
-
-
+ 
 
 
 

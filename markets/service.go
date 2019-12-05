@@ -114,7 +114,7 @@ func (s *Svc) GetMarketDataByID(marketID string) (types.MarketData, error) {
 	return s.marketDataStore.GetByID(marketID)
 }
 
-// GetMarketDataByID return the market data for a given market
+// GetMarketsData return the market data for a given market
 func (s *Svc) GetMarketsData() []types.MarketData {
 	return s.marketDataStore.GetAll()
 }

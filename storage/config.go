@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/config/encoding"
-	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
@@ -47,7 +46,7 @@ type Config struct {
 
 	Level encoding.LogLevel
 
-	Timeout cfgencoding.Duration
+	Timeout encoding.Duration
 
 	AccountsDirPath string
 	CandlesDirPath  string
@@ -76,7 +75,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		CandlesDirPath:        filepath.Join(defaultStoreDirPath, CandlesDataPath),
 		MarketsDirPath:        filepath.Join(defaultStoreDirPath, MarketsDataPath),
 		LogPositionStoreDebug: false,
-		Timeout:               cfgencoding.Duration{Duration: defaultStorageAccessTimeout},
+		Timeout:               encoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
 }
 
@@ -137,7 +136,7 @@ func NewTestConfig() (Config, error) {
 		CandlesDirPath:        fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
 		MarketsDirPath:        fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
 		LogPositionStoreDebug: true,
-		Timeout:               cfgencoding.Duration{Duration: defaultStorageAccessTimeout},
+		Timeout:               encoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
 
 	if err := ensureDir(cfg.CandlesDirPath); err != nil {

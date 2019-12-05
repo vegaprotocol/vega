@@ -83,7 +83,7 @@ func New(
 		return nil, err
 	}
 
-	log.Info("vega blockchain initialized", logging.String("chain-provider", cfg.ChainProvider))
+	log.Info("vega blockchain initialised", logging.String("chain-provider", cfg.ChainProvider))
 
 	return &Blockchain{
 		log:        log,

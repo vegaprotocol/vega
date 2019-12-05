@@ -169,10 +169,11 @@ func (l *NodeCommand) setupBuffers() {
 
 	l.marginLevelsBuf = buffer.NewMarginLevels()
 	l.marginLevelsBuf.Register(l.riskStore)
+	l.settleBuf = buffer.NewSettlement()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
-	// always enbled market,parties etc stores as they are in memory or boths use them
+	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
 		return
 	}
@@ -193,7 +194,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
-	// if stores are not enbled, initialize the noop stores and do nothing else
+	// if stores are not enabled, initialise the noop stores and do nothing else
 	if !l.conf.StoresEnabled {
 		l.orderStore = storage.NewNoopOrders(l.Log, l.conf.Storage)
 		l.tradeStore = storage.NewNoopTrades(l.Log, l.conf.Storage)
@@ -236,7 +237,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
 
-	// instanciate the execution engine
+	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
@@ -250,11 +251,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.transferBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
+		l.settleBuf,
 		l.mktscfg,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
-	// now instanciate the blockchain layer
+	// now instantiate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.executionEngine, l.timeService, l.stats.Blockchain, l.cancel)
 	if err != nil {
 		return errors.Wrap(err, "unable to start the blockchain")

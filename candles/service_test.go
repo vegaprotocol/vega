@@ -29,7 +29,7 @@ type testService struct {
 type itMatcher struct {
 	market   string
 	interval types.Interval
-	ref      uint64
+	// ref      uint64
 }
 
 func getTestService(t *testing.T) *testService {

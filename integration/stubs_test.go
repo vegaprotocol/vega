@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 )
 
@@ -166,7 +167,7 @@ func (o *orderStub) Get(id string) *proto.Order {
 type transferStub struct {
 	data []*proto.TransferResponse
 	mu   *sync.Mutex
-	err  error // still not conviced about this one
+	err  error // still not convinced about this one
 }
 
 func NewTransferStub() *transferStub {
@@ -251,3 +252,19 @@ func (t *timeStub) SetTime(newNow time.Time) {
 func (t *timeStub) NotifyOnTick(f func(time.Time)) {
 	t.notify = f
 }
+
+type SettleStub struct {
+	data []events.SettlePosition
+}
+
+func NewSettlementStub() *SettleStub {
+	return &SettleStub{
+		data: []events.SettlePosition{},
+	}
+}
+
+func (p *SettleStub) Add(e []events.SettlePosition) {
+	p.data = append(p.data, e...)
+}
+
+func (p *SettleStub) Flush() {}

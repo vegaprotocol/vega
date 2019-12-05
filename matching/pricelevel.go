@@ -23,7 +23,7 @@ type PriceLevel struct {
 	volume            uint64
 }
 
-// NewPriceLevel instanciate a new PriceLevel
+// NewPriceLevel instantiate a new PriceLevel
 func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	return &PriceLevel{
 		price:             price,
@@ -102,7 +102,7 @@ func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
 
 	// return if with have an empty slice
 	if len(l.volumeAtTimestamp) <= 0 {
-		// that should never happend as we never call this with no volume bust stilll ...
+		// that should never happened as we never call this with no volume bust stilll ...
 		return
 	}
 

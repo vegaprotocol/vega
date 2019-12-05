@@ -198,6 +198,10 @@ func (bs *badgerStore) candlePrefix(market string, interval types.Interval, desc
 	return keyPrefix, validForPrefix
 }
 
+func (bs *badgerStore) accountMarketPrefix(accType types.AccountType, marketID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	return bs.getPrefix(bs.getAccountTypePrefix(accType), marketID, descending)
+}
+
 func (bs *badgerStore) accountPartyPrefix(accType types.AccountType, party string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	return bs.getPrefix(bs.getAccountTypePrefix(accType), party, descending)
 }
@@ -282,6 +286,12 @@ func (bs *badgerStore) tradeOrderIDKey(orderID, ID string) []byte {
 }
 
 // Account store keys
+
+// accountGeneralKey relates only to a party and asset, no market index/references
+func (bs *badgerStore) accountInsuranceIDKey(marketID string, assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_INSURANCE), marketID, assetID))
+}
 
 // accountGeneralKey relates only to a party and asset, no market index/references
 func (bs *badgerStore) accountGeneralIDKey(partyID string, assetID string) []byte {

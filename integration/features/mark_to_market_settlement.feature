@@ -46,7 +46,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | ETH/DEC19 |    480 |    8520 |
       | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
       | trader2 | ETH   | ETH/DEC19 |    308 |   10692 |
-    Then the following transfers happend:
+    Then the following transfers happened:
       | from    | to     | fromType | toType     | id        | amount | asset |
       | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | ETH   |
     And All balances cumulated are worth "30000"
@@ -92,7 +92,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | ETH/DEC19 |   1200 |    4800 |
       | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
       | trader2 | ETH   | ETH/DEC19 |    770 |   13230 |
-    Then the following transfers happend:
+    Then the following transfers happened:
       | from    | to     | fromType | toType     | id        | amount | asset |
       | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | ETH   |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
@@ -109,7 +109,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | ETH/DEC19 |     21 |   15879 |
       | trader3 | ETH   | ETH/DEC19 |     13 |    5037 |
       | trader2 | ETH   | ETH/DEC19 |      6 |    9044 |
-    Then the following transfers happend:
+    Then the following transfers happened:
       | from    | to      | fromType | toType     | id        | amount | asset |
       | trader3 | trader3 | GENERAL  | MARGIN     | ETH/DEC19 |   1188 | ETH   |
       | trader3 | market  | MARGIN   | SETTLEMENT | ETH/DEC19 |   1320 | ETH   |

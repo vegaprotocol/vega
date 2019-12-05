@@ -6,8 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
 )
 
 type NoopAccount struct {
@@ -46,19 +44,11 @@ func (a *NoopAccount) Close() error {
 	return nil
 }
 
-func (a *NoopAccount) GetByParty(partyID string) ([]*types.Account, error) {
+func (a *NoopAccount) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
 	return []*types.Account{}, nil
 }
 
-func (a *NoopAccount) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
-	return []*types.Account{}, nil
-}
-
-func (a *NoopAccount) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
-	return []*types.Account{}, nil
-}
-
-func (a *NoopAccount) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
+func (a *NoopAccount) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
 	return []*types.Account{}, nil
 }
 
@@ -104,5 +94,5 @@ func (a *NoopAccount) Unsubscribe(id uint64) error {
 	a.log.Warn("Un-subscribe called in account store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return errors.New(fmt.Sprintf("NoopAccount store subscriber does not exist with id: %d", id))
+	return fmt.Errorf("subscriber to NoopAccount does not exist with id: %d", id)
 }

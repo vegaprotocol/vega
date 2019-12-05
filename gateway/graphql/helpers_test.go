@@ -51,7 +51,7 @@ func TestParseOrderStatus(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_Cancelled, status)
 	unknown := OrderStatus("好候")
-	status, err = parseOrderStatus(&unknown)
+	_, err = parseOrderStatus(&unknown)
 	assert.Error(t, err)
 }
 
@@ -73,7 +73,7 @@ func TestParseOrderTimeInForce(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_GTC, orderType)
 	unknown := OrderTimeInForce("好到时候")
-	orderType, err = parseOrderTimeInForce(unknown)
+	_, err = parseOrderTimeInForce(unknown)
 	assert.Error(t, err)
 
 }
@@ -88,6 +88,6 @@ func TestParseSide(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, types.Side_Sell, side)
 	unknown := Side("好到时候")
-	side, err = parseSide(&unknown)
+	_, err = parseSide(&unknown)
 	assert.Error(t, err)
 }

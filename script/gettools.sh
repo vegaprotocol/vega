@@ -38,7 +38,7 @@ honnef.co/go/tools/cmd/staticcheck@2019.2.3"
 }
 
 check_protoc() {
-	echo "Checking for existance: protoc"
+	echo "Checking for existence: protoc"
 	if ! command -v protoc 1>/dev/null ; then \
 		echo "Not found on \$PATH: protoc" >/dev/stderr
 		echo "Please install it from ${PROTOC_URL}" >/dev/stderr

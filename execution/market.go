@@ -78,6 +78,7 @@ type Market struct {
 	transferBuf     TransferBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
+	settleBuf       SettlementBuf
 
 	closed bool
 }
@@ -122,6 +123,7 @@ func NewMarket(
 	tradeBuf TradeBuf,
 	transferBuf TransferBuf,
 	marginLevelsBuf MarginLevelsBuf,
+	settlementBuf SettlementBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -147,7 +149,7 @@ func NewMarket(
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
+	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id, settlementBuf)
 
 	// start first candle
 	candleBuf.Start(mkt.Id, now)
@@ -172,12 +174,12 @@ func NewMarket(
 		candleBuf:          candleBuf,
 		transferBuf:        transferBuf,
 		marginLevelsBuf:    marginLevelsBuf,
+		settleBuf:          settlementBuf,
 	}
 
 	return market, nil
 }
 
-// GetMarkPrice - quick fix add this here to ensure the mark price has indeed updated
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()

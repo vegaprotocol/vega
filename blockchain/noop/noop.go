@@ -90,7 +90,7 @@ func (n *NOOPChain) startTicker() {
 			case tx := <-n.txs:
 				n.totalTxLastBatch++
 				n.proc.Process(tx)
-			case _ = <-n.ticker.C:
+			case <-n.ticker.C:
 				n.log.Info("committing block",
 					logging.String("chain-provider", "noop"),
 					logging.Uint64("block-height", n.blockHeight),
@@ -119,7 +119,6 @@ func (n *NOOPChain) Stop() error {
 	return nil
 }
 
-// implementation of the client stuff
 func (n *NOOPChain) GetGenesisTime(context.Context) (time.Time, error) {
 	return n.genesisTime, nil
 }

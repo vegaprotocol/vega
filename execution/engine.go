@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -50,6 +51,13 @@ type MarketBuf interface {
 type PartyBuf interface {
 	Add(types.Party)
 	Flush() error
+}
+
+// SettlementBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
+type SettlementBuf interface {
+	Add([]events.SettlePosition)
+	Flush()
 }
 
 // TimeService ...
@@ -106,6 +114,7 @@ type Engine struct {
 	transferBuf     TransferBuf
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
+	settleBuf       SettlementBuf
 
 	time TimeService
 }
@@ -125,6 +134,7 @@ func NewEngine(
 	transferBuf TransferBuf,
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
+	settleBuf SettlementBuf,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -139,7 +149,7 @@ func NewEngine(
 	//  create collateral
 	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, now)
 	if err != nil {
-		log.Error("unable to initialize collateral", logging.Error(err))
+		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
 	}
 
@@ -159,6 +169,7 @@ func NewEngine(
 		transferBuf:     transferBuf,
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
+		settleBuf:       settleBuf,
 		idgen:           NewIDGen(),
 	}
 
@@ -247,6 +258,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.tradeBuf,
 		e.transferBuf,
 		e.marginLevelsBuf,
+		e.settleBuf,
 		now,
 		e.idgen,
 	)

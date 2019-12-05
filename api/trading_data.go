@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	google_proto "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -131,10 +130,8 @@ type BlockchainClient interface {
 // AccountsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/api AccountsService
 type AccountsService interface {
-	GetByParty(partyID string) ([]*types.Account, error)
-	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
-	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
-	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
+	GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error)
+	GetMarketAccounts(marketID, asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -145,7 +142,7 @@ type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
 }
 
-// RiskService
+// RiskService ...
 type RiskService interface {
 	ObserveMarginLevels(
 		ctx context.Context, retries int, partyID, marketID string,
@@ -229,7 +226,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.Empty) (*protoapi.MarketsResponse, error) {
+func (h *tradingDataService) Markets(ctx context.Context, request *empty.Empty) (*protoapi.MarketsResponse, error) {
 	markets, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -240,8 +237,8 @@ func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.
 	}, nil
 }
 
-// OrdersByMarketAndId provides the given order, searching by Market and (Order)Id.
-func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
+// OrdersByMarketAndID provides the given order, searching by Market and (Order)Id.
+func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
@@ -410,7 +407,7 @@ func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*pr
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
-func (h *tradingDataService) Statistics(ctx context.Context, request *google_proto.Empty) (*types.Statistics, error) {
+func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empty) (*types.Statistics, error) {
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
@@ -492,7 +489,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 
 // GetVegaTime returns the latest blockchain header timestamp, in UnixNano format.
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
-func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*protoapi.VegaTimeResponse, error) {
+func (h *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.VegaTimeResponse, error) {
 	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
@@ -1084,7 +1081,7 @@ func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.Marke
 }
 
 // Parties provides a list of all parties.
-func (h *tradingDataService) Parties(ctx context.Context, req *google_proto.Empty) (*protoapi.PartiesResponse, error) {
+func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*protoapi.PartiesResponse, error) {
 	parties, err := h.PartyService.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -1150,7 +1147,7 @@ func (h *tradingDataService) LastTrade(
 	if err != nil {
 		return nil, err
 	}
-	if t != nil && len(t) > 0 && t[0] != nil {
+	if len(t) > 0 && t[0] != nil {
 		return &protoapi.LastTradeResponse{Trade: t[0]}, nil
 	}
 	// No trades found on the market yet (and no errors)
@@ -1158,46 +1155,22 @@ func (h *tradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
-// AccountsByParty provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
-	accs, err := h.AccountsService.GetByParty(req.PartyID)
+func (h *tradingDataService) MarketAccounts(_ context.Context, req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	accs, err := h.AccountsService.GetMarketAccounts(req.MarketID, req.Asset)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyResponse{
+	return &protoapi.MarketAccountsResponse{
 		Accounts: accs,
 	}, nil
 }
 
-// AccountsByPartyAndMarket provides a list of accounts for the given party and market.
-func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
+func (h *tradingDataService) PartyAccounts(_ context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
+	accs, err := h.AccountsService.GetPartyAccounts(req.PartyID, req.MarketID, req.Asset, req.Type)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyAndMarketResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndType provides a list of accounts of the given type for the given party.
-func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndTypeResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndAsset provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndAssetResponse{
+	return &protoapi.PartyAccountsResponse{
 		Accounts: accs,
 	}, nil
 }

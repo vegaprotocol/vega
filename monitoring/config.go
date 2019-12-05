@@ -23,7 +23,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:    encoding.LogLevel{Level: logging.InfoLevel},
-		Interval: encoding.Duration{Duration: 500 * time.Millisecond}, // this will be 500*time.Milliseconds when instanciated
+		Interval: encoding.Duration{Duration: 500 * time.Millisecond}, // this will be 500*time.Milliseconds when instantiated
 		Retries:  5,
 	}
 }

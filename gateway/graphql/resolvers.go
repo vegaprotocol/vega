@@ -10,9 +10,7 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
 	"google.golang.org/grpc"
@@ -36,7 +34,7 @@ type TradingClient interface {
 	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	SignIn(ctx context.Context, in *protoapi.SignInRequest, opts ...grpc.CallOption) (*protoapi.SignInResponse, error)
 	// unary calls - reads
-	CheckToken(context.Context, *api.CheckTokenRequest, ...grpc.CallOption) (*api.CheckTokenResponse, error)
+	CheckToken(context.Context, *protoapi.CheckTokenRequest, ...grpc.CallOption) (*protoapi.CheckTokenResponse, error)
 }
 
 // TradingDataClient ...
@@ -46,7 +44,7 @@ type TradingDataClient interface {
 	OrdersByMarket(ctx context.Context, in *protoapi.OrdersByMarketRequest, opts ...grpc.CallOption) (*protoapi.OrdersByMarketResponse, error)
 	OrderByReference(ctx context.Context, in *protoapi.OrderByReferenceRequest, opts ...grpc.CallOption) (*protoapi.OrderByReferenceResponse, error)
 	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
-	OrderByMarketAndId(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
+	OrderByMarketAndID(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
 	// markets
 	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
@@ -77,10 +75,8 @@ type TradingDataClient interface {
 	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
 	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
 	// accounts
-	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
-	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
-	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
-	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
+	PartyAccounts(ctx context.Context, req *protoapi.PartyAccountsRequest, opts ...grpc.CallOption) (*protoapi.PartyAccountsResponse, error)
+	MarketAccounts(ctx context.Context, req *protoapi.MarketAccountsRequest, opts ...grpc.CallOption) (*protoapi.MarketAccountsResponse, error)
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 }
@@ -94,7 +90,7 @@ type VegaResolverRoot struct {
 	tradingDataClient TradingDataClient
 }
 
-// NewResolverRoot instanciate a graphql root resolver
+// NewResolverRoot instantiate a graphql root resolver
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
@@ -130,12 +126,12 @@ func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
 }
 
-// MarketData returns the market depth resolver
+// MarketData returns the market data resolver
 func (r *VegaResolverRoot) MarketData() MarketDataResolver {
 	return (*myMarketDataResolver)(r)
 }
 
-// Margins returns the market depth resolver
+// MarginLevels returns the market levels resolver
 func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
 }
@@ -247,7 +243,7 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*Party, 
 		return nil, err
 	}
 	return []*Party{
-		&Party{ID: pty.ID},
+		{ID: pty.ID},
 	}, nil
 }
 
@@ -406,8 +402,41 @@ func (r *myMarketResolver) OrderByReference(ctx context.Context, market *Market,
 	return res.Order, nil
 }
 
-func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, accType *AccountType) ([]*types.Account, error) {
-	return nil, errors.New("not implemented yet")
+// Accounts ...
+// if partyID specified get margin account for the given market
+// if nil return the insurance pool for the market
+func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID *string) ([]*types.Account, error) {
+	// get margin account for a party
+	if partyID != nil {
+		req := protoapi.PartyAccountsRequest{
+			PartyID:  *partyID,
+			MarketID: market.ID,
+			Type:     types.AccountType_MARGIN,
+			Asset:    "",
+		}
+		res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
+		if err != nil {
+			r.log.Error("unable to get PartyAccounts",
+				logging.Error(err),
+				logging.String("market-id", market.ID),
+				logging.String("party-id", *partyID))
+			return []*types.Account{}, err
+		}
+		return res.Accounts, nil
+	}
+	// get accounts for the market
+	req := protoapi.MarketAccountsRequest{
+		MarketID: market.ID,
+		Asset:    "", // all assets
+	}
+	res, err := r.tradingDataClient.MarketAccounts(ctx, &req)
+	if err != nil {
+		r.log.Error("unable to get MarketAccounts",
+			logging.Error(err),
+			logging.String("market-id", market.ID))
+		return []*types.Account{}, err
+	}
+	return res.Accounts, nil
 }
 
 // END: Market Resolver
@@ -452,9 +481,7 @@ func (r *myPartyResolver) Margins(ctx context.Context, party *Party, marketID *s
 		return nil, err
 	}
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
-	for _, v := range res.MarginLevels {
-		out = append(out, v)
-	}
+	out = append(out, res.MarginLevels...)
 	return out, nil
 }
 
@@ -518,64 +545,61 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.M
 	return res.Positions, nil
 }
 
+func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
+	switch acc {
+	case AccountTypeGeneral:
+		return types.AccountType_GENERAL, nil
+	case AccountTypeMargin:
+		return types.AccountType_MARGIN, nil
+	case AccountTypeInsurance:
+		return types.AccountType_INSURANCE, nil
+	case AccountTypeSettlement:
+		return types.AccountType_SETTLEMENT, nil
+	default:
+		return types.AccountType_NO_ACC, fmt.Errorf("invalid account type %v", acc)
+	}
+}
+
 func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
 	if pty == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
-	// Ensure default account types values
-	general := AccountTypeGeneral
-	margin := AccountTypeMargin
-	if accType == nil {
-		if marketID != nil {
-			accType = &margin
-		} else {
-			accType = &general
+	var (
+		mktid = ""
+		asst  = ""
+		accTy = types.AccountType_NO_ACC
+		err   error
+	)
+
+	if marketID != nil {
+		mktid = *marketID
+	}
+	if asset != nil {
+		asst = *asset
+	}
+	if accType != nil {
+		accTy, err = AccountTypeToProto(*accType)
+		if err != nil || (accTy != types.AccountType_GENERAL && accTy != types.AccountType_MARGIN) {
+			return nil, fmt.Errorf("inalid account type for party %v", accType)
 		}
 	}
-	// Depending on Accounts params, select the correct gRPC call
-	switch *accType {
-	case AccountTypeMargin:
-		if marketID == nil {
-			return nil, errors.New("a market must be specified when querying for a margin account")
-		}
-		req := protoapi.AccountsByPartyAndMarketRequest{
-			PartyID:  pty.ID,
-			MarketID: *marketID,
-			Type:     types.AccountType_MARGIN,
-		}
-		resp, err := r.tradingDataClient.AccountsByPartyAndMarket(ctx, &req)
-		if err != nil {
-			return nil, err
-		}
-		accounts := make([]*types.Account, 0, len(resp.Accounts))
-		for _, acc := range resp.Accounts {
-			if asset == nil || acc.Asset == *asset {
-				accounts = append(accounts, acc)
-			}
-		}
-		return accounts, nil
-	case AccountTypeGeneral:
-		req := protoapi.AccountsByPartyRequest{
-			PartyID: pty.ID,
-			Type:    types.AccountType_GENERAL,
-		}
-		resp, err := r.tradingDataClient.AccountsByParty(ctx, &req)
-		if err != nil {
-			return nil, err
-		}
-		accounts := make([]*types.Account, 0, len(resp.Accounts))
-		for _, acc := range resp.Accounts {
-			acc := acc
-			if asset == nil || acc.Asset == *asset {
-				accounts = append(accounts, acc)
-			}
-		}
-		return accounts, nil
+	req := protoapi.PartyAccountsRequest{
+		PartyID:  pty.ID,
+		MarketID: mktid,
+		Asset:    asst,
+		Type:     accTy,
 	}
-	//Note: there's currently no read store for the following account types
-	// AccountTypeInsurance
-	// AccountTypeSettlement
-	return nil, errors.New("account type specified is not supported")
+	res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
+	if err != nil {
+		r.log.Error("unable to get Party account",
+			logging.Error(err),
+			logging.String("party-id", pty.ID),
+			logging.String("market-id", mktid),
+			logging.String("asset", asst),
+			logging.String("type", accTy.String()))
+		return nil, err
+	}
+	return res.Accounts, nil
 }
 
 // END: Party Resolver
@@ -739,45 +763,45 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 
 type myOrderResolver VegaResolverRoot
 
-func RejectionReasonFromProtoOrderError(o proto.OrderError) (RejectionReason, error) {
+func RejectionReasonFromProtoOrderError(o types.OrderError) (RejectionReason, error) {
 	switch o {
-	case proto.OrderError_INVALID_MARKET_ID:
+	case types.OrderError_INVALID_MARKET_ID:
 		return RejectionReasonInvalidMarketID, nil
-	case proto.OrderError_INVALID_ORDER_ID:
+	case types.OrderError_INVALID_ORDER_ID:
 		return RejectionReasonInvalidOrderID, nil
-	case proto.OrderError_ORDER_OUT_OF_SEQUENCE:
+	case types.OrderError_ORDER_OUT_OF_SEQUENCE:
 		return RejectionReasonOrderOutOfSequence, nil
-	case proto.OrderError_INVALID_REMAINING_SIZE:
+	case types.OrderError_INVALID_REMAINING_SIZE:
 		return RejectionReasonInvalidRemainingSize, nil
-	case proto.OrderError_TIME_FAILURE:
+	case types.OrderError_TIME_FAILURE:
 		return RejectionReasonTimeFailure, nil
-	case proto.OrderError_ORDER_REMOVAL_FAILURE:
+	case types.OrderError_ORDER_REMOVAL_FAILURE:
 		return RejectionReasonOrderRemovalFailure, nil
-	case proto.OrderError_INVALID_EXPIRATION_DATETIME:
+	case types.OrderError_INVALID_EXPIRATION_DATETIME:
 		return RejectionReasonInvalidExpirationTime, nil
-	case proto.OrderError_INVALID_ORDER_REFERENCE:
+	case types.OrderError_INVALID_ORDER_REFERENCE:
 		return RejectionReasonInvalidOrderReference, nil
-	case proto.OrderError_EDIT_NOT_ALLOWED:
+	case types.OrderError_EDIT_NOT_ALLOWED:
 		return RejectionReasonEditNotAllowed, nil
-	case proto.OrderError_ORDER_AMEND_FAILURE:
+	case types.OrderError_ORDER_AMEND_FAILURE:
 		return RejectionReasonOrderAmendFailure, nil
-	case proto.OrderError_ORDER_NOT_FOUND:
+	case types.OrderError_ORDER_NOT_FOUND:
 		return RejectionReasonOrderNotFound, nil
-	case proto.OrderError_INVALID_PARTY_ID:
+	case types.OrderError_INVALID_PARTY_ID:
 		return RejectionReasonInvalidPartyID, nil
-	case proto.OrderError_MARKET_CLOSED:
+	case types.OrderError_MARKET_CLOSED:
 		return RejectionReasonMarketClosed, nil
-	case proto.OrderError_MARGIN_CHECK_FAILED:
+	case types.OrderError_MARGIN_CHECK_FAILED:
 		return RejectionReasonMarginCheckFailed, nil
-	case proto.OrderError_INTERNAL_ERROR:
+	case types.OrderError_INTERNAL_ERROR:
 		return RejectionReasonInternalError, nil
 	default:
-		return RejectionReason(""), fmt.Errorf("Invalid RejectionReason: %v", o)
+		return RejectionReason(""), fmt.Errorf("invalid RejectionReason: %v", o)
 	}
 }
 
-func (r *myOrderResolver) RejectionReason(_ context.Context, o *proto.Order) (*RejectionReason, error) {
-	if o.Reason == proto.OrderError_NONE {
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*RejectionReason, error) {
+	if o.Reason == types.OrderError_NONE {
 		return nil, nil
 	}
 	reason, err := RejectionReasonFromProtoOrderError(o.Reason)
@@ -1277,7 +1301,7 @@ func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *strin
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *types.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
@@ -1293,7 +1317,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		ty = typeArg.IntoProto()
 	}
 
-	req := &api.AccountsSubscribeRequest{
+	req := &protoapi.AccountsSubscribeRequest{
 		MarketID: mkt,
 		PartyID:  pty,
 		Type:     ty,
@@ -1337,7 +1361,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 		pty = *party
 	}
 
-	req := &api.OrdersSubscribeRequest{
+	req := &protoapi.OrdersSubscribeRequest{
 		MarketID: mkt,
 		PartyID:  pty,
 	}
@@ -1380,7 +1404,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 		pty = *party
 	}
 
-	req := &api.TradesSubscribeRequest{
+	req := &protoapi.TradesSubscribeRequest{
 		MarketID: mkt,
 		PartyID:  pty,
 	}
@@ -1413,7 +1437,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 }
 
 func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.MarketPosition, error) {
-	req := &api.PositionsSubscribeRequest{
+	req := &protoapi.PositionsSubscribeRequest{
 		PartyID: party,
 	}
 	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
@@ -1445,7 +1469,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<
 }
 
 func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
-	req := &api.MarketDepthSubscribeRequest{
+	req := &protoapi.MarketDepthSubscribeRequest{
 		MarketID: market,
 	}
 	stream, err := r.tradingDataClient.MarketDepthSubscribe(ctx, req)
@@ -1483,7 +1507,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		r.log.Debug("invalid interval for candles subscriptions", logging.Error(err))
 	}
 
-	req := &api.CandlesSubscribeRequest{
+	req := &protoapi.CandlesSubscribeRequest{
 		MarketID: market,
 		Interval: pinterval,
 	}
@@ -1518,7 +1542,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 type myPendingOrderResolver VegaResolverRoot
 
-func (r *myPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error) {
+func (r *myPendingOrderResolver) Type(ctx context.Context, obj *types.PendingOrder) (*OrderType, error) {
 	if obj != nil {
 		ot := OrderType(obj.Type.String())
 		return &ot, nil
@@ -1526,7 +1550,7 @@ func (r *myPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrd
 	return nil, ErrNilPendingOrder
 }
 
-func (r *myPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
+func (r *myPendingOrderResolver) Price(ctx context.Context, obj *types.PendingOrder) (*string, error) {
 	if obj != nil {
 		str := fmt.Sprintf("%v", obj.Price)
 		return &str, nil
@@ -1534,7 +1558,7 @@ func (r *myPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOr
 	return nil, ErrNilPendingOrder
 }
 
-func (r *myPendingOrderResolver) TimeInForce(ctx context.Context, obj *proto.PendingOrder) (*OrderTimeInForce, error) {
+func (r *myPendingOrderResolver) TimeInForce(ctx context.Context, obj *types.PendingOrder) (*OrderTimeInForce, error) {
 	if obj != nil {
 		ot := OrderTimeInForce(obj.TimeInForce.String())
 		return &ot, nil
@@ -1542,7 +1566,7 @@ func (r *myPendingOrderResolver) TimeInForce(ctx context.Context, obj *proto.Pen
 	return nil, ErrNilPendingOrder
 }
 
-func (r *myPendingOrderResolver) Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error) {
+func (r *myPendingOrderResolver) Side(ctx context.Context, obj *types.PendingOrder) (*Side, error) {
 	if obj != nil {
 		s := Side(obj.Side.String())
 		return &s, nil
@@ -1550,7 +1574,7 @@ func (r *myPendingOrderResolver) Side(ctx context.Context, obj *proto.PendingOrd
 	return nil, ErrNilPendingOrder
 }
 
-func (r *myPendingOrderResolver) Market(ctx context.Context, pord *proto.PendingOrder) (*Market, error) {
+func (r *myPendingOrderResolver) Market(ctx context.Context, pord *types.PendingOrder) (*Market, error) {
 	if pord == nil {
 		return nil, errors.New("invalid pending order")
 	}
@@ -1564,21 +1588,21 @@ func (r *myPendingOrderResolver) Market(ctx context.Context, pord *proto.Pending
 	return MarketFromProto(res.Market)
 }
 
-func (r *myPendingOrderResolver) Party(ctx context.Context, pord *proto.PendingOrder) (*Party, error) {
+func (r *myPendingOrderResolver) Party(ctx context.Context, pord *types.PendingOrder) (*Party, error) {
 	if pord == nil {
 		return nil, nil
 	}
 	return &Party{ID: pord.PartyID}, nil
 }
 
-func (r *myPendingOrderResolver) Size(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
+func (r *myPendingOrderResolver) Size(ctx context.Context, obj *types.PendingOrder) (*string, error) {
 	if obj != nil {
 		str := fmt.Sprintf("%v", obj.Size)
 		return &str, nil
 	}
 	return nil, ErrNilPendingOrder
 }
-func (r *myPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error) {
+func (r *myPendingOrderResolver) Status(ctx context.Context, obj *types.PendingOrder) (*OrderStatus, error) {
 	if obj != nil {
 		os := OrderStatus(obj.Status.String())
 		return &os, nil
@@ -1592,12 +1616,12 @@ func (r *myPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingO
 
 type myAccountResolver VegaResolverRoot
 
-func (r *myAccountResolver) Balance(ctx context.Context, acc *proto.Account) (string, error) {
+func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (string, error) {
 	bal := fmt.Sprintf("%d", acc.Balance)
 	return bal, nil
 }
 
-func (r *myAccountResolver) Market(ctx context.Context, acc *proto.Account) (*Market, error) {
+func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Market, error) {
 	if acc == nil {
 		return nil, errors.New("invalid account")
 	}
@@ -1616,7 +1640,7 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *proto.Account) (*Ma
 	return nil, nil
 }
 
-func (r *myAccountResolver) Type(ctx context.Context, obj *proto.Account) (AccountType, error) {
+func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
 	var t AccountType
 	switch obj.Type {
 	case types.AccountType_MARGIN:
@@ -1635,70 +1659,70 @@ func (r *myAccountResolver) Type(ctx context.Context, obj *proto.Account) (Accou
 
 type myStatisticsResolver VegaResolverRoot
 
-func (r *myStatisticsResolver) BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) BlockHeight(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.BlockHeight), nil
 }
 
-func (r *myStatisticsResolver) BacklogLength(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) BacklogLength(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.BacklogLength), nil
 }
 
-func (r *myStatisticsResolver) TotalPeers(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalPeers(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalPeers), nil
 }
 
-func (r *myStatisticsResolver) Status(ctx context.Context, obj *proto.Statistics) (string, error) {
+func (r *myStatisticsResolver) Status(ctx context.Context, obj *types.Statistics) (string, error) {
 	return obj.Status.String(), nil
 }
 
-func (r *myStatisticsResolver) TxPerBlock(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TxPerBlock(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TxPerBlock), nil
 }
 
-func (r *myStatisticsResolver) AverageTxBytes(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) AverageTxBytes(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.AverageTxBytes), nil
 }
 
-func (r *myStatisticsResolver) AverageOrdersPerBlock(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) AverageOrdersPerBlock(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.AverageOrdersPerBlock), nil
 }
 
-func (r *myStatisticsResolver) TradesPerSecond(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TradesPerSecond(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TradesPerSecond), nil
 }
 
-func (r *myStatisticsResolver) OrdersPerSecond(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) OrdersPerSecond(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.OrdersPerSecond), nil
 }
 
-func (r *myStatisticsResolver) TotalMarkets(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalMarkets(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalMarkets), nil
 }
 
-func (r *myStatisticsResolver) TotalParties(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalParties(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalParties), nil
 }
 
-func (r *myStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalAmendOrder), nil
 }
 
-func (r *myStatisticsResolver) TotalCancelOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalCancelOrder(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalCancelOrder), nil
 }
 
-func (r *myStatisticsResolver) TotalCreateOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalCreateOrder(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalCreateOrder), nil
 }
 
-func (r *myStatisticsResolver) TotalOrders(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalOrders(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalOrders), nil
 }
 
-func (r *myStatisticsResolver) TotalTrades(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) TotalTrades(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalTrades), nil
 }
 
-func (r *myStatisticsResolver) BlockDuration(ctx context.Context, obj *proto.Statistics) (int, error) {
+func (r *myStatisticsResolver) BlockDuration(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.BlockDuration), nil
 }

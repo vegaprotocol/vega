@@ -484,10 +484,8 @@ func waitSig(cancel func()) {
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 
-	select {
-	case sig := <-gracefulStop:
-		log.Printf("Caught signal name=%v", sig)
-		log.Printf("closing client connections")
-		cancel()
-	}
+	sig := <-gracefulStop
+	log.Printf("Caught signal name=%v", sig)
+	log.Printf("closing client connections")
+	cancel()
 }

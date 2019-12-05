@@ -206,49 +206,6 @@ message OrderResponse {
 
 Cancellations typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
-## Benchmarks
-
-There are two ways to run benchmarks:
-* by using `go test -bench`; or
-* by running `vegabench`.
-
-To run benchmarks using `go test -bench`, run:
-```bash
-export GOMAXPROCS=4 # default 8
-go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
-# or simply: make bench
-```
-The output should look something like this:
-```
-BenchmarkMatching100-4  100  22525798 ns/op  13168713 B/op  24021 allocs/op
-```
-Output components:
-* `BenchmarkMatching100` - the name of the test
-* `-4` - the max number of processes (`$GOMAXPROCS`)
-* _number_ - the number of times `go` ran the test so that it took longer than `benchtime`
-* _number_ `ns/op` - average number of nanoseconds per operation
-* _number_ `B/op` - average number of bytes allocated per operation
-* _number_ `allocs/op` - average number of allocations per operation
-
-To run benchmarks using `vegabench`, run:
-```bash
-make build # generate the vegabench binary
-./cmd/vegabench/vegabench -orders 25000 -reportDuration 1s
-```
-For help with command arguments, run `vegabench --help`.
-
-The output should look something like this:
-```
-(25.93%) Elapsed = 1s, average = 154.273µs
-(54.10%) Elapsed = 2s, average = 147.961µs
-(82.48%) Elapsed = 3s, average = 145.549µs
-(n=25000) Elapsed = 4s, average = 143.386µs
-```
-Output components:
-* _percentage_ - how far through the test we are
-* `n=` _number_ - the total number of orders
-* `Elapsed =` _time duration_ - how much time has passed since the start of the test; One output line should be printed once every `reportDuration`
-* `average =` _time duration_ - running average (from beginning to now) time taken to match an order
 
 ## Troubleshooting & debugging
 
