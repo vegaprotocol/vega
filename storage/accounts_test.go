@@ -201,7 +201,7 @@ func createAccountStore(t *testing.T, dir string) *storage.Account {
 		Accounts:        storage.DefaultStoreOptions(),
 		AccountsDirPath: dir,
 	}
-	accountStore, err := storage.NewAccounts(logging.NewTestLogger(), config)
+	accountStore, err := storage.NewAccounts(logging.NewTestLogger(), config, func() {})
 	assert.NoError(t, err)
 	assert.NotNil(t, accountStore)
 
