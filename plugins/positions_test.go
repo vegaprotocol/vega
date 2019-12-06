@@ -35,7 +35,9 @@ type posPluginTst struct {
 func TestStartStop(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
-	ch := make(chan []events.SettlePosition)
+	// make buffered channel. We're not going to be waiting on anything from here anyway
+	// if it's not buffered the select-case might be blocking
+	ch := make(chan []events.SettlePosition, 1)
 	ref := 0
 	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
 	position.pos.EXPECT().Unsubscribe(ref).Times(1).DoAndReturn(func(_ int) {
@@ -47,10 +49,8 @@ func TestStartStop(t *testing.T) {
 
 func TestProcessBufferData(t *testing.T) {
 	position := getPosPlugin(t)
-	// defer position.Finish()
-	// ch := make(chan []events.SettlePosition, 1)
-	// make this blocking, ensuring all data is available
-	ch := make(chan []events.SettlePosition)
+	defer position.Finish()
+	ch := make(chan []events.SettlePosition, 1)
 	ref := 1
 	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
 	position.pos.EXPECT().Unsubscribe(ref).Times(1).DoAndReturn(func(_ int) {
@@ -82,9 +82,7 @@ func TestProcessBufferData(t *testing.T) {
 	position.Stop()
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(pp))
-	position.cfunc()
-	position.ctrl.Finish()
+	assert.Equal(t, 2, len(pp))
 }
 
 func getPosPlugin(t *testing.T) *posPluginTst {
