@@ -56,9 +56,7 @@ var (
 		},
 	}
 
-	riskMinamount      int64  = 250
-	riskRequiredMargin int64  = 300
-	markPrice          uint64 = 100
+	markPrice uint64 = 100
 )
 
 func TestUpdateMargins(t *testing.T) {

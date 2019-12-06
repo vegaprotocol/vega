@@ -36,10 +36,11 @@ type Account struct {
 	batchCountForGC int32
 	subscribers     map[uint64]chan []*types.Account
 	subscriberID    uint64
+	onCriticalError func()
 }
 
 // NewAccounts creates a new account store with the logger and configuration specified.
-func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
+func NewAccounts(log *logging.Logger, c Config, onCriticalError func()) (*Account, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
@@ -52,10 +53,11 @@ func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
 	}
 
 	return &Account{
-		log:         log,
-		Config:      c,
-		badger:      &badgerStore{db: db},
-		subscribers: map[uint64]chan []*types.Account{},
+		log:             log,
+		Config:          c,
+		badger:          &badgerStore{db: db},
+		subscribers:     map[uint64]chan []*types.Account{},
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
@@ -219,6 +221,7 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 			"Unable to write accounts batch",
 			logging.Error(err),
 			logging.Int("batch-size", len(accs)))
+		a.onCriticalError()
 
 		return err
 	}
@@ -268,7 +271,6 @@ func (a *Account) notify(accs []*types.Account) {
 		select {
 		case sub <- accs:
 			ok = true
-			break
 		default:
 			ok = false
 		}

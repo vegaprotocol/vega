@@ -112,21 +112,21 @@ func getTestGRPCServer(
 	}()
 
 	// Account Store
-	accountStore, err := storage.NewAccounts(logger, conf.Storage)
+	accountStore, err := storage.NewAccounts(logger, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create account store")
 		return
 	}
 
 	// Candle Store
-	candleStore, err := storage.NewCandles(logger, conf.Storage)
+	candleStore, err := storage.NewCandles(logger, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create candle store")
 		return
 	}
 
 	// Market Store
-	marketStore, err := storage.NewMarkets(logger, conf.Storage)
+	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create market store")
 		return

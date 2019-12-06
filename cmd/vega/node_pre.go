@@ -174,7 +174,7 @@ func (l *NodeCommand) setupBuffers() {
 
 func (l *NodeCommand) setupStorages() (err error) {
 	// always enabled market,parties etc stores as they are in memory or boths use them
-	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
+	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
@@ -203,7 +203,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 		return
 	}
 
-	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
+	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) })
@@ -218,7 +218,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
 
-	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage); err != nil {
+	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })

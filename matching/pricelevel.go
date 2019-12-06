@@ -97,60 +97,6 @@ func (l *PriceLevel) increaseVolumeByTimestamp(o *types.Order) {
 // once we found the first time stamp not being == 0, then if it is not the expected
 // timestamp, then we will use a binary search to find the correct timestamp as we
 // most likely are in the use case where we remove an order which can be any timestamp
-func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
-	var idx int
-
-	// return if with have an empty slice
-	if len(l.volumeAtTimestamp) <= 0 {
-		// that should never happened as we never call this with no volume bust stilll ...
-		return
-	}
-
-	// figure out where is the first valid timestamp in there
-	// most likely we'll do 0 iteration in here
-	for ; idx < len(l.volumeAtTimestamp) &&
-		l.volumeAtTimestamp[idx].vol == 0; idx++ {
-	}
-	if idx >= len(l.volumeAtTimestamp) {
-		// this should never happen as we should always have enough volume when trying to decrease
-		// , that's weird and should most likely not happen, but let's make sure we do not go out of bound ...
-		return
-	}
-
-	// so now we check the timestamp
-	if l.volumeAtTimestamp[idx].ts == o.CreatedAt {
-		if l.volumeAtTimestamp[idx].vol <= o.Remaining {
-			// FIXME(jeremy): need to make sure we remove the field if it goes < 0
-			l.volumeAtTimestamp[idx].vol = 0
-		} else {
-			l.volumeAtTimestamp[idx].vol -= o.Remaining
-		}
-		return
-	}
-
-	// last case to handle, we did not find the timestamp first
-	// this means we try to delete an order not uncrossing, so let's just remove
-	i := sort.Search(len(l.volumeAtTimestamp), func(i int) bool {
-		return l.volumeAtTimestamp[i].ts >= o.CreatedAt
-	})
-
-	// make sure we found it
-	if i >= len(l.volumeAtTimestamp) &&
-		l.volumeAtTimestamp[i].ts != o.CreatedAt {
-		// we did not find the timestamp, that must be a problem
-		// but is never supposed to happen
-		return
-	}
-
-	// update the pair now as we found it
-	if l.volumeAtTimestamp[i].vol <= o.Remaining {
-		// FIXME(jeremy): need to make sure we remove the field if it goes < 0
-		l.volumeAtTimestamp[i].vol = 0
-		return
-	}
-	l.volumeAtTimestamp[i].vol -= o.Remaining
-}
-
 func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *types.Trade) {
 	var idx int
 
@@ -290,13 +236,6 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 	}
 	l.volumeAtTimestamp = l.volumeAtTimestamp[:copy(l.volumeAtTimestamp[0:], l.volumeAtTimestamp[tsIdx:])]
 	return agg.Remaining == 0, trades, impactedOrders
-}
-
-func (l *PriceLevel) earliestTimestamp() int64 {
-	if len(l.orders) != 0 {
-		return l.orders[0].CreatedAt
-	}
-	return 0
 }
 
 // Get size for a specific trade assuming aggressive order volume is allocated pro-rata among all passive trades

@@ -23,7 +23,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	}
 
 	storage.FlushStores(logging.NewTestLogger(), config)
-	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config)
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -62,7 +62,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	assert.Equal(t, 2, len(candles))
 
-	t.Log(fmt.Sprintf("%s", vegatime.Format(time.Unix(1542106860, 000000000))))
+	t.Log(vegatime.Format(time.Unix(1542106860, 000000000)))
 	assert.Equal(t, int64(1542106860000000000), candles[0].Timestamp)
 	assert.Equal(t, uint64(100), candles[0].High)
 	assert.Equal(t, uint64(100), candles[0].Low)
@@ -208,7 +208,7 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	}
 
 	storage.FlushStores(logging.NewTestLogger(), config)
-	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config)
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -247,7 +247,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	}
 
 	storage.FlushStores(logging.NewTestLogger(), config)
-	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config)
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -282,7 +282,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 
 	assert.Equal(t, 2, len(candles))
 
-	t.Log(fmt.Sprintf("%s", vegatime.Format(time.Unix(1542106860, 000000000))))
+	t.Log(vegatime.Format(time.Unix(1542106860, 000000000)))
 
 	assert.Equal(t, t0.UnixNano(), candles[0].Timestamp)
 	assert.Equal(t, uint64(108), candles[0].High)

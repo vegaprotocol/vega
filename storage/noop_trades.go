@@ -14,12 +14,11 @@ import (
 type NoopTrade struct {
 	Config
 
-	cfgMu           sync.Mutex
-	log             *logging.Logger
-	subscribers     map[uint64]chan<- []types.Trade
-	subscriberID    uint64
-	mu              sync.Mutex
-	onCriticalError func()
+	cfgMu        sync.Mutex
+	log          *logging.Logger
+	subscribers  map[uint64]chan<- []types.Trade
+	subscriberID uint64
+	mu           sync.Mutex
 }
 
 func NewNoopTrades(log *logging.Logger, c Config) *NoopTrade {
@@ -127,35 +126,6 @@ func (ts *NoopTrade) GetMarkPrice(ctx context.Context, market string) (uint64, e
 }
 
 func (ts *NoopTrade) Close() error {
-	return nil
-}
-
-func (ts *NoopTrade) notify(items []types.Trade) error {
-	if len(items) == 0 {
-		return nil
-	}
-	if len(ts.subscribers) == 0 {
-		ts.log.Debug("No subscribers connected in trade store")
-		return nil
-	}
-
-	var ok bool
-	for id, sub := range ts.subscribers {
-		select {
-		case sub <- items:
-			ok = true
-			break
-		default:
-			ok = false
-		}
-		if ok {
-			ts.log.Debug("Trades channel updated for subscriber successfully",
-				logging.Uint64("id", id))
-		} else {
-			ts.log.Debug("Trades channel could not be updated for subscriber",
-				logging.Uint64("id", id))
-		}
-	}
 	return nil
 }
 

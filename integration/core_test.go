@@ -14,23 +14,13 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
-	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/DATA-DOG/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
 
-type traderState struct {
-	pos             int
-	margin, general int64
-	markPrice       int
-	gAcc            *proto.Account
-	mAcc            *proto.Account
-}
-
 var (
-	core     *execution.Market
-	accounts *storage.Account
+	core *execution.Market
 )
 
 func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
