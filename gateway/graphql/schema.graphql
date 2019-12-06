@@ -49,9 +49,9 @@ type Mutation {
     # ID of the party which created the order
     partyId: String!
     # New price for this order
-    price: Int!
+    price: String!
     # New size for this order
-    size: Int!
+    size: String!
     # New expiration time
     expiration: String
   ): PendingOrder!

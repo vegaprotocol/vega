@@ -1165,7 +1165,7 @@ func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party s
 
 }
 
-func (r *myMutationResolver) OrderAmend(ctx context.Context, id string, party string, price, size int, expiration *string) (*types.PendingOrder, error) {
+func (r *myMutationResolver) OrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string) (*types.PendingOrder, error) {
 	order := &types.OrderAmendment{}
 
 	tkn := gateway.TokenFromContext(ctx)
@@ -1179,14 +1179,22 @@ func (r *myMutationResolver) OrderAmend(ctx context.Context, id string, party st
 		return nil, errors.New("party missing or empty")
 	}
 	order.PartyID = party
-	if price < 0 {
-		return nil, errors.New("cannot have price less than 0")
+
+	var err error
+	order.Price, err = strconv.ParseUint(price, 10, 64)
+	if err != nil {
+		r.log.Error("unable to convert price from string in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
-	order.Price = uint64(price)
-	if size < 0 {
-		return nil, errors.New("cannot have size less thean 0")
+
+	order.Size, err = strconv.ParseUint(size, 10, 64)
+	if err != nil {
+		r.log.Error("unable to convert size from string in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid size, could not convert to unsigned int")
 	}
-	order.Size = uint64(size)
+
 	if expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
