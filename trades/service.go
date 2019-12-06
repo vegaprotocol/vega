@@ -377,6 +377,7 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 	for _, pos := range positions {
 		ret = append(ret, &types.MarketPosition{
 			MarketID:          pos.MarketID,
+			PartyID:           pos.PartyID,
 			UnrealisedVolume:  pos.OpenVolume,
 			UnrealisedPNL:     pos.UnrealisedPNL,
 			RealisedPNL:       pos.RealisedPNL,

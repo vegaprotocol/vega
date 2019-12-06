@@ -989,9 +989,37 @@ func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.M
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
+func (r *myPositionResolver) Margins(ctx context.Context, obj *types.MarketPosition) ([]*types.MarginLevels, error) {
+	if obj == nil {
+		return nil, errors.New("invalid position")
+	}
+
+	if len(obj.PartyID) <= 0 {
+		return nil, errors.New("missing party id")
+	}
+
+	req := protoapi.MarginLevelsRequest{
+		PartyID:  obj.PartyID,
+		MarketID: obj.MarketID,
+	}
+	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
+	out = append(out, res.MarginLevels...)
+	return out, nil
+}
+
 func (r *myPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
 	if obj == nil {
 		return nil, errors.New("invalid position")
+	}
+
+	// market not mandatory
+	if len(obj.MarketID) <= 0 {
+		return nil, nil
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
