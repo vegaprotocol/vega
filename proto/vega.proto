@@ -159,10 +159,11 @@ message Position {
     string marketID = 1;
     string partyID = 2;
     int64 openVolume = 3;
-    int64 realisedPNL  = 4;
-    int64 unrealisedPNL = 6;
-    uint64 averageEntryPrice = 7;
-    repeated PositionTrade fifoQueue = 8;
+    int64 pendingVolume = 4;
+    int64 realisedPNL  = 5;
+    int64 unrealisedPNL = 7;
+    uint64 averageEntryPrice = 8;
+    repeated PositionTrade fifoQueue = 9;
 }
 
 message PositionTrade {
