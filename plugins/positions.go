@@ -117,7 +117,11 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	pos, ok := mp[party]
 	if !ok {
 		p.mu.RUnlock()
-		return nil, ErrPartyNotFound
+		pos = types.Position{
+			PartyID:  party,
+			MarketID: market,
+		}
+		// return nil, ErrPartyNotFound
 	}
 	p.mu.RUnlock()
 	return &pos, nil
@@ -135,7 +139,8 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	}
 	p.mu.RUnlock()
 	if len(positions) == 0 {
-		return nil, ErrPartyNotFound
+		return nil, nil
+		// return nil, ErrPartyNotFound
 	}
 	return positions, nil
 }
