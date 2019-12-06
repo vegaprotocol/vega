@@ -76,7 +76,7 @@ type TradeService interface {
 	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.MarketPosition, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	GetTradeSubscribersCount() int32
@@ -351,7 +351,7 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
-	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID)
+	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err
 	}
@@ -399,6 +399,7 @@ func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*pr
 	mds := h.MarketService.GetMarketsData()
 	mdptrs := make([]*types.MarketData, 0, len(mds))
 	for _, v := range mds {
+		v := v
 		mdptrs = append(mdptrs, &v)
 	}
 	return &protoapi.MarketsDataResponse{
@@ -648,6 +649,7 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 				return err
 			}
 			for _, ml := range mls {
+				ml := ml
 				err = srv.Send(&ml)
 				if err != nil {
 					h.log.Error("Margin levels data subscriber - rpc stream error",
