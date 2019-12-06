@@ -3,7 +3,6 @@ package trades
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync/atomic"
 	"time"
 
@@ -11,8 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
-
-	"github.com/pkg/errors"
 )
 
 // TradeStore represents an abstraction over a trade storage
@@ -384,156 +381,4 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 		})
 	}
 	return ret, nil
-}
-
-func (s *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
-	rf, err := s.riskStore.GetByMarket(market)
-	if err != nil {
-		s.log.Error("Failed to obtain risk factors from risk engine",
-			logging.String("market-id", market))
-		return -1, errors.Wrap(err, fmt.Sprintf("Failed to obtain risk factors from risk engine for market: %s", market))
-	}
-
-	var riskFactor float64
-	if openVolumeSign == 1 {
-		riskFactor = rf.Long
-	}
-
-	if openVolumeSign == 0 {
-		riskFactor = 0
-	}
-
-	if openVolumeSign == -1 {
-		riskFactor = rf.Short
-	}
-
-	return riskFactor, nil
-}
-
-func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,
-	OpenContracts, ClosedContracts int64) (float64, float64) {
-
-	var (
-		buyAggregateEntryPriceForClosed     int64
-		sellAggregateEntryPriceForClosed    int64
-		deltaAverageEntryPrice              float64
-		aggregateEntryPriceForOpenContracts int64
-		avgEntryPriceForOpenContracts       float64
-		thresholdController                 int64
-		thresholdReached                    bool
-	)
-
-	// calculate avg entry price for closed and open contracts
-	for _, trade := range marketBucket.Buys {
-		thresholdController += int64(trade.Size)
-		if thresholdController <= ClosedContracts {
-			buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-		} else {
-			if !thresholdReached {
-				thresholdReached = true
-				buyAggregateEntryPriceForClosed +=
-					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-				aggregateEntryPriceForOpenContracts +=
-					(thresholdController - ClosedContracts) * int64(trade.Price)
-			} else {
-				aggregateEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
-			}
-		}
-	}
-
-	for _, trade := range marketBucket.Sells {
-		sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-
-	if ClosedContracts != 0 {
-		deltaAverageEntryPrice = float64(sellAggregateEntryPriceForClosed-buyAggregateEntryPriceForClosed) / float64(ClosedContracts)
-	} else {
-		deltaAverageEntryPrice = 0
-	}
-
-	if OpenContracts != 0 {
-		avgEntryPriceForOpenContracts = float64(math.Abs(float64(aggregateEntryPriceForOpenContracts) / float64(OpenContracts)))
-	} else {
-		avgEntryPriceForOpenContracts = 0
-	}
-
-	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
-}
-
-func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *storage.MarketBucket,
-	OpenContracts, ClosedContracts int64) (float64, float64) {
-
-	var (
-		buyAggregateEntryPriceForClosed  int64
-		sellAggregateEntryPriceForClosed int64
-		deltaAverageEntryPrice           float64
-		avgEntryPriceForOpenContracts    float64
-	)
-
-	avgEntryPriceForOpenContracts = 0
-
-	for _, trade := range marketBucket.Buys {
-		buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-	for _, trade := range marketBucket.Sells {
-		sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-
-	if ClosedContracts != 0 {
-		deltaAverageEntryPrice = float64(sellAggregateEntryPriceForClosed-buyAggregateEntryPriceForClosed) / float64(ClosedContracts)
-	} else {
-		deltaAverageEntryPrice = 0
-	}
-
-	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
-}
-
-func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *storage.MarketBucket,
-	OpenContracts, ClosedContracts int64) (float64, float64) {
-
-	var (
-		buyAggregateEntryPriceForClosed     int64
-		sellAggregateEntryPriceForClosed    int64
-		deltaAverageEntryPrice              float64
-		aggregateEntryPriceForOpenContracts int64
-		avgEntryPriceForOpenContracts       float64
-		thresholdController                 int64
-		thresholdReached                    bool
-	)
-
-	// calculate avg entry price for closed and open contracts
-	for _, trade := range marketBucket.Sells {
-		thresholdController += int64(trade.Size)
-		if thresholdController <= ClosedContracts {
-			sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-		} else {
-			if !thresholdReached {
-				thresholdReached = true
-				sellAggregateEntryPriceForClosed +=
-					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-				aggregateEntryPriceForOpenContracts +=
-					(thresholdController - ClosedContracts) * int64(trade.Price)
-			} else {
-				aggregateEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
-			}
-		}
-	}
-
-	for _, trade := range marketBucket.Buys {
-		buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-
-	if ClosedContracts != 0 {
-		deltaAverageEntryPrice = float64(sellAggregateEntryPriceForClosed-buyAggregateEntryPriceForClosed) / float64(ClosedContracts)
-	} else {
-		deltaAverageEntryPrice = 0
-	}
-
-	if OpenContracts != 0 {
-		avgEntryPriceForOpenContracts = math.Abs(float64(aggregateEntryPriceForOpenContracts) / float64(OpenContracts))
-	} else {
-		avgEntryPriceForOpenContracts = 0
-	}
-
-	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
 }
