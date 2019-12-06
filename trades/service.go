@@ -3,7 +3,6 @@ package trades
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync/atomic"
 	"time"
 
@@ -11,8 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
-
-	"github.com/pkg/errors"
 )
 
 // TradeStore represents an abstraction over a trade storage
@@ -35,18 +32,26 @@ type RiskStore interface {
 	GetByMarket(market string) (*types.RiskFactor, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_plugin_mock.go -package mocks code.vegaprotocol.io/vega/trades PositionsPlugin
+type PositionsPlugin interface {
+	GetPositionsByMarket(market string) ([]*types.Position, error)
+	GetPositionsByParty(party string) ([]*types.Position, error)
+	GetPositionsByMarketAndParty(market, party string) (*types.Position, error)
+}
+
 // Svc is the service handling trades
 type Svc struct {
 	Config
 	log                     *logging.Logger
 	tradeStore              TradeStore
 	riskStore               RiskStore
+	positions               PositionsPlugin
 	positionsSubscribersCnt int32
 	tradeSubscribersCnt     int32
 }
 
-// NewService instantiate a new Trades service
-func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+// NewService instanciate a new Trades service
+func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore, posPlug PositionsPlugin) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -56,6 +61,7 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskS
 		Config:     config,
 		tradeStore: tradeStore,
 		riskStore:  riskStore,
+		positions:  posPlug,
 	}, nil
 }
 
@@ -269,7 +275,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				close(positions)
 				return
 			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
-				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party)
+				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party, "")
 				if err != nil {
 					s.log.Error(
 						"Failed to get positions for subscriber (getPositionsByParty)",
@@ -324,253 +330,54 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 }
 
 // GetPositionsByParty returns a list of positions for a given party
-func (s *Svc) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
+func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*types.MarketPosition, error) {
 
 	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
 
-	marketBuckets := s.tradeStore.GetTradesBySideBuckets(ctx, party)
-
-	var (
-		OpenVolumeSign                int8
-		ClosedContracts               int64
-		OpenContracts                 int64
-		deltaAverageEntryPrice        float64
-		avgEntryPriceForOpenContracts float64
-		markPrice                     uint64
-		riskFactor                    float64
-		forwardRiskMargin             float64
-	)
-
-	s.log.Debug("Loaded market buckets for party",
-		logging.String("party-id", party),
-		logging.Int("total-buckets", len(marketBuckets)))
-
-	for market, marketBucket := range marketBuckets {
-		if marketBucket.BuyVolume > marketBucket.SellVolume {
-			OpenVolumeSign = 1
-			ClosedContracts = marketBucket.SellVolume
-			OpenContracts = marketBucket.BuyVolume - marketBucket.SellVolume
-		}
-
-		if marketBucket.BuyVolume == marketBucket.SellVolume {
-			OpenVolumeSign = 0
-			ClosedContracts = marketBucket.SellVolume
-			OpenContracts = 0
-		}
-
-		if marketBucket.BuyVolume < marketBucket.SellVolume {
-			OpenVolumeSign = -1
-			ClosedContracts = marketBucket.BuyVolume
-			OpenContracts = marketBucket.BuyVolume - marketBucket.SellVolume
-		}
-
-		// long
-		if OpenVolumeSign == 1 {
-			//// calculate avg entry price for closed and open contracts when position is long
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				s.calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket, OpenContracts, ClosedContracts)
-		}
-
-		// net
-		if OpenVolumeSign == 0 {
-			//// calculate avg entry price for closed and open contracts when position is net
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				s.calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket, OpenContracts, ClosedContracts)
-		}
-
-		// short
-		if OpenVolumeSign == -1 {
-			//// calculate avg entry price for closed and open contracts when position is short
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				s.calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket, OpenContracts, ClosedContracts)
-		}
-
-		markPrice, _ = s.tradeStore.GetMarkPrice(ctx, market)
-		if markPrice == 0 {
-			continue
-		}
-
-		riskFactor, err = s.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
+	var positions []*types.Position
+	if party != "" && marketID != "" {
+		pos, err := s.positions.GetPositionsByMarketAndParty(marketID, party)
 		if err != nil {
+			s.log.Error("Error getting position for party and market",
+				logging.String("party-id", party),
+				logging.String("market-id", marketID),
+				logging.Error(err))
 			return nil, err
 		}
-
-		marketPositions := &types.MarketPosition{}
-		marketPositions.MarketID = market
-		marketPositions.RealisedVolume = int64(ClosedContracts)
-		marketPositions.UnrealisedVolume = int64(OpenContracts)
-		marketPositions.RealisedPNL = int64(float64(ClosedContracts) * deltaAverageEntryPrice)
-		marketPositions.UnrealisedPNL = int64(float64(OpenContracts) * (float64(markPrice) - avgEntryPriceForOpenContracts))
-		marketPositions.AverageEntryPrice = uint64(avgEntryPriceForOpenContracts)
-
-		forwardRiskMargin = float64(marketPositions.UnrealisedVolume) * float64(markPrice) *
-			riskFactor * float64(marketBucket.MinimumContractSize)
-
-		// deliberately loose precision for minimum margin requirement to operate on int64 on the API
-
-		//if minimumMargin is a negative number it means that trader is in credit towards vega
-		//if minimumMargin is a positive number it means that trader is in debit towards vega
-		marketPositions.MinimumMargin = -marketPositions.UnrealisedPNL + int64(math.Abs(forwardRiskMargin))
-
-		positions = append(positions, marketPositions)
-	}
-
-	s.log.Debug("Positions for party calculated",
-		logging.String("party-id", party),
-		logging.Int("total-buckets", len(positions)))
-
-	return positions, nil
-}
-
-func (s *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
-	rf, err := s.riskStore.GetByMarket(market)
-	if err != nil {
-		s.log.Error("Failed to obtain risk factors from risk engine",
-			logging.String("market-id", market))
-		return -1, errors.Wrap(err, fmt.Sprintf("Failed to obtain risk factors from risk engine for market: %s", market))
-	}
-
-	var riskFactor float64
-	if openVolumeSign == 1 {
-		riskFactor = rf.Long
-	}
-
-	if openVolumeSign == 0 {
-		riskFactor = 0
-	}
-
-	if openVolumeSign == -1 {
-		riskFactor = rf.Short
-	}
-
-	return riskFactor, nil
-}
-
-func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,
-	OpenContracts, ClosedContracts int64) (float64, float64) {
-
-	var (
-		buyAggregateEntryPriceForClosed     int64
-		sellAggregateEntryPriceForClosed    int64
-		deltaAverageEntryPrice              float64
-		aggregateEntryPriceForOpenContracts int64
-		avgEntryPriceForOpenContracts       float64
-		thresholdController                 int64
-		thresholdReached                    bool
-	)
-
-	// calculate avg entry price for closed and open contracts
-	for _, trade := range marketBucket.Buys {
-		thresholdController += int64(trade.Size)
-		if thresholdController <= ClosedContracts {
-			buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-		} else {
-			if !thresholdReached {
-				thresholdReached = true
-				buyAggregateEntryPriceForClosed +=
-					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-				aggregateEntryPriceForOpenContracts +=
-					(thresholdController - ClosedContracts) * int64(trade.Price)
-			} else {
-				aggregateEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
-			}
+		positions = []*types.Position{pos}
+	} else if party == "" {
+		// either trader or market == ""
+		pos, err := s.positions.GetPositionsByMarket(marketID)
+		if err != nil {
+			s.log.Error("Error getting positions for market",
+				logging.String("market-id", marketID),
+				logging.Error(err),
+			)
+			return nil, err
 		}
-	}
-
-	for _, trade := range marketBucket.Sells {
-		sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-
-	if ClosedContracts != 0 {
-		deltaAverageEntryPrice = float64(sellAggregateEntryPriceForClosed-buyAggregateEntryPriceForClosed) / float64(ClosedContracts)
+		positions = pos
 	} else {
-		deltaAverageEntryPrice = 0
-	}
-
-	if OpenContracts != 0 {
-		avgEntryPriceForOpenContracts = float64(math.Abs(float64(aggregateEntryPriceForOpenContracts) / float64(OpenContracts)))
-	} else {
-		avgEntryPriceForOpenContracts = 0
-	}
-
-	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
-}
-
-func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *storage.MarketBucket,
-	OpenContracts, ClosedContracts int64) (float64, float64) {
-
-	var (
-		buyAggregateEntryPriceForClosed  int64
-		sellAggregateEntryPriceForClosed int64
-		deltaAverageEntryPrice           float64
-		avgEntryPriceForOpenContracts    float64
-	)
-
-	avgEntryPriceForOpenContracts = 0
-
-	for _, trade := range marketBucket.Buys {
-		buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-	for _, trade := range marketBucket.Sells {
-		sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-	}
-
-	if ClosedContracts != 0 {
-		deltaAverageEntryPrice = float64(sellAggregateEntryPriceForClosed-buyAggregateEntryPriceForClosed) / float64(ClosedContracts)
-	} else {
-		deltaAverageEntryPrice = 0
-	}
-
-	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
-}
-
-func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *storage.MarketBucket,
-	OpenContracts, ClosedContracts int64) (float64, float64) {
-
-	var (
-		buyAggregateEntryPriceForClosed     int64
-		sellAggregateEntryPriceForClosed    int64
-		deltaAverageEntryPrice              float64
-		aggregateEntryPriceForOpenContracts int64
-		avgEntryPriceForOpenContracts       float64
-		thresholdController                 int64
-		thresholdReached                    bool
-	)
-
-	// calculate avg entry price for closed and open contracts
-	for _, trade := range marketBucket.Sells {
-		thresholdController += int64(trade.Size)
-		if thresholdController <= ClosedContracts {
-			sellAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
-		} else {
-			if !thresholdReached {
-				thresholdReached = true
-				sellAggregateEntryPriceForClosed +=
-					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-				aggregateEntryPriceForOpenContracts +=
-					(thresholdController - ClosedContracts) * int64(trade.Price)
-			} else {
-				aggregateEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
-			}
+		pos, err := s.positions.GetPositionsByParty(party)
+		if err != nil {
+			s.log.Error("Error getting positions for market",
+				logging.String("party-id", party),
+				logging.Error(err),
+			)
+			return nil, err
 		}
+		positions = pos
 	}
-
-	for _, trade := range marketBucket.Buys {
-		buyAggregateEntryPriceForClosed += int64(trade.Size * trade.Price)
+	ret := make([]*types.MarketPosition, 0, len(positions))
+	for _, pos := range positions {
+		ret = append(ret, &types.MarketPosition{
+			MarketID:          pos.MarketID,
+			PartyID:           pos.PartyID,
+			UnrealisedVolume:  pos.OpenVolume,
+			UnrealisedPNL:     pos.UnrealisedPNL,
+			RealisedPNL:       pos.RealisedPNL,
+			AverageEntryPrice: pos.AverageEntryPrice,
+		})
 	}
-
-	if ClosedContracts != 0 {
-		deltaAverageEntryPrice = float64(sellAggregateEntryPriceForClosed-buyAggregateEntryPriceForClosed) / float64(ClosedContracts)
-	} else {
-		deltaAverageEntryPrice = 0
-	}
-
-	if OpenContracts != 0 {
-		avgEntryPriceForOpenContracts = math.Abs(float64(aggregateEntryPriceForOpenContracts) / float64(OpenContracts))
-	} else {
-		avgEntryPriceForOpenContracts = 0
-	}
-
-	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
+	return ret, nil
 }

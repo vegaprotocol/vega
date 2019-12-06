@@ -80,18 +80,18 @@ func (mr *MockTradeServiceMockRecorder) GetByParty(arg0, arg1, arg2, arg3, arg4,
 }
 
 // GetPositionsByParty mocks base method
-func (m *MockTradeService) GetPositionsByParty(arg0 context.Context, arg1 string) ([]*proto.MarketPosition, error) {
+func (m *MockTradeService) GetPositionsByParty(arg0 context.Context, arg1, arg2 string) ([]*proto.MarketPosition, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPositionsByParty", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetPositionsByParty", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*proto.MarketPosition)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPositionsByParty indicates an expected call of GetPositionsByParty
-func (mr *MockTradeServiceMockRecorder) GetPositionsByParty(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockTradeServiceMockRecorder) GetPositionsByParty(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByParty", reflect.TypeOf((*MockTradeService)(nil).GetPositionsByParty), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByParty", reflect.TypeOf((*MockTradeService)(nil).GetPositionsByParty), arg0, arg1, arg2)
 }
 
 // GetPositionsSubscribersCount mocks base method

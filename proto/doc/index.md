@@ -832,6 +832,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
 
 
 
@@ -1611,7 +1612,7 @@
 | unrealisedVolume | [int64](#int64) |  |  |
 | unrealisedPNL | [int64](#int64) |  |  |
 | averageEntryPrice | [uint64](#uint64) |  |  |
-| minimumMargin | [int64](#int64) |  |  |
+| partyID | [string](#string) |  |  |
 
 
 

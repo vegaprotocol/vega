@@ -152,7 +152,7 @@ message MarketPosition {
     int64 unrealisedVolume = 4;
     int64 unrealisedPNL = 5;
     uint64 averageEntryPrice = 6;
-    int64 minimumMargin = 7;
+    string partyID = 7;
 }
 
 message Position {
