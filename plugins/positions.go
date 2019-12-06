@@ -35,6 +35,7 @@ func NewPositions(buf PosBuffer) *Positions {
 	return &Positions{
 		mu:   &sync.RWMutex{},
 		data: map[string]map[string]types.Position{},
+		buf:  buf,
 	}
 }
 
@@ -116,7 +117,11 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	pos, ok := mp[party]
 	if !ok {
 		p.mu.RUnlock()
-		return nil, ErrPartyNotFound
+		pos = types.Position{
+			PartyID:  party,
+			MarketID: market,
+		}
+		// return nil, ErrPartyNotFound
 	}
 	p.mu.RUnlock()
 	return &pos, nil
@@ -134,7 +139,8 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	}
 	p.mu.RUnlock()
 	if len(positions) == 0 {
-		return nil, ErrPartyNotFound
+		return nil, nil
+		// return nil, ErrPartyNotFound
 	}
 	return positions, nil
 }
@@ -182,6 +188,9 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 				Price:  price,
 			})
 		}
+	}
+	if totVolume == 0 {
+		totVolume = 1
 	}
 	p.AverageEntryPrice = totPrice / absUint64(totVolume)
 	// MTM price * open volume == total value of current pos the entry price/cost of said position

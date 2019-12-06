@@ -199,7 +199,7 @@ func getTestGRPCServer(
 	}
 
 	// Trade Service
-	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, riskStore)
+	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, riskStore, nil)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create trade service")
 		return
