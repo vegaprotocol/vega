@@ -221,6 +221,7 @@ type ComplexityRoot struct {
 
 	Position struct {
 		AverageEntryPrice         func(childComplexity int) int
+		Margins                   func(childComplexity int) int
 		Market                    func(childComplexity int) int
 		RealisedProfitDirection   func(childComplexity int) int
 		RealisedProfitValue       func(childComplexity int) int
@@ -418,6 +419,7 @@ type PositionResolver interface {
 	UnrealisedProfitValue(ctx context.Context, obj *proto.MarketPosition) (string, error)
 	UnrealisedProfitDirection(ctx context.Context, obj *proto.MarketPosition) (ValueDirection, error)
 	AverageEntryPrice(ctx context.Context, obj *proto.MarketPosition) (string, error)
+	Margins(ctx context.Context, obj *proto.MarketPosition) ([]*proto.MarginLevels, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *proto.PriceLevel) (string, error)
@@ -1283,6 +1285,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Position.AverageEntryPrice(childComplexity), true
+
+	case "Position.margins":
+		if e.complexity.Position.Margins == nil {
+			break
+		}
+
+		return e.complexity.Position.Margins(childComplexity), true
 
 	case "Position.market":
 		if e.complexity.Position.Market == nil {
@@ -2587,29 +2596,32 @@ type Party {
 # refer to positions being comprised of trades, rather of volume.
 type Position {
 
-    # Market relating to this position
-    market: Market!
+  # Market relating to this position
+  market: Market!
 
-    # Realised volume (uint64)
-    realisedVolume: String!
+  # Realised volume (uint64)
+  realisedVolume: String!
 
-    # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
-    realisedProfitValue: String!
+  # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
+  realisedProfitValue: String!
 
-    # Realised Profit or Loss direction
-    realisedProfitDirection: ValueDirection!
+  # Realised Profit or Loss direction
+  realisedProfitDirection: ValueDirection!
 
-    # Unrealised volume (uint64)
-    unrealisedVolume: String!
+  # Unrealised volume (uint64)
+  unrealisedVolume: String!
 
-    # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
-    unrealisedProfitValue: String!
+  # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
+  unrealisedProfitValue: String!
 
-    # Unrealised Profit or Loss direction
-    unrealisedProfitDirection: ValueDirection!
+  # Unrealised Profit or Loss direction
+  unrealisedProfitDirection: ValueDirection!
 
-    # Average entry price for this position
-    averageEntryPrice: String!
+  # Average entry price for this position
+  averageEntryPrice: String!
+
+  # margins of the party for the given position
+  margins: [MarginLevels!]
 }
 
 # An order in Vega, if active it will be on the OrderBoook for the market
@@ -7667,6 +7679,40 @@ func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Position_margins(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Position().Margins(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.MarginLevels)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) (ret graphql.Marshaler) {
@@ -12971,6 +13017,17 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "margins":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Position_margins(ctx, field, obj)
 				return res
 			})
 		default:

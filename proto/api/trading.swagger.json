@@ -1690,6 +1690,9 @@
         "averageEntryPrice": {
           "type": "string",
           "format": "uint64"
+        },
+        "partyID": {
+          "type": "string"
         }
       }
     },

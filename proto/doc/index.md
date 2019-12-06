@@ -158,7 +158,7 @@
 
 <a name="api.AccountsByPartyAndAssetRequest"></a>
 
-### AccountsByPartyAndAssetRequest
+### AccountsByPartyAndAssetReques
 
 
 
@@ -189,7 +189,7 @@
 
 <a name="api.AccountsByPartyAndMarketRequest"></a>
 
-### AccountsByPartyAndMarketRequest
+### AccountsByPartyAndMarketReques
 
 
 
@@ -221,7 +221,7 @@
 
 <a name="api.AccountsByPartyAndTypeRequest"></a>
 
-### AccountsByPartyAndTypeRequest
+### AccountsByPartyAndTypeReques
 
 
 
@@ -252,7 +252,7 @@
 
 <a name="api.AccountsByPartyRequest"></a>
 
-### AccountsByPartyRequest
+### AccountsByPartyReques
 
 
 
@@ -283,7 +283,7 @@
 
 <a name="api.AccountsSubscribeRequest"></a>
 
-### AccountsSubscribeRequest
+### AccountsSubscribeReques
 
 
 
@@ -301,7 +301,7 @@
 
 <a name="api.AmendOrderRequest"></a>
 
-### AmendOrderRequest
+### AmendOrderReques
 
 
 
@@ -317,7 +317,7 @@
 
 <a name="api.CancelOrderRequest"></a>
 
-### CancelOrderRequest
+### CancelOrderReques
 
 
 
@@ -333,7 +333,7 @@
 
 <a name="api.CandlesRequest"></a>
 
-### CandlesRequest
+### CandlesReques
 
 
 
@@ -365,7 +365,7 @@
 
 <a name="api.CandlesSubscribeRequest"></a>
 
-### CandlesSubscribeRequest
+### CandlesSubscribeReques
 
 
 
@@ -381,7 +381,7 @@
 
 <a name="api.CheckTokenRequest"></a>
 
-### CheckTokenRequest
+### CheckTokenReques
 
 
 
@@ -412,7 +412,7 @@
 
 <a name="api.LastTradeRequest"></a>
 
-### LastTradeRequest
+### LastTradeReques
 
 
 
@@ -442,7 +442,7 @@
 
 <a name="api.MarginLevelsRequest"></a>
 
-### MarginLevelsRequest
+### MarginLevelsReques
 
 
 
@@ -473,7 +473,7 @@
 
 <a name="api.MarginLevelsSubscribeRequest"></a>
 
-### MarginLevelsSubscribeRequest
+### MarginLevelsSubscribeReques
 
 
 
@@ -489,7 +489,7 @@
 
 <a name="api.MarketByIDRequest"></a>
 
-### MarketByIDRequest
+### MarketByIDReques
 
 
 
@@ -519,7 +519,7 @@
 
 <a name="api.MarketDataByIDRequest"></a>
 
-### MarketDataByIDRequest
+### MarketDataByIDReques
 
 
 
@@ -549,7 +549,7 @@
 
 <a name="api.MarketDepthRequest"></a>
 
-### MarketDepthRequest
+### MarketDepthReques
 
 
 
@@ -582,7 +582,7 @@
 
 <a name="api.MarketDepthSubscribeRequest"></a>
 
-### MarketDepthSubscribeRequest
+### MarketDepthSubscribeReques
 
 
 
@@ -612,7 +612,7 @@
 
 <a name="api.MarketsDataSubscribeRequest"></a>
 
-### MarketsDataSubscribeRequest
+### MarketsDataSubscribeReques
 
 
 
@@ -642,7 +642,7 @@
 
 <a name="api.NotifyTraderAccountRequest"></a>
 
-### NotifyTraderAccountRequest
+### NotifyTraderAccountReques
 
 
 
@@ -672,7 +672,7 @@
 
 <a name="api.OrderByMarketAndIdRequest"></a>
 
-### OrderByMarketAndIdRequest
+### OrderByMarketAndIdReques
 
 
 
@@ -703,7 +703,7 @@
 
 <a name="api.OrderByReferenceRequest"></a>
 
-### OrderByReferenceRequest
+### OrderByReferenceReques
 
 
 
@@ -733,7 +733,7 @@
 
 <a name="api.OrdersByMarketRequest"></a>
 
-### OrdersByMarketRequest
+### OrdersByMarketReques
 
 
 
@@ -765,7 +765,7 @@
 
 <a name="api.OrdersByPartyRequest"></a>
 
-### OrdersByPartyRequest
+### OrdersByPartyReques
 
 
 
@@ -812,7 +812,7 @@
 
 <a name="api.OrdersSubscribeRequest"></a>
 
-### OrdersSubscribeRequest
+### OrdersSubscribeReques
 
 
 
@@ -860,7 +860,7 @@
 
 <a name="api.PartyByIDRequest"></a>
 
-### PartyByIDRequest
+### PartyByIDReques
 
 
 
@@ -890,7 +890,7 @@
 
 <a name="api.PositionsByPartyRequest"></a>
 
-### PositionsByPartyRequest
+### PositionsByPartyReques
 
 
 
@@ -921,7 +921,7 @@
 
 <a name="api.PositionsSubscribeRequest"></a>
 
-### PositionsSubscribeRequest
+### PositionsSubscribeReques
 
 
 
@@ -936,7 +936,7 @@
 
 <a name="api.SignInRequest"></a>
 
-### SignInRequest
+### SignInReques
 
 
 
@@ -967,7 +967,7 @@
 
 <a name="api.SubmitOrderRequest"></a>
 
-### SubmitOrderRequest
+### SubmitOrderReques
 
 
 
@@ -983,7 +983,7 @@
 
 <a name="api.TradesByMarketRequest"></a>
 
-### TradesByMarketRequest
+### TradesByMarketReques
 
 
 
@@ -1014,7 +1014,7 @@
 
 <a name="api.TradesByOrderRequest"></a>
 
-### TradesByOrderRequest
+### TradesByOrderReques
 
 
 
@@ -1044,7 +1044,7 @@
 
 <a name="api.TradesByPartyRequest"></a>
 
-### TradesByPartyRequest
+### TradesByPartyReques
 
 
 
@@ -1091,7 +1091,7 @@
 
 <a name="api.TradesSubscribeRequest"></a>
 
-### TradesSubscribeRequest
+### TradesSubscribeReques
 
 
 
@@ -1122,7 +1122,7 @@
 
 <a name="api.WithdrawRequest"></a>
 
-### WithdrawRequest
+### WithdrawReques
 
 
 
@@ -1256,7 +1256,7 @@
 
 <a name="vega.EthereumEvent"></a>
 
-### EthereumEvent
+### EthereumEven
 
 
 
@@ -1340,7 +1340,7 @@
 
 <a name="vega.Instrument"></a>
 
-### Instrument
+### Instrumen
 
 
 
@@ -1392,7 +1392,7 @@
 
 <a name="vega.Market"></a>
 
-### Market
+### Marke
 
 
 
@@ -1477,7 +1477,7 @@
 
 <a name="vega.TradableInstrument"></a>
 
-### TradableInstrument
+### TradableInstrumen
 
 
 
@@ -1512,7 +1512,7 @@
 
 <a name="vega.Account"></a>
 
-### Account
+### Accoun
 
 
 
@@ -1532,7 +1532,7 @@
 
 <a name="vega.Amount"></a>
 
-### Amount
+### Amoun
 
 
 
@@ -1569,7 +1569,7 @@
 
 <a name="vega.FinancialAmount"></a>
 
-### FinancialAmount
+### FinancialAmoun
 
 
 
@@ -1679,6 +1679,7 @@
 | unrealisedVolume | [int64](#int64) |  |  |
 | unrealisedPNL | [int64](#int64) |  |  |
 | averageEntryPrice | [uint64](#uint64) |  |  |
+| partyID | [string](#string) |  |  |
 
 
 
@@ -1687,7 +1688,7 @@
 
 <a name="vega.NotifyTraderAccount"></a>
 
-### NotifyTraderAccount
+### NotifyTraderAccoun
 
 
 
@@ -1731,7 +1732,7 @@
 
 <a name="vega.OrderAmendment"></a>
 
-### OrderAmendment
+### OrderAmendmen
 
 
 
@@ -1936,7 +1937,7 @@
 
 <a name="vega.RiskResult"></a>
 
-### RiskResult
+### RiskResul
 
 
 
@@ -2056,7 +2057,7 @@
 
 <a name="vega.TradeSet"></a>
 
-### TradeSet
+### TradeSe
 
 
 
@@ -2105,7 +2106,7 @@
 
 <a name="vega.TransferRequest"></a>
 
-### TransferRequest
+### TransferReques
 
 
 
