@@ -35,6 +35,7 @@ func NewPositions(buf PosBuffer) *Positions {
 	return &Positions{
 		mu:   &sync.RWMutex{},
 		data: map[string]map[string]types.Position{},
+		buf:  buf,
 	}
 }
 
@@ -182,6 +183,9 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 				Price:  price,
 			})
 		}
+	}
+	if totVolume == 0 {
+		totVolume = 1
 	}
 	p.AverageEntryPrice = totPrice / absUint64(totVolume)
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
