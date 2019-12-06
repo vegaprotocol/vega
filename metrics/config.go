@@ -7,10 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// namedLogger is the identifier for package and should ideally match the package name
-// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "metrics"
-
 // Config represents the configuration of the metric package
 type Config struct {
 	Level   encoding.LogLevel

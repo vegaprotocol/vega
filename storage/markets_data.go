@@ -141,7 +141,6 @@ func (m *MarketData) notify(batch []proto.MarketData) {
 		select {
 		case sub <- batch:
 			ok = true
-			break
 		default:
 			ok = false
 		}

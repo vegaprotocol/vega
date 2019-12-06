@@ -44,19 +44,11 @@ func (a *NoopAccount) Close() error {
 	return nil
 }
 
-func (a *NoopAccount) GetByParty(partyID string) ([]*types.Account, error) {
+func (a *NoopAccount) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
 	return []*types.Account{}, nil
 }
 
-func (a *NoopAccount) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
-	return []*types.Account{}, nil
-}
-
-func (a *NoopAccount) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
-	return []*types.Account{}, nil
-}
-
-func (a *NoopAccount) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
+func (a *NoopAccount) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
 	return []*types.Account{}, nil
 }
 

@@ -35,7 +35,7 @@ find ./proto/ -name '*.proto' -print0 \
 		--doc_out=proto/doc \
 		--doc_opt=markdown,index.md
 
-sed -i -e 's#[ \t][ \t]*$##' proto/doc/index.md
+#sed -i -e 's#[ \t][ \t]*$##' proto/doc/index.md
 
 # Generate *.pb.gw.go and *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"

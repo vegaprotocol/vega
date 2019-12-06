@@ -132,7 +132,7 @@ type ComplexityRoot struct {
 	}
 
 	Market struct {
-		Accounts           func(childComplexity int, typeArg *AccountType) int
+		Accounts           func(childComplexity int, partyID *string) int
 		Candles            func(childComplexity int, since string, interval Interval) int
 		Data               func(childComplexity int) int
 		DecimalPlaces      func(childComplexity int) int
@@ -171,7 +171,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
+		OrderAmend  func(childComplexity int, id string, partyID string, price string, size string, expiration *string) int
 		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
 		OrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		Signin      func(childComplexity int, id string, password string) int
@@ -347,7 +347,7 @@ type MarginLevelsResolver interface {
 }
 type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
-	Accounts(ctx context.Context, obj *Market, typeArg *AccountType) ([]*proto.Account, error)
+	Accounts(ctx context.Context, obj *Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Depth(ctx context.Context, obj *Market) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
@@ -372,7 +372,7 @@ type MarketDepthResolver interface {
 type MutationResolver interface {
 	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
-	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
+	OrderAmend(ctx context.Context, id string, partyID string, price string, size string, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
@@ -776,7 +776,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Accounts(childComplexity, args["type"].(*AccountType)), true
+		return e.complexity.Market.Accounts(childComplexity, args["partyId"].(*string)), true
 
 	case "Market.candles":
 		if e.complexity.Market.Candles == nil {
@@ -990,7 +990,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(int), args["size"].(int), args["expiration"].(*string)), true
+		return e.complexity.Mutation.OrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["expiration"].(*string)), true
 
 	case "Mutation.orderCancel":
 		if e.complexity.Mutation.OrderCancel == nil {
@@ -1990,9 +1990,9 @@ type Mutation {
     # ID of the party which created the order
     partyId: String!
     # New price for this order
-    price: Int!
+    price: String!
     # New size for this order
-    size: Int!
+    size: String!
     # New expiration time
     expiration: String
   ): PendingOrder!
@@ -2445,10 +2445,10 @@ type Market {
     last: Int
   ): [Order!]
 
-  # Get accounts for a party or market
+  # Get account for a party or market
   accounts(
-    # Specify the account type to get a specific account
-    type: AccountType
+    # Id of the party to get the margin account for
+    partyId: String
   ): [Account!]
 
   # Trades on a market
@@ -2868,14 +2868,14 @@ enum AccountType {
 func (ec *executionContext) field_Market_accounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *AccountType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg0, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg0
+	args["partyId"] = arg0
 	return args, nil
 }
 
@@ -3002,17 +3002,17 @@ func (ec *executionContext) field_Mutation_orderAmend_args(ctx context.Context, 
 		}
 	}
 	args["partyId"] = arg1
-	var arg2 int
+	var arg2 string
 	if tmp, ok := rawArgs["price"]; ok {
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["price"] = arg2
-	var arg3 int
+	var arg3 string
 	if tmp, ok := rawArgs["size"]; ok {
-		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5253,7 +5253,7 @@ func (ec *executionContext) _Market_accounts(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Accounts(rctx, obj, args["type"].(*AccountType))
+		return ec.resolvers.Market().Accounts(rctx, obj, args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6128,7 +6128,7 @@ func (ec *executionContext) _Mutation_orderAmend(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(int), args["size"].(int), args["expiration"].(*string))
+		return ec.resolvers.Mutation().OrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["expiration"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
