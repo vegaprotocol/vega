@@ -56,6 +56,8 @@ func (p *Positions) Stop() {
 		// only unsubscribe if ch was set, otherwise we might end up unregistering ref 0, which
 		// could (in theory at least) be used by another component
 		p.buf.Unsubscribe(p.ref)
+		p.ch = nil
+		p.ref = 0
 	}
 	// we don't need to reassign ch here, because the channel is closed, the consume routine
 	// will pick up on the fact that we don't have to consume data anylonger, and the ch/ref fields
@@ -65,20 +67,19 @@ func (p *Positions) Stop() {
 
 // consume keep reading the channel for as long as we need to
 func (p *Positions) consume(ctx context.Context) {
+	defer func() {
+		p.mu.Lock()
+		p.buf.Unsubscribe(p.ref)
+		p.ref = 0
+		p.ch = nil
+		p.mu.Unlock()
+	}()
 	for {
 		select {
 		case <-ctx.Done():
-			// we're done consuming, let's unregister the channel
-			p.buf.Unsubscribe(p.ref)
-			// unset consume-related fields
-			p.ref = 0
-			p.ch = nil
 			return
 		case update, open := <-p.ch:
 			if !open {
-				// the channel was closed, so unset the field:
-				p.ref = 0
-				p.ch = nil
 				return
 			}
 			p.mu.Lock()
@@ -192,9 +193,12 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	if totVolume == 0 {
 		totVolume = 1
 	}
+	p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
 	p.AverageEntryPrice = totPrice / absUint64(totVolume)
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
 	p.UnrealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
+	// get the realised PNL (final value of asset should market settle at current price)
+	p.RealisedPNL = int64(e.Price())*p.PendingVolume - p.PendingVolume*int64(p.AverageEntryPrice)
 }
 
 func evtToProto(e events.SettlePosition) types.Position {

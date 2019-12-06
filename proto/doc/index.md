@@ -1807,6 +1807,7 @@
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
 | openVolume | [int64](#int64) |  |  |
+| pendingVolume | [int64](#int64) |  |  |
 | realisedPNL | [int64](#int64) |  |  |
 | unrealisedPNL | [int64](#int64) |  |  |
 | averageEntryPrice | [uint64](#uint64) |  |  |

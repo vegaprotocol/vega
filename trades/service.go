@@ -374,6 +374,7 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 			MarketID:          pos.MarketID,
 			PartyID:           pos.PartyID,
 			UnrealisedVolume:  pos.OpenVolume,
+			RealisedVolume:    pos.PendingVolume,
 			UnrealisedPNL:     pos.UnrealisedPNL,
 			RealisedPNL:       pos.RealisedPNL,
 			AverageEntryPrice: pos.AverageEntryPrice,
