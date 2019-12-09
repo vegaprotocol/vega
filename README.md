@@ -87,7 +87,7 @@ The default port (configurable) for the REST API is `3003` and we use a reverse 
 
 The provisioning of new markets is **coming soon**.
 
-Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to APIs as the field `Market` in protobuf / REST / GraphQL requests.
+Vega supports a single fixed market with ID `BTC/DEC20` which can be passed to APIs as the field `Market` in protobuf / REST / GraphQL requests.
 
 ## Trading
 
@@ -101,14 +101,14 @@ There are several trading operations currently supported by Vega, using the gRPC
 rpc CreateOrder(vega.Order) returns (OrderResponse);
 ```
 
-To submit a new order to the network, a caller can submit a protobuf `order` message and receive an `OrderResponse` from the API. In the following example a trader wishes to `buy` a total of `500` contracts at price `100` on market ID `BTC/DEC19`:
+To submit a new order to the network, a caller can submit a protobuf `order` message and receive an `OrderResponse` from the API. In the following example a trader wishes to `buy` a total of `500` contracts at price `100` on market ID `BTC/DEC20`:
 
 **Request**
 
 ```
 message Order {
 	string id = "";
-    string market = "BTC/DEC19";
+    string market = "BTC/DEC20";
     string party = "goldman";
     Side side = Buy;
     uint64 price = 100;
@@ -140,7 +140,7 @@ Submitted orders typically go via consensus so the `OrderResponse` will only ind
 rpc AmendOrder(vega.Amendment) returns (OrderResponse);
 ```
 
-To amend an existing order on the network, a caller can submit a protobuf `Amendment` message and receive an `OrderResponse` from the API. In the following example a trader wishes to amend an existing order with ID `v10028123-99091233` with a total of `1000` contracts at price `400` on market ID `BTC/DEC19`:
+To amend an existing order on the network, a caller can submit a protobuf `Amendment` message and receive an `OrderResponse` from the API. In the following example a trader wishes to amend an existing order with ID `v10028123-99091233` with a total of `1000` contracts at price `400` on market ID `BTC/DEC20`:
 
 **Request**
 
@@ -173,14 +173,14 @@ Amendments typically go via consensus so the `OrderResponse` will only indicate 
 rpc CancelOrder(vega.Order) returns (OrderResponse);
 ```
 
-To cancel an existing order, a trader can submit a protobuf `order` message and receive an `OrderResponse` from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC19`:
+To cancel an existing order, a trader can submit a protobuf `order` message and receive an `OrderResponse` from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC20`:
 
 **Request**
 
 ```
 message Order {
 	string id = "v1008973-9376433"
-    string market = "BTC/DEC19";
+    string market = "BTC/DEC20";
     string party = "goldman";
     Side side = Buy;
     uint64 price = 100;
