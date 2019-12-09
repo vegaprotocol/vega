@@ -65,7 +65,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	}
 
 	// create the root
-	if err := fsutil.EnsureDir(rootPath); err != nil {
+	if err = fsutil.EnsureDir(rootPath); err != nil {
 		return err
 	}
 
@@ -75,16 +75,16 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	fullMarketStorePath := filepath.Join(rootPath, storage.MarketsDataPath)
 
 	// create sub-folders
-	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {
+	if err = fsutil.EnsureDir(fullCandleStorePath); err != nil {
 		return err
 	}
-	if err := fsutil.EnsureDir(fullOrderStorePath); err != nil {
+	if err = fsutil.EnsureDir(fullOrderStorePath); err != nil {
 		return err
 	}
-	if err := fsutil.EnsureDir(fullTradeStorePath); err != nil {
+	if err = fsutil.EnsureDir(fullTradeStorePath); err != nil {
 		return err
 	}
-	if err := fsutil.EnsureDir(fullMarketStorePath); err != nil {
+	if err = fsutil.EnsureDir(fullMarketStorePath); err != nil {
 		return err
 	}
 
@@ -92,7 +92,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	fullDefaultMarketConfigPath :=
 		filepath.Join(rootPath, execution.MarketConfigPath)
 
-	if err := fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
+	if err = fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
 		return err
 	}
 
@@ -110,7 +110,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(cfg); err != nil {
+	if err = toml.NewEncoder(buf).Encode(cfg); err != nil {
 		return err
 	}
 
@@ -120,7 +120,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 		return err
 	}
 
-	if _, err := f.WriteString(buf.String()); err != nil {
+	if _, err = f.WriteString(buf.String()); err != nil {
 		return err
 	}
 
@@ -142,6 +142,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		quoteName        string
 		maturity         time.Time
 		initialMarkPrice uint64
+		settlementValue  uint64
 	}{
 		{
 			decimalPlaces:    5,
@@ -150,6 +151,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementAsset:  "VUSD",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 200,
+			settlementValue:  200,
 		},
 		{
 			decimalPlaces:    5,
@@ -158,6 +160,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementAsset:  "VUSD",
 			maturity:         time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
 			initialMarkPrice: 10,
+			settlementValue:  10,
 		},
 		{
 			decimalPlaces:    5,
@@ -166,6 +169,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementAsset:  "BTC",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 5,
+			settlementValue:  5,
 		},
 	}
 
@@ -199,6 +203,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 								EthereumEvent: &proto.EthereumEvent{
 									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 									Event:      "price_changed",
+									Value:      skel.settlementValue,
 								},
 							},
 							Asset: skel.settlementAsset,

@@ -1,6 +1,4 @@
-APPS := dummyriskmodel vega vegabench vegaccount vegastream
-PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
-PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
+APPS := dummyriskmodel vega vegaccount vegastream
 
 ifeq ($(CI),)
 	# Not in CI
@@ -37,19 +35,22 @@ else
 	endif
 endif
 
-.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
+.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks
 
 all: build
 
 lint: ## Lint the files
-	@go install golang.org/x/lint/golint
-	@go list ./... | xargs -r golint -set_exit_status | sed -e "s#^$$GOPATH/src/##"
-
-bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
-	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
+	@t="$$(mktemp)" ; \
+	go list ./... | xargs golint | grep -vE '(and that stutters|blank import should be|should have comment|which can be annoying to use)' | tee "$$t" ; \
+	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
+	rm -f "$$t" ; \
+	exit "$$code"
 
 test: ## Run unit tests
 	@go test ./...
+
+integrationtest: ## run integration tests, showing ledger movements and full scenario output
+	@go test -v ./integration/... -godog.format=pretty
 
 race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
@@ -63,6 +64,10 @@ msan: ## Run memory sanitizer
 
 vet: ## Run go vet
 	@go vet -all ./...
+
+vetshadow: # Run go vet with shadow detection
+	@go vet -shadow ./... 2>&1 | grep -vE '^(#|gateway/graphql/generated.go|proto/.*\.pb\.(gw\.)?go)' ; \
+	code="$$?" ; test "$$code" -ne 0
 
 .PHONY: .testCoverage.txt
 .testCoverage.txt:
@@ -100,6 +105,10 @@ build: ## install the binaries in cmd/{progname}/
 			|| exit 1 ; \
 	done
 
+.PHONY: gofmtsimplify
+gofmtsimplify:
+	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
+
 install: ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
@@ -120,37 +129,17 @@ gqlgen_check: ## GraphQL: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
-proto: | deps ${PROTOFILES} ${PROTOVALFILES} proto/api/trading.pb.gw.go proto/api/trading.swagger.json ## build proto definitions
+ineffectassign: ## Check for ineffectual assignments
+	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
+	if test "$$(echo -n "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" ; exit 1 ; fi
 
-# This target is similar to the following one, but also with "plugins=grpc"
-proto/api/trading.pb.go: proto/api/trading.proto
-	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
+.PHONY: proto
+proto: deps ## build proto definitions
+	@./proto/generate.sh
 
-.PRECIOUS: proto/%.pb.go
-%.pb.go: %.proto
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. "$<"
-
-.PRECIOUS: %.validator.pb.go
-%.validator.pb.go: %.proto
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --govalidators_out=paths=source_relative:. "$<" && \
-	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
-	./script/fix_imports.sh "$@"
-
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml:.
-
-# This creates a reverse proxy to forward HTTP requests into gRPC requests
-proto/api/trading.pb.gw.go: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
-
-# Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iapi/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
-
+.PHONY: proto_check
 proto_check: ## proto: Check committed files match just-generated files
-	@find proto -name '*.proto' -exec touch '{}' ';' ; \
-	find gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
-	make proto 1>/dev/null || exit 1 ; \
+	@make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
@@ -158,6 +147,14 @@ proto_check: ## proto: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
+.PHONY: proto_clean
+proto_clean:
+	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
+		| xargs -r rm
+	@find proto/doc -name index.md \
+		| xargs -r rm
+
+.PHONY: rest_check
 rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
 	@python3 script/check_rest_endpoints.py \
 		--bindings gateway/rest/grpc-rest-bindings.yml \
@@ -208,6 +205,26 @@ gettools_build:
 .PHONY: gettools_develop
 gettools_develop:
 	@./script/gettools.sh develop
+
+# Make sure the mdspell command matches the one in .drone.yml.
+spellcheck: ## Run markdown spellcheck container
+	@docker run --rm -ti \
+		--entrypoint mdspell \
+		-v "$(PWD):/src" \
+		registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest \
+			--en-gb \
+			--ignore-acronyms \
+			--ignore-numbers \
+			--no-suggestions \
+			--report \
+			'*.md' \
+			'design/**/*.md'
+
+# The integration directory is special, and contains a package called core_test.
+staticcheck: ## Run statick analysis checks
+	@go list ./... | grep -v /integration | xargs staticcheck
+	@f="$$(mktemp)" && find integration -name '*.go' | xargs staticcheck | grep -v 'could not load export data' | tee "$$f" && \
+	count="$$(wc -l <"$$f")" && rm -f "$$f" && if test "$$count" -gt 0 ; then exit 1 ; fi
 
 clean: ## Remove previous build
 	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done

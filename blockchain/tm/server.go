@@ -17,7 +17,7 @@ type Server struct {
 	srv  cmn.Service
 }
 
-// NewServer instanciate a new server
+// NewServer instantiate a new server
 func NewServer(log *logging.Logger, config Config, app *AbciApplication) *Server {
 	// setup logger
 	log = log.Named(namedLogger)

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testMarketId   = "ABC123DEF456"
+	testMarketID   = "ABC123DEF456"
 	testMarketName = "ABCUSD/DEC99"
 )
 
@@ -29,7 +29,7 @@ func TestMarkets(t *testing.T) {
 		Markets:        storage.DefaultMarketStoreOptions(),
 		MarketsDirPath: dir,
 	}
-	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config)
+	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config, func() {})
 	assert.NoError(t, err)
 	assert.NotNil(t, marketStore)
 	if marketStore == nil {
@@ -37,14 +37,11 @@ func TestMarkets(t *testing.T) {
 	}
 	defer marketStore.Close()
 
-	err = marketStore.Commit() // no-op for in-memory store
-	assert.NoError(t, err)
-
 	config.Level.Level = logging.InfoLevel
 	marketStore.ReloadConf(config)
 
 	mkt := types.Market{
-		Id:   testMarketId,
+		Id:   testMarketID,
 		Name: testMarketName,
 	}
 	err = marketStore.Post(&mkt)
@@ -54,7 +51,7 @@ func TestMarkets(t *testing.T) {
 	assert.Equal(t, badger.ErrKeyNotFound, err)
 	assert.Nil(t, mkt2)
 
-	mkt3, err := marketStore.GetByID(testMarketId)
+	mkt3, err := marketStore.GetByID(testMarketID)
 	assert.NoError(t, err)
 	assert.NotNil(t, mkt3)
 	assert.Equal(t, mkt.Id, mkt3.Id)

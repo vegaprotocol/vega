@@ -155,7 +155,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 			return status
 		}
 
-		if err := defaultChainVersion.Check(res.NodeInfo.Version); err != nil {
+		if err = defaultChainVersion.Check(res.NodeInfo.Version); err != nil {
 			cs.log.Error("tendermint version error",
 				logging.Error(err),
 			)

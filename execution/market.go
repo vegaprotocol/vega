@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -37,6 +36,8 @@ var (
 	ErrMarginCheckInsufficient = errors.New("insufficient margin")
 	// ErrInvalidInitialMarkPrice signals that the initial mark price for a market is invalid
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
+	// ErrMissingGeneralAccountForParty ...
+	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
 
 	networkPartyID = "network"
 )
@@ -47,10 +48,7 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	riskConfig       risk.Config
-	positionConfig   positions.Config
-	settlementConfig settlement.Config
-	matchingConfig   matching.Config
+	matchingConfig matching.Config
 
 	mkt         *types.Market
 	closingAt   time.Time
@@ -70,16 +68,14 @@ type Market struct {
 	collateral  *collateral.Engine
 	partyEngine *Party
 
-	// stores
-	candles           CandleStore
-	orders            OrderStore
-	parties           PartyStore
-	trades            TradeStore
-	transferResponses TransferResponseStore
-
 	// buffers
-	candlesBuf           *buffer.Candle
-	transferResponsesBuf *buffer.TransferResponse
+	orderBuf        OrderBuf
+	partyBuf        PartyBuf
+	tradeBuf        TradeBuf
+	transferBuf     TransferBuf
+	candleBuf       CandleBuf
+	marginLevelsBuf MarginLevelsBuf
+	settleBuf       SettlementBuf
 
 	closed bool
 }
@@ -118,11 +114,13 @@ func NewMarket(
 	collateralEngine *collateral.Engine,
 	partyEngine *Party,
 	mkt *types.Market,
-	candles CandleStore,
-	orders OrderStore,
-	parties PartyStore,
-	trades TradeStore,
-	transferResponseStore TransferResponseStore,
+	candleBuf CandleBuf,
+	orderBuf OrderBuf,
+	partyBuf PartyBuf,
+	tradeBuf TradeBuf,
+	transferBuf TransferBuf,
+	marginLevelsBuf MarginLevelsBuf,
+	settlementBuf SettlementBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -144,42 +142,54 @@ func NewMarket(
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
 		tradableInstrument.Instrument.InitialMarkPrice, false)
 
-	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
-	transferResponsesBuf := buffer.NewTransferResponse(transferResponseStore)
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
+	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id, settlementBuf)
+
+	// start first candle
+	candleBuf.Start(mkt.Id, now)
 
 	market := &Market{
-		log:                  log,
-		idgen:                idgen,
-		mkt:                  mkt,
-		closingAt:            closingAt,
-		currentTime:          now,
-		markPrice:            tradableInstrument.Instrument.InitialMarkPrice,
-		matching:             book,
-		tradableInstrument:   tradableInstrument,
-		risk:                 riskEngine,
-		position:             positionEngine,
-		settlement:           settleEngine,
-		collateral:           collateralEngine,
-		partyEngine:          partyEngine,
-		candles:              candles,
-		orders:               orders,
-		parties:              parties,
-		trades:               trades,
-		candlesBuf:           candlesBuf,
-		transferResponsesBuf: transferResponsesBuf,
+		log:                log,
+		idgen:              idgen,
+		mkt:                mkt,
+		closingAt:          closingAt,
+		currentTime:        now,
+		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
+		matching:           book,
+		tradableInstrument: tradableInstrument,
+		risk:               riskEngine,
+		position:           positionEngine,
+		settlement:         settleEngine,
+		collateral:         collateralEngine,
+		partyEngine:        partyEngine,
+		orderBuf:           orderBuf,
+		partyBuf:           partyBuf,
+		tradeBuf:           tradeBuf,
+		candleBuf:          candleBuf,
+		transferBuf:        transferBuf,
+		marginLevelsBuf:    marginLevelsBuf,
+		settleBuf:          settlementBuf,
 	}
 
 	return market, nil
 }
 
-// GetMarkPrice - quick fix add this here to ensure the mark price has indeed updated
-func (m *Market) GetMarkPrice() uint64 {
-	return m.markPrice
+func (m *Market) GetMarketData() types.MarketData {
+	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
+	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()
+	return types.MarketData{
+		Market:          m.GetID(),
+		BestBidPrice:    bestBidPrice,
+		BestBidVolume:   bestBidVolume,
+		BestOfferPrice:  bestOfferPrice,
+		BestOfferVolume: bestOfferVolume,
+		MidPrice:        (bestBidPrice + bestOfferPrice) / 2,
+		MarkPrice:       m.markPrice,
+		Timestamp:       m.currentTime.UnixNano(),
+	}
 }
 
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
@@ -227,16 +237,12 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.log.Debug("Calculated risk factors and updated positions (maybe)",
 		logging.String("market-id", m.mkt.Id))
 
-	// generated / store the buffered candles
-	previousCandlesBuf, err := m.candlesBuf.Start(t)
+	err := m.candleBuf.Flush(m.mkt.Id, t)
 	if err != nil {
-		m.log.Error("unable to get candles buf", logging.Error(err))
-	}
-
-	// get the buffered candles from the buffer
-	err = m.candles.GenerateCandlesFromBuffer(m.GetID(), previousCandlesBuf)
-	if err != nil {
-		m.log.Error("Failed to generate candles from buffer for market", logging.String("market-id", m.GetID()))
+		m.log.Error("Failed to flush candles from buffer for market",
+			logging.String("market-id", m.mkt.Id),
+			logging.Error(err),
+		)
 	}
 
 	if closed {
@@ -248,7 +254,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.Transfer(m.GetID(), positions)
+			transfers, err := m.collateral.FinalSettlement(m.GetID(), positions)
 			if err != nil {
 				m.log.Error(
 					"Failed to get ledger movements after settling closed market",
@@ -256,7 +262,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				m.transferResponsesBuf.Add(transfers)
+				m.transferBuf.Add(transfers)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
@@ -269,14 +275,14 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				}
 
 				asset, _ := m.mkt.GetAsset()
-				parties := m.partyEngine.GetForMarket(m.GetID())
+				parties := m.partyEngine.GetByMarket(m.GetID())
 				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
 				if err != nil {
 					m.log.Error("Clear market error",
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					m.transferResponsesBuf.Add(clearMarketTransfers)
+					m.transferBuf.Add(clearMarketTransfers)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
@@ -293,8 +299,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 		}
 	}
 
-	// flush the transfer response buf
-	m.transferResponsesBuf.Flush()
 	timer.EngineTimeCounterAdd()
 	return
 }
@@ -308,12 +312,25 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
+	// set those at the begining as even rejected order get through the buffers
+	m.idgen.SetID(order)
+	order.CreatedAt = m.currentTime.UnixNano()
+
 	if m.closed {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_MARKET_CLOSED
+		m.orderBuf.Add(*order)
 		return nil, ErrMarketClosed
 	}
 
 	// Validate market
 	if order.MarketID != m.mkt.Id {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INVALID_MARKET_ID
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("market", m.mkt.Id))
@@ -322,10 +339,32 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	party, _ := m.parties.GetByID(order.PartyID)
+	// party, _ := m.parties.GetByID(order.PartyID)
+	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INVALID_PARTY_ID
+		m.orderBuf.Add(*order)
+
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
+	}
+
+	// ensure party have a general account, and margin account is / can be created
+	asset, _ := m.mkt.GetAsset()
+	_, err := m.collateral.CreatePartyMarginAccount(order.PartyID, order.MarketID, asset)
+	if err != nil {
+		m.log.Error("Margin account verification failed",
+			logging.String("party-id", order.PartyID),
+			logging.String("market-id", m.GetID()),
+			logging.String("asset", asset),
+		)
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_MISSING_GENERAL_ACCOUNT
+		m.orderBuf.Add(*order)
+		return nil, ErrMissingGeneralAccountForParty
 	}
 
 	// if this is a market order, let's set the price to it now.
@@ -336,6 +375,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INTERNAL_ERROR
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Unable to register potential trader position",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
@@ -343,26 +387,36 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Perform check and allocate margin
-	if err := m.checkMarginForOrder(pos, order); err != nil {
+	if err = m.checkMarginForOrder(pos, order); err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err1))
 		}
+
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Unable to check/add margin for trader",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
 
-	// set order ID
-	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
-
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
+		order.Status = types.Order_Rejected
+		if oerr, ok := types.IsOrderError(err); ok {
+			order.Reason = oerr
+		} else {
+			// should not happend but still...
+			order.Reason = types.OrderError_INTERNAL_ERROR
+		}
+		m.orderBuf.Add(*order)
 		m.log.Error("Failure after submitting order to matching engine",
 			logging.Order(*order),
 			logging.Error(err))
@@ -371,20 +425,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Insert aggressive remaining order
-	err = m.orders.Post(*order)
-	if err != nil {
-		m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	}
+	m.orderBuf.Add(*order)
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
-			if err != nil {
-				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(*order),
-					logging.Error(err))
-			}
+			m.orderBuf.Add(*order)
 		}
 	}
 
@@ -404,14 +450,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			m.tradeBuf.Add(*trade)
 
 			// Save to trade buffer for generating candles etc
-			err := m.candlesBuf.AddTrade(*trade)
+			err := m.candleBuf.AddTrade(*trade)
 			if err != nil {
 				m.log.Error("Failure adding trade to candle buffer after submit order",
 					logging.Trade(*trade),
@@ -420,11 +462,13 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
+			// add trade to settlement engine for correct MTM settlement of individual trades
+			m.settlement.AddTrade(trade)
 		}
 
 		// now let's get the transfers for MTM settlement
-		evts := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleOrder(m.markPrice, evts)
+		events := m.position.UpdateMarkPrice(m.markPrice)
+		settle := m.settlement.SettleMTM(m.markPrice, events)
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
@@ -447,8 +491,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					}
 				}
 			}
-			if err != nil && 0 != len(transfers) {
-				m.transferResponsesBuf.Add(transfers)
+			if err == nil && len(transfers) > 0 {
+				m.transferBuf.Add(transfers)
 			}
 			err = m.resolveClosedOutTraders(closed, order)
 			if err != nil {
@@ -504,11 +548,6 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	// then remove potentials buys/sell in all the distressed, and recalculate risks
-	for _, v := range distressedMarginEvts {
-		v.ClearPotentials()
-	}
-
 	// now that we closed orders, let's run the risk engine again
 	// so it'll separate the positions still in distress from the
 	// which have acceptable margins
@@ -536,7 +575,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		closed = m.position.RemoveDistressed(closed)
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
-		movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+		var movements *types.TransferResponse
+		movements, err = m.collateral.RemoveDistressed(closed, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -585,19 +625,15 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
-	if err := m.orders.Post(no); err != nil {
-		m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	}
+	m.orderBuf.Add(no)
+	// if err := m.orders.Post(no); err != nil {
+	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
+	// }
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
-			if err != nil {
-				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(*order),
-					logging.Error(err))
-			}
+			m.orderBuf.Add(*order)
 		}
 	}
 
@@ -613,14 +649,10 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			m.tradeBuf.Add(*trade)
 
 			// Save to trade buffer for generating candles etc
-			err := m.candlesBuf.AddTrade(*trade)
+			err = m.candleBuf.AddTrade(*trade)
 			if err != nil {
 				m.log.Error("Failure adding trade to candle buffer after submit order",
 					logging.Trade(*trade),
@@ -628,12 +660,13 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			}
 			// we skip setting the mark price when the network is trading
 
-			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade)
+			// Update positions - this is a special trade involving the network as party
+			// so rather than checking this every time we call Update, call special UpdateNetwork
+			m.position.UpdateNetwork(trade)
 		}
 	}
 
-	if err := m.zeroOutNetwork(size, closed, &no, o); err != nil {
+	if err = m.zeroOutNetwork(size, closed, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -663,13 +696,22 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// get the updated positions
 	evt := m.position.Positions()
 	// settle MTM, the positions have changed
-	settle := m.settlement.SettleOrder(m.markPrice, evt)
+	settle := m.settlement.SettleMTM(m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
-	_, errCh := m.collateral.TransferCh(m.GetID(), settle)
-	// return an error if an error was pushed onto the channel
-	return <-errCh
+
+	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle)
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug(
+			"ledger movements after MTM on traders who closed out distressed",
+			logging.Int("response-count", len(responses)),
+			logging.String("raw", fmt.Sprintf("%#v", responses)),
+		)
+	}
+	// send transfer to buffer
+	m.transferBuf.Add(responses)
+	return err
 }
 
 func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
@@ -697,9 +739,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 	if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
 		return err
 	}
-	if err := m.orders.Post(order); err != nil {
-		return err
-	}
+	m.orderBuf.Add(order)
 	// traders need to take the opposing side
 	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
@@ -719,18 +759,14 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
 		// store the trader order, too
-		if err := m.orders.Post(to); err != nil {
-			return err
-		}
+		m.orderBuf.Add(to)
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
 		}
 		// now store the resulting trades:
 		for _, trade := range res.Trades {
-			if err := m.trades.Post(trade); err != nil {
-				return err
-			}
+			m.tradeBuf.Add(*trade)
 		}
 	}
 	return nil
@@ -763,9 +799,9 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferResponsesBuf.Add(transferResps)
+		m.transferBuf.Add(transferResps)
 
-		if 0 != len(closePositions) {
+		if len(closePositions) > 0 {
 
 			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
@@ -800,9 +836,6 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
-	// transferCh, _ := m.collateral.TransferCh(m.GetID(), settle)
-	// e := <-transferCh
-
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdate := m.risk.UpdateMarginOnNewOrder(e, price)
@@ -810,6 +843,13 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events
 		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
+
+	// push margins into the buffer
+	margins := riskUpdate.MarginLevels()
+	margins.Timestamp = m.currentTime.UnixNano()
+	margins.MarketID = m.GetID()
+	m.marginLevelsBuf.Add(*margins)
+
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Got margins transfer on new order")
 		transfer := riskUpdate.Transfer()
@@ -834,35 +874,45 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	transferCh, errCh := m.collateral.TransferCh(m.GetID(), settle)
-	go func() {
-		err := <-errCh
-		if err != nil {
-			m.log.Error(
-				"Some error in collateral when processing settle MTM transfers",
-				logging.Error(err),
-			)
-			cancel()
-		}
-	}()
-
-	evts := []events.Margin{}
-	// iterate over all events until channel close
-	for e := range transferCh {
-		evts = append(evts, e)
+	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle)
+	if err != nil {
+		m.log.Error(
+			"Failed to process mark to market settlement (collateral)",
+			logging.Error(err),
+		)
+		return nil
 	}
+	if m.log.GetLevel() == logging.DebugLevel {
+		// @TODO stream the ledger movements here
+		m.log.Debug(
+			"transfer responses after MTM settlement",
+			logging.Int("transfer-count", len(response)),
+			logging.String("raw-dump", fmt.Sprintf("%#v", response)),
+		)
+	}
+	// sending response to buffer
+	m.transferBuf.Add(response)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(context.Background(), evts, m.markPrice)
 	if len(riskUpdates) == 0 {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		}
 		return nil
 	}
+
+	// push margins into the buffer
+	t := m.currentTime.UnixNano()
+	mktid := m.GetID()
+	for _, riskUpdate := range riskUpdates {
+		margins := riskUpdate.MarginLevels()
+		margins.Timestamp = t
+		margins.MarketID = mktid
+		m.marginLevelsBuf.Add(*margins)
+	}
+
 	timer.EngineTimeCounterAdd()
 	return riskUpdates
 }
@@ -894,12 +944,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
-	err = m.orders.Put(*order)
-	if err != nil {
-		m.log.Error("Failure storing order update in execution engine (cancel)",
-			logging.Order(*order),
-			logging.Error(err))
-	}
+	m.orderBuf.Add(*order)
 	_, err = m.position.UnregisterOrder(order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -929,15 +974,27 @@ func (m *Market) DeleteOrder(order *types.Order) (err error) {
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(
-	orderAmendment *types.OrderAmendment,
-	existingOrder *types.Order,
-) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
 		return nil, ErrMarketClosed
+	}
+
+	// try to get the order first
+	// order, err := e.order.GetByPartyAndID(
+	// context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
+	existingOrder, err := m.matching.GetOrderByPartyAndID(
+		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
+	if err != nil {
+		m.log.Error("Invalid order reference",
+			logging.String("id", existingOrder.Id),
+			logging.String("party", existingOrder.PartyID),
+			logging.String("market", existingOrder.MarketID),
+			logging.Error(err))
+
+		return nil, types.ErrInvalidOrderReference
 	}
 
 	// Validate Market
@@ -1047,13 +1104,7 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 			logging.Error(err))
 		return &types.OrderConfirmation{}, err
 	}
-	err = m.orders.Put(*newOrder)
-	if err != nil {
-		m.log.Error("Failure storing order update in orders store (amend-in-place)",
-			logging.Order(*newOrder),
-			logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
-	}
+	m.orderBuf.Add(*newOrder)
 	return &types.OrderConfirmation{}, nil
 }
 

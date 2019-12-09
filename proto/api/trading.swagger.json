@@ -17,7 +17,7 @@
   "paths": {
     "/auth/token": {
       "get": {
-        "summary": "unary calls - read",
+        "summary": "Check an API token",
         "operationId": "CheckToken",
         "responses": {
           "200": {
@@ -46,6 +46,7 @@
         ]
       },
       "post": {
+        "summary": "Sign In",
         "operationId": "SignIn",
         "responses": {
           "200": {
@@ -72,6 +73,7 @@
     },
     "/fountain": {
       "post": {
+        "summary": "Request balance increase",
         "operationId": "NotifyTraderAccount",
         "responses": {
           "200": {
@@ -98,6 +100,7 @@
     },
     "/markets": {
       "get": {
+        "summary": "Get a list of Markets",
         "operationId": "Markets",
         "responses": {
           "200": {
@@ -112,9 +115,26 @@
         ]
       }
     },
+    "/markets/data": {
+      "get": {
+        "summary": "Get a list of Market Data",
+        "operationId": "MarketsData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketsDataResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}": {
       "get": {
-        "summary": "markets",
+        "summary": "Get Market by ID",
         "operationId": "MarketByID",
         "responses": {
           "200": {
@@ -139,7 +159,7 @@
     },
     "/markets/{marketID}/candles": {
       "get": {
-        "summary": "candles",
+        "summary": "Get Market Candles",
         "operationId": "Candles",
         "responses": {
           "200": {
@@ -184,8 +204,34 @@
         ]
       }
     },
+    "/markets/{marketID}/data": {
+      "get": {
+        "summary": "Get Market Data by ID",
+        "operationId": "MarketDataByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDataByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}/depth": {
       "get": {
+        "summary": "Get Market Depth",
         "operationId": "MarketDepth",
         "responses": {
           "200": {
@@ -210,7 +256,7 @@
     },
     "/markets/{marketID}/orders": {
       "get": {
-        "summary": "orders",
+        "summary": "Get Market Orders",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
@@ -263,7 +309,8 @@
     },
     "/markets/{marketID}/orders/{orderID}": {
       "get": {
-        "operationId": "OrderByMarketAndId",
+        "summary": "Get Market Order by OrderID",
+        "operationId": "OrderByMarketAndID",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -293,7 +340,7 @@
     },
     "/markets/{marketID}/trades": {
       "get": {
-        "summary": "trades",
+        "summary": "Get Market Trades",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
@@ -339,6 +386,7 @@
     },
     "/markets/{marketID}/trades/latest": {
       "get": {
+        "summary": "Get latest Market Trade",
         "operationId": "LastTrade",
         "responses": {
           "200": {
@@ -363,7 +411,7 @@
     },
     "/orders": {
       "post": {
-        "summary": "unary calls - writes",
+        "summary": "Submit an Order",
         "operationId": "SubmitOrder",
         "responses": {
           "200": {
@@ -390,6 +438,7 @@
     },
     "/orders/{amendment.orderID}": {
       "put": {
+        "summary": "Amend an Order",
         "operationId": "AmendOrder",
         "responses": {
           "200": {
@@ -422,6 +471,7 @@
     },
     "/orders/{cancellation.orderID}": {
       "delete": {
+        "summary": "Cancel an Order",
         "operationId": "CancelOrder",
         "responses": {
           "200": {
@@ -464,6 +514,7 @@
     },
     "/orders/{orderID}/trades": {
       "get": {
+        "summary": "Get Order Trades",
         "operationId": "TradesByOrder",
         "responses": {
           "200": {
@@ -488,6 +539,7 @@
     },
     "/orders/{reference}": {
       "get": {
+        "summary": "Get an Order by Pending Order reference (UUID)",
         "operationId": "OrderByReference",
         "responses": {
           "200": {
@@ -512,6 +564,7 @@
     },
     "/parties": {
       "get": {
+        "summary": "Get a list of Parties",
         "operationId": "Parties",
         "responses": {
           "200": {
@@ -528,7 +581,7 @@
     },
     "/parties/{partyID}": {
       "get": {
-        "summary": "parties",
+        "summary": "Get Party by ID",
         "operationId": "PartyByID",
         "responses": {
           "200": {
@@ -553,13 +606,13 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "accounts",
-        "operationId": "AccountsByParty",
+        "summary": "Get Party accounts",
+        "operationId": "PartyAccounts",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiAccountsByPartyResponse"
+              "$ref": "#/definitions/apiPartyAccountsResponse"
             }
           }
         },
@@ -568,6 +621,12 @@
             "name": "partyID",
             "in": "path",
             "required": true,
+            "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "query",
+            "required": false,
             "type": "string"
           },
           {
@@ -583,6 +642,43 @@
               "GENERAL"
             ],
             "default": "NO_ACC"
+          },
+          {
+            "name": "asset",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/markets/{marketID}/margin": {
+      "get": {
+        "summary": "Get Party Margin Levels",
+        "operationId": "MarginLevels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarginLevelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -592,6 +688,7 @@
     },
     "/parties/{partyID}/orders": {
       "get": {
+        "summary": "Get Party Orders",
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
@@ -644,7 +741,7 @@
     },
     "/parties/{partyID}/positions": {
       "get": {
-        "summary": "positions",
+        "summary": "Get Party Positions",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -660,6 +757,12 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -669,6 +772,7 @@
     },
     "/parties/{partyID}/trades": {
       "get": {
+        "summary": "Get Party Trades",
         "operationId": "TradesByParty",
         "responses": {
           "200": {
@@ -718,9 +822,42 @@
         ]
       }
     },
+    "/parties/{withdraw.partyID}/withdrawals": {
+      "post": {
+        "summary": "Request withdrawal",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdraw.partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
-        "summary": "metrics",
+        "summary": "Get Statistics",
         "operationId": "Statistics",
         "responses": {
           "200": {
@@ -737,6 +874,7 @@
     },
     "/time": {
       "get": {
+        "summary": "Get Time",
         "operationId": "GetVegaTime",
         "responses": {
           "200": {
@@ -760,7 +898,8 @@
         "Expired",
         "Cancelled",
         "Stopped",
-        "Filled"
+        "Filled",
+        "Rejected"
       ],
       "default": "Active"
     },
@@ -773,50 +912,6 @@
         "FOK"
       ],
       "default": "GTC"
-    },
-    "apiAccountsByPartyAndAssetResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyAndMarketResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyAndTypeResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -857,11 +952,41 @@
         }
       }
     },
+    "apiMarginLevelsResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarginLevels"
+          }
+        }
+      }
+    },
+    "apiMarketAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiMarketByIDResponse": {
       "type": "object",
       "properties": {
         "market": {
           "$ref": "#/definitions/vegaMarket"
+        }
+      }
+    },
+    "apiMarketDataByIDResponse": {
+      "type": "object",
+      "properties": {
+        "marketData": {
+          "$ref": "#/definitions/vegaMarketData"
         }
       }
     },
@@ -885,6 +1010,17 @@
         },
         "lastTrade": {
           "$ref": "#/definitions/vegaTrade"
+        }
+      }
+    },
+    "apiMarketsDataResponse": {
+      "type": "object",
+      "properties": {
+        "marketsData": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarketData"
+          }
         }
       }
     },
@@ -993,6 +1129,17 @@
         }
       }
     },
+    "apiPartyAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiPartyByIDResponse": {
       "type": "object",
       "properties": {
@@ -1092,6 +1239,14 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "apiWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdraw"
         }
       }
     },
@@ -1246,6 +1401,10 @@
         },
         "event": {
           "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -1382,6 +1541,40 @@
         }
       }
     },
+    "vegaMarginLevels": {
+      "type": "object",
+      "properties": {
+        "maintenanceMargin": {
+          "type": "string",
+          "format": "int64"
+        },
+        "searchLevel": {
+          "type": "string",
+          "format": "int64"
+        },
+        "initialMargin": {
+          "type": "string",
+          "format": "int64"
+        },
+        "collateralReleaseLevel": {
+          "type": "string",
+          "format": "int64"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "marketID": {
+          "type": "string"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "vegaMarket": {
       "type": "object",
       "properties": {
@@ -1403,6 +1596,42 @@
         },
         "discrete": {
           "$ref": "#/definitions/vegaDiscreteTrading"
+        }
+      }
+    },
+    "vegaMarketData": {
+      "type": "object",
+      "properties": {
+        "markPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestBidPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestBidVolume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestOfferPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestOfferVolume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "midPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "market": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -1452,9 +1681,8 @@
           "type": "string",
           "format": "uint64"
         },
-        "minimumMargin": {
-          "type": "string",
-          "format": "int64"
+        "partyID": {
+          "type": "string"
         }
       }
     },
@@ -1533,6 +1761,9 @@
         },
         "reference": {
           "type": "string"
+        },
+        "reason": {
+          "$ref": "#/definitions/vegaOrderError"
         }
       }
     },
@@ -1543,6 +1774,9 @@
           "type": "string"
         },
         "partyID": {
+          "type": "string"
+        },
+        "marketID": {
           "type": "string"
         },
         "price": {
@@ -1556,6 +1790,9 @@
         "expiresAt": {
           "type": "string",
           "format": "int64"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide"
         }
       }
     },
@@ -1572,6 +1809,29 @@
           "type": "string"
         }
       }
+    },
+    "vegaOrderError": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "INVALID_MARKET_ID",
+        "INVALID_ORDER_ID",
+        "ORDER_OUT_OF_SEQUENCE",
+        "INVALID_REMAINING_SIZE",
+        "TIME_FAILURE",
+        "ORDER_REMOVAL_FAILURE",
+        "INVALID_EXPIRATION_DATETIME",
+        "INVALID_ORDER_REFERENCE",
+        "EDIT_NOT_ALLOWED",
+        "ORDER_AMEND_FAILURE",
+        "ORDER_NOT_FOUND",
+        "INVALID_PARTY_ID",
+        "MARKET_CLOSED",
+        "MARGIN_CHECK_FAILED",
+        "MISSING_GENERAL_ACCOUNT",
+        "INTERNAL_ERROR"
+      ],
+      "default": "NONE"
     },
     "vegaOrderSubmission": {
       "type": "object",
@@ -1604,7 +1864,7 @@
         "expiresAt": {
           "type": "string",
           "format": "int64",
-          "title": "do not enforce as not always required\naltho at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+          "title": "do not enforce as not always required\nalthouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
@@ -1843,6 +2103,10 @@
           "type": "integer",
           "format": "int32"
         },
+        "marketDataSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
         "appVersionHash": {
           "type": "string"
         },
@@ -1855,6 +2119,9 @@
         "blockDuration": {
           "type": "string",
           "format": "uint64"
+        },
+        "uptime": {
+          "type": "string"
         }
       }
     },
@@ -2009,6 +2276,30 @@
         }
       },
       "title": "Stream result of vegaCandle"
+    },
+    "vegaMarginLevels": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarginLevels"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarginLevels"
+    },
+    "vegaMarketData": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketData"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketData"
     },
     "vegaMarketDepth": {
       "type": "object",

@@ -52,6 +52,116 @@ func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Market order price - Buy", testGetMarketOrderPriceBuy)
 	t.Run("Get Market order price - Sell", testGetMarketOrderPriceSell)
 	t.Run("Get Market order price - empty book", testGetMarketOrderPriceEmptyBook)
+	t.Run("Get Best bid price and volume", testBestBidPriceAndVolume)
+	t.Run("Get Best offer price and volume", testBestOfferPriceAndVolume)
+}
+
+func testBestBidPriceAndVolume(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_Buy,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Buy,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Buy,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "d",
+			Side:        types.Side_Buy,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+
+	price, volume := book.BestBidPriceAndVolume()
+	assert.Equal(t, uint64(300), price)
+	assert.Equal(t, uint64(15), volume)
+}
+
+func testBestOfferPriceAndVolume(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_Sell,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Sell,
+			Price:       10,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Sell,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "d",
+			Side:        types.Side_Sell,
+			Price:       10,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+
+	price, volume := book.BestOfferPriceAndVolume()
+	assert.Equal(t, uint64(10), price)
+	assert.Equal(t, uint64(15), volume)
 }
 
 func testGetMarketOrderPriceBuy(t *testing.T) {
@@ -519,9 +629,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Len(t, expired, 5)
 	assert.Equal(t, "8", expired[0].Id)
 	assert.Equal(t, "10", expired[1].Id)
-	assert.Equal(t, "5", expired[2].Id)
+	assert.Equal(t, "1", expired[2].Id)
 	assert.Equal(t, "3", expired[3].Id)
-	assert.Equal(t, "1", expired[4].Id)
+	assert.Equal(t, "5", expired[4].Id)
 }
 
 //test for order validation
@@ -734,7 +844,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 
 	timestamps := []int64{0, 1, 2}
 	for _, timestamp := range timestamps {
-		for index, _ := range m[timestamp] {
+		for index := range m[timestamp] {
 			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
 			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors
@@ -1439,6 +1549,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	// Act
@@ -1478,6 +1589,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	// Act
@@ -1508,6 +1620,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	orderAdded.MarketID = "invalid" // Bad market, malformed?
@@ -1534,6 +1647,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 
 	_, err = book.CancelOrder(orderAdded)
@@ -1927,7 +2041,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 
 	timestamps := []int64{0, 1}
 	for _, timestamp := range timestamps {
-		for index, _ := range m[timestamp] {
+		for index := range m[timestamp] {
 			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
 			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors

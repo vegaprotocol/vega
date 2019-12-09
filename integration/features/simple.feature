@@ -66,4 +66,3 @@ Feature: Test trading-core flow with simple risk model
             | trader2 | 1        | 0   | 0    | 120    | 99880   |
         And "trader3" has not been added to the market
         And the mark price is "1010"
-

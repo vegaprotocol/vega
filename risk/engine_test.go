@@ -56,9 +56,7 @@ var (
 		},
 	}
 
-	riskMinamount      int64  = 250
-	riskRequiredMargin int64  = 300
-	markPrice          uint64 = 100
+	markPrice uint64 = 100
 )
 
 func TestUpdateMargins(t *testing.T) {
@@ -206,7 +204,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
 
-	// instanciate the book then fil it with the orders
+	// instantiate the book then fil it with the orders
 
 	book := matching.NewOrderBook(
 		log, conf.Matching, marketID, uint64(markPrice), false)

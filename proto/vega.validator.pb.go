@@ -84,9 +84,6 @@ func (this *TradeSet) Validate() error {
 	}
 	return nil
 }
-func (this *MarketData) Validate() error {
-	return nil
-}
 func (this *Candle) Validate() error {
 	return nil
 }
@@ -111,6 +108,19 @@ func (this *MarketDepth) Validate() error {
 	return nil
 }
 func (this *MarketPosition) Validate() error {
+	return nil
+}
+func (this *Position) Validate() error {
+	for _, item := range this.FifoQueue {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("FifoQueue", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *PositionTrade) Validate() error {
 	return nil
 }
 func (this *Statistics) Validate() error {
@@ -146,9 +156,6 @@ func (this *OrderSubmission) Validate() error {
 	}
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
-	}
-	if !(this.Price > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Price", fmt.Errorf(`value '%v' must be greater than '0'`, this.Price))
 	}
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
@@ -236,5 +243,8 @@ func (this *TransferResponse) Validate() error {
 	return nil
 }
 func (this *MarginLevels) Validate() error {
+	return nil
+}
+func (this *MarketData) Validate() error {
 	return nil
 }

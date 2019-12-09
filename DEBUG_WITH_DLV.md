@@ -1,13 +1,13 @@
-# Debugging with dlv
+# Debugging with `dlv`
 
 This document is a guide describing how to debug with `dlv` and `VSCode`.
 
 You will need to read and follow instructions in `GETTING_STARTED.md` first.
 
-Once you have sucessfully installed `V E G A` with `tendermint` these are the steps to let you debug.
+Once you have successfully installed `V E G A` with `tendermint` these are the steps to let you debug.
 
-- Install `dlv` if you've not already done so. In `VSCode` you can do this by launching the "Command Pallete" and running `Go: Install/Update Tools`, select `dlv`, press Ok.
-- Use "Command Pallete" to run `Debug: Open launch.json`. If you didn't already have a launch.json file, this will create one with the below default configuration which can be used to debug the current package. Enter the following into `launch.json` (which will be by default created inside `vega/.vscode/`):
+- Install `dlv` if you've not already done so. In `VSCode` you can do this by launching the "Command Palette" and running `Go: Install/Update Tools`, select `dlv`, press OK.
+- Use "Command Palette" to run `Debug: Open launch.json`. If you didn't already have a `launch.json` file, this will create one with the below default configuration which can be used to debug the current package. Enter the following into `launch.json` (which will be by default created inside `vega/.vscode/`):
 
     ```json
     {

@@ -27,14 +27,14 @@ type Processor interface {
 }
 
 // ApplicationService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/tm ApplicationService
 type ApplicationService interface {
 	Begin() error
 	Commit() error
 }
 
 // ApplicationTime ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/tm ApplicationTime
 type ApplicationTime interface {
 	SetTimeNow(epochTimeNano time.Time)
 }

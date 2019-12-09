@@ -57,13 +57,11 @@ func main() {
 }
 
 func waitSig() {
-	var gracefulStop = make(chan os.Signal)
+	var gracefulStop = make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 	log.Printf("waiting for exit signals")
 
-	select {
-	case sig := <-gracefulStop:
-		log.Printf("caught signal %v", fmt.Sprintf("%+v", sig))
-	}
+	sig := <-gracefulStop
+	log.Printf("caught signal %v", fmt.Sprintf("%+v", sig))
 }

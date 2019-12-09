@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	collateralmocks "code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/execution"
@@ -12,13 +13,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,11 +29,12 @@ type testMarket struct {
 
 	collateraEngine       *collateral.Engine
 	partyEngine           *execution.Party
-	candleStore           *mocks.MockCandleStore
-	orderStore            *mocks.MockOrderStore
-	partyStore            *mocks.MockPartyStore
-	tradeStore            *mocks.MockTradeStore
-	transferResponseStore *mocks.MockTransferResponseStore
+	candleStore           *mocks.MockCandleBuf
+	orderStore            *mocks.MockOrderBuf
+	partyStore            *mocks.MockPartyBuf
+	tradeStore            *mocks.MockTradeBuf
+	transferResponseStore *mocks.MockTransferBuf
+	settleBuf             *mocks.MockSettlementBuf
 
 	now time.Time
 }
@@ -47,12 +47,15 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
 
-	candleStore := mocks.NewMockCandleStore(ctrl)
-	candleStore.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).AnyTimes()
-	orderStore := mocks.NewMockOrderStore(ctrl)
-	partyStore := mocks.NewMockPartyStore(ctrl)
-	tradeStore := mocks.NewMockTradeStore(ctrl)
-	transferResponseStore := mocks.NewMockTransferResponseStore(ctrl)
+	candleStore := mocks.NewMockCandleBuf(ctrl)
+	orderStore := mocks.NewMockOrderBuf(ctrl)
+	partyStore := mocks.NewMockPartyBuf(ctrl)
+	tradeStore := mocks.NewMockTradeBuf(ctrl)
+	transferResponseStore := mocks.NewMockTransferBuf(ctrl)
+	settleBuf := mocks.NewMockSettlementBuf(ctrl)
+	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	settleBuf.EXPECT().Flush().AnyTimes()
+	marginLevelsBuf := buffer.NewMarginLevels()
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
@@ -60,15 +63,17 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)
 
+	candleStore.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
-		partyStore, tradeStore, transferResponseStore, now, execution.NewIDGen())
+		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, settleBuf, now, execution.NewIDGen())
+	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	accountBuf.EXPECT().Add(gomock.Any()).Times(2)
+	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	// ignore response ids here + this cannot fail
 	_, _ = collateralEngine.CreateMarketAccounts(mktEngine.GetID(), asset, 0)
 
@@ -84,32 +89,33 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		partyStore:            partyStore,
 		tradeStore:            tradeStore,
 		transferResponseStore: transferResponseStore,
+		settleBuf:             settleBuf,
 		now:                   now,
 	}
 }
 
-func getMarkets(closingAt time.Time) []proto.Market {
-	mkt := proto.Market{
+func getMarkets(closingAt time.Time) []types.Market {
+	mkt := types.Market{
 		Name: "ETHUSD/DEC19",
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
 				Code:      "CRYPTO:ETHUSD/DEC19",
 				Name:      "December 2019 ETH vs USD future",
 				BaseName:  "ETH",
 				QuoteName: "USD",
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
 					},
 				},
 				InitialMarkPrice: 99,
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
+				Product: &types.Instrument_Future{
+					Future: &types.Future{
 						Maturity: closingAt.Format(time.RFC3339),
-						Oracle: &proto.Future_EthereumEvent{
-							EthereumEvent: &proto.EthereumEvent{
+						Oracle: &types.Future_EthereumEvent{
+							EthereumEvent: &types.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 							},
@@ -118,29 +124,29 @@ func getMarkets(closingAt time.Time) []proto.Market {
 					},
 				},
 			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
 					SearchLevel:       1.1,
 					InitialMargin:     1.2,
 					CollateralRelease: 1.4,
 				},
 			},
-			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
-				SimpleRiskModel: &proto.SimpleRiskModel{
-					Params: &proto.SimpleModelParams{
+			RiskModel: &types.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &types.SimpleRiskModel{
+					Params: &types.SimpleModelParams{
 						FactorLong:  0.15,
 						FactorShort: 0.25,
 					},
 				},
 			},
 		},
-		TradingMode: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{},
+		TradingMode: &types.Market_Continuous{
+			Continuous: &types.ContinuousTrading{},
 		},
 	}
 
 	execution.SetMarketID(&mkt, 0)
-	return []proto.Market{mkt}
+	return []types.Market{mkt}
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -153,15 +159,15 @@ func TestMarketClosing(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(8)
-	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
-	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
+	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	// check account gets updated
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// if Margin -> 0
 		if acc.Type == types.AccountType_MARGIN {
 			assert.Equal(t, acc.Balance, int64(0))
@@ -186,10 +192,11 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(6).Do(func(acc types.Account) {
+	// this will also output the close accounts
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
+	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
 
@@ -226,20 +233,16 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	}
 
 	// submit orders
-	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-		return &types.Party{Id: id}, nil
-	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
-	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
-
-	// close the market nowks
-	// check account gets updated
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(4).DoAndReturn(func(acc types.Account) {
-		fmt.Printf("ACCOUNT1: %v\n", acc)
-	})
+	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+	// 	return &types.Party{Id: id}, nil
+	// })
+	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
+	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	_, err := tm.market.SubmitOrder(orderBuy)
 	assert.Nil(t, err)
@@ -252,9 +255,9 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		t.Fail()
 	}
 
-	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(9).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// if general, is should be back to the original topup as no
@@ -287,11 +290,12 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(3).Do(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
+	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	// submit orders
 	// party1 buys
@@ -312,13 +316,14 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	}
 
 	// submit orders
-	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-		return &types.Party{Id: id}, nil
-	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
-	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+	// 	return &types.Party{Id: id}, nil
+	// })
+	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -347,10 +352,10 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(3).Do(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
+	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
 	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(&types.NotifyTraderAccount{TraderID: party1}, 0)
 
 	// submit orders
@@ -372,13 +377,14 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	}
 
 	// submit orders
-	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-		return &types.Party{Id: id}, nil
-	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
-	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+	// 	return &types.Party{Id: id}, nil
+	// })
+	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -405,10 +411,10 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(3).Do(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
+	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 
 	// submit orders
@@ -430,15 +436,16 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	}
 
 	// submit orders
-	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-		return &types.Party{Id: id}, nil
-	})
-	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
-	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+	// 	return &types.Party{Id: id}, nil
+	// })
+	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// general account should have less monies as some is use for collateral
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
@@ -482,7 +489,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		}
 	})
 
-	_, err = tm.market.AmendOrder(amendedOrder, orderBuy)
+	_, err = tm.market.AmendOrder(amendedOrder)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -491,31 +498,31 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 func TestSetMarketID(t *testing.T) {
 	t.Run("nil market config", func(t *testing.T) {
-		marketcfg := &proto.Market{}
+		marketcfg := &types.Market{}
 		err := execution.SetMarketID(marketcfg, 0)
 		assert.Error(t, err)
 	})
 
 	t.Run("good market config", func(t *testing.T) {
-		marketcfg := &proto.Market{
+		marketcfg := &types.Market{
 			Id:   "", // ID will be generated
 			Name: "ETH/DEC19",
-			TradableInstrument: &proto.TradableInstrument{
-				Instrument: &proto.Instrument{
+			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
 					Id:   "Crypto/ETHUSD/Futures/Dec19",
 					Code: "FX:ETHUSD/DEC19",
 					Name: "December 2019 ETH vs USD future",
-					Metadata: &proto.InstrumentMetadata{
+					Metadata: &types.InstrumentMetadata{
 						Tags: []string{
 							"asset_class:fx/crypto",
 							"product:futures",
 						},
 					},
-					Product: &proto.Instrument_Future{
-						Future: &proto.Future{
+					Product: &types.Instrument_Future{
+						Future: &types.Future{
 							Maturity: "2019-12-31T23:59:59Z",
-							Oracle: &proto.Future_EthereumEvent{
-								EthereumEvent: &proto.EthereumEvent{
+							Oracle: &types.Future_EthereumEvent{
+								EthereumEvent: &types.EthereumEvent{
 									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 									Event:      "price_changed",
 								},
@@ -524,11 +531,11 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &proto.ForwardRiskModel{
+				RiskModel: &types.TradableInstrument_ForwardRiskModel{
+					ForwardRiskModel: &types.ForwardRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.ModelParamsBS{
+						Params: &types.ModelParamsBS{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,
@@ -536,8 +543,8 @@ func TestSetMarketID(t *testing.T) {
 					},
 				},
 			},
-			TradingMode: &proto.Market_Continuous{
-				Continuous: &proto.ContinuousTrading{},
+			TradingMode: &types.Market_Continuous{
+				Continuous: &types.ContinuousTrading{},
 			},
 		}
 

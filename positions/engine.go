@@ -59,20 +59,21 @@ func (m MarketPosition) Price() uint64 {
 	return m.price
 }
 
-func (m MarketPosition) ClearPotentials() {
-	m.buy = 0
-	m.sell = 0
-}
-
 // Engine represents the positions engine
 type Engine struct {
 	log *logging.Logger
 	Config
 
 	cfgMu sync.Mutex
-	mu    *sync.RWMutex
 	// partyID -> MarketPosition
 	positions map[string]*MarketPosition
+
+	// this is basically tracking all position to
+	// not perform a copy when positions a retrieved by other engines
+	// the pointer is hidden behing the interface, and do not expose
+	// any function to mutate them, so we can consider it safe to return
+	// this slice
+	positionsCpy []events.MarketPosition
 }
 
 // New instantiates a new positions engine
@@ -82,10 +83,10 @@ func New(log *logging.Logger, config Config) *Engine {
 	log.SetLevel(config.Level.Get())
 
 	return &Engine{
-		Config:    config,
-		log:       log,
-		mu:        &sync.RWMutex{},
-		positions: map[string]*MarketPosition{},
+		Config:       config,
+		log:          log,
+		positions:    map[string]*MarketPosition{},
+		positionsCpy: []events.MarketPosition{},
 	}
 }
 
@@ -112,18 +113,18 @@ func (e *Engine) ReloadConf(cfg Config) {
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
-	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	if !found {
 		pos = &MarketPosition{partyID: order.PartyID}
 		e.positions[order.PartyID] = pos
+		// append the pointer to the slice as well
+		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_Buy {
 		pos.buy += int64(order.Size)
 	} else {
 		pos.sell += int64(order.Size)
 	}
-	e.mu.Unlock()
 	timer.EngineTimeCounterAdd()
 	return pos, nil
 }
@@ -132,9 +133,7 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
 func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err error) {
 	timer := metrics.NewTimeCounter("-", "positions", "UnregisterOrder")
-	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
-	e.mu.Unlock()
 	if !found {
 		err = ErrPositionNotFound
 	} else {
@@ -148,12 +147,51 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 	return
 }
 
+// UpdateNetwork - functionally the same as the Update func, except for ignoring the network
+// party in the trade (whether it be buyer or seller). This could be incorporated into the Update
+// function, but we know when we're adding network trades, and having this check every time is
+// wasteful, and would only serve to add complexity to the Update func, and slow it down
+func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
+	// there's only 1 position
+	var pos *MarketPosition
+	size := int64(trade.Size)
+	// there will only be 1 event
+	ret := make([]events.MarketPosition, 0, 1)
+	if trade.Buyer != "network" {
+		if b, ok := e.positions[trade.Buyer]; !ok {
+			pos = &MarketPosition{
+				partyID: trade.Buyer,
+			}
+			e.positions[trade.Buyer] = pos
+			e.positionsCpy = append(e.positionsCpy, pos)
+		} else {
+			pos = b
+		}
+		// potential buy pos is smaller now
+		pos.buy -= int64(trade.Size)
+	} else {
+		if s, ok := e.positions[trade.Seller]; !ok {
+			pos = &MarketPosition{
+				partyID: trade.Seller,
+			}
+			e.positions[trade.Seller] = pos
+			e.positionsCpy = append(e.positionsCpy, pos)
+		} else {
+			pos = s
+		}
+		// potential sell pos is smaller now
+		pos.sell -= int64(trade.Size)
+		// size is negative in case of a sale
+		size = -size
+	}
+	pos.size += size
+	// updated pos should be appended to event slice
+	ret = append(ret, *pos)
+	return ret
+}
+
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
 func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
-	// Not using defer e.mu.Unlock(), because defer calls add some overhead
-	// and this is called for each transaction, so we want to optimise as much as possible
-	// there aren't multiple returns here anyway, so just unlock as and when it's needed
-	e.mu.Lock()
 	// todo(cdm): overflow should be managed at the trade/order creation point. We shouldn't accept an order onto
 	// your book that would overflow your position. Order validation requires position store/state lookup.
 
@@ -163,6 +201,7 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			partyID: trade.Buyer,
 		}
 		e.positions[trade.Buyer] = buyer
+		e.positionsCpy = append(e.positionsCpy, buyer)
 	}
 
 	seller, ok := e.positions[trade.Seller]
@@ -171,6 +210,7 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			partyID: trade.Seller,
 		}
 		e.positions[trade.Seller] = seller
+		e.positionsCpy = append(e.positionsCpy, seller)
 	}
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
@@ -193,61 +233,42 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
 	}
 
-	// we've set all the values now, unlock after logging
-	// because we're working on MarketPosition pointers
-	e.mu.Unlock()
 	return ret
 }
 
 // RemoveDistressed Removes positions for distressed traders, and returns the most up to date positions we have
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
 	ret := make([]events.MarketPosition, 0, len(traders))
-	e.mu.Lock()
 	for _, trader := range traders {
 		party := trader.Party()
 		if current, ok := e.positions[party]; ok {
 			ret = append(ret, current)
 		}
+		// remove from the map
 		delete(e.positions, party)
+		// remove from the slice
+		for i, v := range e.positionsCpy {
+			if v.Party() == trader.Party() {
+				e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
+				break
+			}
+		}
 	}
-	e.mu.Unlock()
 	return ret
 }
 
 // UpdateMarkPrice update the mark price on all positions and return a slice
 // of the updated positions
 func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
-	e.mu.RLock()
-	out := make([]events.MarketPosition, 0, len(e.positions))
 	for _, pos := range e.positions {
 		pos.price = markPrice
-		out = append(out, *pos)
 	}
-	e.mu.RUnlock()
-	return out
-}
-
-// iterate over all open positions, for mark to market based on new market price
-func (e *Engine) updatePositions(trade *types.Trade) {
-	for _, pos := range e.positions {
-		// just set the price for all positions here (this shouldn't actually be required, but we'll cross that bridge when we get there
-		pos.price = trade.Price
-	}
+	return e.positionsCpy
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []events.MarketPosition {
-	timer := metrics.NewTimeCounter("-", "positions", "Positions")
-	e.mu.RLock()
-	out := make([]events.MarketPosition, 0, len(e.positions))
-	for _, value := range e.positions {
-		if value.size != 0 || value.buy != 0 || value.sell != 0 {
-			out = append(out, *value)
-		}
-	}
-	e.mu.RUnlock()
-	timer.EngineTimeCounterAdd()
-	return out
+	return e.positionsCpy
 }
 
 // Parties returns a list of all the parties in the position engine

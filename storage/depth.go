@@ -26,7 +26,7 @@ func NewMarketDepth(name string) *Depth {
 // Update the market depth with the given order information. If the order already exists at a price level
 // it will be updated. Note: The total cumulative volume for the market depth is calculated elsewhere.
 func (d *Depth) Update(order types.Order) {
-	if order.TimeInForce != types.Order_IOC && order.TimeInForce != types.Order_FOK {
+	if order.TimeInForce != types.Order_IOC && order.TimeInForce != types.Order_FOK && order.Status != types.Order_Rejected {
 		if order.Side == types.Side_Buy {
 			d.updateBuySide(order)
 		} else {
@@ -56,8 +56,6 @@ func (d *Depth) updateBuySide(order types.Order) {
 
 	// check if the price/depth level was found for order price (to update existing total)
 	if found {
-		delta := uint64(0)
-
 		// check if there's a previous order at this price level
 		if existingRemaining, ok := d.Buy[at].orders[order.Id]; ok {
 			// check if order is now fully filled or not trade-able status
@@ -67,7 +65,7 @@ func (d *Depth) updateBuySide(order types.Order) {
 				d.Buy[at].NumberOfOrders--
 				delete(d.Buy[at].orders, order.Id)
 			} else {
-				delta = d.Buy[at].orders[order.Id] - order.Remaining
+				delta := d.Buy[at].orders[order.Id] - order.Remaining
 				d.Buy[at].orders[order.Id] = order.Remaining
 				d.Buy[at].Volume -= delta
 			}
@@ -130,8 +128,6 @@ func (d *Depth) updateSellSide(order types.Order) {
 
 	// check if the price/depth level was found for order price (to update existing total)
 	if found {
-		delta := uint64(0)
-
 		// check if there's a previous order at this price level
 		if existingRemaining, ok := d.Sell[at].orders[order.Id]; ok {
 			// check if order is now fully filled or not trade-able status
@@ -141,7 +137,7 @@ func (d *Depth) updateSellSide(order types.Order) {
 				d.Sell[at].NumberOfOrders--
 				delete(d.Sell[at].orders, order.Id)
 			} else {
-				delta = d.Sell[at].orders[order.Id] - order.Remaining
+				delta := d.Sell[at].orders[order.Id] - order.Remaining
 				d.Sell[at].orders[order.Id] = order.Remaining
 				d.Sell[at].Volume -= delta
 			}

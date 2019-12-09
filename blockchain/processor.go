@@ -189,7 +189,7 @@ func (p *Processor) Process(payload []byte) error {
 		}
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
-		return errors.New(fmt.Sprintf("Unknown command received: %s", cmd))
+		return fmt.Errorf("unknown command received: %s", cmd)
 	}
 	return nil
 }
@@ -229,7 +229,7 @@ func (p *Processor) payloadHash(payload []byte) (*string, error) {
 func (p *Processor) payloadExists(payloadHash *string) (bool, error) {
 	if _, exists := p.seenPayloads[*payloadHash]; exists {
 		p.log.Warn("Transaction payload exists", logging.String("payload-hash", *payloadHash))
-		err := errors.New(fmt.Sprintf("txn payload exists: %s", *payloadHash))
+		err := fmt.Errorf("txn payload exists: %s", *payloadHash)
 		return true, err
 	}
 	return false, nil

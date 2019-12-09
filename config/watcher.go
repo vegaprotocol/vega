@@ -27,7 +27,7 @@ type Watcher struct {
 	mu                 sync.Mutex
 }
 
-// NewFromFile instanciate a new watcher from the vega config files
+// NewFromFile instantiate a new watcher from the vega config files
 func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
 	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
@@ -44,10 +44,19 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 		return nil, err
 	}
 
-	err = w.watch(ctx)
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
+	err = watcher.Add(w.path)
+	if err != nil {
+		return nil, err
+	}
+
+	w.log.Info("config watcher started successfully",
+		logging.String("config", w.path))
+
+	go w.watch(ctx, watcher)
 
 	return w, nil
 }
@@ -89,49 +98,34 @@ func (w *Watcher) load() error {
 	return nil
 }
 
-func (w *Watcher) watch(ctx context.Context) error {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return err
-	}
-	err = watcher.Add(w.path)
-	if err != nil {
-		return err
-	}
-
-	w.log.Info("config watcher started successfully",
-		logging.String("config", w.path))
-
-	go func(log *logging.Logger) {
-		defer watcher.Close()
-		for {
-			select {
-			case event, _ := <-watcher.Events:
-				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
-					if event.Op&fsnotify.Rename == fsnotify.Rename {
-						// add a small sleep here in order to handle vi
-						// vi do not send a write event / edit the file in place,
-						// it always create a temporary file, then delete the original one,
-						// and then rename the temp file with the name of the original file.
-						// if we try to update the conf as soon as we get the event, the file is not
-						// always created and we get a no such file or directory error
-						time.Sleep(time.Duration(50 * time.Millisecond))
-					}
-					log.Info("configuration updated", logging.String("event", event.Name))
-					err := w.load()
-					if err != nil {
-						log.Error("unable to load configuration", logging.Error(err))
-						continue
-					}
-					w.notifyCfgUpdate()
+func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
+	defer watcher.Close()
+	for {
+		select {
+		case event := <-watcher.Events:
+			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
+				if event.Op&fsnotify.Rename == fsnotify.Rename {
+					// add a small sleep here in order to handle vi
+					// vi do not send a write event / edit the file in place,
+					// it always create a temporary file, then delete the original one,
+					// and then rename the temp file with the name of the original file.
+					// if we try to update the conf as soon as we get the event, the file is not
+					// always created and we get a no such file or directory error
+					time.Sleep(time.Duration(50 * time.Millisecond))
 				}
-			case err, _ := <-watcher.Errors:
-				log.Error("config watcher received error event", logging.Error(err))
-			case <-ctx.Done():
-				log.Error("config watcher ctx done", logging.Error(err))
-				return
+				w.log.Info("configuration updated", logging.String("event", event.Name))
+				err := w.load()
+				if err != nil {
+					w.log.Error("unable to load configuration", logging.Error(err))
+					continue
+				}
+				w.notifyCfgUpdate()
 			}
+		case err := <-watcher.Errors:
+			w.log.Error("config watcher received error event", logging.Error(err))
+		case <-ctx.Done():
+			w.log.Error("config watcher ctx done")
+			return
 		}
-	}(w.log)
-	return nil
+	}
 }

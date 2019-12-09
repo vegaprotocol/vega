@@ -27,7 +27,7 @@ message RiskFactor {
 message RiskResult {
   // timestamp when these risk factors were generated
   int64 updatedTimestamp = 1;
-  // risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market
+  // risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market
   map<string, RiskFactor> riskFactors = 2;
   // time when risk factors are expected to change (or empty if risk factors are continually updated)
   int64 nextUpdateTimestamp = 3;
@@ -55,6 +55,7 @@ message Order {
     Cancelled = 2;
     Stopped = 3;
     Filled = 4;
+    Rejected = 5;
   }
 
   string id = 1;
@@ -70,6 +71,7 @@ message Order {
   Status status = 11;
   int64 expiresAt = 12;
   string reference = 13;
+  OrderError reason = 14;
 }
 
 message OrderCancellationConfirmation {
@@ -83,18 +85,23 @@ message OrderConfirmation {
 }
 
 enum OrderError {
-    NONE = 0;
-    INVALID_MARKET_ID = 1;
-    INVALID_ORDER_ID = 2;
-    ORDER_OUT_OF_SEQUENCE = 3;
-    INVALID_REMAINING_SIZE = 4;
-    TIME_FAILURE = 5;
-    ORDER_REMOVAL_FAILURE = 6;
-    INVALID_EXPIRATION_DATETIME = 7;
-    INVALID_ORDER_REFERENCE = 8;
-    EDIT_NOT_ALLOWED = 9;
-    ORDER_AMEND_FAILURE = 10;
-    ORDER_NOT_FOUND = 11;
+  NONE = 0;
+  INVALID_MARKET_ID = 1;
+  INVALID_ORDER_ID = 2;
+  ORDER_OUT_OF_SEQUENCE = 3;
+  INVALID_REMAINING_SIZE = 4;
+  TIME_FAILURE = 5;
+  ORDER_REMOVAL_FAILURE = 6;
+  INVALID_EXPIRATION_DATETIME = 7;
+  INVALID_ORDER_REFERENCE = 8;
+  EDIT_NOT_ALLOWED = 9;
+  ORDER_AMEND_FAILURE = 10;
+  ORDER_NOT_FOUND = 11;
+  INVALID_PARTY_ID = 12;
+  MARKET_CLOSED = 13;
+  MARGIN_CHECK_FAILED = 14;
+  MISSING_GENERAL_ACCOUNT = 15;
+  INTERNAL_ERROR = 16;
 }
 
 message Trade {
@@ -112,12 +119,6 @@ message Trade {
 
 message TradeSet {
     repeated Trade trades = 1;
-}
-
-message MarketData {
-    uint64 bestBid = 1;
-    uint64 bestOffer = 2;
-    uint64 lastTradedPrice = 3;
 }
 
 message Candle {
@@ -151,7 +152,23 @@ message MarketPosition {
     int64 unrealisedVolume = 4;
     int64 unrealisedPNL = 5;
     uint64 averageEntryPrice = 6;
-    int64 minimumMargin = 7;
+    string partyID = 7;
+}
+
+message Position {
+    string marketID = 1;
+    string partyID = 2;
+    int64 openVolume = 3;
+    int64 pendingVolume = 4;
+    int64 realisedPNL  = 5;
+    int64 unrealisedPNL = 7;
+    uint64 averageEntryPrice = 8;
+    repeated PositionTrade fifoQueue = 9;
+}
+
+message PositionTrade {
+  int64 volume = 1;
+  uint64 price = 2;
 }
 
 message Statistics {
@@ -181,10 +198,12 @@ message Statistics {
   int32 marketDepthSubscriptions = 24;
   int32 positionsSubscriptions = 25;
   int32 accountSubscriptions = 26;
-  string appVersionHash = 27;
-  string appVersion = 28;
-  string chainVersion = 29;
-  uint64 blockDuration = 30; // nanoseconds
+  int32 marketDataSubscriptions = 27;
+  string appVersionHash = 28;
+  string appVersion = 29;
+  string chainVersion = 30;
+  uint64 blockDuration = 31; // nanoseconds
+  string uptime = 32;
 }
 
 enum ChainStatus {
@@ -220,9 +239,11 @@ message Withdraw {
 message OrderAmendment {
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
   string partyID = 2 [(validator.field) = {string_not_empty: true}];
-  uint64 price = 3 [(validator.field) = {int_gt: 0}];
-  uint64 size = 4 [(validator.field) = {int_gt: 0}];
-  int64 expiresAt = 5;
+  string marketID = 3;
+  uint64 price = 4 [(validator.field) = {int_gt: 0}];
+  uint64 size = 5 [(validator.field) = {int_gt: 0}];
+  int64 expiresAt = 6;
+  Side side = 7;
 }
 
 message OrderSubmission {
@@ -230,13 +251,13 @@ message OrderSubmission {
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
   // do not enforce that price, as Market Order will not have price specified
-  uint64 price = 4 [(validator.field) = {int_gt: 0}];
+  uint64 price = 4;
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
   // make sur for both that they are non nil and the value is part of the respective enums.
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
   // do not enforce as not always required
-  // altho at least check it's not a negative integer, would be not that very handy to create a time.Time with it
+  // althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
   int64 expiresAt = 8;
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
 }
@@ -320,4 +341,19 @@ message MarginLevels {
   int64 searchLevel = 2;
   int64 initialMargin = 3;
   int64 collateralReleaseLevel = 4;
+  string partyID = 5;
+  string marketID = 6;
+  string asset = 7;
+  int64 timestamp = 8;
+}
+
+message MarketData {
+  uint64 markPrice = 1;
+  uint64 bestBidPrice = 2;
+  uint64 bestBidVolume = 3;
+  uint64 bestOfferPrice = 4;
+  uint64 bestOfferVolume = 5;
+  uint64 midPrice = 6;
+  string market = 7;
+  int64 timestamp = 8;
 }

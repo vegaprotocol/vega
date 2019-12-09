@@ -11,7 +11,20 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() uint64
-	ClearPotentials()
+}
+
+// TradeSettlement Part of the SettlePosition interface -> traces trades as they happened
+type TradeSettlement interface {
+	Size() int64
+	Price() uint64
+}
+
+// SettlePosition is an event that the settlement buffer will propagate through the system
+// used by the plugins (currently only the positions API)
+type SettlePosition interface {
+	MarketPosition
+	MarketID() string
+	Trades() []TradeSettlement
 }
 
 // Transfer is an event passed on by settlement engine, contains position

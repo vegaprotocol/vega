@@ -19,7 +19,7 @@ type MarketBucket struct {
 // GetTradesBySideBuckets ...
 func (ts *Trade) GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket {
 
-	marketBuckets := make(map[string]*MarketBucket, 0)
+	marketBuckets := make(map[string]*MarketBucket)
 	tradesByTimestamp, err := ts.GetByParty(ctx, party, 0, 0, false, nil)
 
 	if err != nil {
