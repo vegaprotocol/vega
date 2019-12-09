@@ -37,7 +37,7 @@ type Engine struct {
 	ob               Orderbook
 }
 
-// NewEngine instanciate a new risk engine
+// NewEngine instantiate a new risk engine
 func NewEngine(
 	log *logging.Logger,
 	config Config,
@@ -107,7 +107,7 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) eve
 		return nil
 	}
 
-	margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+	margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 	// no margins updates, nothing to do then
 	if margins == nil {
 		return nil
@@ -138,6 +138,10 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) eve
 		},
 	}
 
+	// update other fields for the margins
+	margins.PartyID = evt.Party()
+	margins.Asset = evt.Asset()
+
 	return &marginChange{
 		Margin:   evt,
 		amount:   trnsfr.Amount.Amount,
@@ -164,11 +168,16 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	// this can be the result of an error, or being "finished"
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
-		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 		// no margins updates, nothing to do then
 		if margins == nil {
 			continue
 		}
+
+		// update other fields for the margins
+		margins.PartyID = evt.Party()
+		margins.Asset = evt.Asset()
+
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("margins calculated on settlement",
 				logging.String("party-id", evt.Party()),
@@ -238,7 +247,7 @@ func (e *Engine) ExpectMargins(
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.MarketPosition, 0, len(evts)/2)
 	for _, evt := range evts {
-		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
 		// no margins updates, nothing to do then
 		if margins == nil {
 			okMargins = append(okMargins, evt)

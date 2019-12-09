@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
@@ -111,21 +112,21 @@ func getTestGRPCServer(
 	}()
 
 	// Account Store
-	accountStore, err := storage.NewAccounts(logger, conf.Storage)
+	accountStore, err := storage.NewAccounts(logger, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create account store")
 		return
 	}
 
 	// Candle Store
-	candleStore, err := storage.NewCandles(logger, conf.Storage)
+	candleStore, err := storage.NewCandles(logger, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create candle store")
 		return
 	}
 
 	// Market Store
-	marketStore, err := storage.NewMarkets(logger, conf.Storage)
+	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create market store")
 		return
@@ -146,11 +147,7 @@ func getTestGRPCServer(
 	}
 
 	// Risk Store
-	riskStore, err := storage.NewRisks(conf.Storage)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create risk store")
-		return
-	}
+	riskStore := storage.NewRisks(logger, conf.Storage)
 
 	transferResponseStore, err := storage.NewTransferResponses(logger, conf.Storage)
 	if err != nil {
@@ -175,8 +172,10 @@ func getTestGRPCServer(
 		return
 	}
 
+	marketDataStore := storage.NewMarketData(logger, conf.Storage)
+
 	// Market Service
-	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore)
+	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create market service")
 		return
@@ -200,7 +199,7 @@ func getTestGRPCServer(
 	}
 
 	// Trade Service
-	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, riskStore)
+	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, riskStore, nil)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create trade service")
 		return
@@ -212,6 +211,8 @@ func getTestGRPCServer(
 		err = errors.Wrap(err, "failed to create trade service")
 		return
 	}
+
+	riskService := risk.NewService(logger, conf.Risk, riskStore)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -226,6 +227,7 @@ func getTestGRPCServer(
 		candleService,
 		accountService,
 		transferResponseService,
+		riskService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

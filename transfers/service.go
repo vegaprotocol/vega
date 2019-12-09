@@ -61,12 +61,13 @@ func (s *Svc) ObserveTransferResponses(
 	internal := make(chan []*types.TransferResponse)
 	ref := s.store.Subscribe(internal)
 
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	retryCount := retries
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		for {
 			select {
@@ -80,7 +81,7 @@ func (s *Svc) ObserveTransferResponses(
 				// so we can still safely close the channels
 				if err := s.store.Unsubscribe(ref); err != nil {
 					s.log.Error(
-						"Failure un-subscribing transfer reponses subscriber when context.Done()",
+						"Failure un-subscribing transfer responses subscriber when context.Done()",
 						logging.Uint64("id", ref),
 						logging.String("ip-address", ip),
 						logging.Error(err),
@@ -119,7 +120,6 @@ func (s *Svc) ObserveTransferResponses(
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries))
 					cancel()
-					break
 				}
 			}
 		}

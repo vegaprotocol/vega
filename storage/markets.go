@@ -15,12 +15,13 @@ import (
 type Market struct {
 	Config
 
-	log    *logging.Logger
-	badger *badgerStore
+	log             *logging.Logger
+	badger          *badgerStore
+	onCriticalError func()
 }
 
 // NewMarkets returns a concrete implementation of MarketStore.
-func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
+func NewMarkets(log *logging.Logger, c Config, onCriticalError func()) (*Market, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
@@ -35,9 +36,10 @@ func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
 	}
 	bs := badgerStore{db: db}
 	return &Market{
-		log:    log,
-		Config: c,
-		badger: &bs,
+		log:             log,
+		Config:          c,
+		badger:          &bs,
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
@@ -71,16 +73,15 @@ func (m *Market) Post(market *types.Market) error {
 	}
 	marketKey := m.badger.marketKey(market.Id)
 	err = m.badger.db.Update(func(txn *badger.Txn) error {
-		err := txn.Set(marketKey, buf)
-		if err != nil {
-			m.log.Error("unable to save market in badger",
-				logging.Error(err),
-				logging.String("market-id", market.Id),
-			)
-			return err
-		}
-		return nil
+		return txn.Set(marketKey, buf)
 	})
+	if err != nil {
+		m.log.Error("unable to save market in badger",
+			logging.Error(err),
+			logging.String("market-id", market.Id),
+		)
+		m.onCriticalError()
+	}
 
 	return err
 }
@@ -159,10 +160,12 @@ func (m *Market) GetAll() ([]*types.Market, error) {
 	return markets, nil
 }
 
-// Commit typically saves any operations that are queued to underlying storage,
-// if supported by underlying storage implementation.
-func (m *Market) Commit() error {
-	// Not required with a mem-store implementation.
+func (m *Market) SaveBatch(batch []types.Market) error {
+	for _, v := range batch {
+		if err := m.Post(&v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

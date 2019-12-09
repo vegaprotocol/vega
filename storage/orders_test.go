@@ -50,18 +50,17 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 
 	storage.FlushStores(logging.NewTestLogger(), config)
 	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	assert.NoError(t, err)
 	defer orderStore.Close()
 
-	var order = &types.Order{
+	var order = types.Order{
 		Id:       "45305210ff7a9bb9450b1833cc10368a",
 		MarketID: "testMarket",
 		PartyID:  "testParty",
 	}
 
-	err = orderStore.Post(*order)
-	assert.Nil(t, err)
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch([]types.Order{order})
+	assert.NoError(t, err)
 
 	o, err := orderStore.GetByMarketAndID(context.Background(), "testMarket", order.Id)
 	assert.Nil(t, err)
@@ -76,19 +75,18 @@ func TestStorage_PostAndGetByReference(t *testing.T) {
 
 	storage.FlushStores(logging.NewTestLogger(), config)
 	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	assert.NoError(t, err)
 	defer orderStore.Close()
 
-	var order = &types.Order{
+	var order = types.Order{
 		Reference: "83cfdf76-8eac-4c7e-8f6a-2aa51e89364f",
 		Id:        "45305210ff7a9bb9450b1833cc10368a",
 		MarketID:  "testMarket",
 		PartyID:   "testParty",
 	}
 
-	err = orderStore.Post(*order)
-	assert.Nil(t, err)
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch([]types.Order{order})
+	assert.NoError(t, err)
 
 	o, err := orderStore.GetByReference(context.Background(), order.Reference)
 	assert.Nil(t, err)
@@ -185,12 +183,15 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 		assert.Nil(t, err)
 
+		vOrders := make([]types.Order, len(tt.inOrders))
 		for _, order := range tt.inOrders {
-			err := orderStore.Post(*order)
+			o := *order
+			vOrders = append(vOrders, o)
 			assert.Nil(t, err)
 		}
 
-		orderStore.Commit()
+		err = orderStore.SaveBatch(vOrders)
+		assert.NoError(t, err)
 
 		orders, err := orderStore.GetByMarket(context.Background(), tt.inMarket, 0, tt.inLimit, false, nil)
 		assert.Nil(t, err)
@@ -211,27 +212,24 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	passiveOrder := &types.Order{
+	passiveOrder := types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf9999e",
 		MarketID:  testMarket,
 		PartyID:   testPartyA,
 		Remaining: 0,
 	}
 
-	aggressiveOrder := &types.Order{
+	aggressiveOrder := types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
 		MarketID:  testMarket,
 		PartyID:   testPartyB,
 		Remaining: 100,
 	}
 
-	err = orderStore.Post(*passiveOrder)
-	assert.Nil(t, err)
-
-	err = orderStore.Post(*aggressiveOrder)
-	assert.Nil(t, err)
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch([]types.Order{passiveOrder})
+	assert.NoError(t, err)
+	err = orderStore.SaveBatch([]types.Order{aggressiveOrder})
+	assert.NoError(t, err)
 
 	ordersAtPartyA, err := orderStore.GetByParty(context.Background(), testPartyA, 0, 0, false, nil)
 	assert.Nil(t, err)
@@ -250,15 +248,15 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	assert.Equal(t, aggressiveOrder.Id, orderAtPartyB.Id)
 
 	// update order, parties should also be updated as its a pointer
-	updatedAggressiveOrder := &types.Order{
+	updatedAggressiveOrder := types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
 		MarketID:  testMarket,
 		PartyID:   testPartyB,
 		Remaining: 0,
 	}
 
-	err = orderStore.Put(*updatedAggressiveOrder)
-	assert.Nil(t, err)
+	err = orderStore.SaveBatch([]types.Order{updatedAggressiveOrder})
+	assert.NoError(t, err)
 	orderAtPartyB, err = orderStore.GetByPartyAndID(context.Background(), testPartyB, aggressiveOrder.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, updatedAggressiveOrder.Id, orderAtPartyB.Id)
@@ -291,10 +289,8 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 		Reference:   "123123-34334343-1231231",
 	}
 
-	err = newOrderStore.Post(*order)
-	assert.Nil(t, err)
-
-	newOrderStore.Commit()
+	err = newOrderStore.SaveBatch([]types.Order{*order})
+	assert.NoError(t, err)
 
 	fetchedOrder, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 1, true, nil)
 	assert.Nil(t, err)
@@ -377,17 +373,8 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 		Reference:   "123123-34334343-1231232",
 	}
 
-	err = orderStore.Post(*order1)
-	assert.Nil(t, err)
-
-	err = orderStore.Post(*order2)
-	assert.Nil(t, err)
-
-	err = orderStore.Post(*order3)
-	assert.Nil(t, err)
-
-	err = orderStore.Commit()
-	assert.Nil(t, err)
+	err = orderStore.SaveBatch([]types.Order{*order1, *order2, *order3})
+	assert.NoError(t, err)
 
 	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
 	assert.Nil(t, err)
@@ -426,11 +413,8 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 		Reference:   "123123-34334343-1231231",
 	}
 
-	err = orderStore.Post(*order)
-	assert.Nil(t, err)
-
-	err = orderStore.Commit()
-	assert.Nil(t, err)
+	err = orderStore.SaveBatch([]types.Order{*order})
+	assert.NoError(t, err)
 
 	// Bit of a hacky test, but we want to test timeouts when getting market depth because we can only set a timeout
 	// of 1s or more through config, we're setting a timeout of 1 nanosecond on the context we pass to orderStore

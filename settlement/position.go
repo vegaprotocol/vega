@@ -2,15 +2,30 @@ package settlement
 
 import (
 	"code.vegaprotocol.io/vega/events"
-
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
 )
 
 // See positions.MarketPosition
 type pos struct {
-	party string
-	size  int64
-	price uint64
+	// embed the type, we will copy the three main fields because those should be immutable
+	// which we can't guarantee through an embedded interface
+	events.MarketPosition
+	party   string
+	size    int64
+	price   uint64
+	newSize int64 // track this so we can determine when a trader switches between long <> short
+}
+
+type settlePos struct {
+	events.MarketPosition
+	marketID string
+	trades   []*pos
 }
 
 type mtmTransfer struct {
@@ -18,10 +33,26 @@ type mtmTransfer struct {
 	transfer *types.Transfer
 }
 
-func newPos(partyID string) *pos {
+func newPos(evt events.MarketPosition) *pos {
 	return &pos{
-		party: partyID,
+		MarketPosition: evt,
+		party:          evt.Party(),
+		size:           evt.Size(),
+		price:          evt.Price(),
 	}
+}
+
+// update - set the size/price of an event accordingly
+func (p *pos) update(evt events.MarketPosition) error {
+	// this check, in theory, should not be needed...
+	if p.party != evt.Party() {
+		return ErrPartyDoesNotMatch
+	}
+	// embed updated event
+	p.MarketPosition = evt
+	p.size = evt.Size()
+	p.price = evt.Price()
+	return nil
 }
 
 // Party - part of the MarketPosition interface, used to update position after SettlePreTrade
@@ -42,4 +73,18 @@ func (p pos) Price() uint64 {
 // Transfer - part of the Transfer interface
 func (m mtmTransfer) Transfer() *types.Transfer {
 	return m.transfer
+}
+
+// Trades - implements events.SettlePosition event
+func (s settlePos) Trades() []events.TradeSettlement {
+	r := make([]events.TradeSettlement, 0, len(s.trades))
+	for _, t := range s.trades {
+		r = append(r, t)
+	}
+	return r
+}
+
+// MarketID - market ID for this event
+func (s settlePos) MarketID() string {
+	return s.marketID
 }

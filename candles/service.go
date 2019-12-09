@@ -25,12 +25,12 @@ type CandleStore interface {
 type Svc struct {
 	log *logging.Logger
 	Config
-	tradesBuffer  map[string][]*types.Trade
+	// tradesBuffer  map[string][]*types.Trade
 	candleStore   CandleStore
 	subscriberCnt int32
 }
 
-// NewService instanciate a new candles service
+// NewService instantiate a new candles service
 func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
 	if candleStore == nil {
 		return nil, errors.New("candleStore instance is nil when creating candle service instance")
@@ -76,11 +76,12 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 	}
 	ref := s.candleStore.Subscribe(&iT)
 
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
-		ctx, cfunc := context.WithCancel(ctx)
-		defer cfunc()
+		defer cancel()
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		for {
 			select {
@@ -132,8 +133,7 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cfunc()
-					break
+					cancel()
 				}
 			}
 		}

@@ -34,7 +34,7 @@ var (
 	// ErrMalformedRequest signals that the request was malformed
 	ErrMalformedRequest = errors.New("malformed request")
 	// ErrInvalidWithdrawAmount signals that the amount of money to withdraw is invalid
-	// usualy the party specified an amount of 0
+	// usually the party specified an amount of 0
 	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
 	// ErrMissingAsset signals that an asset was required but not specified
 	ErrMissingAsset = errors.New("missing asset")
@@ -51,7 +51,7 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (bool, error)
+	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (bool, error)
 	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 

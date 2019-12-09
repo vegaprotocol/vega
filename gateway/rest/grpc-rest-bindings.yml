@@ -28,12 +28,19 @@ http:
       get: '/markets/{marketID}/depth'
     - selector: api.trading_data.OrdersByMarket
       get: '/markets/{marketID}/orders'
-    - selector: api.trading_data.OrderByMarketAndId
+    - selector: api.trading_data.OrderByMarketAndID
       get: '/markets/{marketID}/orders/{orderID}'
     - selector: api.trading_data.TradesByMarket
       get: '/markets/{marketID}/trades'
     - selector: api.trading_data.LastTrade
       get: '/markets/{marketID}/trades/latest'
+
+    # MarketData
+    - selector: api.trading_data.MarketsData
+      get: '/markets/data'
+    - selector: api.trading_data.MarketDataByID
+      get: '/markets/{marketID}/data'
+
 
     # Orders
     - selector: api.trading.SubmitOrder
@@ -60,8 +67,13 @@ http:
       get: '/parties/{partyID}/positions'
     - selector: api.trading_data.TradesByParty
       get: '/parties/{partyID}/trades'
-    - selector: api.trading_data.AccountsByParty
+    - selector: api.trading_data.PartyAccounts
       get: '/parties/{partyID}/accounts'
+    - selector: api.trading_data.MarginLevels
+      get: '/parties/{partyID}/markets/{marketID}/margin'
+    - selector: api.trading.Withdraw
+      post: '/parties/{withdraw.partyID}/withdrawals'
+      body: '*'
 
     # Miscellaneous
     - selector: api.trading.NotifyTraderAccount

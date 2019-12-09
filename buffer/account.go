@@ -16,7 +16,7 @@ type Account struct {
 	accs  map[string]types.Account
 }
 
-// NewAccount instanciate a new account buffer
+// NewAccount instantiate a new account buffer
 func NewAccount(store AccountStore) *Account {
 	return &Account{
 		store: store,

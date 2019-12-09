@@ -6,7 +6,6 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/trades/mocks"
 
@@ -26,6 +25,7 @@ type testService struct {
 	ctrl  *gomock.Controller
 	trade *mocks.MockTradeStore
 	risk  *mocks.MockRiskStore
+	pos   *mocks.MockPositionsPlugin
 }
 
 func getTestService(t *testing.T) *testService {
@@ -33,12 +33,14 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	trade := mocks.NewMockTradeStore(ctrl)
 	risk := mocks.NewMockRiskStore(ctrl)
+	pos := mocks.NewMockPositionsPlugin(ctrl)
 	log := logging.NewTestLogger()
 	svc, err := trades.NewService(
 		log,
 		trades.NewDefaultConfig(),
 		trade,
 		risk,
+		pos,
 	)
 	assert.NoError(t, err)
 	return &testService{
@@ -50,19 +52,6 @@ func getTestService(t *testing.T) *testService {
 		trade: trade,
 		risk:  risk,
 	}
-}
-
-// storageConfig specifies that the badger files are kept in a different
-// directory when the candle service tests run. This is useful as when
-// all the unit tests are run for the project they can be run in parallel.
-func storageConfig(t *testing.T) storage.Config {
-	storeConfig, err := storage.NewTestConfig()
-	if err != nil {
-		t.Fatalf("unable to setup badger dirs: %v", err)
-	}
-	storeConfig.LogPositionStoreDebug = false
-
-	return storeConfig
 }
 
 func TestGetByMarket(t *testing.T) {

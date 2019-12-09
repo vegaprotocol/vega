@@ -26,7 +26,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	firstBatchOfOrders := []*types.Order{
+	firstBatchOfOrders := []types.Order{
 		{
 			Id:        "01",
 			Side:      types.Side_Buy,
@@ -61,11 +61,8 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 	}
 
-	for idx := range firstBatchOfOrders {
-		orderStore.Post(*firstBatchOfOrders[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(firstBatchOfOrders)
+	assert.NoError(t, err)
 
 	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -84,7 +81,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	secondBatchOfOrders := []*types.Order{
+	secondBatchOfOrders := []types.Order{
 		{
 			Id:        "05",
 			Side:      types.Side_Buy,
@@ -119,11 +116,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 	}
 
-	for idx := range secondBatchOfOrders {
-		orderStore.Post(*secondBatchOfOrders[idx])
-	}
-
-	// No commit - should remain unchanged
+	// No save batch - should remain unchanged
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -142,9 +135,10 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	// COMMIT OK, double the values
+	// Save batch, double the values
 
-	orderStore.Commit()
+	err = orderStore.SaveBatch(secondBatchOfOrders)
+	assert.NoError(t, err)
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -170,11 +164,8 @@ func TestMarketDepth_Hard(t *testing.T) {
 	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 80
 	firstBatchOfOrders[3].Remaining = firstBatchOfOrders[3].Remaining - 100
 
-	for idx := range firstBatchOfOrders {
-		orderStore.Put(*firstBatchOfOrders[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(firstBatchOfOrders)
+	assert.NoError(t, err)
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -196,10 +187,9 @@ func TestMarketDepth_Hard(t *testing.T) {
 	// OK REMOVE ALL FROM THE FIRST BATCH
 	firstBatchOfOrders[1].Remaining = firstBatchOfOrders[1].Remaining - 50
 	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 20
-	orderStore.Put(*firstBatchOfOrders[1])
-	orderStore.Put(*firstBatchOfOrders[2])
 
-	orderStore.Commit()
+	err = orderStore.SaveBatch(firstBatchOfOrders)
+	assert.NoError(t, err)
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -235,11 +225,8 @@ func TestMarketDepth_Hard(t *testing.T) {
 	secondBatchOfOrders[2].Status = types.Order_Cancelled
 	secondBatchOfOrders[3].Status = types.Order_Expired
 
-	for idx := range secondBatchOfOrders {
-		orderStore.Put(*secondBatchOfOrders[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(secondBatchOfOrders)
+	assert.NoError(t, err)
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -407,7 +394,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	orders := []*types.Order{
+	orders := []types.Order{
 		{
 			Id:        fmt.Sprintf("%d", rand.Intn(1000000000000)),
 			Side:      types.Side_Buy,
@@ -442,11 +429,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 	}
 
-	for idx := range orders {
-		orderStore.Post(*orders[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(orders)
+	assert.NoError(t, err)
 
 	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -465,7 +449,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	ordersUpdate := []*types.Order{
+	ordersUpdate := []types.Order{
 		{
 			Id:        orders[0].Id,
 			Side:      types.Side_Buy,
@@ -493,11 +477,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 	}
 
-	for idx := range ordersUpdate {
-		orderStore.Put(*ordersUpdate[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(ordersUpdate)
+	assert.NoError(t, err)
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -536,7 +517,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	orders := []*types.Order{
+	orders := []types.Order{
 		{
 			Id:        fmt.Sprintf("%d", rand.Intn(1000000000000)),
 			Side:      types.Side_Sell,
@@ -571,11 +552,8 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 	}
 
-	for idx := range orders {
-		orderStore.Post(*orders[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(orders)
+	assert.NoError(t, err)
 
 	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -594,7 +572,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Sell[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Sell[2].CumulativeVolume)
 
-	ordersUpdate := []*types.Order{
+	ordersUpdate := []types.Order{
 		{
 			Id:        orders[0].Id,
 			Side:      types.Side_Sell,
@@ -622,11 +600,8 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 	}
 
-	for idx := range ordersUpdate {
-		orderStore.Put(*ordersUpdate[idx])
-	}
-
-	orderStore.Commit()
+	err = orderStore.SaveBatch(ordersUpdate)
+	assert.NoError(t, err)
 
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
@@ -643,7 +618,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	// 113 is removed
 	assert.Equal(t, 2, len(marketDepth.Sell))
 
-	invalidNewOrders := []*types.Order{
+	invalidNewOrders := []types.Order{
 		{
 			Id:        "98",
 			Side:      types.Side_Buy,
@@ -662,12 +637,51 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 	}
 
-	for idx := range invalidNewOrders {
-		orderStore.Post(*invalidNewOrders[idx])
-	}
-	orderStore.Commit()
+	err = orderStore.SaveBatch(invalidNewOrders)
+	assert.NoError(t, err)
 
 	// 1337s did not get added to either side, they're invalid
 	assert.Equal(t, 0, len(marketDepth.Buy))
 	assert.Equal(t, 2, len(marketDepth.Sell))
+}
+
+func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
+	depth := storage.NewMarketDepth(testMarket)
+	invalidOrders := []types.Order{
+		types.Order{
+			Id:        "98",
+			Side:      types.Side_Buy,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     1337,
+			Remaining: 1337,
+			Status:    types.Order_Rejected,
+		},
+		types.Order{
+			Id:          "99",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_IOC,
+		},
+		types.Order{
+			Id:          "99",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_FOK,
+		},
+	}
+
+	// add all orders
+	for _, v := range invalidOrders {
+		depth.Update(v)
+	}
+	assert.Len(t, depth.Buy, 0)
+	assert.Len(t, depth.Sell, 0)
+
 }

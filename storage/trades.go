@@ -20,13 +20,11 @@ import (
 type Trade struct {
 	Config
 
-	cfgMu           sync.Mutex
+	mu              sync.Mutex
 	log             *logging.Logger
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Trade
 	subscriberID    uint64
-	buffer          []types.Trade
-	mu              sync.Mutex
 	onCriticalError func()
 }
 
@@ -51,7 +49,6 @@ func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, e
 		log:             log,
 		Config:          c,
 		badger:          &bs,
-		buffer:          make([]types.Trade, 0),
 		subscribers:     make(map[uint64]chan<- []types.Trade),
 		onCriticalError: onCriticalError,
 	}, nil
@@ -69,9 +66,9 @@ func (ts *Trade) ReloadConf(cfg Config) {
 	}
 
 	// only Timeout is really use in here
-	ts.cfgMu.Lock()
+	ts.mu.Lock()
 	ts.Config = cfg
-	ts.cfgMu.Unlock()
+	ts.mu.Unlock()
 }
 
 // Subscribe to a channel of new or updated trades. The subscriber id will be returned as a uint64 value
@@ -107,43 +104,7 @@ func (ts *Trade) Unsubscribe(id uint64) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Trades subscriber does not exist with id: %d", id))
-}
-
-// Post adds an trade to the badger store, adds
-// to queue the operation to be committed later.
-func (ts *Trade) Post(trade *types.Trade) error {
-	timer := metrics.NewTimeCounter("-", "tradestore", "Post")
-	// with badger we always buffer for future batch insert via Commit()
-	ts.addToBuffer(*trade)
-	timer.EngineTimeCounterAdd()
-	return nil
-}
-
-// Commit saves any operations that are queued to badger store, and includes all updates.
-// It will also call notify() to push updated data to any subscribers.
-func (ts *Trade) Commit() (err error) {
-	if len(ts.buffer) == 0 {
-		return
-	}
-	timer := metrics.NewTimeCounter("-", "tradestore", "Commit")
-	ts.mu.Lock()
-	items := ts.buffer
-	ts.buffer = []types.Trade{}
-	ts.mu.Unlock()
-
-	err = ts.writeBatch(items)
-	if err != nil {
-		ts.log.Error(
-			"badger store error on write",
-			logging.Error(err),
-		)
-		ts.onCriticalError()
-	} else {
-		err = ts.notify(items)
-	}
-	timer.EngineTimeCounterAdd()
-	return
+	return fmt.Errorf("subscriber to Trades store does not exist with id: %d", id)
 }
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to
@@ -153,6 +114,7 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	var (
 		err error
 	)
+	//TODO: (WG 05/11/2019): Bug: Setting limit to maximum value of uint64 results in l=-1
 	result := make([]*types.Trade, 0, int(limit))
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
@@ -201,27 +163,25 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 }
 
 // GetByMarketAndID retrieves a trade for a given market and id, any errors will be returned immediately.
-func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string) (*types.Trade, error) {
-	var trade types.Trade
-
+func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	marketKey := ts.badger.tradeMarketKey(market, id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
-		return nil, err
+		return
 	}
 	tradeBuf, _ := item.ValueCopy(nil)
-	if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+	trade = &types.Trade{}
+	if err = proto.Unmarshal(tradeBuf, trade); err != nil {
+		trade = nil
 		ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarketAndId)",
 			logging.Error(err),
 			logging.String("badger-key", string(item.Key())),
 			logging.String("raw-bytes", string(tradeBuf)))
-
-		return nil, err
 	}
-	return &trade, err
+	return
 }
 
 // GetByParty retrieves trades for a given party. Provide optional query filters to
@@ -421,13 +381,6 @@ func (ts *Trade) Close() error {
 	return ts.badger.db.Close()
 }
 
-// add a trade to the write-batch/notify buffer.
-func (ts *Trade) addToBuffer(t types.Trade) {
-	ts.mu.Lock()
-	ts.buffer = append(ts.buffer, t)
-	ts.mu.Unlock()
-}
-
 // notify any subscribers of trade updates.
 func (ts *Trade) notify(items []types.Trade) error {
 	if len(items) == 0 {
@@ -443,7 +396,6 @@ func (ts *Trade) notify(items []types.Trade) error {
 		select {
 		case sub <- items:
 			ok = true
-			break
 		default:
 			ok = false
 		}
@@ -510,6 +462,30 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 	}
 
 	return nil
+}
+
+// SaveBatch writes the given batch of trades to the underlying badger store and notifies any observers.
+func (ts *Trade) SaveBatch(batch []types.Trade) error {
+	if len(batch) == 0 {
+		// Sanity check, no need to do any processing on an empty batch.
+		return nil
+	}
+	timer := metrics.NewTimeCounter("-", "tradestore", "SaveBatch")
+
+	// write the batch down to the badger kv store, notify observers if successful
+	err := ts.writeBatch(batch)
+	if err != nil {
+		ts.log.Error(
+			"unable to write trades batch to badger store",
+			logging.Error(err),
+		)
+		ts.onCriticalError()
+	} else {
+		err = ts.notify(batch)
+	}
+
+	timer.EngineTimeCounterAdd()
+	return err
 }
 
 func (ts *Trade) getTradeMarketFilter(market *string) ([]byte, int) {

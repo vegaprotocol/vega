@@ -19,7 +19,7 @@ import (
 func bindataRead(data []byte, name string) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewBuffer(data))
 	if err != nil {
-		return nil, fmt.Errorf("Read %q: %v", name, err)
+		return nil, fmt.Errorf("read %q: %v", name, err)
 	}
 
 	var buf bytes.Buffer
@@ -27,7 +27,7 @@ func bindataRead(data []byte, name string) ([]byte, error) {
 	clErr := gz.Close()
 
 	if err != nil {
-		return nil, fmt.Errorf("Read %q: %v", name, err)
+		return nil, fmt.Errorf("read %q: %v", name, err)
 	}
 	if clErr != nil {
 		return nil, err
@@ -215,9 +215,9 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"keys": &bintree{nil, map[string]*bintree{
-		"jwt.priv": &bintree{keysJwtPriv, map[string]*bintree{}},
-		"jwt.pub":  &bintree{keysJwtPub, map[string]*bintree{}},
+	"keys": {nil, map[string]*bintree{
+		"jwt.priv": {keysJwtPriv, map[string]*bintree{}},
+		"jwt.pub":  {keysJwtPub, map[string]*bintree{}},
 	}},
 }}
 

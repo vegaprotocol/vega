@@ -19,7 +19,7 @@ type Party struct {
 func NewParties(config Config) (*Party, error) {
 	return &Party{
 		Config: config,
-		db:     make(map[string]types.Party, 0),
+		db:     make(map[string]types.Party),
 	}, nil
 }
 
@@ -68,4 +68,27 @@ func (p *Party) GetAll() ([]*types.Party, error) {
 		res = append(res, &kv)
 	}
 	return res, nil
+}
+
+type SaveBatchError struct {
+	parties []string
+}
+
+func (s SaveBatchError) Error() string {
+	return fmt.Sprintf("parties already exists: %v", s.parties)
+}
+
+func (p *Party) SaveBatch(batch []types.Party) error {
+	var sberr SaveBatchError
+	for _, v := range batch {
+		err := p.Post(&v)
+		if err != nil {
+			sberr.parties = append(sberr.parties, v.Id)
+		}
+	}
+	if len(sberr.parties) > 0 {
+		return sberr
+	}
+
+	return nil
 }

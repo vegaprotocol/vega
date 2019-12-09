@@ -17,7 +17,7 @@ type Mutation {
     # ID of the party placing the order
     partyId: String!
     # Price of the asset
-    price: String!
+    price: String
     # Size ofthe order
     size: String!
     # Side of the order (Buy or Sell)
@@ -49,9 +49,9 @@ type Mutation {
     # ID of the party which created the order
     partyId: String!
     # New price for this order
-    price: Int!
+    price: String!
     # New size for this order
-    size: Int!
+    size: String!
     # New expiration time
     expiration: String
   ): PendingOrder!
@@ -115,6 +115,60 @@ type Subscription {
     type: AccountType
   ): Account!
 
+  # subscribe to the mark price changes
+  marketData(
+    # id of the market we want to subscribe to the market data changes
+    marketId: String
+  ): MarketData!
+
+  # Subscribe to the margin changes
+  margins(
+    # id of the trader we want to subscribe for margin updates
+    partyId: String!
+    # market we want to listen to margin updates (nil if we want updates for all markets)
+    marketID: String
+  ): MarginLevels!
+}
+
+# Margins for a given a trader
+type MarginLevels {
+  # market in which the margin is required for this trader
+  market: Market!
+  # asset for the current margins
+  asset: String!
+  # id of the trader for this margin
+  party: Party!
+  # minimal margin for the position to be maintained in the network (unsigned int actually)
+  maintenanceLevel: String!
+  # if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)
+  searchLevel: String!
+  # this is the minimal margin required for a trader to place a new order on the network (unsigned int actually)
+  initialLevel: String!
+  # if the margin of the trader is > to this level, then collateral will be release from the margin
+  # account into the general account of the trader for the given asset
+  collateralReleaseLevel: String!
+  # time at which these margin level were relevant
+  timestamp: String!
+}
+
+# Live data of a Market
+type MarketData {
+  # market id of the associated mark price
+  market: Market!
+  # the mark price (actually an unsgined int)
+  markPrice: String!
+  # the highest price level on an order book for buy orders.
+  bestBidPrice: String!
+  # the aggregated volume being bid at the best bid price.
+  bestBidVolume: String!
+  # the lowest price level on an order book for offer orders.
+  bestOfferPrice: String!
+  # the aggregated volume being offered at the best offer price.
+  bestOfferVolume: String!
+  # the arithmetic average of the best bid price and best offer price.
+  midPrice: String!
+  # time at which this mark price was relevant
+  timestamp: String!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -211,6 +265,9 @@ type Statistics {
 
   # Current time (real)
   currentTime: String!
+
+  # Uptime of the node
+  upTime: String!
 
   # Current time of the chain (decided through consensus)
   vegaTime: String!
@@ -447,10 +504,10 @@ type Market {
     last: Int
   ): [Order!]
 
-  # Get accounts for a party or market
+  # Get account for a party or market
   accounts(
-    # Specify the account type to get a specific account
-    type: AccountType
+    # Id of the party to get the margin account for
+    partyId: String
   ): [Account!]
 
   # Trades on a market
@@ -478,6 +535,9 @@ type Market {
     # reference of the order
     reference: String!
   ): Order!
+
+  # marketData for the given market
+  data: MarketData!
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
@@ -493,7 +553,7 @@ type MarketDepth {
     # Sell side price levels (if available)
     sell: [PriceLevel!]
 
-    # Last trade for the given market (if availabe)
+    # Last trade for the given market (if available)
     lastTrade: Trade
 }
 
@@ -516,7 +576,7 @@ type PriceLevel {
 # Candle stick representation of trading
 type Candle {
 
-    # Unix epoch+nanoseconds for when the candle ocurred
+    # Unix epoch+nanoseconds for when the candle occurred
     timestamp: String!
 
     # ISO-8601 RFC3339+Nano formatted data and time for the candle
@@ -580,6 +640,12 @@ type Party {
 
   # Trading positions relating to a party
   positions: [Position!]
+
+  # marginLevels
+  margins(
+    # market id off the margin to get, nil if all markets
+    marketId: String,
+  ): [MarginLevels!]
 }
 
 # An individual trader at any point in time is considered net long or net short.
@@ -589,32 +655,32 @@ type Party {
 # refer to positions being comprised of trades, rather of volume.
 type Position {
 
-    # Market relating to this position
-    market: Market!
+  # Market relating to this position
+  market: Market!
 
-    # Realised volume (uint64)
-    realisedVolume: String!
+  # Realised volume (uint64)
+  realisedVolume: String!
 
-    # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
-    realisedProfitValue: String!
+  # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
+  realisedProfitValue: String!
 
-    # Realised Profit or Loss direction
-    realisedProfitDirection: ValueDirection!
+  # Realised Profit or Loss direction
+  realisedProfitDirection: ValueDirection!
 
-    # Unrealised volume (uint64)
-    unrealisedVolume: String!
+  # Unrealised volume (uint64)
+  unrealisedVolume: String!
 
-    # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
-    unrealisedProfitValue: String!
+  # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
+  unrealisedProfitValue: String!
 
-    # Unrealised Profit or Loss direction
-    unrealisedProfitDirection: ValueDirection!
+  # Unrealised Profit or Loss direction
+  unrealisedProfitDirection: ValueDirection!
 
-    # Average entry price for this position
-    averageEntryPrice: String!
+  # Average entry price for this position
+  averageEntryPrice: String!
 
-    # Minimum margin for this position
-    minimumMargin: String!
+  # margins of the party for the given position
+  margins: [MarginLevels!]
 }
 
 # An order in Vega, if active it will be on the OrderBoook for the market
@@ -667,6 +733,9 @@ type Order {
 
   # Type the order type (defaults to TRADER)
   type: OrderType
+
+  # Reason for the order to be rejected
+  rejectionReason: RejectionReason
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -693,13 +762,13 @@ type Trade {
   # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
   size: String!
 
-  # Unix epoch+nanoseconds for when the trade occured
+  # Unix epoch+nanoseconds for when the trade occurred
   timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occurred (timestamp)
   datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-  # RFC3339Nano for when th trade occured
+  # RFC3339Nano for when the trade occurred
   createdAt: String!
 }
 
@@ -735,21 +804,58 @@ enum OrderTimeInForce {
 # Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
 enum OrderStatus {
 
-    # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
-    # Active does not necessarily mean it's still on the order book.
-    Active
+  # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
+  # Active does not necessarily mean it's still on the order book.
+  Active
 
-    # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-    Cancelled
+  # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+  Cancelled
 
-    # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
-    Expired
+  # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+  Expired
 
-    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
-    Stopped
+  # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+  Stopped
 
-    # This order is fully filled with remaining equals zero.
-    Filled
+  # This order is fully filled with remaining equals zero.
+  Filled
+
+  # This order was rejected while beeing processed in the core.
+  Rejected
+}
+
+# Reason for the order beeing rejected by the core node
+enum RejectionReason {
+  # Market id is invalid
+  InvalidMarketId
+  # Order id is invalid
+  InvalidOrderId
+  # Order is out of sequence
+  OrderOutOfSequence
+  # Remaining size in the order is invalid
+  InvalidRemainingSize
+  # Time has failed us
+  TimeFailure
+  # Unable to remove the order
+  OrderRemovalFailure
+  # Expiration time is invalid
+  InvalidExpirationTime
+  # Order reference is invalid
+  InvalidOrderReference
+  # Edit is not allowed
+  EditNotAllowed
+  # Order amend fail
+  OrderAmendFailure
+  # Order does not exist
+  OrderNotFound
+  # Party id is invalid
+  InvalidPartyId
+  # Market is closed
+  MarketClosed
+  # Margin check failed
+  MarginCheckFailed
+  # An internal error happend
+  InternalError
 }
 
 enum OrderType {

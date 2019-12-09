@@ -30,13 +30,13 @@ func (f *Simple) CalculationInterval() time.Duration {
 func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult) {
 	rf := &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			f.asset: &types.RiskFactor{
+			f.asset: {
 				Long:  f.factorLong,
 				Short: f.factorShort,
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			f.asset: &types.RiskFactor{
+			f.asset: {
 				Long:  f.factorLong,
 				Short: f.factorShort,
 			},

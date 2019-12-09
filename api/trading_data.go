@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	google_proto "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -77,7 +76,7 @@ type TradeService interface {
 	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.MarketPosition, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	GetTradeSubscribersCount() int32
@@ -100,6 +99,10 @@ type MarketService interface {
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 	GetMarketDepthSubscribersCount() int32
+	ObserveMarketsData(ctx context.Context, retries int, marketID string) (<-chan []types.MarketData, uint64)
+	GetMarketDataSubscribersCount() int32
+	GetMarketDataByID(marketID string) (types.MarketData, error)
+	GetMarketsData() []types.MarketData
 }
 
 // PartyService ...
@@ -120,17 +123,15 @@ type BlockchainClient interface {
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	Health() (*tmctypes.ResultHealth, error)
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
+	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (success bool, err error)
 	Withdraw(context.Context, *types.Withdraw) (success bool, err error)
 }
 
 // AccountsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/api AccountsService
 type AccountsService interface {
-	GetByParty(partyID string) ([]*types.Account, error)
-	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
-	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
-	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
+	GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error)
+	GetMarketAccounts(marketID, asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -139,6 +140,15 @@ type AccountsService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_service_mock.go -package mocks code.vegaprotocol.io/vega/api TransferResponseService
 type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
+}
+
+// RiskService ...
+type RiskService interface {
+	ObserveMarginLevels(
+		ctx context.Context, retries int, partyID, marketID string,
+	) (<-chan []types.MarginLevels, uint64)
+	GetMarginLevelsSubscribersCount() int32
+	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
 }
 
 type tradingDataService struct {
@@ -153,14 +163,11 @@ type tradingDataService struct {
 	MarketService           MarketService
 	PartyService            PartyService
 	AccountsService         AccountsService
+	RiskService             RiskService
 	TransferResponseService TransferResponseService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
 }
-
-// defaultLimit specifies the result size limit to use if none is provided by the incoming API
-// call. This prevents returning all results every time a careless query is made.
-const defaultLimit = uint64(1000)
 
 // OrdersByMarket provides a list of orders for a given market.
 // Pagination: Optional. If not provided, defaults are used.
@@ -219,19 +226,19 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.Empty) (*protoapi.MarketsResponse, error) {
-	mkts, err := h.MarketService.GetAll(ctx)
+func (h *tradingDataService) Markets(ctx context.Context, request *empty.Empty) (*protoapi.MarketsResponse, error) {
+	markets, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &protoapi.MarketsResponse{
-		Markets: mkts,
+		Markets: markets,
 	}, nil
 }
 
-// OrdersByMarketAndId provides the given order, searching by Market and (Order)Id.
-func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
+// OrdersByMarketAndID provides the given order, searching by Market and (Order)Id.
+func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
@@ -344,7 +351,7 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
-	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID)
+	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err
 	}
@@ -353,10 +360,57 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	return response, nil
 }
 
+// MarginLevels returns the current margin levels for a given party and market.
+func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
+	if len(req.PartyID) <= 0 {
+		return nil, ErrEmptyMissingPartyID
+	}
+	mls, err := h.RiskService.GetMarginLevelsByID(req.PartyID, req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	levels := make([]*types.MarginLevels, 0, len(mls))
+	for _, v := range mls {
+		v := v
+		levels = append(levels, &v)
+	}
+
+	return &protoapi.MarginLevelsResponse{
+		MarginLevels: levels,
+	}, nil
+}
+
+// MarketDataByID provides market data for the given ID.
+func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
+	if len(req.MarketID) <= 0 {
+		return nil, ErrEmptyMissingMarketID
+	}
+	md, err := h.MarketService.GetMarketDataByID(req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.MarketDataByIDResponse{
+		MarketData: &md,
+	}, nil
+}
+
+// MarketsData provides all market data for all markets on this network.
+func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*protoapi.MarketsDataResponse, error) {
+	mds := h.MarketService.GetMarketsData()
+	mdptrs := make([]*types.MarketData, 0, len(mds))
+	for _, v := range mds {
+		v := v
+		mdptrs = append(mdptrs, &v)
+	}
+	return &protoapi.MarketsDataResponse{
+		MarketsData: mdptrs,
+	}, nil
+}
+
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
-func (h *tradingDataService) Statistics(ctx context.Context, request *google_proto.Empty) (*types.Statistics, error) {
+func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empty) (*types.Statistics, error) {
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
@@ -407,6 +461,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		GenesisTime:              genesisTime,
 		CurrentTime:              vegatime.Format(vegatime.Now()),
 		VegaTime:                 vegatime.Format(epochTime),
+		Uptime:                   vegatime.Format(h.Stats.GetUptime()),
 		TxPerBlock:               uint64(h.Stats.Blockchain.TotalTxLastBatch()),
 		AverageTxBytes:           uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
 		AverageOrdersPerBlock:    uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
@@ -431,12 +486,13 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		MarketDepthSubscriptions: h.MarketService.GetMarketDepthSubscribersCount(),
 		CandleSubscriptions:      h.CandleService.GetCandleSubscribersCount(),
 		AccountSubscriptions:     h.AccountsService.GetAccountSubscribersCount(),
+		MarketDataSubscriptions:  h.MarketService.GetMarketDataSubscribersCount(),
 	}, nil
 }
 
 // GetVegaTime returns the latest blockchain header timestamp, in UnixNano format.
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
-func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*protoapi.VegaTimeResponse, error) {
+func (h *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.VegaTimeResponse, error) {
 	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
@@ -447,23 +503,26 @@ func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_pr
 
 }
 
+// TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
 func (h *tradingDataService) TransferResponsesSubscribe(
 	req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+	// Wrap context from the request into cancellable. We can close internal chan in error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
-	transferResponseschan, ref := h.TransferResponseService.ObserveTransferResponses(
-		ctx, h.Config.StreamRetries)
-	h.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
+	transferResponsesChan, ref := h.TransferResponseService.ObserveTransferResponses(ctx, h.Config.StreamRetries)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
 	var err error
-
 	for {
 		select {
-		case transferResponses := <-transferResponseschan:
+		case transferResponses := <-transferResponsesChan:
 			if transferResponses == nil {
 				err = ErrChannelClosed
-				h.log.Error("transferResponses subscriber",
+				h.log.Error("TransferResponses subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
 				)
@@ -482,42 +541,169 @@ func (h *tradingDataService) TransferResponsesSubscribe(
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
-			h.log.Debug("TransferResponses subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("TransferResponses subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if transferResponseschan == nil {
-			h.log.Debug("TransferResponses subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if transferResponsesChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("TransferResponses subscriber - rpc stream closed",
+					logging.Uint64("ref", ref),
+				)
+			}
+			return ErrStreamClosed
+		}
+	}
+}
+
+// MarketsDataSubscribe opens a subscription to market data provided by the markets service.
+func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubscribeRequest,
+	srv protoapi.TradingData_MarketsDataSubscribeServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	marketsDataChan, ref := h.MarketService.ObserveMarketsData(ctx, h.Config.StreamRetries, req.MarketID)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Markets data subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	var err error
+	for {
+		select {
+		case mds := <-marketsDataChan:
+			if mds == nil {
+				err = ErrChannelClosed
+				h.log.Error("Markets data subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, md := range mds {
+				err = srv.Send(&md)
+				if err != nil {
+					h.log.Error("Markets data subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Markets data subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if marketsDataChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Markets data subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
+			return ErrStreamClosed
+		}
+	}
+}
+
+// AccountsSubscribe opens a subscription to the Margin Levels provided by the risk service.
+func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingData_MarginLevelsSubscribeServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	if len(req.GetPartyID()) <= 0 {
+		return ErrEmptyMissingPartyID
+	}
+
+	marginLevelsChan, ref := h.RiskService.ObserveMarginLevels(ctx, h.Config.StreamRetries, req.PartyID, req.MarketID)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	var err error
+	for {
+		select {
+		case mls := <-marginLevelsChan:
+			if mls == nil {
+				err = ErrChannelClosed
+				h.log.Error("Margin levels subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, ml := range mls {
+				ml := ml
+				err = srv.Send(&ml)
+				if err != nil {
+					h.log.Error("Margin levels data subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Margin levels data subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if marginLevelsChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Margin levels data subscriber - rpc stream closed",
+					logging.Uint64("ref", ref),
+				)
+			}
 			return ErrStreamClosed
 		}
 	}
 }
 
 // AccountsSubscribe opens a subscription to the Accounts service.
-func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest, srv protoapi.TradingData_AccountsSubscribeServer) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest,
+	srv protoapi.TradingData_AccountsSubscribeServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
-	accountschan, ref := h.AccountsService.ObserveAccounts(
+	accountsChan, ref := h.AccountsService.ObserveAccounts(
 		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Asset, req.Type)
-	h.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	var err error
-
 	for {
 		select {
-		case accounts := <-accountschan:
+		case accounts := <-accountsChan:
 			if accounts == nil {
 				err = ErrChannelClosed
-				h.log.Error("accounts subscriber",
+				h.log.Error("Accounts subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
 				)
@@ -536,19 +722,23 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
-			h.log.Debug("Accounts subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Accounts subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if accountschan == nil {
-			h.log.Debug("Accounts subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if accountsChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Accounts subscriber - rpc stream closed",
+					logging.Uint64("ref", ref),
+				)
+			}
 			return ErrStreamClosed
 		}
 	}
@@ -559,9 +749,9 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 // PartyID: Optional.
 func (h *tradingDataService) OrdersSubscribe(
 	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingData_OrdersSubscribeServer) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
 	var (
 		err               error
@@ -574,13 +764,15 @@ func (h *tradingDataService) OrdersSubscribe(
 		partyID = &req.PartyID
 	}
 
-	orderschan, ref := h.OrderService.ObserveOrders(
-		ctx, h.Config.StreamRetries, marketID, partyID)
-	h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+	ordersChan, ref := h.OrderService.ObserveOrders(ctx, h.Config.StreamRetries, marketID, partyID)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	for {
 		select {
-		case orders := <-orderschan:
+		case orders := <-ordersChan:
 			if orders == nil {
 				err = ErrChannelClosed
 				h.log.Error("Orders subscriber",
@@ -604,29 +796,34 @@ func (h *tradingDataService) OrdersSubscribe(
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
-			h.log.Debug("Orders subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Orders subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if orderschan == nil {
-			h.log.Debug("Orders subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if ordersChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Orders subscriber - rpc stream closed",
+					logging.Uint64("ref", ref),
+				)
+			}
 			return ErrStreamClosed
 		}
 	}
 }
 
 // TradesSubscribe opens a subscription to the Trades service.
-func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv protoapi.TradingData_TradesSubscribeServer) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest,
+	srv protoapi.TradingData_TradesSubscribeServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
 	var (
 		err               error
@@ -639,13 +836,15 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 		partyID = &req.PartyID
 	}
 
-	tradeschan, ref := h.TradeService.ObserveTrades(
-		ctx, h.Config.StreamRetries, marketID, partyID)
-	h.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
+	tradesChan, ref := h.TradeService.ObserveTrades(ctx, h.Config.StreamRetries, marketID, partyID)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	for {
 		select {
-		case trades := <-tradeschan:
+		case trades := <-tradesChan:
 			if len(trades) <= 0 {
 				err = ErrChannelClosed
 				h.log.Error("Trades subscriber",
@@ -670,29 +869,31 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
-			h.log.Debug("Trades subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Trades subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
-
-		if tradeschan == nil {
-			h.log.Debug("Trades subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if tradesChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Trades subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
 			return ErrStreamClosed
 		}
 	}
 }
 
 // CandlesSubscribe opens a subscription to the Candles service.
-func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv protoapi.TradingData_CandlesSubscribeServer) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest,
+	srv protoapi.TradingData_CandlesSubscribeServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
 	var (
 		err      error
@@ -704,13 +905,15 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 		return ErrEmptyMissingMarketID
 	}
 
-	candleschan, ref := h.CandleService.ObserveCandles(
-		ctx, h.Config.StreamRetries, marketID, &req.Interval)
-	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+	candlesChan, ref := h.CandleService.ObserveCandles(ctx, h.Config.StreamRetries, marketID, &req.Interval)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	for {
 		select {
-		case candle := <-candleschan:
+		case candle := <-candlesChan:
 			if candle == nil {
 				err = ErrChannelClosed
 				h.log.Error("Candles subscriber",
@@ -719,7 +922,6 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 				)
 				return err
 			}
-
 			err = srv.Send(candle)
 			if err != nil {
 				h.log.Error("Candles subscriber - rpc stream error",
@@ -730,19 +932,21 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
-			h.log.Debug("Candles subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Candles subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if candleschan == nil {
-			h.log.Debug("Candles subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if candlesChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Candles subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
 			return ErrStreamClosed
 		}
 	}
@@ -753,22 +957,25 @@ func (h *tradingDataService) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
 	srv protoapi.TradingData_MarketDepthSubscribeServer,
 ) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
 	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
 		return err
 	}
 
-	depthchan, ref := h.MarketService.ObserveDepth(
+	depthChan, ref := h.MarketService.ObserveDepth(
 		ctx, h.Config.StreamRetries, req.MarketID)
-	h.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	for {
 		select {
-		case depth := <-depthchan:
+		case depth := <-depthChan:
 			if depth == nil {
 				err = ErrChannelClosed
 				h.log.Error("Depth subscriber",
@@ -777,31 +984,33 @@ func (h *tradingDataService) MarketDepthSubscribe(
 				)
 				return err
 			}
-
-			err := srv.Send(depth)
+			err = srv.Send(depth)
 			if err != nil {
-				h.log.Error("Depth subscriber - rpc stream error",
+				if h.log.GetLevel() == logging.DebugLevel {
+					h.log.Error("Depth subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+				}
+				return err
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Depth subscriber - rpc stream ctx error",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
 				)
-				return err
 			}
-
-		case <-ctx.Done():
-			err = ctx.Err()
-			h.log.Debug("Depth subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if depthchan == nil {
-			h.log.Debug("Depth subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if depthChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Depth subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
 			return ErrStreamClosed
 		}
 	}
@@ -812,17 +1021,19 @@ func (h *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
 	srv protoapi.TradingData_PositionsSubscribeServer,
 ) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
-	positionschan, ref := h.TradeService.ObservePositions(
-		ctx, h.Config.StreamRetries, req.PartyID)
-	h.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
+	positionsChan, ref := h.TradeService.ObservePositions(ctx, h.Config.StreamRetries, req.PartyID)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	for {
 		select {
-		case position := <-positionschan:
+		case position := <-positionsChan:
 			if position == nil {
 				err := ErrChannelClosed
 				h.log.Error("Positions subscriber",
@@ -841,19 +1052,21 @@ func (h *tradingDataService) PositionsSubscribe(
 			}
 		case <-ctx.Done():
 			err := ctx.Err()
-			h.log.Debug("Positions subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Positions subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if positionschan == nil {
-			h.log.Debug("Positions subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if positionsChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Positions subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
 			return ErrStreamClosed
 		}
 	}
@@ -872,13 +1085,13 @@ func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.Marke
 }
 
 // Parties provides a list of all parties.
-func (h *tradingDataService) Parties(ctx context.Context, req *google_proto.Empty) (*protoapi.PartiesResponse, error) {
-	pties, err := h.PartyService.GetAll(ctx)
+func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*protoapi.PartiesResponse, error) {
+	parties, err := h.PartyService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &protoapi.PartiesResponse{
-		Parties: pties,
+		Parties: parties,
 	}, nil
 }
 
@@ -938,7 +1151,7 @@ func (h *tradingDataService) LastTrade(
 	if err != nil {
 		return nil, err
 	}
-	if t != nil && len(t) > 0 && t[0] != nil {
+	if len(t) > 0 && t[0] != nil {
 		return &protoapi.LastTradeResponse{Trade: t[0]}, nil
 	}
 	// No trades found on the market yet (and no errors)
@@ -946,46 +1159,22 @@ func (h *tradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
-// AccountsByParty provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
-	accs, err := h.AccountsService.GetByParty(req.PartyID)
+func (h *tradingDataService) MarketAccounts(_ context.Context, req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	accs, err := h.AccountsService.GetMarketAccounts(req.MarketID, req.Asset)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyResponse{
+	return &protoapi.MarketAccountsResponse{
 		Accounts: accs,
 	}, nil
 }
 
-// AccountsByPartyAndMarket provides a list of accounts for the given party and market.
-func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
+func (h *tradingDataService) PartyAccounts(_ context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
+	accs, err := h.AccountsService.GetPartyAccounts(req.PartyID, req.MarketID, req.Asset, req.Type)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyAndMarketResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndType provides a list of accounts of the given type for the given party.
-func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndTypeResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndAsset provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndAssetResponse{
+	return &protoapi.PartyAccountsResponse{
 		Accounts: accs,
 	}, nil
 }
@@ -1000,7 +1189,6 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	if err != nil {
 		return nil, err
 	}
-
 	return mkt, nil
 }
 

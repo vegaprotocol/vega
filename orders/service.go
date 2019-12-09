@@ -20,7 +20,7 @@ var (
 	// ErrInvalidExpirationDT signals that the time format was invalid
 	ErrInvalidExpirationDT = errors.New("invalid expiration datetime")
 	// ErrInvalidTimeInForceForMarketOrder signals that the time in force used with a market order is not accepted
-	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in for for market order (expected: FOK/IOC)")
+	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in force for market order (expected: FOK/IOC)")
 	// ErrInvalidPriceForLimitOrder signal that a a price was missing for a limit order
 	ErrInvalidPriceForLimitOrder = errors.New("invalid limit order (missing required price)")
 	// ErrInvalidPriceForMarketOrder signals that a price was specified for a market order but not price is required
@@ -295,12 +295,13 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cfunc := context.WithCancel(ctx)
-		defer cfunc()
+		defer cancel()
 		for {
 			select {
 			case <-ctx.Done():
@@ -364,8 +365,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cfunc()
-					break
+					cancel()
 				}
 			}
 		}
