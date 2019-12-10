@@ -27,6 +27,9 @@ func TestAccBufSubUnsub(t *testing.T) {
 	assert.NotNil(t, sub1.Recv())
 	assert.NotNil(t, sub2.Recv())
 	buf.Unsubscribe(sub1)
+	// this should cancel the context of sub1, but have no impact on sub2
+	assert.Error(t, sub1.Err())
+	assert.NoError(t, sub2.Err())
 	_, ok := <-sub1.Recv()
 	assert.False(t, ok)
 	// create another subscriber, this should reuse the first sub's key (covered code-path to verify)

@@ -21,8 +21,7 @@ type tradeSubReq struct {
 
 type tradeSub struct {
 	subscriber
-	key int
-	ch  chan []types.Trade
+	ch chan []types.Trade
 }
 
 func NewTradeCh(ctx context.Context) *TradeCh {
@@ -53,6 +52,7 @@ func (t *TradeCh) Subscribe(buf int) tradeSub {
 }
 
 func (t *TradeCh) Unsubscribe(sub tradeSub) {
+	sub.cfunc()
 	t.unsub <- sub.key
 }
 
@@ -70,12 +70,14 @@ func (t *TradeCh) loop(ctx context.Context) {
 			close(t.add)
 			return
 		case ts := <-t.sub:
+			sCtx, cfunc := context.WithCancel(ctx)
 			sub := tradeSub{
 				subscriber: subscriber{
-					ctx: ctx,
+					ctx:   sCtx,
+					cfunc: cfunc,
+					key:   t.getKey(),
 				},
-				key: t.getKey(),
-				ch:  make(chan []types.Trade, ts.chBuf),
+				ch: make(chan []types.Trade, ts.chBuf),
 			}
 			t.subs[sub.key] = sub.ch
 			t.subscribe(sub.key)
