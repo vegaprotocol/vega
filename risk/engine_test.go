@@ -106,8 +106,8 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
-		margin:  10, // required margin will be > 30 so ensure we don't have enough
-		general: 10, // plenty of balance for the transfer anyway
+		margin:  10, // maring and general combined are not enough to get a sufficient margin
+		general: 10,
 		market:  "ETH/DEC19",
 	}
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
