@@ -111,7 +111,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 					// and then rename the temp file with the name of the original file.
 					// if we try to update the conf as soon as we get the event, the file is not
 					// always created and we get a no such file or directory error
-					time.Sleep(time.Duration(50 * time.Millisecond))
+					time.Sleep(50 * time.Millisecond)
 				}
 				w.log.Info("configuration updated", logging.String("event", event.Name))
 				err := w.load()
