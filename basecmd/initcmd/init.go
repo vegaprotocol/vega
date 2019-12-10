@@ -88,7 +88,7 @@ func runInit(rootPath string, force bool) error {
 	}
 
 	if rootPathExists && force {
-		fmt.Println("removing existing configuration at %v", rootPath)
+		fmt.Printf("removing existing configuration at %v\n", rootPath)
 		os.RemoveAll(rootPath) // ignore any errors here to force removal
 	}
 
