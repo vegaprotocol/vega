@@ -2,6 +2,8 @@ package main
 
 import (
 	"code.vegaprotocol.io/vega/basecmd"
+	"code.vegaprotocol.io/vega/basecmd/auth"
+	"code.vegaprotocol.io/vega/basecmd/gateway"
 	"code.vegaprotocol.io/vega/basecmd/initcmd"
 	"code.vegaprotocol.io/vega/basecmd/node"
 	"code.vegaprotocol.io/vega/basecmd/version"
@@ -32,6 +34,8 @@ func main() {
 	version.VersionHash = VersionHash
 
 	basecmd.Main(
+		auth.Command,
+		gateway.Command,
 		initcmd.Command,
 		node.Command,
 		version.Command,

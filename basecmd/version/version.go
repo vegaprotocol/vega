@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/basecmd"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 var Command = basecmd.Command{
 	Name:  "version",
 	Short: "Print the version of the vega node",
-	Run: func(args []string) int {
+	Run: func(_ *logging.Logger, args []string) int {
 		fmt.Printf("vega version %s (%s)\n", Version, VersionHash)
 		return 0
 	},
@@ -26,7 +27,7 @@ var Command = basecmd.Command{
 
 func helpVersion() string {
 	helpStr := `
-usage: vega version
+Usage: vega version
 
 Version prints the vega node version, this is set during the compilation.
 `

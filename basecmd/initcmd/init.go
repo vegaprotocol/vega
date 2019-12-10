@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 	"github.com/gogo/protobuf/jsonpb"
@@ -52,7 +53,7 @@ Usage: vega init [options]
 	return strings.TrimSpace(helpStr)
 }
 
-func runCommand(args []string) int {
+func runCommand(_ *logging.Logger, args []string) int {
 	if err := Command.FlagSet.Parse(args[1:]); err != nil {
 		if err == flag.ErrHelp {
 			return 0

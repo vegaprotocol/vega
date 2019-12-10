@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
@@ -45,7 +46,7 @@ Usage: vega node [options]
 	return strings.TrimSpace(helpStr)
 }
 
-func runCommand(args []string) int {
+func runCommand(log *logging.Logger, args []string) int {
 	if err := Command.FlagSet.Parse(args[1:]); err != nil {
 		if err == flag.ErrHelp {
 			return 0
