@@ -64,6 +64,7 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Noop margin test", testMarginNoop)
 	t.Run("Margin too high (overflow)", testMarginOverflow)
 	t.Run("Update Margin with orders in book", testMarginWithOrderInBook)
+	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
 }
 
 func testMarginTopup(t *testing.T) {
@@ -93,6 +94,30 @@ func testMarginTopup(t *testing.T) {
 	// min = 15 so we go back to search level
 	assert.Equal(t, int64(15), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
+}
+
+func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
+	eng := getTestEngine(t, nil)
+	defer eng.ctrl.Finish()
+	_, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  10, // maring and general combined are not enough to get a sufficient margin
+		general: 10,
+		market:  "ETH/DEC19",
+	}
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
+			return markPrice, nil
+		})
+	riskevt, err := eng.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	assert.Nil(t, riskevt)
+	assert.NotNil(t, err)
+	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 }
 
 func testMarginNoop(t *testing.T) {
@@ -238,11 +263,12 @@ func testMarginWithOrderInBook(t *testing.T) {
 		general: 100000,
 		market:  "ETH/DEC19",
 	}
-	riskevt := testE.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	riskevt, err := testE.UpdateMarginOnNewOrder(evt, uint64(markPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
 	}
+	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
 	assert.Equal(t, int64(1131), margins.MaintenanceMargin)
 	assert.Equal(t, int64(1131*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
