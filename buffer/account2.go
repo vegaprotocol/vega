@@ -12,7 +12,6 @@ type AccountCh struct {
 	add  chan types.Account
 	sub  chan accSubReq
 	subs map[int]chan map[string]types.Account
-	keys []int
 }
 
 type accSubReq struct {
@@ -22,8 +21,7 @@ type accSubReq struct {
 
 type accSub struct {
 	subscriber
-	key int
-	ch  chan map[string]types.Account
+	ch chan map[string]types.Account
 }
 
 func NewAccountCh(ctx context.Context) *AccountCh {
@@ -66,12 +64,14 @@ func (a *AccountCh) loop(ctx context.Context) {
 				ch <- cpy
 			}
 		case req := <-a.sub:
+			sCtx, cfunc := context.WithCancel(ctx)
 			sub := accSub{
 				subscriber: subscriber{
-					ctx: ctx,
+					ctx:   sCtx,
+					cfunc: cfunc,
+					key:   a.getKey(),
 				},
-				key: a.getKey(),
-				ch:  make(chan map[string]types.Account, req.chBuf),
+				ch: make(chan map[string]types.Account, req.chBuf),
 			}
 			a.subs[sub.key] = sub.ch
 			a.subscribe(sub.key)
@@ -96,6 +96,8 @@ func (a *AccountCh) Subscribe(buf int) accSub {
 }
 
 func (a *AccountCh) Unsubscribe(sub accSub) {
+	// cancel the subscriber context, signaling the subscriber is inactive
+	sub.cfunc()
 	a.unsub <- sub.key
 }
 

@@ -3,7 +3,9 @@ package buffer
 import "context"
 
 type subscriber struct {
-	ctx context.Context
+	ctx   context.Context
+	cfunc context.CancelFunc
+	key   int
 }
 
 func (s subscriber) Done() <-chan struct{} {
