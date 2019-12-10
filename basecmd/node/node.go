@@ -1,14 +1,126 @@
 package node
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
+	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/basecmd"
+	"code.vegaprotocol.io/vega/basecmd/gateway"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/buffer"
+	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/orders"
+	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
+	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/risk"
+	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
+	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/vegatime"
+	"github.com/pkg/errors"
 )
+
+type AccountStore interface {
+	buffer.AccountStore
+	accounts.AccountStore
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+type CandleStore interface {
+	buffer.CandleStore
+	candles.CandleStore
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+type OrderStore interface {
+	buffer.OrderStore
+	orders.OrderStore
+	GetMarketDepth(context.Context, string) (*proto.MarketDepth, error)
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+type TradeStore interface {
+	buffer.TradeStore
+	trades.TradeStore
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+// Node use to implement 'node' command.
+type Node struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	accounts              AccountStore
+	candleStore           CandleStore
+	orderStore            OrderStore
+	marketStore           *storage.Market
+	marketDataStore       *storage.MarketData
+	tradeStore            TradeStore
+	partyStore            *storage.Party
+	riskStore             *storage.Risk
+	transferResponseStore *storage.TransferResponse
+
+	orderBuf        *buffer.Order
+	tradeBuf        *buffer.Trade
+	partyBuf        *buffer.Party
+	transferBuf     *buffer.TransferResponse
+	marketBuf       *buffer.Market
+	accountBuf      *buffer.Account
+	candleBuf       *buffer.Candle
+	marketDataBuf   *buffer.MarketData
+	marginLevelsBuf *buffer.MarginLevels
+	settleBuf       *buffer.Settlement
+
+	candleService    *candles.Svc
+	tradeService     *trades.Svc
+	marketService    *markets.Svc
+	orderService     *orders.Svc
+	partyService     *parties.Svc
+	timeService      *vegatime.Svc
+	auth             *auth.Svc
+	accountsService  *accounts.Svc
+	transfersService *transfers.Svc
+	riskService      *risk.Svc
+
+	blockchain       *blockchain.Blockchain
+	blockchainClient *blockchain.Client
+
+	pproffhandlr *pprof.Pprofhandler
+	configPath   string
+	conf         config.Config
+	stats        *stats.Stats
+	withPPROF    bool
+	noChain      bool
+	noStores     bool
+	Log          *logging.Logger
+	cfgwatchr    *config.Watcher
+
+	executionEngine *execution.Engine
+	mktscfg         []proto.Market
+
+	// plugins
+	settlePlugin *plugins.Positions
+}
 
 var (
 	Command basecmd.Command
@@ -55,5 +167,105 @@ func runCommand(log *logging.Logger, args []string) int {
 		return 1
 	}
 
+	node := &Node{
+		Log:        log,
+		configPath: configPath,
+	}
+	err := node.persistentPre()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	err = node.preRun()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	// run the node
+	err = node.runNode()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	err = node.postRun()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	node.persistentPost()
+
 	return 0
+}
+
+// runNode is the entry of node command.
+func (l *Node) runNode() error {
+	defer l.cancel()
+
+	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
+	statusChecker.OnChainDisconnect(l.cancel)
+	statusChecker.OnChainVersionObtained(func(v string) {
+		l.stats.SetChainVersion(v)
+	})
+
+	var err error
+	if l.conf.Auth.Enabled {
+		l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
+		if err != nil {
+			return errors.Wrap(err, "unable to start auth service")
+		}
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
+	}
+
+	// gRPC server
+	grpcServer := api.NewGRPCServer(
+		l.Log,
+		l.conf.API,
+		l.stats,
+		l.blockchainClient,
+		l.timeService,
+		l.marketService,
+		l.partyService,
+		l.orderService,
+		l.tradeService,
+		l.candleService,
+		l.accountsService,
+		l.transfersService,
+		l.riskService,
+		statusChecker,
+	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
+	go grpcServer.Start()
+	if l.conf.Auth.Enabled {
+		l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
+	}
+	metrics.Start(l.conf.Metrics)
+
+	// start gateway
+	var gty *gateway.Gateway
+
+	if l.conf.GatewayEnabled {
+		gty, err = gateway.Start(l.Log, l.conf.Gateway)
+		if err != nil {
+			return err
+		}
+	}
+
+	l.Log.Info("Vega startup complete")
+
+	basecmd.WaitSig(l.ctx, l.Log)
+
+	// Clean up and close resources
+	grpcServer.Stop()
+	l.blockchain.Stop()
+	statusChecker.Stop()
+
+	// cleanup gateway
+	if l.conf.GatewayEnabled {
+		if gty != nil {
+			gty.Stop()
+		}
+	}
+
+	return nil
 }

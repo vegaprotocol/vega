@@ -11,6 +11,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+var (
+	Version     string
+	VersionHash string
+)
+
 type Command struct {
 	Name    string
 	Long    string

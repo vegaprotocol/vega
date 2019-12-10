@@ -95,13 +95,13 @@ func runGateway(log *logging.Logger, configPath string) error {
 	}
 	conf := cfgwatchr.Get()
 
-	gty, err := startGateway(log, conf.Gateway)
+	gty, err := Start(log, conf.Gateway)
 	if err != nil {
 		return err
 	}
 
 	basecmd.WaitSig(ctx, log)
-	gty.stop()
+	gty.Stop()
 
 	return nil
 }
@@ -112,7 +112,7 @@ type Gateway struct {
 	restSrv gatewaySrv
 }
 
-func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
+func Start(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
 	var (
 		restSrv, gqlSrv gatewaySrv
 		err             error
@@ -142,7 +142,7 @@ func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
 
 }
 
-func (g *Gateway) stop() {
+func (g *Gateway) Stop() {
 	if g.restSrv != nil {
 		g.restSrv.Stop()
 	}

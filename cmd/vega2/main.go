@@ -30,8 +30,8 @@ func main() {
 		Version = defaultVersion
 	}
 
-	version.Version = Version
-	version.VersionHash = VersionHash
+	basecmd.Version = Version
+	basecmd.VersionHash = VersionHash
 
 	basecmd.Main(
 		auth.Command,

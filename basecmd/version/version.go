@@ -8,16 +8,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var (
-	Version     string
-	VersionHash string
-)
-
 var Command = basecmd.Command{
 	Name:  "version",
 	Short: "Print the version of the vega node",
 	Run: func(_ *logging.Logger, args []string) int {
-		fmt.Printf("vega version %s (%s)\n", Version, VersionHash)
+		fmt.Printf("vega version %s (%s)\n", basecmd.Version, basecmd.VersionHash)
 		return 0
 	},
 	Usage: func() {
