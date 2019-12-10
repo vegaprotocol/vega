@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,18 +10,21 @@ import (
 )
 
 // CandleStore persistence for candles
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/plugins CandleStore
 type CandleStore interface {
 	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
 }
 
 // TradeSub subscription to the trade buffer
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_sub_mock.go -package mocks code.vegaprotocol.io/vega/plugins TradeSub
 type TradeSub interface {
 	Recv() <-chan []types.Trade
 	Done() <-chan struct{}
 }
 
 // MarketSub subscription for the candles plugin to be aware of (new) markets
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_sub_mock.go -package mocks code.vegaprotocol.io/vega/plugins MarketSub
 type MarketSub interface {
 	Recv() <-chan []types.Market
 	Done() <-chan struct{}
@@ -31,6 +35,7 @@ type Candle struct {
 	tradeSub  TradeSub
 	mktSub    MarketSub
 	buf       map[string]map[string]types.Candle
+	stop      chan struct{}
 	lastTrade types.Trade
 }
 
@@ -44,27 +49,38 @@ var supportedIntervals = [6]types.Interval{
 	types.Interval_I1D,  // 1 day
 }
 
-func NewCandle(store CandleStore, tradeSub TradeSub, mktSub MarketSub) *Candle {
+// NewCandle creates a new candle plugin. The plugin immediately starts to listen for data coming
+// from the subscriptions
+func NewCandle(ctx context.Context, store CandleStore, tradeSub TradeSub, mktSub MarketSub) *Candle {
 	cp := &Candle{
 		store:    store,
 		tradeSub: tradeSub,
 		mktSub:   mktSub,
 		buf:      map[string]map[string]types.Candle{},
+		stop:     make(chan struct{}),
 	}
-	go cp.loop()
+	go cp.loop(ctx)
 	return cp
 }
 
-func (c *Candle) loop() {
+func (c *Candle) Stop() {
+	c.stop <- struct{}{}
+}
+
+func (c *Candle) loop(ctx context.Context) {
+	defer func() {
+		close(c.stop)
+	}()
 	for {
 		select {
+		case <-c.stop:
+		case <-ctx.Done():
 		case <-c.tradeSub.Done():
 			return
 		case trades := <-c.tradeSub.Recv():
 			for _, trade := range trades {
 				c.addTrade(trade)
 			}
-		// @TODO group trades by market, get the TS for this batch
 		case mkts := <-c.mktSub.Recv():
 			ts := time.Now()
 			for _, mkt := range mkts {
@@ -75,7 +91,7 @@ func (c *Candle) loop() {
 }
 
 func (c *Candle) start(marketID string, timestamp time.Time) {
-	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(timestamp)
+	roundedTimestamps := getMapOfIntervalsToRoundedTimestamps(timestamp)
 	previous := c.buf[marketID]
 	c.buf[marketID] = map[string]types.Candle{}
 
@@ -116,9 +132,9 @@ func groupTrades(trades []types.Trade) map[string][]types.Trade {
 	return ret
 }
 
-// GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
+// getMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
 //  15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
-func GetMapOfIntervalsToRoundedTimestamps(timestamp time.Time) map[types.Interval]time.Time {
+func getMapOfIntervalsToRoundedTimestamps(timestamp time.Time) map[types.Interval]time.Time {
 	timestamps := make(map[types.Interval]time.Time)
 
 	// round floor by integer division
@@ -150,7 +166,13 @@ func newCandle(timestamp time.Time, openPrice, size uint64, interval types.Inter
 
 // AddTrade adds a trade to the trades buffer for the given market.
 func (c *Candle) addTrade(trade types.Trade) {
-	mktBuf := c.buf[trade.MarketID]
+	mktBuf, ok := c.buf[trade.MarketID]
+	if !ok {
+		// it's possible the market subscription expired, but we're getting trades from a new
+		// market in already. In this case, we're just going to black-hole the trades in question
+		// until we have a better understanding of what to do...
+		return
+	}
 	for _, interval := range supportedIntervals {
 		roundedTradeTime := vegatime.RoundToNearest(vegatime.UnixNano(trade.Timestamp), interval)
 
