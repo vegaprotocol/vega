@@ -437,7 +437,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		confirmation.Order.Remaining != 0 {
 		// create a temporary order with the size beeing the remaining
 		tmpOrder := *order
-		tmpOrder.Size = order.Size
+		tmpOrder.Size = order.Remaining
 		_, err := m.position.UnregisterOrder(&tmpOrder)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
