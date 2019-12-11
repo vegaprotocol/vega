@@ -281,7 +281,7 @@ func (n *Node) StartPlugins() {
 		if !ok {
 			n.Log.Error("tried to instanciated unknown plugin", logging.String("name", v))
 		}
-		p := plugin.New(n.Log, n.ctx, bufs)
+		p := plugin.New(n.Log, n.ctx, bufs, nil)
 		go p.Start()
 		n.plugins = append(n.plugins, p)
 	}

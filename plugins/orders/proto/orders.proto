@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option go_package = "code.vegaprotocol.io/vega/plugins/orders/proto";
+
+import "proto/vega.proto";
+
+package orders;
+
+service OrdersCore {
+  // List orders on the book, for all markets, for a party.
+  rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse) {}
+
+  // List orders on the book, for a particular market.
+  rpc OrdersByPartyAndMarket(OrdersByPartyAndMarketRequest) returns (OrdersByPartyAndMarketResponse) {}
+
+  // Retrieve an order, if its on the book, for a particular order identifier.
+  rpc OrderByID(OrderByIDRequest) returns (OrderByIDResponse) {}
+}
+
+message OrdersByPartyRequest {
+  string partyID = 1;
+}
+
+message OrdersByPartyResponse {
+  repeated vega.Order orders = 1;
+}
+
+message OrdersByPartyAndMarketRequest {
+  string partyID = 1;
+  string marketID = 2;
+}
+
+message OrdersByPartyAndMarketResponse {
+  repeated vega.Order orders = 1;
+}
+
+message OrderByIDRequest {
+  string orderID = 1;
+}
+
+message OrderByIDResponse {
+  vega.Order order = 1;
+}

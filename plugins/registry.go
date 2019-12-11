@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/logging"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 )
 
 type Plugin interface {
-	New(*logging.Logger, context.Context, *buffer.Buffers) Plugin
+	New(*logging.Logger, context.Context, *buffer.Buffers, *grpc.Server) Plugin
 	Start() error
 }
 
