@@ -1,16 +1,17 @@
-package main
+package node
 
 import (
 	"strings"
 
+	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 type errStack []error
 
-func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
+func (l *Node) postRun() error {
 	var werr errStack
 	if l.candleStore != nil {
 		if err := l.candleStore.Close(); err != nil {
@@ -54,8 +55,8 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 	}
 
 	l.Log.Info("Vega shutdown complete",
-		logging.String("version", Version),
-		logging.String("version-hash", VersionHash))
+		logging.String("version", basecmd.Version),
+		logging.String("version-hash", basecmd.VersionHash))
 
 	l.Log.Sync()
 
@@ -66,7 +67,7 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 	return werr
 }
 
-func (l *NodeCommand) persistentPost(_ *cobra.Command, _ []string) {
+func (l *Node) persistentPost() {
 	l.cancel()
 }
 
