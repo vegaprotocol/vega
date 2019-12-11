@@ -1,15 +1,15 @@
-package main
+package node
 
 import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
@@ -30,16 +30,11 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
-func envConfigPath() string {
-	return os.Getenv("VEGA_CONFIG")
-}
-
-func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error) {
+func (l *Node) persistentPre() (err error) {
 	// this shouldn't happen...
 	if l.cancel != nil {
 		l.cancel()
@@ -50,12 +45,13 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			l.cancel()
 		}
 	}()
+
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 	// Use configPath from args
 	configPath := l.configPath
 	if configPath == "" {
 		// Use configPath from ENV
-		configPath = envConfigPath()
+		configPath = basecmd.EnvConfigPath()
 		if configPath == "" {
 			// Default directory ($HOME/.vega)
 			configPath = fsutil.DefaultVegaDir()
@@ -72,18 +68,18 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	conf := cfgwatchr.Get()
 	l.cfgwatchr = cfgwatchr
 
-	if flagProvided("--no-chain") {
+	if noChain {
 		conf.Blockchain.ChainProvider = "noop"
 	}
 
-	if flagProvided("--no-stores") {
+	if noStores {
 		conf.StoresEnabled = false
 	}
 
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
-	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
+	if withPprof || conf.Pprof.Enabled {
 		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
 		l.pproffhandlr, err = pprof.New(l.Log, conf.Pprof)
 		if err != nil {
@@ -93,8 +89,8 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 
 	l.Log.Info("Starting Vega",
 		logging.String("config-path", configPath),
-		logging.String("version", Version),
-		logging.String("version-hash", VersionHash))
+		logging.String("version", basecmd.Version),
+		logging.String("version-hash", basecmd.VersionHash))
 
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
@@ -112,7 +108,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, basecmd.Version, basecmd.VersionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -129,7 +125,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	return nil
 }
 
-func (l *NodeCommand) loadMarketsConfig() error {
+func (l *Node) loadMarketsConfig() error {
 	pmkts := []proto.Market{}
 	mktsCfg := l.conf.Execution.Markets
 	// loads markets from configuration
@@ -156,7 +152,7 @@ func (l *NodeCommand) loadMarketsConfig() error {
 	return nil
 }
 
-func (l *NodeCommand) setupBuffers() {
+func (l *Node) setupBuffers() {
 	l.orderBuf = buffer.NewOrder(l.orderStore)
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
@@ -173,7 +169,7 @@ func (l *NodeCommand) setupBuffers() {
 	l.settleBuf = buffer.NewSettlement()
 }
 
-func (l *NodeCommand) setupStorages() (err error) {
+func (l *Node) setupStorages() (err error) {
 	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
@@ -228,7 +224,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node
-func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
+func (l *Node) preRun() (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
 		if err != nil {
@@ -307,7 +303,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 // SetUlimits sets limits (within OS-specified limits):
 // * nofile - max number of open files - for badger LSM tree
-func (l *NodeCommand) SetUlimits() error {
+func (l *Node) SetUlimits() error {
 	return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
 		Max: l.conf.UlimitNOFile,
 		Cur: l.conf.UlimitNOFile,

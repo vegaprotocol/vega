@@ -1,7 +1,8 @@
-package main
+package initcmd
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -9,45 +10,73 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/spf13/cobra"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/zannen/toml"
 )
 
-type initCommand struct {
-	command
+var (
+	Command basecmd.Command
 
-	rootPath string
-	force    bool
-	Log      *logging.Logger
-}
+	configPath string
+	force      bool
+)
 
-func (ic *initCommand) Init(c *Cli) {
-	ic.cli = c
-	ic.cmd = &cobra.Command{
-		Use:   "init",
-		Short: "Initialize a vega node",
-		Long:  "Generate the minimal configuration required for a vega node to start",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunInit(ic.rootPath, ic.force, ic.Log)
-		},
+func init() {
+	Command.Name = "init"
+	Command.Short = "Generate an initial vega configuration"
+
+	cmd := flag.NewFlagSet("node", flag.ContinueOnError)
+	cmd.StringVar(&configPath, "config-path", fsutil.DefaultVegaDir(), "file path in which the configuration will be located")
+	cmd.BoolVar(&force, "f", false, "erase existing configuration at the specified path")
+
+	cmd.Usage = func() {
+		fmt.Fprintf(cmd.Output(), "%v\n\n", helpInit())
+		cmd.PrintDefaults()
 	}
 
-	fs := ic.cmd.Flags()
-	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
+	Command.FlagSet = cmd
+	Command.Usage = Command.FlagSet.Usage
+	Command.Run = runCommand
+}
 
+func helpInit() string {
+	helpStr := `
+Usage: vega init [options]
+`
+	return strings.TrimSpace(helpStr)
+}
+
+func runCommand(_ *logging.Logger, args []string) int {
+	if err := Command.FlagSet.Parse(args[1:]); err != nil {
+		if err == flag.ErrHelp {
+			return 0
+		}
+		fmt.Fprintf(Command.FlagSet.Output(), "%v\n", err)
+		return 1
+	}
+
+	if len(configPath) <= 0 {
+		fmt.Fprintln(os.Stderr, "vega: config path cannot be empty")
+		return 1
+	}
+
+	if err := runInit(configPath, force); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+
+	return 0
 }
 
 // RunInit initialises vega config files - config.toml and markets/*.json.
-func RunInit(rootPath string, force bool, logger *logging.Logger) error {
+func runInit(rootPath string, force bool) error {
 	rootPathExists, err := fsutil.PathExists(rootPath)
 	if err != nil {
 		if _, ok := err.(*fsutil.PathNotFound); !ok {
@@ -60,7 +89,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	}
 
 	if rootPathExists && force {
-		logger.Info("removing existing configuration", logging.String("path", rootPath))
+		fmt.Printf("removing existing configuration at %v\n", rootPath)
 		os.RemoveAll(rootPath) // ignore any errors here to force removal
 	}
 
@@ -124,7 +153,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 		return err
 	}
 
-	logger.Info("configuration generated successfully", logging.String("path", rootPath))
+	fmt.Printf("configuration generated successfully at %v\n", rootPath)
 
 	return nil
 }

@@ -1,20 +1,23 @@
-package main
+package node
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/auth"
+	"code.vegaprotocol.io/vega/basecmd"
+	"code.vegaprotocol.io/vega/basecmd/gateway"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/metrics"
@@ -32,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 type AccountStore interface {
@@ -64,10 +66,8 @@ type TradeStore interface {
 	ReloadConf(storage.Config)
 }
 
-// NodeCommand use to implement 'node' command.
-type NodeCommand struct {
-	command
-
+// Node use to implement 'node' command.
+type Node struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -123,37 +123,83 @@ type NodeCommand struct {
 	settlePlugin *plugins.Positions
 }
 
-// Init initialises the node command.
-func (l *NodeCommand) Init(c *Cli) {
-	l.cli = c
-	l.cmd = &cobra.Command{
-		Use:               "node",
-		Short:             "Run a new Vega node",
-		Long:              "Run a new Vega node as defined by config files",
-		Args:              cobra.MaximumNArgs(1),
-		PersistentPreRunE: l.persistentPre,
-		PreRunE:           l.preRun,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return l.runNode(args)
-		},
-		PostRunE:          l.postRun,
-		PersistentPostRun: l.persistentPost,
-		Example:           nodeExample(),
+var (
+	Command basecmd.Command
+
+	configPath string
+	noChain    bool
+	noStores   bool
+	withPprof  bool
+)
+
+func init() {
+	Command.Name = "node"
+	Command.Short = "Start a new vega node"
+
+	cmd := flag.NewFlagSet("node", flag.ContinueOnError)
+	cmd.StringVar(&configPath, "config-path", fsutil.DefaultVegaDir(), "file path to search for vega config file(s)")
+	cmd.BoolVar(&noChain, "no-chain", false, "start the node using the noop chain")
+	cmd.BoolVar(&noStores, "no-stores", false, "start the node without stores support")
+	cmd.BoolVar(&withPprof, "with-pprof", false, "start the node with pprof support")
+
+	cmd.Usage = func() {
+		fmt.Fprintf(cmd.Output(), "%v\n\n", helpNode())
+		cmd.PrintDefaults()
 	}
-	l.addFlags()
+
+	Command.FlagSet = cmd
+	Command.Usage = Command.FlagSet.Usage
+	Command.Run = runCommand
 }
 
-// addFlags adds flags for specific command.
-func (l *NodeCommand) addFlags() {
-	flagSet := l.cmd.Flags()
-	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
-	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
-	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
-	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")
+func helpNode() string {
+	helpStr := `
+Usage: vega node [options]
+`
+	return strings.TrimSpace(helpStr)
+}
+
+func runCommand(log *logging.Logger, args []string) int {
+	if err := Command.FlagSet.Parse(args[1:]); err != nil {
+		if err == flag.ErrHelp {
+			return 0
+		}
+		fmt.Fprintf(Command.FlagSet.Output(), "%v\n", err)
+		return 1
+	}
+
+	node := &Node{
+		Log:        log,
+		configPath: configPath,
+	}
+	err := node.persistentPre()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	err = node.preRun()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	// run the node
+	err = node.runNode()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	err = node.postRun()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return 1
+	}
+	node.persistentPost()
+
+	return 0
 }
 
 // runNode is the entry of node command.
-func (l *NodeCommand) runNode(args []string) error {
+func (l *Node) runNode() error {
 	defer l.cancel()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
@@ -197,10 +243,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	metrics.Start(l.conf.Metrics)
 
 	// start gateway
-	var gty *Gateway
+	var gty *gateway.Gateway
 
 	if l.conf.GatewayEnabled {
-		gty, err = startGateway(l.Log, l.conf.Gateway)
+		gty, err = gateway.Start(l.Log, l.conf.Gateway)
 		if err != nil {
 			return err
 		}
@@ -208,7 +254,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	l.Log.Info("Vega startup complete")
 
-	waitSig(l.ctx, l.Log)
+	basecmd.WaitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
 	grpcServer.Stop()
@@ -218,39 +264,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	// cleanup gateway
 	if l.conf.GatewayEnabled {
 		if gty != nil {
-			gty.stop()
+			gty.Stop()
 		}
 	}
 
 	return nil
-}
-
-// nodeExample shows examples for node command, and is used in auto-generated cli docs.
-func nodeExample() string {
-	return `$ vega node
-VEGA started successfully`
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
-	}
-}
-
-func flagProvided(flag string) bool {
-	for _, v := range os.Args[1:] {
-		if v == flag {
-			return true
-		}
-	}
-
-	return false
 }
