@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/auth/handler"
 	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/gorilla/handlers"
 	"github.com/rs/cors"
 )

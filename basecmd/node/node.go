@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
+
 	"github.com/pkg/errors"
 )
 

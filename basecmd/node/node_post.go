@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/pkg/errors"
 )
 
