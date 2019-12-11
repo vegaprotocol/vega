@@ -1,6 +1,6 @@
 // +build !race
 
-package plugins_test
+package positions_test
 
 // No race condition checks on these tests, the channels are buffered to avoid actual issues
 // we are aware that the tests themselves can be written in an unsafe way, but that's the tests
@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/plugins/mocks"
+	"code.vegaprotocol.io/vega/plugins/positions"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +31,7 @@ type tradeStub struct {
 }
 
 type posPluginTst struct {
-	*plugins.Positions
+	*positions.Positions
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -124,7 +124,7 @@ func TestProcessBufferData(t *testing.T) {
 func getPosPlugin(t *testing.T) *posPluginTst {
 	ctrl := gomock.NewController(t)
 	pos := mocks.NewMockPosBuffer(ctrl)
-	p := plugins.NewPositions(pos)
+	p := positions.NewPositions(pos)
 	tst := posPluginTst{
 		Positions: p,
 		pos:       pos,

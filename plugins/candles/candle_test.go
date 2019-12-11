@@ -1,11 +1,11 @@
-package plugins_test
+package candles_test
 
 import (
 	"context"
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/plugins"
+	"code.vegaprotocol.io/vega/plugins/candles"
 	"code.vegaprotocol.io/vega/plugins/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -14,7 +14,7 @@ import (
 )
 
 type candleTst struct {
-	*plugins.Candle
+	*candles.Candle
 	ctx    context.Context
 	cfunc  context.CancelFunc
 	ctrl   *gomock.Controller
@@ -81,7 +81,7 @@ func getTestCandle(t *testing.T) *candleTst {
 	trade.EXPECT().Recv().AnyTimes().Return(tCh)
 	market.EXPECT().Recv().AnyTimes().Return(mCh)
 	return &candleTst{
-		Candle: plugins.NewCandle(ctx, store, trade, market),
+		Candle: candles.NewCandle(ctx, store, trade, market),
 		ctx:    ctx,
 		cfunc:  cfunc,
 		ctrl:   ctrl,

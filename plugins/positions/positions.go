@@ -1,10 +1,11 @@
-package plugins
+package positions
 
 import (
 	"context"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -15,23 +16,16 @@ var (
 	ErrPartyNotFound  = errors.New("party not found")
 )
 
-// PosBuffer ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/pos_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PosBuffer
-type PosBuffer interface {
-	Subscribe() (<-chan []events.SettlePosition, int)
-	Unsubscribe(int)
-}
-
 // Positions plugin taking settlement data to build positions API data
 type Positions struct {
 	mu   *sync.RWMutex
-	buf  PosBuffer
+	buf  plugins.PosBuffer
 	ref  int
 	ch   <-chan []events.SettlePosition
 	data map[string]map[string]types.Position
 }
 
-func NewPositions(buf PosBuffer) *Positions {
+func NewPositions(buf plugins.PosBuffer) *Positions {
 	return &Positions{
 		mu:   &sync.RWMutex{},
 		data: map[string]map[string]types.Position{},
