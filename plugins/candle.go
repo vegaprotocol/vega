@@ -27,7 +27,7 @@ type TradeSub interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_sub_mock.go -package mocks code.vegaprotocol.io/vega/plugins MarketSub
 type MarketSub interface {
 	Recv() <-chan []types.Market
-	Done() <-chan struct{}
+	Done() <-chan struct{} // we're not using this ATM
 }
 
 type Candle struct {
@@ -74,7 +74,9 @@ func (c *Candle) loop(ctx context.Context) {
 	for {
 		select {
 		case <-c.stop:
+			return
 		case <-ctx.Done():
+			return
 		case <-c.tradeSub.Done():
 			return
 		case trades := <-c.tradeSub.Recv():
@@ -115,21 +117,6 @@ func (c *Candle) start(marketID string, timestamp time.Time) {
 
 		c.buf[marketID][bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
 	}
-}
-
-func groupTrades(trades []types.Trade) map[string][]types.Trade {
-	ret := map[string][]types.Trade{}
-	maxCap := len(trades)
-	for _, trade := range trades {
-		mt, ok := ret[trade.MarketID]
-		if !ok {
-			mt = make([]types.Trade, 0, maxCap)
-		}
-		mt = append(mt, trade)
-		// we've triaged another trade, one less left that could go to a different market
-		maxCap--
-	}
-	return ret
 }
 
 // getMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
