@@ -121,6 +121,7 @@ type Node struct {
 
 	// plugins
 	settlePlugin *plugins.Positions
+	plugins      []plugins.Plugin
 }
 
 var (
@@ -269,4 +270,20 @@ func (l *Node) runNode() error {
 	}
 
 	return nil
+}
+
+func (n *Node) StartPlugins() {
+	bufs := buffer.New(n.ctx)
+
+	n.plugins = []plugins.Plugin{}
+	for _, v := range n.conf.Plugins {
+		plugin, ok := plugins.Get(v)
+		if !ok {
+			n.Log.Error("tried to instanciated unknown plugin", logging.String("name", v))
+		}
+		p := plugin.New(n.Log, n.ctx, bufs)
+		go p.Start()
+		n.plugins = append(n.plugins, p)
+	}
+
 }

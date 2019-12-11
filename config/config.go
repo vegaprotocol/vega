@@ -55,6 +55,7 @@ type Config struct {
 	GatewayEnabled bool
 	StoresEnabled  bool
 	UlimitNOFile   uint64 `tomlcp:"Set the max number of open files (see: ulimit -n)"`
+	Plugins        []string
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -87,5 +88,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,
+		Plugins:        []string{"orders-core"},
 	}
 }
