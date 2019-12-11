@@ -190,15 +190,39 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			})
 		}
 	}
-	if totVolume == 0 {
-		totVolume = 1
+	p.OpenVolume = totVolume
+	if totVolume != 0 {
+		p.AverageEntryPrice = totPrice / absUint64(totVolume)
+	} else {
+		p.AverageEntryPrice = 0
 	}
 	p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
-	p.AverageEntryPrice = totPrice / absUint64(totVolume)
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
-	p.UnrealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
+	p.RealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
+	// get the unrealised pnl based on FIFO Queue
+	// the unrealised PNL is the difference between the value of the trades
+	// if we were to settle at current mark price. Add buy/seel at average entry price to get a
+	// an estimate for those, too. this is an aproximation, however
+	size, price := calcFIFO(p.FifoQueue)
+	pending := e.Buy() - e.Sell()
+	price += absUint64(pending) * p.AverageEntryPrice
+	size += pending
+	p.UnrealisedPNL = int64(price)*size - size*int64(e.Price())
 	// get the realised PNL (final value of asset should market settle at current price)
-	p.RealisedPNL = int64(e.Price())*p.PendingVolume - p.PendingVolume*int64(p.AverageEntryPrice)
+	// p.RealisedPNL = int64(e.Price())*p.PendingVolume - p.PendingVolume*int64(p.AverageEntryPrice)
+}
+
+func calcFIFO(q []*types.PositionTrade) (int64, uint64) {
+	// get the total size + total buy price of the queue
+	var (
+		size  int64
+		price uint64
+	)
+	for _, t := range q {
+		size += t.Volume
+		price += absUint64(t.Volume) * t.Price
+	}
+	return size, price
 }
 
 func evtToProto(e events.SettlePosition) types.Position {
