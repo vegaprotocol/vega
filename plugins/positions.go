@@ -190,11 +190,13 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			})
 		}
 	}
-	if totVolume == 0 {
-		totVolume = 1
+	p.OpenVolume = totVolume
+	if totVolume != 0 {
+		p.AverageEntryPrice = totPrice / absUint64(totVolume)
+	} else {
+		p.AverageEntryPrice = 0
 	}
 	p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
-	p.AverageEntryPrice = totPrice / absUint64(totVolume)
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
 	p.RealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
 	// get the unrealised pnl based on FIFO Queue
