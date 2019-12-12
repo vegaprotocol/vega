@@ -207,6 +207,7 @@ func updateQueue(q []*types.PositionTrade, ts events.TradeSettlement) []*types.P
 	// find with the same price, if exists, but let's keep track of the keys with trades going the "opposite way"
 	// while we're at it
 	entries := make([]int, 0, len(q))
+	rmEntries := make([]int, 0, len(q))
 	for i, pt := range q {
 		if pt.Price == price {
 			pt.Volume += size
@@ -217,6 +218,10 @@ func updateQueue(q []*types.PositionTrade, ts events.TradeSettlement) []*types.P
 		}
 		if sell && pt.Volume > 0 {
 			entries = append(entries, i)
+		} else if pt.Volume < 0 {
+			entries = append(entries, i)
+		} else if pt.Volume == 0 {
+			rmEntries = append(rmEntries, i) // we're going to remove this entry later on
 		}
 	}
 	// get absolute value as int64
@@ -231,10 +236,14 @@ func updateQueue(q []*types.PositionTrade, ts events.TradeSettlement) []*types.P
 			absSize, size = 0, 0
 			break
 		}
-		// this entry is closed, no need to remove here, next update the loop above will
-		// remove this entry if the size is still 0
 		absSize -= es        // remove entry size from absolute size value
 		size -= entry.Volume // update the remaining size
+		// we've used the entire volume of this entry, so this will need to be removed, too
+		rmEntries = append(rmEntries, i)
+	}
+	// removing all empty entries from the slice
+	for _, i := range rmEntries {
+		q = q[:i+copy(q[i:], q[i+1:])]
 	}
 	// whatever is left, add that to the queue
 	if size != 0 {
