@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/plugins/orders/proto"
+
 	"google.golang.org/grpc"
 )
 

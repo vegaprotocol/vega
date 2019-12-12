@@ -3,6 +3,7 @@ package config
 import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
+	apiv2 "code.vegaprotocol.io/vega/api/v2"
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
@@ -29,6 +30,7 @@ import (
 // Config ties together all other application configuration types.
 type Config struct {
 	API        api.Config
+	APIv2      apiv2.Config
 	Accounts   accounts.Config
 	Blockchain blockchain.Config
 	Candles    candles.Config
@@ -66,6 +68,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Blockchain:     blockchain.NewDefaultConfig(),
 		Execution:      execution.NewDefaultConfig(defaultStoreDirPath),
 		API:            api.NewDefaultConfig(),
+		APIv2:          apiv2.NewDefaultConfig(),
 		Accounts:       accounts.NewDefaultConfig(),
 		Orders:         orders.NewDefaultConfig(),
 		Time:           vegatime.NewDefaultConfig(),

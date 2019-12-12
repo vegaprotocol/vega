@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
+	apiv2 "code.vegaprotocol.io/vega/api/v2"
 	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
@@ -167,6 +168,8 @@ func (l *Node) setupBuffers() {
 	l.marginLevelsBuf = buffer.NewMarginLevels()
 	l.marginLevelsBuf.Register(l.riskStore)
 	l.settleBuf = buffer.NewSettlement()
+
+	l.bufs = buffer.New(l.ctx)
 }
 
 func (l *Node) setupStorages() (err error) {
@@ -233,6 +236,11 @@ func (l *Node) preRun() (err error) {
 	}()
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
+
+	l.srvv2 = apiv2.New(l.Log, l.conf.APIv2)
+
+	// start the plugins
+	l.StartPlugins()
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
