@@ -285,12 +285,16 @@ func (l *Node) runNode() error {
 
 func (n *Node) StartPlugins() {
 	n.plugins = []plugins.Plugin{}
-	for _, v := range n.conf.Plugins {
+	for _, v := range n.conf.Plugins.Enabled {
 		plugin, ok := plugins.Get(v)
 		if !ok {
 			n.Log.Error("tried to instanciated unknown plugin", logging.String("name", v))
 		}
-		p := plugin.New(n.Log, n.ctx, n.bufs, n.srvv2.GRPC())
+		p, err := plugin.New(n.Log, n.ctx, n.bufs, n.srvv2.GRPC(), n.conf.Plugins.Configs)
+		if err != nil {
+			n.Log.Error("unable to initialize plugin", logging.Error(err))
+			continue
+		}
 		go p.Start()
 		n.plugins = append(n.plugins, p)
 	}

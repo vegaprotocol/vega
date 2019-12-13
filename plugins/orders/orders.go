@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/buffer"
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/plugins/orders/proto"
@@ -21,8 +22,19 @@ type Plugin struct {
 	svc      *service
 }
 
-func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs *buffer.Buffers, srv *grpc.Server) plugins.Plugin {
-	log.Info("initializing new plugin", logging.String("plugin-name", pluginName))
+func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs *buffer.Buffers, srv *grpc.Server, rawcfg interface{}) (plugins.Plugin, error) {
+	log = log.Named(pluginName)
+	log.Info("initializing new plugin",
+		logging.String("plugin-name", pluginName))
+
+	// load configuration
+	cfg := Config{}
+	err := config.LoadPluginConfig(rawcfg, pluginName, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	log.SetLevel(cfg.Level.Get())
+
 	store := newStore()
 	svc := newService(ctx, log, store)
 	proto.RegisterOrdersCoreServer(srv, svc)
@@ -32,7 +44,7 @@ func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs *buffer.Buff
 		orderSub: bufs.Orders.Subscribe(100000),
 		store:    store,
 		svc:      svc,
-	}
+	}, nil
 }
 
 func (p *Plugin) Start() error {
@@ -59,5 +71,5 @@ func (p *Plugin) Start() error {
 }
 
 func init() {
-	plugins.Register(pluginName, &Plugin{})
+	plugins.Register(pluginName, &Plugin{}, DefaultConfig())
 }
