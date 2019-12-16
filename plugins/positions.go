@@ -166,29 +166,9 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	totPrice, totVolume := p.AverageEntryPrice, p.OpenVolume
 	totPrice *= absUint64(totVolume)
 	for _, t := range e.Trades() {
-		price, size := t.Price(), t.Size()
-		if size == 0 {
-			continue
-		}
-		app := true
-		for i, pt := range p.FifoQueue {
-			if pt.Price == price {
-				pt.Volume += size
-				app = false
-				if pt.Volume == 0 {
-					p.FifoQueue = p.FifoQueue[:i+copy(p.FifoQueue[i:], p.FifoQueue[i+1:])]
-				}
-				break
-			}
-		}
-		totPrice += price * absUint64(size)
-		totVolume += size
-		if app {
-			p.FifoQueue = append(p.FifoQueue, &types.PositionTrade{
-				Volume: size,
-				Price:  price,
-			})
-		}
+		p.FifoQueue = updateQueue(p.FifoQueue, t)
+		totPrice += t.Price() * absUint64(t.Size())
+		totVolume += t.Size()
 	}
 	p.OpenVolume = totVolume
 	if totVolume != 0 {
@@ -210,6 +190,69 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	p.UnrealisedPNL = int64(price)*size - size*int64(e.Price())
 	// get the realised PNL (final value of asset should market settle at current price)
 	// p.RealisedPNL = int64(e.Price())*p.PendingVolume - p.PendingVolume*int64(p.AverageEntryPrice)
+}
+
+func updateQueue(q []*types.PositionTrade, ts events.TradeSettlement) []*types.PositionTrade {
+	size, price := ts.Size(), ts.Price()
+	if len(q) == 0 {
+		return []*types.PositionTrade{&types.PositionTrade{
+			Volume: size,
+			Price:  price,
+		}}
+	}
+	sell := true
+	if size > 0 {
+		sell = false
+	}
+	// find with the same price, if exists, but let's keep track of the keys with trades going the "opposite way"
+	// while we're at it
+	entries := make([]int, 0, len(q))
+	rmEntries := make([]int, 0, len(q))
+	for i, pt := range q {
+		if pt.Price == price {
+			pt.Volume += size
+			if pt.Volume == 0 {
+				q = q[:i+copy(q[i:], q[i+1:])]
+				return q
+			}
+		}
+		if sell && pt.Volume > 0 {
+			entries = append(entries, i)
+		} else if pt.Volume < 0 {
+			entries = append(entries, i)
+		} else if pt.Volume == 0 {
+			rmEntries = append(rmEntries, i) // we're going to remove this entry later on
+		}
+	}
+	// get absolute value as int64
+	absSize := absUint64(size)
+	// we didn't find an entry with the corresponding price, so next we have to close out some position (FIFO)
+	for _, i := range entries {
+		entry := q[i]
+		es := absUint64(entry.Volume)
+		if es >= absSize {
+			entry.Volume += size // add what's left of the size to this entry, and carry on
+			// indicate this trade has been added
+			absSize, size = 0, 0
+			break
+		}
+		absSize -= es        // remove entry size from absolute size value
+		size -= entry.Volume // update the remaining size
+		// we've used the entire volume of this entry, so this will need to be removed, too
+		rmEntries = append(rmEntries, i)
+	}
+	// removing all empty entries from the slice
+	for _, i := range rmEntries {
+		q = q[:i+copy(q[i:], q[i+1:])]
+	}
+	// whatever is left, add that to the queue
+	if size != 0 {
+		q = append(q, &types.PositionTrade{
+			Volume: size,
+			Price:  price,
+		})
+	}
+	return q
 }
 
 func calcFIFO(q []*types.PositionTrade) (int64, uint64) {
