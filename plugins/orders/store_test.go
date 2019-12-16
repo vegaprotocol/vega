@@ -3,6 +3,7 @@ package orders
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -53,7 +54,7 @@ func testAddOrder(t *testing.T) {
 		},
 	}
 
-	store := newStore()
+	store := newStore(logging.NewTestLogger(), DefaultConfig())
 	store.SaveBatch(orders)
 
 	// try to get the orders now
@@ -113,7 +114,7 @@ func testOrderRemoved(t *testing.T) {
 		},
 	}
 
-	store := newStore()
+	store := newStore(logging.NewTestLogger(), DefaultConfig())
 	store.SaveBatch(orders)
 
 	// expiring one of the order and sending it through a batch again

@@ -47,6 +47,7 @@ func newStore(log *logging.Logger, cfg Config) *orderStore {
 		store:       map[string]map[string]map[string]types.Order{},
 		idrefs:      map[string]partyMarket{},
 		subscribers: map[uint64]chan<- []types.Order{},
+		depth:       map[string]*Depth{},
 	}
 }
 
