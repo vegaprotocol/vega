@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -241,9 +242,17 @@ func updateQueue(q []*types.PositionTrade, ts events.TradeSettlement) []*types.P
 		// we've used the entire volume of this entry, so this will need to be removed, too
 		rmEntries = append(rmEntries, i)
 	}
+
 	// removing all empty entries from the slice
+	// using the diff thing, so we reduce as we remove element from the slice
+	var diff int
+	// sorts the rmEntries to be sure we remove from the first elements in the slice
+	// to last
+	sort.Ints(rmEntries)
 	for _, i := range rmEntries {
+		i = i - diff
 		q = q[:i+copy(q[i:], q[i+1:])]
+		diff++
 	}
 	// whatever is left, add that to the queue
 	if size != 0 {
