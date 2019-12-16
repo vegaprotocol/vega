@@ -71,7 +71,7 @@ vetshadow: # Run go vet with shadow detection
 
 .PHONY: .testCoverage.txt
 .testCoverage.txt:
-	@go test -covermode=count -coverprofile="$@" ./...
+	@go list ./... |grep -v '/gateway' | xargs go test -covermode=count -coverprofile="$@"
 	@go tool cover -func="$@"
 
 coverage: .testCoverage.txt ## Generate global code coverage report
