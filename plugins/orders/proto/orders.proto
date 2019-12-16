@@ -15,6 +15,12 @@ service OrdersCore {
 
   // Retrieve an order, if its on the book, for a particular order identifier.
   rpc OrderByID(OrderByIDRequest) returns (OrderByIDResponse) {}
+
+  // Subscribe to order updates
+  rpc Subscribe(SubscribeRequest) returns (stream OrdersStream) {}
+
+  // Subscribe to order updates
+  rpc SubscribeMarketDepth(SubscribeMarketDepthRequest) returns (stream vega.MarketDepth) {}
 }
 
 message OrdersByPartyRequest {
@@ -40,4 +46,17 @@ message OrderByIDRequest {
 
 message OrderByIDResponse {
   vega.Order order = 1;
+}
+
+message OrdersStream {
+  repeated vega.Order orders = 1;
+}
+
+message SubscribeRequest {
+  string marketID = 1;
+  string partyID = 2;
+}
+
+message SubscribeMarketDepthRequest {
+  string marketID = 1;
 }

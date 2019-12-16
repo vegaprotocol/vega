@@ -35,7 +35,7 @@ func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs *buffer.Buff
 	}
 	log.SetLevel(cfg.Level.Get())
 
-	store := newStore()
+	store := newStore(log, cfg)
 	svc := newService(ctx, log, store)
 	proto.RegisterOrdersCoreServer(srv, svc)
 	return &Plugin{

@@ -32,24 +32,21 @@ func (d Duration) MarshalText() ([]byte, error) {
 }
 
 func DurationDecodeHook(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
-	if t != reflect.TypeOf(Duration{}) {
-		val, ok := data.(map[string]interface{})
+	if t == reflect.TypeOf(Duration{}) {
+		val, ok := data.(string)
 		if !ok {
-			return data, fmt.Errorf("expected a map to unwrap Duration")
+			return data, fmt.Errorf("expected a string to unwrap Duration")
 		}
-		durstr, ok := val["Duration"].(string)
-		if !ok {
-			return data, fmt.Errorf("expected Duration to be string")
-		}
-		dur := Duration{}
-		var err error
-		dur.Duration, err = time.ParseDuration(string(durstr))
+		var (
+			dur Duration
+			err error
+		)
+		dur.Duration, err = time.ParseDuration(val)
 		if err != nil {
 			return data, err
 		}
-		return map[string]interface{}{"Duration": dur}, nil
+		return dur, nil
 	}
-
 	return data, nil
 }
 
@@ -77,22 +74,21 @@ func (l LogLevel) MarshalText() ([]byte, error) {
 }
 
 func LogLevelDecodeHook(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
-	if t != reflect.TypeOf(LogLevel{}) {
-		val, ok := data.(map[string]interface{})
+	if t == reflect.TypeOf(LogLevel{}) {
+		val, ok := data.(string)
 		if !ok {
-			return data, fmt.Errorf("expected a map to unwrap LogLevel")
+			return data, fmt.Errorf("expected a string to unwrap LogLevel")
 		}
-		lvlstr, ok := val["Level"].(string)
-		if !ok {
-			return data, fmt.Errorf("expected LogLevel level to be string")
-		}
-		lvl := LogLevel{}
-		var err error
-		lvl.Level, err = logging.ParseLevel(lvlstr)
+
+		var (
+			lvl LogLevel
+			err error
+		)
+		lvl.Level, err = logging.ParseLevel(val)
 		if err != nil {
 			return data, err
 		}
-		return map[string]interface{}{"Level": lvl}, nil
+		return lvl, nil
 	}
 
 	return data, nil

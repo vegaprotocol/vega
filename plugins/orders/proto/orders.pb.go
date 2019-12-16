@@ -265,6 +265,131 @@ func (m *OrderByIDResponse) GetOrder() *proto1.Order {
 	return nil
 }
 
+type OrdersStream struct {
+	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *OrdersStream) Reset()         { *m = OrdersStream{} }
+func (m *OrdersStream) String() string { return proto.CompactTextString(m) }
+func (*OrdersStream) ProtoMessage()    {}
+func (*OrdersStream) Descriptor() ([]byte, []int) {
+	return fileDescriptor_812730c69be5f60a, []int{6}
+}
+
+func (m *OrdersStream) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OrdersStream.Unmarshal(m, b)
+}
+func (m *OrdersStream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OrdersStream.Marshal(b, m, deterministic)
+}
+func (m *OrdersStream) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OrdersStream.Merge(m, src)
+}
+func (m *OrdersStream) XXX_Size() int {
+	return xxx_messageInfo_OrdersStream.Size(m)
+}
+func (m *OrdersStream) XXX_DiscardUnknown() {
+	xxx_messageInfo_OrdersStream.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OrdersStream proto.InternalMessageInfo
+
+func (m *OrdersStream) GetOrders() []*proto1.Order {
+	if m != nil {
+		return m.Orders
+	}
+	return nil
+}
+
+type SubscribeRequest struct {
+	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubscribeRequest) Reset()         { *m = SubscribeRequest{} }
+func (m *SubscribeRequest) String() string { return proto.CompactTextString(m) }
+func (*SubscribeRequest) ProtoMessage()    {}
+func (*SubscribeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_812730c69be5f60a, []int{7}
+}
+
+func (m *SubscribeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubscribeRequest.Unmarshal(m, b)
+}
+func (m *SubscribeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubscribeRequest.Marshal(b, m, deterministic)
+}
+func (m *SubscribeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubscribeRequest.Merge(m, src)
+}
+func (m *SubscribeRequest) XXX_Size() int {
+	return xxx_messageInfo_SubscribeRequest.Size(m)
+}
+func (m *SubscribeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubscribeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubscribeRequest proto.InternalMessageInfo
+
+func (m *SubscribeRequest) GetMarketID() string {
+	if m != nil {
+		return m.MarketID
+	}
+	return ""
+}
+
+func (m *SubscribeRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
+}
+
+type SubscribeMarketDepthRequest struct {
+	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubscribeMarketDepthRequest) Reset()         { *m = SubscribeMarketDepthRequest{} }
+func (m *SubscribeMarketDepthRequest) String() string { return proto.CompactTextString(m) }
+func (*SubscribeMarketDepthRequest) ProtoMessage()    {}
+func (*SubscribeMarketDepthRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_812730c69be5f60a, []int{8}
+}
+
+func (m *SubscribeMarketDepthRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubscribeMarketDepthRequest.Unmarshal(m, b)
+}
+func (m *SubscribeMarketDepthRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubscribeMarketDepthRequest.Marshal(b, m, deterministic)
+}
+func (m *SubscribeMarketDepthRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubscribeMarketDepthRequest.Merge(m, src)
+}
+func (m *SubscribeMarketDepthRequest) XXX_Size() int {
+	return xxx_messageInfo_SubscribeMarketDepthRequest.Size(m)
+}
+func (m *SubscribeMarketDepthRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubscribeMarketDepthRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubscribeMarketDepthRequest proto.InternalMessageInfo
+
+func (m *SubscribeMarketDepthRequest) GetMarketID() string {
+	if m != nil {
+		return m.MarketID
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*OrdersByPartyRequest)(nil), "orders.OrdersByPartyRequest")
 	proto.RegisterType((*OrdersByPartyResponse)(nil), "orders.OrdersByPartyResponse")
@@ -272,32 +397,41 @@ func init() {
 	proto.RegisterType((*OrdersByPartyAndMarketResponse)(nil), "orders.OrdersByPartyAndMarketResponse")
 	proto.RegisterType((*OrderByIDRequest)(nil), "orders.OrderByIDRequest")
 	proto.RegisterType((*OrderByIDResponse)(nil), "orders.OrderByIDResponse")
+	proto.RegisterType((*OrdersStream)(nil), "orders.OrdersStream")
+	proto.RegisterType((*SubscribeRequest)(nil), "orders.SubscribeRequest")
+	proto.RegisterType((*SubscribeMarketDepthRequest)(nil), "orders.SubscribeMarketDepthRequest")
 }
 
 func init() { proto.RegisterFile("plugins/orders/proto/orders.proto", fileDescriptor_812730c69be5f60a) }
 
 var fileDescriptor_812730c69be5f60a = []byte{
-	// 313 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0x4f, 0x4b, 0xc3, 0x40,
-	0x10, 0xc5, 0x4d, 0xc5, 0x6a, 0xa7, 0x08, 0x75, 0x51, 0x89, 0xc1, 0x4a, 0xbb, 0xa2, 0xf4, 0x20,
-	0x49, 0xa9, 0xe0, 0xc9, 0x8b, 0x31, 0x1e, 0x72, 0xf0, 0x0f, 0x01, 0x2f, 0xde, 0x62, 0xb3, 0x94,
-	0x60, 0xcd, 0xc6, 0x4d, 0x2a, 0xe4, 0x33, 0xf8, 0xa5, 0xc5, 0xd9, 0x6d, 0x4c, 0xc2, 0x96, 0xd2,
-	0x53, 0x78, 0xf9, 0xcd, 0xec, 0x7b, 0xcc, 0x0c, 0x0c, 0xd3, 0xf9, 0x62, 0x16, 0x27, 0x99, 0xc3,
-	0x45, 0xc4, 0x44, 0xe6, 0xa4, 0x82, 0xe7, 0x5c, 0x09, 0x1b, 0x05, 0x69, 0x4b, 0x65, 0xf5, 0x24,
-	0xfb, 0x66, 0xb3, 0x50, 0x12, 0x3a, 0x86, 0xc3, 0x67, 0x64, 0x6e, 0xf1, 0x12, 0x8a, 0xbc, 0x08,
-	0xd8, 0xd7, 0x82, 0x65, 0x39, 0x31, 0x61, 0x37, 0xfd, 0xd3, 0xbe, 0x67, 0x1a, 0x03, 0x63, 0xd4,
-	0x09, 0x96, 0x92, 0xde, 0xc2, 0x51, 0xa3, 0x23, 0x4b, 0x79, 0x92, 0x31, 0x72, 0x0e, 0xca, 0xc6,
-	0x34, 0x06, 0xdb, 0xa3, 0xee, 0xa4, 0x6b, 0xa3, 0x0f, 0x16, 0x07, 0x0a, 0xd1, 0x57, 0xe8, 0xd7,
-	0xba, 0xef, 0x92, 0xe8, 0x31, 0x14, 0x1f, 0x2c, 0x5f, 0x6b, 0x4c, 0x2c, 0xd8, 0xfb, 0xc4, 0x52,
-	0xdf, 0x33, 0x5b, 0x88, 0x4a, 0x4d, 0x1f, 0xe0, 0x6c, 0xd5, 0xb3, 0x9b, 0xa4, 0xbb, 0x82, 0x1e,
-	0xfe, 0x70, 0x0b, 0xdf, 0xab, 0x04, 0x42, 0xfa, 0x1f, 0x48, 0x49, 0x7a, 0x03, 0x07, 0x95, 0x6a,
-	0xe5, 0x33, 0x84, 0x1d, 0xe4, 0x58, 0xdc, 0xb0, 0x91, 0x64, 0xf2, 0xd3, 0x02, 0x90, 0x69, 0xef,
-	0xb9, 0x60, 0xe4, 0x09, 0xf6, 0x6b, 0xd9, 0xc9, 0xa9, 0xad, 0x96, 0xa7, 0xdb, 0x8c, 0xd5, 0x5f,
-	0x41, 0xa5, 0x3f, 0xdd, 0x22, 0x31, 0x1c, 0xeb, 0x67, 0x41, 0x2e, 0xb4, 0xad, 0xcd, 0x15, 0x58,
-	0x97, 0xeb, 0xca, 0x4a, 0x2b, 0x17, 0x3a, 0xe5, 0x04, 0x88, 0x59, 0x6b, 0xab, 0x8c, 0xd0, 0x3a,
-	0xd1, 0x90, 0xe5, 0x1b, 0xee, 0xf8, 0xcd, 0x9e, 0xf2, 0x88, 0xe1, 0x9c, 0xf0, 0x26, 0xa7, 0x7c,
-	0x6e, 0xc7, 0xf2, 0x48, 0x1d, 0xdd, 0x69, 0xbf, 0xb7, 0xf1, 0x73, 0xfd, 0x1b, 0x00, 0x00, 0xff,
-	0xff, 0x4f, 0x16, 0xff, 0x61, 0xf9, 0x02, 0x00, 0x00,
+	// 402 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x6f, 0x4b, 0xfa, 0x50,
+	0x14, 0x76, 0xca, 0xcf, 0x5f, 0x1e, 0x0b, 0xf4, 0x62, 0xb1, 0x6e, 0x19, 0x7a, 0xa5, 0xf0, 0x45,
+	0x4c, 0x51, 0x08, 0x82, 0x20, 0x5a, 0x0b, 0xf2, 0x45, 0x7f, 0x98, 0xf4, 0xa6, 0x77, 0x53, 0x2f,
+	0x36, 0x52, 0xef, 0xba, 0x9b, 0xc1, 0xbe, 0x4d, 0x1f, 0x35, 0xbc, 0x77, 0xce, 0x6d, 0x4e, 0xb4,
+	0x57, 0x72, 0x7c, 0xce, 0x79, 0xce, 0xc3, 0xf3, 0x9c, 0x3b, 0xa8, 0x3b, 0x93, 0xf9, 0xd8, 0x9e,
+	0xb9, 0x2d, 0xc6, 0x47, 0x94, 0xbb, 0x2d, 0x87, 0x33, 0x8f, 0x05, 0x85, 0x26, 0x0a, 0x94, 0x97,
+	0x15, 0x2e, 0x49, 0xec, 0x9b, 0x8e, 0x2d, 0x89, 0x90, 0x36, 0x54, 0x5e, 0x04, 0xa6, 0xfb, 0xaf,
+	0x16, 0xf7, 0x7c, 0x93, 0x7e, 0xcd, 0xa9, 0xeb, 0x21, 0x15, 0xfe, 0x3b, 0x8b, 0xba, 0x67, 0xa8,
+	0x4a, 0x4d, 0x69, 0x16, 0xcc, 0x65, 0x49, 0x6e, 0xe0, 0x30, 0x31, 0xe1, 0x3a, 0x6c, 0xe6, 0x52,
+	0xd4, 0x80, 0x60, 0x8d, 0xaa, 0xd4, 0x72, 0xcd, 0x62, 0xa7, 0xa8, 0x89, 0x3d, 0xa2, 0xd9, 0x0c,
+	0x20, 0xf2, 0x06, 0xd5, 0xd8, 0xf4, 0xdd, 0x6c, 0xf4, 0x64, 0xf1, 0x4f, 0xea, 0x6d, 0x5d, 0x8c,
+	0x30, 0xec, 0x4d, 0x45, 0x6b, 0xcf, 0x50, 0xb3, 0x02, 0x0a, 0x6b, 0xf2, 0x00, 0x67, 0x9b, 0x68,
+	0xff, 0xa2, 0xee, 0x12, 0x4a, 0xe2, 0x0f, 0xdd, 0xef, 0x19, 0x11, 0x41, 0x02, 0x5d, 0x09, 0x0a,
+	0x4a, 0x72, 0x05, 0xe5, 0x48, 0x77, 0xb0, 0xa7, 0x0e, 0xff, 0x04, 0x2e, 0x9a, 0x13, 0x6b, 0x24,
+	0x42, 0xba, 0xb0, 0x2f, 0xc5, 0xf6, 0x3d, 0x4e, 0xad, 0xe9, 0x6e, 0xd2, 0x1e, 0xa1, 0xd4, 0x9f,
+	0x0f, 0xdc, 0x21, 0xb7, 0x07, 0x74, 0x29, 0x2d, 0xea, 0x88, 0x12, 0x77, 0x24, 0xea, 0x63, 0x36,
+	0x1e, 0xe0, 0x35, 0x9c, 0x84, 0x4c, 0xd2, 0x24, 0x83, 0x3a, 0xde, 0xc7, 0x0e, 0xa4, 0x9d, 0x9f,
+	0x1c, 0x80, 0x94, 0x7e, 0xcf, 0x38, 0x45, 0xcf, 0x70, 0x10, 0x73, 0x1d, 0x9d, 0x6a, 0xc1, 0xd9,
+	0xa5, 0xdd, 0x14, 0xae, 0x6e, 0x40, 0xa5, 0x73, 0x24, 0x83, 0x6c, 0x38, 0x4a, 0x4f, 0x11, 0x9d,
+	0xa7, 0x8e, 0x26, 0x8f, 0x07, 0x5f, 0x6c, 0x6b, 0x0b, 0x57, 0xe9, 0x50, 0x08, 0xb3, 0x43, 0x6a,
+	0x6c, 0x2c, 0x12, 0x3e, 0x3e, 0x4e, 0x41, 0x42, 0x8e, 0x5b, 0x28, 0x84, 0x46, 0xae, 0x38, 0x92,
+	0x29, 0xe1, 0x4a, 0x5c, 0x94, 0x0c, 0x9d, 0x64, 0xda, 0x0a, 0x32, 0xa1, 0x92, 0x96, 0x04, 0x6a,
+	0xac, 0x71, 0xad, 0xe7, 0x84, 0xcb, 0xf2, 0x4a, 0x22, 0xc8, 0x82, 0x53, 0x6f, 0xbf, 0x6b, 0x43,
+	0x36, 0xa2, 0x02, 0x14, 0x4f, 0x7c, 0xc8, 0x26, 0x9a, 0x2d, 0xdf, 0x7c, 0x2b, 0xed, 0x4b, 0x31,
+	0xc8, 0x8b, 0x9f, 0xee, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xb2, 0x55, 0x5c, 0xda, 0x48, 0x04,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -318,6 +452,10 @@ type OrdersCoreClient interface {
 	OrdersByPartyAndMarket(ctx context.Context, in *OrdersByPartyAndMarketRequest, opts ...grpc.CallOption) (*OrdersByPartyAndMarketResponse, error)
 	// Retrieve an order, if its on the book, for a particular order identifier.
 	OrderByID(ctx context.Context, in *OrderByIDRequest, opts ...grpc.CallOption) (*OrderByIDResponse, error)
+	// Subscribe to order updates
+	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (OrdersCore_SubscribeClient, error)
+	// Subscribe to order updates
+	SubscribeMarketDepth(ctx context.Context, in *SubscribeMarketDepthRequest, opts ...grpc.CallOption) (OrdersCore_SubscribeMarketDepthClient, error)
 }
 
 type ordersCoreClient struct {
@@ -355,6 +493,70 @@ func (c *ordersCoreClient) OrderByID(ctx context.Context, in *OrderByIDRequest, 
 	return out, nil
 }
 
+func (c *ordersCoreClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (OrdersCore_SubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_OrdersCore_serviceDesc.Streams[0], "/orders.OrdersCore/Subscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ordersCoreSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type OrdersCore_SubscribeClient interface {
+	Recv() (*OrdersStream, error)
+	grpc.ClientStream
+}
+
+type ordersCoreSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *ordersCoreSubscribeClient) Recv() (*OrdersStream, error) {
+	m := new(OrdersStream)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *ordersCoreClient) SubscribeMarketDepth(ctx context.Context, in *SubscribeMarketDepthRequest, opts ...grpc.CallOption) (OrdersCore_SubscribeMarketDepthClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_OrdersCore_serviceDesc.Streams[1], "/orders.OrdersCore/SubscribeMarketDepth", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ordersCoreSubscribeMarketDepthClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type OrdersCore_SubscribeMarketDepthClient interface {
+	Recv() (*proto1.MarketDepth, error)
+	grpc.ClientStream
+}
+
+type ordersCoreSubscribeMarketDepthClient struct {
+	grpc.ClientStream
+}
+
+func (x *ordersCoreSubscribeMarketDepthClient) Recv() (*proto1.MarketDepth, error) {
+	m := new(proto1.MarketDepth)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // OrdersCoreServer is the server API for OrdersCore service.
 type OrdersCoreServer interface {
 	// List orders on the book, for all markets, for a party.
@@ -363,6 +565,10 @@ type OrdersCoreServer interface {
 	OrdersByPartyAndMarket(context.Context, *OrdersByPartyAndMarketRequest) (*OrdersByPartyAndMarketResponse, error)
 	// Retrieve an order, if its on the book, for a particular order identifier.
 	OrderByID(context.Context, *OrderByIDRequest) (*OrderByIDResponse, error)
+	// Subscribe to order updates
+	Subscribe(*SubscribeRequest, OrdersCore_SubscribeServer) error
+	// Subscribe to order updates
+	SubscribeMarketDepth(*SubscribeMarketDepthRequest, OrdersCore_SubscribeMarketDepthServer) error
 }
 
 func RegisterOrdersCoreServer(s *grpc.Server, srv OrdersCoreServer) {
@@ -423,6 +629,48 @@ func _OrdersCore_OrderByID_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrdersCore_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(OrdersCoreServer).Subscribe(m, &ordersCoreSubscribeServer{stream})
+}
+
+type OrdersCore_SubscribeServer interface {
+	Send(*OrdersStream) error
+	grpc.ServerStream
+}
+
+type ordersCoreSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *ordersCoreSubscribeServer) Send(m *OrdersStream) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _OrdersCore_SubscribeMarketDepth_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeMarketDepthRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(OrdersCoreServer).SubscribeMarketDepth(m, &ordersCoreSubscribeMarketDepthServer{stream})
+}
+
+type OrdersCore_SubscribeMarketDepthServer interface {
+	Send(*proto1.MarketDepth) error
+	grpc.ServerStream
+}
+
+type ordersCoreSubscribeMarketDepthServer struct {
+	grpc.ServerStream
+}
+
+func (x *ordersCoreSubscribeMarketDepthServer) Send(m *proto1.MarketDepth) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _OrdersCore_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "orders.OrdersCore",
 	HandlerType: (*OrdersCoreServer)(nil),
@@ -440,6 +688,17 @@ var _OrdersCore_serviceDesc = grpc.ServiceDesc{
 			Handler:    _OrdersCore_OrderByID_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Subscribe",
+			Handler:       _OrdersCore_Subscribe_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SubscribeMarketDepth",
+			Handler:       _OrdersCore_SubscribeMarketDepth_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "plugins/orders/proto/orders.proto",
 }
