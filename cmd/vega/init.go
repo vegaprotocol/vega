@@ -258,7 +258,7 @@ func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
 		return err
 	}
 
-	if _, err := f.WriteString(string(buf)); err != nil {
+	if _, err := f.WriteString(buf); err != nil {
 		return err
 	}
 
