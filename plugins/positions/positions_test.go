@@ -18,18 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type posStub struct {
-	mID, party      string
-	size, buy, sell int64
-	price           uint64
-	trades          []events.TradeSettlement
-}
-
-type tradeStub struct {
-	size  int64
-	price uint64
-}
-
 type posPluginTst struct {
 	*positions.Positions
 	ctrl  *gomock.Controller
@@ -38,7 +26,7 @@ type posPluginTst struct {
 	pos   *mocks.MockPosBuffer
 }
 
-func TestStartStop(t *testing.T) {
+func testStartStop(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	// make buffered channel. We're not going to be waiting on anything from here anyway
@@ -57,7 +45,7 @@ func TestStartStop(t *testing.T) {
 	position.Stop()
 }
 
-func TestStartCtxCancel(t *testing.T) {
+func testStartCtxCancel(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	// make buffered channel. We're not going to be waiting on anything from here anyway
@@ -80,7 +68,7 @@ func TestStartCtxCancel(t *testing.T) {
 	wg.Wait() // wait for ctx cancel to have had its effect
 }
 
-func TestProcessBufferData(t *testing.T) {
+func testProcessBufferData(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	ch := make(chan []events.SettlePosition, 1)
@@ -137,40 +125,4 @@ func getPosPlugin(t *testing.T) *posPluginTst {
 func (p *posPluginTst) Finish() {
 	p.cfunc() // cancel context
 	defer p.ctrl.Finish()
-}
-
-func (p posStub) MarketID() string {
-	return p.mID
-}
-
-func (p posStub) Party() string {
-	return p.party
-}
-
-func (p posStub) Size() int64 {
-	return p.size
-}
-
-func (p posStub) Buy() int64 {
-	return p.buy
-}
-
-func (p posStub) Sell() int64 {
-	return p.sell
-}
-
-func (p posStub) Price() uint64 {
-	return p.price
-}
-
-func (p posStub) Trades() []events.TradeSettlement {
-	return p.trades
-}
-
-func (t tradeStub) Size() int64 {
-	return t.size
-}
-
-func (t tradeStub) Price() uint64 {
-	return t.price
 }
