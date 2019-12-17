@@ -54,6 +54,15 @@ type ConfigOptions struct {
 	Truncate                bool
 	LogRotatesToFlush       int32
 	// Logger               logging.Logger // not customisable by end user
+
+	Compression              options.CompressionType
+	EventLogging             bool
+	BlockSize                int
+	BloomFalsePositive       float64
+	KeepL0InMemory           bool
+	MaxCacheSize             int64
+	VerifyValueChecksum      bool
+	ChecksumVerificationMode options.ChecksumVerificationMode
 }
 
 // DefaultStoreOptions supplies default options to be used for all stores.
@@ -87,6 +96,15 @@ func DefaultStoreOptions() ConfigOptions {
 		Truncate:                false,     // bool
 		LogRotatesToFlush:       2,         // int32, default 2
 		// Logger:               TBD,       // Logger, default defaultLogger
+
+		Compression:              options.Snappy,
+		EventLogging:             false,
+		BlockSize:                4096,
+		BloomFalsePositive:       0.01,
+		KeepL0InMemory:           false,
+		MaxCacheSize:             1 << 30,
+		VerifyValueChecksum:      false,
+		ChecksumVerificationMode: options.NoVerification,
 	}
 	return opts
 }
