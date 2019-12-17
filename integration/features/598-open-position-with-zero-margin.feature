@@ -4,7 +4,7 @@ Feature: Regression test for issue 598
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/short |               tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
-      | ETH/DEC19 | ETH      | BTC       | BTC   |       100 | forward    |       0.01 | 0.00011407711613050422 |  0 | 0.016 |  0.09 |            1.4 |            1.2 |           1.1 |              42 |
+      | ETH/DEC19 | ETH      | BTC       | BTC   |       100 | forward    |      0.001 | 0.00011407711613050422 |  0 | 0.016 |   2.0 |            1.4 |            1.2 |           1.1 |              42 |
 #     | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |       0.11 |                    0.1 |  0 |     0 |     0 |            1.4 |            1.2 |           1.1 |              42 |
 #     | ETH/DEC19 | ETH      | BTC       | BTC   |         5 | forward    |       0.01 | 0.00011407711613050422 |  0 | 0.016 |  0.09 |            1.4 |            1.2 |           1.1 |              42 |
 
@@ -36,27 +36,27 @@ Feature: Regression test for issue 598
       | barney | ETH/DEC19 | buy  |     15 |    95 |                0 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | edd    | BTC   | ETH/DEC19 |      19 |     981  |
-      | barney | BTC   | ETH/DEC19 |      19 |     981 |
+      | edd    | BTC   | ETH/DEC19 |    570 |     430 |
+      | barney | BTC   | ETH/DEC19 |    534 |     466 |
 # next instruction will trade with edd
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
       | chris  | ETH/DEC19 | buy  |      10 |     0 |                1 | MARKET | IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | edd    | BTC   | ETH/DEC19 |     19 |     981 |
-      | chris  | BTC   | ETH/DEC19 |      3 |     997 |
+      | edd    | BTC   | ETH/DEC19 |    570 |     430 |
+      | chris  | BTC   | ETH/DEC19 |     83 |     917 |
 # next instruction will trade with barney
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
       | chris  | ETH/DEC19 | sell |      10 |     0 |                1 | MARKET | IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | chris  | BTC   | ETH/DEC19 |      0 |     980 |
-      | barney | BTC   | ETH/DEC19 |     19 |     981 |
-      | edd    | BTC   | ETH/DEC19 |     55 |     965 |
+      | chris  | BTC   | ETH/DEC19 |     63 |     917 |
+      | barney | BTC   | ETH/DEC19 |    534 |     466 |
+      | edd    | BTC   | ETH/DEC19 |    590 |     430 |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
-      | edd    | ETH/DEC19 |          46 |     50 |      55 |      64 |
-      | barney | ETH/DEC19 |          16 |     18 |      19 |      22 |
-      | chris  | ETH/DEC19 |           2 |      2 |       3 |       3 |
+      | edd    | ETH/DEC19 |         475 |    523 |     570 |     666 |
+      | barney | ETH/DEC19 |         445 |    489 |     534 |     623 |
+      | chris  | ETH/DEC19 |          69 |     76 |      83 |      97 |
