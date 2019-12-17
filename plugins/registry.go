@@ -20,8 +20,14 @@ var (
 	configs   = make(map[string]interface{})
 )
 
+type Buffers interface {
+	TradesSub(buf int) buffer.TradeSub
+	OrdersSub(buf int) buffer.OrderSub
+	MarketsSub(buf int) buffer.MarketSub
+}
+
 type Plugin interface {
-	New(*logging.Logger, context.Context, *buffer.Buffers, *grpc.Server, interface{}) (Plugin, error)
+	New(*logging.Logger, context.Context, Buffers, *grpc.Server, interface{}) (Plugin, error)
 	Start() error
 }
 

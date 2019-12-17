@@ -10,16 +10,16 @@ type TradeCh struct {
 	base
 	buf  []types.Trade
 	add  chan types.Trade
-	sub  chan tradeSubReq
+	sub  chan TradeSubReq
 	subs map[int]chan []types.Trade
 }
 
-type tradeSubReq struct {
-	ch    chan tradeSub
+type TradeSubReq struct {
+	ch    chan TradeSub
 	chBuf int
 }
 
-type tradeSub struct {
+type TradeSub struct {
 	subscriber
 	ch chan []types.Trade
 }
@@ -29,7 +29,7 @@ func NewTradeCh(ctx context.Context) *TradeCh {
 		base: newBase(),
 		buf:  []types.Trade{},
 		add:  make(chan types.Trade),
-		sub:  make(chan tradeSubReq),
+		sub:  make(chan TradeSubReq),
 		subs: map[int]chan []types.Trade{},
 	}
 	go t.loop(ctx)
@@ -40,9 +40,9 @@ func (t *TradeCh) Add(trade types.Trade) {
 	t.add <- trade
 }
 
-func (t *TradeCh) Subscribe(buf int) tradeSub {
-	ts := tradeSubReq{
-		ch:    make(chan tradeSub),
+func (t *TradeCh) Subscribe(buf int) TradeSub {
+	ts := TradeSubReq{
+		ch:    make(chan TradeSub),
 		chBuf: buf,
 	}
 	t.sub <- ts
@@ -51,7 +51,7 @@ func (t *TradeCh) Subscribe(buf int) tradeSub {
 	return sub
 }
 
-func (t *TradeCh) Unsubscribe(sub tradeSub) {
+func (t *TradeCh) Unsubscribe(sub TradeSub) {
 	sub.cfunc()
 	t.unsub <- sub.key
 }
@@ -71,7 +71,7 @@ func (t *TradeCh) loop(ctx context.Context) {
 			return
 		case ts := <-t.sub:
 			sCtx, cfunc := context.WithCancel(ctx)
-			sub := tradeSub{
+			sub := TradeSub{
 				subscriber: subscriber{
 					ctx:   sCtx,
 					cfunc: cfunc,
@@ -104,6 +104,6 @@ func (t *TradeCh) loop(ctx context.Context) {
 	}
 }
 
-func (t *tradeSub) Recv() <-chan []types.Trade {
+func (t *TradeSub) Recv() <-chan []types.Trade {
 	return t.ch
 }

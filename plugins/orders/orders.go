@@ -22,7 +22,7 @@ type Plugin struct {
 	svc      *service
 }
 
-func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs *buffer.Buffers, srv *grpc.Server, rawcfg interface{}) (plugins.Plugin, error) {
+func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs plugins.Buffers, srv *grpc.Server, rawcfg interface{}) (plugins.Plugin, error) {
 	log = log.Named(pluginName)
 	log.Info("initializing new plugin",
 		logging.String("plugin-name", pluginName))
@@ -41,7 +41,7 @@ func (p *Plugin) New(log *logging.Logger, ctx context.Context, bufs *buffer.Buff
 	return &Plugin{
 		log:      log,
 		ctx:      ctx,
-		orderSub: bufs.Orders.Subscribe(100000),
+		orderSub: bufs.OrdersSub(100000),
 		store:    store,
 		svc:      svc,
 	}, nil
