@@ -135,13 +135,6 @@ func (p *Pos) updateData(data map[string]map[string]types.Position, raw []events
 	p.mu.Unlock()
 }
 
-func (p *Pos) QuickNDirty(e events.SettlePosition) {
-	p.mu.RLock()
-	cpy := p.data
-	p.mu.RUnlock()
-	p.updateData(cpy, []events.SettlePosition{e})
-}
-
 func updatePosition(p *types.Position, e events.SettlePosition) {
 	current := p.OpenVolume
 	var (
@@ -165,15 +158,18 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			}
 			// only increment realised P&L if the size goes the opposite way compared to the the
 			// current position
-			pnl = delta * int64(t.Price()-p.AverageEntryPrice)
-			p.RealisedPNL += pnl
-			tradePnl = append(tradePnl, pnl)
+			if (size > 0 && p.OpenVolume < 0) || (size < 0 && p.OpenVolume > 0) {
+				pnl = delta * int64(t.Price()-p.AverageEntryPrice)
+				p.RealisedPNL += pnl
+				tradePnl = append(tradePnl, pnl)
+			}
 			// @TODO store trade record with this realised P&L value
 		}
 		net := delta + size
 		if net != 0 {
 			if size != p.OpenVolume {
-				p.AverageEntryPrice = (p.AverageEntryPrice*absUint64(p.OpenVolume) + t.Price()*absUint64(size)) / uint64(p.OpenVolume+size)
+				sAbs, cAbs := absUint64(size), absUint64(p.OpenVolume)
+				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
 			} else {
 				p.AverageEntryPrice = 0
 			}
