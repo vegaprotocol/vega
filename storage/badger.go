@@ -166,6 +166,15 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		Truncate:                cfg.Truncate,
 		LogRotatesToFlush:       2,
 		Logger:                  log.Named(badgerNamedLogger),
+
+		Compression:              cfg.Compression,
+		EventLogging:             cfg.EventLogging,
+		BlockSize:                cfg.BlockSize,
+		BloomFalsePositive:       cfg.BloomFalsePositive,
+		KeepL0InMemory:           cfg.KeepL0InMemory,
+		MaxCacheSize:             cfg.MaxCacheSize,
+		VerifyValueChecksum:      cfg.VerifyValueChecksum,
+		ChecksumVerificationMode: cfg.ChecksumVerificationMode,
 	}
 
 	return opts
