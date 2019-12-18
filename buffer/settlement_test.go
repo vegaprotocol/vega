@@ -11,7 +11,7 @@ import (
 )
 
 type settleTst struct {
-	*buffer.SettlementCh
+	*buffer.Settlement
 	ctx   context.Context
 	cfunc context.CancelFunc
 }
@@ -88,7 +88,7 @@ func TestSettleBufFlush(t *testing.T) {
 		market: mkt,
 		party:  party,
 	}
-	buf.Add(pos)
+	buf.Add([]events.SettlePosition{pos})
 	buf.Flush()
 	data := <-sub.Recv()
 	assert.Equal(t, 1, len(data))
@@ -118,9 +118,7 @@ func TestSettleBufLastOnly(t *testing.T) {
 		},
 	}
 	// keep pushing accounts onto buffer, only the last should remain
-	for i := range data {
-		buf.Add(data[i])
-	}
+	buf.Add(data)
 	buf.Flush()
 	received := <-sub.Recv()
 	assert.Equal(t, 2, len(received))
@@ -132,11 +130,12 @@ func TestSettleBufLastOnly(t *testing.T) {
 	assert.NotNil(t, <-sub.Done())
 	assert.Error(t, sub.Err())
 }
+
 func getSettleTst() *settleTst {
 	ctx, cfunc := context.WithCancel(context.Background())
 	return &settleTst{
-		SettlementCh: buffer.NewSettlementCh(ctx),
-		ctx:          ctx,
-		cfunc:        cfunc,
+		Settlement: buffer.NewSettlement(ctx),
+		ctx:        ctx,
+		cfunc:      cfunc,
 	}
 }

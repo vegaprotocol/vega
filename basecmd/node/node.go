@@ -24,7 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
-	"code.vegaprotocol.io/vega/plugins"
+	"code.vegaprotocol.io/vega/plugins/positions"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -120,7 +120,7 @@ type Node struct {
 	mktscfg         []proto.Market
 
 	// plugins
-	settlePlugin *plugins.Positions
+	settlePlugin *positions.Pos
 }
 
 var (
