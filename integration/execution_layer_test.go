@@ -148,7 +148,6 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	for _, acc := range execsetup.accounts.data {
-		fmt.Printf("acc: %v\n", acc)
 		if acc.Owner == arg1 && acc.Type == proto.AccountType_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
@@ -235,7 +234,6 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		fmt.Printf("ORDER: %#v\n", order)
 		result, err := execsetup.engine.SubmitOrder(&order)
 		if err != nil {
 			return err
@@ -275,7 +273,6 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
 	for _, v := range execsetup.accounts.data {
-		fmt.Printf("ACCOUNT: %v\n", v)
 		cumul += uint64(v.Balance)
 	}
 
