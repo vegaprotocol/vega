@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
+	apiv2 "code.vegaprotocol.io/vega/api/v2"
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/basecmd"
 	"code.vegaprotocol.io/vega/basecmd/gateway"
@@ -24,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/plugins/positions"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/proto"
@@ -121,6 +123,9 @@ type Node struct {
 
 	// plugins
 	settlePlugin *positions.Pos
+	plugins      []plugins.Plugin
+	srvv2        *apiv2.Server
+	bufs         *buffer.Buffers
 }
 
 var (
@@ -242,6 +247,14 @@ func (l *Node) runNode() error {
 	}
 	metrics.Start(l.conf.Metrics)
 
+	// start serverv2
+	go func() {
+		if err := l.srvv2.Start(); err != nil {
+			l.Log.Error("error from api server",
+				logging.Error(err))
+		}
+	}()
+
 	// start gateway
 	var gty *gateway.Gateway
 
@@ -269,4 +282,21 @@ func (l *Node) runNode() error {
 	}
 
 	return nil
+}
+
+func (n *Node) StartPlugins() {
+	n.plugins = []plugins.Plugin{}
+	for _, v := range n.conf.Plugins.Enabled {
+		plugin, ok := plugins.Get(v)
+		if !ok {
+			n.Log.Error("tried to instanciated unknown plugin", logging.String("name", v))
+		}
+		p, err := plugin.New(n.Log, n.ctx, n.bufs, n.srvv2.GRPC(), n.conf.Plugins.Configs)
+		if err != nil {
+			n.Log.Error("unable to initialize plugin", logging.Error(err))
+			continue
+		}
+		go p.Start()
+		n.plugins = append(n.plugins, p)
+	}
 }

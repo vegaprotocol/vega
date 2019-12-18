@@ -15,11 +15,11 @@ type MarketCh struct {
 }
 
 type marketSubReq struct {
-	ch    chan mktSub
+	ch    chan MarketSub
 	chBuf int
 }
 
-type mktSub struct {
+type MarketSub struct {
 	subscriber
 	ch chan []types.Market
 }
@@ -57,7 +57,7 @@ func (m *MarketCh) loop(ctx context.Context) {
 			m.unsubscribe(u)
 		case req := <-m.sub:
 			sCtx, cfunc := context.WithCancel(ctx)
-			sub := mktSub{
+			sub := MarketSub{
 				subscriber: subscriber{
 					ctx:   sCtx,
 					cfunc: cfunc,
@@ -82,9 +82,9 @@ func (m *MarketCh) Add(mkt types.Market) {
 	m.add <- mkt
 }
 
-func (m *MarketCh) Subscribe(chBuf int) mktSub {
+func (m *MarketCh) Subscribe(chBuf int) MarketSub {
 	req := marketSubReq{
-		ch:    make(chan mktSub),
+		ch:    make(chan MarketSub),
 		chBuf: chBuf,
 	}
 	m.sub <- req
@@ -93,11 +93,11 @@ func (m *MarketCh) Subscribe(chBuf int) mktSub {
 	return sub
 }
 
-func (m *MarketCh) Unsubscribe(s mktSub) {
+func (m *MarketCh) Unsubscribe(s MarketSub) {
 	s.cfunc()
 	m.unsub <- s.key
 }
 
-func (m *mktSub) Recv() <-chan []types.Market {
+func (m *MarketSub) Recv() <-chan []types.Market {
 	return m.ch
 }
