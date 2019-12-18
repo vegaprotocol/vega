@@ -136,7 +136,6 @@ func (p *Pos) updateData(data map[string]map[string]types.Position, raw []events
 }
 
 func updatePosition(p *types.Position, e events.SettlePosition) {
-	current := p.OpenVolume
 	var (
 		// delta uint64
 		pnl, delta int64
@@ -144,6 +143,8 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	tradePnl := make([]int64, 0, len(e.Trades()))
 	for _, t := range e.Trades() {
 		size, sAbs := t.Size(), absUint64(t.Size())
+		// approach each trade using the open volume as a starting-point
+		current := p.OpenVolume
 		if current != 0 {
 			cAbs := absUint64(current)
 			// trade direction is actually closing volume
@@ -162,13 +163,12 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 				pnl = delta * int64(t.Price()-p.AverageEntryPrice)
 				p.RealisedPNL += pnl
 				tradePnl = append(tradePnl, pnl)
+				// @TODO store trade record with this realised P&L value
 			}
-			// @TODO store trade record with this realised P&L value
 		}
-		net := delta + size
-		if net != 0 {
+		if net := delta + size; net != 0 {
 			if size != p.OpenVolume {
-				sAbs, cAbs := absUint64(size), absUint64(p.OpenVolume)
+				cAbs := absUint64(p.OpenVolume)
 				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
 			} else {
 				p.AverageEntryPrice = 0
