@@ -154,7 +154,7 @@
 
 <a name="api.AccountsSubscribeRequest"></a>
 
-### AccountsSubscribeReques
+### AccountsSubscribeRequest
 
 
 
@@ -172,7 +172,7 @@
 
 <a name="api.AmendOrderRequest"></a>
 
-### AmendOrderReques
+### AmendOrderRequest
 
 
 
@@ -188,7 +188,7 @@
 
 <a name="api.CancelOrderRequest"></a>
 
-### CancelOrderReques
+### CancelOrderRequest
 
 
 
@@ -204,7 +204,7 @@
 
 <a name="api.CandlesRequest"></a>
 
-### CandlesReques
+### CandlesRequest
 
 
 
@@ -236,7 +236,7 @@
 
 <a name="api.CandlesSubscribeRequest"></a>
 
-### CandlesSubscribeReques
+### CandlesSubscribeRequest
 
 
 
@@ -252,7 +252,7 @@
 
 <a name="api.CheckTokenRequest"></a>
 
-### CheckTokenReques
+### CheckTokenRequest
 
 
 
@@ -283,7 +283,7 @@
 
 <a name="api.LastTradeRequest"></a>
 
-### LastTradeReques
+### LastTradeRequest
 
 
 
@@ -313,7 +313,7 @@
 
 <a name="api.MarginLevelsRequest"></a>
 
-### MarginLevelsReques
+### MarginLevelsRequest
 
 
 
@@ -344,7 +344,7 @@
 
 <a name="api.MarginLevelsSubscribeRequest"></a>
 
-### MarginLevelsSubscribeReques
+### MarginLevelsSubscribeRequest
 
 
 
@@ -360,7 +360,7 @@
 
 <a name="api.MarketAccountsRequest"></a>
 
-### MarketAccountsReques
+### MarketAccountsRequest
 
 
 
@@ -391,7 +391,7 @@
 
 <a name="api.MarketByIDRequest"></a>
 
-### MarketByIDReques
+### MarketByIDRequest
 
 
 
@@ -421,7 +421,7 @@
 
 <a name="api.MarketDataByIDRequest"></a>
 
-### MarketDataByIDReques
+### MarketDataByIDRequest
 
 
 
@@ -451,7 +451,7 @@
 
 <a name="api.MarketDepthRequest"></a>
 
-### MarketDepthReques
+### MarketDepthRequest
 
 
 
@@ -484,7 +484,7 @@
 
 <a name="api.MarketDepthSubscribeRequest"></a>
 
-### MarketDepthSubscribeReques
+### MarketDepthSubscribeRequest
 
 
 
@@ -514,7 +514,7 @@
 
 <a name="api.MarketsDataSubscribeRequest"></a>
 
-### MarketsDataSubscribeReques
+### MarketsDataSubscribeRequest
 
 
 
@@ -544,7 +544,7 @@
 
 <a name="api.NotifyTraderAccountRequest"></a>
 
-### NotifyTraderAccountReques
+### NotifyTraderAccountRequest
 
 
 
@@ -574,7 +574,7 @@
 
 <a name="api.OrderByMarketAndIdRequest"></a>
 
-### OrderByMarketAndIdReques
+### OrderByMarketAndIdRequest
 
 
 
@@ -605,7 +605,7 @@
 
 <a name="api.OrderByReferenceRequest"></a>
 
-### OrderByReferenceReques
+### OrderByReferenceRequest
 
 
 
@@ -635,7 +635,7 @@
 
 <a name="api.OrdersByMarketRequest"></a>
 
-### OrdersByMarketReques
+### OrdersByMarketRequest
 
 
 
@@ -667,7 +667,7 @@
 
 <a name="api.OrdersByPartyRequest"></a>
 
-### OrdersByPartyReques
+### OrdersByPartyRequest
 
 
 
@@ -714,7 +714,7 @@
 
 <a name="api.OrdersSubscribeRequest"></a>
 
-### OrdersSubscribeReques
+### OrdersSubscribeRequest
 
 
 
@@ -762,7 +762,7 @@
 
 <a name="api.PartyAccountsRequest"></a>
 
-### PartyAccountsReques
+### PartyAccountsRequest
 
 
 
@@ -795,7 +795,7 @@
 
 <a name="api.PartyByIDRequest"></a>
 
-### PartyByIDReques
+### PartyByIDRequest
 
 
 
@@ -825,7 +825,7 @@
 
 <a name="api.PositionsByPartyRequest"></a>
 
-### PositionsByPartyReques
+### PositionsByPartyRequest
 
 
 
@@ -856,7 +856,7 @@
 
 <a name="api.PositionsSubscribeRequest"></a>
 
-### PositionsSubscribeReques
+### PositionsSubscribeRequest
 
 
 
@@ -871,7 +871,7 @@
 
 <a name="api.SignInRequest"></a>
 
-### SignInReques
+### SignInRequest
 
 
 
@@ -902,7 +902,7 @@
 
 <a name="api.SubmitOrderRequest"></a>
 
-### SubmitOrderReques
+### SubmitOrderRequest
 
 
 
@@ -918,7 +918,7 @@
 
 <a name="api.TradesByMarketRequest"></a>
 
-### TradesByMarketReques
+### TradesByMarketRequest
 
 
 
@@ -949,7 +949,7 @@
 
 <a name="api.TradesByOrderRequest"></a>
 
-### TradesByOrderReques
+### TradesByOrderRequest
 
 
 
@@ -979,7 +979,7 @@
 
 <a name="api.TradesByPartyRequest"></a>
 
-### TradesByPartyReques
+### TradesByPartyRequest
 
 
 
@@ -1026,7 +1026,7 @@
 
 <a name="api.TradesSubscribeRequest"></a>
 
-### TradesSubscribeReques
+### TradesSubscribeRequest
 
 
 
@@ -1057,7 +1057,7 @@
 
 <a name="api.WithdrawRequest"></a>
 
-### WithdrawReques
+### WithdrawRequest
 
 
 
@@ -1189,7 +1189,7 @@
 
 <a name="vega.EthereumEvent"></a>
 
-### EthereumEven
+### EthereumEvent
 
 
 
@@ -1273,7 +1273,7 @@
 
 <a name="vega.Instrument"></a>
 
-### Instrumen
+### Instrument
 
 
 
@@ -1325,7 +1325,7 @@
 
 <a name="vega.Market"></a>
 
-### Marke
+### Market
 
 
 
@@ -1410,7 +1410,7 @@
 
 <a name="vega.TradableInstrument"></a>
 
-### TradableInstrumen
+### TradableInstrument
 
 
 
@@ -1445,7 +1445,7 @@
 
 <a name="vega.Account"></a>
 
-### Accoun
+### Account
 
 
 
@@ -1465,7 +1465,7 @@
 
 <a name="vega.Amount"></a>
 
-### Amoun
+### Amount
 
 
 
@@ -1502,7 +1502,7 @@
 
 <a name="vega.FinancialAmount"></a>
 
-### FinancialAmoun
+### FinancialAmount
 
 
 
@@ -1621,7 +1621,7 @@
 
 <a name="vega.NotifyTraderAccount"></a>
 
-### NotifyTraderAccoun
+### NotifyTraderAccount
 
 
 
@@ -1665,7 +1665,7 @@
 
 <a name="vega.OrderAmendment"></a>
 
-### OrderAmendmen
+### OrderAmendment
 
 
 
@@ -1871,7 +1871,7 @@
 
 <a name="vega.RiskResult"></a>
 
-### RiskResul
+### RiskResult
 
 
 
@@ -1991,7 +1991,7 @@
 
 <a name="vega.TradeSet"></a>
 
-### TradeSe
+### TradeSet
 
 
 
@@ -2040,7 +2040,7 @@
 
 <a name="vega.TransferRequest"></a>
 
-### TransferReques
+### TransferRequest
 
 
 
