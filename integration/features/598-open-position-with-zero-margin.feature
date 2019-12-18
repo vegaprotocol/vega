@@ -36,27 +36,27 @@ Feature: Regression test for issue 598
       | barney | ETH/DEC19 | buy  |     15 |    95 |                0 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | edd    | BTC   | ETH/DEC19 |    570 |     430 |
-      | barney | BTC   | ETH/DEC19 |    534 |     466 |
+      | edd    | BTC   | ETH/DEC19 |    571 |     429 |
+      | barney | BTC   | ETH/DEC19 |    535 |     465 |
 # next instruction will trade with edd
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
       | chris  | ETH/DEC19 | buy  |      10 |     0 |                1 | MARKET | IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | edd    | BTC   | ETH/DEC19 |    570 |     430 |
-      | chris  | BTC   | ETH/DEC19 |     83 |     917 |
+      | edd    | BTC   | ETH/DEC19 |    571 |     429 |
+      | chris  | BTC   | ETH/DEC19 |     84 |     916 |
 # next instruction will trade with barney
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
       | chris  | ETH/DEC19 | sell |      10 |     0 |                1 | MARKET | IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | chris  | BTC   | ETH/DEC19 |     63 |     917 |
-      | barney | BTC   | ETH/DEC19 |    534 |     466 |
-      | edd    | BTC   | ETH/DEC19 |    590 |     430 |
+      | chris  | BTC   | ETH/DEC19 |     64 |     916 |
+      | barney | BTC   | ETH/DEC19 |    535 |     465 |
+      | edd    | BTC   | ETH/DEC19 |    591 |     429 |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
-      | edd    | ETH/DEC19 |         475 |    523 |     570 |     666 |
-      | barney | ETH/DEC19 |         445 |    489 |     534 |     623 |
-      | chris  | ETH/DEC19 |          69 |     76 |      83 |      97 |
+      | edd    | ETH/DEC19 |         476 |    523 |     571 |     666 |
+      | barney | ETH/DEC19 |         446 |    490 |     535 |     624 |
+      | chris  | ETH/DEC19 |          70 |     77 |      84 |      98 |

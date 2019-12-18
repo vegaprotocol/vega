@@ -108,7 +108,7 @@ Feature: Test mark to market settlement
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |     21 |   15879 |
       | trader3 | ETH   | ETH/DEC19 |     13 |    5037 |
-      | trader2 | ETH   | ETH/DEC19 |      6 |    9044 |
+      | trader2 | ETH   | ETH/DEC19 |      7 |    9043 |
     Then the following transfers happened:
       | from    | to      | fromType | toType     | id        | amount | asset |
       | trader3 | trader3 | GENERAL  | MARGIN     | ETH/DEC19 |   1188 | ETH   |
