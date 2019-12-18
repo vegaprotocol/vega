@@ -96,15 +96,14 @@ func DefaultStoreOptions() ConfigOptions {
 		Truncate:                false,     // bool
 		LogRotatesToFlush:       2,         // int32, default 2
 		// Logger:               TBD,       // Logger, default defaultLogger
-
-		Compression:              options.Snappy,
-		EventLogging:             false,
-		BlockSize:                4096,
-		BloomFalsePositive:       0.01,
-		KeepL0InMemory:           false,
-		MaxCacheSize:             1 << 30,
-		VerifyValueChecksum:      false,
-		ChecksumVerificationMode: options.NoVerification,
+		Compression:              options.Snappy,         // CompressionType, default options.Zstd
+		EventLogging:             true,                   // bool, default true
+		BlockSize:                4096,                   // int, default 1024*4
+		BloomFalsePositive:       0.01,                   // float64, default 0.01
+		KeepL0InMemory:           false,                  // bool, default true
+		MaxCacheSize:             1 << 30,                // int64, default 1GB
+		VerifyValueChecksum:      false,                  // bool, default false
+		ChecksumVerificationMode: options.NoVerification, // ChecksumVerificationMode, default NoVerification
 	}
 	return opts
 }
