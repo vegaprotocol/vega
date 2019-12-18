@@ -163,6 +163,8 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 					current += size
 				}
 			}
+			// only increment realised P&L if the size goes the opposite way compared to the the
+			// current position
 			pnl = delta * int64(t.Price()-p.AverageEntryPrice)
 			p.RealisedPNL += pnl
 			tradePnl = append(tradePnl, pnl)

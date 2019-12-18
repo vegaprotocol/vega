@@ -118,6 +118,269 @@ func TestLongPositions(t *testing.T) {
 				market:     mkt,
 			},
 		},
+		"long gets closed": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  100,
+					price: 5,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  100,
+							price: 5,
+						},
+					},
+				},
+				realised:   0,
+				open:       100,
+				unrealised: 0,
+				aep:        5,
+				trader:     "trader-3",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  0,
+					price: 10,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -100,
+							price: 10,
+						},
+					},
+				},
+				realised:   0,
+				open:       0,
+				unrealised: 0,
+				aep:        0,
+				trader:     "trader-3",
+				market:     mkt,
+			},
+		},
+		"long gets turned short": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  100,
+					price: 5,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  100,
+							price: 5,
+						},
+					},
+				},
+				realised:   0,
+				open:       100,
+				unrealised: 0,
+				aep:        5,
+				trader:     "trader-4",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -25,
+					price: 10,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -125,
+							price: 10,
+						},
+					},
+				},
+				realised:   500,
+				open:       -25,
+				unrealised: -250,
+				aep:        10,
+				trader:     "trader-4",
+				market:     mkt,
+			},
+		},
+	}
+	pos := getTestPos(t)
+	pos.Start(pos.ctx)
+	defer pos.Finish()
+	for testSet, set := range data {
+		for _, evt := range set {
+			evt.evt.party = evt.trader
+			evt.evt.mID = evt.market
+			pos.ch <- []events.SettlePosition{evt.evt}
+			pos.ch <- nil // this blocks test until event has updated data
+			p, err := pos.GetPositionsByMarketAndParty(evt.market, evt.trader)
+			assert.NoError(t, err, testSet)
+			assert.Equal(t, evt.open, p.OpenVolume, testSet)
+			assert.Equal(t, evt.realised, p.RealisedPNL, testSet)
+			assert.Equal(t, evt.unrealised, p.UnrealisedPNL, testSet)
+			assert.Equal(t, evt.aep, p.AverageEntryPrice, testSet)
+		}
+	}
+}
+
+func TestShortPositions(t *testing.T) {
+	mkt := "test-market"
+	data := map[string][]testData{
+		"short gets more short": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -100,
+					price: 5,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -100,
+							price: 5,
+						},
+					},
+				},
+				realised:   0,
+				open:       -100,
+				unrealised: 0,
+				aep:        5,
+				trader:     "trader-1",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -125,
+					price: 10,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -25,
+							price: 10,
+						},
+					},
+				},
+				realised:   0,
+				open:       -125,
+				unrealised: -500,
+				aep:        6,
+				trader:     "trader-1",
+				market:     mkt,
+			},
+		},
+		"short gets less short": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -100,
+					price: 5,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -100,
+							price: 5,
+						},
+					},
+				},
+				realised:   0,
+				open:       -100,
+				unrealised: 0,
+				aep:        5,
+				trader:     "trader-2",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -75,
+					price: 10,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  25,
+							price: 10,
+						},
+					},
+				},
+				realised:   -125,
+				open:       -75,
+				unrealised: -375,
+				aep:        5,
+				trader:     "trader-2",
+				market:     mkt,
+			},
+		},
+		"short gets closed": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -100,
+					price: 5,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -100,
+							price: 5,
+						},
+					},
+				},
+				realised:   0,
+				open:       -100,
+				unrealised: 0,
+				aep:        5,
+				trader:     "trader-3",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  0,
+					price: 10,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  100,
+							price: 10,
+						},
+					},
+				},
+				realised:   -500,
+				open:       0,
+				unrealised: 0,
+				aep:        0,
+				trader:     "trader-3",
+				market:     mkt,
+			},
+		},
+		"short gets turned long": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  -100,
+					price: 5,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -100,
+							price: 5,
+						},
+					},
+				},
+				realised:   0,
+				open:       -100,
+				unrealised: 0,
+				aep:        5,
+				trader:     "trader-4",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  25,
+					price: 10,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  125,
+							price: 10,
+						},
+					},
+				},
+				realised:   -500,
+				open:       25,
+				unrealised: 250,
+				aep:        6,
+				trader:     "trader-4",
+				market:     mkt,
+			},
+		},
 	}
 	pos := getTestPos(t)
 	pos.Start(pos.ctx)
