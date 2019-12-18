@@ -7,6 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/basecmd/initcmd"
 	"code.vegaprotocol.io/vega/basecmd/node"
 	"code.vegaprotocol.io/vega/basecmd/version"
+
+	_ "code.vegaprotocol.io/vega/plugins/orders"
 )
 
 const (

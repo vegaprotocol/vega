@@ -1,6 +1,8 @@
 package encoding
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -29,6 +31,25 @@ func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
 }
 
+func DurationDecodeHook(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	if t == reflect.TypeOf(Duration{}) {
+		val, ok := data.(string)
+		if !ok {
+			return data, fmt.Errorf("expected a string to unwrap Duration")
+		}
+		var (
+			dur Duration
+			err error
+		)
+		dur.Duration, err = time.ParseDuration(val)
+		if err != nil {
+			return data, err
+		}
+		return dur, nil
+	}
+	return data, nil
+}
+
 // LogLevel is wrapper over the actual log level
 // so they can be specified as strings in the toml configuration
 type LogLevel struct {
@@ -50,4 +71,25 @@ func (l *LogLevel) UnmarshalText(text []byte) error {
 // MarshalText marshal a loglevel into bytes
 func (l LogLevel) MarshalText() ([]byte, error) {
 	return []byte(l.String()), nil
+}
+
+func LogLevelDecodeHook(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	if t == reflect.TypeOf(LogLevel{}) {
+		val, ok := data.(string)
+		if !ok {
+			return data, fmt.Errorf("expected a string to unwrap LogLevel")
+		}
+
+		var (
+			lvl LogLevel
+			err error
+		)
+		lvl.Level, err = logging.ParseLevel(val)
+		if err != nil {
+			return data, err
+		}
+		return lvl, nil
+	}
+
+	return data, nil
 }

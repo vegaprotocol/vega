@@ -1,12 +1,16 @@
 package config
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
+	apiv2 "code.vegaprotocol.io/vega/api/v2"
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -16,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/risk"
@@ -24,11 +29,18 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
+	"github.com/mitchellh/mapstructure"
+)
+
+var (
+	ErrInvalidConfig  = errors.New("invalid config format")
+	ErrConfigNotFound = errors.New("configuration for plugin not found")
 )
 
 // Config ties together all other application configuration types.
 type Config struct {
 	API        api.Config
+	APIv2      apiv2.Config
 	Accounts   accounts.Config
 	Blockchain blockchain.Config
 	Candles    candles.Config
@@ -55,6 +67,12 @@ type Config struct {
 	GatewayEnabled bool
 	StoresEnabled  bool
 	UlimitNOFile   uint64 `tomlcp:"Set the max number of open files (see: ulimit -n)"`
+	Plugins        Plugins
+}
+
+type Plugins struct {
+	Enabled []string
+	Configs map[string]interface{}
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -65,6 +83,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Blockchain:     blockchain.NewDefaultConfig(),
 		Execution:      execution.NewDefaultConfig(defaultStoreDirPath),
 		API:            api.NewDefaultConfig(),
+		APIv2:          apiv2.NewDefaultConfig(),
 		Accounts:       accounts.NewDefaultConfig(),
 		Orders:         orders.NewDefaultConfig(),
 		Time:           vegatime.NewDefaultConfig(),
@@ -87,5 +106,42 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,
+		Plugins: Plugins{
+			Enabled: []string{"orders-core"},
+			Configs: plugins.DefaultConfigs(),
+		},
 	}
+}
+
+func LoadPluginConfig(cfg interface{}, pluginName string, plugin interface{}) error {
+	okcfg, ok := cfg.(map[string]interface{})
+	if !ok {
+		return ErrInvalidConfig
+	}
+	plugCfg, ok := okcfg[pluginName]
+	if !ok {
+		return ErrConfigNotFound
+	}
+
+	f := mapstructure.ComposeDecodeHookFunc(
+		encoding.LogLevelDecodeHook,
+		encoding.DurationDecodeHook,
+	)
+
+	mpconfig := &mapstructure.DecoderConfig{
+		Result:     plugin,
+		DecodeHook: f,
+	}
+
+	decoder, err := mapstructure.NewDecoder(mpconfig)
+	if err != nil {
+		panic(err)
+	}
+
+	err = decoder.Decode(plugCfg.(map[string]interface{}))
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
 }
