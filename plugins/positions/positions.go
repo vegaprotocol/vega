@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -16,93 +15,33 @@ var (
 	ErrPartyNotFound  = errors.New("party not found")
 )
 
-// Positions plugin taking settlement data to build positions API data
-type Positions struct {
-	mu   *sync.RWMutex
-	buf  plugins.PosBuffer
-	ref  int
-	ch   <-chan []events.SettlePosition
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_subscriber_mock.go -package mocks code.vegaprotocol.io/vega/plugins/positions Subscriber
+type Subscriber interface {
+	Recv() <-chan []events.SettlePosition
+	Done() <-chan struct{}
+}
+
+type Pos struct {
+	mu   sync.RWMutex // sadly, we still need this because we'll be updating this map and reading from it
+	sub  Subscriber
 	data map[string]map[string]types.Position
 }
 
-func NewPositions(buf plugins.PosBuffer) *Positions {
-	return &Positions{
-		mu:   &sync.RWMutex{},
+func New(sub Subscriber) *Pos {
+	return &Pos{
+		sub:  sub,
 		data: map[string]map[string]types.Position{},
-		buf:  buf,
 	}
 }
 
-func (p *Positions) Start(ctx context.Context) {
-	p.mu.Lock()
-	if p.ch == nil {
-		// get the channel and the reference
-		p.ch, p.ref = p.buf.Subscribe()
-		// start consuming the data
-		go p.consume(ctx)
-	}
-	p.mu.Unlock()
-}
-
-func (p *Positions) Stop() {
-	p.mu.Lock()
-	if p.ch != nil {
-		// only unsubscribe if ch was set, otherwise we might end up unregistering ref 0, which
-		// could (in theory at least) be used by another component
-		p.buf.Unsubscribe(p.ref)
-		p.ch = nil
-		p.ref = 0
-	}
-	// we don't need to reassign ch here, because the channel is closed, the consume routine
-	// will pick up on the fact that we don't have to consume data anylonger, and the ch/ref fields
-	// will be unset there
-	p.mu.Unlock()
-}
-
-// consume keep reading the channel for as long as we need to
-func (p *Positions) consume(ctx context.Context) {
-	defer func() {
-		p.mu.Lock()
-		p.buf.Unsubscribe(p.ref)
-		p.ref = 0
-		p.ch = nil
-		p.mu.Unlock()
-	}()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case update, open := <-p.ch:
-			if !open {
-				return
-			}
-			p.mu.Lock()
-			p.updateData(update)
-			p.mu.Unlock()
-		}
-	}
-}
-
-func (p *Positions) updateData(raw []events.SettlePosition) {
-	for _, sp := range raw {
-		mID, tID := sp.MarketID(), sp.Party()
-		if _, ok := p.data[mID]; !ok {
-			p.data[mID] = map[string]types.Position{}
-		}
-		calc, ok := p.data[mID][tID]
-		if !ok {
-			calc = evtToProto(sp)
-		}
-		updatePosition(&calc, sp)
-		p.data[mID][tID] = calc
-		if calc.OpenVolume == 0 {
-			delete(p.data[mID], tID)
-		}
-	}
+// Start - just an exposed func that hides the fact that we're using routines
+// better for a clean API
+func (p *Pos) Start(ctx context.Context) {
+	go p.consume(ctx)
 }
 
 // GetPositionsByMarketAndParty get the position of a single trader in a given market
-func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
+func (p *Pos) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
 	if !ok {
@@ -111,7 +50,6 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	}
 	pos, ok := mp[party]
 	if !ok {
-		p.mu.RUnlock()
 		pos = types.Position{
 			PartyID:  party,
 			MarketID: market,
@@ -123,7 +61,7 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 }
 
 // GetPositionsByParty get all positions for a given trader
-func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
+func (p *Pos) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
 	// at most, trader is active in all markets
 	positions := make([]*types.Position, 0, len(p.data))
@@ -141,7 +79,7 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 }
 
 // GetPositionsByMarket get all trader positions in a given market
-func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
+func (p *Pos) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
 	if !ok {
@@ -154,4 +92,121 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	}
 	p.mu.RUnlock()
 	return s, nil
+}
+
+func (p *Pos) consume(ctx context.Context) {
+	for {
+		select {
+		case <-p.sub.Done():
+			// if we no longer receive data, we can stop here
+			return
+		case <-ctx.Done():
+			return
+		case data, ok := <-p.sub.Recv():
+			if !ok {
+				// the channel was closed
+				return
+			}
+			if len(data) == 0 {
+				continue
+			}
+			p.mu.RLock()
+			// get a copy, we only need a read lock here
+			cpy := p.data
+			p.mu.RUnlock()
+			p.updateData(cpy, data)
+		}
+	}
+}
+
+func (p *Pos) updateData(data map[string]map[string]types.Position, raw []events.SettlePosition) {
+	for _, sp := range raw {
+		mID, tID := sp.MarketID(), sp.Party()
+		if _, ok := data[mID]; !ok {
+			data[mID] = map[string]types.Position{}
+		}
+		calc, ok := data[mID][tID]
+		if !ok {
+			calc = evtToProto(sp)
+		}
+		updatePosition(&calc, sp)
+		data[mID][tID] = calc
+		if calc.OpenVolume == 0 {
+			delete(data[mID], tID)
+		}
+	}
+	// keep lock time to a minimum, we're working on a copy here, and reassign the data field
+	// only after everything has been updated (instead of maintaining a lock throughout)
+	p.mu.Lock()
+	p.data = data
+	p.mu.Unlock()
+}
+
+func updatePosition(p *types.Position, e events.SettlePosition) {
+	var (
+		// delta uint64
+		pnl, delta int64
+	)
+	tradePnl := make([]int64, 0, len(e.Trades()))
+	for _, t := range e.Trades() {
+		size, sAbs := t.Size(), absUint64(t.Size())
+		// approach each trade using the open volume as a starting-point
+		current := p.OpenVolume
+		if current != 0 {
+			cAbs := absUint64(current)
+			// trade direction is actually closing volume
+			if (current > 0 && size < 0) || (current < 0 && size > 0) {
+				if sAbs > cAbs {
+					delta = current
+					current = 0
+				} else {
+					delta = -size
+					current += size
+				}
+			}
+			// only increment realised P&L if the size goes the opposite way compared to the the
+			// current position
+			if (size > 0 && p.OpenVolume <= 0) || (size < 0 && p.OpenVolume >= 0) {
+				pnl = delta * int64(t.Price()-p.AverageEntryPrice)
+				p.RealisedPNL += pnl
+				tradePnl = append(tradePnl, pnl)
+				// @TODO store trade record with this realised P&L value
+			}
+		}
+		if net := delta + size; net != 0 {
+			if size != p.OpenVolume {
+				cAbs := absUint64(p.OpenVolume)
+				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
+			} else {
+				p.AverageEntryPrice = 0
+			}
+		}
+		p.OpenVolume += size
+	}
+	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
+	// MTM price * open volume == total value of current pos the entry price/cost of said position
+	p.UnrealisedPNL = (int64(e.Price()) - int64(p.AverageEntryPrice)) * p.OpenVolume
+	// Technically not needed, but safer to copy the open volume from event regardless
+	p.OpenVolume = e.Size()
+	if p.OpenVolume != 0 && p.AverageEntryPrice == 0 {
+		p.AverageEntryPrice = e.Price()
+	}
+}
+
+func evtToProto(e events.SettlePosition) types.Position {
+	p := types.Position{
+		MarketID: e.MarketID(),
+		PartyID:  e.Party(),
+	}
+	// NOTE: We don't call this here because the call is made in updateEvt for all positions
+	// we don't want to add the same data twice!
+	// updatePosition(&p, e)
+	return p
+}
+
+func absUint64(v int64) uint64 {
+	if v < 0 {
+		v *= -1
+	}
+	return uint64(v)
 }
