@@ -1,12 +1,15 @@
 package risk
 
 import (
+	"math"
+
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) *types.MarginLevels {
+	maintenance = math.Ceil(maintenance)
 	return &types.MarginLevels{
 		MaintenanceMargin:      int64(maintenance),
 		SearchLevel:            int64(maintenance * scalingFactors.SearchLevel),
