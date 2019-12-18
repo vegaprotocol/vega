@@ -23,7 +23,7 @@ Feature: Test trading-core flow with future risk model
       | trader1 | sell |      1 |  1010 |                0 |
     Then I expect the trader to have a margin liability:
       | trader  | position | buy | sell | margin | general |
-      | trader1 |        0 |   0 |    1 |    130 |   99870 |
+      | trader1 |        0 |   0 |    1 |    131 |   99869 |
     And "trader2" has not been added to the market
     And the mark price is "1000"
 
@@ -34,7 +34,7 @@ Feature: Test trading-core flow with future risk model
       | trader2 | buy  |      1 |  1005 |                0 |
     Then I expect the trader to have a margin liability:
       | trader  | position | buy | sell | margin | general |
-      | trader1 |        0 |   0 |    1 |    130 |   99870 |
+      | trader1 |        0 |   0 |    1 |    131 |   99869 |
       | trader2 |        0 |   1 |    0 |    120 |   99880 |
     And "trader3" has not been added to the market
     And the mark price is "1000"
@@ -46,14 +46,14 @@ Feature: Test trading-core flow with future risk model
       | trader1 | sell |      1 |  1020 |                0 |
     Then I expect the trader to have a margin liability:
       | trader  | position | buy | sell | margin | general |
-      | trader1 |        0 |   0 |    2 |    262 |   99738 |
+      | trader1 |        0 |   0 |    2 |    263 |   99737 |
     When I place the following orders:
       | trader  | type | volume | price | resulting trades |
       | trader2 | buy  |      1 |   980 |                1 |
       | trader3 | buy  |      1 |  1020 |                1 |
     Then I expect the trader to have a margin liability:
       | trader  | position | buy | sell | margin | general |
-      | trader1 |       -2 |   0 |    0 |    268 |   99692 |
-      | trader2 |        1 |   0 |    0 |    142 |   99898 |
-      | trader3 |        1 |   0 |    0 |    117 |   99883 |
+      | trader1 |       -2 |   0 |    0 |    269 |   99691 |
+      | trader2 |        1 |   0 |    0 |    143 |   99897 |
+      | trader3 |        1 |   0 |    0 |    118 |   99882 |
     And the mark price is "1020"

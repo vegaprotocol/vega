@@ -22,9 +22,9 @@ Feature: Test mark to market settlement
     And "trader3" general accounts balance is "10000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 |
-      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | GTC |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    120 |    9880 |
@@ -32,15 +32,15 @@ Feature: Test mark to market settlement
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  2000 |                0 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  2000 |                0 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    240 |    9760 |
 
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader3 |  ETH/DEC19 | buy  |     1  |  2000 |                1 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader3 |  ETH/DEC19 | buy  |     1  |  2000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    480 |    8520 |
@@ -68,9 +68,9 @@ Feature: Test mark to market settlement
     And "trader3" general accounts balance is "10000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 |
-      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | GTC |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    120 |    9880 |
@@ -78,15 +78,15 @@ Feature: Test mark to market settlement
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  5000 |                0 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  5000 |                0 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    240 |    9760 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades |
-      | trader3 | ETH/DEC19 | buy  |      1 |  5000 |                1 |
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |      1 |  5000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   1200 |    4800 |
@@ -101,9 +101,9 @@ Feature: Test mark to market settlement
 # enough funds in the margin account
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades |
-      | trader3 | ETH/DEC19 | buy  |      1 |    50 |                0 |
-      | trader1 | ETH/DEC19 | sell |      1 |    50 |                1 |
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |      1 |    50 |                0 | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell |      1 |    50 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |     21 |   15879 |
@@ -131,24 +131,24 @@ Feature: Test mark to market settlement
     And "trader3" general accounts balance is "10000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 |
-      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | GTC |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    120 |    9880 |
       | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    240 |    9760 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades |
-      | trader3 | ETH/DEC19 | buy  |      1 |  1000 |                1 |
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |      1 |  1000 |                1 | LIMIT | GTC |
 
 # here we expect trader 2 to still have the same margin as the previous trade did not change the markprice
     Then I expect the trader to have a margin:
