@@ -3,7 +3,7 @@ package encoding
 import (
 	"errors"
 
-	options "github.com/dgraph-io/badger/v2/options"
+	"github.com/dgraph-io/badger/v2/options"
 )
 
 var (
