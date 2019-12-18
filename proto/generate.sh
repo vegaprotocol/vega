@@ -37,7 +37,7 @@ do
 			-Ivendor/github.com/google/protobuf/src \
 			--doc_out="$(dirname "$outputfile")" \
 			--doc_opt="$fileformat,$(basename "$outputfile")"
-	sed -i -e 's#[ \t][ \t]*$##' "$outputfile"
+	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
 done
 
 # Generate *.pb.gw.go and *.swagger.json
