@@ -1010,20 +1010,20 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
+	// Verify that the market is not closed
 	if m.closed {
 		return nil, ErrMarketClosed
 	}
 
-	// try to get the order first
-	// order, err := e.order.GetByPartyAndID(
-	// context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
+	// Try and locate the existing order specified on the
+	// order book in the matching engine for this market
 	existingOrder, err := m.matching.GetOrderByPartyAndID(
 		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
 	if err != nil {
 		m.log.Error("Invalid order reference",
-			logging.String("id", existingOrder.Id),
-			logging.String("party", existingOrder.PartyID),
-			logging.String("market", existingOrder.MarketID),
+			logging.String("id", orderAmendment.GetOrderID()),
+			logging.String("party", orderAmendment.GetPartyID()),
+			logging.String("market", orderAmendment.GetMarketID()),
 			logging.Error(err))
 
 		return nil, types.ErrInvalidOrderReference
@@ -1032,8 +1032,9 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
-			logging.Order(*existingOrder),
-			logging.String("market", m.mkt.Id))
+			logging.String("market-id", m.mkt.Id),
+			logging.Order(*existingOrder))
+
 		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
 	}
 
