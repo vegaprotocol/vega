@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 
-	"github.com/dgraph-io/badger/options"
+	"github.com/dgraph-io/badger/v2/options"
 	"github.com/stretchr/testify/assert"
 )
 
