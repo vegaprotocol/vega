@@ -15,11 +15,11 @@ type Settlement struct {
 }
 
 type settleSubReq struct {
-	ch    chan settleSub
+	ch    chan SettleSub
 	chBuf int
 }
 
-type settleSub struct {
+type SettleSub struct {
 	subscriber
 	ch chan []events.SettlePosition
 }
@@ -57,7 +57,7 @@ func (s *Settlement) loop(ctx context.Context) {
 			}
 		case req := <-s.sub:
 			sCtx, cfunc := context.WithCancel(ctx)
-			sub := settleSub{
+			sub := SettleSub{
 				subscriber: subscriber{
 					ctx:   sCtx,
 					cfunc: cfunc,
@@ -95,9 +95,9 @@ func (s *Settlement) Add(e []events.SettlePosition) {
 	s.add <- e
 }
 
-func (s *Settlement) Subscribe(chBuf int) *settleSub {
+func (s *Settlement) Subscribe(chBuf int) *SettleSub {
 	req := settleSubReq{
-		ch:    make(chan settleSub),
+		ch:    make(chan SettleSub),
 		chBuf: chBuf,
 	}
 	s.sub <- req
@@ -106,11 +106,11 @@ func (s *Settlement) Subscribe(chBuf int) *settleSub {
 	return &sub
 }
 
-func (s *Settlement) Unsubscribe(sub *settleSub) {
+func (s *Settlement) Unsubscribe(sub *SettleSub) {
 	sub.cfunc()
 	s.unsub <- sub.key
 }
 
-func (s *settleSub) Recv() <-chan []events.SettlePosition {
+func (s *SettleSub) Recv() <-chan []events.SettlePosition {
 	return s.ch
 }

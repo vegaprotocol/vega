@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins/positions"
 	"code.vegaprotocol.io/vega/plugins/positions/mocks"
 
@@ -28,11 +29,27 @@ type testData struct {
 	trader, market             string
 }
 
+var (
+	rawCfg = map[string]interface{}{
+		"positions-api": positions.DefaultConfig(),
+	}
+)
+
 func TestSetup(t *testing.T) {
 	pos := getTestPos(t)
 	defer pos.Finish()
-	pos.Start(pos.ctx)
+	_ = pos.Start()
 	pos.cfunc()
+}
+
+// this test needs to get the buffer mocked passed in, still
+func testNew(t *testing.T) {
+	pos := getTestPos(t)
+	defer pos.Finish()
+	p2, err := pos.New(logging.NewTestLogger, pos.ctx, nil, nil, rawCfg)
+	assert.NoError(t, err)
+	// ensure we get the same type back
+	assert.IsType(t, pos, p2)
 }
 
 func TestLongPositions(t *testing.T) {
@@ -200,7 +217,7 @@ func TestLongPositions(t *testing.T) {
 		},
 	}
 	pos := getTestPos(t)
-	pos.Start(pos.ctx)
+	_ = pos.Start()
 	defer pos.Finish()
 	for testSet, set := range data {
 		for _, evt := range set {
@@ -383,7 +400,7 @@ func TestShortPositions(t *testing.T) {
 		},
 	}
 	pos := getTestPos(t)
-	pos.Start(pos.ctx)
+	_ = pos.Start()
 	defer pos.Finish()
 	for testSet, set := range data {
 		for _, evt := range set {
@@ -411,7 +428,7 @@ func getTestPos(t *testing.T) *tstPos {
 		return ctx.Done()
 	})
 	return &tstPos{
-		Pos:   positions.New(sub),
+		Pos:   positions.New(ctx, sub),
 		ctrl:  ctrl,
 		ctx:   ctx,
 		cfunc: cfunc,

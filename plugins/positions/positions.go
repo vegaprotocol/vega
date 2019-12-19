@@ -4,8 +4,12 @@ import (
 	"context"
 	"sync"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
+	"google.golang.org/grpc"
 
 	"github.com/pkg/errors"
 )
@@ -13,6 +17,8 @@ import (
 var (
 	ErrMarketNotFound = errors.New("could not find market")
 	ErrPartyNotFound  = errors.New("party not found")
+
+	pluginName = "positions-api"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_subscriber_mock.go -package mocks code.vegaprotocol.io/vega/plugins/positions Subscriber
@@ -22,25 +28,54 @@ type Subscriber interface {
 }
 
 type Pos struct {
+	ctx  context.Context
 	mu   sync.RWMutex // sadly, we still need this because we'll be updating this map and reading from it
 	sub  Subscriber
 	data map[string]map[string]types.Position
+	log  *logging.Logger
+	srv  *grpc.Server
 }
 
-func New(sub Subscriber) *Pos {
+// New - keep this one here, mainly for testing
+func New(ctx context.Context, sub Subscriber) *Pos {
 	return &Pos{
+		ctx:  ctx,
 		sub:  sub,
 		data: map[string]map[string]types.Position{},
 	}
 }
 
+// New - part of the plugin interface, need thit to make it work
+func (p *Pos) New(log *logging.Logger, ctx context.Context, buf plugins.Buffers, srv *grpc.Server, rawCfg interface{}) (plugins.Plugin, error) {
+	log = log.Named(pluginName)
+	log.Info(
+		"initializing new plugin",
+		logging.String("plugin-name", pluginName),
+	)
+
+	cfg := DefaultConfig()
+	if err := config.LoadPluginConfig(rawCfg, pluginName, &cfg); err != nil {
+		return nil, err
+	}
+	log.SetLevel(cfg.Level.Get())
+	return &Pos{
+		ctx:  ctx,
+		sub:  buf.PositionsSub(cfg.SubscriptionBuffer),
+		data: map[string]map[string]types.Position{},
+		log:  log,
+		srv:  srv,
+	}, nil
+}
+
 // Start - just an exposed func that hides the fact that we're using routines
-// better for a clean API
-func (p *Pos) Start(ctx context.Context) {
-	go p.consume(ctx)
+// part of the Plugin interface needed, error returned is _always_ nil
+func (p *Pos) Start() error {
+	go p.consume(p.ctx)
+	return nil
 }
 
 // GetPositionsByMarketAndParty get the position of a single trader in a given market
+// these funcs need to be moved to the server
 func (p *Pos) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
