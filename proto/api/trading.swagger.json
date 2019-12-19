@@ -157,6 +157,37 @@
         ]
       }
     },
+    "/markets/{marketID}/accounts": {
+      "get": {
+        "summary": "Get Market accounts",
+        "operationId": "MarketAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketAccountsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "asset",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}/candles": {
       "get": {
         "summary": "Get Market Candles",
