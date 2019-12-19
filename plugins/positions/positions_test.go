@@ -46,7 +46,7 @@ func TestSetup(t *testing.T) {
 func testNew(t *testing.T) {
 	pos := getTestPos(t)
 	defer pos.Finish()
-	p2, err := pos.New(logging.NewTestLogger, pos.ctx, nil, nil, rawCfg)
+	p2, err := pos.New(logging.NewTestLogger(), pos.ctx, nil, nil, rawCfg)
 	assert.NoError(t, err)
 	// ensure we get the same type back
 	assert.IsType(t, pos, p2)
@@ -395,6 +395,107 @@ func TestShortPositions(t *testing.T) {
 				unrealised: 75,
 				aep:        7,
 				trader:     "trader-4",
+				market:     mkt,
+			},
+		},
+	}
+	pos := getTestPos(t)
+	_ = pos.Start()
+	defer pos.Finish()
+	for testSet, set := range data {
+		for _, evt := range set {
+			evt.evt.party = evt.trader
+			evt.evt.mID = evt.market
+			pos.ch <- []events.SettlePosition{evt.evt}
+			pos.ch <- nil // this blocks test until event has updated data
+			p, err := pos.GetPositionsByMarketAndParty(evt.market, evt.trader)
+			assert.NoError(t, err, testSet)
+			assert.Equal(t, evt.open, p.OpenVolume, testSet)
+			assert.Equal(t, evt.realised, p.RealisedPNL, testSet)
+			assert.Equal(t, evt.unrealised, p.UnrealisedPNL, testSet)
+			assert.Equal(t, evt.aep, p.AverageEntryPrice, testSet)
+		}
+	}
+}
+
+func TestComplexScenario(t *testing.T) {
+	mkt := "test-market"
+	data := map[string][]testData{
+		"long up and down": []testData{
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  100,
+					price: 100,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  100,
+							price: 100,
+						},
+					},
+				},
+				realised:   0,
+				open:       100,
+				unrealised: 0,
+				aep:        100,
+				trader:     "trader-1",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  75,
+					price: 25,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -25,
+							price: 25,
+						},
+					},
+				},
+				realised:   -1875,
+				open:       75,
+				unrealised: -5625,
+				aep:        100,
+				trader:     "trader-1",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  125,
+					price: 50,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  50,
+							price: 50,
+						},
+					},
+				},
+				realised:   -1875,
+				open:       125,
+				unrealised: -3750,
+				aep:        80,
+				trader:     "trader-1",
+				market:     mkt,
+			},
+			{
+				evt: posStub{
+					mID:   mkt,
+					size:  25,
+					price: 75,
+					trades: []events.TradeSettlement{
+						tradeStub{
+							size:  -100,
+							price: 75,
+						},
+					},
+				},
+				realised:   -2375,
+				open:       25,
+				unrealised: -125,
+				aep:        80,
+				trader:     "trader-1",
 				market:     mkt,
 			},
 		},
