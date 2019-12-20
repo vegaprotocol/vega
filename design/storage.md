@@ -6,12 +6,13 @@ These specify the location of the `*.sst` and `*.vlog` files. By default we use 
 Does each write have to be flushed to disk.
 This has a huge impact on the time it takes to handle small batches of inserts.
 
-`Inserting 10K batches of 6 key value pairs:
+```Inserting 10K batches of 6 key value pairs:
 * SyncWrites False: 0m01
 * SyncWrites True (SHM): 0m01
 * SyncWrites True (NVMe): 0m18
 * SyncWrites True (SATA SSD): 0m55
-* SyncWrites True (HD): 6m08`
+* SyncWrites True (HD): 6m08
+```
 
 ## `TableLoadingMode & ValueLogLoadingMode`
 The `BadgerDB` correctly uses virtual memory to map files into memory space and does not use up resident memory if the underlying data is not being accessed. Therefore it makes sense to use `MemoryMap` instead of `FileIO` to reduce system overhead.
