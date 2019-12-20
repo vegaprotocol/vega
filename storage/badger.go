@@ -72,18 +72,18 @@ func DefaultStoreOptions() ConfigOptions {
 		* MaxTableSize: set low to avoid badger grabbing-then-releasing gigs of memory (#147)
 		* ValueThreshold: set low to move most data out of the LSM tree (#147)
 	*/
-	fileio := cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
+	mmio := cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	opts := ConfigOptions{
 		// Dir:                  TBD,       // string
 		// ValueDir:             TBD,       // string
 		SyncWrites:              true,      // bool
-		TableLoadingMode:        fileio,    // options.FileLoadingMode, default options.MemoryMap
-		ValueLogLoadingMode:     fileio,    // options.FileLoadingMode, default options.MemoryMap
+		TableLoadingMode:        mmio,      // options.FileLoadingMode, default options.MemoryMap
+		ValueLogLoadingMode:     mmio,      // options.FileLoadingMode, default options.MemoryMap
 		NumVersionsToKeep:       1,         // int
 		MaxTableSize:            64 << 20,  // int64, default 64<<20 (64MB)
 		LevelSizeMultiplier:     2,         // int, default 10
 		MaxLevels:               7,         // int
-		ValueThreshold:          32,        // int, default 32
+		ValueThreshold:          16,        // int, default 32
 		NumMemtables:            1,         // int, default 5
 		NumLevelZeroTables:      1,         // int, default 5
 		NumLevelZeroTablesStall: 2,         // int, default 10
@@ -101,7 +101,7 @@ func DefaultStoreOptions() ConfigOptions {
 		BlockSize:                4096,                   // int, default 1024*4
 		BloomFalsePositive:       0.01,                   // float64, default 0.01
 		KeepL0InMemory:           false,                  // bool, default true
-		MaxCacheSize:             1 << 30,                // int64, default 1GB
+		MaxCacheSize:             1 << 24,                // int64, default 1GB
 		VerifyValueChecksum:      false,                  // bool, default false
 		ChecksumVerificationMode: options.NoVerification, // ChecksumVerificationMode, default NoVerification
 	}
