@@ -377,9 +377,6 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	}
 
 	// submit orders
-	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-	// 	return &types.Party{Id: id}, nil
-	// })
 	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()

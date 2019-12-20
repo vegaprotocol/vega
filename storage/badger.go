@@ -7,8 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/dgraph-io/badger"
-	"github.com/dgraph-io/badger/options"
+	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v2/options"
 	"github.com/pkg/errors"
 )
 
@@ -54,6 +54,15 @@ type ConfigOptions struct {
 	Truncate                bool
 	LogRotatesToFlush       int32
 	// Logger               logging.Logger // not customisable by end user
+
+	Compression              options.CompressionType
+	EventLogging             bool
+	BlockSize                int
+	BloomFalsePositive       float64
+	KeepL0InMemory           bool
+	MaxCacheSize             int64
+	VerifyValueChecksum      bool
+	ChecksumVerificationMode options.ChecksumVerificationMode
 }
 
 // DefaultStoreOptions supplies default options to be used for all stores.
@@ -63,18 +72,18 @@ func DefaultStoreOptions() ConfigOptions {
 		* MaxTableSize: set low to avoid badger grabbing-then-releasing gigs of memory (#147)
 		* ValueThreshold: set low to move most data out of the LSM tree (#147)
 	*/
-	fileio := cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
+	mmio := cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	opts := ConfigOptions{
 		// Dir:                  TBD,       // string
 		// ValueDir:             TBD,       // string
 		SyncWrites:              true,      // bool
-		TableLoadingMode:        fileio,    // options.FileLoadingMode, default options.MemoryMap
-		ValueLogLoadingMode:     fileio,    // options.FileLoadingMode, default options.MemoryMap
+		TableLoadingMode:        mmio,      // options.FileLoadingMode, default options.MemoryMap
+		ValueLogLoadingMode:     mmio,      // options.FileLoadingMode, default options.MemoryMap
 		NumVersionsToKeep:       1,         // int
 		MaxTableSize:            64 << 20,  // int64, default 64<<20 (64MB)
 		LevelSizeMultiplier:     2,         // int, default 10
 		MaxLevels:               7,         // int
-		ValueThreshold:          32,        // int, default 32
+		ValueThreshold:          16,        // int, default 32
 		NumMemtables:            1,         // int, default 5
 		NumLevelZeroTables:      1,         // int, default 5
 		NumLevelZeroTablesStall: 2,         // int, default 10
@@ -87,6 +96,14 @@ func DefaultStoreOptions() ConfigOptions {
 		Truncate:                false,     // bool
 		LogRotatesToFlush:       2,         // int32, default 2
 		// Logger:               TBD,       // Logger, default defaultLogger
+		Compression:              options.Snappy,         // CompressionType, default options.Zstd
+		EventLogging:             true,                   // bool, default true
+		BlockSize:                4096,                   // int, default 1024*4
+		BloomFalsePositive:       0.01,                   // float64, default 0.01
+		KeepL0InMemory:           false,                  // bool, default true
+		MaxCacheSize:             1 << 24,                // int64, default 1GB
+		VerifyValueChecksum:      false,                  // bool, default false
+		ChecksumVerificationMode: options.NoVerification, // ChecksumVerificationMode, default NoVerification
 	}
 	return opts
 }
@@ -148,6 +165,15 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		Truncate:                cfg.Truncate,
 		LogRotatesToFlush:       2,
 		Logger:                  log.Named(badgerNamedLogger),
+
+		Compression:              cfg.Compression,
+		EventLogging:             cfg.EventLogging,
+		BlockSize:                cfg.BlockSize,
+		BloomFalsePositive:       cfg.BloomFalsePositive,
+		KeepL0InMemory:           cfg.KeepL0InMemory,
+		MaxCacheSize:             cfg.MaxCacheSize,
+		VerifyValueChecksum:      cfg.VerifyValueChecksum,
+		ChecksumVerificationMode: cfg.ChecksumVerificationMode,
 	}
 
 	return opts

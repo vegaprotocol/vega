@@ -170,11 +170,11 @@ func (p *Processor) Process(payload []byte) error {
 			return err
 		}
 	case NotifyTraderAccountCommand:
-		notif, err := p.getNotifyTraderAccount(data)
+		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
 			return err
 		}
-		err = p.blockchainService.NotifyTraderAccount(notif)
+		err = p.blockchainService.NotifyTraderAccount(notify)
 		if err != nil {
 			return err
 		}

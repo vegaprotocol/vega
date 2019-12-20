@@ -148,7 +148,6 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	for _, acc := range execsetup.accounts.data {
-		fmt.Printf("acc: %v\n", acc)
 		if acc.Owner == arg1 && acc.Type == proto.AccountType_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
@@ -213,6 +212,15 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			continue
 		}
 
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+		tif, err := tifval(row, 7)
+		if err != nil {
+			return err
+		}
+
 		order := proto.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -222,8 +230,8 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        oty,
+			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		result, err := execsetup.engine.SubmitOrder(&order)
@@ -265,7 +273,6 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
 	for _, v := range execsetup.accounts.data {
-		fmt.Printf("ACCOUNT: %v\n", v)
 		cumul += uint64(v.Balance)
 	}
 
@@ -490,7 +497,7 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
-	return proto.Market{
+	mkt := proto.Market{
 		Id:            val(row, 0),
 		Name:          val(row, 0),
 		DecimalPlaces: 2,
@@ -542,5 +549,21 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 			Continuous: &proto.ContinuousTrading{},
 		},
 	}
+
+	if val(row, 5) == "forward" {
+		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_ForwardRiskModel{
+			ForwardRiskModel: &proto.ForwardRiskModel{
+				RiskAversionParameter: f64val(row, 6), // 6
+				Tau:                   f64val(row, 7), // 7
+				Params: &proto.ModelParamsBS{
+					Mu:    f64val(row, 8),  // 8
+					R:     f64val(row, 9),  // 9
+					Sigma: f64val(row, 10), //10
+				},
+			},
+		}
+	}
+
+	return mkt
 
 }
