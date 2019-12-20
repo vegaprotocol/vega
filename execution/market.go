@@ -409,6 +409,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
+		_, err := m.position.UnregisterOrder(order)
+		if err != nil {
+			m.log.Error("Unable to unregister potential trader positions",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 		order.Status = types.Order_Rejected
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
@@ -422,6 +428,22 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			logging.Error(err))
 
 		return nil, err
+	}
+
+	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
+	// remove them from the potential orders,
+	// then we should be able to process the rest of the order properly.
+	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) &&
+		confirmation.Order.Remaining != 0 {
+		// create a temporary order with the size beeing the remaining
+		tmpOrder := *order
+		tmpOrder.Size = order.Remaining
+		_, err := m.position.UnregisterOrder(&tmpOrder)
+		if err != nil {
+			m.log.Error("Unable to unregister potential trader positions",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 	}
 
 	// Insert aggressive remaining order
@@ -786,8 +808,15 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		return err
 	}
 
-	riskUpdate := m.collateralAndRiskForOrder(e, m.markPrice)
-	if riskUpdate == nil {
+	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
+	if err != nil {
+		m.log.Error("unable to top up margin on new order",
+			logging.String("party-id", order.PartyID),
+			logging.String("market-id", order.MarketID),
+			logging.Error(err),
+		)
+		return ErrMarginCheckInsufficient
+	} else if riskUpdate == nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates",
 				logging.String("market-id", m.GetID()))
@@ -832,16 +861,19 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events.Risk {
+func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) (events.Risk, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdate := m.risk.UpdateMarginOnNewOrder(e, price)
+	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(e, price)
+	if err != nil {
+		return nil, err
+	}
 	if riskUpdate == nil {
 		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
-		return nil
+		return nil, nil
 	}
 
 	// push margins into the buffer
@@ -860,7 +892,7 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events
 		)
 	}
 
-	return riskUpdate
+	return riskUpdate, nil
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -978,20 +1010,20 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
+	// Verify that the market is not closed
 	if m.closed {
 		return nil, ErrMarketClosed
 	}
 
-	// try to get the order first
-	// order, err := e.order.GetByPartyAndID(
-	// context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
+	// Try and locate the existing order specified on the
+	// order book in the matching engine for this market
 	existingOrder, err := m.matching.GetOrderByPartyAndID(
 		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
 	if err != nil {
 		m.log.Error("Invalid order reference",
-			logging.String("id", existingOrder.Id),
-			logging.String("party", existingOrder.PartyID),
-			logging.String("market", existingOrder.MarketID),
+			logging.String("id", orderAmendment.GetOrderID()),
+			logging.String("party", orderAmendment.GetPartyID()),
+			logging.String("market", orderAmendment.GetMarketID()),
 			logging.Error(err))
 
 		return nil, types.ErrInvalidOrderReference
@@ -1000,8 +1032,9 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
-			logging.Order(*existingOrder),
-			logging.String("market", m.mkt.Id))
+			logging.String("market-id", m.mkt.Id),
+			logging.Order(*existingOrder))
+
 		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
 	}
 

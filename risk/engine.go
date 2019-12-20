@@ -2,6 +2,7 @@ package risk
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
+)
+
+var (
+	ErrInsufficientFundsForInitialMargin = errors.New("insufficient funds for initial margin")
 )
 
 // Orderbook represent an abstraction over the orderbook
@@ -102,15 +107,15 @@ func (e *Engine) CalculateFactors(now time.Time) {
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) events.Risk {
+func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (events.Risk, error) {
 	if evt == nil {
-		return nil
+		return nil, nil
 	}
 
 	margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 	// no margins updates, nothing to do then
 	if margins == nil {
-		return nil
+		return nil, nil
 	}
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("margins calculated on new order",
@@ -123,7 +128,11 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) eve
 	curBalance := evt.MarginBalance()
 	// margins are sufficient, nothing to update
 	if int64(curBalance) >= margins.InitialMargin {
-		return nil
+		return nil, nil
+	}
+
+	if int64(evt.MarginBalance()+evt.GeneralBalance()) < margins.InitialMargin {
+		return nil, ErrInsufficientFundsForInitialMargin
 	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
@@ -147,7 +156,7 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) eve
 		amount:   trnsfr.Amount.Amount,
 		transfer: trnsfr,
 		margins:  margins,
-	}
+	}, nil
 }
 
 // UpdateMarginsOnSettlement ensure the margin requirement over all positions.

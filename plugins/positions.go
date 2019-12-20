@@ -163,51 +163,60 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 }
 
 func updatePosition(p *types.Position, e events.SettlePosition) {
-	totPrice, totVolume := p.AverageEntryPrice, p.OpenVolume
-	totPrice *= absUint64(totVolume)
+	current := p.OpenVolume
+	var (
+		// delta uint64
+		pnl, delta int64
+	)
+	tradePnl := make([]int64, 0, len(e.Trades()))
 	for _, t := range e.Trades() {
-		price, size := t.Price(), t.Size()
-		if size == 0 {
-			continue
-		}
-		app := true
-		for i, pt := range p.FifoQueue {
-			if pt.Price == price {
-				pt.Volume += size
-				app = false
-				if pt.Volume == 0 {
-					p.FifoQueue = p.FifoQueue[:i+copy(p.FifoQueue[i:], p.FifoQueue[i+1:])]
+		size, sAbs := t.Size(), absUint64(t.Size())
+		if current != 0 {
+			cAbs := absUint64(current)
+			// trade direction is actually closing volume
+			if (current > 0 && size < 0) || (current < 0 && size > 0) {
+				if sAbs > cAbs {
+					delta = current
+					current = 0
+				} else {
+					delta = -size
+					current += size
 				}
-				break
+			}
+			// only increment realised P&L if the size goes the opposite way compared to the the
+			// current position
+			if (size > 0 && p.OpenVolume <= 0) || (size < 0 && p.OpenVolume >= 0) {
+				pnl = delta * int64(t.Price()-p.AverageEntryPrice)
+				p.RealisedPNL += pnl
+				tradePnl = append(tradePnl, pnl)
+			}
+			// @TODO store trade record with this realised P&L value
+		}
+		net := delta + size
+		if net != 0 {
+			if size != p.OpenVolume {
+				sAbs, cAbs := absUint64(size), absUint64(p.OpenVolume)
+				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
+			} else {
+				p.AverageEntryPrice = 0
 			}
 		}
-		totPrice += price * absUint64(size)
-		totVolume += size
-		if app {
-			p.FifoQueue = append(p.FifoQueue, &types.PositionTrade{
-				Volume: size,
-				Price:  price,
-			})
-		}
+		p.OpenVolume += size
 	}
-	if totVolume == 0 {
-		totVolume = 1
-	}
-	p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
-	p.AverageEntryPrice = totPrice / absUint64(totVolume)
+	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
-	p.UnrealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
-	// get the realised PNL (final value of asset should market settle at current price)
-	p.RealisedPNL = int64(e.Price())*p.PendingVolume - p.PendingVolume*int64(p.AverageEntryPrice)
+	p.UnrealisedPNL = (int64(e.Price()) - int64(p.AverageEntryPrice)) * p.OpenVolume
+	// Technically not needed, but safer to copy the open volume from event regardless
+	p.OpenVolume = e.Size()
+	if p.OpenVolume != 0 && p.AverageEntryPrice == 0 {
+		p.AverageEntryPrice = e.Price()
+	}
 }
 
 func evtToProto(e events.SettlePosition) types.Position {
-	trades := e.Trades()
 	p := types.Position{
-		MarketID:   e.MarketID(),
-		PartyID:    e.Party(),
-		OpenVolume: e.Size(),
-		FifoQueue:  make([]*types.PositionTrade, 0, len(trades)),
+		MarketID: e.MarketID(),
+		PartyID:  e.Party(),
 	}
 	// NOTE: We don't call this here because the call is made in updateEvt for all positions
 	// we don't want to add the same data twice!
