@@ -136,40 +136,48 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		- Maturity dates should be not all the same, for variety.
 	*/
 	skels := []struct {
-		decimalPlaces    uint64
-		baseName         string
-		settlementAsset  string
-		quoteName        string
-		maturity         time.Time
-		initialMarkPrice uint64
-		settlementValue  uint64
+		decimalPlaces         uint64
+		baseName              string
+		settlementAsset       string
+		quoteName             string
+		maturity              time.Time
+		initialMarkPrice      uint64
+		settlementValue       uint64
+		sigma                 float64
+		riskAversionParameter float64
 	}{
 		{
-			decimalPlaces:    5,
-			baseName:         "ETH",
-			quoteName:        "USD",
-			settlementAsset:  "VUSD",
-			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
-			initialMarkPrice: 200,
-			settlementValue:  200,
+			decimalPlaces:         5,
+			baseName:              "ETH",
+			quoteName:             "USD",
+			settlementAsset:       "VUSD",
+			maturity:              time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice:      1410000,
+			settlementValue:       1500000,
+			riskAversionParameter: 0.001,
+			sigma:                 1.5,
 		},
 		{
-			decimalPlaces:    5,
-			baseName:         "GBP",
-			quoteName:        "USD",
-			settlementAsset:  "VUSD",
-			maturity:         time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
-			initialMarkPrice: 10,
-			settlementValue:  10,
+			decimalPlaces:         5,
+			baseName:              "GBP",
+			quoteName:             "USD",
+			settlementAsset:       "VUSD",
+			maturity:              time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
+			initialMarkPrice:      130000,
+			settlementValue:       126000,
+			riskAversionParameter: 0.01,
+			sigma:                 0.09,
 		},
 		{
-			decimalPlaces:    5,
-			baseName:         "ETH",
-			quoteName:        "BTC",
-			settlementAsset:  "BTC",
-			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
-			initialMarkPrice: 5,
-			settlementValue:  5,
+			decimalPlaces:         5,
+			baseName:              "ETH",
+			quoteName:             "BTC",
+			settlementAsset:       "BTC",
+			maturity:              time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice:      10000,
+			settlementValue:       98123,
+			riskAversionParameter: 0.001,
+			sigma:                 2.0,
 		},
 	}
 
@@ -212,12 +220,12 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				},
 				RiskModel: &proto.TradableInstrument_ForwardRiskModel{
 					ForwardRiskModel: &proto.ForwardRiskModel{
-						RiskAversionParameter: 0.01,
+						RiskAversionParameter: skel.riskAversionParameter,
 						Tau:                   1.0 / 365.25 / 24,
 						Params: &proto.ModelParamsBS{
 							Mu:    0,
 							R:     0.016,
-							Sigma: 0.09,
+							Sigma: skel.sigma,
 						},
 					},
 				},
@@ -258,7 +266,7 @@ func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
 		return err
 	}
 
-	if _, err := f.WriteString(string(buf)); err != nil {
+	if _, err := f.WriteString(buf); err != nil {
 		return err
 	}
 

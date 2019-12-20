@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )

@@ -24,18 +24,21 @@ done
 
 # Generate proto/doc/
 mkdir -p proto/doc
-rm -f proto/doc/index.md
-find ./proto/ -name '*.proto' -print0 \
-	| sort -z \
-	| xargs -0 protoc \
-		-I. \
-		-Iproto \
-		-Ivendor \
-		-Ivendor/github.com/google/protobuf/src \
-		--doc_out=proto/doc \
-		--doc_opt=markdown,index.md
-
-#sed -i -e 's#[ \t][ \t]*$##' proto/doc/index.md
+protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
+echo -e 'html html\nmarkdown md' | while read -r fileformat fileextension
+do
+	outputfile="proto/doc/index.$fileextension"
+	rm -f "$outputfile"
+	echo -n "$protofiles" \
+		| xargs protoc \
+			-I. \
+			-Iproto \
+			-Ivendor \
+			-Ivendor/github.com/google/protobuf/src \
+			--doc_out="$(dirname "$outputfile")" \
+			--doc_opt="$fileformat,$(basename "$outputfile")"
+	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
+done
 
 # Generate *.pb.gw.go and *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"

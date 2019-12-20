@@ -59,23 +59,6 @@ steps:
     depends_on:
       - fetch
 
-  - name: docker
-    image: docker:dind
-    volumes:
-      - name: dockersock
-        path: /dockersock
-      - name: dind
-        path: /var/lib/docker
-    privileged: true
-    command: ['-H', 'unix:///dockersock/docker.sock', '-s', 'overlay2']
-    depends_on: []
-    detach: true
-    when:
-      ref:
-        - refs/heads/master
-        - refs/heads/develop
-        - refs/tags/*
-
   # Tests to be run on *all* branches.
   - name: test
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -188,9 +171,9 @@ steps:
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
     volumes:
       - name: dockersock
-        path: /dockersock
+        path: /run/docker.sock
     environment:
-      DOCKER_HOST: unix:///dockersock/docker.sock
+      DOCKER_HOST: unix:///run/docker.sock
       DOCKER_CONFIG_JSON:
         from_secret: docker_config_json
     commands:
@@ -203,7 +186,6 @@ steps:
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
-      - while ! docker ps ; do sleep 1 ; done  # wait for dind
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
@@ -218,12 +200,9 @@ steps:
         - refs/tags/*
 
 volumes:
-  - name: dind
-    host:
-      path: /var/lib/drone/volumes/trading-core/dind
   - name: dockersock
     host:
-      path: /var/lib/drone/volumes/trading-core/dockersock
+      path: /run/docker.sock
   - name: gopkg
     host:
       path: /var/lib/drone/volumes/trading-core/gopkg
