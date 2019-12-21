@@ -675,6 +675,16 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			Remaining:   1337,
 			TimeInForce: types.Order_FOK,
 		},
+		types.Order{
+			Id:          "199",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_FOK,
+			Type:        types.Order_NETWORK,
+		},
 	}
 
 	// add all orders
