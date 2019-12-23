@@ -556,6 +556,10 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	if len(rmorders) == 0 {
 		return nil
 	}
+	// push rm orders into buf ?
+	for _, o := range rmorders {
+		m.orderBuf.Add(*o)
+	}
 
 	mktID := m.GetID()
 	// remove the orders from the positions engine
