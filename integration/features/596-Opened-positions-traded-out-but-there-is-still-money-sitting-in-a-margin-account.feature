@@ -45,7 +45,7 @@ Feature: Regression test for issue 596
       | chris  | BTC   | ETH/DEC19 |     12 |   10048 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "30000"
-# then cris is trading out
+# then chris is trading out
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
       | chris  | ETH/DEC19 | sell |     50 |    90 |                4 | LIMIT | GTC |
@@ -54,4 +54,68 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 |   1283 |    9007 |
       | chris  | BTC   | ETH/DEC19 |      0 |    9808 |
       | barney | BTC   | ETH/DEC19 |    496 |    9406 |
+    And All balances cumulated are worth "30000"
+
+
+  Scenario: Traded out position, with cancelled half traded order, but monies left in margin account
+    Given the following traders:
+      | name   | amount |
+      | edd    |   10000 |
+      | barney |   10000 |
+      | chris  |   10000 |
+    Then I Expect the traders to have new general account:
+      | name   | asset |
+      | edd    | BTC   |
+      | barney | BTC   |
+      | chris  | BTC   |
+    And "edd" general accounts balance is "10000"
+    And "barney" general accounts balance is "10000"
+    And "chris" general accounts balance is "10000"
+    Then traders place following orders:
+      | trader | id        | type | volume | price | resulting trades | type  | tif |
+      | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     15 |   104 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     30 |   105 |                0 | LIMIT | GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    99 |                0 | LIMIT | GTC |
+      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | LIMIT | GTC |
+      | barney | ETH/DEC19 | buy  |     14 |    97 |                0 | LIMIT | GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    96 |                0 | LIMIT | GTC |
+      | barney | ETH/DEC19 | buy  |     5  |    95 |                0 | LIMIT | GTC |
+    Then I expect the trader to have a margin:
+      | trader | asset | id        | margin | general |
+      | edd    | BTC   | ETH/DEC19 |    848 |    9152 |
+      | barney | BTC   | ETH/DEC19 |    594 |    9406 |
+# Chris place an order for a volume of 60, but only 2 trades happen at that price
+    Then traders place following orders with references:
+      | trader | id        | type | volume | price | resulting trades | type  | tif | reference            |
+      | chris  | ETH/DEC19 | buy  |     60 |   102 |                2 | LIMIT | GTC | chris-id-1-to-cancel |
+    Then I expect the trader to have a margin:
+      | trader | asset | id        | margin | general |
+      | edd    | BTC   | ETH/DEC19 |    961 |    9019 |
+      | chris  | BTC   | ETH/DEC19 |    260 |    9760 |
+      | barney | BTC   | ETH/DEC19 |    594 |    9406 |
+    And All balances cumulated are worth "30000"
+    Then traders cancels the following orders reference:
+      | trader | reference            |
+      | chris  | chris-id-1-to-cancel |
+# then chris is trading out
+    Then traders place following orders:
+      | trader | id        | type | volume | price | resulting trades | type  | tif |
+      | chris  | ETH/DEC19 | sell |     40 |    90 |                3 | LIMIT | GTC |
+    Then I expect the trader to have a margin:
+      | trader | asset | id        | margin | general |
+      | edd    | BTC   | ETH/DEC19 |   1161 |    9019 |
+      | chris  | BTC   | ETH/DEC19 |    112 |    9760 |
+      | barney | BTC   | ETH/DEC19 |    542 |    9406 |
+    And All balances cumulated are worth "30000"
+   Then traders place following orders:
+      | trader | id        | type | volume | price | resulting trades | type  | tif |
+      | barney | ETH/DEC19 | buy  |      1 |   105 |                1 | LIMIT | GTC |
+    Then I expect the trader to have a margin:
+      | trader | asset | id        | margin | general |
+      | edd    | BTC   | ETH/DEC19 |    921 |    9019 |
+      | chris  | BTC   | ETH/DEC19 |    112 |    9760 |
+      | barney | BTC   | ETH/DEC19 |    322 |    9866 |
     And All balances cumulated are worth "30000"

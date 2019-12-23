@@ -121,9 +121,9 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_Buy {
-		pos.buy += int64(order.Size)
+		pos.buy += int64(order.Remaining)
 	} else {
-		pos.sell += int64(order.Size)
+		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
 	return pos, nil
@@ -138,9 +138,9 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 		err = ErrPositionNotFound
 	} else {
 		if order.Side == types.Side_Buy {
-			pos.buy -= int64(order.Size)
+			pos.buy -= int64(order.Remaining)
 		} else {
-			pos.sell -= int64(order.Size)
+			pos.sell -= int64(order.Remaining)
 		}
 	}
 	timer.EngineTimeCounterAdd()
@@ -262,6 +262,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 	for _, pos := range e.positions {
 		pos.price = markPrice
+		// fmt.Printf("POSITION: %#v\n", *pos)
 	}
 	return e.positionsCpy
 }
