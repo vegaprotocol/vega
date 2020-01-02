@@ -351,6 +351,13 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
+
+	// Check here for a valid marketID so we don't fail later
+	_, err := h.MarketService.GetByID(ctx, request.MarketID)
+	if err != nil {
+		return nil, ErrInvalidMarketID
+	}
+
 	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err

@@ -345,7 +345,9 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 				logging.Error(err))
 			return nil, err
 		}
-		positions = []*types.Position{pos}
+		if pos != nil {
+			positions = []*types.Position{pos}
+		}
 	} else if party == "" {
 		// either trader or market == ""
 		pos, err := s.positions.GetPositionsByMarket(marketID)
