@@ -218,8 +218,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 		// bids
 
 		{volume: 1, price: 120, tid: "t4", side: types.Side_Buy},
-		{volume: 4, price: 240, tid: "t5", side: types.Side_Buy},
-		{volume: 7, price: 258, tid: "t6", side: types.Side_Buy},
+		{volume: 4, price: 110, tid: "t5", side: types.Side_Buy},
+		{volume: 5, price: 108, tid: "t6", side: types.Side_Buy},
 	}
 
 	marketID := "testingmarket"
@@ -270,10 +270,10 @@ func testMarginWithOrderInBook(t *testing.T) {
 	}
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
-	assert.Equal(t, int64(1132), margins.MaintenanceMargin)
-	assert.Equal(t, int64(1132*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
-	assert.Equal(t, int64(1132*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
-	assert.Equal(t, int64(1132*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
+	assert.Equal(t, int64(542), margins.MaintenanceMargin)
+	assert.Equal(t, int64(542*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, int64(542*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, int64(542*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
