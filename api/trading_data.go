@@ -353,13 +353,15 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	}
 
 	// Check here for a valid marketID so we don't fail later
-	_, err := h.MarketService.GetByID(ctx, request.MarketID)
-	if err != nil {
-		return nil, ErrInvalidMarketID
+	if request.MarketID != "" {
+		_, err := h.MarketService.GetByID(ctx, request.MarketID)
+		if err != nil {
+			return nil, ErrInvalidMarketID
+		}
 	}
 
 	// Check here for a valid partyID so we don't fail later
-	_, err = h.PartyService.GetByID(ctx, request.PartyID)
+	_, err := h.PartyService.GetByID(ctx, request.PartyID)
 	if err != nil {
 		return nil, ErrInvalidPartyID
 	}
