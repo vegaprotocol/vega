@@ -236,8 +236,9 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 		result, err := execsetup.engine.SubmitOrder(&order)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
 		}
+
 		if int64(len(result.Trades)) != i64val(row, 5) {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
 		}
