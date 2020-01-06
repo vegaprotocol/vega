@@ -61,7 +61,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-// GetCandleSubscribersCount returns the number of subscriber to the candles streeam
+// GetCandleSubscribersCount returns the number of subscriber to the candles stream
 func (s *Svc) GetCandleSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
