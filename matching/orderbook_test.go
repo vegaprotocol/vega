@@ -1477,14 +1477,14 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	}
 
 	for _, s := range scenario {
-		//fmt.Println()
-		//fmt.Println()
-		//fmt.Printf("SCENARIO %d / %d ------------------------------------------------------------------", i+1, len(scenario))
-		//fmt.Println()
-		//fmt.Println("aggressor: ", s.aggressiveOrder)
-		//fmt.Println("expectedPassiveOrdersAffected: ", s.expectedPassiveOrdersAffected)
-		//fmt.Println("expectedTrades: ", s.expectedTrades)
-		//fmt.Println()
+		fmt.Println()
+		fmt.Println()
+		fmt.Printf("SCENARIO %d / %d ------------------------------------------------------------------", i+1, len(scenario))
+		fmt.Println()
+		fmt.Println("aggressor: ", s.aggressiveOrder)
+		fmt.Println("expectedPassiveOrdersAffected: ", s.expectedPassiveOrdersAffected)
+		fmt.Println("expectedTrades: ", s.expectedTrades)
+		fmt.Println()
 
 		confirmation, err := book.SubmitOrder(s.aggressiveOrder)
 
@@ -1497,11 +1497,11 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmation.Trades))
 
-		//fmt.Println("CONFIRMATION types:")
-		//fmt.Println("-> Aggressive:", confirmation.Order)
-		//fmt.Println("-> Trades :", confirmation.Trades)
-		//fmt.Println("-> PassiveOrdersAffected:", confirmation.PassiveOrdersAffected)
-		//fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
+		fmt.Println("CONFIRMATION types:")
+		fmt.Println("-> Aggressive:", confirmation.Order)
+		fmt.Println("-> Trades :", confirmation.Trades)
+		fmt.Println("-> PassiveOrdersAffected:", confirmation.PassiveOrdersAffected)
+		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
 
 		// trades should match expected trades
 		for i, trade := range confirmation.Trades {
