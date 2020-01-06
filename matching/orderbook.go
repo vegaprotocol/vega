@@ -289,7 +289,11 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// update order statuses based on the order types if they didn't trade
 	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) && order.Remaining == order.Size {
+		// if the order was FOK/IOC and didnt trade at all we set status as Stopped
 		order.Status = types.Order_Stopped
+	} else if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
+		// if the order was IOC and partially filled we set status as Cancelled
+		order.Status = types.Order_Cancelled
 	}
 
 	for idx := range impactedOrders {
