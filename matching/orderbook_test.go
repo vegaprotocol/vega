@@ -21,6 +21,7 @@ type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
 	expectedPassiveOrdersAffected []types.Order
 	expectedTrades                []types.Trade
+	expectedAggressiveOrderStatus types.Order_Status
 }
 
 type tstOB struct {
@@ -867,6 +868,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   3,
 			},
+			expectedAggressiveOrderStatus: types.Order_Active,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1280,7 +1282,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, hits one price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "YY",
@@ -1288,7 +1290,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       103,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_IOC, // nonpersistent
+				TimeInForce: types.Order_IOC, // non-persistent
 				CreatedAt:   5,
 			},
 			expectedTrades: []types.Trade{
@@ -1332,7 +1334,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "XX",
@@ -1340,13 +1342,13 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       96,
 				Size:        2000,
 				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   5,
 			},
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
-		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "XX",
@@ -1354,13 +1356,13 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       102,
 				Size:        2000,
 				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   5,
 			},
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
-		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+		{ // aggressive non-persistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "ZZ",
@@ -1475,6 +1477,9 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 
 		//this should not return any errors
 		assert.Equal(t, nil, err)
+
+		//ensure the aggressive order has correct status (if FOK, IOC, etc it can be stopped or cancelled)
+		assert.Equal(t, s.expectedAggressiveOrderStatus, confirmationtypes.Order.Status)
 
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
