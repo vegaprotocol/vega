@@ -290,7 +290,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// What is an Immediate or Cancel Order?
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
-	if order.TimeInForce == types.Order_IOC {
+	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
 		// IOC so we set status as Cancelled.
 		order.Status = types.Order_Cancelled
 	}
