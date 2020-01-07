@@ -1299,7 +1299,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_IOC, // non-persistent
 				CreatedAt:   5,
 			},
-			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not fully filled so Cancelled  CDM TO FIX
+			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not fully filled so Cancelled
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1382,7 +1382,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_IOC, // non-persistent
 				CreatedAt:   5,
 			},
-			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC will be marked as cancelled as not fully filled  CDM TO FIX
+			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC will be marked as cancelled as not fully filled
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1473,10 +1473,25 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
+		{
+			aggressiveOrder: &types.Order{
+				MarketID:    market,
+				PartyID:     "ZU",
+				Side:        types.Side_Sell,
+				Price:       999,
+				Size:        10,
+				Remaining:   10,
+				TimeInForce: types.Order_IOC,
+				CreatedAt:   7,
+			},
+			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not filled so Cancelled
+			expectedTrades:                []types.Trade{},
+			expectedPassiveOrdersAffected: []types.Order{},
+		},
 		// expect empty book after that as remaining order GTT has to expire
 	}
 
-	for _, s := range scenario {
+	for i, s := range scenario {
 		fmt.Println()
 		fmt.Println()
 		fmt.Printf("SCENARIO %d / %d ------------------------------------------------------------------", i+1, len(scenario))
@@ -1492,7 +1507,9 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		assert.Equal(t, nil, err)
 
 		//ensure the aggressive order has correct status (if FOK, IOC, etc it can be stopped or cancelled)
-		assert.Equal(t, s.expectedAggressiveOrderStatus, confirmation.Order.Status, fmt.Sprintf("agg order = %+v", confirmation.Order)) //fmt.Sprintf("party ID = %s", confirmationtypes.Order.PartyID))
+		assert.Equal(t, s.expectedAggressiveOrderStatus,
+			confirmation.Order.Status,
+			fmt.Sprintf("aggressive-order = %+v", confirmation.Order))
 
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmation.Trades))

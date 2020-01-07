@@ -282,18 +282,26 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
-	// did we fully fill the originating order?
+	// Was the aggressive order fully filled?
 	if order.Remaining == 0 {
 		order.Status = types.Order_Filled
 	}
 
-	// update order statuses based on the order types if they didn't trade
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) && order.Remaining == order.Size {
-		// if the order was FOK/IOC and didnt trade at all we set status as Stopped
-		order.Status = types.Order_Stopped
-	} else if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
-		// if the order was IOC and partially filled we set status as Cancelled
+	// What is an Immediate or Cancel Order?
+	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
+	// or part immediately and cancels any unfilled portion of the order.
+	if order.TimeInForce == types.Order_IOC {
+		// IOC so we set status as Cancelled.
 		order.Status = types.Order_Cancelled
+	}
+
+	// What is Fill Or Kill?
+	// Fill or kill (FOK) is a type of time-in-force designation used in trading that instructs
+	// the protocol to execute an order immediately and completely or not at all.
+	// The order must be filled in its entirety or cancelled (killed).
+	if order.TimeInForce == types.Order_FOK && order.Remaining == order.Size {
+		// FOK and didnt trade at all we set status as Stopped
+		order.Status = types.Order_Stopped
 	}
 
 	for idx := range impactedOrders {
