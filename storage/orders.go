@@ -354,8 +354,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	}
 
 	// load from store
-	buy := depth.BuySide()
-	sell := depth.SellSide()
+	buy := append(make([]MarketDepthLevel, 0, len(depth.BuySide())), depth.BuySide()...)
+	sell := append(make([]MarketDepthLevel, 0, len(depth.SellSide())), depth.SellSide()...)
 
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
