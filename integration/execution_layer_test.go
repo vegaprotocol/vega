@@ -236,8 +236,9 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 		result, err := execsetup.engine.SubmitOrder(&order)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
 		}
+
 		if int64(len(result.Trades)) != i64val(row, 5) {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
 		}
@@ -396,16 +397,16 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 		}
 
 		if ml.MaintenanceMargin != i64val(row, 2) {
-			return fmt.Errorf("invalid maintenance margin, expected %v but got %v", i64val(row, 2), ml.MaintenanceMargin)
+			return fmt.Errorf("invalid maintenance margin, expected %v but got %v (trader=%v)", i64val(row, 2), ml.MaintenanceMargin, val(row, 0))
 		}
 		if ml.SearchLevel != i64val(row, 3) {
-			return fmt.Errorf("invalid search margin, expected %v but got %v", i64val(row, 3), ml.SearchLevel)
+			return fmt.Errorf("invalid search margin, expected %v but got %v (trader=%v)", i64val(row, 3), ml.SearchLevel, val(row, 0))
 		}
 		if ml.InitialMargin != i64val(row, 4) {
-			return fmt.Errorf("invalid initial margin, expected %v but got %v", i64val(row, 4), ml.InitialMargin)
+			return fmt.Errorf("invalid initial margin, expected %v but got %v (trader=%v)", i64val(row, 4), ml.InitialMargin, val(row, 0))
 		}
 		if ml.CollateralReleaseLevel != i64val(row, 5) {
-			return fmt.Errorf("invalid collateral release margin, expected %v but got %v", i64val(row, 5), ml.CollateralReleaseLevel)
+			return fmt.Errorf("invalid collateral release margin, expected %v but got %v (trader=%v)", i64val(row, 5), ml.CollateralReleaseLevel, val(row, 0))
 		}
 
 	}
