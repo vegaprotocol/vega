@@ -375,7 +375,7 @@ func (b *OrderBook) RemoveDistressedOrders(
 		if total == 0 {
 			continue
 		}
-		orders := make([]*types.Order, 0, int(total))
+		orders := []*types.Order{}
 		if party.Buy() > 0 {
 			i := party.Buy()
 			for _, l := range b.buy.levels {
