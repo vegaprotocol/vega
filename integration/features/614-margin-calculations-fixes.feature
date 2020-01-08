@@ -29,7 +29,7 @@ Feature: test bugfix 614 for margin calculations
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
       | chris   | ETH/DEC19 | sell |    100 |   250 |                0 | LIMIT | GTC |
-      | edd     | ETH/DEC19 | sell |     12 |   140 |                0 | LIMIT | GTC |
+      | edd     | ETH/DEC19 | sell |     11 |   140 |                0 | LIMIT | GTC |
       | barney  | ETH/DEC19 | sell |      2 |   112 |                0 | LIMIT | GTC |
       | barney  | ETH/DEC19 | buy  |      1 |   100 |                0 | LIMIT | GTC |
       | edd     | ETH/DEC19 | buy  |      3 |    96 |                0 | LIMIT | GTC |
@@ -38,7 +38,7 @@ Feature: test bugfix 614 for margin calculations
       # this is now the actual trader that we are testing
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | tamlyn | ETH/DEC19 | buy  |    13 |   150 |                2 | LIMIT | GTC |
+      | tamlyn | ETH/DEC19 | buy  |     13 |   150 |                2 | LIMIT | GTC |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 |        1053 |   3369 |    4212 |    5265 |
@@ -46,7 +46,7 @@ Feature: test bugfix 614 for margin calculations
       | trader  | asset | id        | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 |   4212 |    5844 |
       | chris   | ETH   | ETH/DEC19 |   3760 |    6240 |
-      | edd     | ETH   | ETH/DEC19 |    452 |     548 |
-      | barney  | ETH   | ETH/DEC19 |    552 |     392 |
+      | edd     | ETH   | ETH/DEC19 |    416 |     584 |
+      | barney  | ETH   | ETH/DEC19 |    944 |       0 |
       | rebecca | ETH   | ETH/DEC19 |   3760 |    6240 |
     And All balances cumulated are worth "32000"
