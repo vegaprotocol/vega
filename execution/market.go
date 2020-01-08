@@ -971,6 +971,13 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 		return nil, types.ErrInvalidMarketID
 	}
 
+	// Locate order by Id in case of partial definition
+	if order.Price == 0 || order.CreatedAt == 0 {
+		if existingOrder, err := m.matching.GetOrderByID(order.Id); err == nil {
+			order = existingOrder
+		}
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		m.log.Error("Failure after cancel order from matching engine",
@@ -1021,8 +1028,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// Try and locate the existing order specified on the
 	// order book in the matching engine for this market
-	existingOrder, err := m.matching.GetOrderByPartyAndID(
-		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
+	existingOrder, err := m.matching.GetOrderByID(orderAmendment.OrderID)
 	if err != nil {
 		m.log.Error("Invalid order reference",
 			logging.String("id", orderAmendment.GetOrderID()),
