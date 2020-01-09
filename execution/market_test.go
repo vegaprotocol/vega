@@ -590,11 +590,11 @@ func TestMarketCancelOrder(t *testing.T) {
 	}
 	confirmation, err := tm.market.SubmitOrder(orderBuy)
 	assert.NotNil(t, confirmation)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	cancelled, err := tm.market.CancelOrderByID(confirmation.Order.Id)
 	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
 
 	cancelled, err = tm.market.CancelOrderByID(confirmation.Order.Id)
