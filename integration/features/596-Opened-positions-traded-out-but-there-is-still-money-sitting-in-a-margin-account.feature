@@ -42,7 +42,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    933 |    9007 |
-      | chris  | BTC   | ETH/DEC19 |     12 |   10048 |
+      | chris  | BTC   | ETH/DEC19 |    850 |    9210 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "30000"
 # then chris is trading out
@@ -53,7 +53,7 @@ Feature: Regression test for issue 596
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |   1283 |    9007 |
       | chris  | BTC   | ETH/DEC19 |      0 |    9808 |
-      | barney | BTC   | ETH/DEC19 |    496 |    9406 |
+      | barney | BTC   | ETH/DEC19 |    630 |    9272 |
     And All balances cumulated are worth "30000"
 
 
@@ -94,7 +94,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    961 |    9019 |
-      | chris  | BTC   | ETH/DEC19 |    260 |    9760 |
+      | chris  | BTC   | ETH/DEC19 |    799 |    9221 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "30000"
     Then traders cancels the following orders reference:
@@ -108,7 +108,7 @@ Feature: Regression test for issue 596
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |   1161 |    9019 |
       | chris  | BTC   | ETH/DEC19 |      0 |    9872 |
-      | barney | BTC   | ETH/DEC19 |    542 |    9406 |
+      | barney | BTC   | ETH/DEC19 |    624 |    9324 |
     And All balances cumulated are worth "30000"
    Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
@@ -117,5 +117,5 @@ Feature: Regression test for issue 596
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    921 |    9019 |
       | chris  | BTC   | ETH/DEC19 |      0 |    9872 |
-      | barney | BTC   | ETH/DEC19 |    322 |    9866 |
+      | barney | BTC   | ETH/DEC19 |    964 |    9224 |
     And All balances cumulated are worth "30000"
