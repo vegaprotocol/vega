@@ -354,8 +354,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	}
 
 	// load from store
-	buy := append(make([]MarketDepthLevel, 0, len(depth.BuySide())), depth.BuySide()...)
-	sell := append(make([]MarketDepthLevel, 0, len(depth.SellSide())), depth.SellSide()...)
+	buy := depth.BuySide()
+	sell := depth.SellSide()
 
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
@@ -385,7 +385,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 				// keep running total
 				cumulativeVolume += b.Volume
 				buy[i].CumulativeVolume = cumulativeVolume
-				buyPtr = append(buyPtr, &buy[i].PriceLevel)
+				aCopy := buy[i].PriceLevel
+				buyPtr = append(buyPtr, &aCopy)
 			}
 		}
 	}()
@@ -404,7 +405,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 				// keep running total
 				cumulativeVolume += s.Volume
 				sell[i].CumulativeVolume = cumulativeVolume
-				sellPtr = append(sellPtr, &sell[i].PriceLevel)
+				aCopy := sell[i].PriceLevel
+				sellPtr = append(sellPtr, &aCopy)
 			}
 		}
 	}()
