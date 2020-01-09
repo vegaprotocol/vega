@@ -303,7 +303,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
-	b.ordersByID[order.Id] = order
+	if order.Status == types.Order_Active {
+		b.ordersByID[order.Id] = order
+	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
 	timer.EngineTimeCounterAdd()
