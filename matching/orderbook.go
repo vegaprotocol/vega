@@ -373,7 +373,7 @@ func (b *OrderBook) GetOrderByPartyAndID(
 
 	if side == types.Side_Buy {
 		for _, l := range b.buy.levels {
-			orders := l.getOrdersByTrader(partyID)
+			orders := l.getOrdersByParty(partyID)
 			for _, v := range orders {
 				if v.Id == orderID {
 					order = v
@@ -388,7 +388,7 @@ func (b *OrderBook) GetOrderByPartyAndID(
 
 	if side == types.Side_Sell {
 		for _, l := range b.sell.levels {
-			orders := l.getOrdersByTrader(partyID)
+			orders := l.getOrdersByParty(partyID)
 			for _, v := range orders {
 				if v.Id == orderID {
 					order = v
@@ -410,19 +410,19 @@ func (b *OrderBook) GetOrderByPartyAndID(
 
 // RemoveDistressedOrders remove from the book all order holding distressed positions
 func (b *OrderBook) RemoveDistressedOrders(
-	traders []events.MarketPosition) ([]*types.Order, error) {
+	parties []events.MarketPosition) ([]*types.Order, error) {
 	rmorders := []*types.Order{}
 
-	for _, trader := range traders {
-		total := trader.Buy() + trader.Sell()
+	for _, party := range parties {
+		total := party.Buy() + party.Sell()
 		if total == 0 {
 			continue
 		}
 		orders := make([]*types.Order, 0, int(total))
-		if trader.Buy() > 0 {
-			i := trader.Buy()
+		if party.Buy() > 0 {
+			i := party.Buy()
 			for _, l := range b.buy.levels {
-				rm := l.getOrdersByTrader(trader.Party())
+				rm := l.getOrdersByParty(party.Party())
 				i -= int64(len(rm))
 				orders = append(orders, rm...)
 				if i == 0 {
@@ -430,10 +430,10 @@ func (b *OrderBook) RemoveDistressedOrders(
 				}
 			}
 		}
-		if trader.Sell() > 0 {
-			i := trader.Sell()
+		if party.Sell() > 0 {
+			i := party.Sell()
 			for _, l := range b.sell.levels {
-				rm := l.getOrdersByTrader(trader.Party())
+				rm := l.getOrdersByParty(party.Party())
 				i -= int64(len(rm))
 				orders = append(orders, rm...)
 				if i == 0 {
@@ -447,7 +447,7 @@ func (b *OrderBook) RemoveDistressedOrders(
 				b.log.Error(
 					"Failed to cancel a given order for trader",
 					logging.Order(*o),
-					logging.String("trader", trader.Party()),
+					logging.String("trader", party.Party()),
 					logging.Error(err),
 				)
 				// let's see whether we need to handle this further down
