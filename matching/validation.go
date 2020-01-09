@@ -31,7 +31,7 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 
 func validateOrderID(orderID string) error {
 	idLen := len(orderID)
-	if idLen < minOrderIDLen && idLen > maxOrderIDLen {
+	if idLen < minOrderIDLen || idLen > maxOrderIDLen {
 		return types.ErrInvalidOrderID
 	}
 	return nil
