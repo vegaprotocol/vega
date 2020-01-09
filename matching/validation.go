@@ -6,6 +6,9 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+const minOrderIDLen = 22
+const maxOrderIDLen = 22
+
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "validateOrder")
 	if orderMessage.MarketID != b.marketID {
@@ -24,4 +27,12 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	}
 	timer.EngineTimeCounterAdd()
 	return
+}
+
+func validateOrderID(orderID string) error {
+	idLen := len(orderID)
+	if idLen < minOrderIDLen && idLen > maxOrderIDLen {
+		return types.ErrInvalidOrderID
+	}
+	return nil
 }
