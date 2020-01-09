@@ -33,10 +33,10 @@ func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	}
 }
 
-func (l *PriceLevel) getOrdersByTrader(trader string) []*types.Order {
+func (l *PriceLevel) getOrdersByParty(partyID string) []*types.Order {
 	ret := []*types.Order{}
 	for _, o := range l.orders {
-		if o.PartyID == trader {
+		if o.PartyID == partyID {
 			ret = append(ret, o)
 		}
 	}
