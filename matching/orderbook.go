@@ -14,7 +14,8 @@ import (
 var (
 	// ErrNotEnoughOrders signals that not enough orders were
 	// in the book to achieve a given operation
-	ErrNotEnoughOrders = errors.New("insufficient orders")
+	ErrNotEnoughOrders   = errors.New("insufficient orders")
+	ErrOrderDoesNotExist = errors.New("order does not exist")
 )
 
 // OrderBook represents the book holding all orders in the system.
@@ -370,7 +371,7 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 
 	order, exists := b.ordersByID[orderID]
 	if !exists {
-		return nil, errors.New("order does not exist")
+		return nil, ErrOrderDoesNotExist
 	}
 	return order, nil
 }
