@@ -107,7 +107,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |   1161 |    9019 |
-      | chris  | BTC   | ETH/DEC19 |    112 |    9760 |
+      | chris  | BTC   | ETH/DEC19 |      0 |    9872 |
       | barney | BTC   | ETH/DEC19 |    542 |    9406 |
     And All balances cumulated are worth "30000"
    Then traders place following orders:
@@ -116,6 +116,6 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    921 |    9019 |
-      | chris  | BTC   | ETH/DEC19 |    112 |    9760 |
+      | chris  | BTC   | ETH/DEC19 |      0 |    9872 |
       | barney | BTC   | ETH/DEC19 |    322 |    9866 |
     And All balances cumulated are worth "30000"
