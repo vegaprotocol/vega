@@ -360,12 +360,6 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 		}
 	}
 
-	// Check here for a valid partyID so we don't fail later
-	_, err := h.PartyService.GetByID(ctx, request.PartyID)
-	if err != nil {
-		return nil, ErrInvalidPartyID
-	}
-
 	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err
