@@ -991,6 +991,15 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	return cancellation, nil
 }
 
+// CancelOrderByID locates order by its Id and cancels it
+func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
+	order, err := m.matching.GetOrderByID(orderID)
+	if err != nil {
+		return nil, err
+	}
+	return m.CancelOrder(order)
+}
+
 // DeleteOrder delete the given order from the order book
 func (m *Market) DeleteOrder(order *types.Order) (err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "DeleteOrder")
@@ -1021,8 +1030,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// Try and locate the existing order specified on the
 	// order book in the matching engine for this market
-	existingOrder, err := m.matching.GetOrderByPartyAndID(
-		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
+	existingOrder, err := m.matching.GetOrderByID(orderAmendment.OrderID)
 	if err != nil {
 		m.log.Error("Invalid order reference",
 			logging.String("id", orderAmendment.GetOrderID()),
