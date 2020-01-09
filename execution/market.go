@@ -971,13 +971,6 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 		return nil, types.ErrInvalidMarketID
 	}
 
-	// Locate order by Id in case of partial definition
-	if order.Price == 0 || order.CreatedAt == 0 {
-		if existingOrder, err := m.matching.GetOrderByID(order.Id); err == nil {
-			order = existingOrder
-		}
-	}
-
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		m.log.Error("Failure after cancel order from matching engine",
@@ -996,6 +989,15 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	return cancellation, nil
+}
+
+// CancelOrderByID locates order by its Id and cancels it
+func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
+	order, err := m.matching.GetOrderByID(orderID)
+	if err != nil {
+		return nil, err
+	}
+	return m.CancelOrder(order)
 }
 
 // DeleteOrder delete the given order from the order book
