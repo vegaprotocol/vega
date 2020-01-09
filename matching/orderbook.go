@@ -171,12 +171,12 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Validate Order ID must be present
-	if order.Id == "" || len(order.Id) < 4 {
+	if err := validateOrderID(order.Id); err != nil {
 		b.log.Error("Order ID missing or invalid",
 			logging.Order(*order),
 			logging.String("order-book", b.marketID))
 
-		return nil, types.ErrInvalidOrderID
+		return nil, err
 	}
 
 	if err := b.DeleteOrder(order); err != nil {
@@ -351,13 +351,11 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
 func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
-	if orderID == "" || len(orderID) < 4 {
+	if err := validateOrderID(orderID); err != nil {
 		b.log.Error("Order ID missing or invalid",
 			logging.String("order-id", orderID))
-
-		return nil, types.ErrInvalidOrderID
+		return nil, err
 	}
-
 	order, exists := b.ordersByID[orderID]
 	if !exists {
 		return nil, ErrOrderDoesNotExist
