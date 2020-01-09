@@ -3,7 +3,6 @@ package risk
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -172,7 +171,6 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 // now only in later when we try to move monies from the general account.
 func (e *Engine) UpdateMarginsOnSettlement(
 	ctx context.Context, evts []events.Margin, markPrice uint64) []events.Risk {
-	fmt.Printf("SETTLE: %v\n", len(evts))
 	ret := make([]events.Risk, 0, len(evts))
 	// var err error
 	// this will keep going until we've closed this channel
@@ -182,7 +180,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 		// no margins updates, nothing to do then
 		if margins == nil {
-			fmt.Printf("MARGIN NIL EVT: %v, %v, %v, %v, %v\n", evt.Party(), evt.Size(), evt.Buy(), evt.Sell(), evt.Price())
 			continue
 		}
 
