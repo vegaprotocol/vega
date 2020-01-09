@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrNoMarginLevelsForParty  = errors.New("no margin levels for party")
-	ErrNoMarginLevelsForMarket = errors.New("party have no margine levels for the market")
+	ErrNoMarginLevelsForMarket = errors.New("party have no margin levels for the market")
 )
 
 // Risk is used for memory/RAM based risk storage.

@@ -248,14 +248,9 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*Party, 
 }
 
 func (r *myQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
-	req := protoapi.PartyByIDRequest{PartyID: name}
-	res, err := r.tradingDataClient.PartyByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
-	}
-
-	return &Party{ID: res.Party.Id}, nil
+	// GraphQL party/parties call always returns a simple party object by design (even if not in vega store yet)
+	// Future: Party logic will be improved when we add auth/signing of txn
+	return &Party{ID: name}, nil
 }
 
 func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
@@ -501,12 +496,12 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
 		return nil, err
 	}
 
-	outorders := make([]*types.Order, 0, len(res.Orders))
-	for _, v := range res.Orders {
-		v := v
-		outorders = append(outorders, v)
+	if len(res.Orders) > 0 {
+		return res.Orders, nil
+	} else {
+		// mandatory return field in schema
+		return []*types.Order{}, nil
 	}
-	return outorders, nil
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
@@ -529,7 +524,13 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	return res.Trades, nil
+
+	if len(res.Trades) > 0 {
+		return res.Trades, nil
+	} else {
+		// mandatory return field in schema
+		return []*types.Trade{}, nil
+	}
 }
 
 func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.MarketPosition, error) {
@@ -542,7 +543,12 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.M
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	return res.Positions, nil
+	if len(res.Positions) > 0 {
+		return res.Positions, nil
+	} else {
+		// mandatory return field in schema
+		return []*types.MarketPosition{}, nil
+	}
 }
 
 func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
@@ -599,7 +605,13 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 			logging.String("type", accTy.String()))
 		return nil, err
 	}
-	return res.Accounts, nil
+
+	if len(res.Accounts) > 0 {
+		return res.Accounts, nil
+	} else {
+		// mandatory return field in schema
+		return []*types.Account{}, nil
+	}
 }
 
 // END: Party Resolver
