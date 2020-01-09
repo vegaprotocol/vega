@@ -312,24 +312,13 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 // DeleteOrder remove a given order on a given side from the book
 func (b *OrderBook) DeleteOrder(order *types.Order) error {
-	if order.Side == types.Side_Buy {
-		if err := b.buy.RemoveOrder(order); err != nil {
-			b.log.Error("Failed to remove order (buy side)",
-				logging.Order(*order),
-				logging.Error(err),
-				logging.String("order-book", b.marketID))
+	if err := b.buy.RemoveOrder(order); err != nil {
+		b.log.Error("Failed to remove order",
+			logging.Order(*order),
+			logging.Error(err),
+			logging.String("order-book", b.marketID))
 
-			return types.ErrOrderRemovalFailure
-		}
-	} else {
-		if err := b.sell.RemoveOrder(order); err != nil {
-			b.log.Error("Failed to remove order (sell side)",
-				logging.Order(*order),
-				logging.Error(err),
-				logging.String("order-book", b.marketID))
-
-			return types.ErrOrderRemovalFailure
-		}
+		return types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
 	return nil
