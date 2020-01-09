@@ -445,9 +445,9 @@ func (b *OrderBook) RemoveDistressedOrders(
 			confirm, err := b.CancelOrder(o)
 			if err != nil {
 				b.log.Error(
-					"Failed to cancel a given order for trader",
+					"Failed to cancel a given order for party",
 					logging.Order(*o),
-					logging.String("trader", party.Party()),
+					logging.String("party", party.Party()),
 					logging.Error(err),
 				)
 				// let's see whether we need to handle this further down
