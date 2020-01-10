@@ -17,8 +17,10 @@ import (
 var (
 	ErrMarketNotFound = errors.New("could not find market")
 	ErrPartyNotFound  = errors.New("party not found")
+)
 
-	pluginName = "positions-api"
+const (
+	PluginName = "positions-api"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_subscriber_mock.go -package mocks code.vegaprotocol.io/vega/plugins/positions Subscriber
@@ -27,43 +29,52 @@ type Subscriber interface {
 	Done() <-chan struct{}
 }
 
+// PlugBuffer - just a local redefinition of the plugins.Buffer interface used for testing
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_plugins_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins/positions PlugBuffer
+type PlugBuffer plugins.Buffers
+
 type Pos struct {
-	ctx  context.Context
-	mu   sync.RWMutex // sadly, we still need this because we'll be updating this map and reading from it
-	sub  Subscriber
-	data map[string]map[string]types.Position
-	log  *logging.Logger
-	srv  *grpc.Server
+	ctx   context.Context
+	mu    sync.RWMutex // sadly, we still need this because we'll be updating this map and reading from it
+	sub   Subscriber
+	data  map[string]map[string]types.Position
+	log   *logging.Logger
+	srv   *grpc.Server
+	store *Store
 }
 
 // New - keep this one here, mainly for testing
-func New(ctx context.Context, sub Subscriber) *Pos {
+func New(ctx context.Context, sub Subscriber, store *Store) *Pos {
 	return &Pos{
-		ctx:  ctx,
-		sub:  sub,
-		data: map[string]map[string]types.Position{},
+		ctx:   ctx,
+		sub:   sub,
+		data:  map[string]map[string]types.Position{},
+		store: store,
 	}
 }
 
 // New - part of the plugin interface, need thit to make it work
 func (p *Pos) New(log *logging.Logger, ctx context.Context, buf plugins.Buffers, srv *grpc.Server, rawCfg interface{}) (plugins.Plugin, error) {
-	log = log.Named(pluginName)
+	log = log.Named(PluginName)
 	log.Info(
 		"initializing new plugin",
-		logging.String("plugin-name", pluginName),
+		logging.String("plugin-name", PluginName),
 	)
 
 	cfg := DefaultConfig()
-	if err := config.LoadPluginConfig(rawCfg, pluginName, &cfg); err != nil {
+	if err := config.LoadPluginConfig(rawCfg, PluginName, &cfg); err != nil {
 		return nil, err
 	}
 	log.SetLevel(cfg.Level.Get())
+	// create store for empty positions
+	store := NewPositionsStore(ctx)
 	return &Pos{
-		ctx:  ctx,
-		sub:  buf.PositionsSub(cfg.SubscriptionBuffer),
-		data: map[string]map[string]types.Position{},
-		log:  log,
-		srv:  srv,
+		ctx:   ctx,
+		sub:   buf.PositionsSub(cfg.SubscriptionBuffer),
+		data:  map[string]map[string]types.Position{},
+		log:   log,
+		srv:   srv,
+		store: store,
 	}, nil
 }
 
@@ -149,6 +160,9 @@ func (p *Pos) consume(ctx context.Context) {
 			// get a copy, we only need a read lock here
 			cpy := p.data
 			p.mu.RUnlock()
+			// the overwrite is done inside the updateData call, with a full lock
+			// the reasoning being that this keeps the map accessible for API calls while
+			// we're updating positions
 			p.updateData(cpy, data)
 		}
 	}
@@ -160,14 +174,28 @@ func (p *Pos) updateData(data map[string]map[string]types.Position, raw []events
 		if _, ok := data[mID]; !ok {
 			data[mID] = map[string]types.Position{}
 		}
-		calc, ok := data[mID][tID]
-		if !ok {
-			calc = evtToProto(sp)
+		var (
+			calc types.Position
+			ok   bool
+		)
+		// check if we can get calc pos from data map
+		if calc, ok = data[mID][tID]; !ok {
+			// if not, fall back to previously closed out positions
+			// use Pop, gets position and removes it if found
+			if pos, err := p.store.Pop(mID, tID); err != nil {
+				// if we couldn't find a closed position, create the new one from the event
+				calc = evtToProto(sp)
+			} else {
+				// else, re-open the closed position
+				calc = *pos
+			}
 		}
 		updatePosition(&calc, sp)
-		data[mID][tID] = calc
 		if calc.OpenVolume == 0 {
 			delete(data[mID], tID)
+			p.store.Add(calc)
+		} else {
+			data[mID][tID] = calc
 		}
 	}
 	// keep lock time to a minimum, we're working on a copy here, and reassign the data field

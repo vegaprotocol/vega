@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins/positions"
@@ -19,6 +20,7 @@ type tstPos struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 	sub   *mocks.MockSubscriber
+	buf   *mocks.MockPlugBuffer
 	ch    chan []events.SettlePosition
 }
 
@@ -31,7 +33,7 @@ type testData struct {
 
 var (
 	rawCfg = map[string]interface{}{
-		"positions-api": positions.DefaultConfig(),
+		positions.PluginName: positions.DefaultConfig(),
 	}
 )
 
@@ -43,10 +45,14 @@ func TestSetup(t *testing.T) {
 }
 
 // this test needs to get the buffer mocked passed in, still
+// @TODO work out what to do with the config here
 func testNew(t *testing.T) {
 	pos := getTestPos(t)
 	defer pos.Finish()
-	p2, err := pos.New(logging.NewTestLogger(), pos.ctx, nil, nil, rawCfg)
+	pos.buf.EXPECT().PositionsSub(gomock.Any()).AnyTimes().Return(&buffer.SettleSub{})
+	//@TODO this rawCfg is wrong, aparently it's a map[string]map[string]interface{}
+	// not a map[string]interface{} where the interface{} values are config objects?
+	p2, err := pos.New(logging.NewTestLogger(), pos.ctx, pos.buf, nil, rawCfg[positions.PluginName])
 	assert.NoError(t, err)
 	// ensure we get the same type back
 	assert.IsType(t, pos, p2)
@@ -523,17 +529,19 @@ func getTestPos(t *testing.T) *tstPos {
 	ctrl := gomock.NewController(t)
 	sub := mocks.NewMockSubscriber(ctrl)
 	ch := make(chan []events.SettlePosition) // do not buffer channel, ensuring the test values have been read
+	buf := mocks.NewMockPlugBuffer(ctrl)
 	ctx, cfunc := context.WithCancel(context.Background())
 	sub.EXPECT().Recv().AnyTimes().Return(ch)
 	sub.EXPECT().Done().AnyTimes().DoAndReturn(func() <-chan struct{} {
 		return ctx.Done()
 	})
 	return &tstPos{
-		Pos:   positions.New(ctx, sub),
+		Pos:   positions.New(ctx, sub, positions.NewPositionsStore(ctx)),
 		ctrl:  ctrl,
 		ctx:   ctx,
 		cfunc: cfunc,
 		sub:   sub,
+		buf:   buf,
 		ch:    ch,
 	}
 }
