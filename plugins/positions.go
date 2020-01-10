@@ -101,9 +101,6 @@ func (p *Positions) updateData(raw []events.SettlePosition) {
 		}
 		updatePosition(&calc, sp)
 		p.data[mID][tID] = calc
-		if calc.OpenVolume == 0 {
-			delete(p.data[mID], tID)
-		}
 	}
 }
 
@@ -202,6 +199,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			}
 		}
 		p.OpenVolume += size
+		current += size
 	}
 	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
