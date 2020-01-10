@@ -68,7 +68,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Markets:               DefaultMarketStoreOptions(),
 		Orders:                DefaultStoreOptions(),
 		Trades:                DefaultStoreOptions(),
-		Level:                 encoding.LogLevel{Level: logging.InfoLevel},
+		Level:                 encoding.LogLevel{Level: logging.WarnLevel},
 		AccountsDirPath:       filepath.Join(defaultStoreDirPath, AccountsDataPath),
 		OrdersDirPath:         filepath.Join(defaultStoreDirPath, OrdersDataPath),
 		TradesDirPath:         filepath.Join(defaultStoreDirPath, TradesDataPath),
