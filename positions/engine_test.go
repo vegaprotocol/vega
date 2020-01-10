@@ -125,9 +125,10 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	)
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
-		PartyID: "test_trader",
-		Side:    proto.Side_Buy,
-		Size:    uint64(buysize),
+		PartyID:   "test_trader",
+		Side:      proto.Side_Buy,
+		Size:      uint64(buysize),
+		Remaining: uint64(buysize),
 	}
 	pos, err := e.RegisterOrder(&orderBuy)
 	assert.NoError(t, err)
@@ -140,9 +141,10 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	assert.Equal(t, pos.Buy(), positions[0].Buy())
 
 	orderSell := proto.Order{
-		PartyID: "test_trader",
-		Side:    proto.Side_Sell,
-		Size:    uint64(sellsize),
+		PartyID:   "test_trader",
+		Side:      proto.Side_Sell,
+		Size:      uint64(sellsize),
+		Remaining: uint64(sellsize),
 	}
 	pos, err = e.RegisterOrder(&orderSell)
 	assert.NoError(t, err)
@@ -163,9 +165,10 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	)
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
-		PartyID: "test_trader",
-		Side:    proto.Side_Buy,
-		Size:    uint64(buysize),
+		PartyID:   "test_trader",
+		Side:      proto.Side_Buy,
+		Size:      uint64(buysize),
+		Remaining: uint64(buysize),
 	}
 	pos, err := e.RegisterOrder(&orderBuy)
 	assert.NoError(t, err)
@@ -176,9 +179,10 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	assert.Zero(t, pos.Buy())
 
 	orderSell := proto.Order{
-		PartyID: "test_trader",
-		Side:    proto.Side_Sell,
-		Size:    uint64(sellsize),
+		PartyID:   "test_trader",
+		Side:      proto.Side_Sell,
+		Size:      uint64(sellsize),
+		Remaining: uint64(sellsize),
 	}
 	pos, err = e.RegisterOrder(&orderSell)
 	assert.NoError(t, err)
@@ -194,9 +198,10 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 func testUnregisterOrderUnsuccessful(t *testing.T) {
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
-		PartyID: "test_trader",
-		Side:    proto.Side_Buy,
-		Size:    uint64(999),
+		PartyID:   "test_trader",
+		Side:      proto.Side_Buy,
+		Size:      uint64(999),
+		Remaining: uint64(999),
 	}
 	pos, err := e.UnregisterOrder(&orderBuy)
 	assert.Equal(t, err, positions.ErrPositionNotFound)

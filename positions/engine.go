@@ -121,9 +121,9 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_Buy {
-		pos.buy += int64(order.Size)
+		pos.buy += int64(order.Remaining)
 	} else {
-		pos.sell += int64(order.Size)
+		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
 	return pos, nil
@@ -138,9 +138,9 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 		err = ErrPositionNotFound
 	} else {
 		if order.Side == types.Side_Buy {
-			pos.buy -= int64(order.Size)
+			pos.buy -= int64(order.Remaining)
 		} else {
-			pos.sell -= int64(order.Size)
+			pos.sell -= int64(order.Remaining)
 		}
 	}
 	timer.EngineTimeCounterAdd()

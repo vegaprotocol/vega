@@ -52,11 +52,11 @@ Feature: Regression test for issue 598
       | chris  | ETH/DEC19 | sell |      10 |     0 |                1 | MARKET | IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | chris  | BTC   | ETH/DEC19 |    137 |     843 |
+      | chris  | BTC   | ETH/DEC19 |     0  |     980 |
       | barney | BTC   | ETH/DEC19 |    535 |     465 |
       | edd    | BTC   | ETH/DEC19 |    591 |     429 |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
       | edd    | ETH/DEC19 |         476 |    523 |     571 |     666 |
       | barney | ETH/DEC19 |         446 |    490 |     535 |     624 |
-      | chris  | ETH/DEC19 |         131 |    144 |     157 |     183 |
+      | chris  | ETH/DEC19 |           0 |      0 |       0 |       0 |
