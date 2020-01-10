@@ -44,7 +44,7 @@ Feature: Test mark to market settlement
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    480 |    8520 |
-      | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
+      | trader3 | ETH   | ETH/DEC19 |    264 |    9736 |
       | trader2 | ETH   | ETH/DEC19 |    308 |   10692 |
     Then the following transfers happened:
       | from    | to     | fromType | toType     | id        | amount | asset |
@@ -90,7 +90,7 @@ Feature: Test mark to market settlement
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   1200 |    4800 |
-      | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
+      | trader3 | ETH   | ETH/DEC19 |    660 |    9340 |
       | trader2 | ETH   | ETH/DEC19 |    770 |   13230 |
     Then the following transfers happened:
       | from    | to     | fromType | toType     | id        | amount | asset |
@@ -111,7 +111,7 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 |      7 |    9043 |
     Then the following transfers happened:
       | from    | to      | fromType | toType     | id        | amount | asset |
-      | trader3 | trader3 | GENERAL  | MARGIN     | ETH/DEC19 |   1188 | ETH   |
+      | trader3 | trader3 | GENERAL  | MARGIN     | ETH/DEC19 |    660 | ETH   |
       | trader3 | market  | MARGIN   | SETTLEMENT | ETH/DEC19 |   1320 | ETH   |
     And All balances cumulated are worth "30000"
 

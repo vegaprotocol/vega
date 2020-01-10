@@ -540,7 +540,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	eng.buf.EXPECT().Add(gomock.Any()).Times(8)
 	// quickly get the interface mocked for this test
 	transfers := getMTMTransfer(pos)
-	responses, raw, err := eng.MarkToMarket(testMarketID, transfers)
+	responses, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err, "was error")
 	assert.NotEmpty(t, raw)
@@ -706,7 +706,7 @@ func testMTMSuccess(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(testMarketID, transfers)
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
