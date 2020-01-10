@@ -10,8 +10,8 @@ Feature: test bugfix 614 for margin calculations
     Given the following traders:
       | name    | amount |
       | chris   |  10000 |
-      | edd     |   1000 |
-      | barney  |   1000 |
+      | edd     |  10000 |
+      | barney  |  10000 |
       | rebecca |  10000 |
       | tamlyn  |  10000 |
     Then I Expect the traders to have new general account:
@@ -22,8 +22,8 @@ Feature: test bugfix 614 for margin calculations
       | rebecca |   ETH |
       | tamlyn  |   ETH |
     And "chris" general accounts balance is "10000"
-    And "edd" general accounts balance is "1000"
-    And "barney" general accounts balance is "1000"
+    And "edd" general accounts balance is "10000"
+    And "barney" general accounts balance is "10000"
     And "rebecca" general accounts balance is "10000"
     And "tamlyn" general accounts balance is "10000"
     Then traders place following orders:
@@ -46,7 +46,7 @@ Feature: test bugfix 614 for margin calculations
       | trader  | asset | id        | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 |   4212 |    5844 |
       | chris   | ETH   | ETH/DEC19 |   3760 |    6240 |
-      | edd     | ETH   | ETH/DEC19 |    416 |     584 |
-      | barney  | ETH   | ETH/DEC19 |    944 |       0 |
+      | edd     | ETH   | ETH/DEC19 |   5456 |    4544 |
+      | barney  | ETH   | ETH/DEC19 |    992 |    8952 |
       | rebecca | ETH   | ETH/DEC19 |   3760 |    6240 |
-    And All balances cumulated are worth "32000"
+    And All balances cumulated are worth "50000"

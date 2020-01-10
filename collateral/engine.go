@@ -180,14 +180,14 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
 // return ledger move stuff here, too (separate return value, because we need to stream those)
-func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]events.Margin, []*types.TransferResponse, error) {
+func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil, nil
 	}
 	marginEvts := make([]events.Margin, 0, len(transfers))
 	responses := make([]*types.TransferResponse, 0, len(transfers))
-	asset := transfers[0].Transfer().Amount.Asset
+
 	// This is where we'll implement everything
 	settle, insurance, err := e.getSystemAccounts(marketID, asset)
 	if err != nil {
@@ -201,12 +201,22 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]e
 	distr := &distributor{}
 	for _, evt := range transfers {
 		transfer := evt.Transfer()
-		loss := isLoss(transfer)
+
 		marginEvt := &marginUpdate{
 			MarketPosition: evt,
-			asset:          transfer.Amount.Asset,
+			asset:          asset,
 			marketID:       settle.MarketID,
 		}
+		// no transfer needed if transfer is nil, just build the marginUpdate
+		if transfer == nil {
+			marginEvt.general, _ = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+			marginEvt.margin, _ = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+			marginEvts = append(marginEvts, marginEvt)
+			continue
+		}
+
+		loss := isLoss(transfer)
+
 		req, err := e.getTransferRequest(transfer, settle, insurance, marginEvt)
 		if err != nil {
 			e.log.Error(
