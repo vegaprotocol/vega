@@ -155,5 +155,5 @@ Feature: Regression test for issue 596
       | chris  | ETH/DEC19 | sell |     5  |     0 |                1 | MARKET | IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
-      | chris  | BTC   | ETH/DEC19 |   1092 |    8676 |
+      | chris  | BTC   | ETH/DEC19 |   0    |    9768 |
     And All balances cumulated are worth "40000"

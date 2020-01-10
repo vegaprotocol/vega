@@ -200,6 +200,11 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		}
 		// we don't need to create a transfer if there's no changes to the balance...
 		if mtmShare == 0 {
+			wins = append(wins, &mtmTransfer{
+				MarketPosition: current,
+				transfer:       nil,
+			})
+
 			continue
 		}
 		settle := &types.Transfer{
