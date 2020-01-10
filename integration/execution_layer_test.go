@@ -246,6 +246,66 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 	return nil
 }
 
+func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+		tif, err := tifval(row, 7)
+		if err != nil {
+			return err
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        oty,
+			TimeInForce: tif,
+			CreatedAt:   time.Now().UnixNano(),
+			Reference:   val(row, 8),
+		}
+		result, err := execsetup.engine.SubmitOrder(&order)
+		if err != nil {
+			return err
+		}
+		if int64(len(result.Trades)) != i64val(row, 5) {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
+		}
+	}
+	return nil
+}
+
+func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
+	for _, row := range refs.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+
+		_, err = execsetup.engine.CancelOrder(&o)
+		if err != nil {
+			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
+		}
+	}
+
+	return nil
+}
+
 func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "trader" {
