@@ -460,7 +460,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// Calculate and set current mark price
 		m.setMarkPrice(confirmation.Trades[len(confirmation.Trades)-1])
-		fmt.Printf("New MARKPRICE: %v\n", m.markPrice)
 
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
