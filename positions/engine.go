@@ -262,6 +262,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 	for _, pos := range e.positions {
 		pos.price = markPrice
+		fmt.Printf("POSITION: %#v\n", pos)
 	}
 	return e.positionsCpy
 }

@@ -3,6 +3,7 @@ package risk
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -186,6 +187,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// update other fields for the margins
 		margins.PartyID = evt.Party()
 		margins.Asset = evt.Asset()
+
+		fmt.Printf("MARGIN: %#v\n", margins)
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("margins calculated on settlement",

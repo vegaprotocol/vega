@@ -460,6 +460,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// Calculate and set current mark price
 		m.setMarkPrice(confirmation.Trades[len(confirmation.Trades)-1])
+		fmt.Printf("New MARKPRICE: %v\n", m.markPrice)
 
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
@@ -981,7 +982,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 
 	// Update the order in our stores (will be marked as cancelled)
 	m.orderBuf.Add(*order)
-	_, err = m.position.UnregisterOrder(order)
+	_, err = m.position.UnregisterOrder(cancellation.Order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
 			logging.Order(*order),
