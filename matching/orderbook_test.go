@@ -1549,7 +1549,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Id:          fmt.Sprintf("V%d-%d", 1, 1),
+		Id:          fmt.Sprintf("V%010d-%010d", 1, 1),
 	}
 
 	_, err := book.SubmitOrder(newOrder)
@@ -1571,6 +1571,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
+	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		MarketID:    market,
 		PartyID:     "A",
@@ -1580,7 +1581,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Id:          fmt.Sprintf("V%d-%d", 1, 1),
+		Id:          id,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1595,7 +1596,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, id, res.Order.Id)
 	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
@@ -1611,6 +1612,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
+	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		MarketID:    market,
 		PartyID:     "A",
@@ -1620,7 +1622,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Id:          fmt.Sprintf("V%d-%d", 1, 1),
+		Id:          id,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1635,10 +1637,53 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, id, res.Order.Id)
 	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
+}
+
+func TestOrderBook_CancelOrderByID(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+	logger.Debug("BEGIN CANCELLING VALID ORDER BY ID")
+
+	id := fmt.Sprintf("V%010d-%010d", 1, 1)
+	newOrder := &types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       101,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Id:          id,
+	}
+
+	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NotNil(t, confirmation, "submit order should succeed")
+	assert.NoError(t, err, "submit order should succeed")
+	orderAdded := confirmation.Order
+	assert.NotNil(t, orderAdded, "submitted order is expected to be valid")
+
+	orderFound, err := book.GetOrderByID(orderAdded.Id)
+	assert.NotNil(t, orderFound, "order lookup should work for the order just submitted")
+	assert.NoError(t, err, "order lookup should not fail")
+
+	res, err := book.CancelOrder(orderFound)
+	assert.NotNil(t, res, "cancelling should work for a valid order that was just found")
+	assert.NoError(t, err, "order cancel should not fail")
+
+	orderFound, err = book.GetOrderByID(orderAdded.Id)
+	assert.Error(t, err, "order lookup for an already cancelled order should fail")
+	assert.Nil(t, orderFound, "order lookup for an already cancelled order should not be possible")
+
+	book.PrintState("AFTER CANCEL ORDER BY ID")
 }
 
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
@@ -1651,7 +1696,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	defer book.Finish()
 	newOrder := &types.Order{
 		MarketID: market,
-		Id:       "123456",
+		Id:       fmt.Sprintf("V%010d-%010d", 1, 1),
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
