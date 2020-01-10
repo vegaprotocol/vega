@@ -981,7 +981,6 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 
 	// Update the order in our stores (will be marked as cancelled)
 	m.orderBuf.Add(*order)
-	// order.Size = order.Remaining
 	_, err = m.position.UnregisterOrder(order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",

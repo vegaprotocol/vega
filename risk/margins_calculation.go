@@ -83,7 +83,7 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		return newMarginLevels(marginMaintenanceSht, r.marginCalculator.ScalingFactors)
 	}
 
-	return newMarginLevels(0, r.marginCalculator.ScalingFactors)
+	return &types.MarginLevels{}
 }
 
 func abs(a int64) int64 {
