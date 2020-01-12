@@ -92,7 +92,7 @@ func testMarginTopup(t *testing.T) {
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(20), trans.Amount.Amount)
-	// min = 15 so we go back to search level
+	// min = 17 so we go back to search level
 	assert.Equal(t, int64(17), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
