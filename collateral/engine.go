@@ -250,6 +250,9 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 				return nil, nil, err
 			}
 		}
+		// updating the accounts stored in the marginEvt
+		marginEvt.general, _ = e.GetAccountByID(marginEvt.general.GetId())
+		marginEvt.margin, _ = e.GetAccountByID(marginEvt.margin.GetId())
 		responses = append(responses, res)
 		marginEvts = append(marginEvts, marginEvt)
 	}
