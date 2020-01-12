@@ -208,7 +208,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// the maintenance level
 			var minAmount int64
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = margins.MaintenanceMargin - curMargin
+				minAmount = margins.SearchLevel - curMargin
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -231,7 +231,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:     evt.Asset(),
-					Amount:    curMargin - margins.CollateralReleaseLevel,
+					Amount:    curMargin - margins.InitialMargin,
 					MinAmount: 0,
 				},
 			}

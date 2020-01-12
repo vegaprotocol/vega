@@ -92,8 +92,8 @@ func testMarginTopup(t *testing.T) {
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(20), trans.Amount.Amount)
-	// min = 15 so we go back to search level
-	assert.Equal(t, int64(15), trans.Amount.MinAmount)
+	// min = 17 so we go back to search level
+	assert.Equal(t, int64(17), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
 
@@ -169,7 +169,7 @@ func testMarginOverflow(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(465), trans.Amount.Amount)
+	assert.Equal(t, int64(470), trans.Amount.Amount)
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_HIGH, trans.Type)
 }
