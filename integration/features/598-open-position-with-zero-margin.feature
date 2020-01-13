@@ -57,6 +57,6 @@ Feature: Regression test for issue 598
       | edd    | BTC   | ETH/DEC19 |    591 |     429 |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
-      | edd    | ETH/DEC19 |         476 |    523 |     571 |     666 |
-      | barney | ETH/DEC19 |         446 |    490 |     535 |     624 |
+      | edd    | ETH/DEC19 |         502 |    552 |     602 |     702 |
+      | barney | ETH/DEC19 |         481 |    529 |     577 |     673 |
       | chris  | ETH/DEC19 |           0 |      0 |       0 |       0 |
