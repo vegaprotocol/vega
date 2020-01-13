@@ -144,7 +144,7 @@ func NewMarket(
 
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
-		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
+		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book, marginLevelsBuf, now.UnixNano(), mkt.GetId())
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id, settlementBuf)
 
@@ -880,12 +880,6 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) (event
 		return nil, nil
 	}
 
-	// push margins into the buffer
-	margins := riskUpdate.MarginLevels()
-	margins.Timestamp = m.currentTime.UnixNano()
-	margins.MarketID = m.GetID()
-	m.marginLevelsBuf.Add(*margins)
-
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Got margins transfer on new order")
 		transfer := riskUpdate.Transfer()
@@ -938,16 +932,6 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		}
 		return nil
-	}
-
-	// push margins into the buffer
-	t := m.currentTime.UnixNano()
-	mktid := m.GetID()
-	for _, riskUpdate := range riskUpdates {
-		margins := riskUpdate.MarginLevels()
-		margins.Timestamp = t
-		margins.MarketID = mktid
-		m.marginLevelsBuf.Add(*margins)
 	}
 
 	timer.EngineTimeCounterAdd()
