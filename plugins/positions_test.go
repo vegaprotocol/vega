@@ -80,6 +80,44 @@ func TestStartCtxCancel(t *testing.T) {
 	wg.Wait() // wait for ctx cancel to have had its effect
 }
 
+func TestMultipleTradesOfSameSize(t *testing.T) {
+	position := getPosPlugin(t)
+	defer position.Finish()
+	ch := make(chan []events.SettlePosition)
+	ref := 1
+	market := "market-id"
+	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.Start(position.ctx)
+	ps := posStub{
+		mID:   market,
+		party: "trader1",
+		size:  -2,
+		price: 1000,
+		trades: []events.TradeSettlement{
+			tradeStub{
+				size:  -1,
+				price: 1000,
+			},
+			tradeStub{
+				size:  -1,
+				price: 1000,
+			},
+		},
+	}
+	ch <- []events.SettlePosition{ps}
+	pp, err := position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	// average entry price should be 1k
+	assert.Equal(t, ps.price, pp[0].AverageEntryPrice)
+}
+
 func TestProcessBufferData(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
