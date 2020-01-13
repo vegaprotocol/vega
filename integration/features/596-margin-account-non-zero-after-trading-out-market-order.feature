@@ -44,7 +44,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    933 |    9007 |
-      | chris  | BTC   | ETH/DEC19 |    850 |    9210 |
+      | chris  | BTC   | ETH/DEC19 |    790 |    9270 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "40000"
 # then chris is trading out
@@ -120,7 +120,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    933 |    9007 |
-      | chris  | BTC   | ETH/DEC19 |    850 |    9210 |
+      | chris  | BTC   | ETH/DEC19 |    790 |    9270 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "40000"
 # then chris is trading out

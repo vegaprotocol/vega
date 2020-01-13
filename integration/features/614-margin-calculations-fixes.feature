@@ -41,10 +41,10 @@ Feature: test bugfix 614 for margin calculations
       | tamlyn | ETH/DEC19 | buy  |     13 |   150 |                2 | LIMIT | GTC |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
-      | tamlyn | ETH/DEC19 |        1053 |   3369 |    4212 |    5265 |
+      | tamlyn | ETH/DEC19 |         988 |   3161 |    3952 |    4940 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
-      | tamlyn  | ETH   | ETH/DEC19 |   4212 |    5844 |
+      | tamlyn  | ETH   | ETH/DEC19 |   3952 |    6104 |
       | chris   | ETH   | ETH/DEC19 |   3760 |    6240 |
       | edd     | ETH   | ETH/DEC19 |   5456 |    4544 |
       | barney  | ETH   | ETH/DEC19 |    992 |    8952 |

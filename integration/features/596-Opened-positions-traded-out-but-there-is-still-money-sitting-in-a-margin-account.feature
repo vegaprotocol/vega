@@ -42,7 +42,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    933 |    9007 |
-      | chris  | BTC   | ETH/DEC19 |    850 |    9210 |
+      | chris  | BTC   | ETH/DEC19 |    790 |    9270 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "30000"
 # then chris is trading out
@@ -94,7 +94,7 @@ Feature: Regression test for issue 596
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    961 |    9019 |
-      | chris  | BTC   | ETH/DEC19 |    799 |    9221 |
+      | chris  | BTC   | ETH/DEC19 |    607 |    9413 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     And All balances cumulated are worth "30000"
     Then traders cancels the following orders reference:
