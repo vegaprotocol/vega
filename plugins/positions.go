@@ -191,7 +191,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		}
 		net := delta + size
 		if net != 0 {
-			if size != p.OpenVolume {
+			if newPos := size + p.OpenVolume; newPos != 0 {
 				sAbs, cAbs := absUint64(size), absUint64(p.OpenVolume)
 				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
 			} else {
