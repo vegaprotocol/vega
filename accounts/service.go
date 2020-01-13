@@ -75,7 +75,26 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 }
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
-	return s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
+	accounts, err := s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
+
+	// We do not want to pass back accounts with "!" marketIDs
+	if len(marketID) <= 0 {
+		var index = 0
+		for index < len(accounts) {
+			acc := accounts[index]
+			if acc.GetMarketID() == "!" {
+				if index < len(accounts)-1 {
+					accounts = append(accounts[:index], accounts[index+1:]...)
+				} else {
+					accounts = append(accounts[:index])
+				}
+			} else {
+				index++
+			}
+		}
+	}
+
+	return accounts, err
 }
 
 func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
