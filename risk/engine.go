@@ -155,6 +155,9 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 		return nil, ErrInsufficientFundsForInitialMargin
 	}
 
+	// propagate margins levels to the buffer
+	e.marginsLevelsBuf.Add(*margins)
+
 	// margins are sufficient, nothing to update
 	if int64(curBalance) >= margins.InitialMargin {
 		return nil, nil
@@ -171,9 +174,6 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 			MinAmount: margins.InitialMargin - int64(curBalance),
 		},
 	}
-
-	// propagate margins levels to the buffer
-	e.marginsLevelsBuf.Add(*margins)
 
 	return &marginChange{
 		Margin:   evt,
