@@ -40,8 +40,8 @@ Feature: Regression test for issue 596
 # checking margins
     Then I expect the trader to have a margin:
       | trader    | asset | id        |    margin |   general |
-      | traderGuy | BTC   | ETH/DEC19 | 421200000 | 584400000 |
+      | traderGuy | BTC   | ETH/DEC19 | 394400032 | 611199968 |
 # checking margins levels
     Then the margins levels for the traders are:
       | trader    | id        | maintenance |    search |   initial |   release |
-      | traderGuy | ETH/DEC19 |   105300000 | 336960000 | 421200000 | 526500000 |
+      | traderGuy | ETH/DEC19 |    98600008 | 315520025 | 394400032 | 493000040 |

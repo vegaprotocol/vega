@@ -297,7 +297,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// volume + expected price
 	callExp := map[uint64]uint64{
 		2: 210 / 2,
-		1: 100,
+		1: 110,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
@@ -403,8 +403,8 @@ func getClosePNLBuy(t *testing.T) {
 	// volume + expected price
 	callExp := map[uint64]uint64{
 		3: 330 / 3,
-		2: 210 / 2,
-		1: 100,
+		2: 230 / 2,
+		1: 120,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
