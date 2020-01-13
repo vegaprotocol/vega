@@ -3,8 +3,8 @@ Feature: Regression test for issue 596
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/short |               tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
-      | ETH/DEC19 | ETH      | BTC       | BTC   |       103 | forward    |      0.001 | 0.00011407711613050422 |  0 | 0.016 |   2.0 |            1.4 |            1.2 |           1.1 |              42 |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/short | tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | ETH/DEC19 | ETH      | BTC       | BTC   |        94 | simple     |        0.2 |      0.1 |  0 | 0.016 |   2.0 |              5 |              4 |           3.2 |              42 |
 
   Scenario: Traded out position but monies left in margin account
 # setup accounts
@@ -39,5 +39,9 @@ Feature: Regression test for issue 596
       | traderGuy | ETH/DEC19 | buy  |     13 | 15000000 |                2 | LIMIT | GTC |
 # checking margins
     Then I expect the trader to have a margin:
-      | trader    | asset | id        |   margin |   general |
-      | traderGuy | BTC   | ETH/DEC19 | 97880181 | 907719819 |
+      | trader    | asset | id        |    margin |   general |
+      | traderGuy | BTC   | ETH/DEC19 | 421200000 | 584400000 |
+# checking margins levels
+    Then the margins levels for the traders are:
+      | trader    | id        | maintenance |    search |   initial |   release |
+      | traderGuy | ETH/DEC19 |   105300000 | 336960000 | 421200000 | 526500000 |
