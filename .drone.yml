@@ -150,9 +150,9 @@ steps:
           --project2 5726034 --projectname2 trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
           create_mr
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
-      export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
+      - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires SLACK_HOOK_URL and 3 DEVNET_* vars.
-      - './script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"'
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
       - 'for u in $$VEGANET_USERS ; do
           cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
