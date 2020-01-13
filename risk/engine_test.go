@@ -22,6 +22,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
+	mlbuf     *mocks.MockMarginLevelsBuf
 }
 
 // implements the events.Margin interface
@@ -229,6 +230,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
+	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
+	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fil it with the orders
 
@@ -252,7 +255,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book)
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, mlbuf, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -331,6 +334,8 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
+	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
+	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fil it with the orders
 
@@ -354,7 +359,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book)
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, mlbuf, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -391,6 +396,9 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
+	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
+	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
 		conf,
@@ -398,6 +406,9 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		model,
 		initialRisk,
 		ob,
+		mlbuf,
+		0,
+		"mktid",
 	)
 	return &testEngine{
 		Engine:    engine,
