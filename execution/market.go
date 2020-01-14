@@ -610,7 +610,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			return err
 		}
 		if len(movements.Transfers) > 0 {
-			m.transferBuf.Add(movements.Transfers)
+			m.transferBuf.Add([]*types.TransferResponse{movements})
 		}
 		return nil
 	}
@@ -707,7 +707,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		return err
 	}
 	if len(movements.Transfers) > 0 {
-		m.transferBuf.Add(movements.Transfers)
+		m.transferBuf.Add([]*types.TransferResponse{movements})
 	}
 	// get the updated positions
 	evt := m.position.Positions()
