@@ -950,7 +950,7 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 	// Validate Market
 	if oc.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
-			logging.String("party-d", oc.PartyID),
+			logging.String("party-id", oc.PartyID),
 			logging.String("order-id", oc.OrderID),
 			logging.String("market", m.mkt.Id))
 
@@ -965,7 +965,7 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		m.log.Error("Failure after cancel order from matching engine",
-			logging.String("party-d", oc.PartyID),
+			logging.String("party-id", oc.PartyID),
 			logging.String("order-id", oc.OrderID),
 			logging.String("market", m.mkt.Id))
 		logging.Error(err)
