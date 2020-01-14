@@ -77,23 +77,14 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
 	accounts, err := s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
 
-	// We do not want to pass back accounts with "!" marketIDs
-	if len(marketID) <= 0 {
-		var index = 0
-		for index < len(accounts) {
-			acc := accounts[index]
+	// We want to blank out any marketIDs with "!" in them
+	if len(marketID) <= 0 && ty == types.AccountType_GENERAL {
+		for _, acc := range accounts {
 			if acc.GetMarketID() == "!" {
-				if index < len(accounts)-1 {
-					accounts = append(accounts[:index], accounts[index+1:]...)
-				} else {
-					accounts = append(accounts[:index])
-				}
-			} else {
-				index++
+				acc.MarketID = ""
 			}
 		}
 	}
-
 	return accounts, err
 }
 
