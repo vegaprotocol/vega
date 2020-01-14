@@ -553,38 +553,37 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 		return err
 	}
-	if len(rmorders) == 0 {
-		return nil
-	}
-	// push rm orders into buf ?
+	mktID := m.GetID()
+	// push rm orders into buf
+	// and remove the orders from the positions engine
 	for _, o := range rmorders {
 		m.orderBuf.Add(*o)
-	}
-
-	mktID := m.GetID()
-	// remove the orders from the positions engine
-	for _, v := range rmorders {
-		_, err = m.position.UnregisterOrder(v)
-		if err != nil {
+		if _, err := m.position.UnregisterOrder(o); err != nil {
 			m.log.Error("unable to unregister order for a distressed party",
-				logging.String("party-id", v.PartyID),
+				logging.String("party-id", o.PartyID),
 				logging.String("market-id", mktID),
-				logging.String("order-id", v.Id),
+				logging.String("order-id", o.Id),
 			)
 		}
 	}
 
-	// now that we closed orders, let's run the risk engine again
-	// so it'll separate the positions still in distress from the
-	// which have acceptable margins
-	okPos, closed := m.risk.ExpectMargins(distressedMarginEvts, m.markPrice)
+	closed := distressedPos // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
 
-	if m.log.GetLevel() == logging.DebugLevel {
-		for _, v := range okPos {
-			m.log.Debug("previously distressed party have now an acceptable margin",
-				logging.String("market-id", mktID),
-				logging.String("party-id", v.Party()),
-			)
+	// we need to check margin requirements again, it's possible for traders to no longer be distressed now that their orders have been removed
+	if len(rmorders) != 0 {
+		var okPos []events.Margin // need to declare this because we want to reassign closed
+		// now that we closed orders, let's run the risk engine again
+		// so it'll separate the positions still in distress from the
+		// which have acceptable margins
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.markPrice)
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			for _, v := range okPos {
+				m.log.Debug("previously distressed party have now an acceptable margin",
+					logging.String("market-id", mktID),
+					logging.String("party-id", v.Party()),
+				)
+			}
 		}
 	}
 
