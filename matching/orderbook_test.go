@@ -699,7 +699,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 
 	book.SubmitOrder(newOrder)
 
-	err := book.DeleteOrder(newOrder)
+	_, err := book.DeleteOrder(newOrder)
 	if err != nil {
 		fmt.Println(err, "ORDER_NOT_FOUND")
 	}
@@ -1710,7 +1710,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_REMOVAL_FAILURE, err)
+	assert.Equal(t, types.OrderError_INVALID_MARKET_ID, err)
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {

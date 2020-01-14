@@ -52,7 +52,7 @@ func (mr *MockBlockchainClientMockRecorder) AmendOrder(arg0, arg1 interface{}) *
 }
 
 // CancelOrder mocks base method
-func (m *MockBlockchainClient) CancelOrder(arg0 context.Context, arg1 *proto.Order) (bool, error) {
+func (m *MockBlockchainClient) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
 	ret0, _ := ret[0].(bool)

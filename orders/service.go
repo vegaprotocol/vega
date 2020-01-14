@@ -49,7 +49,7 @@ type OrderStore interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
 type Blockchain interface {
 	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 }
 
@@ -172,7 +172,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		return nil, errors.New("party mis-match cannot cancel order")
 	}
 	// Send cancellation request by consensus
-	if _, err := s.blockchain.CancelOrder(ctx, o); err != nil {
+	if _, err := s.blockchain.CancelOrder(ctx, order); err != nil {
 		return nil, err
 	}
 
