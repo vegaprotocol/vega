@@ -609,12 +609,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			)
 			return err
 		}
-		// currently just logging ledger movements, will be added to a stream storage engine in time
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug(
-				"Ledger movements after removing distressed traders",
-				logging.String("ledger-dump", fmt.Sprintf("%#v", movements.Transfers)),
-			)
+		if len(movements.Transfers) > 0 {
+			m.transferBuf.Add(movements.Transfers)
 		}
 		return nil
 	}
@@ -710,13 +706,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 		return err
 	}
-	// currently just logging ledger movements, will be added to a stream storage engine in time
-	// only actually perform the Sprintf call if we're running on debug level
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug(
-			"Ledger movements after removing distressed traders",
-			logging.String("ledger-dump", fmt.Sprintf("%#v", movements.Transfers)),
-		)
+	if len(movements.Transfers) > 0 {
+		m.transferBuf.Add(movements.Transfers)
 	}
 	// get the updated positions
 	evt := m.position.Positions()
