@@ -36,8 +36,8 @@ func newClient(clt chainClientImpl) *Client {
 }
 
 // CancelOrder will send a cancel order transaction to the blockchain
-func (c *Client) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
-	return c.sendOrderCommand(ctx, order, CancelOrderCommand)
+func (c *Client) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
+	return c.sendCancellationCommand(ctx, order, CancelOrderCommand)
 }
 
 // AmendOrder will send an amend order transaction to the blockchain
@@ -121,6 +121,20 @@ func (c *Client) sendAmendmentCommand(ctx context.Context, amendment *types.Orde
 
 	// Proto-buf marshall the incoming order to byte slice.
 	bytes, err := proto.Marshal(amendment)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("order message empty after marshal")
+	}
+
+	return c.sendCommand(ctx, bytes, cmd)
+}
+
+func (c *Client) sendCancellationCommand(ctx context.Context, cancel *types.OrderCancellation, cmd Command) (success bool, err error) {
+
+	// Proto-buf marshall the incoming order to byte slice.
+	bytes, err := proto.Marshal(cancel)
 	if err != nil {
 		return false, err
 	}

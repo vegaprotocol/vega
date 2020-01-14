@@ -170,6 +170,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		b.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("order-book", b.marketID))
+		return nil, types.OrderError_INVALID_MARKET_ID
 	}
 
 	// Validate Order ID must be present
@@ -181,7 +182,8 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		return nil, err
 	}
 
-	if err := b.DeleteOrder(order); err != nil {
+	order, err := b.DeleteOrder(order)
+	if err != nil {
 		return nil, err
 	}
 
@@ -315,17 +317,18 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 }
 
 // DeleteOrder remove a given order on a given side from the book
-func (b *OrderBook) DeleteOrder(order *types.Order) error {
-	if err := b.getSide(order.Side).RemoveOrder(order); err != nil {
+func (b *OrderBook) DeleteOrder(order *types.Order) (*types.Order, error) {
+	order, err := b.getSide(order.Side).RemoveOrder(order)
+	if err != nil {
 		b.log.Error("Failed to remove order",
 			logging.Order(*order),
 			logging.Error(err),
 			logging.String("order-book", b.marketID))
 
-		return types.ErrOrderRemovalFailure
+		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
-	return nil
+	return order, err
 }
 
 // RemoveExpiredOrders removes any GTT orders that will expire on or before the expiration timestamp (epoch+nano).
@@ -412,7 +415,7 @@ func (b *OrderBook) RemoveDistressedOrders(
 				// let's see whether we need to handle this further down
 				continue
 			}
-			if err := b.DeleteOrder(confirm.Order); err != nil {
+			if _, err := b.DeleteOrder(confirm.Order); err != nil {
 				b.log.Error(
 					"Failed to remove cancelled order",
 					logging.Order(*confirm.Order),

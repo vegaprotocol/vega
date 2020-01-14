@@ -470,6 +470,45 @@ func getClosePNLSell(t *testing.T) {
 	}
 }
 
+func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
+	market := "cancel-returns-order"
+	party := "p1"
+
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	currentTimestamp := getCurrentUtcTimestampNano()
+
+	order1 := types.Order{
+		MarketID:    market,
+		PartyID:     party,
+		Side:        types.Side_Sell,
+		Price:       1,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   currentTimestamp,
+		Id:          "v0000000000000-0000001",
+	}
+	order2 := types.Order{
+		MarketID:    market,
+		PartyID:     party,
+		Side:        types.Side_Sell,
+		Price:       1,
+		Size:        100,
+		Remaining:   1, // use a wrong remaining here to get the order from the book
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   currentTimestamp,
+		Id:          "v0000000000000-0000001",
+	}
+
+	_, err := book.SubmitOrder(&order1)
+	assert.Equal(t, err, nil)
+
+	o, err := book.CancelOrder(&order2)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, o.Order.Remaining, order1.Remaining)
+}
+
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
@@ -699,7 +738,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 
 	book.SubmitOrder(newOrder)
 
-	err := book.DeleteOrder(newOrder)
+	_, err := book.DeleteOrder(newOrder)
 	if err != nil {
 		fmt.Println(err, "ORDER_NOT_FOUND")
 	}
@@ -1710,7 +1749,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_REMOVAL_FAILURE, err)
+	assert.Equal(t, types.OrderError_INVALID_MARKET_ID, err)
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {

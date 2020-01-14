@@ -939,7 +939,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 }
 
 // CancelOrder cancels the given order
-func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -948,24 +948,32 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Validate Market
-	if order.MarketID != m.mkt.Id {
+	if oc.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
-			logging.Order(*order),
+			logging.String("party-id", oc.PartyID),
+			logging.String("order-id", oc.OrderID),
 			logging.String("market", m.mkt.Id))
 
 		return nil, types.ErrInvalidMarketID
 	}
 
+	order, err := m.matching.GetOrderByID(oc.OrderID)
+	if err != nil {
+		return nil, err
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		m.log.Error("Failure after cancel order from matching engine",
-			logging.Order(*order),
-			logging.Error(err))
+			logging.String("party-id", oc.PartyID),
+			logging.String("order-id", oc.OrderID),
+			logging.String("market", m.mkt.Id))
+		logging.Error(err)
 		return nil, err
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
-	m.orderBuf.Add(*order)
+	m.orderBuf.Add(*cancellation.Order)
 	_, err = m.position.UnregisterOrder(cancellation.Order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -982,25 +990,12 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 	if err != nil {
 		return nil, err
 	}
-	return m.CancelOrder(order)
-}
-
-// DeleteOrder delete the given order from the order book
-func (m *Market) DeleteOrder(order *types.Order) (err error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "DeleteOrder")
-
-	// Validate Market
-	if order.MarketID != m.mkt.Id {
-		m.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("market", m.mkt.Id))
-
-		err = types.ErrInvalidMarketID
-	} else {
-		err = m.matching.DeleteOrder(order)
+	cancellation := types.OrderCancellation{
+		OrderID:  order.Id,
+		PartyID:  order.PartyID,
+		MarketID: order.MarketID,
 	}
-	timer.EngineTimeCounterAdd()
-	return
+	return m.CancelOrder(&cancellation)
 }
 
 // AmendOrder amend an existing order from the order book
@@ -1101,7 +1096,13 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 
 	m.log.Debug("Cancel/replace order")
 
-	cancellation, err := m.CancelOrder(existingOrder)
+	ordCancel := types.OrderCancellation{
+		OrderID:  existingOrder.Id,
+		PartyID:  existingOrder.PartyID,
+		MarketID: existingOrder.MarketID,
+	}
+
+	cancellation, err := m.CancelOrder(&ordCancel)
 	if err != nil || cancellation == nil {
 		if err == nil {
 			err = fmt.Errorf("order cancellation failed (no error given)")

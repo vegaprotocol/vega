@@ -297,7 +297,13 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			return err
 		}
 
-		_, err = execsetup.engine.CancelOrder(&o)
+		cancel := proto.OrderCancellation{
+			OrderID:  o.Id,
+			PartyID:  o.PartyID,
+			MarketID: o.MarketID,
+		}
+
+		_, err = execsetup.engine.CancelOrder(&cancel)
 		if err != nil {
 			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
 		}
