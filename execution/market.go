@@ -774,15 +774,19 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		}
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
-		// store the trader order, too
-		m.orderBuf.Add(to)
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
 		}
+		// store the trader order, too
+		m.orderBuf.Add(to)
 		// now store the resulting trades:
 		for _, trade := range res.Trades {
 			m.tradeBuf.Add(*trade)
+		}
+
+		for _, o := range res.PassiveOrdersAffected {
+			m.orderBuf.Add(*o)
 		}
 	}
 	return nil
