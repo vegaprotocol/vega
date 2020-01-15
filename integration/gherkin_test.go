@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"fmt"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/proto"
@@ -42,4 +43,20 @@ func sideval(rows *gherkin.TableRow, idx int) proto.Side {
 		return proto.Side_Sell
 	}
 	return proto.Side_Buy
+}
+
+func tifval(rows *gherkin.TableRow, idx int) (proto.Order_TimeInForce, error) {
+	tif, ok := proto.Order_TimeInForce_value[rows.Cells[idx].Value]
+	if !ok {
+		return proto.Order_TimeInForce(tif), fmt.Errorf("invalid time in force: %v", rows.Cells[idx].Value)
+	}
+	return proto.Order_TimeInForce(tif), nil
+}
+
+func ordertypeval(rows *gherkin.TableRow, idx int) (proto.Order_Type, error) {
+	ty, ok := proto.Order_Type_value[rows.Cells[idx].Value]
+	if !ok {
+		return proto.Order_Type(ty), fmt.Errorf("invalid order type: %v", rows.Cells[idx].Value)
+	}
+	return proto.Order_Type(ty), nil
 }

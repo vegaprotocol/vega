@@ -1,17 +1,20 @@
 package risk
 
 import (
+	"math"
+
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) *types.MarginLevels {
+func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) *types.MarginLevels {
+	maintenance = math.Ceil(maintenance)
 	return &types.MarginLevels{
-		MaintenanceMargin:      maintenance,
-		SearchLevel:            int64(float64(maintenance) * scalingFactors.SearchLevel),
-		InitialMargin:          int64(float64(maintenance) * scalingFactors.InitialMargin),
-		CollateralReleaseLevel: int64(float64(maintenance) * scalingFactors.CollateralRelease),
+		MaintenanceMargin:      int64(maintenance),
+		SearchLevel:            int64(maintenance * scalingFactors.SearchLevel),
+		InitialMargin:          int64(maintenance * scalingFactors.InitialMargin),
+		CollateralReleaseLevel: int64(maintenance * scalingFactors.CollateralRelease),
 	}
 }
 
@@ -19,8 +22,8 @@ func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) *t
 // https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
 	var (
-		marginMaintenanceLng int64
-		marginMaintenanceSht int64
+		marginMaintenanceLng float64
+		marginMaintenanceSht float64
 	)
 	openVolume := e.Size()
 	var (
@@ -46,9 +49,11 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 				r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
 					logging.Error(err))
 			}
-			slippagePerUnit = int64(exitPrice) - markPrice
+			slippagePerUnit = markPrice - int64(exitPrice)
 		}
-		marginMaintenanceLng = int64(float64(slippageVolume)*(float64(slippagePerUnit)+(rf.Long*float64(markPrice))) + (float64(e.Buy()) * rf.Long * float64(markPrice)))
+
+		marginMaintenanceLng = float64(max(slippageVolume*slippagePerUnit, 0)) + float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(e.Buy()) * rf.Long *
+			float64(markPrice))
 	}
 	// calculate margin maintenance short only if riskiest is < 0
 	// marginMaintenanceSht will be 0 by default
@@ -64,9 +69,10 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 				r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
 					logging.Error(err))
 			}
-			slippagePerUnit = int64(exitPrice) - markPrice
+			slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
-		marginMaintenanceSht = int64(float64(-slippageVolume)*(float64(slippagePerUnit)+(rf.Short*float64(markPrice))) + (float64(e.Sell()) * rf.Short * float64(markPrice)))
+
+		marginMaintenanceSht = float64(max(abs(slippageVolume)*slippagePerUnit, 0)) + float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(e.Sell())) * rf.Short * float64(markPrice))
 	}
 
 	// the greatest liability is the most positive number
@@ -77,7 +83,14 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		return newMarginLevels(marginMaintenanceSht, r.marginCalculator.ScalingFactors)
 	}
 
-	return nil
+	return &types.MarginLevels{}
+}
+
+func abs(a int64) int64 {
+	if a < 0 {
+		return -a
+	}
+	return a
 }
 
 func max(a, b int64) int64 {

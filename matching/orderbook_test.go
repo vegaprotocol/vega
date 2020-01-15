@@ -21,6 +21,7 @@ type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
 	expectedPassiveOrdersAffected []types.Order
 	expectedTrades                []types.Trade
+	expectedAggressiveOrderStatus types.Order_Status
 }
 
 type tstOB struct {
@@ -296,7 +297,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// volume + expected price
 	callExp := map[uint64]uint64{
 		2: 210 / 2,
-		1: 100,
+		1: 110,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
@@ -402,8 +403,8 @@ func getClosePNLBuy(t *testing.T) {
 	// volume + expected price
 	callExp := map[uint64]uint64{
 		3: 330 / 3,
-		2: 210 / 2,
-		1: 100,
+		2: 230 / 2,
+		1: 120,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
@@ -467,6 +468,45 @@ func getClosePNLSell(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, exp, price)
 	}
+}
+
+func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
+	market := "cancel-returns-order"
+	party := "p1"
+
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	currentTimestamp := getCurrentUtcTimestampNano()
+
+	order1 := types.Order{
+		MarketID:    market,
+		PartyID:     party,
+		Side:        types.Side_Sell,
+		Price:       1,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   currentTimestamp,
+		Id:          "v0000000000000-0000001",
+	}
+	order2 := types.Order{
+		MarketID:    market,
+		PartyID:     party,
+		Side:        types.Side_Sell,
+		Price:       1,
+		Size:        100,
+		Remaining:   1, // use a wrong remaining here to get the order from the book
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   currentTimestamp,
+		Id:          "v0000000000000-0000001",
+	}
+
+	_, err := book.SubmitOrder(&order1)
+	assert.Equal(t, err, nil)
+
+	o, err := book.CancelOrder(&order2)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, o.Order.Remaining, order1.Remaining)
 }
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
@@ -698,7 +738,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 
 	book.SubmitOrder(newOrder)
 
-	err := book.DeleteOrder(newOrder)
+	_, err := book.DeleteOrder(newOrder)
 	if err != nil {
 		fmt.Println(err, "ORDER_NOT_FOUND")
 	}
@@ -845,12 +885,11 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	timestamps := []int64{0, 1, 2}
 	for _, timestamp := range timestamps {
 		for index := range m[timestamp] {
-			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
-			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
+			confirmation, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors
 			assert.Equal(t, nil, err)
 			// this should not generate any trades
-			assert.Equal(t, 0, len(confirmationtypes.Trades))
+			assert.Equal(t, 0, len(confirmation.Trades))
 		}
 	}
 
@@ -867,6 +906,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   3,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -920,6 +960,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   3,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -991,6 +1032,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   3,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1045,6 +1087,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   3,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1098,6 +1141,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   4,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1140,7 +1184,8 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 		},
 		{
-			// Sell is aggressive, aggressive at exact price, all orders at this price level should be hitted plus order should remain on the sell side of the book at 99 level
+			// Sell is aggressive, aggressive at exact price, all orders at this price level should be hit
+			// plus order should remain on the sell side of the book at 99 level
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "Z",
@@ -1151,6 +1196,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				TimeInForce: types.Order_GTC,
 				CreatedAt:   4,
 			},
+			expectedAggressiveOrderStatus: types.Order_Active,
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1228,7 +1274,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "XX",
@@ -1236,9 +1282,10 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       102,
 				Size:        100,
 				Remaining:   100,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   4,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled, // FOK but fully filled
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1280,7 +1327,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, hits one price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "YY",
@@ -1288,9 +1335,10 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       103,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_IOC, // nonpersistent
+				TimeInForce: types.Order_IOC, // non-persistent
 				CreatedAt:   5,
 			},
+			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not fully filled so Cancelled
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1332,7 +1380,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "XX",
@@ -1340,13 +1388,14 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       96,
 				Size:        2000,
 				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   5,
 			},
+			expectedAggressiveOrderStatus: types.Order_Stopped, // FOK will be marked STOPPED if not able to fully fill
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
-		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "XX",
@@ -1354,13 +1403,14 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       102,
 				Size:        2000,
 				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   5,
 			},
+			expectedAggressiveOrderStatus: types.Order_Stopped, // FOK will be marked STOPPED if not able to fully fill
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
-		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+		{ // aggressive non-persistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "ZZ",
@@ -1368,9 +1418,10 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       95,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_IOC, // nonpersistent
+				TimeInForce: types.Order_IOC, // non-persistent
 				CreatedAt:   5,
 			},
+			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC will be marked as cancelled as not fully filled
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1394,7 +1445,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+		{
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "ZZ",
@@ -1402,14 +1453,15 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       95,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_GTT, // nonpersistent
+				TimeInForce: types.Order_GTT, // non-persistent
 				CreatedAt:   5,
 				ExpiresAt:   6,
 			},
+			expectedAggressiveOrderStatus: types.Order_Active,
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
-		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+		{
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "ZXY",
@@ -1417,9 +1469,10 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       95,
 				Size:        100,
 				Remaining:   100,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   6,
 			},
+			expectedAggressiveOrderStatus: types.Order_Filled, // FOK should be fully filled
 			expectedTrades: []types.Trade{
 				{
 					MarketID:  market,
@@ -1438,13 +1491,13 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Price:       95,
 					Size:        200,
 					Remaining:   100,
-					TimeInForce: types.Order_GTT, // nonpersistent
+					TimeInForce: types.Order_GTT, // non-persistent
 					CreatedAt:   5,
 					ExpiresAt:   7,
 				},
 			},
 		},
-		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "XX",
@@ -1452,9 +1505,25 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       102,
 				Size:        2000,
 				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // nonpersistent
+				TimeInForce: types.Order_FOK, // non-persistent
 				CreatedAt:   6,
 			},
+			expectedAggressiveOrderStatus: types.Order_Stopped, // FOK will be marked STOPPED if not able to fully fill
+			expectedTrades:                []types.Trade{},
+			expectedPassiveOrdersAffected: []types.Order{},
+		},
+		{
+			aggressiveOrder: &types.Order{
+				MarketID:    market,
+				PartyID:     "ZU",
+				Side:        types.Side_Sell,
+				Price:       999,
+				Size:        10,
+				Remaining:   10,
+				TimeInForce: types.Order_IOC,
+				CreatedAt:   7,
+			},
+			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not filled so Cancelled
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
 		},
@@ -1471,27 +1540,32 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		fmt.Println("expectedTrades: ", s.expectedTrades)
 		fmt.Println()
 
-		confirmationtypes, err := book.SubmitOrder(s.aggressiveOrder)
+		confirmation, err := book.SubmitOrder(s.aggressiveOrder)
 
 		//this should not return any errors
 		assert.Equal(t, nil, err)
 
+		//ensure the aggressive order has correct status (if FOK, IOC, etc it can be stopped or cancelled)
+		assert.Equal(t, s.expectedAggressiveOrderStatus,
+			confirmation.Order.Status,
+			fmt.Sprintf("aggressive-order = %+v", confirmation.Order))
+
 		//this should not generate any trades
-		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
+		assert.Equal(t, len(s.expectedTrades), len(confirmation.Trades))
 
 		fmt.Println("CONFIRMATION types:")
-		fmt.Println("-> Aggressive:", confirmationtypes.Order)
-		fmt.Println("-> Trades :", confirmationtypes.Trades)
-		fmt.Println("-> PassiveOrdersAffected:", confirmationtypes.PassiveOrdersAffected)
+		fmt.Println("-> Aggressive:", confirmation.Order)
+		fmt.Println("-> Trades :", confirmation.Trades)
+		fmt.Println("-> PassiveOrdersAffected:", confirmation.PassiveOrdersAffected)
 		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
 
 		// trades should match expected trades
-		for i, trade := range confirmationtypes.Trades {
+		for i, trade := range confirmation.Trades {
 			expectTrade(t, &s.expectedTrades[i], trade)
 		}
 
 		// orders affected should match expected values
-		for i, orderAffected := range confirmationtypes.PassiveOrdersAffected {
+		for i, orderAffected := range confirmation.PassiveOrdersAffected {
 			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
 
@@ -1514,7 +1588,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Id:          fmt.Sprintf("V%d-%d", 1, 1),
+		Id:          fmt.Sprintf("V%010d-%010d", 1, 1),
 	}
 
 	_, err := book.SubmitOrder(newOrder)
@@ -1536,6 +1610,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
+	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		MarketID:    market,
 		PartyID:     "A",
@@ -1545,7 +1620,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Id:          fmt.Sprintf("V%d-%d", 1, 1),
+		Id:          id,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1560,7 +1635,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, id, res.Order.Id)
 	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
@@ -1576,6 +1651,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
+	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		MarketID:    market,
 		PartyID:     "A",
@@ -1585,7 +1661,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Id:          fmt.Sprintf("V%d-%d", 1, 1),
+		Id:          id,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1600,10 +1676,53 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, id, res.Order.Id)
 	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
+}
+
+func TestOrderBook_CancelOrderByID(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+	logger.Debug("BEGIN CANCELLING VALID ORDER BY ID")
+
+	id := fmt.Sprintf("V%010d-%010d", 1, 1)
+	newOrder := &types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       101,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Id:          id,
+	}
+
+	confirmation, err := book.SubmitOrder(newOrder)
+	assert.NotNil(t, confirmation, "submit order should succeed")
+	assert.NoError(t, err, "submit order should succeed")
+	orderAdded := confirmation.Order
+	assert.NotNil(t, orderAdded, "submitted order is expected to be valid")
+
+	orderFound, err := book.GetOrderByID(orderAdded.Id)
+	assert.NotNil(t, orderFound, "order lookup should work for the order just submitted")
+	assert.NoError(t, err, "order lookup should not fail")
+
+	res, err := book.CancelOrder(orderFound)
+	assert.NotNil(t, res, "cancelling should work for a valid order that was just found")
+	assert.NoError(t, err, "order cancel should not fail")
+
+	orderFound, err = book.GetOrderByID(orderAdded.Id)
+	assert.Error(t, err, "order lookup for an already cancelled order should fail")
+	assert.Nil(t, orderFound, "order lookup for an already cancelled order should not be possible")
+
+	book.PrintState("AFTER CANCEL ORDER BY ID")
 }
 
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
@@ -1616,7 +1735,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	defer book.Finish()
 	newOrder := &types.Order{
 		MarketID: market,
-		Id:       "123456",
+		Id:       fmt.Sprintf("V%010d-%010d", 1, 1),
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1630,7 +1749,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_REMOVAL_FAILURE, err)
+	assert.Equal(t, types.OrderError_INVALID_MARKET_ID, err)
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
@@ -2042,12 +2161,11 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	timestamps := []int64{0, 1}
 	for _, timestamp := range timestamps {
 		for index := range m[timestamp] {
-			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
-			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
+			confirmation, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors
 			assert.Equal(t, nil, err)
 			// this should not generate any trades
-			assert.Equal(t, 0, len(confirmationtypes.Trades))
+			assert.Equal(t, 0, len(confirmation.Trades))
 		}
 	}
 

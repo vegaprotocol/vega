@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -385,7 +385,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 				// keep running total
 				cumulativeVolume += b.Volume
 				buy[i].CumulativeVolume = cumulativeVolume
-				buyPtr = append(buyPtr, &buy[i].PriceLevel)
+				aCopy := buy[i].PriceLevel
+				buyPtr = append(buyPtr, &aCopy)
 			}
 		}
 	}()
@@ -404,7 +405,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 				// keep running total
 				cumulativeVolume += s.Volume
 				sell[i].CumulativeVolume = cumulativeVolume
-				sellPtr = append(sellPtr, &sell[i].PriceLevel)
+				aCopy := sell[i].PriceLevel
+				sellPtr = append(sellPtr, &aCopy)
 			}
 		}
 	}()

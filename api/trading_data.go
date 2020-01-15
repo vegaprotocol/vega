@@ -116,7 +116,7 @@ type PartyService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
-	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
@@ -351,6 +351,15 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
+
+	// Check here for a valid marketID so we don't fail later
+	if request.MarketID != "" {
+		_, err := h.MarketService.GetByID(ctx, request.MarketID)
+		if err != nil {
+			return nil, ErrInvalidMarketID
+		}
+	}
+
 	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err

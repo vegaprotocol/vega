@@ -22,6 +22,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
+	mlbuf     *mocks.MockMarginLevelsBuf
 }
 
 // implements the events.Margin interface
@@ -64,6 +65,7 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Noop margin test", testMarginNoop)
 	t.Run("Margin too high (overflow)", testMarginOverflow)
 	t.Run("Update Margin with orders in book", testMarginWithOrderInBook)
+	t.Run("Update Margin with orders in book 2", testMarginWithOrderInBook2)
 	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
 }
 
@@ -91,8 +93,8 @@ func testMarginTopup(t *testing.T) {
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(20), trans.Amount.Amount)
-	// min = 15 so we go back to search level
-	assert.Equal(t, int64(15), trans.Amount.MinAmount)
+	// min = 17 so we go back to search level
+	assert.Equal(t, int64(17), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
 
@@ -168,7 +170,7 @@ func testMarginOverflow(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(465), trans.Amount.Amount)
+	assert.Equal(t, int64(470), trans.Amount.Amount)
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_HIGH, trans.Type)
 }
@@ -218,8 +220,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 		// bids
 
 		{volume: 1, price: 120, tid: "t4", side: types.Side_Buy},
-		{volume: 4, price: 240, tid: "t5", side: types.Side_Buy},
-		{volume: 7, price: 258, tid: "t6", side: types.Side_Buy},
+		{volume: 4, price: 110, tid: "t5", side: types.Side_Buy},
+		{volume: 5, price: 108, tid: "t6", side: types.Side_Buy},
 	}
 
 	marketID := "testingmarket"
@@ -228,6 +230,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
+	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
+	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fil it with the orders
 
@@ -251,7 +255,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book)
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, mlbuf, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -270,10 +274,117 @@ func testMarginWithOrderInBook(t *testing.T) {
 	}
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
-	assert.Equal(t, int64(1131), margins.MaintenanceMargin)
-	assert.Equal(t, int64(1131*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
-	assert.Equal(t, int64(1131*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
-	assert.Equal(t, int64(1131*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
+	assert.Equal(t, int64(542), margins.MaintenanceMargin)
+	assert.Equal(t, int64(542*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, int64(542*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, int64(542*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
+}
+
+// testcase 1 from: https://drive.google.com/file/d/1B8-rLK2NB6rWvjzZX9sLtqOQzLz8s2ky/view
+func testMarginWithOrderInBook2(t *testing.T) {
+	// custom risk factors
+	r := &types.RiskResult{
+		RiskFactors: map[string]*types.RiskFactor{
+			"ETH": {
+				Market: "ETH/DEC19",
+				Short:  .2,
+				Long:   .1,
+			},
+		},
+		PredictedNextRiskFactors: map[string]*types.RiskFactor{
+			"ETH": {
+				Market: "ETH/DEC19",
+				Short:  .2,
+				Long:   .1,
+			},
+		},
+	}
+	// custom scaling factor
+	mc := &types.MarginCalculator{
+		ScalingFactors: &types.ScalingFactors{
+			SearchLevel:       3.2,
+			InitialMargin:     4,
+			CollateralRelease: 5,
+		},
+	}
+
+	var markPrice int64 = 94
+
+	// list of order in the book before the test happen
+	ordersInBook := []struct {
+		volume int64
+		price  int64
+		tid    string
+		side   types.Side
+	}{
+		// asks
+		{volume: 100, price: 250, tid: "t1", side: types.Side_Sell},
+		{volume: 11, price: 140, tid: "t2", side: types.Side_Sell},
+		{volume: 2, price: 112, tid: "t3", side: types.Side_Sell},
+		// bids
+		{volume: 1, price: 100, tid: "t4", side: types.Side_Buy},
+		{volume: 3, price: 96, tid: "t5", side: types.Side_Buy},
+		{volume: 15, price: 90, tid: "t6", side: types.Side_Buy},
+		{volume: 50, price: 87, tid: "t7", side: types.Side_Buy},
+	}
+
+	marketID := "testingmarket"
+
+	conf := config.NewDefaultConfig("")
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	model := mocks.NewMockModel(ctrl)
+	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
+	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	// instantiate the book then fil it with the orders
+
+	book := matching.NewOrderBook(
+		log, conf.Matching, marketID, uint64(markPrice), false)
+
+	for _, v := range ordersInBook {
+		o := &types.Order{
+			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
+			MarketID:    marketID,
+			Side:        v.side,
+			Price:       uint64(v.price),
+			Size:        uint64(v.volume),
+			Remaining:   uint64(v.volume),
+			TimeInForce: types.Order_GTT,
+			Type:        types.Order_LIMIT,
+			Status:      types.Order_Active,
+			ExpiresAt:   10000,
+		}
+		_, err := book.SubmitOrder(o)
+		assert.Nil(t, err)
+	}
+
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, mlbuf, 0, "mktid")
+	evt := testMargin{
+		party:   "tx",
+		size:    13,
+		buy:     0,
+		sell:    0,
+		price:   150,
+		asset:   "ETH",
+		margin:  0,
+		general: 100000,
+		market:  "ETH/DEC19",
+	}
+
+	previousMarkPrice := 103
+
+	riskevt, err := testE.UpdateMarginOnNewOrder(evt, uint64(previousMarkPrice))
+	assert.NotNil(t, riskevt)
+	if riskevt == nil {
+		t.Fatal("expecting non nil risk update")
+	}
+	assert.Nil(t, err)
+	margins := riskevt.MarginLevels()
+	assert.Equal(t, int64(277), margins.MaintenanceMargin)
+	assert.Equal(t, int64(277*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, int64(277*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, int64(277*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
@@ -285,6 +396,9 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
+	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
+	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
 		conf,
@@ -292,6 +406,9 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		model,
 		initialRisk,
 		ob,
+		mlbuf,
+		0,
+		"mktid",
 	)
 	return &testEngine{
 		Engine:    engine,

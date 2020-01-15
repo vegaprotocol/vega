@@ -197,7 +197,8 @@ func testAddNewTraderSelfTrade(t *testing.T) {
 	engine.Update(init)
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(markPrice, positions)
-	assert.Empty(t, noTransfers)
+	assert.Len(t, noTransfers, 1)
+	assert.Nil(t, noTransfers[0].Transfer())
 }
 
 func testAddNewTrader(t *testing.T) {
@@ -240,7 +241,10 @@ func testAddNewTrader(t *testing.T) {
 	engine.Update(init)
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(markPrice, positions)
-	assert.Empty(t, noTransfers)
+	assert.Len(t, noTransfers, 2)
+	for _, v := range noTransfers {
+		assert.Nil(t, v.Transfer())
+	}
 }
 
 // This tests MTM results put losses first, trades tested are Long going longer, short going shorter

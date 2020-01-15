@@ -20,11 +20,11 @@ Feature: Test mark to market settlement with insurance pool
     And "trader1" general accounts balance is "121"
     And "trader2" general accounts balance is "10000"
     And "trader3" general accounts balance is "10000"
-    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
+   And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 |
-      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | GTC |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    120 |       1 |
@@ -32,20 +32,20 @@ Feature: Test mark to market settlement with insurance pool
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | id         | type | volume | price | resulting trades |
-      | trader2 |  ETH/DEC19 | buy |     1  |  6000 |                0 |
+      | trader  | id         | type | volume | price | resulting trades | type  | tif |
+      | trader2 |  ETH/DEC19 | buy |     1  |  6000 |                0 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader2 | ETH   | ETH/DEC19 |    264 |    9736 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades |
-      | trader3 | ETH/DEC19 | sell |      1 |  5000 |                1 |
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | sell |      1 |  5000 |                1 | LIMIT | GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
-      | trader2 | ETH   | ETH/DEC19 |   1847 |   13153 |
-      | trader3 | ETH   | ETH/DEC19 |    120 |    9880 |
+      | trader2 | ETH   | ETH/DEC19 |   1584 |   13416 |
+      | trader3 | ETH   | ETH/DEC19 |    720 |    9280 |
    And All balances cumulated are worth "25242"
    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
    And the insurance pool balance is "242" for the market "ETH/DEC19"

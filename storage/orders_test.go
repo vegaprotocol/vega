@@ -382,8 +382,121 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 	assert.Equal(t, testMarket, depth.MarketID)
 	assert.Equal(t, 1, len(depth.Buy))
 	assert.Equal(t, 1, len(depth.Sell))
+	assert.Equal(t, uint64(2), depth.Buy[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(1), depth.Sell[0].GetNumberOfOrders())
 	assert.Equal(t, uint64(100), depth.Buy[0].Price)
 	assert.Equal(t, uint64(9999), depth.Sell[0].Price)
+}
+
+// Ensure market depth returns expected price levels from incoming orders when called multiple times with different order book state
+func TestStorage_GetMarketDepthRepeatedCalls(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	log := logging.NewTestLogger()
+	storage.FlushStores(log, config)
+	orderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer orderStore.Close()
+
+	order1 := &types.Order{
+		Id:          "d41d8cd98f00b204e9800998ecf8427b",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		Remaining:   1000,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231231",
+	}
+
+	sellPrice1 := uint64(9999)
+	order2 := &types.Order{
+		Id:          "d41d8cd98f00b204e9800998hhf8427c",
+		MarketID:    testMarket,
+		PartyID:     testPartyB,
+		Side:        types.Side_Sell,
+		Price:       sellPrice1,
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231232",
+	}
+
+	err = orderStore.SaveBatch([]types.Order{*order1, *order2})
+	assert.NoError(t, err)
+
+	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	assert.Nil(t, err)
+
+	assert.Equal(t, testMarket, depth.MarketID)
+	assert.Equal(t, 1, len(depth.Buy))
+	assert.Equal(t, 1, len(depth.Sell))
+	assert.Equal(t, uint64(1), depth.Buy[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(1), depth.Sell[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(100), depth.Buy[0].Price)
+	assert.Equal(t, sellPrice1, depth.Sell[0].Price)
+
+	sellPrice2 := uint64(5)
+	assert.NotEqual(t, sellPrice2, sellPrice1)
+
+	order3 := &types.Order{
+		Id:          "d41d8cd98f00b204e9800998hhf8427c",
+		MarketID:    testMarket,
+		PartyID:     testPartyB,
+		Side:        types.Side_Sell,
+		Price:       9999,
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Cancelled,
+		Reference:   "123123-34334343-1231232",
+	}
+
+	order4 := &types.Order{
+		Id:          "d41d8cd98f00b204e9800998hhf8427c",
+		MarketID:    testMarket,
+		PartyID:     testPartyB,
+		Side:        types.Side_Sell,
+		Price:       sellPrice2,
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231232",
+	}
+
+	err = orderStore.SaveBatch([]types.Order{*order3, *order4})
+	assert.NoError(t, err)
+
+	depth2, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	assert.Nil(t, err)
+
+	assert.Equal(t, testMarket, depth2.MarketID)
+	assert.Equal(t, 1, len(depth2.Buy))
+	assert.Equal(t, 1, len(depth2.Sell))
+	assert.Equal(t, uint64(1), depth2.Buy[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(1), depth2.Sell[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(100), depth2.Buy[0].Price)
+	assert.Equal(t, sellPrice2, depth2.Sell[0].Price)
+
+	//Assure preivous marketDepth didn't change
+	assert.Equal(t, testMarket, depth.MarketID)
+	assert.Equal(t, 1, len(depth.Buy))
+	assert.Equal(t, 1, len(depth.Sell))
+	assert.Equal(t, uint64(1), depth.Buy[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(1), depth.Sell[0].GetNumberOfOrders())
+	assert.Equal(t, uint64(100), depth.Buy[0].Price)
+	assert.Equal(t, sellPrice1, depth.Sell[0].Price)
+
 }
 
 func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {

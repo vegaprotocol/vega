@@ -23,6 +23,12 @@ type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
 }
 
+// MarginLevelsBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
+type MarginLevelsBuf interface {
+	Add(types.MarginLevels)
+}
+
 type marginChange struct {
 	events.Margin       // previous event that caused this change
 	amount        int64 // the amount we need to move (positive is move to margin, neg == move to general)
@@ -40,6 +46,10 @@ type Engine struct {
 	factors          *types.RiskResult
 	waiting          bool
 	ob               Orderbook
+	marginsLevelsBuf MarginLevelsBuf
+
+	currTime int64
+	mktID    string
 }
 
 // NewEngine instantiate a new risk engine
@@ -50,6 +60,9 @@ func NewEngine(
 	model Model,
 	initialFactors *types.RiskResult,
 	ob Orderbook,
+	mlBuf MarginLevelsBuf,
+	initialTime int64,
+	mktID string,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -63,6 +76,9 @@ func NewEngine(
 		model:            model,
 		waiting:          false,
 		ob:               ob,
+		marginsLevelsBuf: mlBuf,
+		currTime:         initialTime,
+		mktID:            mktID,
 	}
 }
 
@@ -125,14 +141,26 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 		)
 	}
 
+	// update other fields for the margins
+	margins.PartyID = evt.Party()
+	margins.Asset = evt.Asset()
+	margins.Timestamp = e.currTime
+	margins.MarketID = e.mktID
+
 	curBalance := evt.MarginBalance()
+
+	// there's not enought monies in the accounts of the party,
+	// we break from here
+	if int64(evt.MarginBalance()+evt.GeneralBalance()) < margins.InitialMargin {
+		return nil, ErrInsufficientFundsForInitialMargin
+	}
+
+	// propagate margins levels to the buffer
+	e.marginsLevelsBuf.Add(*margins)
+
 	// margins are sufficient, nothing to update
 	if int64(curBalance) >= margins.InitialMargin {
 		return nil, nil
-	}
-
-	if int64(evt.MarginBalance()+evt.GeneralBalance()) < margins.InitialMargin {
-		return nil, ErrInsufficientFundsForInitialMargin
 	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
@@ -146,10 +174,6 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 			MinAmount: margins.InitialMargin - int64(curBalance),
 		},
 	}
-
-	// update other fields for the margins
-	margins.PartyID = evt.Party()
-	margins.Asset = evt.Asset()
 
 	return &marginChange{
 		Margin:   evt,
@@ -184,6 +208,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 
 		// update other fields for the margins
+		margins.Timestamp = e.currTime
+		margins.MarketID = e.mktID
 		margins.PartyID = evt.Party()
 		margins.Asset = evt.Asset()
 
@@ -198,6 +224,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		curMargin := int64(evt.MarginBalance())
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.CollateralReleaseLevel {
+			// propagate margins then continue
+			e.marginsLevelsBuf.Add(*margins)
 			continue
 		}
 
@@ -208,7 +236,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// the maintenance level
 			var minAmount int64
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = margins.MaintenanceMargin - curMargin
+				minAmount = margins.SearchLevel - curMargin
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -231,11 +259,14 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:     evt.Asset(),
-					Amount:    curMargin - margins.CollateralReleaseLevel,
+					Amount:    curMargin - margins.InitialMargin,
 					MinAmount: 0,
 				},
 			}
 		}
+
+		// propage margins to the buffers
+		e.marginsLevelsBuf.Add(*margins)
 
 		risk := &marginChange{
 			Margin:   evt,

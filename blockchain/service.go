@@ -38,7 +38,7 @@ type ServiceTime interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/blockchain ServiceExecutionEngine
 type ServiceExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
+	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
@@ -194,10 +194,10 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	return nil
 }
 
-func (s *abciService) CancelOrder(order *types.Order) error {
+func (s *abciService) CancelOrder(order *types.OrderCancellation) error {
 	s.stats.addTotalCancelOrder(1)
 	if s.log.GetLevel() == logging.DebugLevel {
-		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
+		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderID))
 	}
 
 	// Submit the cancel new order request to the Vega trading core
@@ -209,7 +209,7 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 	}
 	if errorMessage != nil {
 		s.log.Error("error message on cancelling order",
-			logging.Order(*order),
+			logging.String("order-id", order.OrderID),
 			logging.Error(errorMessage))
 		return errorMessage
 	}

@@ -14,7 +14,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_service_mock.go -package mocks code.vegaprotocol.io/vega/blockchain ProcessorService
 type ProcessorService interface {
 	SubmitOrder(order *types.Order) error
-	CancelOrder(order *types.Order) error
+	CancelOrder(order *types.OrderCancellation) error
 	AmendOrder(order *types.OrderAmendment) error
 	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
@@ -58,6 +58,15 @@ func (p *Processor) ReloadConf(cfg Config) {
 
 func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
 	order := &types.Order{}
+	err := proto.Unmarshal(payload, order)
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
+func (p *Processor) getOrderCancellation(payload []byte) (*types.OrderCancellation, error) {
+	order := &types.OrderCancellation{}
 	err := proto.Unmarshal(payload, order)
 	if err != nil {
 		return nil, err
@@ -152,7 +161,7 @@ func (p *Processor) Process(payload []byte) error {
 			return err
 		}
 	case CancelOrderCommand:
-		order, err := p.getOrder(data)
+		order, err := p.getOrderCancellation(data)
 		if err != nil {
 			return err
 		}
@@ -170,11 +179,11 @@ func (p *Processor) Process(payload []byte) error {
 			return err
 		}
 	case NotifyTraderAccountCommand:
-		notif, err := p.getNotifyTraderAccount(data)
+		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
 			return err
 		}
-		err = p.blockchainService.NotifyTraderAccount(notif)
+		err = p.blockchainService.NotifyTraderAccount(notify)
 		if err != nil {
 			return err
 		}

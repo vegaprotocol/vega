@@ -21,7 +21,7 @@ var (
 )
 
 type cancelMatcher struct {
-	e proto.Order
+	e proto.OrderCancellation
 }
 
 func TestCancelOrder(t *testing.T) {
@@ -46,7 +46,7 @@ func testCancelOrderSuccess(t *testing.T) {
 	}
 
 	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
-	svc.block.EXPECT().CancelOrder(gomock.Any(), cancelMatcher{e: order}).Times(1).Return(true, nil)
+	svc.block.EXPECT().CancelOrder(gomock.Any(), &arg).Times(1).Return(true, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.NotNil(t, pendingOrder)
 	assert.NoError(t, err)
@@ -137,5 +137,5 @@ func (m cancelMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	return (m.e.Id == v.Id && m.e.MarketID == v.MarketID && m.e.PartyID == v.PartyID && m.e.Status == v.Status && m.e.Remaining == v.Remaining)
+	return (m.e.OrderID == v.Id && m.e.MarketID == v.MarketID && m.e.PartyID == v.PartyID)
 }

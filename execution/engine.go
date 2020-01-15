@@ -366,9 +366,9 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Cancel order", logging.Order(*order))
+		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
@@ -380,6 +380,25 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 	if conf.Order.Status == types.Order_Cancelled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
+	return conf, nil
+}
+
+// CancelOrderByID attempts to locate order by its Id and cancel it if exists.
+func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderCancellationConfirmation, error) {
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Cancel order by id", logging.String("order-id", orderID))
+	}
+	mkt, ok := e.markets[marketID]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+	conf, err := mkt.CancelOrderByID(orderID)
+	if err != nil {
+		return nil, err
+	}
+	if conf.Order.Status == types.Order_Cancelled {
+		metrics.OrderGaugeAdd(-1, marketID)
 	}
 	return conf, nil
 }

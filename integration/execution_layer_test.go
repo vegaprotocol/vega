@@ -148,7 +148,6 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	for _, acc := range execsetup.accounts.data {
-		fmt.Printf("acc: %v\n", acc)
 		if acc.Owner == arg1 && acc.Type == proto.AccountType_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
@@ -213,6 +212,15 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			continue
 		}
 
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+		tif, err := tifval(row, 7)
+		if err != nil {
+			return err
+		}
+
 		order := proto.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -222,9 +230,50 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        oty,
+			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
+		}
+		result, err := execsetup.engine.SubmitOrder(&order)
+		if err != nil {
+			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
+		}
+
+		if int64(len(result.Trades)) != i64val(row, 5) {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
+		}
+	}
+	return nil
+}
+
+func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+		tif, err := tifval(row, 7)
+		if err != nil {
+			return err
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        oty,
+			TimeInForce: tif,
+			CreatedAt:   time.Now().UnixNano(),
+			Reference:   val(row, 8),
 		}
 		result, err := execsetup.engine.SubmitOrder(&order)
 		if err != nil {
@@ -234,6 +283,32 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
 		}
 	}
+	return nil
+}
+
+func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
+	for _, row := range refs.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+
+		cancel := proto.OrderCancellation{
+			OrderID:  o.Id,
+			PartyID:  o.PartyID,
+			MarketID: o.MarketID,
+		}
+
+		_, err = execsetup.engine.CancelOrder(&cancel)
+		if err != nil {
+			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
+		}
+	}
+
 	return nil
 }
 
@@ -265,7 +340,6 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
 	for _, v := range execsetup.accounts.data {
-		fmt.Printf("ACCOUNT: %v\n", v)
 		cumul += uint64(v.Balance)
 	}
 
@@ -389,16 +463,16 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 		}
 
 		if ml.MaintenanceMargin != i64val(row, 2) {
-			return fmt.Errorf("invalid maintenance margin, expected %v but got %v", i64val(row, 2), ml.MaintenanceMargin)
+			return fmt.Errorf("invalid maintenance margin, expected %v but got %v (trader=%v)", i64val(row, 2), ml.MaintenanceMargin, val(row, 0))
 		}
 		if ml.SearchLevel != i64val(row, 3) {
-			return fmt.Errorf("invalid search margin, expected %v but got %v", i64val(row, 3), ml.SearchLevel)
+			return fmt.Errorf("invalid search margin, expected %v but got %v (trader=%v)", i64val(row, 3), ml.SearchLevel, val(row, 0))
 		}
 		if ml.InitialMargin != i64val(row, 4) {
-			return fmt.Errorf("invalid initial margin, expected %v but got %v", i64val(row, 4), ml.InitialMargin)
+			return fmt.Errorf("invalid initial margin, expected %v but got %v (trader=%v)", i64val(row, 4), ml.InitialMargin, val(row, 0))
 		}
 		if ml.CollateralReleaseLevel != i64val(row, 5) {
-			return fmt.Errorf("invalid collateral release margin, expected %v but got %v", i64val(row, 5), ml.CollateralReleaseLevel)
+			return fmt.Errorf("invalid collateral release margin, expected %v but got %v (trader=%v)", i64val(row, 5), ml.CollateralReleaseLevel, val(row, 0))
 		}
 
 	}
@@ -490,7 +564,7 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
-	return proto.Market{
+	mkt := proto.Market{
 		Id:            val(row, 0),
 		Name:          val(row, 0),
 		DecimalPlaces: 2,
@@ -542,5 +616,21 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 			Continuous: &proto.ContinuousTrading{},
 		},
 	}
+
+	if val(row, 5) == "forward" {
+		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_ForwardRiskModel{
+			ForwardRiskModel: &proto.ForwardRiskModel{
+				RiskAversionParameter: f64val(row, 6), // 6
+				Tau:                   f64val(row, 7), // 7
+				Params: &proto.ModelParamsBS{
+					Mu:    f64val(row, 8),  // 8
+					R:     f64val(row, 9),  // 9
+					Sigma: f64val(row, 10), //10
+				},
+			},
+		}
+	}
+
+	return mkt
 
 }
