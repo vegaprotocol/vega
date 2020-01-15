@@ -86,3 +86,36 @@ func TestNewParty(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, err, execution.ErrNotifyTraderAccountMissing)
 }
+
+func TestNewAccount(t *testing.T) {
+	now := time.Now()
+
+	ctrl := gomock.NewController(t)
+	log := logging.NewTestLogger()
+	partyBuf := mocks.NewMockPartyBuf(ctrl)
+	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
+	assert.NoError(t, err)
+
+	testMarket := getMarkets(now.AddDate(0, 0, 7))
+	testMarketID := testMarket[0].Id
+
+	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
+	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
+
+	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
+	assert.NotNil(t, party)
+	party = execution.NewParty(log, collateralEngine, testMarket, partyBuf)
+	assert.NotNil(t, party)
+
+	res := party.GetByMarket("invalid")
+	assert.Equal(t, 0, len(res))
+	res = party.GetByMarket(testMarketID)
+	assert.Equal(t, 0, len(res))
+
+	trader := "Finn the human"
+	err = party.MakeAccount(trader)
+	assert.NoError(t, err)
+	err = party.MakeAccount(trader)
+	assert.NoError(t, err)
+}
