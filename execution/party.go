@@ -75,7 +75,7 @@ func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 		return ErrNotifyTraderAccountMissing
 	}
 	if notify.Amount == 0 {
-		return p.notifyTraderAccount(notify, 1000000000000)
+		return p.notifyTraderAccount(notify, 1000000000) // 10000.00000
 	}
 	return p.notifyTraderAccount(notify, int64(notify.Amount))
 }

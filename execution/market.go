@@ -516,11 +516,13 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			if err == nil && len(transfers) > 0 {
 				m.transferBuf.Add(transfers)
 			}
-			err = m.resolveClosedOutTraders(closed, order)
-			if err != nil {
-				m.log.Error("unable to close out traders",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
+			if len(closed) > 0 {
+				err = m.resolveClosedOutTraders(closed, order)
+				if err != nil {
+					m.log.Error("unable to close out traders",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				}
 			}
 		}
 	}
@@ -585,6 +587,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 				)
 			}
 		}
+	}
+
+	// if no position are meant to be closed, just return now.
+	if len(closed) <= 0 {
+		return nil
 	}
 
 	// get the actual position, so we can work out what the total position of the market is going to be
@@ -774,15 +781,19 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		}
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
-		// store the trader order, too
-		m.orderBuf.Add(to)
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
 		}
+		// store the trader order, too
+		m.orderBuf.Add(to)
 		// now store the resulting trades:
 		for _, trade := range res.Trades {
 			m.tradeBuf.Add(*trade)
+		}
+
+		for _, o := range res.PassiveOrdersAffected {
+			m.orderBuf.Add(*o)
 		}
 	}
 	return nil
