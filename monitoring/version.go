@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	minVersion = semver.MustParse("0.32.6")
+	minVersion = semver.MustParse("0.32.9")
 	maxVersion = semver.MustParse("0.33.0")
 )
 
@@ -37,7 +37,7 @@ func (c ChainVersion) Check(vstr string) error {
 	}
 
 	if v.GE(c.Max) {
-		return fmt.Errorf("expected version lesser than %v but got %v", c.Max, v)
+		return fmt.Errorf("expected version less than %v but got %v", c.Max, v)
 	}
 
 	return nil

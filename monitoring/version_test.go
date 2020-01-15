@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	minVersion = semver.MustParse("0.31.5")
-	maxVersion = semver.MustParse("0.32.0")
+	minVersion = semver.MustParse("0.1.2")
+	maxVersion = semver.MustParse("0.2.0")
 )
 
 func newTestChainVersion() monitoring.ChainVersion {
@@ -22,7 +22,7 @@ func newTestChainVersion() monitoring.ChainVersion {
 
 func TestVersion(t *testing.T) {
 	t.Run("version is ok", testVersionOK)
-	t.Run("version is lesser than expected", testVersionLesser)
+	t.Run("version is less than expected", testVersionLesser)
 	t.Run("version is greater than expected", testVersionGreater)
 	t.Run("version with invalid format", testVersionInvalidFormat)
 }
@@ -31,17 +31,17 @@ func testVersionOK(t *testing.T) {
 	c := newTestChainVersion()
 
 	// v = min
-	okVersion := "0.32.6"
+	okVersion := "0.1.2"
 	err := c.Check(okVersion)
 	assert.Nil(t, err)
 
 	// v with vprefix
-	okVersion = "v0.32.6"
+	okVersion = "v0.1.2"
 	err = c.Check(okVersion)
 	assert.Nil(t, err)
 
 	// v between min and max
-	okVersion = "0.32.123"
+	okVersion = "0.1.123"
 	err = c.Check(okVersion)
 	assert.Nil(t, err)
 }
@@ -49,26 +49,26 @@ func testVersionOK(t *testing.T) {
 func testVersionLesser(t *testing.T) {
 	c := newTestChainVersion()
 
-	koVersion := "0.31.4"
+	koVersion := "0.1.1"
 	err := c.Check(koVersion)
 	assert.NotNil(t, err)
-	assert.Equal(t, "expected version greater than 0.32.6 but got 0.31.4", err.Error())
+	assert.Equal(t, "expected version greater than 0.1.2 but got 0.1.1", err.Error())
 }
 
 func testVersionGreater(t *testing.T) {
 	c := newTestChainVersion()
 
 	// v == max
-	koVersion := "0.33.0"
+	koVersion := "0.2.0"
 	err := c.Check(koVersion)
 	assert.NotNil(t, err)
-	assert.Equal(t, "expexted version lesser than 0.33.0 but got 0.33.0", err.Error())
+	assert.Equal(t, "expected version less than 0.2.0 but got 0.2.0", err.Error())
 
 	// v > max
-	koVersion = "0.367.0"
+	koVersion = "0.345.0"
 	err = c.Check(koVersion)
 	assert.NotNil(t, err)
-	assert.Equal(t, "expexted version lesser than 0.33.0 but got 0.367.0", err.Error())
+	assert.Equal(t, "expected version less than 0.2.0 but got 0.345.0", err.Error())
 }
 
 func testVersionInvalidFormat(t *testing.T) {
