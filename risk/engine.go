@@ -232,9 +232,10 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
 		if curMargin <= margins.SearchLevel {
+			var minAmount int64
+
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
-			var minAmount int64
 			if curMargin < margins.MaintenanceMargin {
 				minAmount = margins.SearchLevel - curMargin
 			}

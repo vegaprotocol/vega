@@ -27,9 +27,9 @@ var (
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
-	ErrAccountDoesNotExist = errors.New("account do not exists")
-
+	ErrAccountDoesNotExist                     = errors.New("account do not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
+	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
 )
 
 // AccountBuffer ...
@@ -304,8 +304,13 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 			asset:          update.Asset(),
 			marketID:       update.MarketID(),
 		}
+
 		req, err := e.getTransferRequest(transfer, settle, nil, mevt)
 		if err != nil {
+			if err == ErrMinAmountNotReached {
+				closed = append(closed, mevt)
+				continue
+			}
 			// log this
 			return nil, nil, err
 		}
@@ -324,7 +329,6 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		// In both case either the order will not be accepted, or the trader will be closed
 		if transfer.Type == types.TransferType_MARGIN_LOW &&
 			res.Balances[0].Account.Balance < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
-			// mevt embeds update, which in turn embeds events.MarketPosition
 			closed = append(closed, mevt)
 		} else {
 			response = append(response, res)
@@ -421,6 +425,10 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		p.Size = 1
 	}
 	if p.Type == types.TransferType_MARGIN_LOW {
+		if mEvt.general.Balance < p.Amount.MinAmount {
+			return nil, ErrMinAmountNotReached
+		}
+
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
 				mEvt.general,
