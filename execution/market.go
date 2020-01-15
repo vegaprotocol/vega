@@ -698,7 +698,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	if err = m.zeroOutNetwork(size, closedMPs, &no, o); err != nil {
+	if err = m.zeroOutNetwork(closedMPs, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -741,34 +741,23 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	return err
 }
 
-func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
+func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, initial *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
 	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice, false)
-	side := types.Side_Sell
-	if settleOrder.Side == side {
-		side = types.Side_Buy
-	}
+	marketID := m.GetID()
 	order := types.Order{
-		MarketID:    m.GetID(),
-		Remaining:   size,
+		MarketID:    marketID,
 		Status:      types.Order_Active,
 		PartyID:     networkPartyID,
-		Side:        side, // assume sell, price is zero in that case anyway
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
 		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
-	order.Size = order.Remaining
-	if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
-		return err
-	}
-	m.orderBuf.Add(order)
 	// traders need to take the opposing side
-	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
 
 	asset, _ := m.mkt.GetAsset()
@@ -779,12 +768,25 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 	}
 
 	for i, trader := range traders {
+		tSide, nSide := types.Side_Sell, types.Side_Sell // one of them will have to sell
+		if trader.Size() < 0 {
+			tSide = types.Side_Buy
+		} else {
+			nSide = types.Side_Buy
+		}
+		tSize := uint64(math.Abs(float64(trader.Size())))
+		// set order fields (network order)
+		order.Size = tSize
+		order.Remaining = order.Size
+		order.Side = nSide
+		order.Status = types.Order_Active // ensure the status is always active
+		m.idgen.SetID(&order)
 		to := types.Order{
-			MarketID:    m.GetID(),
-			Remaining:   uint64(math.Abs(float64(trader.Size()))),
+			MarketID:    marketID,
+			Remaining:   tSize,
 			Status:      types.Order_Active,
 			PartyID:     trader.Party(),
-			Side:        side,              // assume sell, price is zero in that case anyway
+			Side:        tSide,             // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
@@ -793,14 +795,27 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		}
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
+		if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
+			return err
+		}
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
 		}
 		// store the trader order, too
 		m.orderBuf.Add(to)
+		m.orderBuf.Add(order)
 		// now store the resulting trades:
-		for _, trade := range res.Trades {
+		for idx, trade := range res.Trades {
+			trade.Id = fmt.Sprintf("%s-%010d", to.Id, idx)
+			if order.Side == types.Side_Buy {
+				trade.BuyOrder = order.Id
+				trade.SellOrder = res.PassiveOrdersAffected[idx].Id
+			} else {
+				trade.SellOrder = order.Id
+				trade.BuyOrder = res.PassiveOrdersAffected[idx].Id
+			}
+
 			m.tradeBuf.Add(*trade)
 		}
 
