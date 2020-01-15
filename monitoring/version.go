@@ -32,12 +32,12 @@ func (c ChainVersion) Check(vstr string) error {
 		return err
 	}
 
-	if v.LT(minVersion) {
-		return fmt.Errorf("expected version greater than %v but got %v", minVersion, v)
+	if v.LT(c.Min) {
+		return fmt.Errorf("expected version greater than %v but got %v", c.Min, v)
 	}
 
-	if v.GE(maxVersion) {
-		return fmt.Errorf("expexted version lesser than %v but got %v", maxVersion, v)
+	if v.GE(c.Max) {
+		return fmt.Errorf("expected version lesser than %v but got %v", c.Max, v)
 	}
 
 	return nil
