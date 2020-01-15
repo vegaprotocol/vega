@@ -114,7 +114,7 @@ func (p *Party) makeGeneralAccounts(id string) (stringSet, error) {
 	// ignore errors as they can only happen when the party already exists
 	p.partyBuf.Add(types.Party{Id: id})
 
-	var result stringSet
+	result := stringSet{}
 
 	for _, mkt := range p.markets {
 		p.addParty(id, mkt.Id)
