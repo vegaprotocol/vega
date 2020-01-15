@@ -3,7 +3,6 @@ package risk
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -147,7 +146,6 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
 	margins.MarketID = e.mktID
-	fmt.Printf("MARGIN OPEN ORDER: %#v, balance: %v\n", margins, evt.MarginBalance())
 
 	curBalance := evt.MarginBalance()
 
