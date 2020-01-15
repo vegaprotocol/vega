@@ -93,6 +93,7 @@ func New(
 		time:       time,
 		processor:  proc,
 		stats:      stats,
+		service:    service,
 	}, nil
 }
 
