@@ -214,7 +214,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		margins.MarketID = e.mktID
 		margins.PartyID = evt.Party()
 		margins.Asset = evt.Asset()
-		fmt.Printf("MARGIN ON SETTLEMENT: %#v, balance: %v\n", margins, evt.MarginBalance())
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("margins calculated on settlement",
@@ -235,9 +234,10 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
 		if curMargin <= margins.SearchLevel {
+			var minAmount int64
+
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
-			var minAmount int64
 			if curMargin < margins.MaintenanceMargin {
 				minAmount = margins.SearchLevel - curMargin
 			}
