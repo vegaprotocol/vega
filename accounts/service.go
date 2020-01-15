@@ -76,7 +76,7 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
 	if ty == types.AccountType_GENERAL {
-		// GENERAL accounts cannot have a marketID so blank it
+		// General accounts for party are not specific to one market, therefore marketID should not be set
 		marketID = ""
 	}
 
