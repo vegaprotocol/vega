@@ -219,6 +219,11 @@ func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notify)
 }
 
+// CreateTraderAccount creates new account for a party
+func (e *Engine) CreateTraderAccount(newAccountID string) error {
+	return e.party.MakeAccount(newAccountID)
+}
+
 func (e *Engine) Withdraw(w *types.Withdraw) error {
 	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
 	if err != nil {
