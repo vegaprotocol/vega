@@ -31,6 +31,12 @@ type posValue struct {
 	size   int64
 }
 
+type marginVal struct {
+	events.MarketPosition
+	asset, marketID string
+	margin, general uint64
+}
+
 func TestMarketExpiry(t *testing.T) {
 	t.Run("Settle at market expiry - success", testSettleExpiredSuccess)
 	t.Run("Settle at market expiry - error", testSettleExpiryFail)
@@ -412,7 +418,14 @@ func TestConcurrent(t *testing.T) {
 				size:   0,
 			},
 		}
-		_, evts := engine.getMockMarketPositions(data)
+		raw, evts := engine.getMockMarketPositions(data)
+		// margin evt
+		marginEvts := make([]events.Margin, 0, len(raw))
+		for _, pe := range raw {
+			marginEvts = append(marginEvts, marginVal{
+				MarketPosition: pe,
+			})
+		}
 
 		go func() {
 			defer wg.Done()
@@ -422,7 +435,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// RemoveDistressed requires posMu and closedMu
-			engine.RemoveDistressed(evts)
+			engine.RemoveDistressed(marginEvts)
 		}()
 		go func() {
 			defer wg.Done()
@@ -488,5 +501,21 @@ func getTestEngine(t *testing.T) *testEngine {
 		market:    market,
 	}
 } // }}}
+
+func (m marginVal) Asset() string {
+	return m.asset
+}
+
+func (m marginVal) MarketID() string {
+	return m.marketID
+}
+
+func (m marginVal) MarginBalance() uint64 {
+	return m.margin
+}
+
+func (m marginVal) GeneralBalance() uint64 {
+	return m.general
+}
 
 //  vim: set ts=4 sw=4 tw=0 foldlevel=1 foldmethod=marker noet :

@@ -243,13 +243,22 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 
 // RemoveDistressed - remove whatever settlement data we have for distressed traders
 // they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
+func (e *Engine) RemoveDistressed(evts []events.Margin) {
 	e.mu.Lock()
-	for _, trader := range traders {
-		key := trader.Party()
+	bEvts := make([]events.SettlePosition, 0, len(evts))
+	for _, v := range evts {
+		key := v.Party()
+		sp := &settlePos{
+			MarketPosition: v,
+			marketID:       e.market,
+			margin:         v,
+		}
+		bEvts = append(bEvts, sp)
 		delete(e.pos, key)
 		delete(e.trades, key)
 	}
+	e.buf.Add(bEvts)
+	e.buf.Flush()
 	e.mu.Unlock()
 }
 
