@@ -26,6 +26,7 @@ type settlePos struct {
 	events.MarketPosition
 	marketID string
 	trades   []*pos
+	margin   events.Margin // this field is only used when dealing with distressed traders
 }
 
 type mtmTransfer struct {
@@ -87,4 +88,11 @@ func (s settlePos) Trades() []events.TradeSettlement {
 // MarketID - market ID for this event
 func (s settlePos) MarketID() string {
 	return s.marketID
+}
+
+// Margin - part of the interface, returns the margin event and a bool indicating whether or not
+// the margin event is nil or not
+func (s settlePos) Margin() (events.Margin, bool) {
+	ok := (s.margin != nil)
+	return s.margin, ok
 }

@@ -569,7 +569,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	closed := distressedPos // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
+	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
 
 	// we need to check margin requirements again, it's possible for traders to no longer be distressed now that their orders have been removed
 	if len(rmorders) != 0 {
@@ -594,21 +594,25 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		return nil
 	}
 
+	// we only need the MarketPosition events here, and rather than changing all the calls
+	// we can just keep the MarketPosition bit
+	closedMPs := make([]events.MarketPosition, 0, len(closed))
 	// get the actual position, so we can work out what the total position of the market is going to be
 	var networkPos int64
 	for _, pos := range closed {
 		networkPos += pos.Size()
+		closedMPs = append(closedMPs, pos)
 	}
 	if networkPos == 0 {
 		// remove accounts, positions and return
 		// from settlement engine first
 		m.settlement.RemoveDistressed(closed)
 		// then from positions
-		closed = m.position.RemoveDistressed(closed)
+		closedMPs = m.position.RemoveDistressed(closedMPs)
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
 		var movements *types.TransferResponse
-		movements, err = m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+		movements, err = m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -694,7 +698,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	if err = m.zeroOutNetwork(size, closed, &no, o); err != nil {
+	if err = m.zeroOutNetwork(size, closedMPs, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -703,9 +707,9 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
 	// insurance pool, which needs to happen before we settle the non-distressed traders
-	closed = m.position.RemoveDistressed(closed)
+	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
-	movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+	movements, err := m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
