@@ -160,6 +160,17 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 }
 
 func updatePosition(p *types.Position, e events.SettlePosition) {
+	// if this settlePosition event has a margin event embedded, that means we're dealing
+	// with a trader who was closed out...
+	if margin, ok := e.Margin(); ok {
+		p.OpenVolume = 0
+		p.UnrealisedPNL = 0
+		// realised P&L includes whatever we had in margin account at this point
+		p.RealisedPNL -= int64(margin.MarginBalance())
+		// @TODO average entry price shouldn't be affected(?)
+		// the volume now is zero, though, so we'll end up moving this position to storage
+		return
+	}
 	current := p.OpenVolume
 	var (
 		// delta uint64
