@@ -770,6 +770,14 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 	// traders need to take the opposing side
 	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
+
+	asset, _ := m.mkt.GetAsset()
+	marginLevels := types.MarginLevels{
+		MarketID:  m.mkt.GetId(),
+		Asset:     asset,
+		Timestamp: m.currentTime.UnixNano(),
+	}
+
 	for i, trader := range traders {
 		to := types.Order{
 			MarketID:    m.GetID(),
@@ -799,6 +807,10 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		for _, o := range res.PassiveOrdersAffected {
 			m.orderBuf.Add(*o)
 		}
+
+		// 0 out margins levels for this trader
+		marginLevels.PartyID = trader.Party()
+		m.marginLevelsBuf.Add(marginLevels)
 	}
 	return nil
 }
