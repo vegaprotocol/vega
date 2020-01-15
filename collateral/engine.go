@@ -706,8 +706,8 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 				FromAccount: acc.Id,
 				ToAccount:   ins.Id,
 				Amount:      acc.Balance,
-				Reference:   "close-out distressed",
-				Type:        "", // @TODO determine this value
+				Reference:   types.TransferType_MARGIN_CONFISCATED.String(),
+				Type:        "position-resolution",
 				Timestamp:   e.currentTime,
 			})
 			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
