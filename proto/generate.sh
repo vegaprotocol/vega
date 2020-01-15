@@ -62,3 +62,6 @@ do
 	sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
 		&& ./script/fix_imports.sh "$pbfile"
 done
+
+## Template for plugin proto gen
+#protoc -I. -Iproto -Ivendor -Iplugins/positions/proto -Ivendor/github.com/google/protobuf/src --go_out="plugins=grpc,paths=source_relative:." --govalidators_out="paths=source_relative:." plugins/positions/proto/positions.proto
