@@ -533,7 +533,7 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 	}
 }
 
-func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.MarketPosition, error) {
+func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.Position, error) {
 	if pty == nil {
 		return nil, errors.New("nil party")
 	}
@@ -547,7 +547,7 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.M
 		return res.Positions, nil
 	} else {
 		// mandatory return field in schema
-		return []*types.MarketPosition{}, nil
+		return []*types.Position{}, nil
 	}
 }
 
@@ -1001,35 +1001,47 @@ func (r *myPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *types.
 
 type myPositionResolver VegaResolverRoot
 
-func (r *myPositionResolver) RealisedVolume(ctx context.Context, obj *types.MarketPosition) (string, error) {
-	return strconv.FormatInt(obj.RealisedVolume, 10), nil
+func (r *myPositionResolver) RealisedVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return "0", nil
 }
 
-func (r *myPositionResolver) RealisedProfitValue(ctx context.Context, obj *types.MarketPosition) (string, error) {
+func (r *myPositionResolver) RealisedProfitValue(ctx context.Context, obj *types.Position) (string, error) {
 	return r.absInt64Str(obj.RealisedPNL), nil
 }
 
-func (r *myPositionResolver) RealisedProfitDirection(ctx context.Context, obj *types.MarketPosition) (ValueDirection, error) {
+func (r *myPositionResolver) RealisedProfitDirection(ctx context.Context, obj *types.Position) (ValueDirection, error) {
 	return r.direction(obj.RealisedPNL), nil
 }
 
-func (r *myPositionResolver) UnrealisedVolume(ctx context.Context, obj *types.MarketPosition) (string, error) {
-	return strconv.FormatInt(obj.UnrealisedVolume, 10), nil
+func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.RealisedPNL, 10), nil
 }
 
-func (r *myPositionResolver) UnrealisedProfitValue(ctx context.Context, obj *types.MarketPosition) (string, error) {
+func (r *myPositionResolver) UnrealisedVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
+}
+
+func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
+}
+
+func (r *myPositionResolver) UnrealisedProfitValue(ctx context.Context, obj *types.Position) (string, error) {
 	return r.absInt64Str(obj.UnrealisedPNL), nil
 }
 
-func (r *myPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj *types.MarketPosition) (ValueDirection, error) {
+func (r *myPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj *types.Position) (ValueDirection, error) {
 	return r.direction(obj.UnrealisedPNL), nil
 }
 
-func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.MarketPosition) (string, error) {
+func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
+}
+
+func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
-func (r *myPositionResolver) Margins(ctx context.Context, obj *types.MarketPosition) ([]*types.MarginLevels, error) {
+func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) ([]*types.MarginLevels, error) {
 	if obj == nil {
 		return nil, errors.New("invalid position")
 	}
@@ -1052,7 +1064,7 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.MarketPosit
 	return out, nil
 }
 
-func (r *myPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
+func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*Market, error) {
 	if obj == nil {
 		return nil, errors.New("invalid position")
 	}
@@ -1480,7 +1492,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.MarketPosition, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.Position, error) {
 	req := &protoapi.PositionsSubscribeRequest{
 		PartyID: party,
 	}
@@ -1489,7 +1501,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<
 		return nil, err
 	}
 
-	c := make(chan *types.MarketPosition)
+	c := make(chan *types.Position)
 	go func() {
 		defer func() {
 			stream.CloseSend()
