@@ -34,22 +34,34 @@ type Subscriber interface {
 type PlugBuffer plugins.Buffers
 
 type Pos struct {
-	ctx   context.Context
-	mu    sync.RWMutex // sadly, we still need this because we'll be updating this map and reading from it
-	sub   Subscriber
-	data  map[string]map[string]types.Position
-	log   *logging.Logger
-	srv   *grpc.Server
-	store *Store
+	ctx           context.Context
+	conf          Config
+	mu            sync.RWMutex // sadly, we still need this because we'll be updating this map and reading from it
+	sub           Subscriber
+	data          map[string]map[string]types.Position
+	log           *logging.Logger
+	srv           *grpc.Server
+	store         *Store
+	subscriptions map[int]subscription
+	keys          []int
+	smu           sync.Mutex
+}
+
+type subscription struct {
+	ch   chan<- struct{}
+	full chan struct{} // this channel indicates the retry could is reached
 }
 
 // New - keep this one here, mainly for testing
 func New(ctx context.Context, sub Subscriber, store *Store) *Pos {
 	return &Pos{
-		ctx:   ctx,
-		sub:   sub,
-		data:  map[string]map[string]types.Position{},
-		store: store,
+		ctx:           ctx,
+		conf:          DefaultConfig(),
+		sub:           sub,
+		data:          map[string]map[string]types.Position{},
+		store:         store,
+		subscriptions: map[int]subscription{},
+		keys:          []int{},
 	}
 }
 
@@ -61,7 +73,7 @@ func (p *Pos) New(log *logging.Logger, ctx context.Context, buf plugins.Buffers,
 		logging.String("plugin-name", PluginName),
 	)
 
-	cfg := DefaultConfig()
+	cfg := p.conf
 	if err := config.LoadPluginConfig(rawCfg, PluginName, &cfg); err != nil {
 		return nil, err
 	}
@@ -69,12 +81,15 @@ func (p *Pos) New(log *logging.Logger, ctx context.Context, buf plugins.Buffers,
 	// create store for empty positions
 	store := NewPositionsStore(ctx)
 	return &Pos{
-		ctx:   ctx,
-		sub:   buf.PositionsSub(cfg.SubscriptionBuffer),
-		data:  map[string]map[string]types.Position{},
-		log:   log,
-		srv:   srv,
-		store: store,
+		ctx:           ctx,
+		conf:          cfg,
+		sub:           buf.PositionsSub(cfg.SubscriptionBuffer),
+		data:          map[string]map[string]types.Position{},
+		log:           log,
+		srv:           srv,
+		store:         store,
+		subscriptions: map[int]subscription{},
+		keys:          []int{},
 	}, nil
 }
 
@@ -83,6 +98,40 @@ func (p *Pos) New(log *logging.Logger, ctx context.Context, buf plugins.Buffers,
 func (p *Pos) Start() error {
 	go p.consume(p.ctx)
 	return nil
+}
+
+func (p *Pos) Subscribe(ch chan<- struct{}) (int, <-chan struct{}) {
+	p.smu.Lock()
+	k := p.getKey()
+	sub := subscription{
+		ch:   ch,
+		full: make(chan struct{}, 1),
+	}
+	p.subscriptions[k] = sub
+	p.smu.Unlock()
+	return k, sub.full
+}
+
+func (p *Pos) Unsubscribe(k int) {
+	p.smu.Lock()
+	// only do something if the key actually exists
+	if s, ok := p.subscriptions[k]; ok {
+		// make the subscription key available again
+		p.keys = append(p.keys, k)
+		// remove the current entry
+		delete(p.subscriptions, k)
+		close(s.full)
+	}
+	p.smu.Unlock()
+}
+
+func (p *Pos) getKey() int {
+	if len(p.keys) != 0 {
+		k := p.keys[0]
+		p.keys = p.keys[1:]
+		return k
+	}
+	return len(p.subscriptions) + 1 // don't allow 0 as a subscription ID
 }
 
 // GetPositionsByMarketAndParty get the position of a single trader in a given market
@@ -203,6 +252,22 @@ func (p *Pos) updateData(data map[string]map[string]types.Position, raw []events
 	p.mu.Lock()
 	p.data = data
 	p.mu.Unlock()
+	// now that the data has been updated, let any subscriptions know there's fresh data
+	// lock the map in case a subscription is removed meanwhile
+	p.smu.Lock()
+	for _, sub := range p.subscriptions {
+		// only write if this won't block
+		if len(sub.ch) != cap(sub.ch) {
+			sub.ch <- struct{}{}
+		} else {
+			select {
+			case sub.full <- struct{}{}:
+			default:
+				// full channel is already set, just skip over this subscription, it'll be closed
+			}
+		}
+	}
+	p.smu.Unlock()
 }
 
 func updatePosition(p *types.Position, e events.SettlePosition) {
