@@ -18,6 +18,7 @@ import (
 
 var (
 	ErrOrderNotFoundForMarketAndID = errors.New("order not found for market and id")
+	ErrOrderDoNotExistForReference = errors.New("order do not exist for reference")
 )
 
 // Order is a package internal data struct that implements the OrderStore interface.
@@ -314,14 +315,23 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 		refKey := os.badger.orderReferenceKey(ref)
 		marketKeyItem, err := txn.Get(refKey)
 		if err != nil {
+			if err == badger.ErrKeyNotFound {
+				return ErrOrderDoNotExistForReference
+			}
 			return err
 		}
 		marketKey, err := marketKeyItem.ValueCopy(nil)
 		if err != nil {
+			if err == badger.ErrKeyNotFound {
+				return ErrOrderDoNotExistForReference
+			}
 			return err
 		}
 		orderItem, err := txn.Get(marketKey)
 		if err != nil {
+			if err == badger.ErrKeyNotFound {
+				return ErrOrderDoNotExistForReference
+			}
 			return err
 		}
 		orderBuf, err := orderItem.ValueCopy(nil)
