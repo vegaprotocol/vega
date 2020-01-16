@@ -18,7 +18,7 @@ var (
 	// ErrInvalidExpirationDTFmt signals that the time format was invalid
 	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
 	// ErrInvalidExpirationDT signals that the time format was invalid
-	ErrInvalidExpirationDT = errors.New("invalid expiration datetime")
+	ErrInvalidExpirationDT = errors.New("invalid expiration datetime (cannot be in the past)")
 	// ErrInvalidTimeInForceForMarketOrder signals that the time in force used with a market order is not accepted
 	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in force for market order (expected: FOK/IOC)")
 	// ErrInvalidPriceForLimitOrder signal that a a price was missing for a limit order
