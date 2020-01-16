@@ -8,7 +8,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 
-	"github.com/dgraph-io/badger/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +47,7 @@ func TestMarkets(t *testing.T) {
 	assert.NoError(t, err)
 
 	mkt2, err := marketStore.GetByID("nonexistant_market")
-	assert.Equal(t, badger.ErrKeyNotFound, err)
+	assert.Equal(t, storage.ErrMarketDoNotExist, err)
 	assert.Nil(t, mkt2)
 
 	mkt3, err := marketStore.GetByID(testMarketID)
