@@ -175,8 +175,12 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	var (
 		// delta uint64
 		pnl, delta int64
+		reset      bool
 	)
 	tradePnl := make([]int64, 0, len(e.Trades()))
+	if current == 0 {
+		reset = true
+	}
 	for _, t := range e.Trades() {
 		size, sAbs := t.Size(), absUint64(t.Size())
 		if current != 0 {
@@ -206,6 +210,10 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		p.OpenVolume += size
 		current += size
 	}
+	if reset {
+		p.AverageEntryPrice = e.Price()
+	}
+
 	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
 	p.UnrealisedPNL = (int64(e.Price()) - int64(p.AverageEntryPrice)) * p.OpenVolume
