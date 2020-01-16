@@ -24,6 +24,7 @@ type Buffers interface {
 	TradesSub(buf int) buffer.TradeSub
 	OrdersSub(buf int) buffer.OrderSub
 	MarketsSub(buf int) buffer.MarketSub
+	PositionsSub(buf int) *buffer.SettleSub
 }
 
 type Plugin interface {
@@ -52,17 +53,17 @@ func unregisterAllPlugins() {
 	pluginsMu.Lock()
 	defer pluginsMu.Unlock()
 	// For tests.
-	plugins = make(map[string]Plugin)
+	plugins = map[string]Plugin{}
 }
 
 // Plugins returns a sorted list of the names of the registered plugins.
 func Plugins() []string {
 	pluginsMu.RLock()
-	defer pluginsMu.RUnlock()
-	var list []string
+	list := make([]string, 0, len(plugins))
 	for name := range plugins {
 		list = append(list, name)
 	}
+	pluginsMu.RUnlock()
 	sort.Strings(list)
 	return list
 
@@ -70,8 +71,8 @@ func Plugins() []string {
 
 func Get(name string) (Plugin, bool) {
 	pluginsMu.RLock()
-	defer pluginsMu.RUnlock()
 	p, ok := plugins[name]
+	pluginsMu.RUnlock()
 	return p, ok
 }
 

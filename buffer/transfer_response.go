@@ -31,6 +31,6 @@ func (t *TransferResponse) Add(trs []*types.TransferResponse) {
 // Flush will save all the buffered element into the stores
 func (t *TransferResponse) Flush() error {
 	trs := t.trs
-	t.trs = []*types.TransferResponse{}
+	t.trs = make([]*types.TransferResponse, 0, cap(trs))
 	return t.store.SaveBatch(trs)
 }

@@ -22,6 +22,14 @@ do
 		"$protofile"
 done
 
+## Generate plugins proto files: find in pluings dir, depth 3 (plugins/1:plugin/2:proto/3:file.proto)
+find plugins -maxdepth 3 -name '*.proto' | sort | while read -r protofile; do
+    protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src \
+        --go_out=plugins="grpc,${paths}:." \
+        --govalidators_out="${paths}:." \
+        "${protofile}"
+done
+
 # Generate proto/doc/
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"

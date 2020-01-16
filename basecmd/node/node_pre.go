@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
-	"code.vegaprotocol.io/vega/plugins"
+	"code.vegaprotocol.io/vega/plugins/positions"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -167,7 +167,7 @@ func (l *Node) setupBuffers() {
 
 	l.marginLevelsBuf = buffer.NewMarginLevels()
 	l.marginLevelsBuf.Register(l.riskStore)
-	l.settleBuf = buffer.NewSettlement()
+	l.settleBuf = buffer.NewSettlement(l.ctx)
 
 	l.bufs = buffer.New(l.ctx)
 }
@@ -262,7 +262,7 @@ func (l *Node) preRun() (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
 	// plugins
-	l.settlePlugin = plugins.NewPositions(l.settleBuf)
+	l.settlePlugin = positions.New(l.settleBuf.Subscribe(10))
 	l.settlePlugin.Start(l.ctx) // open channel from the start
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.executionEngine, l.timeService, l.stats.Blockchain, l.cancel)

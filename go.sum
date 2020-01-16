@@ -251,6 +251,7 @@ github.com/zannen/toml v0.3.2 h1:IYPp4GVtabUyQpzSU6xP1VDyKR3Ico3qhNP2VxCkl2Y=
 github.com/zannen/toml v0.3.2/go.mod h1:17qwsU2a1aZpHAu+nMR+zAzGupaxRIaCvxBhvCp5YGk=
 gitlab.com/vega-protocol/quant v0.1.0 h1:lNsl82K1TYpPU6wSUG7z97cUNUz6V/bDOJGJEiCEiVc=
 gitlab.com/vega-protocol/quant v0.1.0/go.mod h1:fQm5KvyuSwQuFFrzIXyN83Vz6m9tKfx2UCMls/gn1bo=
+gitlab.com/vega-protocol/trading-core v0.14.0 h1:o37peMu+0ov3DA+grqmmByLGflurvhsGerO7AGWepr8=
 go.elastic.co/apm v1.5.0 h1:arba7i+CVc36Jptww3R1ttW+O10ydvnBtidyd85DLpg=
 go.elastic.co/apm v1.5.0/go.mod h1:OdB9sPtM6Vt7oz3VXt7+KR96i9li74qrxBGHTQygFvk=
 go.elastic.co/apm/module/apmhttp v1.5.0 h1:sxntP97oENyWWi+6GAwXUo05oEpkwbiarZLqrzLRA4o=

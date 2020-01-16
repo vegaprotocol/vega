@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "code.vegaprotocol.io/vega/proto/api";
+
+import "proto/vega.proto";
+
+package api;
+
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
+service positions {
+  rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
+  // streams
+  rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+}
+
+message PositionsByPartyRequest{
+  string partyID = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 2;
+}
+
+message PositionsSubscribeRequest {
+  string partyID = 1;
+}
+
+message PositionsByPartyResponse{
+  repeated vega.MarketPosition positions = 1;
+}

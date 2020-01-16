@@ -1,39 +1,19 @@
-package plugins
+package candles
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 )
 
-// CandleStore persistence for candles
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/plugins CandleStore
-type CandleStore interface {
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
-	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
-}
-
-// TradeSub subscription to the trade buffer
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_sub_mock.go -package mocks code.vegaprotocol.io/vega/plugins TradeSub
-type TradeSub interface {
-	Recv() <-chan []types.Trade
-	Done() <-chan struct{}
-}
-
-// MarketSub subscription for the candles plugin to be aware of (new) markets
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_sub_mock.go -package mocks code.vegaprotocol.io/vega/plugins MarketSub
-type MarketSub interface {
-	Recv() <-chan []types.Market
-	Done() <-chan struct{} // we're not using this ATM
-}
-
 type Candle struct {
-	store     CandleStore
-	tradeSub  TradeSub
-	mktSub    MarketSub
+	store     plugins.CandleStore
+	tradeSub  plugins.TradeSub
+	mktSub    plugins.MarketSub
 	buf       map[string]map[string]types.Candle
 	stop      chan struct{}
 	lastTrade types.Trade
@@ -51,7 +31,7 @@ var supportedIntervals = [6]types.Interval{
 
 // NewCandle creates a new candle plugin. The plugin immediately starts to listen for data coming
 // from the subscriptions
-func NewCandle(ctx context.Context, store CandleStore, tradeSub TradeSub, mktSub MarketSub) *Candle {
+func NewCandle(ctx context.Context, store plugins.CandleStore, tradeSub plugins.TradeSub, mktSub plugins.MarketSub) *Candle {
 	cp := &Candle{
 		store:    store,
 		tradeSub: tradeSub,
