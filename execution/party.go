@@ -72,19 +72,19 @@ func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *types.NotifyTraderAcc
 // Void type represents nothingness, emptiness
 type Void struct{}
 
-// MakeGeneralAccounts creates general accounts on every market for the given trader id
-func (p *Party) MakeGeneralAccounts(id string) (map[string]Void, error) {
-	if len(id) <= 0 {
+// MakeGeneralAccounts creates general accounts on every market for the given party id
+func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
+	if len(partyID) <= 0 {
 		return nil, ErrInvalidAccountId
 	}
 
 	// ignore errors as they can only happen when the party already exists
-	p.partyBuf.Add(types.Party{Id: id})
+	p.partyBuf.Add(types.Party{Id: partyID})
 
 	result := map[string]Void{}
 
 	for _, mkt := range p.markets {
-		p.addParty(id, mkt.Id)
+		p.addParty(partyID, mkt.Id)
 		asset, err := mkt.GetAsset()
 		if err != nil {
 			p.log.Error("unable to get market asset", logging.Error(err))
@@ -92,12 +92,12 @@ func (p *Party) MakeGeneralAccounts(id string) (map[string]Void, error) {
 		}
 
 		// create account
-		generalAccount := p.collateral.CreatePartyGeneralAccount(id, asset)
+		generalAccount := p.collateral.CreatePartyGeneralAccount(partyID, asset)
 		if _, exists := result[generalAccount]; !exists {
 			result[generalAccount] = Void{}
 			if _, err := p.collateral.GetAccountByID(generalAccount); err != nil {
 				p.log.Error("unable to locate created trader general account",
-					logging.String("party-id", id),
+					logging.String("party-id", partyID),
 					logging.String("asset", asset),
 					logging.Error(err))
 				return nil, err
@@ -105,7 +105,7 @@ func (p *Party) MakeGeneralAccounts(id string) (map[string]Void, error) {
 			if p.log.GetLevel() == logging.DebugLevel {
 				p.log.Debug("created trader general account",
 					logging.String("asset", asset),
-					logging.String("party-id", id))
+					logging.String("party-id", partyID))
 			}
 		}
 	}
