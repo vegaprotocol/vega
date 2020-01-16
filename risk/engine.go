@@ -231,7 +231,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
-		if curMargin <= margins.SearchLevel {
+		if curMargin < margins.SearchLevel {
 			var minAmount int64
 
 			// first calculate minimal amount, which will be specified in the case we are under
@@ -253,7 +253,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				},
 			}
 
-		} else if curMargin >= margins.CollateralReleaseLevel { // case 3 -> release some collateral
+		} else { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
 				Size:  1,
