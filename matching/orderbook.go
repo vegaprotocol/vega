@@ -317,8 +317,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 }
 
 // DeleteOrder remove a given order on a given side from the book
-func (b *OrderBook) DeleteOrder(order *types.Order) (*types.Order, error) {
-	order, err := b.getSide(order.Side).RemoveOrder(order)
+func (b *OrderBook) DeleteOrder(
+	order *types.Order) (*types.Order, error) {
+	dorder, err := b.getSide(order.Side).RemoveOrder(order)
 	if err != nil {
 		b.log.Error("Failed to remove order",
 			logging.Order(*order),
@@ -328,7 +329,7 @@ func (b *OrderBook) DeleteOrder(order *types.Order) (*types.Order, error) {
 		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
-	return order, err
+	return dorder, err
 }
 
 // RemoveExpiredOrders removes any GTT orders that will expire on or before the expiration timestamp (epoch+nano).
@@ -415,15 +416,8 @@ func (b *OrderBook) RemoveDistressedOrders(
 				// let's see whether we need to handle this further down
 				continue
 			}
-			if _, err := b.DeleteOrder(confirm.Order); err != nil {
-				b.log.Error(
-					"Failed to remove cancelled order",
-					logging.Order(*confirm.Order),
-					logging.Error(err),
-				)
-			}
+			rmorders = append(rmorders, confirm.Order)
 		}
-		rmorders = append(rmorders, orders...)
 	}
 	return rmorders, nil
 }

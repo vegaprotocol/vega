@@ -2209,6 +2209,7 @@
 | MTM_WIN | 4 |  |
 | MARGIN_LOW | 5 |  |
 | MARGIN_HIGH | 6 |  |
+| MARGIN_CONFISCATED | 7 |  |
 
 
 

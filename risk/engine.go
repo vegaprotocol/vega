@@ -231,10 +231,11 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
-		if curMargin <= margins.SearchLevel {
+		if curMargin < margins.SearchLevel {
+			var minAmount int64
+
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
-			var minAmount int64
 			if curMargin < margins.MaintenanceMargin {
 				minAmount = margins.SearchLevel - curMargin
 			}
@@ -252,7 +253,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				},
 			}
 
-		} else if curMargin >= margins.CollateralReleaseLevel { // case 3 -> release some collateral
+		} else { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
 				Size:  1,
@@ -283,9 +284,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 // in this situation we will only check if the trader margin is > to the maintenance margin
 func (e *Engine) ExpectMargins(
 	evts []events.Margin, markPrice uint64,
-) (okMargins []events.Margin, distressedPositions []events.MarketPosition) {
+) (okMargins []events.Margin, distressedPositions []events.Margin) {
 	okMargins = make([]events.Margin, 0, len(evts)/2)
-	distressedPositions = make([]events.MarketPosition, 0, len(evts)/2)
+	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
 		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
 		// no margins updates, nothing to do then
