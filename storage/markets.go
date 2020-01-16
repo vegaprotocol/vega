@@ -11,6 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrMarketDoNotExist = errors.New("market do not exist")
+)
+
 // Market is used for memory/RAM based markets storage.
 type Market struct {
 	Config
@@ -94,6 +98,9 @@ func (m *Market) GetByID(id string) (*types.Market, error) {
 	err := m.badger.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(marketKey)
 		if err != nil {
+			if err == badger.ErrKeyNotFound {
+				return ErrMarketDoNotExist
+			}
 			return err
 		}
 		// fine to use value copy here, only one ID to get
