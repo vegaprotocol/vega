@@ -221,7 +221,8 @@ func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 
 // CreateTraderAccount creates new account for a party
 func (e *Engine) CreateTraderAccount(newAccountID string) error {
-	return e.party.MakeAccount(newAccountID)
+	_, err := e.party.MakeGeneralAccounts(newAccountID)
+	return err
 }
 
 func (e *Engine) Withdraw(w *types.Withdraw) error {
