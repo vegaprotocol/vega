@@ -114,8 +114,23 @@ func TestNewAccount(t *testing.T) {
 	assert.Equal(t, 0, len(res))
 
 	trader := "Finn the human"
-	err = party.MakeAccount(trader)
+	accs, err := party.MakeGeneralAccounts(trader)
 	assert.NoError(t, err)
-	err = party.MakeAccount(trader)
+	assert.Len(t, accs, 1)
+
+	accs, err = party.MakeGeneralAccounts(trader)
 	assert.NoError(t, err)
+	assert.Len(t, accs, 1)
+
+	foundParty, err := party.GetByMarketAndID(testMarketID, trader)
+	assert.NoError(t, err)
+	assert.NotNil(t, foundParty)
+	assert.Equal(t, trader, foundParty.Id)
+
+	for accName, _ := range accs {
+		acc, err := collateralEngine.GetAccountByID(accName)
+		assert.NoError(t, err)
+		assert.NotNil(t, acc)
+		assert.Zero(t, acc.GetBalance())
+	}
 }
