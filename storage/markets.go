@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrMarketDoNotExist = errors.New("market do not exist")
+	ErrMarketDoNotExist = errors.New("market does not exist")
 )
 
 // Market is used for memory/RAM based markets storage.
