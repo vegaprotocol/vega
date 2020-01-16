@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrOrderNotFoundForMarketAndID = errors.New("order not found for market and id")
+)
+
 // Order is a package internal data struct that implements the OrderStore interface.
 type Order struct {
 	Config
@@ -181,6 +185,9 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 	marketKey := os.badger.orderMarketKey(market, id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
+		if err == badger.ErrKeyNotFound {
+			return nil, ErrOrderNotFoundForMarketAndID
+		}
 		return nil, err
 	}
 	orderBuf, _ := item.ValueCopy(nil)
