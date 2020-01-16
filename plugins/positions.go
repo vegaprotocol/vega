@@ -200,14 +200,8 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			}
 			// @TODO store trade record with this realised P&L value
 		}
-		net := delta + size
-		if net != 0 {
-			if newPos := size + p.OpenVolume; newPos != 0 {
-				sAbs, cAbs := absUint64(size), absUint64(p.OpenVolume)
-				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
-			} else {
-				p.AverageEntryPrice = 0
-			}
+		if net := delta + size; net != 0 {
+			p.AverageEntryPrice = calcAEP(size, p.OpenVolume, t.Price(), p.AverageEntryPrice)
 		}
 		p.OpenVolume += size
 		current += size
@@ -220,6 +214,30 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	if p.OpenVolume != 0 && p.AverageEntryPrice == 0 {
 		p.AverageEntryPrice = e.Price()
 	}
+}
+
+func calcAEP(size, open int64, newPrice, avgPrice uint64) uint64 {
+	// first up: AEP is zero if we close out:
+	if size == 0 {
+		return 0
+	}
+	// our position has reduced (short to less short, long to less long)
+	// but we've not closed out or inverted (short -> long, long -> short)
+	// then the AEP remains as is
+	if (open > 0 && size > 0 && open > size) || (open < 0 && size < 0 && open < size) {
+		return avgPrice
+	}
+	oAbs, sAbs := absUint64(open), absUint64(size)
+	// also create signed versions of abs value to see if we flipped position
+	soAbs, ssAbs := int64(oAbs), int64(sAbs)
+	// the abs value of one volume doesn't match, but the other doesn't -> we've flipped position
+	if (soAbs != open && ssAbs == size) || (soAbs == open && ssAbs != size) {
+		return newPrice // we went from long to short (or short to long) -> the average entry price == new price
+	}
+	// we've increased our position: long -> longer || short -> shorter
+	// we need to calculate the new AEP: average price * open + new price * (new size-old size) / newSize
+	delta := absUint64(int64(oAbs) - int64(sAbs))
+	return (avgPrice*oAbs + newPrice*delta) / sAbs
 }
 
 func evtToProto(e events.SettlePosition) types.Position {
