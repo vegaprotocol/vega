@@ -90,6 +90,7 @@ func (s *ProxyServer) Start() {
 
 	// CORS support
 	handler := cors.Default().Handler(mux)
+	handler = healthCheckMiddleware(handler)
 	handler = gateway.TokenMiddleware(logger, handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
@@ -121,5 +122,16 @@ func (s *ProxyServer) Stop() {
 			s.log.Error("Failed to stop REST<>GRPC based API cleanly",
 				logging.Error(err))
 		}
+	}
+}
+
+func healthCheckMiddleware(f http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			w.Write([]byte("ok"))
+			w.WriteHeader(200)
+			return
+		}
+		f.ServeHTTP(w, r)
 	}
 }
