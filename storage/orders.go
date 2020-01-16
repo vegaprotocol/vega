@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	ErrOrderNotFoundForMarketAndID = errors.New("order not found for market and id")
-	ErrOrderDoNotExistForReference = errors.New("order do not exist for reference")
+	ErrOrderNotFoundForMarketAndID   = errors.New("order not found for market and id")
+	ErrOrderDoesNotExistForReference = errors.New("order does not exist for reference")
 )
 
 // Order is a package internal data struct that implements the OrderStore interface.
@@ -311,41 +311,43 @@ func (os *Order) GetByPartyAndID(ctx context.Context, party string, id string) (
 func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	var order types.Order
 
-	err := os.badger.db.View(func(txn *badger.Txn) error {
+	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
+		defer func() {
+			if err == badger.ErrKeyNotFound {
+				err = ErrOrderDoesNotExistForReference
+			}
+		}()
 		refKey := os.badger.orderReferenceKey(ref)
-		marketKeyItem, err := txn.Get(refKey)
+		var (
+			marketKeyItem, orderItem *badger.Item
+			marketKey, orderBuf      []byte
+		)
+
+		marketKeyItem, err = txn.Get(refKey)
 		if err != nil {
-			if err == badger.ErrKeyNotFound {
-				return ErrOrderDoNotExistForReference
-			}
-			return err
+			return
 		}
-		marketKey, err := marketKeyItem.ValueCopy(nil)
+		marketKey, err = marketKeyItem.ValueCopy(nil)
 		if err != nil {
-			if err == badger.ErrKeyNotFound {
-				return ErrOrderDoNotExistForReference
-			}
-			return err
+			return
 		}
-		orderItem, err := txn.Get(marketKey)
+		orderItem, err = txn.Get(marketKey)
 		if err != nil {
-			if err == badger.ErrKeyNotFound {
-				return ErrOrderDoNotExistForReference
-			}
-			return err
+			return
 		}
-		orderBuf, err := orderItem.ValueCopy(nil)
+		orderBuf, err = orderItem.ValueCopy(nil)
 		if err != nil {
-			return err
+			return
 		}
-		if err := proto.Unmarshal(orderBuf, &order); err != nil {
+		err = proto.Unmarshal(orderBuf, &order)
+		if err != nil {
 			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
 				logging.Error(err),
 				logging.String("badger-key", string(refKey)),
 				logging.String("raw-bytes", string(orderBuf)))
 			return err
 		}
-		return nil
+		return
 	})
 
 	if err != nil {
