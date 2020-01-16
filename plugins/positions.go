@@ -211,7 +211,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		current += size
 	}
 	if reset {
-		p.AverageEntryPrice = t.Price()
+		p.AverageEntryPrice = e.Price()
 	}
 
 	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
