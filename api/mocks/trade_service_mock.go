@@ -80,10 +80,10 @@ func (mr *MockTradeServiceMockRecorder) GetByParty(arg0, arg1, arg2, arg3, arg4,
 }
 
 // GetPositionsByParty mocks base method
-func (m *MockTradeService) GetPositionsByParty(arg0 context.Context, arg1, arg2 string) ([]*proto.MarketPosition, error) {
+func (m *MockTradeService) GetPositionsByParty(arg0 context.Context, arg1, arg2 string) ([]*proto.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPositionsByParty", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*proto.MarketPosition)
+	ret0, _ := ret[0].([]*proto.Position)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -123,10 +123,10 @@ func (mr *MockTradeServiceMockRecorder) GetTradeSubscribersCount() *gomock.Call 
 }
 
 // ObservePositions mocks base method
-func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.MarketPosition, uint64) {
+func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.Position, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObservePositions", arg0, arg1, arg2)
-	ret0, _ := ret[0].(<-chan *proto.MarketPosition)
+	ret0, _ := ret[0].(<-chan *proto.Position)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }

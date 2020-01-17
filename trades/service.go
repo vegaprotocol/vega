@@ -243,8 +243,8 @@ func (s *Svc) GetPositionsSubscribersCount() int32 {
 
 // ObservePositions return a channel through which all positions are streamed to the caller
 // when they get updated
-func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
-	positions := make(chan *types.MarketPosition)
+func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.Position, uint64) {
+	positions := make(chan *types.Position)
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
@@ -330,7 +330,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 }
 
 // GetPositionsByParty returns a list of positions for a given party
-func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*types.MarketPosition, error) {
+func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*types.Position, error) {
 
 	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
@@ -370,17 +370,5 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 		}
 		positions = pos
 	}
-	ret := make([]*types.MarketPosition, 0, len(positions))
-	for _, pos := range positions {
-		ret = append(ret, &types.MarketPosition{
-			MarketID:          pos.MarketID,
-			PartyID:           pos.PartyID,
-			UnrealisedVolume:  pos.OpenVolume,
-			RealisedVolume:    pos.PendingVolume,
-			UnrealisedPNL:     pos.UnrealisedPNL,
-			RealisedPNL:       pos.RealisedPNL,
-			AverageEntryPrice: pos.AverageEntryPrice,
-		})
-	}
-	return ret, nil
+	return positions, nil
 }
