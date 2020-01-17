@@ -219,9 +219,9 @@ func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notify)
 }
 
-// CreateTraderAccount creates new account for a party
-func (e *Engine) CreateTraderAccount(newAccountID string) error {
-	_, err := e.party.MakeGeneralAccounts(newAccountID)
+// CreateGeneralAccounts creates new general accounts for a party
+func (e *Engine) CreateGeneralAccounts(partyID string) error {
+	_, err := e.party.MakeGeneralAccounts(partyID)
 	return err
 }
 

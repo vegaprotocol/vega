@@ -9,8 +9,8 @@ import (
 )
 
 var ErrPartyDoesNotExist = errors.New("party does not exist in party engine")
-var ErrNotifyTraderAccountMissing = errors.New("notify trader account is missing")
-var ErrInvalidAccountId = errors.New("trader account id is not valid")
+var ErrNotifyTraderAccountMissing = errors.New("notify party id is missing")
+var ErrInvalidAccountId = errors.New("party id is not valid")
 
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
@@ -96,14 +96,14 @@ func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
 		if _, exists := result[generalAccount]; !exists {
 			result[generalAccount] = Void{}
 			if _, err := p.collateral.GetAccountByID(generalAccount); err != nil {
-				p.log.Error("unable to locate created trader general account",
+				p.log.Error("unable to locate created general account",
 					logging.String("party-id", partyID),
 					logging.String("asset", asset),
 					logging.Error(err))
 				return nil, err
 			}
 			if p.log.GetLevel() == logging.DebugLevel {
-				p.log.Debug("created trader general account",
+				p.log.Debug("created general account",
 					logging.String("asset", asset),
 					logging.String("party-id", partyID))
 			}
@@ -140,18 +140,18 @@ func (p *Party) addParty(ptyID, mktID string) {
 func (p *Party) creditGeneralAccount(accountID string, amount int64) error {
 
 	if err := p.collateral.IncrementBalance(accountID, amount); err != nil {
-		p.log.Error("unable to top-up trader general account", logging.Error(err))
+		p.log.Error("unable to top-up general account", logging.Error(err))
 		return err
 	}
 	acc, err := p.collateral.GetAccountByID(accountID)
 	if err != nil {
-		p.log.Error("unable to get trader general account",
+		p.log.Error("unable to get general account",
 			logging.String("party-id", accountID),
 			logging.Error(err))
 		return err
 	}
 	if p.log.GetLevel() == logging.DebugLevel {
-		p.log.Debug("party account top-up",
+		p.log.Debug("account top-up",
 			logging.String("party-id", accountID),
 			logging.Int64("top-up-amount", amount),
 			logging.Int64("new-balance", acc.Balance))
