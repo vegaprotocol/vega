@@ -224,6 +224,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	// Technically not needed, but safer to copy the open volume from event regardless
 	p.OpenVolume = e.Size()
 	if p.OpenVolume == 0 {
+		p.RealisedPNL += p.UnrealisedPNL
 		p.UnrealisedPNL = 0
 		p.AverageEntryPrice = 0
 		return
