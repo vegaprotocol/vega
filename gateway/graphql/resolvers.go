@@ -1034,7 +1034,7 @@ func (r *myPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj 
 }
 
 func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.OpenVolume, 10), nil
+	return strconv.FormatInt(obj.UnrealisedPNL, 10), nil
 }
 
 func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
