@@ -205,7 +205,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		// is the MTM of the trade price <-> mark price
 		if reset {
 			// the P&L is the value at mark price - value at trade price
-			p.RealisedPNL += (t.Size() * int64(e.Price())) - (t.Size() * int64(t.Price()))
+			p.UnrealisedPNL += (t.Size() * int64(e.Price())) - (t.Size() * int64(t.Price()))
 		}
 		if net := delta + size; net != 0 {
 			p.AverageEntryPrice = calcAEP(size, p.OpenVolume, t.Price(), p.AverageEntryPrice)
