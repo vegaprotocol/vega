@@ -165,6 +165,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	if margin, ok := e.Margin(); ok {
 		p.OpenVolume = 0
 		p.UnrealisedPNL = 0
+		p.AverageEntryPrice = 0
 		// realised P&L includes whatever we had in margin account at this point
 		p.RealisedPNL -= int64(margin.MarginBalance())
 		// @TODO average entry price shouldn't be affected(?)
@@ -173,11 +174,9 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	}
 	current := p.OpenVolume
 	var (
-		// delta uint64
-		pnl, delta int64
-		reset      bool
+		delta int64
+		reset bool
 	)
-	tradePnl := make([]int64, 0, len(e.Trades()))
 	if current == 0 {
 		reset = true
 	}
@@ -198,17 +197,22 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			// only increment realised P&L if the size goes the opposite way compared to the the
 			// current position
 			if (size > 0 && p.OpenVolume <= 0) || (size < 0 && p.OpenVolume >= 0) {
-				pnl = delta * int64(t.Price()-p.AverageEntryPrice)
-				p.RealisedPNL += pnl
-				tradePnl = append(tradePnl, pnl)
+				p.RealisedPNL += delta * int64(t.Price()-p.AverageEntryPrice)
 			}
 			// @TODO store trade record with this realised P&L value
+		}
+		// we're going to set the AEP to the mark price, the realised P&L at this point
+		// is the MTM of the trade price <-> mark price
+		if reset {
+			// the P&L is the value at mark price - value at trade price
+			p.RealisedPNL += (t.Size() * int64(e.Price())) - (t.Size() * int64(t.Price()))
 		}
 		if net := delta + size; net != 0 {
 			p.AverageEntryPrice = calcAEP(size, p.OpenVolume, t.Price(), p.AverageEntryPrice)
 		}
 		p.OpenVolume += size
 		current += size
+		delta = 0
 	}
 	if reset {
 		p.AverageEntryPrice = e.Price()
@@ -219,7 +223,12 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	p.UnrealisedPNL = (int64(e.Price()) - int64(p.AverageEntryPrice)) * p.OpenVolume
 	// Technically not needed, but safer to copy the open volume from event regardless
 	p.OpenVolume = e.Size()
-	if p.OpenVolume != 0 && p.AverageEntryPrice == 0 {
+	if p.OpenVolume == 0 {
+		p.UnrealisedPNL = 0
+		p.AverageEntryPrice = 0
+		return
+	}
+	if p.AverageEntryPrice == 0 {
 		p.AverageEntryPrice = e.Price()
 	}
 }
