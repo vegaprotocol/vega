@@ -659,22 +659,31 @@ type Position {
   market: Market!
 
   # Realised volume (uint64)
-  realisedVolume: String!
+  realisedVolume: String! @deprecated(reason: "This field is being removed in the near future and will return 0")
 
-  # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
-  realisedProfitValue: String!
+  # Realised Profit and Loss
+  realisedProfitValue: String! @deprecated(reason: "This field is being replaced by realisedPNL in the near future")
 
   # Realised Profit or Loss direction
-  realisedProfitDirection: ValueDirection!
+  realisedProfitDirection: ValueDirection! @deprecated(reason: "This field will be removed in the near future")
+
+  # Realised Profit and Loss (int64)
+  realisedPNL: String!
 
   # Unrealised volume (uint64)
-  unrealisedVolume: String!
+  unrealisedVolume: String! @deprecated(reason: "This field is being replaced by openVolume in the near future")
 
-  # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
-  unrealisedProfitValue: String!
+  # Open volume (uint64)
+  openVolume: String!
+
+  # Unrealised Profit and Loss
+  unrealisedProfitValue: String! @deprecated(reason: "This field is being replaced by unrealisedPNL in the near future")
 
   # Unrealised Profit or Loss direction
-  unrealisedProfitDirection: ValueDirection!
+  unrealisedProfitDirection: ValueDirection! @deprecated(reason: "This field will be removed in the near future")
+
+  # Unrealised Profit and Loss (int64)
+  unrealisedPNL: String!
 
   # Average entry price for this position
   averageEntryPrice: String!

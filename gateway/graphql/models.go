@@ -101,12 +101,12 @@ type ModelParamsBs struct {
 }
 
 type Party struct {
-	ID        string                  `json:"id"`
-	Orders    []*proto.Order          `json:"orders"`
-	Trades    []*proto.Trade          `json:"trades"`
-	Accounts  []*proto.Account        `json:"accounts"`
-	Positions []*proto.MarketPosition `json:"positions"`
-	Margins   []*proto.MarginLevels   `json:"margins"`
+	ID        string                `json:"id"`
+	Orders    []*proto.Order        `json:"orders"`
+	Trades    []*proto.Trade        `json:"trades"`
+	Accounts  []*proto.Account      `json:"accounts"`
+	Positions []*proto.Position     `json:"positions"`
+	Margins   []*proto.MarginLevels `json:"margins"`
 }
 
 type SimpleRiskModel struct {
