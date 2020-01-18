@@ -304,6 +304,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 			if impactedOrders[idx].TimeInForce == types.Order_GTT {
 				b.removePendingGttOrder(*impactedOrders[idx])
 			}
+
+			// delete from lookup table
+			delete(b.ordersByID, impactedOrders[idx].Id)
 		}
 	}
 
