@@ -140,7 +140,7 @@ func NewMarket(
 	}
 
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, false)
+		tradableInstrument.Instrument.InitialMarkPrice)
 
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
@@ -746,7 +746,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
-	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice, false)
+	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice)
 	marketID := m.GetID()
 	order := types.Order{
 		MarketID:    marketID,

@@ -21,8 +21,7 @@ var (
 type OrderBookSide struct {
 	log *logging.Logger
 	// Config
-	levels      []*PriceLevel
-	proRataMode bool
+	levels []*PriceLevel
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
@@ -170,7 +169,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	// this would reallocate sufficiently then
 	// no risk of this being a empty order, as it's overwritten just next with
 	// the slice insert
-	level := NewPriceLevel(price, s.proRataMode)
+	level := NewPriceLevel(price)
 	s.levels = append(s.levels, nil)
 	copy(s.levels[i+1:], s.levels[i:])
 	s.levels[i] = level
