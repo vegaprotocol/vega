@@ -9,12 +9,12 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type BuySide struct {
+type SellSide struct {
 	baseSide
 }
 
-func NewBuySide(log *logging.Logger) *BuySide {
-	return &BuySide{
+func NewSellSide(log *logging.Logger) *SellSide {
+	return &SellSide{
 		baseSide{
 			log:    log,
 			levels: []*PriceLevel{},
@@ -22,14 +22,14 @@ func NewBuySide(log *logging.Logger) *BuySide {
 	}
 }
 
-func (b *BuySide) AddOrder(o *types.Order) {
-	b.getPriceLevel(o.Price).addOrder(o)
+func (s *SellSide) AddOrder(o *types.Order) {
+	s.getPriceLevel(o.Price).addOrder(o)
 }
 
-func (b *BuySide) GetCloseoutPrice(volume uint64) (uint64, error) {
+func (s *SellSide) GetCloseoutPrice(volume uint64) (uint64, error) {
 	var (
 		vol    uint64        = volume
-		levels []*PriceLevel = b.levels
+		levels []*PriceLevel = s.levels
 		price  uint64
 		err    error
 	)
@@ -42,55 +42,55 @@ func (b *BuySide) GetCloseoutPrice(volume uint64) (uint64, error) {
 		price += lvl.price * lvl.volume
 		vol -= lvl.volume
 	}
-	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+	// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
+	// still return the price for the volume we could close out, so the caller can make a decision on what to do
 	if vol != 0 {
 		err = ErrNotEnoughOrders
 		// TODO(jeremy): there's no orders in the book so return the markPrice
-		// this is a temporary fix for nice-net and this behaviour will need
-		// to be properly specified and handled in the future.
+		// this is a temporary fix for nicenet and this behaviour will need
+		// to be properaly specified and handled in the future.
 		if vol == volume {
+			// no orders at all
+			err = ErrNoOrder
 			return 0, err
 		}
-
 	}
 	return price / (volume - vol), err
-
 }
 
-func (b *BuySide) GetHighestOrderPrice() (uint64, error) {
-	if len(b.levels) <= 0 {
+func (s *SellSide) GetHighestOrderPrice() (uint64, error) {
+	if len(s.levels) <= 0 {
 		return 0, ErrNoOrder
 	}
-	// buy order ascending
-	return b.levels[len(b.levels)-1].price, nil
+	// sell order descending
+	return s.levels[0].price, nil
 }
 
-func (b *BuySide) GetLowestOrderPrice() (uint64, error) {
-	if len(b.levels) <= 0 {
+func (s *SellSide) GetLowestOrderPrice() (uint64, error) {
+	if len(s.levels) <= 0 {
 		return 0, ErrNoOrder
 	}
-	// buy order ascending
-	return b.levels[0].price, nil
+	// sell order descending
+	return s.levels[len(s.levels)-1].price, nil
 }
 
 // RemoveOrder will remove an order from the book
-func (b *BuySide) RemoveOrder(o *types.Order) (*types.Order, error) {
+func (s *SellSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
 	var i int
-	i = sort.Search(len(b.levels), func(i int) bool { return b.levels[i].price >= o.Price })
-
+	// sell side levels should be ordered in ascending
+	i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
 	// we did not found the level
 	// then the order do not exists in the price level
-	if i >= len(b.levels) {
+	if i >= len(s.levels) {
 		return nil, types.ErrOrderNotFound
 	}
 
-	return b.baseSide.removeOrderAtPriceLevelIndex(i, o)
-
+	return s.baseSide.removeOrderAtPriceLevelIndex(i, o)
 }
 
-func (s *BuySide) Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
-	timer := metrics.NewTimeCounter("-", "matching", "BuySide.uncross")
+func (s *SellSide) Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
+	timer := metrics.NewTimeCounter("-", "matching", "SellSide.uncross")
 
 	var (
 		trades                  []*types.Trade
@@ -113,7 +113,7 @@ func (s *BuySide) Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uin
 					totalVolume -= level.volume
 				}
 				totalPrice += level.price * factor
-			} else if level.price >= agg.Price {
+			} else if level.price <= agg.Price {
 				totalVolumeToFill += level.volume
 			}
 		}
@@ -144,7 +144,7 @@ func (s *BuySide) Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uin
 	// price levels from the back of the slice instead of from the front
 	// also it will allow us to reduce allocations
 	for !filled && idx >= 0 {
-		if s.levels[idx].price >= agg.Price {
+		if s.levels[idx].price <= agg.Price {
 			filled, ntrades, nimpact = s.levels[idx].uncross(agg)
 			trades = append(trades, ntrades...)
 			impactedOrders = append(impactedOrders, nimpact...)
@@ -159,6 +159,7 @@ func (s *BuySide) Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uin
 
 	// now we nil the price levels that have been completely emptied out
 	// then we resize the slice
+	// idx can be < to 0 if we went through all price levels
 	if idx < 0 || len(s.levels[idx].orders) > 0 {
 		// do not remove this one as it's not emptied already
 		idx++
@@ -178,13 +179,14 @@ func (s *BuySide) Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uin
 	return trades, impactedOrders, lastTradedPrice
 }
 
-func (b *BuySide) getPriceLevel(price uint64) *PriceLevel {
+func (s *SellSide) getPriceLevel(price uint64) *PriceLevel {
 	var i int
-	i = sort.Search(len(b.levels), func(i int) bool { return b.levels[i].price >= price })
+	// sell side levels should be ordered in ascending
+	i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
 
 	// we found the level just return it.
-	if i < len(b.levels) && b.levels[i].price == price {
-		return b.levels[i]
+	if i < len(s.levels) && s.levels[i].price == price {
+		return s.levels[i]
 	}
 
 	// append new elem first to make sure we have enough place
@@ -192,8 +194,8 @@ func (b *BuySide) getPriceLevel(price uint64) *PriceLevel {
 	// no risk of this being a empty order, as it's overwritten just next with
 	// the slice insert
 	level := NewPriceLevel(price)
-	b.levels = append(b.levels, nil)
-	copy(b.levels[i+1:], b.levels[i:])
-	b.levels[i] = level
+	s.levels = append(s.levels, nil)
+	copy(s.levels[i+1:], s.levels[i:])
+	s.levels[i] = level
 	return level
 }

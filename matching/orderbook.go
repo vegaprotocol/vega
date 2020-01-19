@@ -18,6 +18,12 @@ var (
 	ErrOrderDoesNotExist = errors.New("order does not exist")
 )
 
+type OrderBookSide interface {
+	Uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64)
+	AddOrder(o *types.Order)
+	RemoveOrder(o *types.Order) (*types.Order, error)
+}
+
 // OrderBook represents the book holding all orders in the system.
 type OrderBook struct {
 	log *logging.Logger
@@ -25,8 +31,8 @@ type OrderBook struct {
 
 	cfgMu           *sync.Mutex
 	marketID        string
-	buy             *OrderBookSide
-	sell            *OrderBookSide
+	buy             *BuySide
+	sell            *SellSide
 	lastTradedPrice uint64
 	latestTimestamp int64
 	expiringOrders  *ExpiringOrders
@@ -48,8 +54,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		log:             log,
 		marketID:        marketID,
 		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log},
-		sell:            &OrderBookSide{log: log},
+		buy:             NewBuySide(log),
+		sell:            NewSellSide(log),
 		Config:          config,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
@@ -81,53 +87,17 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price uint64
 		err   error
 	)
-	vol := volume
-	if side == types.Side_Sell {
-		levels := b.sell.getLevels()
-		for i := len(levels) - 1; i >= 0; i-- {
-			lvl := levels[i]
-			if lvl.volume >= vol {
-				price += lvl.price * vol
-				return price / volume, err
-			}
-			price += lvl.price * lvl.volume
-			vol -= lvl.volume
-		}
-		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
-		// still return the price for the volume we could close out, so the caller can make a decision on what to do
-		if vol != 0 {
-			err = ErrNotEnoughOrders
-			// TODO(jeremy): there's no orders in the book so return the markPrice
-			// this is a temporary fix for nicenet and this behaviour will need
-			// to be properaly specified and handled in the future.
-			if vol == volume {
-				return b.lastTradedPrice, err
-			}
-		}
-		return price / (volume - vol), err
+	if side == types.Side_Buy {
+		price, err = b.buy.GetCloseoutPrice(volume)
+	} else {
+		price, err = b.sell.GetCloseoutPrice(volume)
 	}
-	levels := b.buy.getLevels()
-	for i := len(levels) - 1; i >= 0; i-- {
-		lvl := levels[i]
-		if lvl.volume >= vol {
-			price += lvl.price * vol
-			return price / volume, err
-		}
-		price += lvl.price * lvl.volume
-		vol -= lvl.volume
-	}
-	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
-	if vol != 0 {
-		err = ErrNotEnoughOrders
-		// TODO(jeremy): there's no orders in the book so return the markPrice
-		// this is a temporary fix for nice-net and this behaviour will need
-		// to be properly specified and handled in the future.
-		if vol == volume {
-			return b.lastTradedPrice, err
-		}
 
+	// not enough volume on the book sidex
+	if err != nil && err == ErrNoOrder {
+		price = b.lastTradedPrice
 	}
-	return price / (volume - vol), err
+	return price, err
 }
 
 // MarketOrderPrice return the price that would be applied for a market
@@ -140,13 +110,13 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 // place the order, by doing this we do not implement any more logic at this level
 func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
 	if s == types.Side_Buy {
-		p, err := b.sell.getHighestOrderPrice(types.Side_Sell)
+		p, err := b.sell.GetHighestOrderPrice()
 		if err != nil {
 			return b.lastTradedPrice
 		}
 		return p
 	}
-	p, err := b.buy.getLowestOrderPrice(types.Side_Buy)
+	p, err := b.buy.GetLowestOrderPrice()
 	if err != nil {
 		return b.lastTradedPrice
 	}
@@ -248,7 +218,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).Uncross(order)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
@@ -266,7 +236,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 			b.insertExpiringOrder(*order)
 		}
 
-		b.getSide(order.Side).addOrder(order, order.Side)
+		b.getSide(order.Side).AddOrder(order)
 
 		if b.LogPriceLevelsDebug {
 			b.PrintState("After addOrder state:")
@@ -425,14 +395,14 @@ func (b *OrderBook) RemoveDistressedOrders(
 	return rmorders, nil
 }
 
-func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
+func (b OrderBook) getSide(orderSide types.Side) OrderBookSide {
 	if orderSide == types.Side_Buy {
 		return b.buy
 	}
 	return b.sell
 }
 
-func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
+func (b *OrderBook) getOppositeSide(orderSide types.Side) OrderBookSide {
 	if orderSide == types.Side_Buy {
 		return b.sell
 	}
@@ -465,17 +435,9 @@ func (b *OrderBook) PrintState(types string) {
 		logging.String("types", types))
 	b.log.Debug("------------------------------------------------------------")
 	b.log.Debug("                        BUY SIDE                            ")
-	for _, priceLevel := range b.buy.getLevels() {
-		if len(priceLevel.orders) > 0 {
-			priceLevel.print(b.log)
-		}
-	}
+	b.buy.Print()
 	b.log.Debug("------------------------------------------------------------")
 	b.log.Debug("                        SELL SIDE                           ")
-	for _, priceLevel := range b.sell.getLevels() {
-		if len(priceLevel.orders) > 0 {
-			priceLevel.print(b.log)
-		}
-	}
+	b.sell.Print()
 	b.log.Debug("------------------------------------------------------------")
 }
