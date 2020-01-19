@@ -21,11 +21,11 @@ func getCurrentUtcTimestampNano() int64 {
 	return vegatime.Now().UnixNano()
 }
 
-func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
+func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100.0, proRata)
+	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100.0)
 	return &tob
 }
 
@@ -61,31 +61,6 @@ func (ob *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
 		priceLevel := ob.sell.getPriceLevel(price, side)
 		if priceLevel != nil {
 			return priceLevel.volume
-		}
-	}
-	return 0
-}
-
-func (ob *OrderBook) getVolumeAtLevelAndTS(price uint64, timestamp int64, side types.Side) uint64 {
-	if side == types.Side_Buy {
-		priceLevel := ob.buy.getPriceLevel(price, side)
-		if priceLevel != nil {
-			for _, vp := range priceLevel.volumeAtTimestamp {
-				if vp.ts == timestamp {
-					return vp.vol
-				}
-			}
-			return 0
-		}
-	} else {
-		priceLevel := ob.sell.getPriceLevel(price, side)
-		if priceLevel != nil {
-			for _, vp := range priceLevel.volumeAtTimestamp {
-				if vp.ts == timestamp {
-					return vp.vol
-				}
-			}
-			return 0
 		}
 	}
 	return 0

@@ -141,14 +141,9 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
+	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
+		tradableInstrument.Instrument.InitialMarkPrice)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
-	book := matching.NewOrderBook(
-		log,
-		matchingConfig,
-		mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice,
-		false,
-	)
 	riskEngine := risk.NewEngine(
 		log,
 		riskConfig,
@@ -787,7 +782,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
-	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice, false)
+	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice)
 	marketID := m.GetID()
 	order := types.Order{
 		MarketID:    marketID,
