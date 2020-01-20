@@ -562,7 +562,7 @@ func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
 	case AccountTypeSettlement:
 		return types.AccountType_SETTLEMENT, nil
 	default:
-		return types.AccountType_NO_ACC, fmt.Errorf("invalid account type %v", acc)
+		return types.AccountType_ALL, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
 	}
 }
 
@@ -573,7 +573,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 	var (
 		mktid = ""
 		asst  = ""
-		accTy = types.AccountType_NO_ACC
+		accTy = types.AccountType_ALL
 		err   error
 	)
 
@@ -586,7 +586,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 	if accType != nil {
 		accTy, err = AccountTypeToProto(*accType)
 		if err != nil || (accTy != types.AccountType_GENERAL && accTy != types.AccountType_MARGIN) {
-			return nil, fmt.Errorf("inalid account type for party %v", accType)
+			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
 	}
 	req := protoapi.PartyAccountsRequest{
@@ -1363,6 +1363,10 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		ty       types.AccountType
 	)
 
+	if marketID == nil && partyID == nil && asset == nil && typeArg == nil {
+		// Updates on every balance update, on every account, for everyone and shouldn't be allowed for GraphQL.
+		return nil, errors.New("at least one query filter must be applied for this subscription")
+	}
 	if marketID != nil {
 		mkt = *marketID
 	}
