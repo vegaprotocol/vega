@@ -179,7 +179,6 @@ type ComplexityRoot struct {
 
 	Order struct {
 		CreatedAt       func(childComplexity int) int
-		Datetime        func(childComplexity int) int
 		ExpiresAt       func(childComplexity int) int
 		Id              func(childComplexity int) int
 		Market          func(childComplexity int) int
@@ -192,7 +191,6 @@ type ComplexityRoot struct {
 		Size            func(childComplexity int) int
 		Status          func(childComplexity int) int
 		TimeInForce     func(childComplexity int) int
-		Timestamp       func(childComplexity int) int
 		Trades          func(childComplexity int) int
 		Type            func(childComplexity int) int
 	}
@@ -220,18 +218,12 @@ type ComplexityRoot struct {
 	}
 
 	Position struct {
-		AverageEntryPrice         func(childComplexity int) int
-		Margins                   func(childComplexity int) int
-		Market                    func(childComplexity int) int
-		OpenVolume                func(childComplexity int) int
-		RealisedPnl               func(childComplexity int) int
-		RealisedProfitDirection   func(childComplexity int) int
-		RealisedProfitValue       func(childComplexity int) int
-		RealisedVolume            func(childComplexity int) int
-		UnrealisedPnl             func(childComplexity int) int
-		UnrealisedProfitDirection func(childComplexity int) int
-		UnrealisedProfitValue     func(childComplexity int) int
-		UnrealisedVolume          func(childComplexity int) int
+		AverageEntryPrice func(childComplexity int) int
+		Margins           func(childComplexity int) int
+		Market            func(childComplexity int) int
+		OpenVolume        func(childComplexity int) int
+		RealisedPnl       func(childComplexity int) int
+		UnrealisedPnl     func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -312,13 +304,11 @@ type ComplexityRoot struct {
 		Aggressor func(childComplexity int) int
 		Buyer     func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
-		Datetime  func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Market    func(childComplexity int) int
 		Price     func(childComplexity int) int
 		Seller    func(childComplexity int) int
 		Size      func(childComplexity int) int
-		Timestamp func(childComplexity int) int
 	}
 }
 
@@ -386,8 +376,6 @@ type OrderResolver interface {
 	Size(ctx context.Context, obj *proto.Order) (string, error)
 	Remaining(ctx context.Context, obj *proto.Order) (string, error)
 	Party(ctx context.Context, obj *proto.Order) (*Party, error)
-	Timestamp(ctx context.Context, obj *proto.Order) (string, error)
-	Datetime(ctx context.Context, obj *proto.Order) (string, error)
 	CreatedAt(ctx context.Context, obj *proto.Order) (string, error)
 	ExpiresAt(ctx context.Context, obj *proto.Order) (*string, error)
 	Status(ctx context.Context, obj *proto.Order) (OrderStatus, error)
@@ -415,14 +403,8 @@ type PendingOrderResolver interface {
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*Market, error)
-	RealisedVolume(ctx context.Context, obj *proto.Position) (string, error)
-	RealisedProfitValue(ctx context.Context, obj *proto.Position) (string, error)
-	RealisedProfitDirection(ctx context.Context, obj *proto.Position) (ValueDirection, error)
-	RealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
-	UnrealisedVolume(ctx context.Context, obj *proto.Position) (string, error)
 	OpenVolume(ctx context.Context, obj *proto.Position) (string, error)
-	UnrealisedProfitValue(ctx context.Context, obj *proto.Position) (string, error)
-	UnrealisedProfitDirection(ctx context.Context, obj *proto.Position) (ValueDirection, error)
+	RealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
 	UnrealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
 	AverageEntryPrice(ctx context.Context, obj *proto.Position) (string, error)
 	Margins(ctx context.Context, obj *proto.Position) ([]*proto.MarginLevels, error)
@@ -479,8 +461,6 @@ type TradeResolver interface {
 	Aggressor(ctx context.Context, obj *proto.Trade) (Side, error)
 	Price(ctx context.Context, obj *proto.Trade) (string, error)
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
-	Timestamp(ctx context.Context, obj *proto.Trade) (string, error)
-	Datetime(ctx context.Context, obj *proto.Trade) (string, error)
 	CreatedAt(ctx context.Context, obj *proto.Trade) (string, error)
 }
 
@@ -1041,13 +1021,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.CreatedAt(childComplexity), true
 
-	case "Order.datetime":
-		if e.complexity.Order.Datetime == nil {
-			break
-		}
-
-		return e.complexity.Order.Datetime(childComplexity), true
-
 	case "Order.expiresAt":
 		if e.complexity.Order.ExpiresAt == nil {
 			break
@@ -1131,13 +1104,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.TimeInForce(childComplexity), true
-
-	case "Order.timestamp":
-		if e.complexity.Order.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.Order.Timestamp(childComplexity), true
 
 	case "Order.trades":
 		if e.complexity.Order.Trades == nil {
@@ -1320,54 +1286,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Position.RealisedPnl(childComplexity), true
 
-	case "Position.realisedProfitDirection":
-		if e.complexity.Position.RealisedProfitDirection == nil {
-			break
-		}
-
-		return e.complexity.Position.RealisedProfitDirection(childComplexity), true
-
-	case "Position.realisedProfitValue":
-		if e.complexity.Position.RealisedProfitValue == nil {
-			break
-		}
-
-		return e.complexity.Position.RealisedProfitValue(childComplexity), true
-
-	case "Position.realisedVolume":
-		if e.complexity.Position.RealisedVolume == nil {
-			break
-		}
-
-		return e.complexity.Position.RealisedVolume(childComplexity), true
-
 	case "Position.unrealisedPNL":
 		if e.complexity.Position.UnrealisedPnl == nil {
 			break
 		}
 
 		return e.complexity.Position.UnrealisedPnl(childComplexity), true
-
-	case "Position.unrealisedProfitDirection":
-		if e.complexity.Position.UnrealisedProfitDirection == nil {
-			break
-		}
-
-		return e.complexity.Position.UnrealisedProfitDirection(childComplexity), true
-
-	case "Position.unrealisedProfitValue":
-		if e.complexity.Position.UnrealisedProfitValue == nil {
-			break
-		}
-
-		return e.complexity.Position.UnrealisedProfitValue(childComplexity), true
-
-	case "Position.unrealisedVolume":
-		if e.complexity.Position.UnrealisedVolume == nil {
-			break
-		}
-
-		return e.complexity.Position.UnrealisedVolume(childComplexity), true
 
 	case "PriceLevel.cumulativeVolume":
 		if e.complexity.PriceLevel.CumulativeVolume == nil {
@@ -1826,13 +1750,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.CreatedAt(childComplexity), true
 
-	case "Trade.datetime":
-		if e.complexity.Trade.Datetime == nil {
-			break
-		}
-
-		return e.complexity.Trade.Datetime(childComplexity), true
-
 	case "Trade.id":
 		if e.complexity.Trade.Id == nil {
 			break
@@ -1867,13 +1784,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Trade.Size(childComplexity), true
-
-	case "Trade.timestamp":
-		if e.complexity.Trade.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.Trade.Timestamp(childComplexity), true
 
 	}
 	return 0, false
@@ -2626,29 +2536,11 @@ type Position {
   # Market relating to this position
   market: Market!
 
-  # Realised volume (uint64)
-  realisedVolume: String! @deprecated(reason: "This field is being removed in the near future and will return 0")
-
-  # Realised Profit and Loss
-  realisedProfitValue: String! @deprecated(reason: "This field is being replaced by realisedPNL in the near future")
-
-  # Realised Profit or Loss direction
-  realisedProfitDirection: ValueDirection! @deprecated(reason: "This field will be removed in the near future")
-
-  # Realised Profit and Loss (int64)
-  realisedPNL: String!
-
-  # Unrealised volume (uint64)
-  unrealisedVolume: String! @deprecated(reason: "This field is being replaced by openVolume in the near future")
-
   # Open volume (uint64)
   openVolume: String!
 
-  # Unrealised Profit and Loss
-  unrealisedProfitValue: String! @deprecated(reason: "This field is being replaced by unrealisedPNL in the near future")
-
-  # Unrealised Profit or Loss direction
-  unrealisedProfitDirection: ValueDirection! @deprecated(reason: "This field will be removed in the near future")
+  # Realised Profit and Loss (int64)
+  realisedPNL: String!
 
   # Unrealised Profit and Loss (int64)
   unrealisedPNL: String!
@@ -2686,12 +2578,6 @@ type Order {
 
   # The trader who place the order (probably stored internally as the trader's public key)
   party: Party!
-
-  # Unix epoch+nanoseconds for when the order was created
-  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
-
-  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
-  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
   # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
   createdAt: String!
@@ -2738,12 +2624,6 @@ type Trade {
 
   # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
   size: String!
-
-  # Unix epoch+nanoseconds for when the trade occurred
-  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
-
-  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occurred (timestamp)
-  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
   # RFC3339Nano for when the trade occurred
   createdAt: String!
@@ -2854,12 +2734,6 @@ enum Side {
 
   # The placer of the order is aiming to sell
   Sell
-}
-
-# Whether the position etc value is in profit (positive) or loss (negative).
-enum ValueDirection {
-  Positive
-  Negative
 }
 
 # The interval for trade candles when subscribing via VEGA graphql, default is I15M
@@ -6522,80 +6396,6 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Order",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().Timestamp(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Order",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().Datetime(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7458,191 +7258,6 @@ func (ec *executionContext) _Position_market(ctx context.Context, field graphql.
 	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Position",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().RealisedVolume(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Position_realisedProfitValue(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Position",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().RealisedProfitValue(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Position_realisedProfitDirection(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Position",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().RealisedProfitDirection(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(ValueDirection)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Position_realisedPNL(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Position",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().RealisedPnl(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Position_unrealisedVolume(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Position",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().UnrealisedVolume(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Position_openVolume(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7680,7 +7295,7 @@ func (ec *executionContext) _Position_openVolume(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
+func (ec *executionContext) _Position_realisedPNL(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7699,7 +7314,7 @@ func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context,
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().UnrealisedProfitValue(rctx, obj)
+		return ec.resolvers.Position().RealisedPnl(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7715,43 +7330,6 @@ func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context,
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Position",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().UnrealisedProfitDirection(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(ValueDirection)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_unrealisedPNL(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
@@ -10302,80 +9880,6 @@ func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Trade",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Trade().Timestamp(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Trade",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Trade().Datetime(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Trade_createdAt(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -12728,34 +12232,6 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
-		case "timestamp":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Order_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "datetime":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Order_datetime(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "createdAt":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -13068,76 +12544,6 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 				}
 				return res
 			})
-		case "realisedVolume":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_realisedVolume(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "realisedProfitValue":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_realisedProfitValue(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "realisedProfitDirection":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_realisedProfitDirection(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "realisedPNL":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_realisedPNL(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "unrealisedVolume":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_unrealisedVolume(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "openVolume":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -13152,7 +12558,7 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 				}
 				return res
 			})
-		case "unrealisedProfitValue":
+		case "realisedPNL":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -13160,21 +12566,7 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Position_unrealisedProfitValue(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "unrealisedProfitDirection":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_unrealisedProfitDirection(ctx, field, obj)
+				res = ec._Position_realisedPNL(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -13937,34 +13329,6 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Trade_size(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "timestamp":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Trade_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "datetime":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Trade_datetime(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -14740,15 +14104,6 @@ func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._TradingMode(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx context.Context, v interface{}) (ValueDirection, error) {
-	var res ValueDirection
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx context.Context, sel ast.SelectionSet, v ValueDirection) graphql.Marshaler {
-	return v
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

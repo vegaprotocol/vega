@@ -857,14 +857,8 @@ func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, e
 func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
-func (r *myOrderResolver) Timestamp(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatInt(obj.CreatedAt, 10), nil
-}
 func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
-}
-func (r *myOrderResolver) Datetime(ctx context.Context, obj *types.Order) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
@@ -925,12 +919,6 @@ func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, 
 }
 func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
-}
-func (r *myTradeResolver) Timestamp(ctx context.Context, obj *types.Trade) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
-}
-func (r *myTradeResolver) Datetime(ctx context.Context, obj *types.Trade) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
@@ -1001,36 +989,28 @@ func (r *myPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *types.
 
 type myPositionResolver VegaResolverRoot
 
-func (r *myPositionResolver) RealisedVolume(ctx context.Context, obj *types.Position) (string, error) {
-	return "0", nil
-}
-
-func (r *myPositionResolver) RealisedProfitValue(ctx context.Context, obj *types.Position) (string, error) {
-	return r.absInt64Str(obj.RealisedPNL), nil
-}
-
-func (r *myPositionResolver) RealisedProfitDirection(ctx context.Context, obj *types.Position) (ValueDirection, error) {
-	return r.direction(obj.RealisedPNL), nil
-}
-
-func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.RealisedPNL, 10), nil
-}
-
-func (r *myPositionResolver) UnrealisedVolume(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.OpenVolume, 10), nil
+func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*Market, error) {
+	if obj == nil {
+		return nil, errors.New("invalid position")
+	}
+	if len(obj.MarketID) <= 0 {
+		return nil, nil
+	}
+	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
 }
 
 func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *myPositionResolver) UnrealisedProfitValue(ctx context.Context, obj *types.Position) (string, error) {
-	return r.absInt64Str(obj.UnrealisedPNL), nil
-}
-
-func (r *myPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj *types.Position) (ValueDirection, error) {
-	return r.direction(obj.UnrealisedPNL), nil
+func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.RealisedPNL, 10), nil
 }
 
 func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
@@ -1062,39 +1042,6 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
 	out = append(out, res.MarginLevels...)
 	return out, nil
-}
-
-func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*Market, error) {
-	if obj == nil {
-		return nil, errors.New("invalid position")
-	}
-
-	// market not mandatory
-	if len(obj.MarketID) <= 0 {
-		return nil, nil
-	}
-
-	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
-	res, err := r.tradingDataClient.MarketByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
-	}
-	return MarketFromProto(res.Market)
-}
-
-func (r *myPositionResolver) absInt64Str(val int64) string {
-	if val < 0 {
-		return strconv.FormatInt(val*-1, 10)
-	}
-	return strconv.FormatInt(val, 10)
-}
-
-func (r *myPositionResolver) direction(val int64) ValueDirection {
-	if val < 0 {
-		return ValueDirectionNegative
-	}
-	return ValueDirectionPositive
 }
 
 // END: Position Resolver
