@@ -2076,7 +2076,7 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NO_ACC | 0 |  |
+| ALL | 0 |  |
 | INSURANCE | 1 |  |
 | SETTLEMENT | 2 |  |
 | MARGIN | 3 |  |

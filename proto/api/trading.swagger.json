@@ -666,13 +666,13 @@
             "required": false,
             "type": "string",
             "enum": [
-              "NO_ACC",
+              "ALL",
               "INSURANCE",
               "SETTLEMENT",
               "MARGIN",
               "GENERAL"
             ],
-            "default": "NO_ACC"
+            "default": "ALL"
           },
           {
             "name": "asset",
@@ -1354,13 +1354,13 @@
     "vegaAccountType": {
       "type": "string",
       "enum": [
-        "NO_ACC",
+        "ALL",
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
         "GENERAL"
       ],
-      "default": "NO_ACC"
+      "default": "ALL"
     },
     "vegaCandle": {
       "type": "object",

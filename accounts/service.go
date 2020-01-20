@@ -150,7 +150,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 						(len(partyID) <= 0 || partyID == acc.Owner) &&
 						(len(asset) <= 0 || asset == acc.Asset) &&
-						(ty == types.AccountType_NO_ACC || ty == acc.Type) {
+						(ty == types.AccountType_ALL || ty == acc.Type) {
 						filtered = append(filtered, acc)
 					}
 				}
