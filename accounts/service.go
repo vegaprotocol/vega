@@ -79,10 +79,10 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 		// General accounts for party are not specific to one market, therefore marketID should not be set
 		marketID = ""
 	}
-
 	accounts, err := s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
-
-	// We want to blank out any marketIDs with "!" in them
+	// Prevent internal "!" special character from leaking out via marketID
+	// There is a ticket to improve and clean this up in the collateral-engine:
+	// https://gitlab.com/vega-protocol/trading-core/issues/416
 	for _, acc := range accounts {
 		if acc.GetType() == types.AccountType_GENERAL {
 			if acc.GetMarketID() == "!" {
@@ -94,7 +94,16 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 }
 
 func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
-	return s.storage.GetMarketAccounts(marketID, asset)
+	accounts, err := s.storage.GetMarketAccounts(marketID, asset)
+	// Prevent internal "*" special character from leaking out via owner (similar to above).
+	// There is a ticket to improve and clean this up in the collateral-engine:
+	// https://gitlab.com/vega-protocol/trading-core/issues/416
+	for _, acc := range accounts {
+		if acc.Owner == "*" {
+			acc.Owner = ""
+		}
+	}
+	return accounts, err
 }
 
 // ObserveAccounts is used by streaming subscribers to be notified when changes
