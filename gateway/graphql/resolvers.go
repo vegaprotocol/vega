@@ -1363,6 +1363,10 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		ty       types.AccountType
 	)
 
+	if marketID == nil && partyID == nil && asset == nil && typeArg == nil {
+		// Updates on every balance update, on every account, for everyone and shouldn't be allowed for GraphQL.
+		return nil, errors.New("at least one query filter must be applied for this subscription")
+	}
 	if marketID != nil {
 		mkt = *marketID
 	}
