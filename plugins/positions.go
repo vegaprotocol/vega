@@ -180,6 +180,7 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 	if current == 0 {
 		reset = true
 	}
+
 	for _, t := range e.Trades() {
 		size, sAbs := t.Size(), absUint64(t.Size())
 		if current != 0 {
@@ -252,10 +253,9 @@ func calcAEP(size, open int64, newPrice, avgPrice uint64) uint64 {
 	if (soAbs != open && ssAbs == size) || (soAbs == open && ssAbs != size) {
 		return newPrice // we went from long to short (or short to long) -> the average entry price == new price
 	}
-	// we've increased our position: long -> longer || short -> shorter
-	// we need to calculate the new AEP: average price * open + new price * (new size-old size) / newSize
-	delta := absUint64(int64(oAbs) - int64(sAbs))
-	return (avgPrice*oAbs + newPrice*delta) / sAbs
+
+	// New Open Volume Entry Price = (Prev Open Volume Entry Price * Prev Open Volume + New Trade Price * New Trade Volume) / (Prev Open Volume + New Trade Volume)
+	return (avgPrice*oAbs + newPrice*sAbs) / (oAbs + sAbs)
 }
 
 func evtToProto(e events.SettlePosition) types.Position {
