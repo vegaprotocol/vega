@@ -115,7 +115,7 @@
         ]
       }
     },
-    "/markets/data": {
+    "/markets-data": {
       "get": {
         "summary": "Get a list of Market Data",
         "operationId": "MarketsData",
@@ -127,6 +127,31 @@
             }
           }
         },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets-data/{marketID}": {
+      "get": {
+        "summary": "Get Market Data by ID",
+        "operationId": "MarketDataByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDataByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "tags": [
           "trading_data"
         ]
@@ -228,31 +253,6 @@
               "I1D"
             ],
             "default": "I1M"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/markets/{marketID}/data": {
-      "get": {
-        "summary": "Get Market Data by ID",
-        "operationId": "MarketDataByID",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketDataByIDResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [

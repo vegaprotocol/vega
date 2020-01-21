@@ -1521,9 +1521,9 @@ var (
 
 	pattern_TradingData_GetVegaTime_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"time"}, ""))
 
-	pattern_TradingData_MarketDataByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "data"}, ""))
+	pattern_TradingData_MarketDataByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets-data", "marketID"}, ""))
 
-	pattern_TradingData_MarketsData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"markets", "data"}, ""))
+	pattern_TradingData_MarketsData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets-data"}, ""))
 
 	pattern_TradingData_MarginLevels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"parties", "partyID", "markets", "marketID", "margin"}, ""))
 
