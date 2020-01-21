@@ -159,6 +159,50 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	return s, nil
 }
 
+func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
+	if currentOpenVolume != 0 && ((currentOpenVolume > 0) != (tradedVolume > 0)) {
+		var closedVolume int64
+		if absUint64(tradedVolume) > absUint64(currentOpenVolume) {
+			closedVolume = currentOpenVolume
+		} else {
+			closedVolume = -tradedVolume
+		}
+		return tradedVolume + closedVolume, closedVolume
+	}
+	return tradedVolume, 0
+}
+
+func closeV(p *types.Position, closedVolume int64, tradedPrice uint64) int64 {
+	if closedVolume == 0 {
+		return 0
+	}
+	realisedPnlDelta := closedVolume * int64(tradedPrice-p.AverageEntryPrice)
+	p.RealisedPNL += int64(realisedPnlDelta)
+	p.OpenVolume -= closedVolume
+	return realisedPnlDelta
+}
+
+func updateVWAP(vwap uint64, volume int64, addVolume int64, addPrice uint64) uint64 {
+	if volume+addVolume == 0 {
+		return 0
+	}
+	return uint64((((int64(vwap) * volume) + (int64(addPrice) * addVolume)) / (volume + addVolume)))
+}
+
+func openV(p *types.Position, openedVolume int64, tradedPrice uint64) {
+	p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, tradedPrice)
+	p.OpenVolume += openedVolume
+
+}
+
+func mtm(p *types.Position, markPrice uint64) {
+	if p.OpenVolume == 0 {
+		p.UnrealisedPNL = 0
+		return
+	}
+	p.UnrealisedPNL = p.OpenVolume * int64(markPrice-p.AverageEntryPrice)
+}
+
 func updatePosition(p *types.Position, e events.SettlePosition) {
 	// if this settlePosition event has a margin event embedded, that means we're dealing
 	// with a trader who was closed out...
@@ -173,65 +217,11 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		return
 	}
 	current := p.OpenVolume
-	var (
-		delta int64
-		reset bool
-	)
-	if current == 0 {
-		reset = true
-	}
-
 	for _, t := range e.Trades() {
-		size, sAbs := t.Size(), absUint64(t.Size())
-		if current != 0 {
-			cAbs := absUint64(current)
-			// trade direction is actually closing volume
-			if (current > 0 && size < 0) || (current < 0 && size > 0) {
-				if sAbs > cAbs {
-					delta = current
-					current = 0
-				} else {
-					delta = -size
-					current += size
-				}
-			}
-			// only increment realised P&L if the size goes the opposite way compared to the the
-			// current position
-			if (size > 0 && p.OpenVolume <= 0) || (size < 0 && p.OpenVolume >= 0) {
-				p.RealisedPNL += delta * int64(t.Price()-p.AverageEntryPrice)
-			}
-			// @TODO store trade record with this realised P&L value
-		}
-		// we're going to set the AEP to the mark price, the realised P&L at this point
-		// is the MTM of the trade price <-> mark price
-		if reset {
-			// the P&L is the value at mark price - value at trade price
-			p.UnrealisedPNL += (t.Size() * int64(e.Price())) - (t.Size() * int64(t.Price()))
-		}
-		if net := delta + size; net != 0 {
-			p.AverageEntryPrice = calcAEP(size, p.OpenVolume, t.Price(), p.AverageEntryPrice)
-		}
-		p.OpenVolume += size
-		current += size
-		delta = 0
-	}
-	if reset {
-		p.AverageEntryPrice = e.Price()
-	}
-
-	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
-	// MTM price * open volume == total value of current pos the entry price/cost of said position
-	p.UnrealisedPNL = (int64(e.Price()) - int64(p.AverageEntryPrice)) * p.OpenVolume
-	// Technically not needed, but safer to copy the open volume from event regardless
-	p.OpenVolume = e.Size()
-	if p.OpenVolume == 0 {
-		p.RealisedPNL += p.UnrealisedPNL
-		p.UnrealisedPNL = 0
-		p.AverageEntryPrice = 0
-		return
-	}
-	if p.AverageEntryPrice == 0 {
-		p.AverageEntryPrice = e.Price()
+		openedVolume, closedVolume := calculateOpenClosedVolume(current, t.Size())
+		_ = closeV(p, closedVolume, t.Price())
+		openV(p, openedVolume, t.Price())
+		mtm(p, t.Price())
 	}
 }
 
