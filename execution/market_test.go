@@ -531,11 +531,11 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &types.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &types.ForwardRiskModel{
+				RiskModel: &types.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &types.LogNormalRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &types.ModelParamsBS{
+						Params: &types.LogNormalModelParams{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,

@@ -166,12 +166,12 @@ func (i *Instrument) IntoProto() (*types.Instrument, error) {
 }
 
 // IntoProto ...
-func (f *ForwardRiskModel) IntoProto() (*types.TradableInstrument_ForwardRiskModel, error) {
-	return &types.TradableInstrument_ForwardRiskModel{
-		ForwardRiskModel: &types.ForwardRiskModel{
+func (f *LogNormalRiskModel) IntoProto() (*types.TradableInstrument_LogNormalRiskModel, error) {
+	return &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: f.RiskAversionParameter,
 			Tau:                   f.Tau,
-			Params: &types.ModelParamsBS{
+			Params: &types.LogNormalModelParams{
 				Mu:    f.Params.Mu,
 				R:     f.Params.R,
 				Sigma: f.Params.Sigma,
@@ -186,7 +186,7 @@ func (ti *TradableInstrument) riskModelIntoProto(
 		return ErrNilRiskModel
 	}
 	switch rm := ti.RiskModel.(type) {
-	case *ForwardRiskModel:
+	case *LogNormalRiskModel:
 		pti.RiskModel, err = rm.IntoProto()
 	default:
 		err = ErrUnimplementedRiskModel
@@ -363,11 +363,11 @@ func InstrumentFromProto(pi *types.Instrument) (*Instrument, error) {
 }
 
 // ForwardFromProto ...
-func ForwardFromProto(f *types.ForwardRiskModel) (*ForwardRiskModel, error) {
-	return &ForwardRiskModel{
+func ForwardFromProto(f *types.LogNormalRiskModel) (*LogNormalRiskModel, error) {
+	return &LogNormalRiskModel{
 		RiskAversionParameter: f.RiskAversionParameter,
 		Tau:                   f.Tau,
-		Params: &ModelParamsBs{
+		Params: &LogNormalModelParams{
 			Mu:    f.Params.Mu,
 			R:     f.Params.R,
 			Sigma: f.Params.Sigma,
@@ -391,8 +391,8 @@ func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 		return nil, ErrNilRiskModel
 	}
 	switch rmimpl := rm.(type) {
-	case *types.TradableInstrument_ForwardRiskModel:
-		return ForwardFromProto(rmimpl.ForwardRiskModel)
+	case *types.TradableInstrument_LogNormalRiskModel:
+		return ForwardFromProto(rmimpl.LogNormalRiskModel)
 	case *types.TradableInstrument_SimpleRiskModel:
 		return SimpleRiskModelFromProto(rmimpl.SimpleRiskModel)
 	default:

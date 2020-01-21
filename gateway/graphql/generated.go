@@ -94,12 +94,6 @@ type ComplexityRoot struct {
 		Event      func(childComplexity int) int
 	}
 
-	ForwardRiskModel struct {
-		Params                func(childComplexity int) int
-		RiskAversionParameter func(childComplexity int) int
-		Tau                   func(childComplexity int) int
-	}
-
 	Future struct {
 		Asset    func(childComplexity int) int
 		Maturity func(childComplexity int) int
@@ -118,6 +112,18 @@ type ComplexityRoot struct {
 
 	InstrumentMetadata struct {
 		Tags func(childComplexity int) int
+	}
+
+	LogNormalModelParams struct {
+		Mu    func(childComplexity int) int
+		R     func(childComplexity int) int
+		Sigma func(childComplexity int) int
+	}
+
+	LogNormalRiskModel struct {
+		Params                func(childComplexity int) int
+		RiskAversionParameter func(childComplexity int) int
+		Tau                   func(childComplexity int) int
 	}
 
 	MarginLevels struct {
@@ -162,12 +168,6 @@ type ComplexityRoot struct {
 		LastTrade func(childComplexity int) int
 		Market    func(childComplexity int) int
 		Sell      func(childComplexity int) int
-	}
-
-	ModelParamsBs struct {
-		Mu    func(childComplexity int) int
-		R     func(childComplexity int) int
-		Sigma func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -618,27 +618,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EthereumEvent.Event(childComplexity), true
 
-	case "ForwardRiskModel.params":
-		if e.complexity.ForwardRiskModel.Params == nil {
-			break
-		}
-
-		return e.complexity.ForwardRiskModel.Params(childComplexity), true
-
-	case "ForwardRiskModel.riskAversionParameter":
-		if e.complexity.ForwardRiskModel.RiskAversionParameter == nil {
-			break
-		}
-
-		return e.complexity.ForwardRiskModel.RiskAversionParameter(childComplexity), true
-
-	case "ForwardRiskModel.tau":
-		if e.complexity.ForwardRiskModel.Tau == nil {
-			break
-		}
-
-		return e.complexity.ForwardRiskModel.Tau(childComplexity), true
-
 	case "Future.asset":
 		if e.complexity.Future.Asset == nil {
 			break
@@ -715,6 +694,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentMetadata.Tags(childComplexity), true
+
+	case "LogNormalModelParams.mu":
+		if e.complexity.LogNormalModelParams.Mu == nil {
+			break
+		}
+
+		return e.complexity.LogNormalModelParams.Mu(childComplexity), true
+
+	case "LogNormalModelParams.r":
+		if e.complexity.LogNormalModelParams.R == nil {
+			break
+		}
+
+		return e.complexity.LogNormalModelParams.R(childComplexity), true
+
+	case "LogNormalModelParams.sigma":
+		if e.complexity.LogNormalModelParams.Sigma == nil {
+			break
+		}
+
+		return e.complexity.LogNormalModelParams.Sigma(childComplexity), true
+
+	case "LogNormalRiskModel.params":
+		if e.complexity.LogNormalRiskModel.Params == nil {
+			break
+		}
+
+		return e.complexity.LogNormalRiskModel.Params(childComplexity), true
+
+	case "LogNormalRiskModel.riskAversionParameter":
+		if e.complexity.LogNormalRiskModel.RiskAversionParameter == nil {
+			break
+		}
+
+		return e.complexity.LogNormalRiskModel.RiskAversionParameter(childComplexity), true
+
+	case "LogNormalRiskModel.tau":
+		if e.complexity.LogNormalRiskModel.Tau == nil {
+			break
+		}
+
+		return e.complexity.LogNormalRiskModel.Tau(childComplexity), true
 
 	case "MarginLevels.asset":
 		if e.complexity.MarginLevels.Asset == nil {
@@ -964,27 +985,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketDepth.Sell(childComplexity), true
-
-	case "ModelParamsBS.mu":
-		if e.complexity.ModelParamsBs.Mu == nil {
-			break
-		}
-
-		return e.complexity.ModelParamsBs.Mu(childComplexity), true
-
-	case "ModelParamsBS.r":
-		if e.complexity.ModelParamsBs.R == nil {
-			break
-		}
-
-		return e.complexity.ModelParamsBs.R(childComplexity), true
-
-	case "ModelParamsBS.sigma":
-		if e.complexity.ModelParamsBs.Sigma == nil {
-			break
-		}
-
-		return e.complexity.ModelParamsBs.Sigma(childComplexity), true
 
 	case "Mutation.orderAmend":
 		if e.complexity.Mutation.OrderAmend == nil {
@@ -2326,8 +2326,8 @@ union TradingMode =
 ContinuousTrading
 | DiscreteTrading
 
-# Parameters to be forwards to the risk model
-type ModelParamsBS {
+# Parameters for the log normal risk model
+type LogNormalModelParams {
   # mu parameter
   mu: Float!
   # r parameter
@@ -2346,13 +2346,13 @@ type SimpleRiskModelParams {
 
 
 # A type of risk model for futures trading
-type ForwardRiskModel {
+type LogNormalRiskModel {
   # Lambda parameter of the risk model
   riskAversionParameter: Float!
   # Tau parameter of the risk model
   tau: Float!
-  # Params for the forward risk model
-  params: ModelParamsBS!
+  # Params for the log normal risk model
+  params: LogNormalModelParams!
 }
 
 # A type of simple/dummy risk model where we can specify the risk factor long and short in params
@@ -2361,7 +2361,7 @@ type SimpleRiskModel {
   params: SimpleRiskModelParams!
 }
 
-union RiskModel = ForwardRiskModel | SimpleRiskModel
+union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
 # A set of metadata to associate to an instruments
 type InstrumentMetadata {
@@ -4223,117 +4223,6 @@ func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ForwardRiskModel_riskAversionParameter(ctx context.Context, field graphql.CollectedField, obj *ForwardRiskModel) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "ForwardRiskModel",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RiskAversionParameter, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ForwardRiskModel_tau(ctx context.Context, field graphql.CollectedField, obj *ForwardRiskModel) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "ForwardRiskModel",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tau, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ForwardRiskModel_params(ctx context.Context, field graphql.CollectedField, obj *ForwardRiskModel) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "ForwardRiskModel",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Params, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ModelParamsBs)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐModelParamsBs(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.CollectedField, obj *Future) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4739,6 +4628,228 @@ func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogNormalModelParams_mu(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LogNormalModelParams",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mu, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogNormalModelParams_r(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LogNormalModelParams",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.R, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogNormalModelParams_sigma(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LogNormalModelParams",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sigma, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogNormalRiskModel_riskAversionParameter(ctx context.Context, field graphql.CollectedField, obj *LogNormalRiskModel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LogNormalRiskModel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RiskAversionParameter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogNormalRiskModel_tau(ctx context.Context, field graphql.CollectedField, obj *LogNormalRiskModel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LogNormalRiskModel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tau, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogNormalRiskModel_params(ctx context.Context, field graphql.CollectedField, obj *LogNormalRiskModel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LogNormalRiskModel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Params, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*LogNormalModelParams)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -5937,117 +6048,6 @@ func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ModelParamsBS_mu(ctx context.Context, field graphql.CollectedField, obj *ModelParamsBs) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "ModelParamsBS",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Mu, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ModelParamsBS_r(ctx context.Context, field graphql.CollectedField, obj *ModelParamsBs) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "ModelParamsBS",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.R, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ModelParamsBS_sigma(ctx context.Context, field graphql.CollectedField, obj *ModelParamsBs) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "ModelParamsBS",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Sigma, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11598,10 +11598,10 @@ func (ec *executionContext) _RiskModel(ctx context.Context, sel ast.SelectionSet
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case ForwardRiskModel:
-		return ec._ForwardRiskModel(ctx, sel, &obj)
-	case *ForwardRiskModel:
-		return ec._ForwardRiskModel(ctx, sel, obj)
+	case LogNormalRiskModel:
+		return ec._LogNormalRiskModel(ctx, sel, &obj)
+	case *LogNormalRiskModel:
+		return ec._LogNormalRiskModel(ctx, sel, obj)
 	case SimpleRiskModel:
 		return ec._SimpleRiskModel(ctx, sel, &obj)
 	case *SimpleRiskModel:
@@ -11930,43 +11930,6 @@ func (ec *executionContext) _EthereumEvent(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var forwardRiskModelImplementors = []string{"ForwardRiskModel", "RiskModel"}
-
-func (ec *executionContext) _ForwardRiskModel(ctx context.Context, sel ast.SelectionSet, obj *ForwardRiskModel) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, forwardRiskModelImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ForwardRiskModel")
-		case "riskAversionParameter":
-			out.Values[i] = ec._ForwardRiskModel_riskAversionParameter(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "tau":
-			out.Values[i] = ec._ForwardRiskModel_tau(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "params":
-			out.Values[i] = ec._ForwardRiskModel_params(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var futureImplementors = []string{"Future", "Product"}
 
 func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, obj *Future) graphql.Marshaler {
@@ -12074,6 +12037,80 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("InstrumentMetadata")
 		case "tags":
 			out.Values[i] = ec._InstrumentMetadata_tags(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var logNormalModelParamsImplementors = []string{"LogNormalModelParams"}
+
+func (ec *executionContext) _LogNormalModelParams(ctx context.Context, sel ast.SelectionSet, obj *LogNormalModelParams) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, logNormalModelParamsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LogNormalModelParams")
+		case "mu":
+			out.Values[i] = ec._LogNormalModelParams_mu(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "r":
+			out.Values[i] = ec._LogNormalModelParams_r(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "sigma":
+			out.Values[i] = ec._LogNormalModelParams_sigma(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var logNormalRiskModelImplementors = []string{"LogNormalRiskModel", "RiskModel"}
+
+func (ec *executionContext) _LogNormalRiskModel(ctx context.Context, sel ast.SelectionSet, obj *LogNormalRiskModel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, logNormalRiskModelImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LogNormalRiskModel")
+		case "riskAversionParameter":
+			out.Values[i] = ec._LogNormalRiskModel_riskAversionParameter(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tau":
+			out.Values[i] = ec._LogNormalRiskModel_tau(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "params":
+			out.Values[i] = ec._LogNormalRiskModel_params(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -12520,43 +12557,6 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 				res = ec._MarketDepth_lastTrade(ctx, field, obj)
 				return res
 			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var modelParamsBSImplementors = []string{"ModelParamsBS"}
-
-func (ec *executionContext) _ModelParamsBS(ctx context.Context, sel ast.SelectionSet, obj *ModelParamsBs) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, modelParamsBSImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ModelParamsBS")
-		case "mu":
-			out.Values[i] = ec._ModelParamsBS_mu(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "r":
-			out.Values[i] = ec._ModelParamsBS_r(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "sigma":
-			out.Values[i] = ec._ModelParamsBS_sigma(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14398,6 +14398,20 @@ func (ec *executionContext) marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋg
 	return v
 }
 
+func (ec *executionContext) marshalNLogNormalModelParams2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v LogNormalModelParams) graphql.Marshaler {
+	return ec._LogNormalModelParams(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v *LogNormalModelParams) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LogNormalModelParams(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNMarginLevels2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v proto.MarginLevels) graphql.Marshaler {
 	return ec._MarginLevels(ctx, sel, &v)
 }
@@ -14452,20 +14466,6 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._MarketDepth(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNModelParamsBS2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐModelParamsBs(ctx context.Context, sel ast.SelectionSet, v ModelParamsBs) graphql.Marshaler {
-	return ec._ModelParamsBS(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐModelParamsBs(ctx context.Context, sel ast.SelectionSet, v *ModelParamsBs) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ModelParamsBS(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracle(ctx context.Context, sel ast.SelectionSet, v Oracle) graphql.Marshaler {

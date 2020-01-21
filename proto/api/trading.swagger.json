@@ -1456,22 +1456,6 @@
         }
       }
     },
-    "vegaForwardRiskModel": {
-      "type": "object",
-      "properties": {
-        "riskAversionParameter": {
-          "type": "number",
-          "format": "double"
-        },
-        "tau": {
-          "type": "number",
-          "format": "double"
-        },
-        "params": {
-          "$ref": "#/definitions/vegaModelParamsBS"
-        }
-      }
-    },
     "vegaFuture": {
       "type": "object",
       "properties": {
@@ -1561,6 +1545,39 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "vegaLogNormalModelParams": {
+      "type": "object",
+      "properties": {
+        "mu": {
+          "type": "number",
+          "format": "double"
+        },
+        "r": {
+          "type": "number",
+          "format": "double"
+        },
+        "sigma": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "vegaLogNormalRiskModel": {
+      "type": "object",
+      "properties": {
+        "riskAversionParameter": {
+          "type": "number",
+          "format": "double"
+        },
+        "tau": {
+          "type": "number",
+          "format": "double"
+        },
+        "params": {
+          "$ref": "#/definitions/vegaLogNormalModelParams"
         }
       }
     },
@@ -1683,23 +1700,6 @@
           "items": {
             "$ref": "#/definitions/vegaPriceLevel"
           }
-        }
-      }
-    },
-    "vegaModelParamsBS": {
-      "type": "object",
-      "properties": {
-        "mu": {
-          "type": "number",
-          "format": "double"
-        },
-        "r": {
-          "type": "number",
-          "format": "double"
-        },
-        "sigma": {
-          "type": "number",
-          "format": "double"
         }
       }
     },
@@ -2161,8 +2161,8 @@
         "marginCalculator": {
           "$ref": "#/definitions/vegaMarginCalculator"
         },
-        "forwardRiskModel": {
-          "$ref": "#/definitions/vegaForwardRiskModel"
+        "logNormalRiskModel": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel"
         },
         "externalRiskModel": {
           "$ref": "#/definitions/vegaExternalRiskModel"
