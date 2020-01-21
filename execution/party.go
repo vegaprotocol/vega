@@ -9,7 +9,8 @@ import (
 )
 
 var ErrPartyDoesNotExist = errors.New("party does not exist in party engine")
-var ErrNotifyTraderAccountMissing = errors.New("notify trader account is missing")
+var ErrNotifyPartyIdMissing = errors.New("notify party id is missing")
+var ErrInvalidPartyId = errors.New("party id is not valid")
 
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
@@ -68,11 +69,54 @@ func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *types.NotifyTraderAcc
 	return p.notifyTraderAccount(notify, amount)
 }
 
+// Void type represents nothingness, emptiness
+type Void struct{}
+
+// MakeGeneralAccounts creates general accounts on every market for the given party id
+func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
+	if len(partyID) <= 0 {
+		return nil, ErrInvalidPartyId
+	}
+
+	// ignore errors as they can only happen when the party already exists
+	p.partyBuf.Add(types.Party{Id: partyID})
+
+	result := map[string]Void{}
+
+	for _, mkt := range p.markets {
+		p.addParty(partyID, mkt.Id)
+		asset, err := mkt.GetAsset()
+		if err != nil {
+			p.log.Error("unable to get market asset", logging.Error(err))
+			return nil, err
+		}
+
+		// create account
+		generalAccount := p.collateral.CreatePartyGeneralAccount(partyID, asset)
+		if _, exists := result[generalAccount]; !exists {
+			result[generalAccount] = Void{}
+			if _, err := p.collateral.GetAccountByID(generalAccount); err != nil {
+				p.log.Error("unable to locate created general account",
+					logging.String("party-id", partyID),
+					logging.String("asset", asset),
+					logging.Error(err))
+				return nil, err
+			}
+			if p.log.GetLevel() == logging.DebugLevel {
+				p.log.Debug("created general account",
+					logging.String("asset", asset),
+					logging.String("party-id", partyID))
+			}
+		}
+	}
+	return result, nil
+}
+
 // NotifyTraderAccount will create a new party in the system
 // and top-up it general account with the default amount
 func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	if notify == nil {
-		return ErrNotifyTraderAccountMissing
+		return ErrNotifyPartyIdMissing
 	}
 	if notify.Amount == 0 {
 		return p.notifyTraderAccount(notify, 1000000000) // 10000.00000
@@ -93,54 +137,41 @@ func (p *Party) addParty(ptyID, mktID string) {
 	p.partyByMarket[mktID][ptyID] = struct{}{}
 }
 
+func (p *Party) creditGeneralAccount(accountID string, amount int64) error {
+
+	if err := p.collateral.IncrementBalance(accountID, amount); err != nil {
+		p.log.Error("unable to top-up general account", logging.Error(err))
+		return err
+	}
+	acc, err := p.collateral.GetAccountByID(accountID)
+	if err != nil {
+		p.log.Error("unable to get general account",
+			logging.String("party-id", accountID),
+			logging.Error(err))
+		return err
+	}
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("account top-up",
+			logging.String("party-id", accountID),
+			logging.Int64("top-up-amount", amount),
+			logging.Int64("new-balance", acc.Balance))
+	}
+	return nil
+}
+
 func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount int64) error {
 	if notify == nil {
-		return ErrNotifyTraderAccountMissing
+		return ErrNotifyPartyIdMissing
 	}
 
-	alreadyTopUp := map[string]struct{}{}
-
-	// ignore errors as they can only happen when the party already exists
-	p.partyBuf.Add(types.Party{Id: notify.TraderID})
-
-	for _, mkt := range p.markets {
-		p.addParty(notify.TraderID, mkt.Id)
-		asset, err := mkt.GetAsset()
-		if err != nil {
-			p.log.Error("unable to get market asset",
-				logging.Error(err))
+	generalAccs, err := p.MakeGeneralAccounts(notify.TraderID)
+	if err != nil {
+		return err
+	}
+	for acc := range generalAccs {
+		if err = p.creditGeneralAccount(acc, amount); err != nil {
 			return err
 		}
-
-		// create account
-		generalID := p.collateral.CreatePartyGeneralAccount(notify.TraderID, asset)
-		if _, ok := alreadyTopUp[generalID]; !ok {
-			alreadyTopUp[generalID] = struct{}{}
-			// then credit the general account
-			err = p.collateral.IncrementBalance(generalID, amount)
-			if err != nil {
-				p.log.Error("unable to top-up trader account",
-					logging.Error(err))
-				return err
-			}
-			var acc *types.Account
-			acc, err = p.collateral.GetAccountByID(generalID)
-			if err != nil {
-				p.log.Error("unable to get trader account",
-					logging.String("party-id", notify.TraderID),
-					logging.String("asset", asset),
-					logging.Error(err))
-				return err
-			}
-			if p.log.GetLevel() == logging.DebugLevel {
-				p.log.Debug("party account top-up",
-					logging.String("asset", asset),
-					logging.String("party-id", notify.TraderID),
-					logging.Int64("top-up-amount", amount),
-					logging.Int64("new-balance", acc.Balance))
-			}
-		}
 	}
-
 	return nil
 }

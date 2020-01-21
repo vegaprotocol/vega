@@ -102,7 +102,6 @@
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
-    - [MarketPosition](#vega.MarketPosition)
     - [NotifyTraderAccount](#vega.NotifyTraderAccount)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
@@ -847,7 +846,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| positions | [vega.MarketPosition](#vega.MarketPosition) | repeated |  |
+| positions | [vega.Position](#vega.Position) | repeated |  |
 
 
 
@@ -1138,7 +1137,7 @@
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream |  |
 | CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream |  |
 | MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream |  |
-| PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.MarketPosition](#vega.MarketPosition) stream |  |
+| PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream |  |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream |  |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream |  |
 | MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream |  |
@@ -1598,27 +1597,6 @@
 
 
 
-<a name="vega.MarketPosition"></a>
-
-### MarketPosition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| realisedVolume | [int64](#int64) |  |  |
-| realisedPNL | [int64](#int64) |  |  |
-| unrealisedVolume | [int64](#int64) |  |  |
-| unrealisedPNL | [int64](#int64) |  |  |
-| averageEntryPrice | [uint64](#uint64) |  |  |
-| partyID | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="vega.NotifyTraderAccount"></a>
 
 ### NotifyTraderAccount
@@ -1765,7 +1743,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
-| positions | [MarketPosition](#vega.MarketPosition) | repeated |  |
+| positions | [Position](#vega.Position) | repeated |  |
 
 
 
@@ -1807,11 +1785,9 @@
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
 | openVolume | [int64](#int64) |  |  |
-| pendingVolume | [int64](#int64) |  |  |
 | realisedPNL | [int64](#int64) |  |  |
 | unrealisedPNL | [int64](#int64) |  |  |
 | averageEntryPrice | [uint64](#uint64) |  |  |
-| fifoQueue | [PositionTrade](#vega.PositionTrade) | repeated |  |
 
 
 
@@ -2100,7 +2076,7 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NO_ACC | 0 |  |
+| ALL | 0 |  |
 | INSURANCE | 1 |  |
 | SETTLEMENT | 2 |  |
 | MARGIN | 3 |  |
@@ -2233,6 +2209,7 @@
 | MTM_WIN | 4 |  |
 | MARGIN_LOW | 5 |  |
 | MARGIN_HIGH | 6 |  |
+| MARGIN_CONFISCATED | 7 |  |
 
 
 

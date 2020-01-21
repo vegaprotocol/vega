@@ -25,6 +25,7 @@ type SettlePosition interface {
 	MarketPosition
 	MarketID() string
 	Trades() []TradeSettlement
+	Margin() (Margin, bool)
 }
 
 // Transfer is an event passed on by settlement engine, contains position

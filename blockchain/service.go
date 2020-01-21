@@ -13,20 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Service represent the Blockchain service
-type Service interface {
-	Begin() error
-	Commit() error
-
-	SubmitOrder(order *types.Order) error
-	CancelOrder(order *types.Order) error
-	AmendOrder(order *types.OrderAmendment) error
-	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
-	Withdraw(*types.Withdraw) error
-	ValidateOrder(order *types.Order) error
-	ReloadConf(conf Config)
-}
-
 // ServiceTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/blockchain ServiceTime
 type ServiceTime interface {

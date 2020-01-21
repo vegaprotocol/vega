@@ -113,7 +113,7 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 		return nil, ErrMissingPartyID
 	}
 
-	if ty != types.AccountType_GENERAL && ty != types.AccountType_MARGIN && ty != types.AccountType_NO_ACC {
+	if ty != types.AccountType_GENERAL && ty != types.AccountType_MARGIN && ty != types.AccountType_ALL {
 		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
 	}
 
@@ -136,7 +136,7 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 	for _, acc := range accounts {
 		if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 			(len(asset) <= 0 || asset == acc.Asset) &&
-			(ty == types.AccountType_NO_ACC || ty == acc.Type) {
+			(ty == types.AccountType_ALL || ty == acc.Type) {
 			// ensure there's no duplicate
 			out = append(out, acc)
 		}

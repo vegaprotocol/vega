@@ -219,6 +219,12 @@ func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notify)
 }
 
+// CreateGeneralAccounts creates new general accounts for a party
+func (e *Engine) CreateGeneralAccounts(partyID string) error {
+	_, err := e.party.MakeGeneralAccounts(partyID)
+	return err
+}
+
 func (e *Engine) Withdraw(w *types.Withdraw) error {
 	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
 	if err != nil {

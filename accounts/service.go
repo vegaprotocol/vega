@@ -75,11 +75,35 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 }
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
-	return s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
+	if ty == types.AccountType_GENERAL {
+		// General accounts for party are not specific to one market, therefore marketID should not be set
+		marketID = ""
+	}
+	accounts, err := s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
+	// Prevent internal "!" special character from leaking out via marketID
+	// There is a ticket to improve and clean this up in the collateral-engine:
+	// https://gitlab.com/vega-protocol/trading-core/issues/416
+	for _, acc := range accounts {
+		if acc.GetType() == types.AccountType_GENERAL {
+			if acc.GetMarketID() == "!" {
+				acc.MarketID = ""
+			}
+		}
+	}
+	return accounts, err
 }
 
 func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
-	return s.storage.GetMarketAccounts(marketID, asset)
+	accounts, err := s.storage.GetMarketAccounts(marketID, asset)
+	// Prevent internal "*" special character from leaking out via owner (similar to above).
+	// There is a ticket to improve and clean this up in the collateral-engine:
+	// https://gitlab.com/vega-protocol/trading-core/issues/416
+	for _, acc := range accounts {
+		if acc.Owner == "*" {
+			acc.Owner = ""
+		}
+	}
+	return accounts, err
 }
 
 // ObserveAccounts is used by streaming subscribers to be notified when changes
@@ -135,7 +159,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 						(len(partyID) <= 0 || partyID == acc.Owner) &&
 						(len(asset) <= 0 || asset == acc.Asset) &&
-						(ty == types.AccountType_NO_ACC || ty == acc.Type) {
+						(ty == types.AccountType_ALL || ty == acc.Type) {
 						filtered = append(filtered, acc)
 					}
 				}

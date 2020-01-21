@@ -160,12 +160,26 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 }
 
 func updatePosition(p *types.Position, e events.SettlePosition) {
+	// if this settlePosition event has a margin event embedded, that means we're dealing
+	// with a trader who was closed out...
+	if margin, ok := e.Margin(); ok {
+		p.OpenVolume = 0
+		p.UnrealisedPNL = 0
+		p.AverageEntryPrice = 0
+		// realised P&L includes whatever we had in margin account at this point
+		p.RealisedPNL -= int64(margin.MarginBalance())
+		// @TODO average entry price shouldn't be affected(?)
+		// the volume now is zero, though, so we'll end up moving this position to storage
+		return
+	}
 	current := p.OpenVolume
 	var (
-		// delta uint64
-		pnl, delta int64
+		delta int64
+		reset bool
 	)
-	tradePnl := make([]int64, 0, len(e.Trades()))
+	if current == 0 {
+		reset = true
+	}
 	for _, t := range e.Trades() {
 		size, sAbs := t.Size(), absUint64(t.Size())
 		if current != 0 {
@@ -183,32 +197,65 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 			// only increment realised P&L if the size goes the opposite way compared to the the
 			// current position
 			if (size > 0 && p.OpenVolume <= 0) || (size < 0 && p.OpenVolume >= 0) {
-				pnl = delta * int64(t.Price()-p.AverageEntryPrice)
-				p.RealisedPNL += pnl
-				tradePnl = append(tradePnl, pnl)
+				p.RealisedPNL += delta * int64(t.Price()-p.AverageEntryPrice)
 			}
 			// @TODO store trade record with this realised P&L value
 		}
-		net := delta + size
-		if net != 0 {
-			if newPos := size + p.OpenVolume; newPos != 0 {
-				sAbs, cAbs := absUint64(size), absUint64(p.OpenVolume)
-				p.AverageEntryPrice = (p.AverageEntryPrice*cAbs + t.Price()*sAbs) / (sAbs + cAbs)
-			} else {
-				p.AverageEntryPrice = 0
-			}
+		// we're going to set the AEP to the mark price, the realised P&L at this point
+		// is the MTM of the trade price <-> mark price
+		if reset {
+			// the P&L is the value at mark price - value at trade price
+			p.UnrealisedPNL += (t.Size() * int64(e.Price())) - (t.Size() * int64(t.Price()))
+		}
+		if net := delta + size; net != 0 {
+			p.AverageEntryPrice = calcAEP(size, p.OpenVolume, t.Price(), p.AverageEntryPrice)
 		}
 		p.OpenVolume += size
 		current += size
+		delta = 0
 	}
+	if reset {
+		p.AverageEntryPrice = e.Price()
+	}
+
 	// p.PendingVolume = p.OpenVolume + e.Buy() - e.Sell()
 	// MTM price * open volume == total value of current pos the entry price/cost of said position
 	p.UnrealisedPNL = (int64(e.Price()) - int64(p.AverageEntryPrice)) * p.OpenVolume
 	// Technically not needed, but safer to copy the open volume from event regardless
 	p.OpenVolume = e.Size()
-	if p.OpenVolume != 0 && p.AverageEntryPrice == 0 {
+	if p.OpenVolume == 0 {
+		p.RealisedPNL += p.UnrealisedPNL
+		p.UnrealisedPNL = 0
+		p.AverageEntryPrice = 0
+		return
+	}
+	if p.AverageEntryPrice == 0 {
 		p.AverageEntryPrice = e.Price()
 	}
+}
+
+func calcAEP(size, open int64, newPrice, avgPrice uint64) uint64 {
+	// first up: AEP is zero if we close out:
+	if size == 0 {
+		return 0
+	}
+	// our position has reduced (short to less short, long to less long)
+	// but we've not closed out or inverted (short -> long, long -> short)
+	// then the AEP remains as is
+	if (open > 0 && size > 0 && open > size) || (open < 0 && size < 0 && open < size) {
+		return avgPrice
+	}
+	oAbs, sAbs := absUint64(open), absUint64(size)
+	// also create signed versions of abs value to see if we flipped position
+	soAbs, ssAbs := int64(oAbs), int64(sAbs)
+	// the abs value of one volume doesn't match, but the other doesn't -> we've flipped position
+	if (soAbs != open && ssAbs == size) || (soAbs == open && ssAbs != size) {
+		return newPrice // we went from long to short (or short to long) -> the average entry price == new price
+	}
+	// we've increased our position: long -> longer || short -> shorter
+	// we need to calculate the new AEP: average price * open + new price * (new size-old size) / newSize
+	delta := absUint64(int64(oAbs) - int64(sAbs))
+	return (avgPrice*oAbs + newPrice*delta) / sAbs
 }
 
 func evtToProto(e events.SettlePosition) types.Position {

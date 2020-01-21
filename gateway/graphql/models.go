@@ -101,12 +101,12 @@ type ModelParamsBs struct {
 }
 
 type Party struct {
-	ID        string                  `json:"id"`
-	Orders    []*proto.Order          `json:"orders"`
-	Trades    []*proto.Trade          `json:"trades"`
-	Accounts  []*proto.Account        `json:"accounts"`
-	Positions []*proto.MarketPosition `json:"positions"`
-	Margins   []*proto.MarginLevels   `json:"margins"`
+	ID        string                `json:"id"`
+	Orders    []*proto.Order        `json:"orders"`
+	Trades    []*proto.Trade        `json:"trades"`
+	Accounts  []*proto.Account      `json:"accounts"`
+	Positions []*proto.Position     `json:"positions"`
+	Margins   []*proto.MarginLevels `json:"margins"`
 }
 
 type SimpleRiskModel struct {
@@ -461,46 +461,5 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type ValueDirection string
-
-const (
-	ValueDirectionPositive ValueDirection = "Positive"
-	ValueDirectionNegative ValueDirection = "Negative"
-)
-
-var AllValueDirection = []ValueDirection{
-	ValueDirectionPositive,
-	ValueDirectionNegative,
-}
-
-func (e ValueDirection) IsValid() bool {
-	switch e {
-	case ValueDirectionPositive, ValueDirectionNegative:
-		return true
-	}
-	return false
-}
-
-func (e ValueDirection) String() string {
-	return string(e)
-}
-
-func (e *ValueDirection) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ValueDirection(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ValueDirection", str)
-	}
-	return nil
-}
-
-func (e ValueDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

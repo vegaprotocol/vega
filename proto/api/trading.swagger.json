@@ -115,7 +115,7 @@
         ]
       }
     },
-    "/markets/data": {
+    "/markets-data": {
       "get": {
         "summary": "Get a list of Market Data",
         "operationId": "MarketsData",
@@ -127,6 +127,31 @@
             }
           }
         },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets-data/{marketID}": {
+      "get": {
+        "summary": "Get Market Data by ID",
+        "operationId": "MarketDataByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDataByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "tags": [
           "trading_data"
         ]
@@ -228,31 +253,6 @@
               "I1D"
             ],
             "default": "I1M"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/markets/{marketID}/data": {
-      "get": {
-        "summary": "Get Market Data by ID",
-        "operationId": "MarketDataByID",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketDataByIDResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [
@@ -666,13 +666,13 @@
             "required": false,
             "type": "string",
             "enum": [
-              "NO_ACC",
+              "ALL",
               "INSURANCE",
               "SETTLEMENT",
               "MARGIN",
               "GENERAL"
             ],
-            "default": "NO_ACC"
+            "default": "ALL"
           },
           {
             "name": "asset",
@@ -1185,7 +1185,7 @@
         "positions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaMarketPosition"
+            "$ref": "#/definitions/vegaPosition"
           }
         }
       }
@@ -1354,13 +1354,13 @@
     "vegaAccountType": {
       "type": "string",
       "enum": [
-        "NO_ACC",
+        "ALL",
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
         "GENERAL"
       ],
-      "default": "NO_ACC"
+      "default": "ALL"
     },
     "vegaCandle": {
       "type": "object",
@@ -1686,37 +1686,6 @@
         }
       }
     },
-    "vegaMarketPosition": {
-      "type": "object",
-      "properties": {
-        "marketID": {
-          "type": "string"
-        },
-        "realisedVolume": {
-          "type": "string",
-          "format": "int64"
-        },
-        "realisedPNL": {
-          "type": "string",
-          "format": "int64"
-        },
-        "unrealisedVolume": {
-          "type": "string",
-          "format": "int64"
-        },
-        "unrealisedPNL": {
-          "type": "string",
-          "format": "int64"
-        },
-        "averageEntryPrice": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "partyID": {
-          "type": "string"
-        }
-      }
-    },
     "vegaModelParamsBS": {
       "type": "object",
       "properties": {
@@ -1920,7 +1889,7 @@
         "positions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaMarketPosition"
+            "$ref": "#/definitions/vegaPosition"
           }
         }
       }
@@ -1959,6 +1928,33 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        }
+      }
+    },
+    "vegaPosition": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "openVolume": {
+          "type": "string",
+          "format": "int64"
+        },
+        "realisedPNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "unrealisedPNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -2344,17 +2340,17 @@
       },
       "title": "Stream result of vegaMarketDepth"
     },
-    "vegaMarketPosition": {
+    "vegaPosition": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaMarketPosition"
+          "$ref": "#/definitions/vegaPosition"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaMarketPosition"
+      "title": "Stream result of vegaPosition"
     },
     "vegaTransferResponse": {
       "type": "object",

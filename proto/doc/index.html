@@ -545,10 +545,6 @@
                 </li>
 
                 <li>
-                  <a href="#vega.MarketPosition"><span class="badge">M</span>MarketPosition</a>
-                </li>
-
-                <li>
                   <a href="#vega.NotifyTraderAccount"><span class="badge">M</span>NotifyTraderAccount</a>
                 </li>
 
@@ -2177,7 +2173,7 @@
 
                 <tr>
                   <td>positions</td>
-                  <td><a href="#vega.MarketPosition">vega.MarketPosition</a></td>
+                  <td><a href="#vega.Position">vega.Position</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -2864,7 +2860,7 @@
               <tr>
                 <td>PositionsSubscribe</td>
                 <td><a href="#api.PositionsSubscribeRequest">PositionsSubscribeRequest</a></td>
-                <td><a href="#vega.MarketPosition">.vega.MarketPosition</a> stream</td>
+                <td><a href="#vega.Position">.vega.Position</a> stream</td>
                 <td><p></p></td>
               </tr>
 
@@ -3967,72 +3963,6 @@
 
 
 
-        <h3 id="vega.MarketPosition">MarketPosition</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>marketID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>realisedVolume</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>realisedPNL</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>unrealisedVolume</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>unrealisedPNL</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>averageEntryPrice</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.NotifyTraderAccount">NotifyTraderAccount</h3>
         <p></p>
 
@@ -4647,7 +4577,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
 
                 <tr>
                   <td>positions</td>
-                  <td><a href="#vega.MarketPosition">MarketPosition</a></td>
+                  <td><a href="#vega.Position">Position</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -4805,13 +4735,6 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                 </tr>
 
                 <tr>
-                  <td>pendingVolume</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
                   <td>realisedPNL</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
@@ -4829,13 +4752,6 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                   <td>averageEntryPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>fifoQueue</td>
-                  <td><a href="#vega.PositionTrade">PositionTrade</a></td>
-                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -5634,7 +5550,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
           <tbody>
 
               <tr>
-                <td>NO_ACC</td>
+                <td>ALL</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
@@ -6036,6 +5952,12 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>MARGIN_HIGH</td>
                 <td>6</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>MARGIN_CONFISCATED</td>
+                <td>7</td>
                 <td><p></p></td>
               </tr>
 

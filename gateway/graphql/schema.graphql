@@ -658,23 +658,14 @@ type Position {
   # Market relating to this position
   market: Market!
 
-  # Realised volume (uint64)
-  realisedVolume: String!
+  # Open volume (uint64)
+  openVolume: String!
 
-  # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
-  realisedProfitValue: String!
+  # Realised Profit and Loss (int64)
+  realisedPNL: String!
 
-  # Realised Profit or Loss direction
-  realisedProfitDirection: ValueDirection!
-
-  # Unrealised volume (uint64)
-  unrealisedVolume: String!
-
-  # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
-  unrealisedProfitValue: String!
-
-  # Unrealised Profit or Loss direction
-  unrealisedProfitDirection: ValueDirection!
+  # Unrealised Profit and Loss (int64)
+  unrealisedPNL: String!
 
   # Average entry price for this position
   averageEntryPrice: String!
@@ -709,12 +700,6 @@ type Order {
 
   # The trader who place the order (probably stored internally as the trader's public key)
   party: Party!
-
-  # Unix epoch+nanoseconds for when the order was created
-  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
-
-  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
-  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
   # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
   createdAt: String!
@@ -761,12 +746,6 @@ type Trade {
 
   # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
   size: String!
-
-  # Unix epoch+nanoseconds for when the trade occurred
-  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
-
-  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occurred (timestamp)
-  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
   # RFC3339Nano for when the trade occurred
   createdAt: String!
@@ -877,12 +856,6 @@ enum Side {
 
   # The placer of the order is aiming to sell
   Sell
-}
-
-# Whether the position etc value is in profit (positive) or loss (negative).
-enum ValueDirection {
-  Positive
-  Negative
 }
 
 # The interval for trade candles when subscribing via VEGA graphql, default is I15M

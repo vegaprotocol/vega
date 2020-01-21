@@ -533,7 +533,7 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 	}
 }
 
-func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.MarketPosition, error) {
+func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.Position, error) {
 	if pty == nil {
 		return nil, errors.New("nil party")
 	}
@@ -547,7 +547,7 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.M
 		return res.Positions, nil
 	} else {
 		// mandatory return field in schema
-		return []*types.MarketPosition{}, nil
+		return []*types.Position{}, nil
 	}
 }
 
@@ -562,7 +562,7 @@ func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
 	case AccountTypeSettlement:
 		return types.AccountType_SETTLEMENT, nil
 	default:
-		return types.AccountType_NO_ACC, fmt.Errorf("invalid account type %v", acc)
+		return types.AccountType_ALL, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
 	}
 }
 
@@ -573,7 +573,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 	var (
 		mktid = ""
 		asst  = ""
-		accTy = types.AccountType_NO_ACC
+		accTy = types.AccountType_ALL
 		err   error
 	)
 
@@ -586,7 +586,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 	if accType != nil {
 		accTy, err = AccountTypeToProto(*accType)
 		if err != nil || (accTy != types.AccountType_GENERAL && accTy != types.AccountType_MARGIN) {
-			return nil, fmt.Errorf("inalid account type for party %v", accType)
+			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
 	}
 	req := protoapi.PartyAccountsRequest{
@@ -857,14 +857,8 @@ func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, e
 func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
-func (r *myOrderResolver) Timestamp(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatInt(obj.CreatedAt, 10), nil
-}
 func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
-}
-func (r *myOrderResolver) Datetime(ctx context.Context, obj *types.Order) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
@@ -925,12 +919,6 @@ func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, 
 }
 func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
-}
-func (r *myTradeResolver) Timestamp(ctx context.Context, obj *types.Trade) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
-}
-func (r *myTradeResolver) Datetime(ctx context.Context, obj *types.Trade) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
@@ -1001,35 +989,39 @@ func (r *myPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *types.
 
 type myPositionResolver VegaResolverRoot
 
-func (r *myPositionResolver) RealisedVolume(ctx context.Context, obj *types.MarketPosition) (string, error) {
-	return strconv.FormatInt(obj.RealisedVolume, 10), nil
+func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*Market, error) {
+	if obj == nil {
+		return nil, errors.New("invalid position")
+	}
+	if len(obj.MarketID) <= 0 {
+		return nil, nil
+	}
+	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
 }
 
-func (r *myPositionResolver) RealisedProfitValue(ctx context.Context, obj *types.MarketPosition) (string, error) {
-	return r.absInt64Str(obj.RealisedPNL), nil
+func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *myPositionResolver) RealisedProfitDirection(ctx context.Context, obj *types.MarketPosition) (ValueDirection, error) {
-	return r.direction(obj.RealisedPNL), nil
+func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.RealisedPNL, 10), nil
 }
 
-func (r *myPositionResolver) UnrealisedVolume(ctx context.Context, obj *types.MarketPosition) (string, error) {
-	return strconv.FormatInt(obj.UnrealisedVolume, 10), nil
+func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.UnrealisedPNL, 10), nil
 }
 
-func (r *myPositionResolver) UnrealisedProfitValue(ctx context.Context, obj *types.MarketPosition) (string, error) {
-	return r.absInt64Str(obj.UnrealisedPNL), nil
-}
-
-func (r *myPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj *types.MarketPosition) (ValueDirection, error) {
-	return r.direction(obj.UnrealisedPNL), nil
-}
-
-func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.MarketPosition) (string, error) {
+func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
-func (r *myPositionResolver) Margins(ctx context.Context, obj *types.MarketPosition) ([]*types.MarginLevels, error) {
+func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) ([]*types.MarginLevels, error) {
 	if obj == nil {
 		return nil, errors.New("invalid position")
 	}
@@ -1050,39 +1042,6 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.MarketPosit
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
 	out = append(out, res.MarginLevels...)
 	return out, nil
-}
-
-func (r *myPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
-	if obj == nil {
-		return nil, errors.New("invalid position")
-	}
-
-	// market not mandatory
-	if len(obj.MarketID) <= 0 {
-		return nil, nil
-	}
-
-	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
-	res, err := r.tradingDataClient.MarketByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
-	}
-	return MarketFromProto(res.Market)
-}
-
-func (r *myPositionResolver) absInt64Str(val int64) string {
-	if val < 0 {
-		return strconv.FormatInt(val*-1, 10)
-	}
-	return strconv.FormatInt(val, 10)
-}
-
-func (r *myPositionResolver) direction(val int64) ValueDirection {
-	if val < 0 {
-		return ValueDirectionNegative
-	}
-	return ValueDirectionPositive
 }
 
 // END: Position Resolver
@@ -1351,6 +1310,10 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		ty       types.AccountType
 	)
 
+	if marketID == nil && partyID == nil && asset == nil && typeArg == nil {
+		// Updates on every balance update, on every account, for everyone and shouldn't be allowed for GraphQL.
+		return nil, errors.New("at least one query filter must be applied for this subscription")
+	}
 	if marketID != nil {
 		mkt = *marketID
 	}
@@ -1480,7 +1443,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.MarketPosition, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.Position, error) {
 	req := &protoapi.PositionsSubscribeRequest{
 		PartyID: party,
 	}
@@ -1489,7 +1452,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<
 		return nil, err
 	}
 
-	c := make(chan *types.MarketPosition)
+	c := make(chan *types.Position)
 	go func() {
 		defer func() {
 			stream.CloseSend()

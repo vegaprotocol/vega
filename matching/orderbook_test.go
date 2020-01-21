@@ -2411,3 +2411,63 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		book.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
 	}
 }
+
+// Validate that an IOC order that is not fully filled
+// is not added to the order book.
+func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
+
+	newOrder := &types.Order{
+		MarketID:    market,
+		Id:          "100000",
+		Side:        types.Side_Sell,
+		Price:       100,
+		PartyID:     "A",
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   10,
+	}
+
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
+		t.Log(err)
+	}
+
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "100000", confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
+
+	iocOrder := &types.Order{
+		MarketID:    market,
+		Id:          "100001",
+		Side:        types.Side_Buy,
+		Price:       100,
+		PartyID:     "B",
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_IOC,
+		CreatedAt:   10,
+	}
+	confirmation, err = book.SubmitOrder(iocOrder)
+	if err != nil {
+		t.Log(err)
+	}
+
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "100001", confirmation.Order.Id)
+	assert.Equal(t, 1, len(confirmation.Trades))
+
+	// Check to see if the order still exists (it should not)
+	nonorder, err := book.GetOrderByID("100001")
+	assert.Equal(t, types.OrderError_INVALID_ORDER_ID, err)
+	assert.Equal(t, (*types.Order)(nil), nonorder)
+}

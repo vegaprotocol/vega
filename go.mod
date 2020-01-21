@@ -2,7 +2,7 @@ module code.vegaprotocol.io/vega
 
 require (
 	code.vegaprotocol.io/quant v0.1.0
-	github.com/99designs/gqlgen v0.10.1
+	github.com/99designs/gqlgen v0.10.2
 	github.com/DATA-DOG/godog v0.7.13
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
@@ -28,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tendermint/tendermint v0.32.9
 	github.com/vegaprotocol/modvendor v0.0.2 // indirect
-	github.com/vektah/gqlparser v1.1.2
+	github.com/vektah/gqlparser v1.2.0
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
 	go.uber.org/zap v1.10.0
