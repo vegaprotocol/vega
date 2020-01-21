@@ -165,8 +165,8 @@ func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.R
 // in the mempool, removing any that were included in the block, and re-run
 // the rest using CheckTx against the post-Commit mempool state]
 //
-func (a *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
-	err := a.processor.Validate(txn)
+func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckTx {
+	err := a.processor.Validate(txn.Tx)
 	if err != nil {
 		a.log.Error("Error when validating payload in CheckTx", logging.Error(err))
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
@@ -202,12 +202,12 @@ func (a *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 //
-func (a *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
+func (a *AbciApplication) DeliverTx(txn types.RequestDeliverTx) types.ResponseDeliverTx {
 	a.size++ // Always increment size first, ensure appHash is consistent
-	txLength := len(txn)
+	txLength := len(txn.Tx)
 	a.setTxStats(txLength)
 
-	err := a.processor.Process(txn)
+	err := a.processor.Process(txn.Tx)
 	if err != nil {
 		a.log.Error("Error during processing of DeliverTx", logging.Error(err))
 		//return types.ResponseDeliverTx{Code: AbciTxnValidationFailure} // todo: revisit this as part of #414 (gitlab.com/vega-protocol/trading-core/issues/414)
