@@ -430,7 +430,80 @@ func TestPositionSpecSuite(t *testing.T) {
 				OpenVolume:        2,
 				AverageEntryPrice: 1010,
 				UnrealisedPNL:     0,
-				RealisedPNL:       -444,
+				RealisedPNL:       -446,
+			},
+		},
+		{
+			run: "Scenario from jeremy",
+			pos: posStub{
+				mID:   market,
+				party: "trader1",
+				size:  -2,
+				price: 1000,
+				trades: []events.TradeSettlement{
+					tradeStub{
+						size:  1,
+						price: 1931,
+					},
+					tradeStub{
+						size:  4,
+						price: 1931,
+					},
+					tradeStub{
+						size:  -1,
+						price: 1923,
+					},
+					tradeStub{
+						size:  -4,
+						price: 1923,
+					},
+					tradeStub{
+						size:  7,
+						price: 1927,
+					},
+					tradeStub{
+						size:  -2,
+						price: 1926,
+					},
+					tradeStub{
+						size:  -1,
+						price: 1926,
+					},
+					tradeStub{
+						size:  -4,
+						price: 1926,
+					},
+					tradeStub{
+						size:  1,
+						price: 1934,
+					},
+					tradeStub{
+						size:  7,
+						price: 1933,
+					},
+					tradeStub{
+						size:  1,
+						price: 1932,
+					},
+					tradeStub{
+						size:  1,
+						price: 1932,
+					},
+					tradeStub{
+						size:  -8,
+						price: 1926,
+					},
+					tradeStub{
+						size:  -2,
+						price: 1926,
+					},
+				},
+			},
+			expect: expect{
+				OpenVolume:        0,
+				AverageEntryPrice: 0,
+				UnrealisedPNL:     0,
+				RealisedPNL:       -116,
 			},
 		},
 	}
