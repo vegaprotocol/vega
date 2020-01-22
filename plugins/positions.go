@@ -159,13 +159,6 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	return s, nil
 }
 
-/*
-def calculate_open_closed_volume(self, traded_volume: int) -> (int, int):
-    if self.open_volume != 0 and ((self.open_volume > 0) != (traded_volume > 0)):  # If sign of open volume and traded volume differ then some volume has been closed
-      closed_volume = self.open_volume if abs(traded_volume) > abs(self.open_volume) else -traded_volume
-      return traded_volume + closed_volume, closed_volume
-    return traded_volume, 0
-*/
 func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
 	if currentOpenVolume != 0 && ((currentOpenVolume > 0) != (tradedVolume > 0)) {
 		var closedVolume int64
