@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sync"
 
@@ -220,7 +219,6 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		d := closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
 		mtm(p, t.Price())
-		fmt.Printf("PNL DELTA=%v, Position open_volume=%v, average_entry_price=%v, unrealised_pnl=%v, realised_pnl=%v\n", d, p.OpenVolume, p.AverageEntryPriceFP, p.UnrealisedPNLFP, p.RealisedPNLFP)
 		p.AverageEntryPrice = uint64(math.Ceil(p.AverageEntryPriceFP))
 		p.UnrealisedPNL = int64(math.Ceil(p.UnrealisedPNLFP))
 		p.RealisedPNL = int64(math.Ceil(p.RealisedPNLFP))
