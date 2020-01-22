@@ -346,3 +346,8 @@ message MarketData {
   string market = 7;
   int64 timestamp = 8;
 }
+
+message ErrorDetail {
+  int32 code = 1;
+  string message = 2;
+}

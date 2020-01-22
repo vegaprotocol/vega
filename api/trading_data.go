@@ -15,6 +15,11 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"google.golang.org/grpc/codes"
+)
+
+const (
+	errStr = "API call failed"
 )
 
 // Errors
@@ -41,8 +46,6 @@ var (
 	ErrEmptyMissingSinceTimestamp = errors.New("empty or missing since-timestamp")
 	// ErrServerShutdown signals to the client that the server  is shutting down
 	ErrServerShutdown = errors.New("server shutdown")
-	// ErrStatisticsNotAvailable signals to the users that the stats endpoint is not available
-	ErrStatisticsNotAvailable = errors.New("statistics not available")
 	// ErrStreamClosed signals to the users that the grpc stream is closing
 	ErrStreamClosed = errors.New("stream closed")
 )
@@ -167,6 +170,17 @@ type tradingDataService struct {
 	TransferResponseService TransferResponseService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
+	errorMap                map[error]int32
+}
+
+func (h *tradingDataService) apiError(code codes.Code, message string, err error) error {
+	return errorWithDetails(
+		code,
+		message,
+		&types.ErrorDetail{
+			Code:    lookupError(h.errorMap, err),
+			Message: err.Error(),
+		})
 }
 
 // OrdersByMarket provides a list of orders for a given market.
@@ -424,16 +438,16 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
 	if err != nil {
-		return nil, err
+		return nil, h.apiError(codes.Internal, errStr, err)
 	}
 	if h.Stats == nil || h.Stats.Blockchain == nil {
-		return nil, ErrStatisticsNotAvailable
+		return nil, h.apiError(codes.Unavailable, errStr, ErrChainNotConnected)
 	}
 
-	// Call out to tendermint via rpc client
+	// Call tendermint via rpc client
 	backlogLength, numPeers, gt, err := h.getTendermintStats(ctx)
 	if err != nil {
-		return nil, err
+		return nil, h.apiError(codes.Unavailable, errStr, err)
 	}
 
 	// If the chain is replaying then genesis time can be nil
@@ -445,7 +459,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 	// Load current markets details
 	m, err := h.MarketService.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, h.apiError(codes.Unavailable, errStr, err)
 	}
 
 	// Load current parties details

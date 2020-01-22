@@ -183,6 +183,7 @@ func (g *GRPCServer) Start() {
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
+		errorMap:          newErrorMap(),
 	}
 	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
@@ -203,6 +204,7 @@ func (g *GRPCServer) Start() {
 		RiskService:             g.riskService,
 		statusChecker:           g.statusChecker,
 		ctx:                     g.ctx,
+		errorMap:                newErrorMap(),
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)

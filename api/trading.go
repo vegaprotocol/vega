@@ -67,6 +67,8 @@ type tradingService struct {
 	authEnabled bool
 	parties     []auth.PartyInfo
 	mu          sync.Mutex
+
+	errorMap map[error]int32
 }
 
 func (s *tradingService) UpdateParties(parties []auth.PartyInfo) {

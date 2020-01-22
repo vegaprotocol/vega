@@ -97,6 +97,7 @@
     - [Account](#vega.Account)
     - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
+    - [ErrorDetail](#vega.ErrorDetail)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
@@ -1493,6 +1494,22 @@
 | close | [uint64](#uint64) |  |  |
 | volume | [uint64](#uint64) |  |  |
 | interval | [Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="vega.ErrorDetail"></a>
+
+### ErrorDetail
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| code | [int32](#int32) |  |  |
+| message | [string](#string) |  |  |
 
 
 

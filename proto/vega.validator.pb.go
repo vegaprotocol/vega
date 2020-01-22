@@ -238,3 +238,6 @@ func (this *MarginLevels) Validate() error {
 func (this *MarketData) Validate() error {
 	return nil
 }
+func (this *ErrorDetail) Validate() error {
+	return nil
+}
