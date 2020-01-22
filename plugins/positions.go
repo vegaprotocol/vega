@@ -216,7 +216,7 @@ func updatePosition(p *Position, e events.SettlePosition) {
 	}
 	for _, t := range e.Trades() {
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
-		d := closeV(p, closedVolume, t.Price())
+		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
 		mtm(p, t.Price())
 		p.AverageEntryPrice = uint64(math.Ceil(p.AverageEntryPriceFP))
