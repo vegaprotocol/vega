@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -168,14 +167,11 @@ def calculate_open_closed_volume(self, traded_volume: int) -> (int, int):
     return traded_volume, 0
 */
 func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
-	fmt.Printf("tradedvolume(%v) openvolume(%v)\n", tradedVolume, currentOpenVolume)
 	if currentOpenVolume != 0 && ((currentOpenVolume > 0) != (tradedVolume > 0)) {
 		var closedVolume int64
-		fmt.Printf("tradedvolume(%v) openvolume(%v)\n", tradedVolume, currentOpenVolume)
 		if absUint64(tradedVolume) > absUint64(currentOpenVolume) {
 			closedVolume = currentOpenVolume
 		} else {
-			fmt.Printf("traded volume: %v\n", -tradedVolume)
 			closedVolume = -tradedVolume
 		}
 		return tradedVolume + closedVolume, closedVolume
