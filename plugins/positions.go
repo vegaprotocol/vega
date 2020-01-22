@@ -219,9 +219,9 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
 		mtm(p, t.Price())
-		p.AverageEntryPrice = uint64(math.Ceil(p.AverageEntryPriceFP))
-		p.UnrealisedPNL = int64(math.Ceil(p.UnrealisedPNLFP))
-		p.RealisedPNL = int64(math.Ceil(p.RealisedPNLFP))
+		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
+		p.UnrealisedPNL = int64(math.Round(p.UnrealisedPNLFP))
+		p.RealisedPNL = int64(math.Round(p.RealisedPNLFP))
 	}
 }
 
