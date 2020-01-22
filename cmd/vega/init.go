@@ -169,7 +169,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			sigma:                 0.09,
 		},
 		{
-			decimalPlaces:         5,
+			decimalPlaces:         7,
 			baseName:              "ETH",
 			quoteName:             "BTC",
 			settlementAsset:       "BTC",
