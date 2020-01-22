@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"math"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -28,13 +29,13 @@ type Positions struct {
 	buf  PosBuffer
 	ref  int
 	ch   <-chan []events.SettlePosition
-	data map[string]map[string]types.Position
+	data map[string]map[string]Position
 }
 
 func NewPositions(buf PosBuffer) *Positions {
 	return &Positions{
 		mu:   &sync.RWMutex{},
-		data: map[string]map[string]types.Position{},
+		data: map[string]map[string]Position{},
 		buf:  buf,
 	}
 }
@@ -93,7 +94,7 @@ func (p *Positions) updateData(raw []events.SettlePosition) {
 	for _, sp := range raw {
 		mID, tID := sp.MarketID(), sp.Party()
 		if _, ok := p.data[mID]; !ok {
-			p.data[mID] = map[string]types.Position{}
+			p.data[mID] = map[string]Position{}
 		}
 		calc, ok := p.data[mID][tID]
 		if !ok {
@@ -115,14 +116,10 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	pos, ok := mp[party]
 	if !ok {
 		p.mu.RUnlock()
-		pos = types.Position{
-			PartyID:  party,
-			MarketID: market,
-		}
 		return nil, nil
 	}
 	p.mu.RUnlock()
-	return &pos, nil
+	return &pos.Position, nil
 }
 
 // GetPositionsByParty get all positions for a given trader
@@ -132,7 +129,7 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	positions := make([]*types.Position, 0, len(p.data))
 	for _, traders := range p.data {
 		if pos, ok := traders[party]; ok {
-			positions = append(positions, &pos)
+			positions = append(positions, &pos.Position)
 		}
 	}
 	p.mu.RUnlock()
@@ -153,7 +150,7 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	}
 	s := make([]*types.Position, 0, len(mp))
 	for _, tp := range mp {
-		s = append(s, &tp)
+		s = append(s, &tp.Position)
 	}
 	p.mu.RUnlock()
 	return s, nil
@@ -172,38 +169,37 @@ func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, in
 	return tradedVolume, 0
 }
 
-func closeV(p *types.Position, closedVolume int64, tradedPrice uint64) int64 {
+func closeV(p *Position, closedVolume int64, tradedPrice uint64) float64 {
 	if closedVolume == 0 {
 		return 0
 	}
-	realisedPnlDelta := closedVolume * int64(tradedPrice-p.AverageEntryPrice)
-	p.RealisedPNL += int64(realisedPnlDelta)
+	realisedPnlDelta := float64(closedVolume) * (float64(tradedPrice) - p.AverageEntryPriceFP)
+	p.RealisedPNLFP += realisedPnlDelta
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
 }
 
-func updateVWAP(vwap uint64, volume int64, addVolume int64, addPrice uint64) uint64 {
+func updateVWAP(vwap float64, volume int64, addVolume int64, addPrice uint64) float64 {
 	if volume+addVolume == 0 {
 		return 0
 	}
-	return uint64((((int64(vwap) * volume) + (int64(addPrice) * addVolume)) / (volume + addVolume)))
+	return float64(((vwap * float64(volume)) + (float64(addPrice) * float64(addVolume))) / (float64(volume) + float64(addVolume)))
 }
 
-func openV(p *types.Position, openedVolume int64, tradedPrice uint64) {
-	p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, tradedPrice)
+func openV(p *Position, openedVolume int64, tradedPrice uint64) {
+	p.AverageEntryPriceFP = updateVWAP(p.AverageEntryPriceFP, p.OpenVolume, openedVolume, tradedPrice)
 	p.OpenVolume += openedVolume
-
 }
 
-func mtm(p *types.Position, markPrice uint64) {
+func mtm(p *Position, markPrice uint64) {
 	if p.OpenVolume == 0 {
-		p.UnrealisedPNL = 0
+		p.UnrealisedPNLFP = 0
 		return
 	}
-	p.UnrealisedPNL = p.OpenVolume * int64(markPrice-p.AverageEntryPrice)
+	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
 }
 
-func updatePosition(p *types.Position, e events.SettlePosition) {
+func updatePosition(p *Position, e events.SettlePosition) {
 	// if this settlePosition event has a margin event embedded, that means we're dealing
 	// with a trader who was closed out...
 	if margin, ok := e.Margin(); ok {
@@ -214,6 +210,8 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		p.RealisedPNL -= int64(margin.MarginBalance())
 		// @TODO average entry price shouldn't be affected(?)
 		// the volume now is zero, though, so we'll end up moving this position to storage
+		p.UnrealisedPNLFP = 0
+		p.AverageEntryPriceFP = 0
 		return
 	}
 	for _, t := range e.Trades() {
@@ -221,13 +219,28 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
 		mtm(p, t.Price())
+		p.AverageEntryPrice = uint64(math.Ceil(p.AverageEntryPriceFP))
+		p.UnrealisedPNL = int64(math.Ceil(p.UnrealisedPNLFP))
+		p.RealisedPNL = int64(math.Ceil(p.RealisedPNLFP))
 	}
 }
 
-func evtToProto(e events.SettlePosition) types.Position {
-	p := types.Position{
-		MarketID: e.MarketID(),
-		PartyID:  e.Party(),
+type Position struct {
+	types.Position
+	AverageEntryPriceFP float64
+	RealisedPNLFP       float64
+	UnrealisedPNLFP     float64
+}
+
+func evtToProto(e events.SettlePosition) Position {
+	p := Position{
+		Position: types.Position{
+			MarketID: e.MarketID(),
+			PartyID:  e.Party(),
+		},
+		AverageEntryPriceFP: 0,
+		RealisedPNLFP:       0,
+		UnrealisedPNLFP:     0,
 	}
 	// NOTE: We don't call this here because the call is made in updateEvt for all positions
 	// we don't want to add the same data twice!
