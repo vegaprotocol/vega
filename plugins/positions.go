@@ -216,36 +216,12 @@ func updatePosition(p *types.Position, e events.SettlePosition) {
 		// the volume now is zero, though, so we'll end up moving this position to storage
 		return
 	}
-	current := p.OpenVolume
 	for _, t := range e.Trades() {
-		openedVolume, closedVolume := calculateOpenClosedVolume(current, t.Size())
+		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
 		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
 		mtm(p, t.Price())
 	}
-}
-
-func calcAEP(size, open int64, newPrice, avgPrice uint64) uint64 {
-	// first up: AEP is zero if we close out:
-	if size == 0 {
-		return 0
-	}
-	// our position has reduced (short to less short, long to less long)
-	// but we've not closed out or inverted (short -> long, long -> short)
-	// then the AEP remains as is
-	if (open > 0 && size > 0 && open > size) || (open < 0 && size < 0 && open < size) {
-		return avgPrice
-	}
-	oAbs, sAbs := absUint64(open), absUint64(size)
-	// also create signed versions of abs value to see if we flipped position
-	soAbs, ssAbs := int64(oAbs), int64(sAbs)
-	// the abs value of one volume doesn't match, but the other doesn't -> we've flipped position
-	if (soAbs != open && ssAbs == size) || (soAbs == open && ssAbs != size) {
-		return newPrice // we went from long to short (or short to long) -> the average entry price == new price
-	}
-
-	// New Open Volume Entry Price = (Prev Open Volume Entry Price * Prev Open Volume + New Trade Price * New Trade Volume) / (Prev Open Volume + New Trade Volume)
-	return (avgPrice*oAbs + newPrice*sAbs) / (oAbs + sAbs)
 }
 
 func evtToProto(e events.SettlePosition) types.Position {
