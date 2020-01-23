@@ -214,7 +214,9 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		p.AverageEntryPriceFP = 0
 		return
 	}
+	var traded bool
 	for _, t := range e.Trades() {
+		traded = true
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
 		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
@@ -222,6 +224,11 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
 		p.UnrealisedPNL = int64(math.Round(p.UnrealisedPNLFP))
 		p.RealisedPNL = int64(math.Round(p.RealisedPNLFP))
+	}
+	// if we did not have trade in the event, we still adjust the unrealisedPNL with the new markprice
+	if !traded && p.OpenVolume != 0 {
+		p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(e.Price()) - p.AverageEntryPriceFP)
+		p.UnrealisedPNL = int64(math.Round(p.UnrealisedPNLFP))
 	}
 }
 
