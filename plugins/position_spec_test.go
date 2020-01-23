@@ -29,7 +29,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -54,7 +54,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -79,7 +79,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -104,7 +104,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -129,7 +129,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  -100,
@@ -154,7 +154,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  -100,
@@ -179,7 +179,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  -100,
@@ -204,7 +204,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 100,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  -100,
@@ -229,7 +229,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 75,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -262,7 +262,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 25,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -291,7 +291,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 50,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  -100,
@@ -320,7 +320,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 250,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  100,
@@ -349,7 +349,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 25,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  -100,
@@ -378,7 +378,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 1010,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  5,
@@ -439,7 +439,7 @@ func TestPositionSpecSuite(t *testing.T) {
 				mID:   market,
 				party: "trader1",
 				size:  -2,
-				price: 1000,
+				price: 1926,
 				trades: []events.TradeSettlement{
 					tradeStub{
 						size:  1,
