@@ -1,7 +1,6 @@
 package collateral_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -779,17 +778,19 @@ func TestMTMLossSocialization(t *testing.T) {
 		},
 	}
 
-	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
+		if acc.Owner == winTrader1 && acc.Type == types.AccountType_MARGIN {
+			assert.Equal(t, acc.Balance, int64(1067))
+		}
+		if acc.Owner == winTrader2 && acc.Type == types.AccountType_MARGIN {
+			assert.Equal(t, acc.Balance, int64(533))
+		}
+	})
 	transfers := eng.getTestMTMTransfer(pos)
-	_, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
-	// assert.NoError(t, err)
-	// assert.Equal(t, 4, len(raw))
-	// assert.NotEmpty(t, evts)
-	// eng.Engine.DumpAccounts()
-
-	for _, r := range raw {
-		fmt.Printf("t: %v\n", r.GetTransfers())
-	}
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(raw))
+	assert.NotEmpty(t, evts)
 }
 
 func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {

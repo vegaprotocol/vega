@@ -569,7 +569,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	}
 	amount := int64(req.Amount)
 	for _, acc := range req.FromAccount {
-		// fmt.Printf("acc: %v\n", *acc)
 		// give each to account an equal share
 		parts := amount / int64(len(req.ToAccount))
 		// add remaining pennies to last ledger movement
@@ -921,12 +920,6 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 func (e *Engine) removeAccount(id string) error {
 	delete(e.accs, id)
 	return nil
-}
-
-func (e *Engine) DumpAccounts() {
-	for _, v := range e.accs {
-		fmt.Printf("account: %v\n", *v)
-	}
 }
 
 // @TODO this function uses a single slice for each call. This is fine now, as we're processing
