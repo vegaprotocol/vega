@@ -218,7 +218,6 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
 		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
-		mtm(p, t.Price())
 		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
 		p.RealisedPNL = int64(math.Round(p.RealisedPNLFP))
 	}
