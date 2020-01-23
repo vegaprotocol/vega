@@ -95,25 +95,26 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	insID := e.accountID(marketID, systemOwner, asset, types.AccountType_INSURANCE)
 	setID := e.accountID(marketID, systemOwner, asset, types.AccountType_SETTLEMENT)
 
-	var ok bool
-	if insurance, ok = e.accs[insID]; !ok {
+	if insurance, err = e.GetAccountByID(insID); err != nil {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("missing system account",
 				logging.String("asset", asset),
 				logging.String("id", insID),
 				logging.String("market", marketID),
+				logging.Error(err),
 			)
 		}
 		err = ErrSystemAccountsMissing
 		return
 	}
 
-	if settle, ok = e.accs[setID]; !ok {
+	if settle, err = e.GetAccountByID(setID); err != nil {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("missing system account",
 				logging.String("asset", asset),
 				logging.String("id", setID),
 				logging.String("market", marketID),
+				logging.Error(err),
 			)
 		}
 		err = ErrSystemAccountsMissing
@@ -198,8 +199,14 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		return nil, nil, err
 	}
 	// get the component that calculates the loss socialisation etc... if needed
-	distr := &distributor{}
-	for _, evt := range transfers {
+
+	var (
+		winidx          int
+		expectCollected int64
+	)
+
+	// iterate over transfer unti we get the first win, so we need we accumulated all loss
+	for i, evt := range transfers {
 		transfer := evt.Transfer()
 
 		marginEvt := &marginUpdate{
@@ -215,7 +222,11 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			continue
 		}
 
-		loss := isLoss(transfer)
+		if transfer.Type == types.TransferType_MTM_WIN {
+			// we processed all loss break then
+			winidx = i
+			break
+		}
 
 		req, err := e.getTransferRequest(transfer, settle, insurance, marginEvt)
 		if err != nil {
@@ -225,8 +236,10 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			)
 			return nil, nil, err
 		}
+		// accumulate the expected transfer size
+		expectCollected += int64(req.Amount)
+
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
-		distr.amountCB(req, loss)
 		res, err := e.getLedgerEntries(req)
 		if err != nil {
 			e.log.Error(
@@ -235,10 +248,96 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			)
 			return nil, nil, err
 		}
-		// if this is a loss, we want to update the delta, too
-		if loss {
-			distr.registerTransfer(res)
+
+		// // update the to accounts now
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
+				e.log.Error(
+					"Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.Id),
+					logging.Error(err),
+				)
+				return nil, nil, err
+			}
 		}
+
+		// updating the accounts stored in the marginEvt
+		marginEvt.general, _ = e.GetAccountByID(marginEvt.general.GetId())
+		marginEvt.margin, _ = e.GetAccountByID(marginEvt.margin.GetId())
+		responses = append(responses, res)
+		marginEvts = append(marginEvts, marginEvt)
+	}
+
+	// now check that what was collected is enough
+	// This is where we'll implement everything
+	settle, _, err = e.getSystemAccounts(marketID, asset)
+	if err != nil {
+		e.log.Error(
+			"Failed to get system accounts required for MTM settlement",
+			logging.Error(err),
+		)
+		return nil, nil, err
+	}
+
+	// now compare what's in the settlement account what we expect initialy to redistribute.
+	// if there's not enough we enter loss socialization
+	if settle.Balance < int64(expectCollected) {
+		e.log.Warn("Entering loss socialization",
+			logging.String("market-id", marketID),
+			logging.String("asset", asset),
+			logging.Int64("expect-collected", expectCollected),
+			logging.Int64("collected", settle.Balance))
+	}
+
+	distr := simpleDistributor{
+		expectCollected: expectCollected,
+		collected:       settle.Balance,
+		requests:        []request{},
+	}
+
+	for _, evt := range transfers[winidx:] {
+		transfer := evt.Transfer()
+		if transfer != nil && transfer.Type == types.TransferType_MTM_WIN {
+			distr.Add(evt.Transfer())
+		}
+	}
+	distr.Run()
+
+	// then we process all the wins
+	for _, evt := range transfers[winidx:] {
+		transfer := evt.Transfer()
+		marginEvt := &marginUpdate{
+			MarketPosition: evt,
+			asset:          asset,
+			marketID:       settle.MarketID,
+		}
+		// no transfer needed if transfer is nil, just build the marginUpdate
+		if transfer == nil {
+			marginEvt.general, _ = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+			marginEvt.margin, _ = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+			marginEvts = append(marginEvts, marginEvt)
+			continue
+		}
+
+		req, err := e.getTransferRequest(transfer, settle, insurance, marginEvt)
+		if err != nil {
+			e.log.Error(
+				"Failed to build transfer request for event",
+				logging.Error(err),
+			)
+			return nil, nil, err
+		}
+
+		// set the amount (this can change the req.Amount value if we entered loss socialisation
+		res, err := e.getLedgerEntries(req)
+		if err != nil {
+			e.log.Error(
+				"Failed to transfer funds",
+				logging.Error(err),
+			)
+			return nil, nil, err
+		}
+
 		// update the to accounts now
 		for _, bal := range res.Balances {
 			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
@@ -256,6 +355,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		responses = append(responses, res)
 		marginEvts = append(marginEvts, marginEvt)
 	}
+
 	return marginEvts, responses, nil
 }
 
@@ -469,6 +569,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	}
 	amount := int64(req.Amount)
 	for _, acc := range req.FromAccount {
+		// fmt.Printf("acc: %v\n", *acc)
 		// give each to account an equal share
 		parts := amount / int64(len(req.ToAccount))
 		// add remaining pennies to last ledger movement
@@ -820,6 +921,12 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 func (e *Engine) removeAccount(id string) error {
 	delete(e.accs, id)
 	return nil
+}
+
+func (e *Engine) DumpAccounts() {
+	for _, v := range e.accs {
+		fmt.Printf("account: %v\n", *v)
+	}
 }
 
 // @TODO this function uses a single slice for each call. This is fine now, as we're processing
