@@ -262,9 +262,8 @@ func (bs *badgerStore) marketKey(marketID string) []byte {
 
 // Candle store keys
 
-func (bs *badgerStore) lastCandleKey(
-	marketID string, interval types.Interval) []byte {
-	return []byte(fmt.Sprintf("LCM:%s_I:%s", marketID, interval.String()))
+func (bs *badgerStore) lastCandleKey(market string, interval types.Interval) []byte {
+	return []byte(fmt.Sprintf("LCM:%s_I:%s", market, interval.String()))
 }
 
 func (bs *badgerStore) candleKey(market string, interval types.Interval, timestamp int64) []byte {
