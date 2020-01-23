@@ -90,8 +90,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		time.Now(),
 	)
 	marginLevelsBuf := NewMarginsStub()
-	// mock call to get the last candle
-	candles.EXPECT().Start(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil, nil)
 	candles.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	setup := &marketTestSetup{
