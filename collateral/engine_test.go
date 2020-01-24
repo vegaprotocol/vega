@@ -23,6 +23,7 @@ type testEngine struct {
 	*collateral.Engine
 	ctrl               *gomock.Controller
 	buf                *mocks.MockAccountBuffer
+	lossBuf            *mocks.MockLossSocializationBuf
 	systemAccs         []*types.Account
 	marketInsuranceID  string
 	marketSettlementID string
@@ -780,10 +781,10 @@ func TestMTMLossSocialization(t *testing.T) {
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		if acc.Owner == winTrader1 && acc.Type == types.AccountType_MARGIN {
-			assert.Equal(t, acc.Balance, int64(1067))
+			assert.Equal(t, acc.Balance, int64(1066))
 		}
 		if acc.Owner == winTrader2 && acc.Type == types.AccountType_MARGIN {
-			assert.Equal(t, acc.Balance, int64(533))
+			assert.Equal(t, acc.Balance, int64(534))
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
@@ -808,10 +809,13 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEngine {
 	ctrl := gomock.NewController(t)
 	buf := mocks.NewMockAccountBuffer(ctrl)
+	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	conf := collateral.NewDefaultConfig()
 	buf.EXPECT().Add(gomock.Any()).Times(2)
+	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	lossBuf.EXPECT().Flush().AnyTimes()
 
-	eng, err := collateral.New(logging.NewTestLogger(), conf, buf, time.Now())
+	eng, err := collateral.New(logging.NewTestLogger(), conf, buf, lossBuf, time.Now())
 	assert.Nil(t, err)
 
 	// create market and traders used for tests
@@ -822,6 +826,7 @@ func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEng
 		Engine:             eng,
 		ctrl:               ctrl,
 		buf:                buf,
+		lossBuf:            lossBuf,
 		marketInsuranceID:  insID,
 		marketSettlementID: setID,
 		// systemAccs: accounts,

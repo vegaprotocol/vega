@@ -7,7 +7,6 @@ package plugins_test
 // not the code itsel. The behaviour of the tests is 100% reliable
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -205,7 +204,6 @@ func TestMultipleTradesAndLossSocialization(t *testing.T) {
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
 	assert.Equal(t, 700, int(pp[0].RealisedPNL))
-	fmt.Printf("price: %v\n", int(pp[0].RealisedPNL))
 }
 
 func TestProcessBufferData(t *testing.T) {

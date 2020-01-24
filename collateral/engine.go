@@ -38,14 +38,22 @@ type AccountBuffer interface {
 	Add(types.Account)
 }
 
+// LossSocializationBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/collateral LossSocializationBuf
+type LossSocializationBuf interface {
+	Add([]events.LossSocialization)
+	Flush()
+}
+
 // Engine is handling the power of the collateral
 type Engine struct {
 	Config
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	accs map[string]*types.Account
-	buf  AccountBuffer
+	accs       map[string]*types.Account
+	buf        AccountBuffer
+	lossSocBuf LossSocializationBuf
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
@@ -53,7 +61,7 @@ type Engine struct {
 }
 
 // New instantiates a new collateral engine
-func New(log *logging.Logger, conf Config, buf AccountBuffer, now time.Time) (*Engine, error) {
+func New(log *logging.Logger, conf Config, buf AccountBuffer, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -64,6 +72,7 @@ func New(log *logging.Logger, conf Config, buf AccountBuffer, now time.Time) (*E
 		buf:         buf,
 		currentTime: now.UnixNano(),
 		idbuf:       make([]byte, 256),
+		lossSocBuf:  lossSocBuf,
 	}, nil
 }
 
@@ -281,27 +290,29 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 
 	// now compare what's in the settlement account what we expect initialy to redistribute.
 	// if there's not enough we enter loss socialization
-	if settle.Balance < int64(expectCollected) {
-		e.log.Warn("Entering loss socialization",
-			logging.String("market-id", marketID),
-			logging.String("asset", asset),
-			logging.Int64("expect-collected", expectCollected),
-			logging.Int64("collected", settle.Balance))
-	}
-
 	distr := simpleDistributor{
+		marketID:        settle.MarketID,
 		expectCollected: expectCollected,
 		collected:       settle.Balance,
 		requests:        []request{},
 	}
 
-	for _, evt := range transfers[winidx:] {
-		transfer := evt.Transfer()
-		if transfer != nil && transfer.Type == types.TransferType_MTM_WIN {
-			distr.Add(evt.Transfer())
+	if distr.LossSocializationEnabled() {
+		e.log.Warn("Entering loss socialization",
+			logging.String("market-id", marketID),
+			logging.String("asset", asset),
+			logging.Int64("expect-collected", expectCollected),
+			logging.Int64("collected", settle.Balance))
+		for _, evt := range transfers[winidx:] {
+			transfer := evt.Transfer()
+			if transfer != nil && transfer.Type == types.TransferType_MTM_WIN {
+				distr.Add(evt.Transfer())
+			}
 		}
+		evts := distr.Run()
+		e.lossSocBuf.Add(evts)
+		e.lossSocBuf.Flush()
 	}
-	distr.Run()
 
 	// then we process all the wins
 	for _, evt := range transfers[winidx:] {
