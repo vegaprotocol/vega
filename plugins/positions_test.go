@@ -7,8 +7,10 @@ package plugins_test
 // not the code itsel. The behaviour of the tests is 100% reliable
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/plugins"
@@ -37,6 +39,7 @@ type posPluginTst struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 	pos   *mocks.MockPosBuffer
+	ls    *mocks.MockLossSocializationBuffer
 }
 
 func TestStartStop(t *testing.T) {
@@ -45,10 +48,18 @@ func TestStartStop(t *testing.T) {
 	// make buffered channel. We're not going to be waiting on anything from here anyway
 	// if it's not buffered the select-case might be blocking
 	ch := make(chan []events.SettlePosition, 1)
+	lsch := make(chan []events.LossSocialization)
 	ref := 0
 	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
 	// will be called by Stop(), might be called when ctx is cancelled
 	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
 		if ch != nil {
 			close(ch)
 			ch = nil
@@ -64,16 +75,24 @@ func TestStartCtxCancel(t *testing.T) {
 	// make buffered channel. We're not going to be waiting on anything from here anyway
 	// if it's not buffered the select-case might be blocking
 	ch := make(chan []events.SettlePosition, 1)
+	lsch := make(chan []events.LossSocialization)
 	ref := 0
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
 	// unsubscribe should be called only on ctx cancel
 	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).DoAndReturn(func(_ int) {
 		if ch != nil {
 			close(ch)
 			ch = nil
 			wg.Done()
+		}
+	})
+	position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
 		}
 	})
 	position.Start(position.ctx)
@@ -86,9 +105,17 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	defer position.Finish()
 	ch := make(chan []events.SettlePosition)
 	ref := 1
+	lsch := make(chan []events.LossSocialization)
 	market := "market-id"
 	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
 	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
 		if ch != nil {
 			close(ch)
 			ch = nil
@@ -119,14 +146,84 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	assert.Equal(t, ps.price, pp[0].AverageEntryPrice)
 }
 
+func TestMultipleTradesAndLossSocialization(t *testing.T) {
+	position := getPosPlugin(t)
+	defer position.Finish()
+	ch := make(chan []events.SettlePosition)
+	ref := 1
+	lsch := make(chan []events.LossSocialization)
+	market := "market-id"
+	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
+	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.Start(position.ctx)
+	ps := posStub{
+		mID:   market,
+		party: "trader1",
+		size:  -2,
+		price: 1000,
+		trades: []events.TradeSettlement{
+			tradeStub{
+				size:  2,
+				price: 1000,
+			},
+			tradeStub{
+				size:  -2,
+				price: 1500,
+			},
+		},
+	}
+	ch <- []events.SettlePosition{ps}
+	pp, err := position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	// average entry price should be 1k
+	// initialy calculation say the RealisedPNL should be 1000
+	assert.Equal(t, 1000, int(pp[0].RealisedPNL))
+
+	// then we process the event for LossSocialization
+	lsevt := lsStub{
+		market:     market,
+		party:      "trader1",
+		amountLoss: 300,
+	}
+	lsch <- []events.LossSocialization{lsevt}
+	time.Sleep(1 * time.Second)
+	pp, err = position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	// with the changes, the RealisedPNL should be 700
+	assert.Equal(t, 700, int(pp[0].RealisedPNL))
+	fmt.Printf("price: %v\n", int(pp[0].RealisedPNL))
+}
+
 func TestProcessBufferData(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	// ch := make(chan []events.SettlePosition, 1)
 	ch := make(chan []events.SettlePosition)
 	ref := 1
+	lsch := make(chan []events.LossSocialization)
 	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
 	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
 		if ch != nil {
 			close(ch)
 			ch = nil
@@ -174,10 +271,12 @@ func TestProcessBufferData(t *testing.T) {
 func getPosPlugin(t *testing.T) *posPluginTst {
 	ctrl := gomock.NewController(t)
 	pos := mocks.NewMockPosBuffer(ctrl)
-	p := plugins.NewPositions(pos)
+	ls := mocks.NewMockLossSocializationBuffer(ctrl)
+	p := plugins.NewPositions(pos, ls)
 	tst := posPluginTst{
 		Positions: p,
 		pos:       pos,
+		ls:        ls,
 		ctrl:      ctrl,
 	}
 	tst.ctx, tst.cfunc = context.WithCancel(context.Background())
@@ -228,4 +327,22 @@ func (t tradeStub) Size() int64 {
 
 func (t tradeStub) Price() uint64 {
 	return t.price
+}
+
+type lsStub struct {
+	market     string
+	party      string
+	amountLoss int64
+}
+
+func (l lsStub) MarketID() string {
+	return l.market
+}
+
+func (l lsStub) PartyID() string {
+	return l.party
+}
+
+func (l lsStub) AmountLost() int64 {
+	return l.amountLoss
 }

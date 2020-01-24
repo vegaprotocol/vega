@@ -19,6 +19,13 @@ type TradeSettlement interface {
 	Price() uint64
 }
 
+// LossSocialization ...
+type LossSocialization interface {
+	MarketID() string
+	PartyID() string
+	AmountLost() int64
+}
+
 // SettlePosition is an event that the settlement buffer will propagate through the system
 // used by the plugins (currently only the positions API)
 type SettlePosition interface {
