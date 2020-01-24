@@ -9,8 +9,8 @@ import (
 )
 
 var ErrPartyDoesNotExist = errors.New("party does not exist in party engine")
-var ErrNotifyPartyIdMissing = errors.New("notify party id is missing")
-var ErrInvalidPartyId = errors.New("party id is not valid")
+var ErrNotifyPartyIDMissing = errors.New("notify party id is missing")
+var ErrInvalidPartyID = errors.New("party id is not valid")
 
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
@@ -75,7 +75,7 @@ type Void struct{}
 // MakeGeneralAccounts creates general accounts on every market for the given party id
 func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
 	if len(partyID) <= 0 {
-		return nil, ErrInvalidPartyId
+		return nil, ErrInvalidPartyID
 	}
 
 	// ignore errors as they can only happen when the party already exists
@@ -116,7 +116,7 @@ func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
 // and top-up it general account with the default amount
 func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	if notify == nil {
-		return ErrNotifyPartyIdMissing
+		return ErrNotifyPartyIDMissing
 	}
 	if notify.Amount == 0 {
 		return p.notifyTraderAccount(notify, 1000000000) // 10000.00000
@@ -161,7 +161,7 @@ func (p *Party) creditGeneralAccount(accountID string, amount int64) error {
 
 func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount int64) error {
 	if notify == nil {
-		return ErrNotifyPartyIdMissing
+		return ErrNotifyPartyIDMissing
 	}
 
 	generalAccs, err := p.MakeGeneralAccounts(notify.TraderID)
