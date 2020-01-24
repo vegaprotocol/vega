@@ -113,9 +113,9 @@ func TestMarketService_GetDepth(t *testing.T) {
 	}
 
 	svc.market.EXPECT().GetByID(market.Id).Times(1).Return(market, nil)
-	svc.order.EXPECT().GetMarketDepth(svc.ctx, market.Id).Times(1).Return(depth, nil)
+	svc.order.EXPECT().GetMarketDepth(svc.ctx, market.Id, 1).Times(1).Return(depth, nil)
 
-	got, err := svc.GetDepth(svc.ctx, market.Id)
+	got, err := svc.GetDepth(svc.ctx, market.Id, 1)
 	assert.NoError(t, err)
 	assert.Equal(t, depth, got)
 }
@@ -128,7 +128,7 @@ func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
 
 	svc.market.EXPECT().GetByID(market.Id).Times(1).Return(nil, notFoundErr)
 
-	depth, err := svc.GetDepth(svc.ctx, market.Id)
+	depth, err := svc.GetDepth(svc.ctx, market.Id, 99)
 	assert.Equal(t, notFoundErr, err)
 	assert.Nil(t, depth)
 }
@@ -159,7 +159,7 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 		go writeToChannel(ch)
 	})
 
-	svc.order.EXPECT().GetMarketDepth(gomock.Any(), marketArg).Times(1).Return(&depth, nil)
+	svc.order.EXPECT().GetMarketDepth(gomock.Any(), marketArg, 0).Times(1).Return(&depth, nil)
 	// waitgroup here ensures that unsubscribe was indeed called
 	svc.order.EXPECT().Unsubscribe(uint64(1)).Times(1).Return(nil).Do(func(_ uint64) {
 		wg.Done()
