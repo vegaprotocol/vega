@@ -118,24 +118,3 @@ func testCancelOrderPartyMismatch(t *testing.T) {
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
-
-type cancelMatcher struct {
-	e proto.OrderCancellation
-}
-
-func (m cancelMatcher) String() string {
-	return fmt.Sprintf("%#v", m.e)
-}
-
-func (m cancelMatcher) Matches(x interface{}) bool {
-	var v proto.Order
-	switch val := x.(type) {
-	case *proto.Order:
-		v = *val
-	case proto.Order:
-		v = val
-	default:
-		return false
-	}
-	return (m.e.OrderID == v.Id && m.e.MarketID == v.MarketID && m.e.PartyID == v.PartyID)
-}

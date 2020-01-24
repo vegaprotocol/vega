@@ -14,7 +14,6 @@ import (
 type marginsStub struct {
 	data map[string]map[string]proto.MarginLevels
 	mu   sync.Mutex
-	err  error // for future use
 }
 
 func NewMarginsStub() *marginsStub {
