@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sync"
 
@@ -128,7 +127,6 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 		pos.RealisedPNLFP -= float64(amountLoss)
 		pos.Position.RealisedPNL -= amountLoss
 		p.data[marketID][partyID] = pos
-		fmt.Printf("evt %v\n", evt)
 	}
 }
 
