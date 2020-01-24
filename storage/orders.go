@@ -358,7 +358,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
+func (os *Order) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
 
 	// validate
 	depth, ok := os.depth[market]
@@ -373,8 +373,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	}
 
 	// load from store
-	buy := depth.BuySide()
-	sell := depth.SellSide()
+	buy := depth.BuySide(limit)
+	sell := depth.SellSide(limit)
 
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))

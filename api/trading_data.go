@@ -96,7 +96,7 @@ type CandleService interface {
 type MarketService interface {
 	GetByID(ctx context.Context, name string) (*types.Market, error)
 	GetAll(ctx context.Context) ([]*types.Market, error)
-	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
+	GetDepth(ctx context.Context, market string, limit uint64) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 	GetMarketDepthSubscribersCount() int32
 	ObserveMarketsData(ctx context.Context, retries int, marketID string) (<-chan []types.MarketData, uint64)
@@ -304,7 +304,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 	}
 
 	// Query market depth statistics
-	depth, err := h.MarketService.GetDepth(ctx, req.MarketID)
+	depth, err := h.MarketService.GetDepth(ctx, req.MarketID, req.MaxDepth)
 	if err != nil {
 		return nil, err
 	}
