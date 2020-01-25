@@ -480,6 +480,10 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to flush accounts buffer")
 	}
+
+	// margins levels
+	e.marginLevelsBuf.Flush()
+
 	// Trades
 	err = e.tradeBuf.Flush()
 	if err != nil {
@@ -507,9 +511,6 @@ func (e *Engine) Generate() error {
 	e.marketDataBuf.Flush()
 	// Parties
 	_ = e.partyBuf.Flush() // JL: do not check errors here as they only happened when a party is created
-
-	// margins levels
-	e.marginLevelsBuf.Flush()
 
 	return nil
 }
