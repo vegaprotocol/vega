@@ -618,11 +618,11 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	}
 
 	if val(row, 5) == "forward" {
-		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_ForwardRiskModel{
-			ForwardRiskModel: &proto.ForwardRiskModel{
+		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
+			LogNormalRiskModel: &proto.LogNormalRiskModel{
 				RiskAversionParameter: f64val(row, 6), // 6
 				Tau:                   f64val(row, 7), // 7
-				Params: &proto.ModelParamsBS{
+				Params: &proto.LogNormalModelParams{
 					Mu:    f64val(row, 8),  // 8
 					R:     f64val(row, 9),  // 9
 					Sigma: f64val(row, 10), //10

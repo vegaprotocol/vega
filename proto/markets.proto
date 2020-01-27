@@ -56,22 +56,16 @@ message Instrument {
 
 // here start risk models
 
-message ModelParamsBS {
+message LogNormalRiskModel {
+  double riskAversionParameter = 1;
+  double tau = 2;
+  LogNormalModelParams params = 3;
+}
+
+message LogNormalModelParams {
   double mu = 1;
   double r = 2;
   double sigma = 3;
-}
-
-message ForwardRiskModel {
-  double riskAversionParameter = 1;
-  double tau = 2;
-  ModelParamsBS params = 3;
-}
-
-message ExternalRiskModel {
-  string name = 1;
-  string socket = 2;
-  map<string, string> config = 3;
 }
 
 message SimpleRiskModel {
@@ -81,6 +75,12 @@ message SimpleRiskModel {
 message SimpleModelParams {
   double factorLong = 1;
   double factorShort = 2;
+}
+
+message ExternalRiskModel {
+  string name = 1;
+  string socket = 2;
+  map<string, string> config = 3;
 }
 
 // here ends risk models
@@ -99,7 +99,7 @@ message TradableInstrument {
   Instrument instrument = 1;
   MarginCalculator marginCalculator = 2;
   oneof riskModel {
-    ForwardRiskModel forwardRiskModel = 100;
+    LogNormalRiskModel logNormalRiskModel = 100;
     ExternalRiskModel externalRiskModel = 101;
     SimpleRiskModel simpleRiskModel = 102;
   }
