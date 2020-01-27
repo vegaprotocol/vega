@@ -101,8 +101,6 @@ type Subscription {
   marketDepth(
     # ID of the market we want to receive market depth updates for
     marketId: String!
-    # Maximum market order book depth (returns whole order book if omitted)
-    maxDepth: Int
   ): MarketDepth!
 
   # Subscribe to the accounts updates
@@ -522,7 +520,9 @@ type Market {
     last: Int): [Trade!]
 
   # Current depth on the orderbook for this market
-  depth: MarketDepth!
+  depth(
+    # Maximum market order book depth (returns whole order book if omitted)
+    maxDepth: Int): MarketDepth!
 
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
   candles (
