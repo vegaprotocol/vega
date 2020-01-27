@@ -311,6 +311,7 @@ message CandlesResponse {
 
 message MarketDepthRequest {
   string marketID = 1 [(validator.field) = {msg_exists: true}];
+  uint64 maxDepth = 2;
 }
 
 message MarketDepthResponse {

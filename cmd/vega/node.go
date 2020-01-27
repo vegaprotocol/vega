@@ -52,7 +52,7 @@ type CandleStore interface {
 type OrderStore interface {
 	buffer.OrderStore
 	orders.OrderStore
-	GetMarketDepth(context.Context, string) (*proto.MarketDepth, error)
+	GetMarketDepth(context.Context, string, uint64) (*proto.MarketDepth, error)
 	Close() error
 	ReloadConf(storage.Config)
 }

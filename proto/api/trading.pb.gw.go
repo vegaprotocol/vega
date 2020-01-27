@@ -373,6 +373,10 @@ func request_TradingData_Markets_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
+var (
+	filter_TradingData_MarketDepth_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+)
+
 func request_TradingData_MarketDepth_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MarketDepthRequest
 	var metadata runtime.ServerMetadata
@@ -393,6 +397,10 @@ func request_TradingData_MarketDepth_0(ctx context.Context, marshaler runtime.Ma
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+	}
+
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_MarketDepth_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.MarketDepth(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
