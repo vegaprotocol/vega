@@ -457,6 +457,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
+| maxDepth | [uint64](#uint64) |  |  |
 
 
 
