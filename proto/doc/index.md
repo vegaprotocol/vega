@@ -77,13 +77,13 @@
     - [EthereumEvent](#vega.EthereumEvent)
     - [ExternalRiskModel](#vega.ExternalRiskModel)
     - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
-    - [ForwardRiskModel](#vega.ForwardRiskModel)
     - [Future](#vega.Future)
     - [Instrument](#vega.Instrument)
     - [InstrumentMetadata](#vega.InstrumentMetadata)
+    - [LogNormalModelParams](#vega.LogNormalModelParams)
+    - [LogNormalRiskModel](#vega.LogNormalRiskModel)
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
-    - [ModelParamsBS](#vega.ModelParamsBS)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -1237,23 +1237,6 @@
 
 
 
-<a name="vega.ForwardRiskModel"></a>
-
-### ForwardRiskModel
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| riskAversionParameter | [double](#double) |  |  |
-| tau | [double](#double) |  |  |
-| params | [ModelParamsBS](#vega.ModelParamsBS) |  |  |
-
-
-
-
-
-
 <a name="vega.Future"></a>
 
 ### Future
@@ -1308,6 +1291,40 @@
 
 
 
+<a name="vega.LogNormalModelParams"></a>
+
+### LogNormalModelParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| mu | [double](#double) |  |  |
+| r | [double](#double) |  |  |
+| sigma | [double](#double) |  |  |
+
+
+
+
+
+
+<a name="vega.LogNormalRiskModel"></a>
+
+### LogNormalRiskModel
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| riskAversionParameter | [double](#double) |  |  |
+| tau | [double](#double) |  |  |
+| params | [LogNormalModelParams](#vega.LogNormalModelParams) |  |  |
+
+
+
+
+
+
 <a name="vega.MarginCalculator"></a>
 
 ### MarginCalculator
@@ -1337,23 +1354,6 @@
 | decimalPlaces | [uint64](#uint64) |  |  |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
-
-
-
-
-
-
-<a name="vega.ModelParamsBS"></a>
-
-### ModelParamsBS
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| mu | [double](#double) |  |  |
-| r | [double](#double) |  |  |
-| sigma | [double](#double) |  |  |
 
 
 
@@ -1418,7 +1418,7 @@
 | ----- | ---- | ----- | ----------- |
 | instrument | [Instrument](#vega.Instrument) |  |  |
 | marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
-| forwardRiskModel | [ForwardRiskModel](#vega.ForwardRiskModel) |  |  |
+| logNormalRiskModel | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  |  |
 | externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  |  |
 | simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  |  |
 

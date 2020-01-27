@@ -23,7 +23,11 @@ func TestNewParty(t *testing.T) {
 	log := logging.NewTestLogger()
 	partyBuf := mocks.NewMockPartyBuf(ctrl)
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
+	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
+	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	lossBuf.EXPECT().Flush().AnyTimes()
+
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
@@ -94,7 +98,11 @@ func TestNewAccount(t *testing.T) {
 	log := logging.NewTestLogger()
 	partyBuf := mocks.NewMockPartyBuf(ctrl)
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
+	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
+	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	lossBuf.EXPECT().Flush().AnyTimes()
+
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))

@@ -358,8 +358,8 @@ union TradingMode =
 ContinuousTrading
 | DiscreteTrading
 
-# Parameters to be forwards to the risk model
-type ModelParamsBS {
+# Parameters for the log normal risk model
+type LogNormalModelParams {
   # mu parameter
   mu: Float!
   # r parameter
@@ -378,13 +378,13 @@ type SimpleRiskModelParams {
 
 
 # A type of risk model for futures trading
-type ForwardRiskModel {
+type LogNormalRiskModel {
   # Lambda parameter of the risk model
   riskAversionParameter: Float!
   # Tau parameter of the risk model
   tau: Float!
-  # Params for the forward risk model
-  params: ModelParamsBS!
+  # Params for the log normal risk model
+  params: LogNormalModelParams!
 }
 
 # A type of simple/dummy risk model where we can specify the risk factor long and short in params
@@ -393,7 +393,7 @@ type SimpleRiskModel {
   params: SimpleRiskModelParams!
 }
 
-union RiskModel = ForwardRiskModel | SimpleRiskModel
+union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
 # A set of metadata to associate to an instruments
 type InstrumentMetadata {

@@ -169,7 +169,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			sigma:                 0.09,
 		},
 		{
-			decimalPlaces:         7,
+			decimalPlaces:         5,
 			baseName:              "ETH",
 			quoteName:             "BTC",
 			settlementAsset:       "BTC",
@@ -218,11 +218,11 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 						},
 					},
 				},
-				RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &proto.ForwardRiskModel{
+				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &proto.LogNormalRiskModel{
 						RiskAversionParameter: skel.riskAversionParameter,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.ModelParamsBS{
+						Params: &proto.LogNormalModelParams{
 							Mu:    0,
 							R:     0.016,
 							Sigma: skel.sigma,
