@@ -6,10 +6,12 @@ import (
 	"os"
 	"time"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -136,9 +138,10 @@ type executionTestSetup struct {
 	timesvc         *timeStub
 	marketdata      *mocks.MockMarketDataBuf
 	marginLevelsBuf *marginsStub
-	settle          *SettleStub
-	// TODO(jeremy): will need a stub at some point for that
-	lossSoc *mocks.MockLossSocializationBuf
+	settle          *buffer.Settlement
+	lossSoc         *buffer.LossSocialization
+
+	positionPlugin *plugins.Positions
 
 	// save trader accounts state
 	accs map[string][]account
@@ -172,7 +175,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
 	execsetup.orders = NewOrderStub()
 	execsetup.trades = NewTradeStub()
-	execsetup.settle = NewSettlementStub()
+	execsetup.settle = buffer.NewSettlement()
 	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
 	execsetup.transfers = NewTransferStub()
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
@@ -181,7 +184,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.timesvc = &timeStub{now: startTime}
 	execsetup.marketdata = mocks.NewMockMarketDataBuf(ctrl)
 	execsetup.marginLevelsBuf = NewMarginsStub()
-	execsetup.lossSoc = mocks.NewMockLossSocializationBuf(ctrl)
+	execsetup.lossSoc = buffer.NewLossSocialization()
 
 	execsetup.marketdata.EXPECT().Flush().AnyTimes()
 	execsetup.marketdata.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -191,10 +194,14 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.parties.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
-	execsetup.lossSoc.EXPECT().Add(gomock.Any()).AnyTimes()
-	execsetup.lossSoc.EXPECT().Flush().AnyTimes()
+	// execsetup.lossSoc.EXPECT().Add(gomock.Any()).AnyTimes()
+	// execsetup.lossSoc.EXPECT().Flush().AnyTimes()
 
 	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, mkts)
+
+	// instanciate position plugin
+	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)
+
 	return execsetup
 }
 

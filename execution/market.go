@@ -515,10 +515,19 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// now let's get the transfers for MTM settlement
 		events := m.position.UpdateMarkPrice(m.markPrice)
 		settle := m.settlement.SettleMTM(m.markPrice, events)
+		fmt.Printf("SETTLE LEN %v\n", len(settle))
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
+		fmt.Printf("MARGINS LEN %v\n", len(margins))
 		if len(margins) > 0 {
+			fmt.Printf("GOT NEW MARGINS\n")
+			for _, v := range margins {
+				if v.Transfer() != nil {
+					fmt.Printf("transfer: %v %v %v\n", v.Transfer().Owner, v.Transfer().Amount.Amount, v.Transfer().Type.String())
+				}
+			}
+
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug(
