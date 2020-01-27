@@ -101,6 +101,8 @@ type Subscription {
   marketDepth(
     # ID of the market we want to receive market depth updates for
     marketId: String!
+    # Maximum market order book depth (returns whole order book if omitted)
+    maxDepth: Int
   ): MarketDepth!
 
   # Subscribe to the accounts updates
