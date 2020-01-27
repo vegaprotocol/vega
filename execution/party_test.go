@@ -135,7 +135,7 @@ func TestNewAccount(t *testing.T) {
 	assert.NotNil(t, foundParty)
 	assert.Equal(t, trader, foundParty.Id)
 
-	for accName := range accs {
+	for accName, _ := range accs {
 		acc, err := collateralEngine.GetAccountByID(accName)
 		assert.NoError(t, err)
 		assert.NotNil(t, acc)

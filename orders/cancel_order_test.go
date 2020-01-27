@@ -20,6 +20,10 @@ var (
 	}
 )
 
+type cancelMatcher struct {
+	e proto.OrderCancellation
+}
+
 func TestCancelOrder(t *testing.T) {
 	t.Run("Cancel order - success", testCancelOrderSuccess)
 	t.Run("Cancel order - order not in storage", testCancelOrderNotFound)
@@ -117,10 +121,6 @@ func testCancelOrderPartyMismatch(t *testing.T) {
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
-}
-
-type cancelMatcher struct {
-	e proto.OrderCancellation
 }
 
 func (m cancelMatcher) String() string {
