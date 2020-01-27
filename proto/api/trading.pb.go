@@ -11,8 +11,6 @@ import (
 	empty "github.com/golang/protobuf/ptypes/empty"
 	_ "github.com/mwitkow/go-proto-validators"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -2952,32 +2950,6 @@ type TradingServer interface {
 	CheckToken(context.Context, *CheckTokenRequest) (*CheckTokenResponse, error)
 }
 
-// UnimplementedTradingServer can be embedded to have forward compatible implementations.
-type UnimplementedTradingServer struct {
-}
-
-func (*UnimplementedTradingServer) SubmitOrder(ctx context.Context, req *SubmitOrderRequest) (*proto1.PendingOrder, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubmitOrder not implemented")
-}
-func (*UnimplementedTradingServer) CancelOrder(ctx context.Context, req *CancelOrderRequest) (*proto1.PendingOrder, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelOrder not implemented")
-}
-func (*UnimplementedTradingServer) AmendOrder(ctx context.Context, req *AmendOrderRequest) (*proto1.PendingOrder, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AmendOrder not implemented")
-}
-func (*UnimplementedTradingServer) SignIn(ctx context.Context, req *SignInRequest) (*SignInResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SignIn not implemented")
-}
-func (*UnimplementedTradingServer) NotifyTraderAccount(ctx context.Context, req *NotifyTraderAccountRequest) (*NotifyTraderAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NotifyTraderAccount not implemented")
-}
-func (*UnimplementedTradingServer) Withdraw(ctx context.Context, req *WithdrawRequest) (*WithdrawResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Withdraw not implemented")
-}
-func (*UnimplementedTradingServer) CheckToken(ctx context.Context, req *CheckTokenRequest) (*CheckTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckToken not implemented")
-}
-
 func RegisterTradingServer(s *grpc.Server, srv TradingServer) {
 	s.RegisterService(&_Trading_serviceDesc, srv)
 }
@@ -3755,104 +3727,6 @@ type TradingDataServer interface {
 	PartyAccounts(context.Context, *PartyAccountsRequest) (*PartyAccountsResponse, error)
 	// Get Market accounts
 	MarketAccounts(context.Context, *MarketAccountsRequest) (*MarketAccountsResponse, error)
-}
-
-// UnimplementedTradingDataServer can be embedded to have forward compatible implementations.
-type UnimplementedTradingDataServer struct {
-}
-
-func (*UnimplementedTradingDataServer) OrdersByMarket(ctx context.Context, req *OrdersByMarketRequest) (*OrdersByMarketResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OrdersByMarket not implemented")
-}
-func (*UnimplementedTradingDataServer) OrdersByParty(ctx context.Context, req *OrdersByPartyRequest) (*OrdersByPartyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OrdersByParty not implemented")
-}
-func (*UnimplementedTradingDataServer) OrderByMarketAndID(ctx context.Context, req *OrderByMarketAndIdRequest) (*OrderByMarketAndIdResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OrderByMarketAndID not implemented")
-}
-func (*UnimplementedTradingDataServer) OrderByReference(ctx context.Context, req *OrderByReferenceRequest) (*OrderByReferenceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OrderByReference not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketByID(ctx context.Context, req *MarketByIDRequest) (*MarketByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MarketByID not implemented")
-}
-func (*UnimplementedTradingDataServer) Markets(ctx context.Context, req *empty.Empty) (*MarketsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Markets not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketDepth(ctx context.Context, req *MarketDepthRequest) (*MarketDepthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MarketDepth not implemented")
-}
-func (*UnimplementedTradingDataServer) LastTrade(ctx context.Context, req *LastTradeRequest) (*LastTradeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LastTrade not implemented")
-}
-func (*UnimplementedTradingDataServer) PartyByID(ctx context.Context, req *PartyByIDRequest) (*PartyByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PartyByID not implemented")
-}
-func (*UnimplementedTradingDataServer) Parties(ctx context.Context, req *empty.Empty) (*PartiesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Parties not implemented")
-}
-func (*UnimplementedTradingDataServer) TradesByMarket(ctx context.Context, req *TradesByMarketRequest) (*TradesByMarketResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TradesByMarket not implemented")
-}
-func (*UnimplementedTradingDataServer) TradesByParty(ctx context.Context, req *TradesByPartyRequest) (*TradesByPartyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TradesByParty not implemented")
-}
-func (*UnimplementedTradingDataServer) TradesByOrder(ctx context.Context, req *TradesByOrderRequest) (*TradesByOrderResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TradesByOrder not implemented")
-}
-func (*UnimplementedTradingDataServer) PositionsByParty(ctx context.Context, req *PositionsByPartyRequest) (*PositionsByPartyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PositionsByParty not implemented")
-}
-func (*UnimplementedTradingDataServer) Candles(ctx context.Context, req *CandlesRequest) (*CandlesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Candles not implemented")
-}
-func (*UnimplementedTradingDataServer) Statistics(ctx context.Context, req *empty.Empty) (*proto1.Statistics, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Statistics not implemented")
-}
-func (*UnimplementedTradingDataServer) GetVegaTime(ctx context.Context, req *empty.Empty) (*VegaTimeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVegaTime not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketDataByID(ctx context.Context, req *MarketDataByIDRequest) (*MarketDataByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MarketDataByID not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketsData(ctx context.Context, req *empty.Empty) (*MarketsDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MarketsData not implemented")
-}
-func (*UnimplementedTradingDataServer) MarginLevels(ctx context.Context, req *MarginLevelsRequest) (*MarginLevelsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MarginLevels not implemented")
-}
-func (*UnimplementedTradingDataServer) OrdersSubscribe(req *OrdersSubscribeRequest, srv TradingData_OrdersSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method OrdersSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) TradesSubscribe(req *TradesSubscribeRequest, srv TradingData_TradesSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method TradesSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) CandlesSubscribe(req *CandlesSubscribeRequest, srv TradingData_CandlesSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method CandlesSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketDepthSubscribe(req *MarketDepthSubscribeRequest, srv TradingData_MarketDepthSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method MarketDepthSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) PositionsSubscribe(req *PositionsSubscribeRequest, srv TradingData_PositionsSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method PositionsSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) AccountsSubscribe(req *AccountsSubscribeRequest, srv TradingData_AccountsSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method AccountsSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) TransferResponsesSubscribe(req *empty.Empty, srv TradingData_TransferResponsesSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method TransferResponsesSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketsDataSubscribe(req *MarketsDataSubscribeRequest, srv TradingData_MarketsDataSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method MarketsDataSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) MarginLevelsSubscribe(req *MarginLevelsSubscribeRequest, srv TradingData_MarginLevelsSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method MarginLevelsSubscribe not implemented")
-}
-func (*UnimplementedTradingDataServer) PartyAccounts(ctx context.Context, req *PartyAccountsRequest) (*PartyAccountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PartyAccounts not implemented")
-}
-func (*UnimplementedTradingDataServer) MarketAccounts(ctx context.Context, req *MarketAccountsRequest) (*MarketAccountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MarketAccounts not implemented")
 }
 
 func RegisterTradingDataServer(s *grpc.Server, srv TradingDataServer) {
