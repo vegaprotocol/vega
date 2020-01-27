@@ -95,6 +95,13 @@ type MarginLevelsBuf interface {
 	Flush()
 }
 
+// LossSocializationBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution LossSocializationBuf
+type LossSocializationBuf interface {
+	Add([]events.LossSocialization)
+	Flush()
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -115,6 +122,7 @@ type Engine struct {
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
+	lossSocBuf      LossSocializationBuf
 
 	time TimeService
 }
@@ -135,6 +143,7 @@ func NewEngine(
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
+	lossSocBuf LossSocializationBuf,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -147,7 +156,7 @@ func NewEngine(
 		return nil
 	}
 	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, now)
+	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
@@ -170,6 +179,7 @@ func NewEngine(
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
+		lossSocBuf:      lossSocBuf,
 		idgen:           NewIDGen(),
 	}
 

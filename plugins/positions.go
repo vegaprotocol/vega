@@ -23,28 +23,40 @@ type PosBuffer interface {
 	Unsubscribe(int)
 }
 
-// Positions plugin taking settlement data to build positions API data
-type Positions struct {
-	mu   *sync.RWMutex
-	buf  PosBuffer
-	ref  int
-	ch   <-chan []events.SettlePosition
-	data map[string]map[string]Position
+// LossSocializationBuffer ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins LossSocializationBuffer
+type LossSocializationBuffer interface {
+	Subscribe() (<-chan []events.LossSocialization, int)
+	Unsubscribe(int)
 }
 
-func NewPositions(buf PosBuffer) *Positions {
+// Positions plugin taking settlement data to build positions API data
+type Positions struct {
+	mu    *sync.RWMutex
+	buf   PosBuffer
+	lsbuf LossSocializationBuffer
+	ref   int
+	lsref int
+	ch    <-chan []events.SettlePosition
+	lsch  <-chan []events.LossSocialization
+	data  map[string]map[string]Position
+}
+
+func NewPositions(buf PosBuffer, lsbuf LossSocializationBuffer) *Positions {
 	return &Positions{
-		mu:   &sync.RWMutex{},
-		data: map[string]map[string]Position{},
-		buf:  buf,
+		mu:    &sync.RWMutex{},
+		data:  map[string]map[string]Position{},
+		buf:   buf,
+		lsbuf: lsbuf,
 	}
 }
 
 func (p *Positions) Start(ctx context.Context) {
 	p.mu.Lock()
-	if p.ch == nil {
+	if p.ch == nil && p.lsch == nil {
 		// get the channel and the reference
 		p.ch, p.ref = p.buf.Subscribe()
+		p.lsch, p.lsref = p.lsbuf.Subscribe()
 		// start consuming the data
 		go p.consume(ctx)
 	}
@@ -59,6 +71,10 @@ func (p *Positions) Stop() {
 		p.buf.Unsubscribe(p.ref)
 		p.ch = nil
 		p.ref = 0
+
+		p.lsbuf.Unsubscribe(p.lsref)
+		p.lsch = nil
+		p.lsref = 0
 	}
 	// we don't need to reassign ch here, because the channel is closed, the consume routine
 	// will pick up on the fact that we don't have to consume data anylonger, and the ch/ref fields
@@ -73,12 +89,22 @@ func (p *Positions) consume(ctx context.Context) {
 		p.buf.Unsubscribe(p.ref)
 		p.ref = 0
 		p.ch = nil
+		p.lsbuf.Unsubscribe(p.lsref)
+		p.lsref = 0
+		p.lsch = nil
 		p.mu.Unlock()
 	}()
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case evts, open := <-p.lsch:
+			if !open {
+				return
+			}
+			p.mu.Lock()
+			p.applyLossSocialization(evts)
+			p.mu.Unlock()
 		case update, open := <-p.ch:
 			if !open {
 				return
@@ -87,6 +113,20 @@ func (p *Positions) consume(ctx context.Context) {
 			p.updateData(update)
 			p.mu.Unlock()
 		}
+	}
+}
+
+func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
+	for _, evt := range evts {
+		marketID, partyID, amountLoss := evt.MarketID(), evt.PartyID(), evt.AmountLost()
+		pos, ok := p.data[marketID][partyID]
+		if !ok {
+			// do nothing, market/party does not exists, but that should not happen
+			continue
+		}
+		pos.RealisedPNLFP -= float64(amountLoss)
+		pos.Position.RealisedPNL -= amountLoss
+		p.data[marketID][partyID] = pos
 	}
 }
 

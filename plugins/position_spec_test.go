@@ -515,8 +515,16 @@ func TestPositionSpecSuite(t *testing.T) {
 			defer position.Finish()
 			ch := make(chan []events.SettlePosition)
 			ref := 1
+			lsch := make(chan []events.LossSocialization)
 			position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+			position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
 			position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+				if ch != nil {
+					close(ch)
+					ch = nil
+				}
+			})
+			position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
 				if ch != nil {
 					close(ch)
 					ch = nil
