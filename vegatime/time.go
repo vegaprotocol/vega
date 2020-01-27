@@ -47,7 +47,7 @@ func Parse(t string) (time.Time, error) {
 	return time.ParseInLocation(time.RFC3339Nano, t, time.UTC)
 }
 
-// Format format the time using the time.RFC3339Nano formating
+// Format format the time using the time.RFC3339Nano formatting
 func Format(t time.Time) string {
 	return t.In(time.UTC).Format(time.RFC3339Nano)
 }
@@ -56,17 +56,17 @@ func Format(t time.Time) string {
 func RoundToNearest(t time.Time, interval types.Interval) time.Time {
 	switch interval {
 	case types.Interval_I1M:
-		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location())
+		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, time.UTC)
 	case types.Interval_I5M:
-		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location())
+		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, time.UTC)
 	case types.Interval_I15M:
-		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location())
+		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, time.UTC)
 	case types.Interval_I1H:
-		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
+		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.UTC)
 	case types.Interval_I6H:
-		return time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location())
+		return time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, time.UTC)
 	case types.Interval_I1D:
-		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	default:
 		return t
 	}
