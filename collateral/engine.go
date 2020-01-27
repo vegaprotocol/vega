@@ -277,6 +277,12 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
+	// if winidx is 0, this means we had now wind and loss, but may have some event which
+	// needs to be propagated forward so we return now.
+	if winidx == 0 {
+		return marginEvts, responses, nil
+	}
+
 	// now check that what was collected is enough
 	// This is where we'll implement everything
 	settle, _, err = e.getSystemAccounts(marketID, asset)
