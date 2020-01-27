@@ -311,7 +311,7 @@ func TestStorage_GetMarketDepthForNewMarket(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket, 0)
 	assert.Nil(t, err)
 
 	assert.Equal(t, testMarket, depth.MarketID)
@@ -376,7 +376,7 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 	err = orderStore.SaveBatch([]types.Order{*order1, *order2, *order3})
 	assert.NoError(t, err)
 
-	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket, 0)
 	assert.Nil(t, err)
 
 	assert.Equal(t, testMarket, depth.MarketID)
@@ -432,7 +432,7 @@ func TestStorage_GetMarketDepthRepeatedCalls(t *testing.T) {
 	err = orderStore.SaveBatch([]types.Order{*order1, *order2})
 	assert.NoError(t, err)
 
-	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket, 0)
 	assert.Nil(t, err)
 
 	assert.Equal(t, testMarket, depth.MarketID)
@@ -477,7 +477,7 @@ func TestStorage_GetMarketDepthRepeatedCalls(t *testing.T) {
 	err = orderStore.SaveBatch([]types.Order{*order3, *order4})
 	assert.NoError(t, err)
 
-	depth2, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	depth2, err := orderStore.GetMarketDepth(context.Background(), testMarket, 0)
 	assert.Nil(t, err)
 
 	assert.Equal(t, testMarket, depth2.MarketID)
@@ -537,6 +537,6 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 
 	// perhaps sleep here in case we need to make sure the context has indeed expired, but starting the 2 routines and the map lookups
 	// alone will take longer than a nanosecond anyway, so there's no need.
-	_, err = orderStore.GetMarketDepth(tctx, testMarket)
+	_, err = orderStore.GetMarketDepth(tctx, testMarket, 0)
 	assert.Equal(t, storage.ErrTimeoutReached, err)
 }

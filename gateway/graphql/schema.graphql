@@ -520,7 +520,9 @@ type Market {
     last: Int): [Trade!]
 
   # Current depth on the orderbook for this market
-  depth: MarketDepth!
+  depth(
+    # Maximum market order book depth (returns whole order book if omitted)
+    maxDepth: Int): MarketDepth!
 
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
   candles (

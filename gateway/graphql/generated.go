@@ -142,7 +142,7 @@ type ComplexityRoot struct {
 		Candles            func(childComplexity int, since string, interval Interval) int
 		Data               func(childComplexity int) int
 		DecimalPlaces      func(childComplexity int) int
-		Depth              func(childComplexity int) int
+		Depth              func(childComplexity int, maxDepth *int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
 		OrderByReference   func(childComplexity int, reference string) int
@@ -342,7 +342,7 @@ type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
-	Depth(ctx context.Context, obj *Market) (*proto.MarketDepth, error)
+	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
 	OrderByReference(ctx context.Context, obj *Market, reference string) (*proto.Order, error)
 	Data(ctx context.Context, obj *Market) (*proto.MarketData, error)
@@ -816,7 +816,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Market.Depth(childComplexity), true
+		args, err := ec.field_Market_depth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Market.Depth(childComplexity, args["maxDepth"].(*int)), true
 
 	case "Market.id":
 		if e.complexity.Market.ID == nil {
@@ -2398,7 +2403,9 @@ type Market {
     last: Int): [Trade!]
 
   # Current depth on the orderbook for this market
-  depth: MarketDepth!
+  depth(
+    # Maximum market order book depth (returns whole order book if omitted)
+    maxDepth: Int): MarketDepth!
 
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
   candles (
@@ -2808,6 +2815,20 @@ func (ec *executionContext) field_Market_candles_args(ctx context.Context, rawAr
 		}
 	}
 	args["interval"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["maxDepth"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["maxDepth"] = arg0
 	return args, nil
 }
 
@@ -5346,10 +5367,17 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Market_depth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Depth(rctx, obj)
+		return ec.resolvers.Market().Depth(rctx, obj, args["maxDepth"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

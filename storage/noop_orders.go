@@ -131,7 +131,7 @@ func (os *NoopOrder) GetByReference(ctx context.Context, ref string) (*types.Ord
 	return &order, nil
 }
 
-func (os *NoopOrder) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
+func (os *NoopOrder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
 
 	depth, ok := os.depth[market]
 	if !ok || depth == nil {
@@ -145,8 +145,8 @@ func (os *NoopOrder) GetMarketDepth(ctx context.Context, market string) (*types.
 	}
 
 	// load from store
-	buy := depth.BuySide()
-	sell := depth.SellSide()
+	buy := depth.BuySide(limit)
+	sell := depth.SellSide(limit)
 
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
