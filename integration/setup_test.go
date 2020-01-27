@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -202,6 +203,24 @@ type account struct {
 	Type    proto.AccountType
 	Market  string
 	Asset   string
+}
+
+func getTraderMarginAccount(accs []account, market string) (account, error) {
+	for _, v := range accs {
+		if v.Type == proto.AccountType_MARGIN && v.Market == market {
+			return v, nil
+		}
+	}
+	return account{}, errors.New("account does not exist")
+}
+
+func getTraderGeneralAccount(accs []account, asset string) (account, error) {
+	for _, v := range accs {
+		if v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+			return v, nil
+		}
+	}
+	return account{}, errors.New("account does not exist")
 }
 
 func traderHaveGeneralAccount(accs []account, asset string) bool {
