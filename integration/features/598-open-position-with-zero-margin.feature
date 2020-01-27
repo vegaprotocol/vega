@@ -45,7 +45,7 @@ Feature: Regression test for issue 598
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    571 |     429 |
-      | chris  | BTC   | ETH/DEC19 |    134 |     866  |
+      | chris  | BTC   | ETH/DEC19 |    109 |     891 |
 # next instruction will trade with barney
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
