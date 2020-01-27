@@ -56,9 +56,12 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	settleBuf.EXPECT().Flush().AnyTimes()
 	marginLevelsBuf := buffer.NewMarginLevels()
+	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
+	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	lossBuf.EXPECT().Flush().AnyTimes()
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.Nil(t, err)
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)

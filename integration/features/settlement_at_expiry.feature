@@ -51,7 +51,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell |      1 |  1000 |                0 | OrderError: Invalid Market ID |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |      0 |   10718 |
+      | trader1 | ETH   | ETH/DEC19 |      0 |   11676 |
       | trader2 | ETH   | ETH/DEC19 |      0 |      42 |
       | trader3 | ETH   | ETH/DEC19 |      0 |    4042 |
     And All balances cumulated are worth "14802"
