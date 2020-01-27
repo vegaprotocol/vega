@@ -25,6 +25,7 @@ type testService struct {
 	ctrl  *gomock.Controller
 	trade *mocks.MockTradeStore
 	risk  *mocks.MockRiskStore
+	pos   *mocks.MockPositionsPlugin
 }
 
 func getTestService(t *testing.T) *testService {

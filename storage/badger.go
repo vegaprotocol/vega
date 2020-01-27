@@ -228,6 +228,24 @@ func (bs *badgerStore) accountPartyPrefix(accType types.AccountType, party strin
 	return bs.getPrefix(bs.getAccountTypePrefix(accType), party, descending)
 }
 
+func (bs *badgerStore) accountPartyMarketPrefix(accType types.AccountType, partyID string, marketID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("%s:%s_M:%s_", bs.getAccountTypePrefix(accType), partyID, marketID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) accountPartyAssetPrefix(partyID string, asset string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("A:%s_%s_ID:", asset, partyID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
 func (bs *badgerStore) readTransaction() *badger.Txn {
 	return bs.db.NewTransaction(false)
 }

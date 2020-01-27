@@ -22,6 +22,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
+	mlbuf     *mocks.MockMarginLevelsBuf
 }
 
 // implements the events.Margin interface
