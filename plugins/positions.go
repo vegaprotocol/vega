@@ -124,8 +124,10 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 			// do nothing, market/party does not exists, but that should not happen
 			continue
 		}
-		pos.RealisedPNLFP -= float64(amountLoss)
-		pos.Position.RealisedPNL -= amountLoss
+
+		pos.loss += float64(amountLoss)
+		pos.UnrealisedPNLFP -= float64(amountLoss)
+		pos.Position.UnrealisedPNL -= amountLoss
 		p.data[marketID][partyID] = pos
 	}
 }
@@ -237,12 +239,14 @@ func mtm(p *Position, markPrice uint64) {
 		return
 	}
 	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
+	p.UnrealisedPNLFP -= p.loss
 }
 
 func updatePosition(p *Position, e events.SettlePosition) {
 	// if this settlePosition event has a margin event embedded, that means we're dealing
 	// with a trader who was closed out...
 	if margin, ok := e.Margin(); ok {
+		p.RealisedPNL += p.UnrealisedPNL
 		p.OpenVolume = 0
 		p.UnrealisedPNL = 0
 		p.AverageEntryPrice = 0
@@ -270,6 +274,9 @@ type Position struct {
 	AverageEntryPriceFP float64
 	RealisedPNLFP       float64
 	UnrealisedPNLFP     float64
+
+	// store the loss over loss socialization
+	loss float64
 }
 
 func evtToProto(e events.SettlePosition) Position {

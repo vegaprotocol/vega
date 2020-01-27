@@ -203,7 +203,8 @@ func TestMultipleTradesAndLossSocialization(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
-	assert.Equal(t, 700, int(pp[0].RealisedPNL))
+	assert.Equal(t, 1000, int(pp[0].RealisedPNL))
+	assert.Equal(t, -300, int(pp[0].UnrealisedPNL))
 }
 
 func TestProcessBufferData(t *testing.T) {

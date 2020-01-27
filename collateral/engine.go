@@ -258,8 +258,10 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			return nil, nil, err
 		}
 
+		var amountCollected int64
 		// // update the to accounts now
 		for _, bal := range res.Balances {
+			amountCollected += bal.Balance
 			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
@@ -268,6 +270,19 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 				)
 				return nil, nil, err
 			}
+		}
+
+		// here we check if we were able to collect all monies,
+		// if not send an event to notify the
+		if amountCollected < int64(req.Amount) {
+			evt := &lossSocializationEvt{
+				market:     settle.MarketID,
+				party:      evt.Party(),
+				amountLost: amountCollected - int64(req.Amount),
+			}
+
+			e.lossSocBuf.Add([]events.LossSocialization{evt})
+			e.lossSocBuf.Flush()
 		}
 
 		// updating the accounts stored in the marginEvt

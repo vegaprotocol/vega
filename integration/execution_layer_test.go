@@ -531,6 +531,38 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	return nil
 }
 
+func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
+	for _, row := range table.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		party := val(row, 0)
+		pos, err := execsetup.positionPlugin.GetPositionsByParty(party)
+		if err != nil {
+			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
+		}
+		if len(pos) <= 0 {
+			return fmt.Errorf("party do not have a position, party(%v)", party)
+		}
+
+		volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 2), i64val(row, 3)
+		if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
+			return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), realisedPNL(%v), unrealisedPNL(%v)", party, pos[0].OpenVolume, pos[0].RealisedPNL, pos[0].UnrealisedPNL)
+		}
+	}
+	return nil
+}
+
+func dumpTransfers() error {
+	for _, _v := range execsetup.transfers.data {
+		for _, v := range _v.GetTransfers() {
+			fmt.Printf("transfer: %v\n", *v)
+		}
+	}
+	return nil
+}
+
 func accountID(marketID, partyID, asset string, _ty int32) string {
 	ty := proto.AccountType(_ty)
 	idbuf := make([]byte, 256)
