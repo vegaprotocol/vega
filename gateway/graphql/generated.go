@@ -289,7 +289,7 @@ type ComplexityRoot struct {
 		Candles     func(childComplexity int, marketID string, interval Interval) int
 		Margins     func(childComplexity int, partyID string, marketID *string) int
 		MarketData  func(childComplexity int, marketID *string) int
-		MarketDepth func(childComplexity int, marketID string) int
+		MarketDepth func(childComplexity int, marketID string, maxDepth *int) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
 		Positions   func(childComplexity int, partyID string) int
 		Trades      func(childComplexity int, marketID *string, partyID *string) int
@@ -450,7 +450,7 @@ type SubscriptionResolver interface {
 	Orders(ctx context.Context, marketID *string, partyID *string) (<-chan []*proto.Order, error)
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*proto.Trade, error)
 	Positions(ctx context.Context, partyID string) (<-chan *proto.Position, error)
-	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
+	MarketDepth(ctx context.Context, marketID string, maxDepth *int) (<-chan *proto.MarketDepth, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
@@ -1677,7 +1677,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.MarketDepth(childComplexity, args["marketId"].(string)), true
+		return e.complexity.Subscription.MarketDepth(childComplexity, args["marketId"].(string), args["maxDepth"].(*int)), true
 
 	case "Subscription.orders":
 		if e.complexity.Subscription.Orders == nil {
@@ -1979,6 +1979,8 @@ type Subscription {
   marketDepth(
     # ID of the market we want to receive market depth updates for
     marketId: String!
+    # Maximum market order book depth (returns whole order book if omitted)
+    maxDepth: Int
   ): MarketDepth!
 
   # Subscribe to the accounts updates
@@ -3380,6 +3382,14 @@ func (ec *executionContext) field_Subscription_marketDepth_args(ctx context.Cont
 		}
 	}
 	args["marketId"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["maxDepth"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["maxDepth"] = arg1
 	return args, nil
 }
 
@@ -9361,7 +9371,7 @@ func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().MarketDepth(rctx, args["marketId"].(string))
+		return ec.resolvers.Subscription().MarketDepth(rctx, args["marketId"].(string), args["maxDepth"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
