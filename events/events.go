@@ -24,6 +24,7 @@ type LossSocialization interface {
 	MarketID() string
 	PartyID() string
 	AmountLost() int64
+	Price() uint64
 }
 
 // SettlePosition is an event that the settlement buffer will propagate through the system

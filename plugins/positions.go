@@ -125,9 +125,20 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 			continue
 		}
 
-		pos.loss += float64(amountLoss)
-		pos.UnrealisedPNLFP -= float64(amountLoss)
-		pos.Position.UnrealisedPNL -= amountLoss
+		// amountLoss will be negative for a good trader, as they lost monies because of bad trader
+		// inverse is true for the bad trader as they kind of stole monies from the network
+
+		if pos.OpenVolume == 0 {
+			// this means the trader is closed out already, apply this directly to the RealisedPNL
+			pos.RealisedPNLFP += float64(amountLoss)
+			pos.RealisedPNL += amountLoss
+		} else {
+			// here we update the AverageEntryPriceAdjustedWith the lost then mtm
+			pos.AverageEntryPriceAdjusted = ((pos.AverageEntryPriceAdjusted * float64(pos.OpenVolume)) - float64(amountLoss)) / float64(pos.OpenVolume)
+			mtm(&pos, evt.Price()) // run mark to mark, evt.Price() is the mark price
+			pos.UnrealisedPNL = int64(math.Round(pos.UnrealisedPNLFP))
+		}
+
 		p.data[marketID][partyID] = pos
 	}
 }
@@ -215,7 +226,7 @@ func closeV(p *Position, closedVolume int64, tradedPrice uint64) float64 {
 	if closedVolume == 0 {
 		return 0
 	}
-	realisedPnlDelta := float64(closedVolume) * (float64(tradedPrice) - p.AverageEntryPriceFP)
+	realisedPnlDelta := float64(closedVolume) * (float64(tradedPrice) - p.AverageEntryPriceAdjusted)
 	p.RealisedPNLFP += realisedPnlDelta
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
@@ -229,6 +240,8 @@ func updateVWAP(vwap float64, volume int64, addVolume int64, addPrice uint64) fl
 }
 
 func openV(p *Position, openedVolume int64, tradedPrice uint64) {
+	// calculate both average entry price here.
+	p.AverageEntryPriceAdjusted = updateVWAP(p.AverageEntryPriceAdjusted, p.OpenVolume, openedVolume, tradedPrice)
 	p.AverageEntryPriceFP = updateVWAP(p.AverageEntryPriceFP, p.OpenVolume, openedVolume, tradedPrice)
 	p.OpenVolume += openedVolume
 }
@@ -238,8 +251,7 @@ func mtm(p *Position, markPrice uint64) {
 		p.UnrealisedPNLFP = 0
 		return
 	}
-	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
-	p.UnrealisedPNLFP -= p.loss
+	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceAdjusted)
 }
 
 func updatePosition(p *Position, e events.SettlePosition) {
@@ -256,6 +268,7 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		// the volume now is zero, though, so we'll end up moving this position to storage
 		p.UnrealisedPNLFP = 0
 		p.AverageEntryPriceFP = 0
+		p.AverageEntryPriceAdjusted = 0
 		return
 	}
 	for _, t := range e.Trades() {
@@ -271,12 +284,17 @@ func updatePosition(p *Position, e events.SettlePosition) {
 
 type Position struct {
 	types.Position
+	// this is the actual entry price over all orders of the trader
 	AverageEntryPriceFP float64
 	RealisedPNLFP       float64
 	UnrealisedPNLFP     float64
 
-	// store the loss over loss socialization
-	loss float64
+	// this is used to calculate an average entry price handling loss from the mtm
+	// in the case a losing trader cannot pay, it may be slightly different to the actual entry price
+	// and may be exposed in the future through an API.
+	// this average entry price is used in all calculation.
+	// at startup both average entry prices are the same until the trader is subject to loss capitalization
+	AverageEntryPriceAdjusted float64
 }
 
 func evtToProto(e events.SettlePosition) Position {

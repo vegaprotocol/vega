@@ -278,7 +278,8 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			evt := &lossSocializationEvt{
 				market:     settle.MarketID,
 				party:      evt.Party(),
-				amountLost: amountCollected - int64(req.Amount),
+				amountLost: int64(req.Amount) - amountCollected,
+				price:      evt.Price(),
 			}
 
 			e.lossSocBuf.Add([]events.LossSocialization{evt})
@@ -327,7 +328,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		for _, evt := range transfers[winidx:] {
 			transfer := evt.Transfer()
 			if transfer != nil && transfer.Type == types.TransferType_MTM_WIN {
-				distr.Add(evt.Transfer())
+				distr.Add(evt.Transfer(), evt.Price())
 			}
 		}
 		evts := distr.Run()

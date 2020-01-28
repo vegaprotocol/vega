@@ -10,6 +10,7 @@ import (
 type request struct {
 	amount  float64
 	request *types.Transfer
+	price   uint64
 }
 
 type simpleDistributor struct {
@@ -23,10 +24,11 @@ func (s *simpleDistributor) LossSocializationEnabled() bool {
 	return s.collected < s.expectCollected
 }
 
-func (s *simpleDistributor) Add(req *types.Transfer) {
+func (s *simpleDistributor) Add(req *types.Transfer, price uint64) {
 	s.requests = append(s.requests, request{
 		amount:  float64(req.Amount.Amount*int64(req.Size)) * (float64(s.collected) / float64(s.expectCollected)),
 		request: req,
+		price:   price,
 	})
 }
 
@@ -43,9 +45,11 @@ func (s *simpleDistributor) Run() []events.LossSocialization {
 	for _, v := range s.requests {
 		totalamount += int64(math.Floor(v.amount))
 		evt = &lossSocializationEvt{
-			market:     s.marketID,
-			party:      v.request.Owner,
-			amountLost: v.request.Amount.Amount - int64(math.Floor(v.amount)),
+			market: s.marketID,
+			party:  v.request.Owner,
+			// negative amount as this what they missing
+			amountLost: int64(math.Floor(v.amount)) - v.request.Amount.Amount,
+			price:      v.price,
 		}
 		v.request.Amount.Amount = int64(math.Floor(v.amount))
 		evts = append(evts, evt)
@@ -65,6 +69,7 @@ type lossSocializationEvt struct {
 	market     string
 	party      string
 	amountLost int64
+	price      uint64
 }
 
 func (e *lossSocializationEvt) MarketID() string {
@@ -77,4 +82,8 @@ func (e *lossSocializationEvt) PartyID() string {
 
 func (e *lossSocializationEvt) AmountLost() int64 {
 	return e.amountLost
+}
+
+func (e *lossSocializationEvt) Price() uint64 {
+	return e.price
 }

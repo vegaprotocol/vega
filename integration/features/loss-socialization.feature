@@ -71,8 +71,6 @@ Feature: Test loss socialization behaviour
       | trader2 | ETH/DEC19 | buy  |    100 |   180 |                0 | LIMIT | GTC |
       | trader3 | ETH/DEC19 | sell |    100 |   180 |                1 | LIMIT | GTC |
 
-    And dump transfers
-
     # Then the following transfers happened:
     #   | from    | to     | fromType | toType     | id        | amount | asset |
     #   | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | BTC   |
