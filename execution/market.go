@@ -139,17 +139,33 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, false)
-
 	asset := tradableInstrument.Instrument.Product.GetAsset()
-	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
-		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book, marginLevelsBuf, now.UnixNano(), mkt.GetId())
+	book := matching.NewOrderBook(
+		log,
+		matchingConfig,
+		mkt.Id,
+		tradableInstrument.Instrument.InitialMarkPrice,
+		false,
+	)
+	riskEngine := risk.NewEngine(
+		log,
+		riskConfig,
+		tradableInstrument.MarginCalculator,
+		tradableInstrument.RiskModel,
+		getInitialFactors(log, mkt, asset),
+		book,
+		marginLevelsBuf,
+		now.UnixNano(),
+		mkt.GetId(),
+	)
+	settleEngine := settlement.New(
+		log,
+		settlementConfig,
+		tradableInstrument.Instrument.Product,
+		mkt.Id,
+		settlementBuf,
+	)
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id, settlementBuf)
-
-	// start first candle
-	candleBuf.Start(mkt.Id, now)
 
 	market := &Market{
 		log:                log,
@@ -222,9 +238,17 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// Only start candle generation once we have a non-zero(default) time from vega-time service
+	if m.currentTime.IsZero() {
+		_, err := m.candleBuf.Start(m.mkt.Id, t)
+		if err != nil {
+			m.log.Error("error when starting candle generation for market",
+				logging.String("market-id", m.mkt.Id), logging.Error(err))
+		}
+	}
+
 	closed = t.After(m.closingAt)
 	m.closed = closed
-
 	m.currentTime = t
 
 	// TODO(): handle market start time

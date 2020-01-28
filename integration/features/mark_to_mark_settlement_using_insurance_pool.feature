@@ -46,9 +46,9 @@ Feature: Test mark to market settlement with insurance pool
       | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
       | trader2 | ETH   | ETH/DEC19 |   1584 |   13416 |
       | trader3 | ETH   | ETH/DEC19 |    720 |    9280 |
-   And All balances cumulated are worth "25242"
+   And All balances cumulated are worth "30121"
    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-   And the insurance pool balance is "242" for the market "ETH/DEC19"
+   And the insurance pool balance is "5121" for the market "ETH/DEC19"
 
     # Then the following transfers happened:
     #   | from    | to     | fromType | toType     | id        | amount | asset |

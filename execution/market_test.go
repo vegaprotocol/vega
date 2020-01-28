@@ -56,9 +56,12 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	settleBuf.EXPECT().Flush().AnyTimes()
 	marginLevelsBuf := buffer.NewMarginLevels()
+	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
+	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	lossBuf.EXPECT().Flush().AnyTimes()
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.Nil(t, err)
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)
@@ -531,11 +534,11 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &types.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &types.ForwardRiskModel{
+				RiskModel: &types.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &types.LogNormalRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &types.ModelParamsBS{
+						Params: &types.LogNormalModelParams{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,

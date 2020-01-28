@@ -458,10 +458,6 @@
                 </li>
 
                 <li>
-                  <a href="#vega.ForwardRiskModel"><span class="badge">M</span>ForwardRiskModel</a>
-                </li>
-
-                <li>
                   <a href="#vega.Future"><span class="badge">M</span>Future</a>
                 </li>
 
@@ -474,15 +470,19 @@
                 </li>
 
                 <li>
+                  <a href="#vega.LogNormalModelParams"><span class="badge">M</span>LogNormalModelParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LogNormalRiskModel"><span class="badge">M</span>LogNormalRiskModel</a>
+                </li>
+
+                <li>
                   <a href="#vega.MarginCalculator"><span class="badge">M</span>MarginCalculator</a>
                 </li>
 
                 <li>
                   <a href="#vega.Market"><span class="badge">M</span>Market</a>
-                </li>
-
-                <li>
-                  <a href="#vega.ModelParamsBS"><span class="badge">M</span>ModelParamsBS</a>
                 </li>
 
                 <li>
@@ -1327,6 +1327,13 @@
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxDepth</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3077,44 +3084,6 @@
 
 
 
-        <h3 id="vega.ForwardRiskModel">ForwardRiskModel</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>riskAversionParameter</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>tau</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>params</td>
-                  <td><a href="#vega.ModelParamsBS">ModelParamsBS</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.Future">Future</h3>
         <p></p>
 
@@ -3250,6 +3219,82 @@
 
 
 
+        <h3 id="vega.LogNormalModelParams">LogNormalModelParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>mu</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>r</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sigma</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.LogNormalRiskModel">LogNormalRiskModel</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>riskAversionParameter</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>tau</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>params</td>
+                  <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.MarginCalculator">MarginCalculator</h3>
         <p></p>
 
@@ -3322,44 +3367,6 @@
                 <tr>
                   <td>discrete</td>
                   <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="vega.ModelParamsBS">ModelParamsBS</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>mu</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>r</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>sigma</td>
-                  <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3489,8 +3496,8 @@
                 </tr>
 
                 <tr>
-                  <td>forwardRiskModel</td>
-                  <td><a href="#vega.ForwardRiskModel">ForwardRiskModel</a></td>
+                  <td>logNormalRiskModel</td>
+                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>

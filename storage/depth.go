@@ -175,14 +175,20 @@ func (d *Depth) updateSellSide(order types.Order) {
 
 // BuySide The buy side price levels (and additional information such as orders,
 // remaining volumes) for the market.
-func (d *Depth) BuySide() []MarketDepthLevel {
-	return d.Buy
+func (d *Depth) BuySide(limit uint64) []MarketDepthLevel {
+	if limit == 0 || limit > uint64(len(d.Buy)) {
+		return d.Buy
+	}
+	return d.Buy[:limit]
 }
 
 // SellSide The sell side price levels (and additional information such as
 // orders, remaining volumes) for the market.
-func (d *Depth) SellSide() []MarketDepthLevel {
-	return d.Sell
+func (d *Depth) SellSide(limit uint64) []MarketDepthLevel {
+	if limit == 0 || limit > uint64(len(d.Sell)) {
+		return d.Sell
+	}
+	return d.Sell[:limit]
 }
 
 // Helper to check for orders that have zero remaining, or a status such as cancelled etc.

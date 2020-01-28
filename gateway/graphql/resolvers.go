@@ -330,7 +330,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
 	return res.Trades, nil
 }
 
-func (r *myMarketResolver) Depth(ctx context.Context, market *Market) (*types.MarketDepth, error) {
+func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *int) (*types.MarketDepth, error) {
 
 	if market == nil {
 		return nil, errors.New("market missing or empty")
@@ -338,6 +338,13 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market) (*types.Ma
 	}
 
 	req := protoapi.MarketDepthRequest{MarketID: market.ID}
+	if maxDepth != nil {
+		if *maxDepth <= 0 {
+			return nil, errors.New("invalid maxDepth, must be a positive number")
+		}
+		req.MaxDepth = uint64(*maxDepth)
+	}
+
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
 	res, err := r.tradingDataClient.MarketDepth(ctx, &req)

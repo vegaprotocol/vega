@@ -49,14 +49,6 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
-type ForwardRiskModel struct {
-	RiskAversionParameter float64        `json:"riskAversionParameter"`
-	Tau                   float64        `json:"tau"`
-	Params                *ModelParamsBs `json:"params"`
-}
-
-func (ForwardRiskModel) IsRiskModel() {}
-
 type Future struct {
 	Maturity string `json:"maturity"`
 	Asset    string `json:"asset"`
@@ -79,6 +71,20 @@ type InstrumentMetadata struct {
 	Tags []*string `json:"tags"`
 }
 
+type LogNormalModelParams struct {
+	Mu    float64 `json:"mu"`
+	R     float64 `json:"r"`
+	Sigma float64 `json:"sigma"`
+}
+
+type LogNormalRiskModel struct {
+	RiskAversionParameter float64               `json:"riskAversionParameter"`
+	Tau                   float64               `json:"tau"`
+	Params                *LogNormalModelParams `json:"params"`
+}
+
+func (LogNormalRiskModel) IsRiskModel() {}
+
 type Market struct {
 	ID                 string              `json:"id"`
 	Name               string              `json:"name"`
@@ -92,12 +98,6 @@ type Market struct {
 	Candles            []*proto.Candle     `json:"candles"`
 	OrderByReference   *proto.Order        `json:"orderByReference"`
 	Data               *proto.MarketData   `json:"data"`
-}
-
-type ModelParamsBs struct {
-	Mu    float64 `json:"mu"`
-	R     float64 `json:"r"`
-	Sigma float64 `json:"sigma"`
 }
 
 type Party struct {
