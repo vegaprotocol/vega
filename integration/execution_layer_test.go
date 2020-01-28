@@ -240,8 +240,9 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 
 		if int64(len(result.Trades)) != i64val(row, 5) {
-			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
+			return fmt.Errorf("%v size %v at price %v, expected %d trades, instead saw %d", val(row, 0), u64val(row, 3), u64val(row, 4), i64val(row, 5), len(result.Trades))
 		}
+
 	}
 	return nil
 }
@@ -528,6 +529,16 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	if ordCnt > 0 {
 		return errors.New("some orders were not rejected")
 	}
+	return nil
+}
+
+func dumpTransfers() error {
+	for _, t := range execsetup.transfers.data {
+		for _, v := range t.GetTransfers() {
+			fmt.Printf("TRANSFER: %v\n", v)
+		}
+	}
+	execsetup.transfers.Flush()
 	return nil
 }
 

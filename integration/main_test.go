@@ -86,4 +86,5 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following orders are rejected:$`, theFollowingOrdersAreRejected)
 	s.Step(`^traders place following orders with references:$`, tradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancels the following orders reference:$`, tradersCancelsTheFollowingOrdersReference)
+	s.Step(`^dump transfers$`, dumpTransfers)
 }
