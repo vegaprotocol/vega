@@ -258,6 +258,7 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5}
 }
 
+// Order Time in Force
 type Order_TimeInForce int32
 
 const (
@@ -293,10 +294,13 @@ func (Order_TimeInForce) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{4, 0}
 }
 
+// Order Type
 type Order_Type int32
 
 const (
-	Order_LIMIT  Order_Type = 0
+	// used for Limit orders
+	Order_LIMIT Order_Type = 0
+	// used for Market orders
 	Order_MARKET Order_Type = 1
 	// used for orders where the initiating party is the network (used for distressed traders)
 	Order_NETWORK Order_Type = 2
@@ -1324,11 +1328,12 @@ type Statistics struct {
 	AppVersionHash           string      `protobuf:"bytes,28,opt,name=appVersionHash,proto3" json:"appVersionHash,omitempty"`
 	AppVersion               string      `protobuf:"bytes,29,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
 	ChainVersion             string      `protobuf:"bytes,30,opt,name=chainVersion,proto3" json:"chainVersion,omitempty"`
-	BlockDuration            uint64      `protobuf:"varint,31,opt,name=blockDuration,proto3" json:"blockDuration,omitempty"`
-	Uptime                   string      `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
-	XXX_NoUnkeyedLiteral     struct{}    `json:"-"`
-	XXX_unrecognized         []byte      `json:"-"`
-	XXX_sizecache            int32       `json:"-"`
+	// nanoseconds
+	BlockDuration        uint64   `protobuf:"varint,31,opt,name=blockDuration,proto3" json:"blockDuration,omitempty"`
+	Uptime               string   `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Statistics) Reset()         { *m = Statistics{} }
@@ -1881,22 +1886,18 @@ func (m *OrderAmendment) GetSide() Side {
 }
 
 type OrderSubmission struct {
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID  string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// do not enforce that price, as Market Order will not have price specified
-	Price uint64 `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
-	Size  uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
-	// make sur for both that they are non nil and the value is part of the respective enums.
-	Side        Side              `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=TimeInForce,proto3,enum=vega.Order_TimeInForce" json:"TimeInForce,omitempty"`
-	// do not enforce as not always required
-	// althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
-	ExpiresAt            int64      `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	Type                 Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MarketID             string            `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	PartyID              string            `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	Price                uint64            `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
+	Size                 uint64            `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	Side                 Side              `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
+	TimeInForce          Order_TimeInForce `protobuf:"varint,7,opt,name=TimeInForce,proto3,enum=vega.Order_TimeInForce" json:"TimeInForce,omitempty"`
+	ExpiresAt            int64             `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	Type                 Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *OrderSubmission) Reset()         { *m = OrderSubmission{} }

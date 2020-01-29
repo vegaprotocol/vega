@@ -4426,7 +4426,7 @@
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>do not enforce that price, as Market Order will not have price specified </p></td>
+                  <td><p>mandatory for Limit orders, not required for Market orders </p></td>
                 </tr>
 
                 <tr>
@@ -4440,7 +4440,7 @@
                   <td>side</td>
                   <td><a href="#vega.Side">Side</a></td>
                   <td></td>
-                  <td><p>make sur for both that they are non nil and the value is part of the respective enums. </p></td>
+                  <td><p> </p></td>
                 </tr>
 
                 <tr>
@@ -4454,8 +4454,7 @@
                   <td>expiresAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>do not enforce as not always required
-althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it </p></td>
+                  <td><p>mandatory for GTT orders, not required for GTC, IOC, FOK </p></td>
                 </tr>
 
                 <tr>
@@ -5713,7 +5712,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
         </table>
 
         <h3 id="vega.Order.TimeInForce">Order.TimeInForce</h3>
-        <p></p>
+        <p>Order Time in Force</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -5748,7 +5747,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
         </table>
 
         <h3 id="vega.Order.Type">Order.Type</h3>
-        <p></p>
+        <p>Order Type</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -5758,13 +5757,13 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>LIMIT</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>used for Limit orders</p></td>
               </tr>
 
               <tr>
                 <td>MARKET</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>used for Market orders</p></td>
               </tr>
 
               <tr>

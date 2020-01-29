@@ -36,6 +36,8 @@ message RiskResult {
 }
 
 message Order {
+
+  // Order Time in Force
   enum TimeInForce {
 
     // good til cancelled
@@ -51,8 +53,12 @@ message Order {
     FOK = 3;
   }
 
+  // Order Type
   enum Type {
+    // used for Limit orders
     LIMIT   = 0;
+
+    // used for Market orders
     MARKET  = 1;
 
     // used for orders where the initiating party is the network (used for distressed traders)
@@ -200,7 +206,10 @@ message Statistics {
   string appVersionHash = 28;
   string appVersion = 29;
   string chainVersion = 30;
-  uint64 blockDuration = 31; // nanoseconds
+
+  // nanoseconds
+  uint64 blockDuration = 31;
+
   string uptime = 32;
 }
 
@@ -248,15 +257,11 @@ message OrderSubmission {
   string id = 1 [(validator.field) = {string_not_empty: false}];
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
-  // do not enforce that price, as Market Order will not have price specified
-  uint64 price = 4;
+  uint64 price = 4; // mandatory for Limit orders, not required for Market orders
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
-  // make sur for both that they are non nil and the value is part of the respective enums.
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
-  // do not enforce as not always required
-  // althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
-  int64 expiresAt = 8;
+  int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
 }
 

@@ -950,7 +950,8 @@
         "FOK"
       ],
       "default": "GTC",
-      "title": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill"
+      "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "title": "Order Time in Force"
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -1864,24 +1865,21 @@
         },
         "price": {
           "type": "string",
-          "format": "uint64",
-          "title": "do not enforce that price, as Market Order will not have price specified"
+          "format": "uint64"
         },
         "size": {
           "type": "string",
           "format": "uint64"
         },
         "side": {
-          "$ref": "#/definitions/vegaSide",
-          "description": "make sur for both that they are non nil and the value is part of the respective enums."
+          "$ref": "#/definitions/vegaSide"
         },
         "TimeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
-          "format": "int64",
-          "title": "do not enforce as not always required\nalthouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+          "format": "int64"
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
@@ -1896,7 +1894,8 @@
         "NETWORK"
       ],
       "default": "LIMIT",
-      "title": "- NETWORK: used for orders where the initiating party is the network (used for distressed traders)"
+      "description": "- LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
+      "title": "Order Type"
     },
     "vegaParty": {
       "type": "object",
@@ -2163,7 +2162,8 @@
         },
         "blockDuration": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "nanoseconds"
         },
         "uptime": {
           "type": "string"

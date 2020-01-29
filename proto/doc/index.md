@@ -1723,11 +1723,11 @@
 | id | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  | do not enforce that price, as Market Order will not have price specified |
+| price | [uint64](#uint64) |  | mandatory for Limit orders, not required for Market orders |
 | size | [uint64](#uint64) |  |  |
-| side | [Side](#vega.Side) |  | make sur for both that they are non nil and the value is part of the respective enums. |
+| side | [Side](#vega.Side) |  |  |
 | TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | do not enforce as not always required althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
+| expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 
 
@@ -2133,7 +2133,7 @@
 <a name="vega.Order.TimeInForce"></a>
 
 ### Order.TimeInForce
-
+Order Time in Force
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -2147,12 +2147,12 @@
 <a name="vega.Order.Type"></a>
 
 ### Order.Type
-
+Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LIMIT | 0 |  |
-| MARKET | 1 |  |
+| LIMIT | 0 | used for Limit orders |
+| MARKET | 1 | used for Market orders |
 | NETWORK | 2 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
