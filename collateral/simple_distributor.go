@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -14,6 +15,7 @@ type request struct {
 }
 
 type simpleDistributor struct {
+	log             *logging.Logger
 	marketID        string
 	expectCollected int64
 	collected       int64
@@ -52,6 +54,10 @@ func (s *simpleDistributor) Run() []events.LossSocialization {
 			price:      v.price,
 		}
 		v.request.Amount.Amount = int64(math.Floor(v.amount))
+		s.log.Warn("loss socialization missing funds to be distributed",
+			logging.String("party-id", evt.party),
+			logging.Int64("amount", evt.amountLost),
+			logging.String("market-id", evt.market))
 		evts = append(evts, evt)
 	}
 

@@ -268,8 +268,8 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
-	assert.Equal(t, 0, int(pp[0].RealisedPNL))
-	assert.Equal(t, -900, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, -300, int(pp[0].RealisedPNL))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
 }
 
 func TestProcessBufferData(t *testing.T) {

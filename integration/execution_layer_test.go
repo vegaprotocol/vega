@@ -546,9 +546,9 @@ func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 			return fmt.Errorf("party do not have a position, party(%v)", party)
 		}
 
-		volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 2), i64val(row, 3)
+		volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 3), i64val(row, 2)
 		if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
-			return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), realisedPNL(%v), unrealisedPNL(%v)", party, pos[0].OpenVolume, pos[0].RealisedPNL, pos[0].UnrealisedPNL)
+			return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), unrealisedPNL(%v), realisedPNL(%v)", party, pos[0].OpenVolume, pos[0].UnrealisedPNL, pos[0].RealisedPNL)
 		}
 	}
 	return nil
