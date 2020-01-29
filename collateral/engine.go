@@ -218,6 +218,11 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 	for i, evt := range transfers {
 		transfer := evt.Transfer()
 
+		// get the state of the accoutns before processing transfers
+		// so they can be used in the marginEvt, and to calculate the missing funds
+		generalAcc, _ := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+		marginAcc, _ := e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+
 		marginEvt := &marginUpdate{
 			MarketPosition: evt,
 			asset:          asset,
@@ -225,8 +230,8 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		}
 		// no transfer needed if transfer is nil, just build the marginUpdate
 		if transfer == nil {
-			marginEvt.general, _ = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
-			marginEvt.margin, _ = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+			marginEvt.general = generalAcc
+			marginEvt.margin = marginAcc
 			marginEvts = append(marginEvts, marginEvt)
 			continue
 		}
@@ -258,8 +263,10 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			return nil, nil, err
 		}
 
+		var amountCollected int64
 		// // update the to accounts now
 		for _, bal := range res.Balances {
+			amountCollected += bal.Balance
 			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
@@ -268,6 +275,25 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 				)
 				return nil, nil, err
 			}
+		}
+
+		totalInAccount := marginAcc.Balance + generalAcc.Balance
+
+		// here we check if we were able to collect all monies,
+		// if not send an event to notify the plugins
+		if totalInAccount < int64(req.Amount) {
+			lsevt := &lossSocializationEvt{
+				market:     settle.MarketID,
+				party:      evt.Party(),
+				amountLost: int64(req.Amount) - totalInAccount,
+			}
+
+			e.log.Warn("loss socialization missing amount to be collected or used from insurance pool",
+				logging.String("party-id", lsevt.party),
+				logging.Int64("amount", lsevt.amountLost),
+				logging.String("market-id", lsevt.market))
+
+			e.lossSocBuf.Add([]events.LossSocialization{lsevt})
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -297,6 +323,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 	// now compare what's in the settlement account what we expect initialy to redistribute.
 	// if there's not enough we enter loss socialization
 	distr := simpleDistributor{
+		log:             e.log,
 		marketID:        settle.MarketID,
 		expectCollected: expectCollected,
 		collected:       settle.Balance,
@@ -317,7 +344,6 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		}
 		evts := distr.Run()
 		e.lossSocBuf.Add(evts)
-		e.lossSocBuf.Flush()
 	}
 
 	// then we process all the wins
@@ -373,6 +399,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
+	e.lossSocBuf.Flush()
 	return marginEvts, responses, nil
 }
 
