@@ -36,10 +36,6 @@ Feature: Test loss socialization case 1
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
       | trader2 | ETH/DEC19 | buy  |    100 |   100 |                1 | LIMIT | GTC |
-# trade happened, no we check the traders margins, and update the state of the book
-    Then I expect the trader to have a margin:
-     | trader  | asset | id        | margin | general |
-     | trader1 | BTC   | ETH/DEC19 |   2400 |    2600 |
 # then we change the volume in the book
     Then traders cancels the following orders reference:
       | trader           | reference       |
@@ -49,16 +45,10 @@ Feature: Test loss socialization case 1
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
       | sellSideProvider | ETH/DEC19 | sell |   1000 |   200 |                0 | LIMIT | GTC | sell-provider-2 |
       | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | LIMIT | GTC | buy-provider-2  |
-    Then I expect the trader to have a margin:
-     | trader  | asset | id        | margin | general |
-     | trader1 | BTC   | ETH/DEC19 |   2400 |    2600 |
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
       | trader2 | ETH/DEC19 | buy  |    100 |   180 |                0 | LIMIT | GTC |
       | trader3 | ETH/DEC19 | sell |    100 |   180 |                1 | LIMIT | GTC |
-    Then I expect the trader to have a margin:
-     | trader  | asset | id        | margin | general |
-     | trader1 | BTC   | ETH/DEC19 |      0 |       0 |
     Then position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 |      0 |             0 |       -5000 |
