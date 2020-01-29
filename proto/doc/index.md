@@ -535,7 +535,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| markets | [vega.Market](#vega.Market) | repeated |  |
+| markets | [vega.Market](#vega.Market) | repeated | a list of Markets |
 
 
 
@@ -877,8 +877,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| password | [string](#string) |  |  |
+| id | [string](#string) |  | a party ID |
+| password | [string](#string) |  | a password |
 
 
 
@@ -893,7 +893,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| token | [string](#string) |  |  |
+| token | [string](#string) |  | a token corresponding to the party given in the request, and valid for subsequent requests for that party |
 
 
 
@@ -908,8 +908,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  |  |
-| token | [string](#string) |  |  |
+| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
+| token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
 
 
 
@@ -1134,7 +1134,7 @@
 | MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by ID |
 | MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
 | MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Party Margin Levels |
-| OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | streams |
+| OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream |  |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream |  |
 | CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream |  |
 | MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream |  |
@@ -1348,10 +1348,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| name | [string](#string) |  |  |
+| id | [string](#string) |  | 32 pseudo-random upper-case letters and digits |
+| name | [string](#string) |  | a human-understandable name for the Market, perhaps including a currency pair and a maturity date |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
-| decimalPlaces | [uint64](#uint64) |  |  |
+| decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -2137,10 +2137,10 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| GTC | 0 |  |
-| GTT | 1 |  |
-| IOC | 2 |  |
-| FOK | 3 |  |
+| GTC | 0 | good til cancelled |
+| GTT | 1 | good til time |
+| IOC | 2 | immediate or cancel |
+| FOK | 3 | fill or kill |
 
 
 
@@ -2151,9 +2151,9 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LIMIT | 0 | Limit order |
-| MARKET | 1 | Market order type |
-| NETWORK | 2 | order where the initiating party is the network (used for distressed traders) |
+| LIMIT | 0 |  |
+| MARKET | 1 |  |
+| NETWORK | 2 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 

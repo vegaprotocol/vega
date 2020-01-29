@@ -37,16 +37,26 @@ message RiskResult {
 
 message Order {
   enum TimeInForce {
+
+    // good til cancelled
     GTC = 0;
+
+    // good til time
     GTT = 1;
+
+    // immediate or cancel
     IOC = 2;
+
+    // fill or kill
     FOK = 3;
   }
 
   enum Type {
-    LIMIT   = 0; // Limit order
-    MARKET  = 1; // Market order type
-    NETWORK = 2; // order where the initiating party is the network (used for distressed traders)
+    LIMIT   = 0;
+    MARKET  = 1;
+
+    // used for orders where the initiating party is the network (used for distressed traders)
+    NETWORK = 2;
   }
 
   enum Status {

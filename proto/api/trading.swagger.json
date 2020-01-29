@@ -949,7 +949,8 @@
         "IOC",
         "FOK"
       ],
-      "default": "GTC"
+      "default": "GTC",
+      "title": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill"
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -1069,7 +1070,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaMarket"
-          }
+          },
+          "title": "a list of Markets"
         }
       }
     },
@@ -1201,10 +1203,12 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "a party ID"
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "title": "a password"
         }
       }
     },
@@ -1212,7 +1216,8 @@
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "title": "a token corresponding to the party given in the request, and valid for subsequent requests for that party"
         }
       }
     },
@@ -1220,10 +1225,12 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaOrderSubmission"
+          "$ref": "#/definitions/vegaOrderSubmission",
+          "description": "the bulk of the Order, including market, party, price, size, side, time in force, etc."
         },
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
         }
       }
     },
@@ -1634,17 +1641,20 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "32 pseudo-random upper-case letters and digits"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "a human-understandable name for the Market, perhaps including a currency pair and a maturity date"
         },
         "tradableInstrument": {
           "$ref": "#/definitions/vegaTradableInstrument"
         },
         "decimalPlaces": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -1885,7 +1895,8 @@
         "MARKET",
         "NETWORK"
       ],
-      "default": "LIMIT"
+      "default": "LIMIT",
+      "title": "- NETWORK: used for orders where the initiating party is the network (used for distressed traders)"
     },
     "vegaParty": {
       "type": "object",

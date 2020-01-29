@@ -1499,7 +1499,7 @@
                   <td>markets</td>
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>a list of Markets </p></td>
                 </tr>
 
             </tbody>
@@ -2230,14 +2230,14 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a party ID </p></td>
                 </tr>
 
                 <tr>
                   <td>password</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a password </p></td>
                 </tr>
 
             </tbody>
@@ -2261,7 +2261,7 @@
                   <td>token</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a token corresponding to the party given in the request, and valid for subsequent requests for that party </p></td>
                 </tr>
 
             </tbody>
@@ -2285,14 +2285,14 @@
                   <td>submission</td>
                   <td><a href="#vega.OrderSubmission">vega.OrderSubmission</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the bulk of the Order, including market, party, price, size, side, time in force, etc. </p></td>
                 </tr>
 
                 <tr>
                   <td>token</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -2840,7 +2840,7 @@
                 <td>OrdersSubscribe</td>
                 <td><a href="#api.OrdersSubscribeRequest">OrdersSubscribeRequest</a></td>
                 <td><a href="#api.OrdersStream">OrdersStream</a> stream</td>
-                <td><p>streams</p></td>
+                <td><p></p></td>
               </tr>
 
               <tr>
@@ -3329,14 +3329,14 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>32 pseudo-random upper-case letters and digits </p></td>
                 </tr>
 
                 <tr>
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a human-understandable name for the Market, perhaps including a currency pair and a maturity date </p></td>
                 </tr>
 
                 <tr>
@@ -3350,7 +3350,7 @@
                   <td>decimalPlaces</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
                 </tr>
 
                 <tr>
@@ -5723,25 +5723,25 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>GTC</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
                 <td>GTT</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>good til time</p></td>
               </tr>
 
               <tr>
                 <td>IOC</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
                 <td>FOK</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>fill or kill</p></td>
               </tr>
 
           </tbody>
@@ -5758,19 +5758,19 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>LIMIT</td>
                 <td>0</td>
-                <td><p>Limit order</p></td>
+                <td><p></p></td>
               </tr>
 
               <tr>
                 <td>MARKET</td>
                 <td>1</td>
-                <td><p>Market order type</p></td>
+                <td><p></p></td>
               </tr>
 
               <tr>
                 <td>NETWORK</td>
                 <td>2</td>
-                <td><p>order where the initiating party is the network (used for distressed traders)</p></td>
+                <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
               </tr>
 
           </tbody>

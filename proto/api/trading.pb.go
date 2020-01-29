@@ -182,7 +182,9 @@ func (m *NotifyTraderAccountResponse) GetSubmitted() bool {
 }
 
 type SignInRequest struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// a party ID
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// a password
 	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -229,6 +231,7 @@ func (m *SignInRequest) GetPassword() string {
 }
 
 type SignInResponse struct {
+	// a token corresponding to the party given in the request, and valid for subsequent requests for that party
 	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -268,11 +271,13 @@ func (m *SignInResponse) GetToken() string {
 }
 
 type SubmitOrderRequest struct {
-	Submission           *proto1.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
-	Token                string                  `protobuf:"bytes,101,opt,name=token,proto3" json:"token,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
+	// the bulk of the Order, including market, party, price, size, side, time in force, etc.
+	Submission *proto1.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
+	// a token acquired from a SignIn request and corresponding to the party specified in the `submission`.
+	Token                string   `protobuf:"bytes,101,opt,name=token,proto3" json:"token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *SubmitOrderRequest) Reset()         { *m = SubmitOrderRequest{} }
@@ -1777,6 +1782,7 @@ func (m *OrderByReferenceResponse) GetOrder() *proto1.Order {
 }
 
 type MarketsResponse struct {
+	// a list of Markets
 	Markets              []*proto1.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -3161,7 +3167,6 @@ type TradingDataClient interface {
 	MarketsData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsDataResponse, error)
 	// Get Party Margin Levels
 	MarginLevels(ctx context.Context, in *MarginLevelsRequest, opts ...grpc.CallOption) (*MarginLevelsResponse, error)
-	// streams
 	OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error)
 	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error)
 	CandlesSubscribe(ctx context.Context, in *CandlesSubscribeRequest, opts ...grpc.CallOption) (TradingData_CandlesSubscribeClient, error)
@@ -3713,7 +3718,6 @@ type TradingDataServer interface {
 	MarketsData(context.Context, *empty.Empty) (*MarketsDataResponse, error)
 	// Get Party Margin Levels
 	MarginLevels(context.Context, *MarginLevelsRequest) (*MarginLevelsResponse, error)
-	// streams
 	OrdersSubscribe(*OrdersSubscribeRequest, TradingData_OrdersSubscribeServer) error
 	TradesSubscribe(*TradesSubscribeRequest, TradingData_TradesSubscribeServer) error
 	CandlesSubscribe(*CandlesSubscribeRequest, TradingData_CandlesSubscribeServer) error

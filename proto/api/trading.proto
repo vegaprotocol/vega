@@ -11,6 +11,7 @@ import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service trading {
+
   // Submit an Order
   rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
 
@@ -50,16 +51,26 @@ message NotifyTraderAccountResponse {
 }
 
 message SignInRequest {
+
+  // a party ID
   string id = 1;
+
+  // a password
   string password = 2;
 }
 
 message SignInResponse {
+
+  // a token corresponding to the party given in the request, and valid for subsequent requests for that party
   string token = 1;
 }
 
 message SubmitOrderRequest {
+
+  // the bulk of the Order, including market, party, price, size, side, time in force, etc.
   vega.OrderSubmission submission = 1;
+
+  // a token acquired from a SignIn request and corresponding to the party specified in the `submission`.
   string token = 101;
 }
 
@@ -74,6 +85,7 @@ message AmendOrderRequest {
 }
 
 service trading_data {
+
   // Get Market Orders
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
 
@@ -134,7 +146,6 @@ service trading_data {
   // Get Party Margin Levels
   rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
 
-  // streams
   rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
@@ -296,6 +307,8 @@ message OrderByReferenceResponse {
 }
 
 message MarketsResponse {
+
+  // a list of Markets
   repeated vega.Market markets = 1;
 }
 

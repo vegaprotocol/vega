@@ -261,9 +261,13 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 type Order_TimeInForce int32
 
 const (
+	// good til cancelled
 	Order_GTC Order_TimeInForce = 0
+	// good til time
 	Order_GTT Order_TimeInForce = 1
+	// immediate or cancel
 	Order_IOC Order_TimeInForce = 2
+	// fill or kill
 	Order_FOK Order_TimeInForce = 3
 )
 
@@ -292,8 +296,9 @@ func (Order_TimeInForce) EnumDescriptor() ([]byte, []int) {
 type Order_Type int32
 
 const (
-	Order_LIMIT   Order_Type = 0
-	Order_MARKET  Order_Type = 1
+	Order_LIMIT  Order_Type = 0
+	Order_MARKET Order_Type = 1
+	// used for orders where the initiating party is the network (used for distressed traders)
 	Order_NETWORK Order_Type = 2
 )
 
