@@ -49,6 +49,8 @@ type GRPCServer struct {
 
 	statusChecker *monitoring.Status
 
+	errorMap map[error]int32
+
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -75,6 +77,8 @@ func NewGRPCServer(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
+
+	initErrorMap()
 
 	return &GRPCServer{
 		log:                     log,
@@ -183,7 +187,6 @@ func (g *GRPCServer) Start() {
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
-		errorMap:          newErrorMap(),
 	}
 	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
@@ -204,7 +207,6 @@ func (g *GRPCServer) Start() {
 		RiskService:             g.riskService,
 		statusChecker:           g.statusChecker,
 		ctx:                     g.ctx,
-		errorMap:                newErrorMap(),
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)

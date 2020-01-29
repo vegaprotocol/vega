@@ -18,10 +18,6 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const (
-	errStr = "API call failed"
-)
-
 // Errors
 var (
 	// ErrChainNotConnected signals to the user that he cannot access a given endpoint
@@ -170,17 +166,6 @@ type tradingDataService struct {
 	TransferResponseService TransferResponseService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
-	errorMap                map[error]int32
-}
-
-func (h *tradingDataService) apiError(code codes.Code, message string, err error) error {
-	return errorWithDetails(
-		code,
-		message,
-		&types.ErrorDetail{
-			Code:    lookupError(h.errorMap, err),
-			Message: err.Error(),
-		})
 }
 
 // OrdersByMarket provides a list of orders for a given market.
@@ -190,7 +175,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 
 	if request.MarketID == "" {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 
 	p := defaultPagination
@@ -200,7 +185,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 
 	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, &request.Open)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrOrderService, err)
 	}
 
 	var response = &protoapi.OrdersByMarketResponse{}
@@ -218,7 +203,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 
 	if request.PartyID == "" {
-		return nil, ErrEmptyMissingPartyID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
 	}
 
 	p := defaultPagination
@@ -228,7 +213,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 
 	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, &request.Open)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrOrderService, err)
 	}
 
 	var response = &protoapi.OrdersByPartyResponse{}
@@ -243,7 +228,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 func (h *tradingDataService) Markets(ctx context.Context, request *empty.Empty) (*protoapi.MarketsResponse, error) {
 	markets, err := h.MarketService.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMarketService, err)
 	}
 
 	return &protoapi.MarketsResponse{
@@ -256,14 +241,14 @@ func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 	if request.OrderID == "" {
-		return nil, ErrEmptyMissingOrderID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingOrderID)
 	}
 	order, err := h.OrderService.GetByMarketAndID(ctx, request.MarketID, request.OrderID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrOrderService, err)
 	}
 
 	return &protoapi.OrderByMarketAndIdResponse{
@@ -274,11 +259,11 @@ func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 // OrderByReference provides the (possibly not yet accepted/rejected) order.
 func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
 	if req.Reference == "" {
-		return nil, ErrEmptyMissingOrderReference
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingOrderReference)
 	}
 	order, err := h.OrderService.GetByReference(ctx, req.Reference)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrOrderService, err)
 	}
 	return &protoapi.OrderByReferenceResponse{
 		Order: order,
@@ -293,16 +278,16 @@ func (h *tradingDataService) Candles(ctx context.Context,
 
 	marketID := request.MarketID
 	if marketID == "" {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 
 	if request.SinceTimestamp == 0 {
-		return nil, ErrEmptyMissingSinceTimestamp
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingSinceTimestamp)
 	}
 
 	c, err := h.CandleService.GetCandles(ctx, marketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrCandleService, err)
 	}
 
 	return &protoapi.CandlesResponse{
@@ -314,17 +299,17 @@ func (h *tradingDataService) Candles(ctx context.Context,
 // for the given market.
 func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
 	if req.MarketID == "" {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 
 	// Query market depth statistics
 	depth, err := h.MarketService.GetDepth(ctx, req.MarketID, req.MaxDepth)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMarketService, err)
 	}
 	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTradeService, err)
 	}
 
 	// Build market depth response, including last trade (if available)
@@ -343,7 +328,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 // Pagination: Optional. If not provided, defaults are used.
 func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
 	if request.MarketID == "" {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 
 	p := defaultPagination
@@ -353,7 +338,7 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 
 	t, err := h.TradeService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTradeService, err)
 	}
 	return &protoapi.TradesByMarketResponse{
 		Trades: t,
@@ -363,7 +348,7 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 // PositionsByParty provides a list of positions for a given party.
 func (h *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
 	if request.PartyID == "" {
-		return nil, ErrEmptyMissingPartyID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
 	}
 
 	// Check here for a valid marketID so we don't fail later
@@ -376,7 +361,7 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 
 	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTradeService, err)
 	}
 	var response = &protoapi.PositionsByPartyResponse{}
 	response.Positions = positions
@@ -386,11 +371,11 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 // MarginLevels returns the current margin levels for a given party and market.
 func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
 	if len(req.PartyID) <= 0 {
-		return nil, ErrEmptyMissingPartyID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
 	}
 	mls, err := h.RiskService.GetMarginLevelsByID(req.PartyID, req.MarketID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrRiskService, err)
 	}
 	levels := make([]*types.MarginLevels, 0, len(mls))
 	for _, v := range mls {
@@ -406,11 +391,11 @@ func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 // MarketDataByID provides market data for the given ID.
 func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
 	if len(req.MarketID) <= 0 {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 	md, err := h.MarketService.GetMarketDataByID(req.MarketID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMarketService, err)
 	}
 	return &protoapi.MarketDataByIDResponse{
 		MarketData: &md,
@@ -438,16 +423,13 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
 	if err != nil {
-		return nil, h.apiError(codes.Internal, errStr, err)
-	}
-	if h.Stats == nil || h.Stats.Blockchain == nil {
-		return nil, h.apiError(codes.Unavailable, errStr, ErrChainNotConnected)
+		return nil, apiError(codes.Internal, ErrTimeService, err)
 	}
 
 	// Call tendermint via rpc client
 	backlogLength, numPeers, gt, err := h.getTendermintStats(ctx)
 	if err != nil {
-		return nil, h.apiError(codes.Unavailable, errStr, err)
+		return nil, err // getTendermintStats already returns an API error
 	}
 
 	// If the chain is replaying then genesis time can be nil
@@ -459,13 +441,13 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 	// Load current markets details
 	m, err := h.MarketService.GetAll(ctx)
 	if err != nil {
-		return nil, h.apiError(codes.Unavailable, errStr, err)
+		return nil, apiError(codes.Unavailable, ErrMarketService, err)
 	}
 
 	// Load current parties details
 	p, err := h.PartyService.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Unavailable, ErrPartyService, err)
 	}
 
 	// Extract names for ease of reading in stats
@@ -518,7 +500,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 func (h *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.VegaTimeResponse, error) {
 	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTimeService, err)
 	}
 	return &protoapi.VegaTimeResponse{
 		Timestamp: ts.UnixNano(),
@@ -986,7 +968,7 @@ func (h *tradingDataService) MarketDepthSubscribe(
 
 	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
-		return err
+		return err // validateMarket already returns an API error
 	}
 
 	depthChan, ref := h.MarketService.ObserveDepth(
@@ -1099,7 +1081,7 @@ func (h *tradingDataService) PositionsSubscribe(
 func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
 	mkt, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
-		return nil, err
+		return nil, err // validateMarket already returns an API error
 	}
 
 	return &protoapi.MarketByIDResponse{
@@ -1111,7 +1093,7 @@ func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.Marke
 func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*protoapi.PartiesResponse, error) {
 	parties, err := h.PartyService.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrPartyService, err)
 	}
 	return &protoapi.PartiesResponse{
 		Parties: parties,
@@ -1122,7 +1104,7 @@ func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*pr
 func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
 	pty, err := validateParty(ctx, req.PartyID, h.PartyService)
 	if err != nil {
-		return nil, err
+		return nil, err // validateParty already returns an API error
 	}
 	return &protoapi.PartyByIDResponse{
 		Party: pty,
@@ -1142,7 +1124,7 @@ func (h *tradingDataService) TradesByParty(
 
 	trades, err := h.TradeService.GetByParty(ctx, req.PartyID, p.Skip, p.Limit, p.Descending, &req.MarketID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTradeService, err)
 	}
 
 	return &protoapi.TradesByPartyResponse{
@@ -1156,7 +1138,7 @@ func (h *tradingDataService) TradesByOrder(
 ) (*protoapi.TradesByOrderResponse, error) {
 	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTradeService, err)
 	}
 	return &protoapi.TradesByOrderResponse{
 		Trades: trades,
@@ -1168,11 +1150,11 @@ func (h *tradingDataService) LastTrade(
 	ctx context.Context, req *protoapi.LastTradeRequest,
 ) (*protoapi.LastTradeResponse, error) {
 	if len(req.MarketID) <= 0 {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrTradeService, err)
 	}
 	if len(t) > 0 && t[0] != nil {
 		return &protoapi.LastTradeResponse{Trade: t[0]}, nil
@@ -1185,7 +1167,7 @@ func (h *tradingDataService) LastTrade(
 func (h *tradingDataService) MarketAccounts(_ context.Context, req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
 	accs, err := h.AccountsService.GetMarketAccounts(req.MarketID, req.Asset)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrAccountService, err)
 	}
 	return &protoapi.MarketAccountsResponse{
 		Accounts: accs,
@@ -1195,7 +1177,7 @@ func (h *tradingDataService) MarketAccounts(_ context.Context, req *protoapi.Mar
 func (h *tradingDataService) PartyAccounts(_ context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
 	accs, err := h.AccountsService.GetPartyAccounts(req.PartyID, req.MarketID, req.Asset, req.Type)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrAccountService, err)
 	}
 	return &protoapi.PartyAccountsResponse{
 		Accounts: accs,
@@ -1206,11 +1188,11 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	var mkt *types.Market
 	var err error
 	if len(marketID) == 0 {
-		return nil, ErrEmptyMissingMarketID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
 	mkt, err = marketService.GetByID(ctx, marketID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMarketService, err)
 	}
 	return mkt, nil
 }
@@ -1219,17 +1201,24 @@ func validateParty(ctx context.Context, partyID string, partyService PartyServic
 	var pty *types.Party
 	var err error
 	if len(partyID) == 0 {
-		return nil, ErrEmptyMissingPartyID
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
 	}
 	pty, err = partyService.GetByID(ctx, partyID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrPartyService, err)
 	}
 	return pty, err
 }
 
-func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLength int,
-	numPeers int, genesis *time.Time, err error) {
+func (h *tradingDataService) getTendermintStats(
+	ctx context.Context,
+) (
+	backlogLength int, numPeers int, genesis *time.Time, err error,
+) {
+
+	if h.Stats == nil || h.Stats.Blockchain == nil {
+		return 0, 0, nil, apiError(codes.Internal, ErrChainNotConnected)
+	}
 
 	refused := "connection refused"
 
@@ -1239,7 +1228,7 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 		if strings.Contains(err.Error(), refused) {
 			return 0, 0, nil, nil
 		}
-		return 0, 0, nil, err
+		return 0, 0, nil, apiError(codes.Internal, ErrBlockchain, err)
 	}
 
 	// Net info provides peer stats etc (block chain network info) == number of peers
@@ -1248,7 +1237,7 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 		if strings.Contains(err.Error(), refused) {
 			return backlogLength, 0, nil, nil
 		}
-		return backlogLength, 0, nil, err
+		return backlogLength, 0, nil, apiError(codes.Internal, ErrBlockchain, err)
 	}
 
 	// Genesis retrieves the current genesis date/time for the blockchain
@@ -1257,7 +1246,7 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 		if strings.Contains(err.Error(), refused) {
 			return backlogLength, 0, nil, nil
 		}
-		return backlogLength, 0, nil, err
+		return backlogLength, 0, nil, apiError(codes.Internal, ErrBlockchain, err)
 	}
 
 	return backlogLength, netInfo.NPeers, &genesisTime, nil
