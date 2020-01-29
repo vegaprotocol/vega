@@ -286,7 +286,6 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 				market:     settle.MarketID,
 				party:      evt.Party(),
 				amountLost: int64(req.Amount) - totalInAccount,
-				price:      evt.Price(),
 			}
 
 			e.log.Warn("loss socialization missing amount to be collected or used from insurance pool",
@@ -295,7 +294,6 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 				logging.String("market-id", lsevt.market))
 
 			e.lossSocBuf.Add([]events.LossSocialization{lsevt})
-			e.lossSocBuf.Flush()
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -341,12 +339,11 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		for _, evt := range transfers[winidx:] {
 			transfer := evt.Transfer()
 			if transfer != nil && transfer.Type == types.TransferType_MTM_WIN {
-				distr.Add(evt.Transfer(), evt.Price())
+				distr.Add(evt.Transfer())
 			}
 		}
 		evts := distr.Run()
 		e.lossSocBuf.Add(evts)
-		e.lossSocBuf.Flush()
 	}
 
 	// then we process all the wins
@@ -402,6 +399,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
+	e.lossSocBuf.Flush()
 	return marginEvts, responses, nil
 }
 
