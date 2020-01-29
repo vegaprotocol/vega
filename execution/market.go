@@ -519,6 +519,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
+
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug(

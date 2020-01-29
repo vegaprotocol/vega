@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -13,6 +14,7 @@ type request struct {
 }
 
 type simpleDistributor struct {
+	log             *logging.Logger
 	marketID        string
 	expectCollected int64
 	collected       int64
@@ -43,11 +45,16 @@ func (s *simpleDistributor) Run() []events.LossSocialization {
 	for _, v := range s.requests {
 		totalamount += int64(math.Floor(v.amount))
 		evt = &lossSocializationEvt{
-			market:     s.marketID,
-			party:      v.request.Owner,
-			amountLost: v.request.Amount.Amount - int64(math.Floor(v.amount)),
+			market: s.marketID,
+			party:  v.request.Owner,
+			// negative amount as this what they missing
+			amountLost: int64(math.Floor(v.amount)) - v.request.Amount.Amount,
 		}
 		v.request.Amount.Amount = int64(math.Floor(v.amount))
+		s.log.Warn("loss socialization missing funds to be distributed",
+			logging.String("party-id", evt.party),
+			logging.Int64("amount", evt.amountLost),
+			logging.String("market-id", evt.market))
 		evts = append(evts, evt)
 	}
 
