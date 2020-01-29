@@ -69,11 +69,9 @@ func (p *Positions) Stop() {
 		// only unsubscribe if ch was set, otherwise we might end up unregistering ref 0, which
 		// could (in theory at least) be used by another component
 		p.buf.Unsubscribe(p.ref)
-		p.ch = nil
 		p.ref = 0
 
 		p.lsbuf.Unsubscribe(p.lsref)
-		p.lsch = nil
 		p.lsref = 0
 	}
 	// we don't need to reassign ch here, because the channel is closed, the consume routine
@@ -85,14 +83,9 @@ func (p *Positions) Stop() {
 // consume keep reading the channel for as long as we need to
 func (p *Positions) consume(ctx context.Context) {
 	defer func() {
-		p.mu.Lock()
-		p.buf.Unsubscribe(p.ref)
-		p.ref = 0
+		p.Stop()
 		p.ch = nil
-		p.lsbuf.Unsubscribe(p.lsref)
-		p.lsref = 0
 		p.lsch = nil
-		p.mu.Unlock()
 	}()
 	for {
 		select {
