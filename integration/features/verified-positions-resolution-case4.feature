@@ -53,8 +53,8 @@ Feature: Position resolution case 4
 
 # check positions
     Then position API produce the following:
-      | trader           | volume | unrealisedPNL | realisedPNL |
-      | designatedLooser |      0 |             0 |  -870000000 |
+     | trader           | volume | unrealisedPNL | realisedPNL |
+     | designatedLooser |      0 |             0 |  -1160000000 |
 
 # checking margins
     Then I expect the trader to have a margin:

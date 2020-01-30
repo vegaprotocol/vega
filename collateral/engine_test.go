@@ -55,6 +55,11 @@ func TestRemoveDistressed(t *testing.T) {
 	t.Run("Successfully remove distressed trader, no balance transfer", testRemoveDistressedNoBalance)
 }
 
+func TestMarginUpdateOnOrder(t *testing.T) {
+	t.Run("Successfully update margin on new order if general account balance is OK", testMarginUpdateOnOrderOK)
+	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
+}
+
 func testNew(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	eng.Finish()
@@ -794,6 +799,77 @@ func TestMTMLossSocialization(t *testing.T) {
 	assert.NotEmpty(t, evts)
 }
 
+func testMarginUpdateOnOrderOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	evt := riskFake{
+		asset:  testMarketAsset,
+		amount: 100,
+		transfer: &types.Transfer{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				MinAmount: 100,
+				Amount:    100,
+				Asset:     testMarketAsset,
+			},
+			Type: types.TransferType_MARGIN_LOW,
+		},
+	}
+
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
+		if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
+			assert.Equal(t, acc.Balance, int64(100))
+		}
+	})
+	resp, closed, err := eng.Engine.MarginUpdateOnOrder(testMarketID, evt)
+	assert.Nil(t, err)
+	assert.Nil(t, closed)
+	assert.NotNil(t, resp)
+}
+
+func testMarginUpdateOnOrderFail(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	_ = eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	evt := riskFake{
+		asset:  testMarketAsset,
+		amount: 100000,
+		transfer: &types.Transfer{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				MinAmount: 100000,
+				Amount:    100000,
+				Asset:     testMarketAsset,
+			},
+			Type: types.TransferType_MARGIN_LOW,
+		},
+	}
+
+	resp, closed, err := eng.Engine.MarginUpdateOnOrder(testMarketID, evt)
+	assert.NotNil(t, err)
+	assert.Error(t, err, collateral.ErrMinAmountNotReached.Error())
+	assert.NotNil(t, closed)
+	assert.Nil(t, resp)
+}
+
 func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	tt := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
@@ -875,3 +951,27 @@ func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	}
 	return r
 }
+
+type riskFake struct {
+	party           string
+	size, buy, sell int64
+	price           uint64
+	margins         *types.MarginLevels
+	amount          int64
+	transfer        *types.Transfer
+	asset           string
+}
+
+func (m riskFake) Party() string                     { return m.party }
+func (m riskFake) Size() int64                       { return m.size }
+func (m riskFake) Buy() int64                        { return m.buy }
+func (m riskFake) Sell() int64                       { return m.sell }
+func (m riskFake) Price() uint64                     { return m.price }
+func (m riskFake) ClearPotentials()                  {}
+func (m riskFake) Transfer() *types.Transfer         { return m.transfer }
+func (m riskFake) Amount() int64                     { return m.amount }
+func (m riskFake) MarginLevels() *types.MarginLevels { return m.margins }
+func (m riskFake) Asset() string                     { return m.asset }
+func (m riskFake) MarketID() string                  { return "" }
+func (m riskFake) MarginBalance() uint64             { return 0 }
+func (m riskFake) GeneralBalance() uint64            { return 0 }
