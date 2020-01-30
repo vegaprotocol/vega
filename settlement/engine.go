@@ -173,9 +173,10 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		traded, hasTraded := trades[party]
 		// create (and add position to buffer)
 		sp := &settlePos{
-			MarketPosition: evt,
-			marketID:       e.market,
-			trades:         traded,
+			party:    evt.Party(),
+			price:    evt.Price(),
+			marketID: e.market,
+			trades:   traded,
 		}
 		bufEvents = append(bufEvents, sp)
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
@@ -249,9 +250,11 @@ func (e *Engine) RemoveDistressed(evts []events.Margin) {
 	for _, v := range evts {
 		key := v.Party()
 		sp := &settlePos{
-			MarketPosition: v,
-			marketID:       e.market,
-			margin:         v,
+			party:     v.Party(),
+			price:     v.Price(),
+			marketID:  e.market,
+			margin:    v.MarginBalance(),
+			hasMargin: true,
 		}
 		bEvts = append(bEvts, sp)
 		delete(e.pos, key)
