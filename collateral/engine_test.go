@@ -799,7 +799,8 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 	for _, t := range transfers {
 
 		mt := mtmFake{
-			t: t,
+			t:     t,
+			party: t.Owner,
 		}
 		tt = append(tt, mt)
 	}
@@ -852,10 +853,11 @@ func (m marketPositionFake) Price() uint64    { return m.price }
 func (m marketPositionFake) ClearPotentials() {}
 
 type mtmFake struct {
-	t *types.Transfer
+	t     *types.Transfer
+	party string
 }
 
-func (m mtmFake) Party() string             { return "" }
+func (m mtmFake) Party() string             { return m.party }
 func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() uint64             { return 0 }
 func (m mtmFake) Buy() int64                { return 0 }
@@ -867,7 +869,8 @@ func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	r := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
 		r = append(r, &mtmFake{
-			t: t,
+			t:     t,
+			party: t.Owner,
 		})
 	}
 	return r
