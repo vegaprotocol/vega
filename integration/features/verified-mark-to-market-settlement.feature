@@ -5,7 +5,7 @@ Feature: MTM settlement tests
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/short | tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | ETH      | BTC       | BTC   |       100 | simple     |          0 |        0 |  0 | 0.016 |   2.0 |            1.4 |            1.2 |           1.1 |              42 |
 
-  Scenario: case 4 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+  Scenario: case 1 - LONG - MORE LONG - one trade
 # setup accounts
     Given the following traders:
       | name             |    amount |
