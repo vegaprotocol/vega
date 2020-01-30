@@ -451,11 +451,6 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 
 		req, err := e.getTransferRequest(transfer, settle, nil, mevt)
 		if err != nil {
-			if err == ErrMinAmountNotReached {
-				closed = append(closed, mevt)
-				continue
-			}
-			// log this
 			return nil, nil, err
 		}
 		res, err := e.getLedgerEntries(req)
@@ -476,23 +471,71 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 			closed = append(closed, mevt)
 		} else {
 			response = append(response, res)
-			for _, v := range res.GetTransfers() {
-				// increment the to account
-				if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
-					e.log.Error(
-						"Failed to increment balance for account",
-						logging.String("account-id", v.ToAccount),
-						logging.Int64("amount", v.Amount),
-						logging.Error(err),
-					)
-					continue
-				}
+		}
+		for _, v := range res.GetTransfers() {
+			// increment the to account
+			if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+				e.log.Error(
+					"Failed to increment balance for account",
+					logging.String("account-id", v.ToAccount),
+					logging.Int64("amount", v.Amount),
+					logging.Error(err),
+				)
+				continue
 			}
-
 		}
 	}
 
 	return response, closed, nil
+}
+
+// MarginUpdate will run the margin updates over a set of risk events (margin updates)
+func (e *Engine) MarginUpdateOnOrder(
+	marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
+	// create "fake" settle account for market ID
+	settle := &types.Account{
+		MarketID: marketID,
+	}
+	transfer := update.Transfer()
+	// although this is mainly a duplicate event, we need to pass it to getTransferRequest
+	mevt := &marginUpdate{
+		MarketPosition: update,
+		asset:          update.Asset(),
+		marketID:       update.MarketID(),
+	}
+
+	req, err := e.getTransferRequest(transfer, settle, nil, mevt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// we do not have enough money to get to the minimum amount,
+	// we return an error.
+	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.GetAmount().MinAmount) {
+		return nil, mevt, ErrMinAmountNotReached
+	}
+
+	// from here we know there's enough money,
+	// let get the ledger entries, return the transfers
+
+	res, err := e.getLedgerEntries(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, v := range res.GetTransfers() {
+		// increment the to account
+		if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Int64("amount", v.Amount),
+				logging.Error(err),
+			)
+			continue
+		}
+	}
+
+	return res, nil, nil
 }
 
 func isLoss(t *types.Transfer) bool {
@@ -569,10 +612,6 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		p.Size = 1
 	}
 	if p.Type == types.TransferType_MARGIN_LOW {
-		if mEvt.general.Balance < p.Amount.MinAmount {
-			return nil, ErrMinAmountNotReached
-		}
-
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
 				mEvt.general,
@@ -845,46 +884,30 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 		if err != nil {
 			return nil, err
 		}
-		if le, err := e.confiscateFunds(acc, ins, asset); le != nil && err == nil {
-			resp.Transfers = append(resp.Transfers, le)
+		if acc.Balance > 0 {
+			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+				FromAccount: acc.Id,
+				ToAccount:   ins.Id,
+				Amount:      acc.Balance,
+				Reference:   types.TransferType_MARGIN_CONFISCATED.String(),
+				Type:        "position-resolution",
+				Timestamp:   e.currentTime,
+			})
+			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
+				return nil, err
+			}
+			if err := e.UpdateBalance(acc.Id, 0); err != nil {
+				return nil, err
+			}
 		}
+
 		// we remove the margin account
 		if err := e.removeAccount(acc.Id); err != nil {
 			return nil, err
 		}
 
-		// then from the general account first
-		acc, err = e.GetAccountByID(e.accountID(noMarket, trader.Party(), asset, types.AccountType_GENERAL))
-		if err != nil {
-			return nil, err
-		}
-		if le, err := e.confiscateFunds(acc, ins, asset); le != nil && err == nil {
-			resp.Transfers = append(resp.Transfers, le)
-		}
 	}
 	return &resp, nil
-}
-
-func (e *Engine) confiscateFunds(from, into *types.Account, asset string) (*types.LedgerEntry, error) {
-	var transfer *types.LedgerEntry
-	// only create a ledger move if the balance is greater than zero
-	if from.Balance > 0 {
-		transfer = &types.LedgerEntry{
-			FromAccount: from.Id,
-			ToAccount:   into.Id,
-			Amount:      from.Balance,
-			Reference:   types.TransferType_MARGIN_CONFISCATED.String(),
-			Type:        "position-resolution",
-			Timestamp:   e.currentTime,
-		}
-		if err := e.IncrementBalance(into.Id, from.Balance); err != nil {
-			return nil, err
-		}
-		if err := e.UpdateBalance(from.Id, 0); err != nil {
-			return nil, err
-		}
-	}
-	return transfer, nil
 }
 
 // CreateMarketAccounts will create all required accounts for a market once

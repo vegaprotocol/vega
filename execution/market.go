@@ -889,15 +889,14 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transferResps, closePositions, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
+		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(m.GetID(), riskUpdate)
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferBuf.Add(transferResps)
+		m.transferBuf.Add([]*types.TransferResponse{transfer})
 
-		if len(closePositions) > 0 {
-
-			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
+		if closePos != nil {
+			// if closePose is not nil then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
 
 			m.log.Error("party did not have enough collateral to reach the InitialMargin",
@@ -909,14 +908,12 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Transfers applied for ")
-			for _, tr := range transferResps {
-				for _, v := range tr.GetTransfers() {
-					m.log.Debug(
-						"Ensured margin on order with success",
-						logging.String("transfer", fmt.Sprintf("%v", *v)),
-						logging.String("market-id", m.GetID()),
-					)
-				}
+			for _, v := range transfer.GetTransfers() {
+				m.log.Debug(
+					"Ensured margin on order with success",
+					logging.String("transfer", fmt.Sprintf("%v", *v)),
+					logging.String("market-id", m.GetID()),
+				)
 			}
 		}
 	}
