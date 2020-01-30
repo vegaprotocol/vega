@@ -375,7 +375,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 
 		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v", fromAccountID, toAccountID)
+			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
 		}
 		if ledgerEntry.Amount != i64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
