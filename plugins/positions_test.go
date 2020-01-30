@@ -24,7 +24,8 @@ type posStub struct {
 	size, buy, sell int64
 	price           uint64
 	trades          []events.TradeSettlement
-	margin          events.Margin
+	margin          uint64
+	hasMargin       bool
 }
 
 type tradeStub struct {
@@ -380,9 +381,8 @@ func (p posStub) Trades() []events.TradeSettlement {
 	return p.trades
 }
 
-func (p posStub) Margin() (events.Margin, bool) {
-	ok := (p.margin != nil)
-	return p.margin, ok
+func (p posStub) Margin() (uint64, bool) {
+	return p.margin, p.hasMargin
 }
 
 func (t tradeStub) Size() int64 {
