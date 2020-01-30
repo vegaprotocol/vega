@@ -469,9 +469,8 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		if transfer.Type == types.TransferType_MARGIN_LOW &&
 			res.Balances[0].Account.Balance < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
 			closed = append(closed, mevt)
-		} else {
-			response = append(response, res)
 		}
+		response = append(response, res)
 		for _, v := range res.GetTransfers() {
 			// increment the to account
 			if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
