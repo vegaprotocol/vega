@@ -375,7 +375,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 
 		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v", fromAccountID, toAccountID)
+			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
 		}
 		if ledgerEntry.Amount != i64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
@@ -551,6 +551,24 @@ func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 			return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), unrealisedPNL(%v), realisedPNL(%v)", party, pos[0].OpenVolume, pos[0].UnrealisedPNL, pos[0].RealisedPNL)
 		}
 	}
+	return nil
+}
+
+func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
+	markPrice, err := strconv.ParseUint(markPriceStr, 10, 0)
+	if err != nil {
+		return fmt.Errorf("markPrice is not a integer: markPrice(%v), err(%v)", markPriceStr, err)
+	}
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get mark price for market(%v), err(%v)", markPriceStr, err)
+	}
+
+	if mktdata.MarkPrice != markPrice {
+		return fmt.Errorf("mark price if wrong for market(%v), expected(%v) got(%v)", market, markPrice, mktdata.MarkPrice)
+	}
+
 	return nil
 }
 

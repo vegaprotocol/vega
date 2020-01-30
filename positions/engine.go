@@ -260,13 +260,10 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 // UpdateMarkPrice update the mark price on all positions and return a slice
 // of the updated positions
 func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
-	ret := make([]events.MarketPosition, 0, len(e.positions))
 	for _, pos := range e.positions {
 		pos.price = markPrice
-		cpy := *pos
-		ret = append(ret, &cpy)
 	}
-	return ret
+	return e.positionsCpy
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push

@@ -483,6 +483,14 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
+func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
+	mkt, ok := e.markets[mktid]
+	if !ok {
+		return types.MarketData{}, types.ErrInvalidMarketID
+	}
+	return mkt.GetMarketData(), nil
+}
+
 // Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
 	// Accounts

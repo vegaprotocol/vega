@@ -252,7 +252,7 @@ func updatePosition(p *Position, e events.SettlePosition) {
 		p.UnrealisedPNL = 0
 		p.AverageEntryPrice = 0
 		// realised P&L includes whatever we had in margin account at this point
-		p.RealisedPNL -= int64(margin.MarginBalance())
+		p.RealisedPNL -= int64(margin)
 		// @TODO average entry price shouldn't be affected(?)
 		// the volume now is zero, though, so we'll end up moving this position to storage
 		p.UnrealisedPNLFP = 0
