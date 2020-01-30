@@ -822,7 +822,7 @@
                   <td>sinceTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
@@ -2563,7 +2563,7 @@
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch, for example <tt>1580473859111222333</tt> corresponds to <tt>2020-01-31T12:30:59.111222333Z</tt> </p></td>
                 </tr>
 
             </tbody>
@@ -2697,45 +2697,45 @@
           <tbody>
 
               <tr>
-                <td>OrdersByMarket</td>
-                <td><a href="#api.OrdersByMarketRequest">OrdersByMarketRequest</a></td>
-                <td><a href="#api.OrdersByMarketResponse">OrdersByMarketResponse</a></td>
-                <td><p>Get Market Orders</p></td>
+                <td>MarketAccounts</td>
+                <td><a href="#api.MarketAccountsRequest">MarketAccountsRequest</a></td>
+                <td><a href="#api.MarketAccountsResponse">MarketAccountsResponse</a></td>
+                <td><p>Get a list of Accounts by Market</p></td>
               </tr>
 
               <tr>
-                <td>OrdersByParty</td>
-                <td><a href="#api.OrdersByPartyRequest">OrdersByPartyRequest</a></td>
-                <td><a href="#api.OrdersByPartyResponse">OrdersByPartyResponse</a></td>
-                <td><p>Get Party Orders</p></td>
+                <td>PartyAccounts</td>
+                <td><a href="#api.PartyAccountsRequest">PartyAccountsRequest</a></td>
+                <td><a href="#api.PartyAccountsResponse">PartyAccountsResponse</a></td>
+                <td><p>Get a list of Accounts by Party</p></td>
               </tr>
 
               <tr>
-                <td>OrderByMarketAndID</td>
-                <td><a href="#api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</a></td>
-                <td><a href="#api.OrderByMarketAndIdResponse">OrderByMarketAndIdResponse</a></td>
-                <td><p>Get Market Order by OrderID</p></td>
+                <td>Candles</td>
+                <td><a href="#api.CandlesRequest">CandlesRequest</a></td>
+                <td><a href="#api.CandlesResponse">CandlesResponse</a></td>
+                <td><p>Get a list of Candles by Market</p></td>
               </tr>
 
               <tr>
-                <td>OrderByReference</td>
-                <td><a href="#api.OrderByReferenceRequest">OrderByReferenceRequest</a></td>
-                <td><a href="#api.OrderByReferenceResponse">OrderByReferenceResponse</a></td>
-                <td><p>Get an Order by Pending Order reference (UUID)</p></td>
+                <td>MarketDataByID</td>
+                <td><a href="#api.MarketDataByIDRequest">MarketDataByIDRequest</a></td>
+                <td><a href="#api.MarketDataByIDResponse">MarketDataByIDResponse</a></td>
+                <td><p>Get Market Data by MarketID</p></td>
+              </tr>
+
+              <tr>
+                <td>MarketsData</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.MarketsDataResponse">MarketsDataResponse</a></td>
+                <td><p>Get a list of Market Data</p></td>
               </tr>
 
               <tr>
                 <td>MarketByID</td>
                 <td><a href="#api.MarketByIDRequest">MarketByIDRequest</a></td>
                 <td><a href="#api.MarketByIDResponse">MarketByIDResponse</a></td>
-                <td><p>Get Market by ID</p></td>
-              </tr>
-
-              <tr>
-                <td>Markets</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.MarketsResponse">MarketsResponse</a></td>
-                <td><p>Get a list of Markets</p></td>
+                <td><p>Get a Market by ID</p></td>
               </tr>
 
               <tr>
@@ -2746,17 +2746,45 @@
               </tr>
 
               <tr>
-                <td>LastTrade</td>
-                <td><a href="#api.LastTradeRequest">LastTradeRequest</a></td>
-                <td><a href="#api.LastTradeResponse">LastTradeResponse</a></td>
-                <td><p>Get latest Market Trade</p></td>
+                <td>Markets</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.MarketsResponse">MarketsResponse</a></td>
+                <td><p>Get a list of Markets</p></td>
               </tr>
 
               <tr>
-                <td>PartyByID</td>
-                <td><a href="#api.PartyByIDRequest">PartyByIDRequest</a></td>
-                <td><a href="#api.PartyByIDResponse">PartyByIDResponse</a></td>
-                <td><p>Get Party by ID</p></td>
+                <td>OrderByMarketAndID</td>
+                <td><a href="#api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</a></td>
+                <td><a href="#api.OrderByMarketAndIdResponse">OrderByMarketAndIdResponse</a></td>
+                <td><p>Get an Order by Market and OrderID</p></td>
+              </tr>
+
+              <tr>
+                <td>OrderByReference</td>
+                <td><a href="#api.OrderByReferenceRequest">OrderByReferenceRequest</a></td>
+                <td><a href="#api.OrderByReferenceResponse">OrderByReferenceResponse</a></td>
+                <td><p>Get an Order by Pending Order reference (UUID)</p></td>
+              </tr>
+
+              <tr>
+                <td>OrdersByMarket</td>
+                <td><a href="#api.OrdersByMarketRequest">OrdersByMarketRequest</a></td>
+                <td><a href="#api.OrdersByMarketResponse">OrdersByMarketResponse</a></td>
+                <td><p>Get a list of Orders by Market</p></td>
+              </tr>
+
+              <tr>
+                <td>OrdersByParty</td>
+                <td><a href="#api.OrdersByPartyRequest">OrdersByPartyRequest</a></td>
+                <td><a href="#api.OrdersByPartyResponse">OrdersByPartyResponse</a></td>
+                <td><p>Get a list of Orders by Party</p></td>
+              </tr>
+
+              <tr>
+                <td>MarginLevels</td>
+                <td><a href="#api.MarginLevelsRequest">MarginLevelsRequest</a></td>
+                <td><a href="#api.MarginLevelsResponse">MarginLevelsResponse</a></td>
+                <td><p>Get Margin Levels by PartyID</p></td>
               </tr>
 
               <tr>
@@ -2767,38 +2795,45 @@
               </tr>
 
               <tr>
-                <td>TradesByMarket</td>
-                <td><a href="#api.TradesByMarketRequest">TradesByMarketRequest</a></td>
-                <td><a href="#api.TradesByMarketResponse">TradesByMarketResponse</a></td>
-                <td><p>Get Market Trades</p></td>
-              </tr>
-
-              <tr>
-                <td>TradesByParty</td>
-                <td><a href="#api.TradesByPartyRequest">TradesByPartyRequest</a></td>
-                <td><a href="#api.TradesByPartyResponse">TradesByPartyResponse</a></td>
-                <td><p>Get Party Trades</p></td>
-              </tr>
-
-              <tr>
-                <td>TradesByOrder</td>
-                <td><a href="#api.TradesByOrderRequest">TradesByOrderRequest</a></td>
-                <td><a href="#api.TradesByOrderResponse">TradesByOrderResponse</a></td>
-                <td><p>Get Order Trades</p></td>
+                <td>PartyByID</td>
+                <td><a href="#api.PartyByIDRequest">PartyByIDRequest</a></td>
+                <td><a href="#api.PartyByIDResponse">PartyByIDResponse</a></td>
+                <td><p>Get a Party by ID</p></td>
               </tr>
 
               <tr>
                 <td>PositionsByParty</td>
                 <td><a href="#api.PositionsByPartyRequest">PositionsByPartyRequest</a></td>
                 <td><a href="#api.PositionsByPartyResponse">PositionsByPartyResponse</a></td>
-                <td><p>Get Party Positions</p></td>
+                <td><p>Get a list of Positions by Party</p></td>
               </tr>
 
               <tr>
-                <td>Candles</td>
-                <td><a href="#api.CandlesRequest">CandlesRequest</a></td>
-                <td><a href="#api.CandlesResponse">CandlesResponse</a></td>
-                <td><p>Get Market Candles</p></td>
+                <td>LastTrade</td>
+                <td><a href="#api.LastTradeRequest">LastTradeRequest</a></td>
+                <td><a href="#api.LastTradeResponse">LastTradeResponse</a></td>
+                <td><p>Get latest Trade</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesByMarket</td>
+                <td><a href="#api.TradesByMarketRequest">TradesByMarketRequest</a></td>
+                <td><a href="#api.TradesByMarketResponse">TradesByMarketResponse</a></td>
+                <td><p>Get a list of Trades by Market</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesByOrder</td>
+                <td><a href="#api.TradesByOrderRequest">TradesByOrderRequest</a></td>
+                <td><a href="#api.TradesByOrderResponse">TradesByOrderResponse</a></td>
+                <td><p>Get a list of Trades by Order</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesByParty</td>
+                <td><a href="#api.TradesByPartyRequest">TradesByPartyRequest</a></td>
+                <td><a href="#api.TradesByPartyResponse">TradesByPartyResponse</a></td>
+                <td><p>Get a list of Trades by Party</p></td>
               </tr>
 
               <tr>
@@ -2816,101 +2851,66 @@
               </tr>
 
               <tr>
-                <td>MarketDataByID</td>
-                <td><a href="#api.MarketDataByIDRequest">MarketDataByIDRequest</a></td>
-                <td><a href="#api.MarketDataByIDResponse">MarketDataByIDResponse</a></td>
-                <td><p>Get Market Data by ID</p></td>
-              </tr>
-
-              <tr>
-                <td>MarketsData</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.MarketsDataResponse">MarketsDataResponse</a></td>
-                <td><p>Get a list of Market Data</p></td>
-              </tr>
-
-              <tr>
-                <td>MarginLevels</td>
-                <td><a href="#api.MarginLevelsRequest">MarginLevelsRequest</a></td>
-                <td><a href="#api.MarginLevelsResponse">MarginLevelsResponse</a></td>
-                <td><p>Get Party Margin Levels</p></td>
-              </tr>
-
-              <tr>
-                <td>OrdersSubscribe</td>
-                <td><a href="#api.OrdersSubscribeRequest">OrdersSubscribeRequest</a></td>
-                <td><a href="#api.OrdersStream">OrdersStream</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>TradesSubscribe</td>
-                <td><a href="#api.TradesSubscribeRequest">TradesSubscribeRequest</a></td>
-                <td><a href="#api.TradesStream">TradesStream</a> stream</td>
-                <td><p></p></td>
+                <td>AccountsSubscribe</td>
+                <td><a href="#api.AccountsSubscribeRequest">AccountsSubscribeRequest</a></td>
+                <td><a href="#vega.Account">.vega.Account</a> stream</td>
+                <td><p>Subscribe to a stream of Accounts</p></td>
               </tr>
 
               <tr>
                 <td>CandlesSubscribe</td>
                 <td><a href="#api.CandlesSubscribeRequest">CandlesSubscribeRequest</a></td>
                 <td><a href="#vega.Candle">.vega.Candle</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>MarketDepthSubscribe</td>
-                <td><a href="#api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</a></td>
-                <td><a href="#vega.MarketDepth">.vega.MarketDepth</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>PositionsSubscribe</td>
-                <td><a href="#api.PositionsSubscribeRequest">PositionsSubscribeRequest</a></td>
-                <td><a href="#vega.Position">.vega.Position</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>AccountsSubscribe</td>
-                <td><a href="#api.AccountsSubscribeRequest">AccountsSubscribeRequest</a></td>
-                <td><a href="#vega.Account">.vega.Account</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>TransferResponsesSubscribe</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#vega.TransferResponse">.vega.TransferResponse</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>MarketsDataSubscribe</td>
-                <td><a href="#api.MarketsDataSubscribeRequest">MarketsDataSubscribeRequest</a></td>
-                <td><a href="#vega.MarketData">.vega.MarketData</a> stream</td>
-                <td><p></p></td>
+                <td><p>Subscribe to a stream of Candles</p></td>
               </tr>
 
               <tr>
                 <td>MarginLevelsSubscribe</td>
                 <td><a href="#api.MarginLevelsSubscribeRequest">MarginLevelsSubscribeRequest</a></td>
                 <td><a href="#vega.MarginLevels">.vega.MarginLevels</a> stream</td>
-                <td><p></p></td>
+                <td><p>Subscribe to a stream of Margin Levels</p></td>
               </tr>
 
               <tr>
-                <td>PartyAccounts</td>
-                <td><a href="#api.PartyAccountsRequest">PartyAccountsRequest</a></td>
-                <td><a href="#api.PartyAccountsResponse">PartyAccountsResponse</a></td>
-                <td><p>Get Party accounts</p></td>
+                <td>MarketDepthSubscribe</td>
+                <td><a href="#api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</a></td>
+                <td><a href="#vega.MarketDepth">.vega.MarketDepth</a> stream</td>
+                <td><p>Subscribe to a stream of Market Depth</p></td>
               </tr>
 
               <tr>
-                <td>MarketAccounts</td>
-                <td><a href="#api.MarketAccountsRequest">MarketAccountsRequest</a></td>
-                <td><a href="#api.MarketAccountsResponse">MarketAccountsResponse</a></td>
-                <td><p>Get Market accounts</p></td>
+                <td>MarketsDataSubscribe</td>
+                <td><a href="#api.MarketsDataSubscribeRequest">MarketsDataSubscribeRequest</a></td>
+                <td><a href="#vega.MarketData">.vega.MarketData</a> stream</td>
+                <td><p>Subscribe to a stream of Markets Data</p></td>
+              </tr>
+
+              <tr>
+                <td>OrdersSubscribe</td>
+                <td><a href="#api.OrdersSubscribeRequest">OrdersSubscribeRequest</a></td>
+                <td><a href="#api.OrdersStream">OrdersStream</a> stream</td>
+                <td><p>Subscribe to a stream of Orders</p></td>
+              </tr>
+
+              <tr>
+                <td>PositionsSubscribe</td>
+                <td><a href="#api.PositionsSubscribeRequest">PositionsSubscribeRequest</a></td>
+                <td><a href="#vega.Position">.vega.Position</a> stream</td>
+                <td><p>Subscribe to a stream of Positions</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesSubscribe</td>
+                <td><a href="#api.TradesSubscribeRequest">TradesSubscribeRequest</a></td>
+                <td><a href="#api.TradesStream">TradesStream</a> stream</td>
+                <td><p>Subscribe to a stream of Trades</p></td>
+              </tr>
+
+              <tr>
+                <td>TransferResponsesSubscribe</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#vega.TransferResponse">.vega.TransferResponse</a> stream</td>
+                <td><p>Subscribe to a stream of Transfer Responses</p></td>
               </tr>
 
           </tbody>

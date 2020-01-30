@@ -39,7 +39,10 @@ do
 			--doc_opt="$fileformat,$(basename "$outputfile")"
 	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
 done
-sed --in-place -re 's#`([^`]*)`#<tt>\1</tt>#' proto/doc/index.html
+sed --in-place -r \
+	-e 's#`([^`]*)`#<tt>\1</tt>#g' \
+	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
+	proto/doc/index.html
 
 # Generate *.pb.gw.go and *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"

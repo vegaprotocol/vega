@@ -134,7 +134,7 @@
     },
     "/markets-data/{marketID}": {
       "get": {
-        "summary": "Get Market Data by ID",
+        "summary": "Get Market Data by MarketID",
         "operationId": "MarketDataByID",
         "responses": {
           "200": {
@@ -159,7 +159,7 @@
     },
     "/markets/{marketID}": {
       "get": {
-        "summary": "Get Market by ID",
+        "summary": "Get a Market by ID",
         "operationId": "MarketByID",
         "responses": {
           "200": {
@@ -184,7 +184,7 @@
     },
     "/markets/{marketID}/accounts": {
       "get": {
-        "summary": "Get Market accounts",
+        "summary": "Get a list of Accounts by Market",
         "operationId": "MarketAccounts",
         "responses": {
           "200": {
@@ -215,7 +215,7 @@
     },
     "/markets/{marketID}/candles": {
       "get": {
-        "summary": "Get Market Candles",
+        "summary": "Get a list of Candles by Market",
         "operationId": "Candles",
         "responses": {
           "200": {
@@ -234,6 +234,7 @@
           },
           {
             "name": "sinceTimestamp",
+            "description": "nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -294,7 +295,7 @@
     },
     "/markets/{marketID}/orders": {
       "get": {
-        "summary": "Get Market Orders",
+        "summary": "Get a list of Orders by Market",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
@@ -347,7 +348,7 @@
     },
     "/markets/{marketID}/orders/{orderID}": {
       "get": {
-        "summary": "Get Market Order by OrderID",
+        "summary": "Get an Order by Market and OrderID",
         "operationId": "OrderByMarketAndID",
         "responses": {
           "200": {
@@ -378,7 +379,7 @@
     },
     "/markets/{marketID}/trades": {
       "get": {
-        "summary": "Get Market Trades",
+        "summary": "Get a list of Trades by Market",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
@@ -424,7 +425,7 @@
     },
     "/markets/{marketID}/trades/latest": {
       "get": {
-        "summary": "Get latest Market Trade",
+        "summary": "Get latest Trade",
         "operationId": "LastTrade",
         "responses": {
           "200": {
@@ -552,7 +553,7 @@
     },
     "/orders/{orderID}/trades": {
       "get": {
-        "summary": "Get Order Trades",
+        "summary": "Get a list of Trades by Order",
         "operationId": "TradesByOrder",
         "responses": {
           "200": {
@@ -619,7 +620,7 @@
     },
     "/parties/{partyID}": {
       "get": {
-        "summary": "Get Party by ID",
+        "summary": "Get a Party by ID",
         "operationId": "PartyByID",
         "responses": {
           "200": {
@@ -644,7 +645,7 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "Get Party accounts",
+        "summary": "Get a list of Accounts by Party",
         "operationId": "PartyAccounts",
         "responses": {
           "200": {
@@ -695,7 +696,7 @@
     },
     "/parties/{partyID}/markets/{marketID}/margin": {
       "get": {
-        "summary": "Get Party Margin Levels",
+        "summary": "Get Margin Levels by PartyID",
         "operationId": "MarginLevels",
         "responses": {
           "200": {
@@ -726,7 +727,7 @@
     },
     "/parties/{partyID}/orders": {
       "get": {
-        "summary": "Get Party Orders",
+        "summary": "Get a list of Orders by Party",
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
@@ -779,7 +780,7 @@
     },
     "/parties/{partyID}/positions": {
       "get": {
-        "summary": "Get Party Positions",
+        "summary": "Get a list of Positions by Party",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -810,7 +811,7 @@
     },
     "/parties/{partyID}/trades": {
       "get": {
-        "summary": "Get Party Trades",
+        "summary": "Get a list of Trades by Party",
         "operationId": "TradesByParty",
         "responses": {
           "200": {
@@ -1284,7 +1285,8 @@
       "properties": {
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`"
         }
       }
     },

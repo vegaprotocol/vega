@@ -86,50 +86,83 @@ message AmendOrderRequest {
 
 service trading_data {
 
-  // Get Market Orders
-  rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
+  // Accounts
 
-  // Get Party Orders
-  rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
+  // Get a list of Accounts by Market
+  rpc MarketAccounts(MarketAccountsRequest) returns (MarketAccountsResponse);
 
-  // Get Market Order by OrderID
+  // Get a list of Accounts by Party
+  rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
+
+  // Candles
+
+  // Get a list of Candles by Market
+  rpc Candles(CandlesRequest) returns (CandlesResponse);
+
+  // Market Data
+
+  // Get Market Data by MarketID
+  rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
+
+  // Get a list of Market Data
+  rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
+
+  // Markets
+
+  // Get a Market by ID
+  rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
+
+  // Get Market Depth
+  rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+
+  // Get a list of Markets
+  rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
+
+  // Orders
+
+  // Get an Order by Market and OrderID
   rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
 
   // Get an Order by Pending Order reference (UUID)
   rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
 
-  // Get Market by ID
-  rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
+  // Get a list of Orders by Market
+  rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
 
-  // Get a list of Markets
-  rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
+  // Get a list of Orders by Party
+  rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
-  // Get Market Depth
-  rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+  // Parties
 
-  // Get latest Market Trade
-  rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
-
-  // Get Party by ID
-  rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
+  // Get Margin Levels by PartyID
+  rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
 
   // Get a list of Parties
   rpc Parties(google.protobuf.Empty) returns (PartiesResponse);
 
-  // Get Market Trades
-  rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
+  // Get a Party by ID
+  rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
 
-  // Get Party Trades
-  rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
+  // Positions
 
-  // Get Order Trades
-  rpc TradesByOrder(TradesByOrderRequest) returns (TradesByOrderResponse);
-
-  // Get Party Positions
+  // Get a list of Positions by Party
   rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
 
-  // Get Market Candles
-  rpc Candles(CandlesRequest) returns (CandlesResponse);
+  // Trades
+
+  // Get latest Trade
+  rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
+
+  // Get a list of Trades by Market
+  rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
+
+  // Get a list of Trades by Order
+  rpc TradesByOrder(TradesByOrderRequest) returns (TradesByOrderResponse);
+
+  // Get a list of Trades by Party
+  rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
+
+  // Misc
 
   // Get Statistics
   rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
@@ -137,30 +170,32 @@ service trading_data {
   // Get Time
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
-  // Get Market Data by ID
-  rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
-
-  // Get a list of Market Data
-  rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
-
-  // Get Party Margin Levels
-  rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
-
-  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
-  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
-  rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
-  rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
-  rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.Position);
+  // Subscribe to a stream of Accounts
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
-  rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
-  rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
+
+  // Subscribe to a stream of Candles
+  rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
+
+  // Subscribe to a stream of Margin Levels
   rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream vega.MarginLevels);
 
-  // Get Party accounts
-  rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
+  // Subscribe to a stream of Market Depth
+  rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
 
-  // Get Market accounts
-  rpc MarketAccounts(MarketAccountsRequest) returns (MarketAccountsResponse);
+  // Subscribe to a stream of Markets Data
+  rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
+
+  // Subscribe to a stream of Orders
+  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
+
+  // Subscribe to a stream of Positions
+  rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.Position);
+
+  // Subscribe to a stream of Trades
+  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
+
+  // Subscribe to a stream of Transfer Responses
+  rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 }
 
 message MarginLevelsSubscribeRequest {
@@ -314,7 +349,10 @@ message MarketsResponse {
 
 message CandlesRequest {
   string marketID = 1 [(validator.field) = {msg_exists : true}];
+
+  // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
+
   vega.Interval interval = 3;
 }
 
@@ -353,6 +391,8 @@ message PositionsByPartyResponse{
 }
 
 message VegaTimeResponse {
+
+  // nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
   int64 timestamp = 1;
 }
 
