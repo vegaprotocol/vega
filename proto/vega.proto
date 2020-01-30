@@ -7,7 +7,26 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 enum Side { Buy = 0; Sell = 1; }
 
-enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
+enum Interval {
+
+  // 1 minute
+  I1M = 0;
+
+  // 5 minutes
+  I5M = 1;
+
+  // 15 minutes
+  I15M = 2;
+
+  // 1 hour
+  I1H = 3;
+
+  // 6 hours
+  I6H = 4;
+
+  // 1 day
+  I1D = 5;
+}
 
 message Amount {
   string value = 1;
@@ -84,7 +103,10 @@ message Order {
   TimeInForce timeInForce  = 8;
   Type type = 9;
   int64 createdAt = 10;
+
+  // If `status` is `Rejected`, check `reason`.
   Status status = 11;
+
   int64 expiresAt = 12;
   string reference = 13;
   OrderError reason = 14;
@@ -130,6 +152,8 @@ message Trade {
     Side aggressor = 7;
     string buyOrder = 8;
     string sellOrder = 9;
+
+    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
     int64 timestamp = 10;
 }
 
@@ -138,8 +162,13 @@ message TradeSet {
 }
 
 message Candle {
+
+    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
     int64 timestamp = 1;
+
+    // ISO 8601 datetime
     string datetime = 2;
+
     uint64 high = 3;
     uint64 low = 4;
     uint64 open = 5;
@@ -179,9 +208,16 @@ message Statistics {
   uint64 blockHeight = 1;
   uint64 backlogLength = 2;
   uint64 totalPeers = 3;
+
+  // ISO 8601 datetime, nanosecond precision
   string genesisTime = 4;
+
+  // ISO 8601 datetime, nanosecond precision
   string currentTime = 5;
+
+  // ISO 8601 datetime, nanosecond precision
   string vegaTime = 6;
+
   ChainStatus status = 7;
   uint64 txPerBlock = 8;
   uint64 averageTxBytes = 9;
@@ -210,6 +246,7 @@ message Statistics {
   // nanoseconds
   uint64 blockDuration = 31;
 
+  // ISO 8601 datetime, nanosecond precision
   string uptime = 32;
 }
 

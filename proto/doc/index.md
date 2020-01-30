@@ -1486,8 +1486,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  |  |
-| datetime | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| datetime | [string](#string) |  | ISO 8601 datetime |
 | high | [uint64](#uint64) |  |  |
 | low | [uint64](#uint64) |  |  |
 | open | [uint64](#uint64) |  |  |
@@ -1632,7 +1632,7 @@
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | createdAt | [int64](#int64) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  |  |
+| status | [Order.Status](#vega.Order.Status) |  | If `status` is `Rejected`, check `reason`. |
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
@@ -1907,9 +1907,9 @@
 | blockHeight | [uint64](#uint64) |  |  |
 | backlogLength | [uint64](#uint64) |  |  |
 | totalPeers | [uint64](#uint64) |  |  |
-| genesisTime | [string](#string) |  |  |
-| currentTime | [string](#string) |  |  |
-| vegaTime | [string](#string) |  |  |
+| genesisTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+| currentTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+| vegaTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
 | status | [ChainStatus](#vega.ChainStatus) |  |  |
 | txPerBlock | [uint64](#uint64) |  |  |
 | averageTxBytes | [uint64](#uint64) |  |  |
@@ -1935,7 +1935,7 @@
 | appVersion | [string](#string) |  |  |
 | chainVersion | [string](#string) |  |  |
 | blockDuration | [uint64](#uint64) |  | nanoseconds |
-| uptime | [string](#string) |  |  |
+| uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
 
 
 
@@ -1959,7 +1959,7 @@
 | aggressor | [Side](#vega.Side) |  |  |
 | buyOrder | [string](#string) |  |  |
 | sellOrder | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 
 
 
@@ -2105,12 +2105,12 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| I1M | 0 |  |
-| I5M | 1 |  |
-| I15M | 2 |  |
-| I1H | 3 |  |
-| I6H | 4 |  |
-| I1D | 5 |  |
+| I1M | 0 | 1 minute |
+| I5M | 1 | 5 minutes |
+| I15M | 2 | 15 minutes |
+| I1H | 3 | 1 hour |
+| I6H | 4 | 6 hours |
+| I1D | 5 | 1 day |
 
 
 
