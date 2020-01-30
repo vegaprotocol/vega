@@ -840,32 +840,51 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 		Transfers: make([]*types.LedgerEntry, 0, tl),
 	}
 	for _, trader := range traders {
+		// move monies from the margin account first
 		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_MARGIN))
 		if err != nil {
 			return nil, err
 		}
-		// only create a ledger move if the balance is greater than zero
-		if acc.Balance > 0 {
-			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
-				FromAccount: acc.Id,
-				ToAccount:   ins.Id,
-				Amount:      acc.Balance,
-				Reference:   types.TransferType_MARGIN_CONFISCATED.String(),
-				Type:        "position-resolution",
-				Timestamp:   e.currentTime,
-			})
-			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
-				return nil, err
-			}
-			if err := e.UpdateBalance(acc.Id, 0); err != nil {
-				return nil, err
-			}
+		if le, err := e.confiscateFunds(acc, ins, asset); le != nil && err == nil {
+			resp.Transfers = append(resp.Transfers, le)
 		}
+		// we remove the margin account
 		if err := e.removeAccount(acc.Id); err != nil {
 			return nil, err
 		}
+
+		// then from the general account first
+		acc, err = e.GetAccountByID(e.accountID(noMarket, trader.Party(), asset, types.AccountType_GENERAL))
+		if err != nil {
+			return nil, err
+		}
+		if le, err := e.confiscateFunds(acc, ins, asset); le != nil && err == nil {
+			resp.Transfers = append(resp.Transfers, le)
+		}
 	}
 	return &resp, nil
+}
+
+func (e *Engine) confiscateFunds(from, into *types.Account, asset string) (*types.LedgerEntry, error) {
+	var transfer *types.LedgerEntry
+	// only create a ledger move if the balance is greater than zero
+	if from.Balance > 0 {
+		transfer = &types.LedgerEntry{
+			FromAccount: from.Id,
+			ToAccount:   into.Id,
+			Amount:      from.Balance,
+			Reference:   types.TransferType_MARGIN_CONFISCATED.String(),
+			Type:        "position-resolution",
+			Timestamp:   e.currentTime,
+		}
+		if err := e.IncrementBalance(into.Id, from.Balance); err != nil {
+			return nil, err
+		}
+		if err := e.UpdateBalance(from.Id, 0); err != nil {
+			return nil, err
+		}
+	}
+	return transfer, nil
 }
 
 // CreateMarketAccounts will create all required accounts for a market once
