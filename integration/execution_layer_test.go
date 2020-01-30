@@ -533,22 +533,39 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 
 func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 	for _, row := range table.Rows {
+		var (
+			retries = 10
+			ok      bool
+		)
 		if val(row, 0) == "trader" {
 			continue
 		}
 
 		party := val(row, 0)
-		pos, err := execsetup.positionPlugin.GetPositionsByParty(party)
-		if err != nil {
-			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
-		}
-		if len(pos) <= 0 {
-			return fmt.Errorf("party do not have a position, party(%v)", party)
-		}
 
-		volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 3), i64val(row, 2)
-		if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
-			return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), unrealisedPNL(%v), realisedPNL(%v)", party, pos[0].OpenVolume, pos[0].UnrealisedPNL, pos[0].RealisedPNL)
+		for !ok && retries >= 0 {
+			pos, err := execsetup.positionPlugin.GetPositionsByParty(party)
+			if err != nil {
+				return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
+			}
+			if len(pos) <= 0 {
+				return fmt.Errorf("party do not have a position, party(%v)", party)
+			}
+
+			volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 3), i64val(row, 2)
+			if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
+				if retries == 0 {
+					return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), unrealisedPNL(%v), realisedPNL(%v)", party, pos[0].OpenVolume, pos[0].UnrealisedPNL, pos[0].RealisedPNL)
+				}
+
+				// yea not amazing...
+				// but it's an actual pain to get the positions api to be in sync as it's
+				// designed to run asyncrhronously
+				time.Sleep(10 * time.Millisecond)
+				retries -= 1
+			} else {
+				ok = !ok
+			}
 		}
 	}
 	return nil
