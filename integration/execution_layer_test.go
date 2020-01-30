@@ -318,20 +318,28 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		account, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		generalAccount, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
-		if account.GetBalance() != i64val(row, 4) {
-			return fmt.Errorf("expected general balance  %d, instead saw %d (trader: %v)", i64val(row, 4), account.GetBalance(), val(row, 0))
+
+		var hasError bool
+
+		if generalAccount.GetBalance() != i64val(row, 4) {
+			hasError = true
 		}
-		account, err = execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
-		if account.GetBalance() != i64val(row, 3) {
-			return fmt.Errorf("expected margin balance  %d, instead saw %d (trader: %v)", i64val(row, 3), account.GetBalance(), val(row, 0))
+		if marginAccount.GetBalance() != i64val(row, 3) {
+			hasError = true
 		}
+
+		if hasError {
+			return fmt.Errorf("expected balances to be margin(%d) general(%v), instead saw margin(%v), general(%v), (trader: %v)", i64val(row, 3), i64val(row, 4), marginAccount.GetBalance(), generalAccount.GetBalance(), val(row, 0))
+		}
+
 	}
 	return nil
 }
@@ -462,17 +470,23 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 			return err
 		}
 
+		var hasError bool
+
 		if ml.MaintenanceMargin != i64val(row, 2) {
-			return fmt.Errorf("invalid maintenance margin, expected %v but got %v (trader=%v)", i64val(row, 2), ml.MaintenanceMargin, val(row, 0))
+			hasError = true
 		}
 		if ml.SearchLevel != i64val(row, 3) {
-			return fmt.Errorf("invalid search margin, expected %v but got %v (trader=%v)", i64val(row, 3), ml.SearchLevel, val(row, 0))
+			hasError = true
 		}
 		if ml.InitialMargin != i64val(row, 4) {
-			return fmt.Errorf("invalid initial margin, expected %v but got %v (trader=%v)", i64val(row, 4), ml.InitialMargin, val(row, 0))
+			hasError = true
 		}
 		if ml.CollateralReleaseLevel != i64val(row, 5) {
-			return fmt.Errorf("invalid collateral release margin, expected %v but got %v (trader=%v)", i64val(row, 5), ml.CollateralReleaseLevel, val(row, 0))
+			hasError = true
+		}
+		if hasError {
+			return fmt.Errorf(
+				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)", i64val(row, 2), i64val(row, 3), i64val(row, 4), i64val(row, 5), ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, val(row, 0))
 		}
 
 	}
