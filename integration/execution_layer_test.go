@@ -554,6 +554,24 @@ func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 	return nil
 }
 
+func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
+	markPrice, err := strconv.ParseUint(markPriceStr, 10, 0)
+	if err != nil {
+		return fmt.Errorf("markPrice is not a integer: markPrice(%v), err(%v)", markPriceStr, err)
+	}
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get mark price for market(%v), err(%v)", markPriceStr, err)
+	}
+
+	if mktdata.MarkPrice != markPrice {
+		return fmt.Errorf("mark price if wrong for market(%v), expected(%v) got(%v)", market, markPrice, mktdata.MarkPrice)
+	}
+
+	return nil
+}
+
 func dumpTransfers() error {
 	for _, _v := range execsetup.transfers.data {
 		for _, v := range _v.GetTransfers() {
