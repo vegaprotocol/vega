@@ -561,7 +561,7 @@ func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 				// yea not amazing...
 				// but it's an actual pain to get the positions api to be in sync as it's
 				// designed to run asyncrhronously
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 				retries -= 1
 			} else {
 				ok = !ok
