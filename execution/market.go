@@ -569,6 +569,9 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
+		m.log.Warn("closing out trader",
+			logging.String("party-id", v.Party()),
+			logging.String("market-id", m.GetID()))
 		distressedPos = append(distressedPos, v)
 	}
 	// cancel pending orders for traders
