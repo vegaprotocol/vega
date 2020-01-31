@@ -55,10 +55,9 @@ Feature: Position esolution case 4
 
 #check positions
    Then position API produce the following:
-   | trader           | volume | unrealisedPNL | realisedPNL |
-   | designatedLooser |      0 |             0 |      -10000 |
-   | buySideProvider  |    101 |         11500 |       -1500 |
-
+     | trader           | volume | unrealisedPNL | realisedPNL |
+     | designatedLooser |      0 |             0 |      -10000 |
+     | buySideProvider  |    101 |         11500 |       -1500 |
 
 # checking margins
     Then I expect the trader to have a margin:
@@ -67,3 +66,13 @@ Feature: Position esolution case 4
 
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance is "0" for the market "ETH/DEC19"
+
+
+# now we check what's left in the orderbook
+# we expect 50 orders to be left there on the sell side
+# we buy a first time 50 to consume the book
+# then try to buy 1 again -> result in no trades, book empty
+   Then traders place following orders:
+      | trader          | id        | type | volume | price | resulting trades | type  | tif |
+      | buySideProvider | ETH/DEC19 | buy  |     50 |   350 |                1 | LIMIT | GTC |
+      | buySideProvider | ETH/DEC19 | buy  |      1 |   350 |                0 | LIMIT | FOK |
