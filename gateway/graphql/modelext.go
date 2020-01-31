@@ -42,6 +42,8 @@ var (
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
 	// ErrnilScalingFactors...
 	ErrNilScalingFactors = errors.New("nil scaling factors")
+	// ErrNilMarginCalculator
+	ErrNilMarginCalculator = errors.New("nil margin calculator")
 )
 
 // IntoProto ...
@@ -206,9 +208,8 @@ func (ti *TradableInstrument) IntoProto() (*types.TradableInstrument, error) {
 			return nil, err
 		}
 	}
-	if ti.ScalingFactors != nil {
-		mc := &types.MarginCalculator{}
-		mc.ScalingFactors, _ = ti.ScalingFactors.IntoProto()
+	if ti.MarginCalculator != nil {
+		pti.MarginCalculator, _ = ti.MarginCalculator.IntoProto()
 	}
 	err = ti.riskModelIntoProto(pti)
 	if err != nil {
@@ -216,6 +217,14 @@ func (ti *TradableInstrument) IntoProto() (*types.TradableInstrument, error) {
 	}
 
 	return pti, nil
+}
+
+func (m *MarginCalculator) IntoProto() (*types.MarginCalculator, error) {
+	pm := &types.MarginCalculator{}
+	if m.ScalingFactors != nil {
+		pm.ScalingFactors, _ = m.ScalingFactors.IntoProto()
+	}
+	return pm, nil
 }
 
 func (s *ScalingFactors) IntoProto() (*types.ScalingFactors, error) {
@@ -430,10 +439,25 @@ func TradableInstrumentFromProto(pti *types.TradableInstrument) (*TradableInstru
 	if err != nil {
 		return nil, err
 	}
-	if mc := pti.MarginCalculator; mc != nil {
-		ti.ScalingFactors, _ = ScalingFactorsFromProto(mc.ScalingFactors)
+	mc, err := MarginCalculatorFromProto(pti.MarginCalculator)
+	if err != nil {
+		return nil, err
 	}
+	ti.MarginCalculator = mc
 	return ti, nil
+}
+
+func MarginCalculatorFromProto(mc *types.MarginCalculator) (*MarginCalculator, error) {
+	if mc == nil {
+		return nil, ErrNilMarginCalculator
+	}
+	m := &MarginCalculator{}
+	sf, err := ScalingFactorsFromProto(mc.ScalingFactors)
+	if err != nil {
+		return nil, err
+	}
+	m.ScalingFactors = sf
+	return m, nil
 }
 
 func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error) {

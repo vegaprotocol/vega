@@ -126,6 +126,10 @@ type ComplexityRoot struct {
 		Tau                   func(childComplexity int) int
 	}
 
+	MarginCalculator struct {
+		ScalingFactors func(childComplexity int) int
+	}
+
 	MarginLevels struct {
 		Asset                  func(childComplexity int) int
 		CollateralReleaseLevel func(childComplexity int) int
@@ -302,9 +306,9 @@ type ComplexityRoot struct {
 	}
 
 	TradableInstrument struct {
-		Instrument     func(childComplexity int) int
-		RiskModel      func(childComplexity int) int
-		ScalingFactors func(childComplexity int) int
+		Instrument       func(childComplexity int) int
+		MarginCalculator func(childComplexity int) int
+		RiskModel        func(childComplexity int) int
 	}
 
 	Trade struct {
@@ -723,6 +727,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LogNormalRiskModel.Tau(childComplexity), true
+
+	case "MarginCalculator.scalingFactors":
+		if e.complexity.MarginCalculator.ScalingFactors == nil {
+			break
+		}
+
+		return e.complexity.MarginCalculator.ScalingFactors(childComplexity), true
 
 	case "MarginLevels.asset":
 		if e.complexity.MarginLevels.Asset == nil {
@@ -1755,19 +1766,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradableInstrument.Instrument(childComplexity), true
 
+	case "TradableInstrument.marginCalculator":
+		if e.complexity.TradableInstrument.MarginCalculator == nil {
+			break
+		}
+
+		return e.complexity.TradableInstrument.MarginCalculator(childComplexity), true
+
 	case "TradableInstrument.riskModel":
 		if e.complexity.TradableInstrument.RiskModel == nil {
 			break
 		}
 
 		return e.complexity.TradableInstrument.RiskModel(childComplexity), true
-
-	case "TradableInstrument.scalingFactors":
-		if e.complexity.TradableInstrument.ScalingFactors == nil {
-			break
-		}
-
-		return e.complexity.TradableInstrument.ScalingFactors(childComplexity), true
 
 	case "Trade.aggressor":
 		if e.complexity.Trade.Aggressor == nil {
@@ -2372,6 +2383,11 @@ type Instrument {
   product: Product!
 }
 
+type MarginCalculator {
+  # The scaling factors that will be used for margin calculation
+  scalingFactors: ScalingFactors!
+}
+
 type ScalingFactors {
   # the scaling factor that determines the margin level at which we have to search for more money
   searchLevel: Float!
@@ -2391,8 +2407,8 @@ type TradableInstrument {
   # A reference to a risk model that is valid for the instrument
   riskModel: RiskModel!
 
-  # the scaling factors (search, initial, release) for this tradable instrument
-  scalingFactors: ScalingFactors
+  # Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
+  marginCalculator: MarginCalculator
 }
 
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
@@ -4794,6 +4810,43 @@ func (ec *executionContext) _LogNormalRiskModel_params(ctx context.Context, fiel
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParams(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginCalculator_scalingFactors(ctx context.Context, field graphql.CollectedField, obj *MarginCalculator) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "MarginCalculator",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScalingFactors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ScalingFactors)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -9809,7 +9862,7 @@ func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, f
 	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TradableInstrument_scalingFactors(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
+func (ec *executionContext) _TradableInstrument_marginCalculator(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9828,7 +9881,7 @@ func (ec *executionContext) _TradableInstrument_scalingFactors(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ScalingFactors, nil
+		return obj.MarginCalculator, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9837,10 +9890,10 @@ func (ec *executionContext) _TradableInstrument_scalingFactors(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ScalingFactors)
+	res := resTmp.(*MarginCalculator)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx, field.Selections, res)
+	return ec.marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -11869,6 +11922,33 @@ func (ec *executionContext) _LogNormalRiskModel(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var marginCalculatorImplementors = []string{"MarginCalculator"}
+
+func (ec *executionContext) _MarginCalculator(ctx context.Context, sel ast.SelectionSet, obj *MarginCalculator) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, marginCalculatorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarginCalculator")
+		case "scalingFactors":
+			out.Values[i] = ec._MarginCalculator_scalingFactors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var marginLevelsImplementors = []string{"MarginLevels"}
 
 func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.SelectionSet, obj *proto.MarginLevels) graphql.Marshaler {
@@ -13518,8 +13598,8 @@ func (ec *executionContext) _TradableInstrument(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "scalingFactors":
-			out.Values[i] = ec._TradableInstrument_scalingFactors(ctx, field, obj)
+		case "marginCalculator":
+			out.Values[i] = ec._TradableInstrument_marginCalculator(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14238,6 +14318,20 @@ func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._RiskModel(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNScalingFactors2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v ScalingFactors) graphql.Marshaler {
+	return ec._ScalingFactors(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v *ScalingFactors) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ScalingFactors(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
 	var res Side
 	return res, res.UnmarshalGQL(v)
@@ -14772,6 +14866,17 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
+func (ec *executionContext) marshalOMarginCalculator2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v MarginCalculator) graphql.Marshaler {
+	return ec._MarginCalculator(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v *MarginCalculator) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MarginCalculator(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevelsᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.MarginLevels) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -15128,17 +15233,6 @@ func (ec *executionContext) marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) marshalOScalingFactors2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v ScalingFactors) graphql.Marshaler {
-	return ec._ScalingFactors(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v *ScalingFactors) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ScalingFactors(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
