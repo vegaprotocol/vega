@@ -480,7 +480,6 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 					logging.Int64("amount", v.Amount),
 					logging.Error(err),
 				)
-				continue
 			}
 		}
 	}
@@ -530,7 +529,6 @@ func (e *Engine) MarginUpdateOnOrder(
 				logging.Int64("amount", v.Amount),
 				logging.Error(err),
 			)
-			continue
 		}
 	}
 
