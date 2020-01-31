@@ -242,6 +242,12 @@ type ComplexityRoot struct {
 		Statistics func(childComplexity int) int
 	}
 
+	ScalingFactors struct {
+		CollateralRelease func(childComplexity int) int
+		InitialMargin     func(childComplexity int) int
+		SearchLevel       func(childComplexity int) int
+	}
+
 	SimpleRiskModel struct {
 		Params func(childComplexity int) int
 	}
@@ -296,8 +302,9 @@ type ComplexityRoot struct {
 	}
 
 	TradableInstrument struct {
-		Instrument func(childComplexity int) int
-		RiskModel  func(childComplexity int) int
+		Instrument     func(childComplexity int) int
+		RiskModel      func(childComplexity int) int
+		ScalingFactors func(childComplexity int) int
 	}
 
 	Trade struct {
@@ -1393,6 +1400,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
+	case "ScalingFactors.collateralRelease":
+		if e.complexity.ScalingFactors.CollateralRelease == nil {
+			break
+		}
+
+		return e.complexity.ScalingFactors.CollateralRelease(childComplexity), true
+
+	case "ScalingFactors.initialMargin":
+		if e.complexity.ScalingFactors.InitialMargin == nil {
+			break
+		}
+
+		return e.complexity.ScalingFactors.InitialMargin(childComplexity), true
+
+	case "ScalingFactors.searchLevel":
+		if e.complexity.ScalingFactors.SearchLevel == nil {
+			break
+		}
+
+		return e.complexity.ScalingFactors.SearchLevel(childComplexity), true
+
 	case "SimpleRiskModel.params":
 		if e.complexity.SimpleRiskModel.Params == nil {
 			break
@@ -1733,6 +1761,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TradableInstrument.RiskModel(childComplexity), true
+
+	case "TradableInstrument.scalingFactors":
+		if e.complexity.TradableInstrument.ScalingFactors == nil {
+			break
+		}
+
+		return e.complexity.TradableInstrument.ScalingFactors(childComplexity), true
 
 	case "Trade.aggressor":
 		if e.complexity.Trade.Aggressor == nil {
@@ -2337,6 +2372,17 @@ type Instrument {
   product: Product!
 }
 
+type ScalingFactors {
+  # the scaling factor that determines the margin level at which we have to search for more money
+  searchLevel: Float!
+
+  # the scaling factor that determines the optimal margin level
+  initialMargin: Float!
+
+  # The scaling factor that determines the overflow margin level
+  collateralRelease: Float!
+}
+
 # A tradable instrument is a combination of an instrument and a risk model
 type TradableInstrument {
   # An instance of or reference to a fully specified instrument.
@@ -2344,6 +2390,9 @@ type TradableInstrument {
 
   # A reference to a risk model that is valid for the instrument
   riskModel: RiskModel!
+
+  # the scaling factors (search, initial, release) for this tradable instrument
+  scalingFactors: ScalingFactors
 }
 
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
@@ -7936,6 +7985,117 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ScalingFactors_searchLevel(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ScalingFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SearchLevel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ScalingFactors_initialMargin(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ScalingFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InitialMargin, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ScalingFactors_collateralRelease(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ScalingFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollateralRelease, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _SimpleRiskModel_params(ctx context.Context, field graphql.CollectedField, obj *SimpleRiskModel) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -9647,6 +9807,40 @@ func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradableInstrument_scalingFactors(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TradableInstrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScalingFactors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ScalingFactors)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -12848,6 +13042,43 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var scalingFactorsImplementors = []string{"ScalingFactors"}
+
+func (ec *executionContext) _ScalingFactors(ctx context.Context, sel ast.SelectionSet, obj *ScalingFactors) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, scalingFactorsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ScalingFactors")
+		case "searchLevel":
+			out.Values[i] = ec._ScalingFactors_searchLevel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "initialMargin":
+			out.Values[i] = ec._ScalingFactors_initialMargin(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "collateralRelease":
+			out.Values[i] = ec._ScalingFactors_collateralRelease(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var simpleRiskModelImplementors = []string{"SimpleRiskModel", "RiskModel"}
 
 func (ec *executionContext) _SimpleRiskModel(ctx context.Context, sel ast.SelectionSet, obj *SimpleRiskModel) graphql.Marshaler {
@@ -13287,6 +13518,8 @@ func (ec *executionContext) _TradableInstrument(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "scalingFactors":
+			out.Values[i] = ec._TradableInstrument_scalingFactors(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14895,6 +15128,17 @@ func (ec *executionContext) marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOScalingFactors2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v ScalingFactors) graphql.Marshaler {
+	return ec._ScalingFactors(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v *ScalingFactors) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ScalingFactors(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {

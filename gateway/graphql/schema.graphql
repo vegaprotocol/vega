@@ -454,6 +454,17 @@ type Instrument {
   product: Product!
 }
 
+type ScalingFactors {
+  # the scaling factor that determines the margin level at which we have to search for more money
+  searchLevel: Float!
+
+  # the scaling factor that determines the optimal margin level
+  initialMargin: Float!
+
+  # The scaling factor that determines the overflow margin level
+  collateralRelease: Float!
+}
+
 # A tradable instrument is a combination of an instrument and a risk model
 type TradableInstrument {
   # An instance of or reference to a fully specified instrument.
@@ -461,6 +472,9 @@ type TradableInstrument {
 
   # A reference to a risk model that is valid for the instrument
   riskModel: RiskModel!
+
+  # the scaling factors (search, initial, release) for this tradable instrument
+  scalingFactors: ScalingFactors
 }
 
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history

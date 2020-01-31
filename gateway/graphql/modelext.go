@@ -40,6 +40,8 @@ var (
 	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
 	// ErrNilContinuousTradingTickSize ...
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
+	// ErrnilScalingFactors...
+	ErrNilScalingFactors = errors.New("nil scaling factors")
 )
 
 // IntoProto ...
@@ -204,12 +206,24 @@ func (ti *TradableInstrument) IntoProto() (*types.TradableInstrument, error) {
 			return nil, err
 		}
 	}
+	if ti.ScalingFactors != nil {
+		mc := &types.MarginCalculator{}
+		mc.ScalingFactors, _ = ti.ScalingFactors.IntoProto()
+	}
 	err = ti.riskModelIntoProto(pti)
 	if err != nil {
 		return nil, err
 	}
 
 	return pti, nil
+}
+
+func (s *ScalingFactors) IntoProto() (*types.ScalingFactors, error) {
+	return &types.ScalingFactors{
+		SearchLevel:       s.SearchLevel,
+		InitialMargin:     s.InitialMargin,
+		CollateralRelease: s.CollateralRelease,
+	}, nil
 }
 
 // IntoProto ...
@@ -416,7 +430,21 @@ func TradableInstrumentFromProto(pti *types.TradableInstrument) (*TradableInstru
 	if err != nil {
 		return nil, err
 	}
+	if mc := pti.MarginCalculator; mc != nil {
+		ti.ScalingFactors, _ = ScalingFactorsFromProto(mc.ScalingFactors)
+	}
 	return ti, nil
+}
+
+func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error) {
+	if psf == nil {
+		return nil, ErrNilScalingFactors
+	}
+	return &ScalingFactors{
+		SearchLevel:       psf.SearchLevel,
+		InitialMargin:     psf.InitialMargin,
+		CollateralRelease: psf.CollateralRelease,
+	}, nil
 }
 
 // MarketFromProto ...

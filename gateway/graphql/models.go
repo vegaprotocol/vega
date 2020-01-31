@@ -109,6 +109,12 @@ type Party struct {
 	Margins   []*proto.MarginLevels `json:"margins"`
 }
 
+type ScalingFactors struct {
+	SearchLevel       float64 `json:"searchLevel"`
+	InitialMargin     float64 `json:"initialMargin"`
+	CollateralRelease float64 `json:"collateralRelease"`
+}
+
 type SimpleRiskModel struct {
 	Params *SimpleRiskModelParams `json:"params"`
 }
@@ -121,8 +127,9 @@ type SimpleRiskModelParams struct {
 }
 
 type TradableInstrument struct {
-	Instrument *Instrument `json:"instrument"`
-	RiskModel  RiskModel   `json:"riskModel"`
+	Instrument     *Instrument     `json:"instrument"`
+	RiskModel      RiskModel       `json:"riskModel"`
+	ScalingFactors *ScalingFactors `json:"scalingFactors"`
 }
 
 type AccountType string
