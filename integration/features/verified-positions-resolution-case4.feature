@@ -54,12 +54,12 @@ Feature: Position resolution case 4
 # check positions
     Then position API produce the following:
      | trader           | volume | unrealisedPNL | realisedPNL |
-     | designatedLooser |      0 |             0 |  -1160000000 |
+     | designatedLooser |    290 |    -870000000 |           0 |
 
 # checking margins
     Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 |      0 |       0 |
+      | trader           | asset | id        |    margin | general |
+      | designatedLooser | BTC   | ETH/DEC19 | 290000000 |       0 |
 
 # then we make sure the insurance pool collected the funds
-    And the insurance pool balance is "290000000" for the market "ETH/DEC19"
+    And the insurance pool balance is "0" for the market "ETH/DEC19"
