@@ -9,6 +9,7 @@ import (
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
@@ -90,6 +91,13 @@ func getTestMarket() *types.Market {
 						},
 						Asset: "Ethereum/Ether",
 					},
+				},
+			},
+			MarginCalculator: &proto.MarginCalculator{
+				ScalingFactors: &proto.ScalingFactors{
+					SearchLevel:       1.1,
+					InitialMargin:     1.2,
+					CollateralRelease: 1.4,
 				},
 			},
 			RiskModel: &types.TradableInstrument_LogNormalRiskModel{

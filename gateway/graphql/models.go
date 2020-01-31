@@ -85,6 +85,10 @@ type LogNormalRiskModel struct {
 
 func (LogNormalRiskModel) IsRiskModel() {}
 
+type MarginCalculator struct {
+	ScalingFactors *ScalingFactors `json:"scalingFactors"`
+}
+
 type Market struct {
 	ID                 string              `json:"id"`
 	Name               string              `json:"name"`
@@ -109,6 +113,12 @@ type Party struct {
 	Margins   []*proto.MarginLevels `json:"margins"`
 }
 
+type ScalingFactors struct {
+	SearchLevel       float64 `json:"searchLevel"`
+	InitialMargin     float64 `json:"initialMargin"`
+	CollateralRelease float64 `json:"collateralRelease"`
+}
+
 type SimpleRiskModel struct {
 	Params *SimpleRiskModelParams `json:"params"`
 }
@@ -121,8 +131,9 @@ type SimpleRiskModelParams struct {
 }
 
 type TradableInstrument struct {
-	Instrument *Instrument `json:"instrument"`
-	RiskModel  RiskModel   `json:"riskModel"`
+	Instrument       *Instrument       `json:"instrument"`
+	RiskModel        RiskModel         `json:"riskModel"`
+	MarginCalculator *MarginCalculator `json:"marginCalculator"`
 }
 
 type AccountType string
