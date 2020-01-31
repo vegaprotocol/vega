@@ -38,6 +38,8 @@ var (
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 	// ErrMissingGeneralAccountForParty ...
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
+	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
+	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
 
 	networkPartyID = "network"
 )
@@ -569,6 +571,9 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
+		m.log.Warn("closing out trader",
+			logging.String("party-id", v.Party()),
+			logging.String("market-id", m.GetID()))
 		distressedPos = append(distressedPos, v)
 	}
 	// cancel pending orders for traders
@@ -683,9 +688,16 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
 	m.orderBuf.Add(no)
-	// if err := m.orders.Post(no); err != nil {
-	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	// }
+
+	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
+	// in the book to 0 out the positions.
+	// in this case we will just return now, cutting off the position resolution
+	// this means that trader still being distressed will stay distressed,
+	// then when a new order is placed, the distressed traders will go again through positions resolution
+	// and if the volume of the book is acceptable, we will then process positions resolutions
+	if no.Remaining == no.Size {
+		return ErrNotEnoughVolumeToZeroOutNetworkOrder
+	}
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
@@ -886,15 +898,14 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transferResps, closePositions, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
+		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(m.GetID(), riskUpdate)
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferBuf.Add(transferResps)
+		m.transferBuf.Add([]*types.TransferResponse{transfer})
 
-		if len(closePositions) > 0 {
-
-			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
+		if closePos != nil {
+			// if closePose is not nil then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
 
 			m.log.Error("party did not have enough collateral to reach the InitialMargin",
@@ -906,14 +917,12 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Transfers applied for ")
-			for _, tr := range transferResps {
-				for _, v := range tr.GetTransfers() {
-					m.log.Debug(
-						"Ensured margin on order with success",
-						logging.String("transfer", fmt.Sprintf("%v", *v)),
-						logging.String("market-id", m.GetID()),
-					)
-				}
+			for _, v := range transfer.GetTransfers() {
+				m.log.Debug(
+					"Ensured margin on order with success",
+					logging.String("transfer", fmt.Sprintf("%v", *v)),
+					logging.String("market-id", m.GetID()),
+				)
 			}
 		}
 	}
