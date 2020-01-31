@@ -3,8 +3,8 @@ Feature: Test trader accounts
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/short | tau/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |        94 | simple     |        0.2 |      0.1 |  0 | 0 |     0 |              5 |              4 |           3.2 |              94 |
+      | name      | baseName | quoteName | asset | markprice | risk model | tau/long | lamd/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | ETH/DEC19 | BTC      | ETH       | ETH   |        94 | simple     |      0.1 |        0.2 |  0 | 0 |     0 |              5 |              4 |           3.2 |              94 |
     And the following traders:
       | name       | amount |
       | trader1    | 10000  |
@@ -37,7 +37,7 @@ Feature: Test trader accounts
     Then traders place following orders:
       | trader     | market id | type | volume | price | resulting trades | type  | tif |
       | trader1    | ETH/DEC19 |  buy |     13 |   150 |                2 | LIMIT | GTC |
-    And "trader1" general account for asset "ETH" balance is "6104"
+    And "trader1" general account for asset "ETH" balance is "6832"
     #And executed trades:
     #  |  buyer  | price | size |       seller |
     #  | trader1 |   112 |    2 |   sellSideMM |
@@ -46,7 +46,7 @@ Feature: Test trader accounts
     # checking margins
     Then I expect the trader to have a margin:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   3952 |    6104 |
+      | trader1 | ETH   | ETH/DEC19 |   3224 |    6832 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 |         988 |   3161 |    3952 |    4940 |
+      | trader1 | ETH/DEC19 |         806 |   2579 |    3224 |    4030 |
