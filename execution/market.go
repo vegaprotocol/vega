@@ -38,6 +38,8 @@ var (
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 	// ErrMissingGeneralAccountForParty ...
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
+	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
+	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
 
 	networkPartyID = "network"
 )
@@ -686,9 +688,16 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
 	m.orderBuf.Add(no)
-	// if err := m.orders.Post(no); err != nil {
-	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	// }
+
+	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
+	// in the book to 0 out the positions.
+	// in this case we will just return now, cutting off the position resolution
+	// this means that trader still being distressed will stay distressed,
+	// then when a new order is placed, the distressed traders will go again through positions resolution
+	// and if the volume of the book is acceptable, we will then process positions resolutions
+	if no.Remaining == no.Size {
+		return ErrNotEnoughVolumeToZeroOutNetworkOrder
+	}
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
