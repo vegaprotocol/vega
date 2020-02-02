@@ -318,20 +318,28 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		account, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		generalAccount, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
-		if account.GetBalance() != i64val(row, 4) {
-			return fmt.Errorf("expected general balance  %d, instead saw %d (trader: %v)", i64val(row, 4), account.GetBalance(), val(row, 0))
+
+		var hasError bool
+
+		if generalAccount.GetBalance() != i64val(row, 4) {
+			hasError = true
 		}
-		account, err = execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
-		if account.GetBalance() != i64val(row, 3) {
-			return fmt.Errorf("expected margin balance  %d, instead saw %d (trader: %v)", i64val(row, 3), account.GetBalance(), val(row, 0))
+		if marginAccount.GetBalance() != i64val(row, 3) {
+			hasError = true
 		}
+
+		if hasError {
+			return fmt.Errorf("expected balances to be margin(%d) general(%v), instead saw margin(%v), general(%v), (trader: %v)", i64val(row, 3), i64val(row, 4), marginAccount.GetBalance(), generalAccount.GetBalance(), val(row, 0))
+		}
+
 	}
 	return nil
 }
@@ -375,7 +383,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 
 		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v", fromAccountID, toAccountID)
+			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
 		}
 		if ledgerEntry.Amount != i64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
@@ -462,17 +470,23 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 			return err
 		}
 
+		var hasError bool
+
 		if ml.MaintenanceMargin != i64val(row, 2) {
-			return fmt.Errorf("invalid maintenance margin, expected %v but got %v (trader=%v)", i64val(row, 2), ml.MaintenanceMargin, val(row, 0))
+			hasError = true
 		}
 		if ml.SearchLevel != i64val(row, 3) {
-			return fmt.Errorf("invalid search margin, expected %v but got %v (trader=%v)", i64val(row, 3), ml.SearchLevel, val(row, 0))
+			hasError = true
 		}
 		if ml.InitialMargin != i64val(row, 4) {
-			return fmt.Errorf("invalid initial margin, expected %v but got %v (trader=%v)", i64val(row, 4), ml.InitialMargin, val(row, 0))
+			hasError = true
 		}
 		if ml.CollateralReleaseLevel != i64val(row, 5) {
-			return fmt.Errorf("invalid collateral release margin, expected %v but got %v (trader=%v)", i64val(row, 5), ml.CollateralReleaseLevel, val(row, 0))
+			hasError = true
+		}
+		if hasError {
+			return fmt.Errorf(
+				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)", i64val(row, 2), i64val(row, 3), i64val(row, 4), i64val(row, 5), ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, val(row, 0))
 		}
 
 	}
@@ -527,6 +541,74 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 
 	if ordCnt > 0 {
 		return errors.New("some orders were not rejected")
+	}
+	return nil
+}
+
+func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
+	for _, row := range table.Rows {
+		var (
+			retries = 10
+			ok      bool
+		)
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		party := val(row, 0)
+
+		for !ok && retries >= 0 {
+			pos, err := execsetup.positionPlugin.GetPositionsByParty(party)
+			if err != nil {
+				return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
+			}
+			if len(pos) <= 0 {
+				return fmt.Errorf("party do not have a position, party(%v)", party)
+			}
+
+			volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 3), i64val(row, 2)
+			if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
+				if retries == 0 {
+					return fmt.Errorf("invalid positions api values for party(%v), expected: volume(%v), unrealisedPNL(%v), realisedPNL(%v)", party, pos[0].OpenVolume, pos[0].UnrealisedPNL, pos[0].RealisedPNL)
+				}
+
+				// yea not amazing...
+				// but it's an actual pain to get the positions api to be in sync as it's
+				// designed to run asyncrhronously
+				time.Sleep(1 * time.Second)
+				retries -= 1
+
+			} else {
+				ok = !ok
+			}
+		}
+	}
+	return nil
+}
+
+func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
+	markPrice, err := strconv.ParseUint(markPriceStr, 10, 0)
+	if err != nil {
+		return fmt.Errorf("markPrice is not a integer: markPrice(%v), err(%v)", markPriceStr, err)
+	}
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get mark price for market(%v), err(%v)", markPriceStr, err)
+	}
+
+	if mktdata.MarkPrice != markPrice {
+		return fmt.Errorf("mark price if wrong for market(%v), expected(%v) got(%v)", market, markPrice, mktdata.MarkPrice)
+	}
+
+	return nil
+}
+
+func dumpTransfers() error {
+	for _, _v := range execsetup.transfers.data {
+		for _, v := range _v.GetTransfers() {
+			fmt.Printf("transfer: %v\n", *v)
+		}
 	}
 	return nil
 }

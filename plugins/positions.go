@@ -69,11 +69,9 @@ func (p *Positions) Stop() {
 		// only unsubscribe if ch was set, otherwise we might end up unregistering ref 0, which
 		// could (in theory at least) be used by another component
 		p.buf.Unsubscribe(p.ref)
-		p.ch = nil
 		p.ref = 0
 
 		p.lsbuf.Unsubscribe(p.lsref)
-		p.lsch = nil
 		p.lsref = 0
 	}
 	// we don't need to reassign ch here, because the channel is closed, the consume routine
@@ -85,14 +83,9 @@ func (p *Positions) Stop() {
 // consume keep reading the channel for as long as we need to
 func (p *Positions) consume(ctx context.Context) {
 	defer func() {
-		p.mu.Lock()
-		p.buf.Unsubscribe(p.ref)
-		p.ref = 0
+		p.Stop()
 		p.ch = nil
-		p.lsbuf.Unsubscribe(p.lsref)
-		p.lsref = 0
 		p.lsch = nil
-		p.mu.Unlock()
 	}()
 	for {
 		select {
@@ -124,8 +117,18 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 			// do nothing, market/party does not exists, but that should not happen
 			continue
 		}
-		pos.RealisedPNLFP -= float64(amountLoss)
-		pos.Position.RealisedPNL -= amountLoss
+
+		// amountLoss will be negative for a good trader, as they lost monies because of bad trader
+		// inverse is true for the bad trader as they kind of stole monies from the network
+		if amountLoss < 0 {
+			// good trader
+			pos.loss += float64(-amountLoss)
+		} else {
+			// bad trader
+			pos.adjustment += float64(amountLoss)
+		}
+		pos.RealisedPNL += amountLoss
+
 		p.data[marketID][partyID] = pos
 	}
 }
@@ -227,6 +230,7 @@ func updateVWAP(vwap float64, volume int64, addVolume int64, addPrice uint64) fl
 }
 
 func openV(p *Position, openedVolume int64, tradedPrice uint64) {
+	// calculate both average entry price here.
 	p.AverageEntryPriceFP = updateVWAP(p.AverageEntryPriceFP, p.OpenVolume, openedVolume, tradedPrice)
 	p.OpenVolume += openedVolume
 }
@@ -243,11 +247,12 @@ func updatePosition(p *Position, e events.SettlePosition) {
 	// if this settlePosition event has a margin event embedded, that means we're dealing
 	// with a trader who was closed out...
 	if margin, ok := e.Margin(); ok {
+		p.RealisedPNL += p.UnrealisedPNL
 		p.OpenVolume = 0
 		p.UnrealisedPNL = 0
 		p.AverageEntryPrice = 0
 		// realised P&L includes whatever we had in margin account at this point
-		p.RealisedPNL -= int64(margin.MarginBalance())
+		p.RealisedPNL -= int64(margin)
 		// @TODO average entry price shouldn't be affected(?)
 		// the volume now is zero, though, so we'll end up moving this position to storage
 		p.UnrealisedPNLFP = 0
@@ -270,6 +275,11 @@ type Position struct {
 	AverageEntryPriceFP float64
 	RealisedPNLFP       float64
 	UnrealisedPNLFP     float64
+
+	// what the party lost because of loss socialization
+	loss float64
+	// what a party was missing which triggered loss socialization
+	adjustment float64
 }
 
 func evtToProto(e events.SettlePosition) Position {

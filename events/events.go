@@ -29,10 +29,11 @@ type LossSocialization interface {
 // SettlePosition is an event that the settlement buffer will propagate through the system
 // used by the plugins (currently only the positions API)
 type SettlePosition interface {
-	MarketPosition
 	MarketID() string
 	Trades() []TradeSettlement
-	Margin() (Margin, bool)
+	Margin() (uint64, bool)
+	Party() string
+	Price() uint64
 }
 
 // Transfer is an event passed on by settlement engine, contains position
