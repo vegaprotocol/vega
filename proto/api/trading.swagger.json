@@ -1836,7 +1836,10 @@
         "MARKET_CLOSED",
         "MARGIN_CHECK_FAILED",
         "MISSING_GENERAL_ACCOUNT",
-        "INTERNAL_ERROR"
+        "INTERNAL_ERROR",
+        "INVALID_PRICE",
+        "INVALID_SIZE",
+        "INVALID_PERSISTENCE"
       ],
       "default": "NONE"
     },
