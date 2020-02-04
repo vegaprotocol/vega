@@ -47,25 +47,6 @@ func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
 }
 
-func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
-	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
-	defer book.Finish()
-	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
-		Side:        types.Side_Buy,
-		Price:       0,
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
-	}
-	confirm, err := book.SubmitOrder(&order)
-	assert.Equal(t, types.ErrInvalidPrice, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
-}
-
 func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market, true)
@@ -83,6 +64,25 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidSize, err)
 	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+}
+
+func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       0,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), confirm.GetOrder().GetPrice())
 }
 
 func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {

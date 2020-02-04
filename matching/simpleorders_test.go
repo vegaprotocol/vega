@@ -128,7 +128,7 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_IOC,
 		Type:        types.Order_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -155,7 +155,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_IOC,
 		Type:        types.Order_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -186,7 +186,7 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_FOK,
 		Type:        types.Order_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -213,7 +213,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_FOK,
 		Type:        types.Order_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -339,7 +339,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_IOC,
 		Type:        types.Order_MARKET,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -380,7 +380,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_IOC,
 		Type:        types.Order_MARKET,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -421,7 +421,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_FOK,
 		Type:        types.Order_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -462,7 +462,7 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_FOK,
 		Type:        types.Order_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)

@@ -234,7 +234,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
 		}
 
-		if totalVolumeToFill <= agg.Remaining {
+		if totalVolumeToFill < agg.Remaining {
 			timer.EngineTimeCounterAdd()
 			return trades, impactedOrders, 0
 		}

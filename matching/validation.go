@@ -26,8 +26,8 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 		err = types.ErrInvalidExpirationDatetime
 	} else if len(orderMessage.PartyID) == 0 {
 		err = types.ErrInvalidPartyID
-	} else if orderMessage.Price == 0 {
-		err = types.ErrInvalidPrice
+	} else if orderMessage.Size == 0 {
+		err = types.ErrInvalidSize
 	} else if orderMessage.Remaining > orderMessage.Size {
 		err = types.ErrInvalidRemainingSize
 	} else if orderMessage.Type == types.Order_NETWORK && orderMessage.TimeInForce != types.Order_FOK {

@@ -13,7 +13,7 @@ var (
 	ErrOrderAmendFailure         = OrderError_ORDER_AMEND_FAILURE
 	ErrOrderNotFound             = OrderError_ORDER_NOT_FOUND
 	ErrInvalidPartyID            = OrderError_INVALID_PARTY_ID
-	ErrInvalidPrice              = OrderError_INVALID_PRICE
+	ErrInvalidSize               = OrderError_INVALID_SIZE
 	ErrInvalidPersistence        = OrderError_INVALID_PERSISTENCE
 )
 
