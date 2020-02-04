@@ -40,6 +40,10 @@ var (
 	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
 	// ErrNilContinuousTradingTickSize ...
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
+	// ErrnilScalingFactors...
+	ErrNilScalingFactors = errors.New("nil scaling factors")
+	// ErrNilMarginCalculator
+	ErrNilMarginCalculator = errors.New("nil margin calculator")
 )
 
 // IntoProto ...
@@ -204,12 +208,31 @@ func (ti *TradableInstrument) IntoProto() (*types.TradableInstrument, error) {
 			return nil, err
 		}
 	}
+	if ti.MarginCalculator != nil {
+		pti.MarginCalculator, _ = ti.MarginCalculator.IntoProto()
+	}
 	err = ti.riskModelIntoProto(pti)
 	if err != nil {
 		return nil, err
 	}
 
 	return pti, nil
+}
+
+func (m *MarginCalculator) IntoProto() (*types.MarginCalculator, error) {
+	pm := &types.MarginCalculator{}
+	if m.ScalingFactors != nil {
+		pm.ScalingFactors, _ = m.ScalingFactors.IntoProto()
+	}
+	return pm, nil
+}
+
+func (s *ScalingFactors) IntoProto() (*types.ScalingFactors, error) {
+	return &types.ScalingFactors{
+		SearchLevel:       s.SearchLevel,
+		InitialMargin:     s.InitialMargin,
+		CollateralRelease: s.CollateralRelease,
+	}, nil
 }
 
 // IntoProto ...
@@ -416,7 +439,36 @@ func TradableInstrumentFromProto(pti *types.TradableInstrument) (*TradableInstru
 	if err != nil {
 		return nil, err
 	}
+	mc, err := MarginCalculatorFromProto(pti.MarginCalculator)
+	if err != nil {
+		return nil, err
+	}
+	ti.MarginCalculator = mc
 	return ti, nil
+}
+
+func MarginCalculatorFromProto(mc *types.MarginCalculator) (*MarginCalculator, error) {
+	if mc == nil {
+		return nil, ErrNilMarginCalculator
+	}
+	m := &MarginCalculator{}
+	sf, err := ScalingFactorsFromProto(mc.ScalingFactors)
+	if err != nil {
+		return nil, err
+	}
+	m.ScalingFactors = sf
+	return m, nil
+}
+
+func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error) {
+	if psf == nil {
+		return nil, ErrNilScalingFactors
+	}
+	return &ScalingFactors{
+		SearchLevel:       psf.SearchLevel,
+		InitialMargin:     psf.InitialMargin,
+		CollateralRelease: psf.CollateralRelease,
+	}, nil
 }
 
 // MarketFromProto ...
