@@ -4,6 +4,10 @@
     "title": "proto/api/trading.proto",
     "version": "version not set"
   },
+  "schemes": [
+    "http",
+    "https"
+  ],
   "consumes": [
     "application/json"
   ],
@@ -2258,6 +2262,116 @@
           "type": "string"
         }
       }
+    }
+  },
+  "x-stream-definitions": {
+    "apiOrdersStream": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiOrdersStream"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiOrdersStream"
+    },
+    "apiTradesStream": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiTradesStream"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiTradesStream"
+    },
+    "vegaAccount": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaAccount"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaAccount"
+    },
+    "vegaCandle": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaCandle"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaCandle"
+    },
+    "vegaMarginLevels": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarginLevels"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarginLevels"
+    },
+    "vegaMarketData": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketData"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketData"
+    },
+    "vegaMarketDepth": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketDepth"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketDepth"
+    },
+    "vegaPosition": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaPosition"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaPosition"
+    },
+    "vegaTransferResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaTransferResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaTransferResponse"
     }
   }
 }
