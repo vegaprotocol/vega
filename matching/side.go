@@ -62,16 +62,16 @@ func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64) {
 	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume
 }
 
-func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
+func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1
 	var oldOrder *types.Order
 
 	for idx, priceLevel := range s.levels {
-		if priceLevel.price == orderAmended.Price {
+		if priceLevel.price == orderAmend.Price {
 			priceLevelIndex = idx
 			for j, order := range priceLevel.orders {
-				if order.Id == orderAmended.Id {
+				if order.Id == orderAmend.Id {
 					orderIndex = j
 					oldOrder = order
 					break
@@ -85,19 +85,23 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	if oldOrder.PartyID != orderAmended.PartyID {
+	if oldOrder.PartyID != orderAmend.PartyID {
 		return types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Size < orderAmended.Size {
+	if oldOrder.Remaining < orderAmend.Size {
 		return types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Reference != orderAmended.Reference {
+	if oldOrder.Reference != orderAmend.Reference {
 		return types.ErrOrderAmendFailure
 	}
 
-	s.levels[priceLevelIndex].orders[orderIndex] = orderAmended
+	// Find out the reduce by amount
+	reduceBy := oldOrder.Remaining - orderAmend.Size
+
+	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
+	s.levels[priceLevelIndex].reduceVolumeAtTS(reduceBy, orderAmend.GetCreatedAt())
 	return nil
 }
 
