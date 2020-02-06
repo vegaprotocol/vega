@@ -78,7 +78,8 @@ func NewGRPCServer(
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	initErrorMap()
+	// Initialise the Vega specific/domain error code map
+	InitErrorMap()
 
 	return &GRPCServer{
 		log:                     log,
