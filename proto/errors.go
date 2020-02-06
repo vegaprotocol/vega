@@ -12,6 +12,9 @@ var (
 	ErrEditNotAllowed            = OrderError_EDIT_NOT_ALLOWED
 	ErrOrderAmendFailure         = OrderError_ORDER_AMEND_FAILURE
 	ErrOrderNotFound             = OrderError_ORDER_NOT_FOUND
+	ErrInvalidPartyID            = OrderError_INVALID_PARTY_ID
+	ErrInvalidSize               = OrderError_INVALID_SIZE
+	ErrInvalidPersistence        = OrderError_INVALID_PERSISTENCE
 )
 
 func IsOrderError(err error) (OrderError, bool) {
