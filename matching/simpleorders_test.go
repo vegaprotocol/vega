@@ -8,61 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOrderBook_PeteTest(t *testing.T) {
-	/*	market := "testMarket"
-		book := getTestOrderBook(t, market, true)
-		defer book.Finish()
-		// 3 orders of size 1, 3 different prices
-		orders := []*types.Order{
-			{
-				MarketID:    market,
-				PartyID:     "A",
-				Side:        types.Side_Buy,
-				Price:       100,
-				Size:        1,
-				Remaining:   1,
-				TimeInForce: types.Order_GTC,
-			},
-			{
-				MarketID:    market,
-				PartyID:     "B",
-				Side:        types.Side_Buy,
-				Price:       300,
-				Size:        5,
-				Remaining:   5,
-				TimeInForce: types.Order_GTC,
-			},
-			{
-				MarketID:    market,
-				PartyID:     "B",
-				Side:        types.Side_Buy,
-				Price:       200,
-				Size:        1,
-				Remaining:   1,
-				TimeInForce: types.Order_GTC,
-			},
-			{
-				MarketID:    market,
-				PartyID:     "d",
-				Side:        types.Side_Buy,
-				Price:       300,
-				Size:        10,
-				Remaining:   10,
-				TimeInForce: types.Order_GTC,
-			},
-		}
-		for _, o := range orders {
-			confirm, err := book.SubmitOrder(o)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(confirm.Trades))
-		}
-
-		price, volume := book.BestBidPriceAndVolume()
-		assert.Equal(t, uint64(300), price)
-		assert.Equal(t, uint64(15), volume)
-		assert.Equal(t, book.getNumberOfLevels(), 1)*/
-}
-
 func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market, true)
@@ -88,6 +33,7 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(1))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 1)
 }
 
 func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
@@ -115,6 +61,7 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 1)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(1))
+	assert.Equal(t, len(book.ordersByID), 1)
 }
 
 func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
@@ -142,6 +89,7 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
@@ -169,6 +117,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 /*
@@ -200,6 +149,7 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
@@ -227,6 +177,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 /*
@@ -271,6 +222,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
@@ -312,6 +264,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
@@ -353,6 +306,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
@@ -394,6 +348,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
@@ -435,6 +390,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
 
 func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
@@ -476,4 +432,5 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
+	assert.Equal(t, len(book.ordersByID), 0)
 }
