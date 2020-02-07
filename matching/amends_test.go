@@ -152,6 +152,42 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevelAndTS(100, 0, types.Side_Buy))
 }
 
+func TestOrderBookAmends_reduceToZero(t *testing.T) {
+	market := "market"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        2,
+		Remaining:   2,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_Buy))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevelAndTS(100, 0, types.Side_Buy))
+
+	amend := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        0,
+		Remaining:   0,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	err = book.AmendOrder(&amend)
+	assert.Error(t, types.ErrOrderAmendFailure, err)
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_Buy))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevelAndTS(100, 0, types.Side_Buy))
+}
+
 func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 	market := "market"
 	book := getTestOrderBook(t, market, true)
