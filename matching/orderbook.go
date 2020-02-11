@@ -387,32 +387,14 @@ func (b *OrderBook) RemoveDistressedOrders(
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {
-		total := party.Buy() + party.Sell()
-		if total == 0 {
-			continue
-		}
 		orders := []*types.Order{}
-		if party.Buy() > 0 {
-			i := party.Buy()
-			for _, l := range b.buy.levels {
-				rm := l.getOrdersByParty(party.Party())
-				i -= int64(len(rm))
-				orders = append(orders, rm...)
-				if i == 0 {
-					break
-				}
-			}
+		for _, l := range b.buy.levels {
+			rm := l.getOrdersByParty(party.Party())
+			orders = append(orders, rm...)
 		}
-		if party.Sell() > 0 {
-			i := party.Sell()
-			for _, l := range b.sell.levels {
-				rm := l.getOrdersByParty(party.Party())
-				i -= int64(len(rm))
-				orders = append(orders, rm...)
-				if i == 0 {
-					break
-				}
-			}
+		for _, l := range b.sell.levels {
+			rm := l.getOrdersByParty(party.Party())
+			orders = append(orders, rm...)
 		}
 		for _, o := range orders {
 			confirm, err := b.CancelOrder(o)
