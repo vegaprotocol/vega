@@ -39,6 +39,8 @@ do
 			--doc_opt="$fileformat,$(basename "$outputfile")"
 	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
 done
+
+# shellcheck disable=SC2016
 sed --in-place -r \
 	-e 's#`([^`]*)`#<tt>\1</tt>#g' \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
