@@ -126,6 +126,10 @@ type ComplexityRoot struct {
 		Tau                   func(childComplexity int) int
 	}
 
+	MarginCalculator struct {
+		ScalingFactors func(childComplexity int) int
+	}
+
 	MarginLevels struct {
 		Asset                  func(childComplexity int) int
 		CollateralReleaseLevel func(childComplexity int) int
@@ -242,6 +246,12 @@ type ComplexityRoot struct {
 		Statistics func(childComplexity int) int
 	}
 
+	ScalingFactors struct {
+		CollateralRelease func(childComplexity int) int
+		InitialMargin     func(childComplexity int) int
+		SearchLevel       func(childComplexity int) int
+	}
+
 	SimpleRiskModel struct {
 		Params func(childComplexity int) int
 	}
@@ -296,8 +306,9 @@ type ComplexityRoot struct {
 	}
 
 	TradableInstrument struct {
-		Instrument func(childComplexity int) int
-		RiskModel  func(childComplexity int) int
+		Instrument       func(childComplexity int) int
+		MarginCalculator func(childComplexity int) int
+		RiskModel        func(childComplexity int) int
 	}
 
 	Trade struct {
@@ -716,6 +727,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LogNormalRiskModel.Tau(childComplexity), true
+
+	case "MarginCalculator.scalingFactors":
+		if e.complexity.MarginCalculator.ScalingFactors == nil {
+			break
+		}
+
+		return e.complexity.MarginCalculator.ScalingFactors(childComplexity), true
 
 	case "MarginLevels.asset":
 		if e.complexity.MarginLevels.Asset == nil {
@@ -1393,6 +1411,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
+	case "ScalingFactors.collateralRelease":
+		if e.complexity.ScalingFactors.CollateralRelease == nil {
+			break
+		}
+
+		return e.complexity.ScalingFactors.CollateralRelease(childComplexity), true
+
+	case "ScalingFactors.initialMargin":
+		if e.complexity.ScalingFactors.InitialMargin == nil {
+			break
+		}
+
+		return e.complexity.ScalingFactors.InitialMargin(childComplexity), true
+
+	case "ScalingFactors.searchLevel":
+		if e.complexity.ScalingFactors.SearchLevel == nil {
+			break
+		}
+
+		return e.complexity.ScalingFactors.SearchLevel(childComplexity), true
+
 	case "SimpleRiskModel.params":
 		if e.complexity.SimpleRiskModel.Params == nil {
 			break
@@ -1727,6 +1766,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradableInstrument.Instrument(childComplexity), true
 
+	case "TradableInstrument.marginCalculator":
+		if e.complexity.TradableInstrument.MarginCalculator == nil {
+			break
+		}
+
+		return e.complexity.TradableInstrument.MarginCalculator(childComplexity), true
+
 	case "TradableInstrument.riskModel":
 		if e.complexity.TradableInstrument.RiskModel == nil {
 			break
@@ -1889,241 +1935,253 @@ schema {
     mutation: Mutation
 }
 
-# Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
+"Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
 type Mutation {
 
-  # Send a submit order request into VEGA network, this does not immediately create the order.
-  # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+  """
+  Send a submit order request into VEGA network, this does not immediately create the order.
+  It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+  """
   orderSubmit(
-    # ID of the market to place the order
+    "ID of the market to place the order"
     marketId: String!
-    # ID of the party placing the order
+    "ID of the party placing the order"
     partyId: String!
-    # Price of the asset
+    "Price of the asset"
     price: String
-    # Size ofthe order
+    "Size ofthe order"
     size: String!
-    # Side of the order (Buy or Sell)
+    "Side of the order (Buy or Sell)"
     side: Side!
-    # TimeInForce of the order
+    "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    # exiration of the the order
+    "exiration of the the order"
     expiration: String
-    # type of the order
+    "type of the order"
     type: OrderType!
   ): PendingOrder!
 
-  # Send a cancel order request into VEGA network, this does not immediately cancel an order.
-  # It validates and sends the request out for consensus.
+  """
+  Send a cancel order request into VEGA network, this does not immediately cancel an order.
+  It validates and sends the request out for consensus.
+  """
   orderCancel(
-    # ID of the order to cancel
+    "ID of the order to cancel"
     id: ID!
-    # ID of the party placing the order
+    "ID of the party placing the order"
     partyId: String!
-    # ID of the market where to find the order
+    "ID of the market where to find the order"
     marketId: String!
   ): PendingOrder!
 
-  # Send a amend order request into VEGA network, this does not immediately amend an order.
-  # It validates and sends the request out for consensus.
+  """
+  Send a amend order request into VEGA network, this does not immediately amend an order.
+  It validates and sends the request out for consensus.
+  """
   orderAmend(
-    # ID of the order to amend
+    "ID of the order to amend"
     id: ID!
-    # ID of the party which created the order
+    "ID of the party which created the order"
     partyId: String!
-    # New price for this order
+    "New price for this order"
     price: String!
-    # New size for this order
+    "New size for this order"
     size: String!
-    # New expiration time
+    "New expiration time"
     expiration: String
   ): PendingOrder!
 
 
-  # sign a party in using an username and password, then return a token
+  "sign a party in using an username and password, then return a token"
   signin(
-    # ID of the party to get logged in
+    "ID of the party to get logged in"
     id: String!
-    # Password of the party
+    "Password of the party"
     password: String!): String!
 }
 
-# Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
+"Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
 type Subscription {
-  # Subscribe to the candles updates
+  "Subscribe to the candles updates"
   candles(
-    # ID of the market we want to listen candles for
+    "ID of the market we want to listen candles for"
     marketId: String!
-    # Interval of the candles we want to listen for
+    "Interval of the candles we want to listen for"
     interval: Interval!
   ): Candle!
 
-  # Subscribe to orders updates
+  "Subscribe to orders updates"
   orders(
-    # ID of the market from which we want orders updates
+    "ID of the market from which we want orders updates"
     marketId: String
-    # ID of the party from which we want orders updates
+    "ID of the party from which we want orders updates"
     partyId: String
   ): [Order!]
 
-  # Subscribe to the trades updates
+  "Subscribe to the trades updates"
   trades(
-    # ID of the market from which we want trades updates
+    "ID of the market from which we want trades updates"
     marketId: String
-    # ID of the party from which we want trades updates
+    "ID of the party from which we want trades updates"
     partyId: String
   ): [Trade!]
 
-  # Subscribe to the positions updates
+  "Subscribe to the positions updates"
   positions(
-    # ID of the party from we want updates for
+    "ID of the party from we want updates for"
     partyId: String!
   ): Position!
 
-  # Subscribe to the market depths update
+  "Subscribe to the market depths update"
   marketDepth(
-    # ID of the market we want to receive market depth updates for
+    "ID of the market we want to receive market depth updates for"
     marketId: String!
   ): MarketDepth!
 
-  # Subscribe to the accounts updates
+  "Subscribe to the accounts updates"
   accounts(
-    # ID of the market from which we want accounts updates
+    "ID of the market from which we want accounts updates"
     marketId: String
-    # ID of the party from which we want accounts updates
+    "ID of the party from which we want accounts updates"
     partyId: String,
-    # Asset code
+    "Asset code"
     asset: String,
-    # Type of the account
+    "Type of the account"
     type: AccountType
   ): Account!
 
-  # subscribe to the mark price changes
+  "subscribe to the mark price changes"
   marketData(
-    # id of the market we want to subscribe to the market data changes
+    "id of the market we want to subscribe to the market data changes"
     marketId: String
   ): MarketData!
 
-  # Subscribe to the margin changes
+  "Subscribe to the margin changes"
   margins(
-    # id of the trader we want to subscribe for margin updates
+    "id of the trader we want to subscribe for margin updates"
     partyId: String!
-    # market we want to listen to margin updates (nil if we want updates for all markets)
+    "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketID: String
   ): MarginLevels!
 }
 
-# Margins for a given a trader
+"Margins for a given a trader"
 type MarginLevels {
-  # market in which the margin is required for this trader
+  "market in which the margin is required for this trader"
   market: Market!
-  # asset for the current margins
+  "asset for the current margins"
   asset: String!
-  # id of the trader for this margin
+  "id of the trader for this margin"
   party: Party!
-  # minimal margin for the position to be maintained in the network (unsigned int actually)
+  "minimal margin for the position to be maintained in the network (unsigned int actually)"
   maintenanceLevel: String!
-  # if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)
+  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)"
   searchLevel: String!
-  # this is the minimal margin required for a trader to place a new order on the network (unsigned int actually)
+  "this is the minimal margin required for a trader to place a new order on the network (unsigned int actually)"
   initialLevel: String!
-  # if the margin of the trader is > to this level, then collateral will be release from the margin
-  # account into the general account of the trader for the given asset
+
+  """
+  If the margin of the trader is greater than this level, then collateral will be released from the margin account into
+  the general account of the trader for the given asset.
+  """
   collateralReleaseLevel: String!
-  # time at which these margin level were relevant
+
+  "time at which these margin level were relevant"
   timestamp: String!
 }
 
-# Live data of a Market
+"Live data of a Market"
 type MarketData {
-  # market id of the associated mark price
+  "market id of the associated mark price"
   market: Market!
-  # the mark price (actually an unsgined int)
+  "the mark price (actually an unsgined int)"
   markPrice: String!
-  # the highest price level on an order book for buy orders.
+  "the highest price level on an order book for buy orders."
   bestBidPrice: String!
-  # the aggregated volume being bid at the best bid price.
+  "the aggregated volume being bid at the best bid price."
   bestBidVolume: String!
-  # the lowest price level on an order book for offer orders.
+  "the lowest price level on an order book for offer orders."
   bestOfferPrice: String!
-  # the aggregated volume being offered at the best offer price.
+  "the aggregated volume being offered at the best offer price."
   bestOfferVolume: String!
-  # the arithmetic average of the best bid price and best offer price.
+  "the arithmetic average of the best bid price and best offer price."
   midPrice: String!
-  # time at which this mark price was relevant
+  "time at which this mark price was relevant"
   timestamp: String!
 }
 
-# An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
+"An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted."
 type PendingOrder {
 
-  # The id of the Order, can be null if the request was SubmitOrder
+  "The id of the Order, can be null if the request was SubmitOrder"
   id: String
 
-  # A UUID reference for the caller to aid in tracking operations on VEGA
+  "A UUID reference for the caller to aid in tracking operations on VEGA"
   reference: String!
 
-  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
   price: String
 
-  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
   timeInForce: OrderTimeInForce
 
-  # Whether the order is to buy or sell
+  "Whether the order is to buy or sell"
   side: Side
 
-  # The market the order is trading on (probably stored internally as a hash of the market details)
-  # could be nil if the submit order failed an no order is getting created
+  """
+  The market the order is trading on (probably stored internally as a hash of the market details)
+  could be nil if the submit order failed and no order is created.
+  """
   market: Market
 
-  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String
 
-  # The trader who place the order (probably stored internally as the trader's public key)
+  "The trader who place the order (probably stored internally as the trader's public key)"
   party: Party
 
-  # The status of an order, for example 'Active'
+  "The status of an order, for example 'Active'"
   status: OrderStatus
 
-  # The type of the order
+  "The type of the order"
   type: OrderType
 }
 
-# Queries allow a caller to read data and filter data via GraphQL.
+"Queries allow a caller to read data and filter data via GraphQL."
 type Query {
 
-  # One or more instruments that are trading on the VEGA network
+  "One or more instruments that are trading on the VEGA network"
   markets(
-    # ID of the market
+    "ID of the market"
     id: String
   ): [Market!]
 
-  # An instrument that is trading on the VEGA network
+  "An instrument that is trading on the VEGA network"
   market(
-    # Optional ID of a market
+    "Optional ID of a market"
     id: String!
   ): Market
 
-  # One or more entities that are trading on the VEGA network
+  "One or more entities that are trading on the VEGA network"
   parties(
-    # Optional ID of a party
+    "Optional ID of a party"
     id: String
   ): [Party!]
 
-  # An entity that is trading on the VEGA network
+  "An entity that is trading on the VEGA network"
   party(
-    # ID of a party
+    "ID of a party"
     id: String!
   ): Party
 
-  # a bunch of statistics about the node
+  "a bunch of statistics about the node"
   statistics: Statistics!
 
-  # Check a partyID+Token combination
+  "Check a partyID+Token combination"
   checkToken(
-    # Party ID
+    "Party ID"
     partyId: String!
-    # Token
+    "Token"
     token: String!
   ): CheckTokenResponse!
 }
@@ -2132,108 +2190,108 @@ type CheckTokenResponse {
   ok: Boolean!
 }
 
-# A bunch of statistics about the node
+"Statistics about the node"
 type Statistics {
-  # Current block number
+  "Current block number"
   blockHeight: Int!
 
-  # Number of items in the backlog
+  "Number of items in the backlog"
   backlogLength: Int!
 
-  # Total number of peers on the vega network
+  "Total number of peers on the vega network"
   totalPeers: Int!
 
-  # Genesis time of the chain
+  "Genesis time of the chain"
   genesisTime: String!
 
-  # Current time (real)
+  "Current time (real)"
   currentTime: String!
 
-  # Uptime of the node
+  "Uptime of the node"
   upTime: String!
 
-  # Current time of the chain (decided through consensus)
+  "Current time of the chain (decided through consensus)"
   vegaTime: String!
 
-  # Status of the vega application connection with the chain
+  "Status of the vega application connection with the chain"
   status: String!
 
-  # Number of transaction processed per block
+  "Number of transaction processed per block"
   txPerBlock: Int!
 
-  # Average size of the transactions
+  "Average size of the transactions"
   averageTxBytes: Int!
 
-  # Average number of orders added per blocks
+  "Average number of orders added per blocks"
   averageOrdersPerBlock: Int!
 
-  # Number of the trades per seconds
+  "Number of the trades per seconds"
   tradesPerSecond: Int!
 
-  # Number of orders per seconds
+  "Number of orders per seconds"
   ordersPerSecond: Int!
 
-  # Total number of markets
+  "Total number of markets"
   totalMarkets: Int!
 
-  # Total number of parties
+  "Total number of parties"
   totalParties: Int!
 
-  # Traders on the vega network
+  "Traders on the vega network"
   parties: [String]!
 
-  # Total number of amended orders
+  "Total number of amended orders"
   totalAmendOrder: Int!
 
-  # Total number of cancelled orders
+  "Total number of cancelled orders"
   totalCancelOrder: Int!
 
-  # Total number of orders created
+  "Total number of orders created"
   totalCreateOrder: Int!
 
-  # Total number of orders
+  "Total number of orders"
   totalOrders: Int!
 
-  # Total number of trades
+  "Total number of trades"
   totalTrades: Int!
 
-  # Version commit hash of the vega node
+  "Version commit hash of the vega node"
   appVersionHash: String!
 
-  # Version of the vega node (semver)
+  "Version of the vega node (semver)"
   appVersion: String!
 
-  # Version of the chain (semver)
+  "Version of the chain (semver)"
   chainVersion: String!
 
-  # Duration of the last block, in nanoseconds
+  "Duration of the last block, in nanoseconds"
   blockDuration: Int!
 
-  # Number of orders subscriptions
+  "Number of orders subscriptions"
   orderSubscriptions: Int!
 
-  # Number of trades subscriptions
+  "Number of trades subscriptions"
   tradeSubscriptions: Int!
 
-  # Number of candles subscriptions
+  "Number of candles subscriptions"
   candleSubscriptions: Int!
 
-  # Number of market depth subscriptions
+  "Number of market depth subscriptions"
   marketDepthSubscriptions: Int!
 
-  # Number of positions subscriptions
+  "Number of positions subscriptions"
   positionsSubscriptions: Int!
 }
 
-# A mode where Vega try to execute order as soon as they are received
+"A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
-  # Size of an increment in price in terms of the quote currency (uint64)
+  "Size of an increment in price in terms of the quote currency (uint64)"
   tickSize: Int
 }
 
-# Some non continuous trading mode
+"Some non continuous trading mode"
 type DiscreteTrading {
-  # Duration of the trading (uint64)
+  "Duration of the trading (uint64)"
   duration: Int
 }
 
@@ -2241,538 +2299,570 @@ union TradingMode =
 ContinuousTrading
 | DiscreteTrading
 
-# Parameters for the log normal risk model
+"Parameters for the log normal risk model"
 type LogNormalModelParams {
-  # mu parameter
+  "mu parameter"
   mu: Float!
-  # r parameter
+  "r parameter"
   r: Float!
-  # sigma parameter
+  "sigma parameter"
   sigma: Float!
 }
 
-# Parameters for the simple risk model
+"Parameters for the simple risk model"
 type SimpleRiskModelParams {
-  # Risk factor for long
+  "Risk factor for long"
   factorLong: Float!
-  # Risk factor for short
+  "Risk factor for short"
   factorShort: Float!
 }
 
 
-# A type of risk model for futures trading
+"A type of risk model for futures trading"
 type LogNormalRiskModel {
-  # Lambda parameter of the risk model
+  "Lambda parameter of the risk model"
   riskAversionParameter: Float!
-  # Tau parameter of the risk model
+  "Tau parameter of the risk model"
   tau: Float!
-  # Params for the log normal risk model
+  "Params for the log normal risk model"
   params: LogNormalModelParams!
 }
 
-# A type of simple/dummy risk model where we can specify the risk factor long and short in params
+"A type of simple/dummy risk model where we can specify the risk factor long and short in params"
 type SimpleRiskModel {
-  # Params for the simple risk model
+  "Params for the simple risk model"
   params: SimpleRiskModelParams!
 }
 
 union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
-# A set of metadata to associate to an instruments
+"A set of metadata to associate to an instruments"
 type InstrumentMetadata {
 
-  # An arbitrary list of tags to associated to associate to the Instrument (string list)
+  "An arbitrary list of tags to associated to associate to the Instrument (string list)"
   tags: [String]!
 }
 
-# An Ethereum oracle
+"An Ethereum oracle"
 type EthereumEvent {
 
-  # The ID of the ethereum contract to use (string)
+  "The ID of the ethereum contract to use (string)"
   contractId: String!
 
-  # Name of the Ethereum event to listen to. (string)
+  "Name of the Ethereum event to listen to. (string)"
   event: String!
 }
 
 union Oracle = EthereumEvent
 
-# A Future product
+"A Future product"
 type Future {
 
-  # The maturity date of the product (string)
+  "The maturity date of the product (string)"
   maturity: String!
 
-  # The name of the asset (string)
+  "The name of the asset (string)"
   asset: String!
 
-  # The oracle used for this product (Oracle union)
+  "The oracle used for this product (Oracle union)"
   oracle: Oracle!
 }
 
 union Product = Future
 
-# Describe something that can be traded on Vega
+"Describe something that can be traded on Vega"
 type Instrument {
 
-  # Uniquely identify an instrument accrods all instruments available on Vega (string)
+  "Uniquely identify an instrument accrods all instruments available on Vega (string)"
   id: String!
 
-  # A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
   code: String!
 
-  # Full and fairly descriptive name for the instrument
+  "Full and fairly descriptive name for the instrument"
   name: String!
 
-  # String representing the base (e.g. BTCUSD -> BTC is base)
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
   baseName: String!
 
-  # String representing the quote (e.g. BTCUSD -> USD is quote)
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  # Metadata for this instrument
+  "Metadata for this instrument"
   metadata: InstrumentMetadata!
 
-  # A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
+  "A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)"
   product: Product!
 }
 
-# A tradable instrument is a combination of an instrument and a risk model
-type TradableInstrument {
-  # An instance of or reference to a fully specified instrument.
-  instrument: Instrument!
-
-  # A reference to a risk model that is valid for the instrument
-  riskModel: RiskModel!
+type MarginCalculator {
+  "The scaling factors that will be used for margin calculation"
+  scalingFactors: ScalingFactors!
 }
 
-# Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
+type ScalingFactors {
+  "the scaling factor that determines the margin level at which we have to search for more money"
+  searchLevel: Float!
+
+  "the scaling factor that determines the optimal margin level"
+  initialMargin: Float!
+
+  "The scaling factor that determines the overflow margin level"
+  collateralRelease: Float!
+}
+
+"A tradable instrument is a combination of an instrument and a risk model"
+type TradableInstrument {
+  "An instance of or reference to a fully specified instrument."
+  instrument: Instrument!
+
+  "A reference to a risk model that is valid for the instrument"
+  riskModel: RiskModel!
+
+  "Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument"
+  marginCalculator: MarginCalculator
+}
+
+"Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
-  # Market ID
+  "Market ID"
   id: String!
 
 	# Market full name
   name: String!
 
-  # An instance of or reference to a tradable instrument.
+  "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
 
-  # Definitions and required configuration for the trading mode
+  "Definitions and required configuration for the trading mode"
   tradingMode: TradingMode!
 
-  # decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct number denominated in the currency of the Market. (uint64)
-  # Examples:
-  #   Currency     Balance  decimalPlaces  Real Balance
-  #   GBP              100              0       GBP 100
-  #   GBP              100              2       GBP   1.00
-  #   GBP              100              4       GBP   0.01
-  #   GBP                1              4       GBP   0.0001   (  0.01p  )
-  #
-  #   GBX (pence)      100              0       GBP   1.00     (100p     )
-  #   GBX (pence)      100              2       GBP   0.01     (  1p     )
-  #   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-  #   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  """
+  decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
+  number denominated in the currency of the Market. (uint64)
+
+  Examples:
+    Currency     Balance  decimalPlaces  Real Balance
+    GBP              100              0       GBP 100
+    GBP              100              2       GBP   1.00
+    GBP              100              4       GBP   0.01
+    GBP                1              4       GBP   0.0001   (  0.01p  )
+
+    GBX (pence)      100              0       GBP   1.00     (100p     )
+    GBX (pence)      100              2       GBP   0.01     (  1p     )
+    GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+    GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  """
   decimalPlaces: Int!
 
-  # Orders on a market
+  "Orders on a market"
   orders (
-    # Filter open orders only
+    "Filter open orders only"
     open: Boolean
-    # Pagination skip
+    "Pagination skip"
     skip: Int
-    # Pagination first element
+    "Pagination first element"
     first: Int
-    # Pagination last element
+    "Pagination last element"
     last: Int
   ): [Order!]
 
-  # Get account for a party or market
+  "Get account for a party or market"
   accounts(
-    # Id of the party to get the margin account for
+    "Id of the party to get the margin account for"
     partyId: String
   ): [Account!]
 
-  # Trades on a market
+  "Trades on a market"
   trades (
-    # Pagination skip
+    "Pagination skip"
     skip: Int
-    # Pagination first element
+    "Pagination first element"
     first: Int
-    # Pagination last element
+    "Pagination last element"
     last: Int): [Trade!]
 
-  # Current depth on the orderbook for this market
+  "Current depth on the orderbook for this market"
   depth(
-    # Maximum market order book depth (returns whole order book if omitted)
+    "Maximum market order book depth (returns whole order book if omitted)"
     maxDepth: Int): MarketDepth!
 
-  # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params"
   candles (
-    # RFC3339Nano encoded time from when to get candles
+    "RFC3339Nano encoded time from when to get candles"
     since: String!
-    # Interval of the candles
+    "Interval of the candles"
     interval: Interval!
   ): [Candle]
 
-  # Query an order by reference for the given market
+  "Query an order by reference for the given market"
   orderByReference (
-    # reference of the order
+    "reference of the order"
     reference: String!
   ): Order!
 
-  # marketData for the given market
+  "marketData for the given market"
   data: MarketData!
 }
 
-# Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
-# The depth of market measure provides an indication of the liquidity and depth for the instrument.
+"""
+Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
+The depth of market measure provides an indication of the liquidity and depth for the instrument.
+"""
 type MarketDepth {
 
-    # Market id
+    "Market id"
     market: Market!
 
-    # Buy side price levels (if available)
+    "Buy side price levels (if available)"
     buy: [PriceLevel!]
 
-    # Sell side price levels (if available)
+    "Sell side price levels (if available)"
     sell: [PriceLevel!]
 
-    # Last trade for the given market (if available)
+    "Last trade for the given market (if available)"
     lastTrade: Trade
 }
 
-# Represents a price on either the buy or sell side and all the orders at that price
+"Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
 
-    # The price of all the orders at this level (uint64)
+    "The price of all the orders at this level (uint64)"
     price: String!
 
-    # The total remaining size of all orders at this level (uint64)
+    "The total remaining size of all orders at this level (uint64)"
     volume: String!
 
-    # The number of orders at this price level (uint64)
+    "The number of orders at this price level (uint64)"
     numberOfOrders: String!
 
-    # The cumulative total volume to this price level (uint64)
+    "The cumulative total volume to this price level (uint64)"
     cumulativeVolume: String!
 }
 
-# Candle stick representation of trading
+"Candle stick representation of trading"
 type Candle {
 
-    # Unix epoch+nanoseconds for when the candle occurred
+    "Unix epoch+nanoseconds for when the candle occurred"
     timestamp: String!
 
-    # ISO-8601 RFC3339+Nano formatted data and time for the candle
+    "ISO-8601 RFC3339+Nano formatted data and time for the candle"
     datetime: String!
 
-    # High price (uint64)
+    "High price (uint64)"
     high: String!
 
-    # Low price (uint64)
+    "Low price (uint64)"
     low: String!
 
-    # Open price (uint64)
+    "Open price (uint64)"
     open: String!
 
-    # Close price (uint64)
+    "Close price (uint64)"
     close: String!
 
-    # Volume price (uint64)
+    "Volume price (uint64)"
     volume: String!
 
-    # Interval price (string)
+    "Interval price (string)"
     interval: Interval!
 }
 
-# Represents a party on Vega, could be an ethereum wallet address in the future
+"Represents a party on Vega, could be an ethereum wallet address in the future"
 type Party {
-  # Party identifier
+  "Party identifier"
   id: String!
 
-  # Orders relating to a party
+  "Orders relating to a party"
   orders(
-    # Is the order still open or not
+    "Is the order still open or not"
     open: Boolean
-    # Pagination skip
+    "Pagination skip"
     skip: Int
-    # Pagination first element
+    "Pagination first element"
     first: Int
-    # Pagination last element
+    "Pagination last element"
     last: Int): [Order!]
 
-  # Trades relating to a party (specifically where party is either buyer OR seller)
+  "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
-    # ID of the market we want to get trades for
+    "ID of the market we want to get trades for"
     marketId: String
-    # Pagination skip
+    "Pagination skip"
     skip: Int
-    # Pagination first element
+    "Pagination first element"
     first: Int
-    # Pagination last element
+    "Pagination last element"
     last: Int): [Trade!]
 
-  # Collateral accounts relating to a party
+  "Collateral accounts relating to a party"
   accounts(
-    # Market ID - specify what market accounts for the party to return
+    "Market ID - specify what market accounts for the party to return"
     marketId: String
-    # Asset (USD, EUR etc)
+    "Asset (USD, EUR etc)"
     asset: String,
-    # Filter accounts by type (General account, margin account, etc...)
+    "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
   ): [Account!]
 
-  # Trading positions relating to a party
+  "Trading positions relating to a party"
   positions: [Position!]
 
-  # marginLevels
+  "marginLevels"
   margins(
-    # market id off the margin to get, nil if all markets
+    "market id off the margin to get, nil if all markets"
     marketId: String,
   ): [MarginLevels!]
 }
 
-# An individual trader at any point in time is considered net long or net short.
-# This refers to their Open Volume, calculated using FIFO. This volume should now be signed as either
-# negative for LONG positions and positive for SHORT positions. A single trade may end up "splitting" with some
-# of its volume matched into closed volume and some of its volume remaining as open volume. This is why we don't
-# refer to positions being comprised of trades, rather of volume.
+"""
+An individual trader at any point in time is considered net long or net short. This refers to their Open Volume,
+calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
+single trade may end up "splitting" with some of its volume matched into closed volume and some of its volume
+remaining as open volume. This is why we don't refer to positions being comprised of trades, rather of volume.
+"""
 type Position {
 
-  # Market relating to this position
+  "Market relating to this position"
   market: Market!
 
-  # Open volume (uint64)
+  "Open volume (uint64)"
   openVolume: String!
 
-  # Realised Profit and Loss (int64)
+  "Realised Profit and Loss (int64)"
   realisedPNL: String!
 
-  # Unrealised Profit and Loss (int64)
+  "Unrealised Profit and Loss (int64)"
   unrealisedPNL: String!
 
-  # Average entry price for this position
+  "Average entry price for this position"
   averageEntryPrice: String!
 
-  # margins of the party for the given position
+  "margins of the party for the given position"
   margins: [MarginLevels!]
 }
 
-# An order in Vega, if active it will be on the OrderBoook for the market
+"An order in Vega, if active it will be on the OrderBoook for the market"
 type Order {
 
-  # Hash of the order data
+  "Hash of the order data"
   id: ID!
 
-  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
   price: String!
 
-  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
   timeInForce: OrderTimeInForce!
 
-  # Whether the order is to buy or sell
+  "Whether the order is to buy or sell"
   side: Side!
 
-  # The market the order is trading on (probably stored internally as a hash of the market details)
+  "The market the order is trading on (probably stored internally as a hash of the market details)"
   market: Market!
 
-  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
+  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  # The trader who place the order (probably stored internally as the trader's public key)
+  "The trader who place the order (probably stored internally as the trader's public key)"
   party: Party!
 
-  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  "ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)"
   createdAt: String!
 
-  # Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
   expiresAt: String
 
-  # The status of an order, for example 'Active'
+  "The status of an order, for example 'Active'"
   status: OrderStatus!
 
-  # The external reference (if available) for the order
+  "The external reference (if available) for the order"
   reference: String!
 
-  # Trades relating to this order
+  "Trades relating to this order"
   trades: [Trade!]
 
-  # Type the order type (defaults to TRADER)
+  "Type the order type (defaults to TRADER)"
   type: OrderType
 
-  # Reason for the order to be rejected
+  "Reason for the order to be rejected"
   rejectionReason: RejectionReason
 }
 
-# A trade on Vega, the result of two orders being "matched" in the market
+"A trade on Vega, the result of two orders being 'matched' in the market"
 type Trade {
 
-  # The hash of the trade data
+  "The hash of the trade data"
   id: ID!
 
-  # The market the trade occurred on
+  "The market the trade occurred on"
   market: Market!
 
-  # The order that bought
+  "The order that bought"
   buyer: String!
 
-  # The order that sold
+  "The order that sold"
   seller: String!
 
-  # The aggressor indicates whether this trade was related to a BUY or SELL
+  "The aggressor indicates whether this trade was related to a BUY or SELL"
   aggressor: Side!
 
-  # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
+  "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
   price: String!
 
-  # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
+  "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
   size: String!
 
-  # RFC3339Nano for when the trade occurred
+  "RFC3339Nano for when the trade occurred"
   createdAt: String!
 }
 
-# An account record
+"An account record"
 type Account {
-  # Balance as string - current account balance (approx. as balances can be updated several times per second)
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
-  # Asset, the "currency"
+  "Asset, the 'currency'"
   asset: String!
-  # Account type (General, Margin, etc)
+  "Account type (General, Margin, etc)"
   type: AccountType!
-  # Market (only relevant to margin accounts)
+  "Market (only relevant to margin accounts)"
   market: Market
 }
 
-# Valid order types, these determine what happens when an order is added to the book
+"Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
 
-    # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
+    "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
     FOK
 
-    # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
+    "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
     IOC
 
-    # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+    "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
     GTC
 
-    # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
-    # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+    """
+    This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+    NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+    """
     GTT
 }
 
-# Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
+"Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
 enum OrderStatus {
 
-  # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
-  # Active does not necessarily mean it's still on the order book.
+  """
+  The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
+  Active does not necessarily mean it's still on the order book.
+  """
   Active
 
-  # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
   Cancelled
 
-  # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+  "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
   Expired
 
-  # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+  "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
   Stopped
 
-  # This order is fully filled with remaining equals zero.
+  "This order is fully filled with remaining equals zero."
   Filled
 
-  # This order was rejected while beeing processed in the core.
+  "This order was rejected while beeing processed in the core."
   Rejected
 }
 
-# Reason for the order beeing rejected by the core node
+"Reason for the order beeing rejected by the core node"
 enum RejectionReason {
-  # Market id is invalid
+  "Market id is invalid"
   InvalidMarketId
-  # Order id is invalid
+  "Order id is invalid"
   InvalidOrderId
-  # Order is out of sequence
+  "Order is out of sequence"
   OrderOutOfSequence
-  # Remaining size in the order is invalid
+  "Remaining size in the order is invalid"
   InvalidRemainingSize
-  # Time has failed us
+  "Time has failed us"
   TimeFailure
-  # Unable to remove the order
+  "Unable to remove the order"
   OrderRemovalFailure
-  # Expiration time is invalid
+  "Expiration time is invalid"
   InvalidExpirationTime
-  # Order reference is invalid
+  "Order reference is invalid"
   InvalidOrderReference
-  # Edit is not allowed
+  "Edit is not allowed"
   EditNotAllowed
-  # Order amend fail
+  "Order amend fail"
   OrderAmendFailure
-  # Order does not exist
+  "Order does not exist"
   OrderNotFound
-  # Party id is invalid
+  "Party id is invalid"
   InvalidPartyId
-  # Market is closed
+  "Market is closed"
   MarketClosed
-  # Margin check failed
+  "Margin check failed"
   MarginCheckFailed
-  # An internal error happend
+  "An internal error happend"
   InternalError
 }
 
 enum OrderType {
-  ## MARKET - the default order type
+  "the default order type"
   MARKET
 
-  ## LIMIT - mentioned in ticket, but as yet unused order type
+  "mentioned in ticket, but as yet unused order type"
   LIMIT
 
-  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
-  ## similar to MARKET order, only no party is attached to the order as such
+  """
+  Used for distressed traders, an order placed by the network to close out distressed traders
+  similar to MARKET order, only no party is attached to the order.
+  """
   NETWORK
 }
 
-# Whether the placer of an order is aiming to buy or sell on the market
+"Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
-  # The Placer of the order is aiming to buy
+  "The Placer of the order is aiming to buy"
   Buy
 
-  # The placer of the order is aiming to sell
+  "The placer of the order is aiming to sell"
   Sell
 }
 
-# The interval for trade candles when subscribing via VEGA graphql, default is I15M
+"The interval for trade candles when subscribing via VEGA graphql, default is I15M"
 enum Interval {
-  # 1 minute interval
+  "1 minute interval"
   I1M
 
-  # 5 minute interval
+  "5 minute interval"
   I5M
 
-  # 15 minute interval (default)
+  "15 minute interval (default)"
   I15M
 
-  # 1 hour interval
+  "1 hour interval"
   I1H
 
-  # 6 hour interval
+  "6 hour interval"
   I6H
 
-  # 1 day interval
+  "1 day interval"
   I1D
 }
 
-# The various account types we have (used by collateral)
+"The various account types we have (used by collateral)"
 enum AccountType {
-  # Insurance pool account - only for "system" party
+  "Insurance pool account - only for 'system' party"
   Insurance
-  # Settlement - only for "system" party
+  "Settlement - only for 'system' party"
   Settlement
-  # Margin - The leverage account for traders
+  "Margin - The leverage account for traders"
   Margin
-  # General account - the account containing "unused" collateral for traders
+  "General account - the account containing 'unused' collateral for traders"
   General
 }
 `},
@@ -4745,6 +4835,43 @@ func (ec *executionContext) _LogNormalRiskModel_params(ctx context.Context, fiel
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParams(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginCalculator_scalingFactors(ctx context.Context, field graphql.CollectedField, obj *MarginCalculator) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "MarginCalculator",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScalingFactors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ScalingFactors)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -7936,6 +8063,117 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ScalingFactors_searchLevel(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ScalingFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SearchLevel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ScalingFactors_initialMargin(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ScalingFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InitialMargin, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ScalingFactors_collateralRelease(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ScalingFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollateralRelease, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _SimpleRiskModel_params(ctx context.Context, field graphql.CollectedField, obj *SimpleRiskModel) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -9647,6 +9885,40 @@ func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradableInstrument_marginCalculator(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TradableInstrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginCalculator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*MarginCalculator)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -11675,6 +11947,33 @@ func (ec *executionContext) _LogNormalRiskModel(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var marginCalculatorImplementors = []string{"MarginCalculator"}
+
+func (ec *executionContext) _MarginCalculator(ctx context.Context, sel ast.SelectionSet, obj *MarginCalculator) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, marginCalculatorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarginCalculator")
+		case "scalingFactors":
+			out.Values[i] = ec._MarginCalculator_scalingFactors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var marginLevelsImplementors = []string{"MarginLevels"}
 
 func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.SelectionSet, obj *proto.MarginLevels) graphql.Marshaler {
@@ -12848,6 +13147,43 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var scalingFactorsImplementors = []string{"ScalingFactors"}
+
+func (ec *executionContext) _ScalingFactors(ctx context.Context, sel ast.SelectionSet, obj *ScalingFactors) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, scalingFactorsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ScalingFactors")
+		case "searchLevel":
+			out.Values[i] = ec._ScalingFactors_searchLevel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "initialMargin":
+			out.Values[i] = ec._ScalingFactors_initialMargin(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "collateralRelease":
+			out.Values[i] = ec._ScalingFactors_collateralRelease(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var simpleRiskModelImplementors = []string{"SimpleRiskModel", "RiskModel"}
 
 func (ec *executionContext) _SimpleRiskModel(ctx context.Context, sel ast.SelectionSet, obj *SimpleRiskModel) graphql.Marshaler {
@@ -13287,6 +13623,8 @@ func (ec *executionContext) _TradableInstrument(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "marginCalculator":
+			out.Values[i] = ec._TradableInstrument_marginCalculator(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14005,6 +14343,20 @@ func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._RiskModel(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNScalingFactors2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v ScalingFactors) graphql.Marshaler {
+	return ec._ScalingFactors(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v *ScalingFactors) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ScalingFactors(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
 	var res Side
 	return res, res.UnmarshalGQL(v)
@@ -14537,6 +14889,17 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return ec.marshalOInt2int(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOMarginCalculator2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v MarginCalculator) graphql.Marshaler {
+	return ec._MarginCalculator(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v *MarginCalculator) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MarginCalculator(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevelsᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.MarginLevels) graphql.Marshaler {

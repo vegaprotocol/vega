@@ -379,6 +379,13 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 			},
+			MarginCalculator: &proto.MarginCalculator{
+				ScalingFactors: &proto.ScalingFactors{
+					SearchLevel:       1.1,
+					InitialMargin:     1.2,
+					CollateralRelease: 1.4,
+				},
+			},
 			RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
 				LogNormalRiskModel: &proto.LogNormalRiskModel{
 					RiskAversionParameter: 0.01,
@@ -415,6 +422,13 @@ func TestModelConverters(t *testing.T) {
 								EthereumEvent: &proto.EthereumEvent{},
 							},
 						},
+					},
+				},
+				MarginCalculator: &proto.MarginCalculator{
+					ScalingFactors: &proto.ScalingFactors{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
 					},
 				},
 				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{

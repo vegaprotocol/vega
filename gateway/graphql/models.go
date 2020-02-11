@@ -30,108 +30,198 @@ type CheckTokenResponse struct {
 	Ok bool `json:"ok"`
 }
 
+// A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
+	// Size of an increment in price in terms of the quote currency (uint64)
 	TickSize *int `json:"tickSize"`
 }
 
 func (ContinuousTrading) IsTradingMode() {}
 
+// Some non continuous trading mode
 type DiscreteTrading struct {
+	// Duration of the trading (uint64)
 	Duration *int `json:"duration"`
 }
 
 func (DiscreteTrading) IsTradingMode() {}
 
+// An Ethereum oracle
 type EthereumEvent struct {
+	// The ID of the ethereum contract to use (string)
 	ContractID string `json:"contractId"`
-	Event      string `json:"event"`
+	// Name of the Ethereum event to listen to. (string)
+	Event string `json:"event"`
 }
 
 func (EthereumEvent) IsOracle() {}
 
+// A Future product
 type Future struct {
+	// The maturity date of the product (string)
 	Maturity string `json:"maturity"`
-	Asset    string `json:"asset"`
-	Oracle   Oracle `json:"oracle"`
+	// The name of the asset (string)
+	Asset string `json:"asset"`
+	// The oracle used for this product (Oracle union)
+	Oracle Oracle `json:"oracle"`
 }
 
 func (Future) IsProduct() {}
 
+// Describe something that can be traded on Vega
 type Instrument struct {
-	ID        string              `json:"id"`
-	Code      string              `json:"code"`
-	Name      string              `json:"name"`
-	BaseName  string              `json:"baseName"`
-	QuoteName string              `json:"quoteName"`
-	Metadata  *InstrumentMetadata `json:"metadata"`
-	Product   Product             `json:"product"`
+	// Uniquely identify an instrument accrods all instruments available on Vega (string)
+	ID string `json:"id"`
+	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
+	Code string `json:"code"`
+	// Full and fairly descriptive name for the instrument
+	Name string `json:"name"`
+	// String representing the base (e.g. BTCUSD -> BTC is base)
+	BaseName string `json:"baseName"`
+	// String representing the quote (e.g. BTCUSD -> USD is quote)
+	QuoteName string `json:"quoteName"`
+	// Metadata for this instrument
+	Metadata *InstrumentMetadata `json:"metadata"`
+	// A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
+	Product Product `json:"product"`
 }
 
+// A set of metadata to associate to an instruments
 type InstrumentMetadata struct {
+	// An arbitrary list of tags to associated to associate to the Instrument (string list)
 	Tags []*string `json:"tags"`
 }
 
+// Parameters for the log normal risk model
 type LogNormalModelParams struct {
-	Mu    float64 `json:"mu"`
-	R     float64 `json:"r"`
+	// mu parameter
+	Mu float64 `json:"mu"`
+	// r parameter
+	R float64 `json:"r"`
+	// sigma parameter
 	Sigma float64 `json:"sigma"`
 }
 
+// A type of risk model for futures trading
 type LogNormalRiskModel struct {
-	RiskAversionParameter float64               `json:"riskAversionParameter"`
-	Tau                   float64               `json:"tau"`
-	Params                *LogNormalModelParams `json:"params"`
+	// Lambda parameter of the risk model
+	RiskAversionParameter float64 `json:"riskAversionParameter"`
+	// Tau parameter of the risk model
+	Tau float64 `json:"tau"`
+	// Params for the log normal risk model
+	Params *LogNormalModelParams `json:"params"`
 }
 
 func (LogNormalRiskModel) IsRiskModel() {}
 
+type MarginCalculator struct {
+	// The scaling factors that will be used for margin calculation
+	ScalingFactors *ScalingFactors `json:"scalingFactors"`
+}
+
+// Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market struct {
-	ID                 string              `json:"id"`
-	Name               string              `json:"name"`
+	// Market ID
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// An instance of or reference to a tradable instrument.
 	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
-	TradingMode        TradingMode         `json:"tradingMode"`
-	DecimalPlaces      int                 `json:"decimalPlaces"`
-	Orders             []*proto.Order      `json:"orders"`
-	Accounts           []*proto.Account    `json:"accounts"`
-	Trades             []*proto.Trade      `json:"trades"`
-	Depth              *proto.MarketDepth  `json:"depth"`
-	Candles            []*proto.Candle     `json:"candles"`
-	OrderByReference   *proto.Order        `json:"orderByReference"`
-	Data               *proto.MarketData   `json:"data"`
+	// Definitions and required configuration for the trading mode
+	TradingMode TradingMode `json:"tradingMode"`
+	// decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
+	// number denominated in the currency of the Market. (uint64)
+	//
+	// Examples:
+	//   Currency     Balance  decimalPlaces  Real Balance
+	//   GBP              100              0       GBP 100
+	//   GBP              100              2       GBP   1.00
+	//   GBP              100              4       GBP   0.01
+	//   GBP                1              4       GBP   0.0001   (  0.01p  )
+	//
+	//   GBX (pence)      100              0       GBP   1.00     (100p     )
+	//   GBX (pence)      100              2       GBP   0.01     (  1p     )
+	//   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+	//   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+	DecimalPlaces int `json:"decimalPlaces"`
+	// Orders on a market
+	Orders []*proto.Order `json:"orders"`
+	// Get account for a party or market
+	Accounts []*proto.Account `json:"accounts"`
+	// Trades on a market
+	Trades []*proto.Trade `json:"trades"`
+	// Current depth on the orderbook for this market
+	Depth *proto.MarketDepth `json:"depth"`
+	// Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+	Candles []*proto.Candle `json:"candles"`
+	// Query an order by reference for the given market
+	OrderByReference *proto.Order `json:"orderByReference"`
+	// marketData for the given market
+	Data *proto.MarketData `json:"data"`
 }
 
+// Represents a party on Vega, could be an ethereum wallet address in the future
 type Party struct {
-	ID        string                `json:"id"`
-	Orders    []*proto.Order        `json:"orders"`
-	Trades    []*proto.Trade        `json:"trades"`
-	Accounts  []*proto.Account      `json:"accounts"`
-	Positions []*proto.Position     `json:"positions"`
-	Margins   []*proto.MarginLevels `json:"margins"`
+	// Party identifier
+	ID string `json:"id"`
+	// Orders relating to a party
+	Orders []*proto.Order `json:"orders"`
+	// Trades relating to a party (specifically where party is either buyer OR seller)
+	Trades []*proto.Trade `json:"trades"`
+	// Collateral accounts relating to a party
+	Accounts []*proto.Account `json:"accounts"`
+	// Trading positions relating to a party
+	Positions []*proto.Position `json:"positions"`
+	// marginLevels
+	Margins []*proto.MarginLevels `json:"margins"`
 }
 
+type ScalingFactors struct {
+	// the scaling factor that determines the margin level at which we have to search for more money
+	SearchLevel float64 `json:"searchLevel"`
+	// the scaling factor that determines the optimal margin level
+	InitialMargin float64 `json:"initialMargin"`
+	// The scaling factor that determines the overflow margin level
+	CollateralRelease float64 `json:"collateralRelease"`
+}
+
+// A type of simple/dummy risk model where we can specify the risk factor long and short in params
 type SimpleRiskModel struct {
+	// Params for the simple risk model
 	Params *SimpleRiskModelParams `json:"params"`
 }
 
 func (SimpleRiskModel) IsRiskModel() {}
 
+// Parameters for the simple risk model
 type SimpleRiskModelParams struct {
-	FactorLong  float64 `json:"factorLong"`
+	// Risk factor for long
+	FactorLong float64 `json:"factorLong"`
+	// Risk factor for short
 	FactorShort float64 `json:"factorShort"`
 }
 
+// A tradable instrument is a combination of an instrument and a risk model
 type TradableInstrument struct {
+	// An instance of or reference to a fully specified instrument.
 	Instrument *Instrument `json:"instrument"`
-	RiskModel  RiskModel   `json:"riskModel"`
+	// A reference to a risk model that is valid for the instrument
+	RiskModel RiskModel `json:"riskModel"`
+	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
+	MarginCalculator *MarginCalculator `json:"marginCalculator"`
 }
 
+// The various account types we have (used by collateral)
 type AccountType string
 
 const (
-	AccountTypeInsurance  AccountType = "Insurance"
+	// Insurance pool account - only for 'system' party
+	AccountTypeInsurance AccountType = "Insurance"
+	// Settlement - only for 'system' party
 	AccountTypeSettlement AccountType = "Settlement"
-	AccountTypeMargin     AccountType = "Margin"
-	AccountTypeGeneral    AccountType = "General"
+	// Margin - The leverage account for traders
+	AccountTypeMargin AccountType = "Margin"
+	// General account - the account containing 'unused' collateral for traders
+	AccountTypeGeneral AccountType = "General"
 )
 
 var AllAccountType = []AccountType{
@@ -170,15 +260,22 @@ func (e AccountType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// The interval for trade candles when subscribing via VEGA graphql, default is I15M
 type Interval string
 
 const (
-	IntervalI1m  Interval = "I1M"
-	IntervalI5m  Interval = "I5M"
+	// 1 minute interval
+	IntervalI1m Interval = "I1M"
+	// 5 minute interval
+	IntervalI5m Interval = "I5M"
+	// 15 minute interval (default)
 	IntervalI15m Interval = "I15M"
-	IntervalI1h  Interval = "I1H"
-	IntervalI6h  Interval = "I6H"
-	IntervalI1d  Interval = "I1D"
+	// 1 hour interval
+	IntervalI1h Interval = "I1H"
+	// 6 hour interval
+	IntervalI6h Interval = "I6H"
+	// 1 day interval
+	IntervalI1d Interval = "I1D"
 )
 
 var AllInterval = []Interval{
@@ -219,15 +316,23 @@ func (e Interval) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
 type OrderStatus string
 
 const (
-	OrderStatusActive    OrderStatus = "Active"
+	// The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
+	// Active does not necessarily mean it's still on the order book.
+	OrderStatusActive OrderStatus = "Active"
+	// The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
 	OrderStatusCancelled OrderStatus = "Cancelled"
-	OrderStatusExpired   OrderStatus = "Expired"
-	OrderStatusStopped   OrderStatus = "Stopped"
-	OrderStatusFilled    OrderStatus = "Filled"
-	OrderStatusRejected  OrderStatus = "Rejected"
+	// This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+	OrderStatusExpired OrderStatus = "Expired"
+	// This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+	OrderStatusStopped OrderStatus = "Stopped"
+	// This order is fully filled with remaining equals zero.
+	OrderStatusFilled OrderStatus = "Filled"
+	// This order was rejected while beeing processed in the core.
+	OrderStatusRejected OrderStatus = "Rejected"
 )
 
 var AllOrderStatus = []OrderStatus{
@@ -268,12 +373,18 @@ func (e OrderStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Valid order types, these determine what happens when an order is added to the book
 type OrderTimeInForce string
 
 const (
+	// The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
 	OrderTimeInForceFok OrderTimeInForce = "FOK"
+	// The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
 	OrderTimeInForceIoc OrderTimeInForce = "IOC"
+	// This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
 	OrderTimeInForceGtc OrderTimeInForce = "GTC"
+	// This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+	// NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
 	OrderTimeInForceGtt OrderTimeInForce = "GTT"
 )
 
@@ -316,8 +427,12 @@ func (e OrderTimeInForce) MarshalGQL(w io.Writer) {
 type OrderType string
 
 const (
-	OrderTypeMarket  OrderType = "MARKET"
-	OrderTypeLimit   OrderType = "LIMIT"
+	// the default order type
+	OrderTypeMarket OrderType = "MARKET"
+	// mentioned in ticket, but as yet unused order type
+	OrderTypeLimit OrderType = "LIMIT"
+	// Used for distressed traders, an order placed by the network to close out distressed traders
+	// similar to MARKET order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "NETWORK"
 )
 
@@ -356,24 +471,40 @@ func (e OrderType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Reason for the order beeing rejected by the core node
 type RejectionReason string
 
 const (
-	RejectionReasonInvalidMarketID       RejectionReason = "InvalidMarketId"
-	RejectionReasonInvalidOrderID        RejectionReason = "InvalidOrderId"
-	RejectionReasonOrderOutOfSequence    RejectionReason = "OrderOutOfSequence"
-	RejectionReasonInvalidRemainingSize  RejectionReason = "InvalidRemainingSize"
-	RejectionReasonTimeFailure           RejectionReason = "TimeFailure"
-	RejectionReasonOrderRemovalFailure   RejectionReason = "OrderRemovalFailure"
+	// Market id is invalid
+	RejectionReasonInvalidMarketID RejectionReason = "InvalidMarketId"
+	// Order id is invalid
+	RejectionReasonInvalidOrderID RejectionReason = "InvalidOrderId"
+	// Order is out of sequence
+	RejectionReasonOrderOutOfSequence RejectionReason = "OrderOutOfSequence"
+	// Remaining size in the order is invalid
+	RejectionReasonInvalidRemainingSize RejectionReason = "InvalidRemainingSize"
+	// Time has failed us
+	RejectionReasonTimeFailure RejectionReason = "TimeFailure"
+	// Unable to remove the order
+	RejectionReasonOrderRemovalFailure RejectionReason = "OrderRemovalFailure"
+	// Expiration time is invalid
 	RejectionReasonInvalidExpirationTime RejectionReason = "InvalidExpirationTime"
+	// Order reference is invalid
 	RejectionReasonInvalidOrderReference RejectionReason = "InvalidOrderReference"
-	RejectionReasonEditNotAllowed        RejectionReason = "EditNotAllowed"
-	RejectionReasonOrderAmendFailure     RejectionReason = "OrderAmendFailure"
-	RejectionReasonOrderNotFound         RejectionReason = "OrderNotFound"
-	RejectionReasonInvalidPartyID        RejectionReason = "InvalidPartyId"
-	RejectionReasonMarketClosed          RejectionReason = "MarketClosed"
-	RejectionReasonMarginCheckFailed     RejectionReason = "MarginCheckFailed"
-	RejectionReasonInternalError         RejectionReason = "InternalError"
+	// Edit is not allowed
+	RejectionReasonEditNotAllowed RejectionReason = "EditNotAllowed"
+	// Order amend fail
+	RejectionReasonOrderAmendFailure RejectionReason = "OrderAmendFailure"
+	// Order does not exist
+	RejectionReasonOrderNotFound RejectionReason = "OrderNotFound"
+	// Party id is invalid
+	RejectionReasonInvalidPartyID RejectionReason = "InvalidPartyId"
+	// Market is closed
+	RejectionReasonMarketClosed RejectionReason = "MarketClosed"
+	// Margin check failed
+	RejectionReasonMarginCheckFailed RejectionReason = "MarginCheckFailed"
+	// An internal error happend
+	RejectionReasonInternalError RejectionReason = "InternalError"
 )
 
 var AllRejectionReason = []RejectionReason{
@@ -423,10 +554,13 @@ func (e RejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Whether the placer of an order is aiming to buy or sell on the market
 type Side string
 
 const (
-	SideBuy  Side = "Buy"
+	// The Placer of the order is aiming to buy
+	SideBuy Side = "Buy"
+	// The placer of the order is aiming to sell
 	SideSell Side = "Sell"
 )
 
