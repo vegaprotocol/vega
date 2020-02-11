@@ -40,6 +40,12 @@ do
 	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
 done
 
+# shellcheck disable=SC2016
+sed --in-place -r \
+	-e 's#`([^`]*)`#<tt>\1</tt>#g' \
+	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
+	proto/doc/index.html
+
 # Generate *.pb.gw.go and *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile

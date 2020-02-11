@@ -83,8 +83,6 @@ message ExternalRiskModel {
   map<string, string> config = 3;
 }
 
-// here ends risk models
-
 message ScalingFactors {
   double searchLevel = 1;
   double initialMargin = 2;
@@ -106,10 +104,18 @@ message TradableInstrument {
 }
 
 message Market {
+
+  // 32 pseudo-random upper-case letters and digits
   string id = 1;
+
+  // a human-understandable name for the Market, perhaps including a currency pair and a maturity date
   string name = 2;
+
   TradableInstrument tradableInstrument = 3;
+
+  // the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
   uint64 decimalPlaces = 4;
+
   oneof tradingMode {
     ContinuousTrading continuous = 100;
     DiscreteTrading discrete = 101;

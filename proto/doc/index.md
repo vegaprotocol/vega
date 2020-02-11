@@ -210,7 +210,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
-| sinceTimestamp | [int64](#int64) |  |  |
+| sinceTimestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | interval | [vega.Interval](#vega.Interval) |  |  |
 
 
@@ -535,7 +535,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| markets | [vega.Market](#vega.Market) | repeated |  |
+| markets | [vega.Market](#vega.Market) | repeated | a list of Markets |
 
 
 
@@ -877,8 +877,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| password | [string](#string) |  |  |
+| id | [string](#string) |  | a party ID |
+| password | [string](#string) |  | a password |
 
 
 
@@ -893,7 +893,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| token | [string](#string) |  |  |
+| token | [string](#string) |  | a token corresponding to the party given in the request, and valid for subsequent requests for that party |
 
 
 
@@ -908,8 +908,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  |  |
-| token | [string](#string) |  |  |
+| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
+| token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
 
 
 
@@ -1048,7 +1048,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  |  |
+| timestamp | [int64](#int64) |  | nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z` |
 
 
 
@@ -1114,37 +1114,37 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get Market Orders |
-| OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get Party Orders |
-| OrderByMarketAndID | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get Market Order by OrderID |
-| OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
-| MarketByID | [MarketByIDRequest](#api.MarketByIDRequest) | [MarketByIDResponse](#api.MarketByIDResponse) | Get Market by ID |
-| Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.MarketsResponse) | Get a list of Markets |
+| MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get a list of Accounts by Market |
+| PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get a list of Accounts by Party |
+| Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get a list of Candles by Market |
+| MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by MarketID |
+| MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
+| MarketByID | [MarketByIDRequest](#api.MarketByIDRequest) | [MarketByIDResponse](#api.MarketByIDResponse) | Get a Market by ID |
 | MarketDepth | [MarketDepthRequest](#api.MarketDepthRequest) | [MarketDepthResponse](#api.MarketDepthResponse) | Get Market Depth |
-| LastTrade | [LastTradeRequest](#api.LastTradeRequest) | [LastTradeResponse](#api.LastTradeResponse) | Get latest Market Trade |
-| PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get Party by ID |
+| Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.MarketsResponse) | Get a list of Markets |
+| OrderByMarketAndID | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get an Order by Market and OrderID |
+| OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
+| OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get a list of Orders by Market |
+| OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
+| MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by PartyID |
 | Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
-| TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get Market Trades |
-| TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get Party Trades |
-| TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get Order Trades |
-| PositionsByParty | [PositionsByPartyRequest](#api.PositionsByPartyRequest) | [PositionsByPartyResponse](#api.PositionsByPartyResponse) | Get Party Positions |
-| Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get Market Candles |
+| PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get a Party by ID |
+| PositionsByParty | [PositionsByPartyRequest](#api.PositionsByPartyRequest) | [PositionsByPartyResponse](#api.PositionsByPartyResponse) | Get a list of Positions by Party |
+| LastTrade | [LastTradeRequest](#api.LastTradeRequest) | [LastTradeResponse](#api.LastTradeResponse) | Get latest Trade |
+| TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
+| TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
+| TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
-| MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by ID |
-| MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
-| MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Party Margin Levels |
-| OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | streams |
-| TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream |  |
-| CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream |  |
-| MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream |  |
-| PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream |  |
-| AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream |  |
-| TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream |  |
-| MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream |  |
-| MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream |  |
-| PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get Party accounts |
-| MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get Market accounts |
+| AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
+| CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream | Subscribe to a stream of Candles |
+| MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream | Subscribe to a stream of Margin Levels |
+| MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream | Subscribe to a stream of Market Depth |
+| MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream | Subscribe to a stream of Markets Data |
+| OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | Subscribe to a stream of Orders |
+| PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
+| TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
+| TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
 
 
 
@@ -1348,10 +1348,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| name | [string](#string) |  |  |
+| id | [string](#string) |  | 32 pseudo-random upper-case letters and digits |
+| name | [string](#string) |  | a human-understandable name for the Market, perhaps including a currency pair and a maturity date |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
-| decimalPlaces | [uint64](#uint64) |  |  |
+| decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -1486,8 +1486,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  |  |
-| datetime | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| datetime | [string](#string) |  | ISO 8601 datetime |
 | high | [uint64](#uint64) |  |  |
 | low | [uint64](#uint64) |  |  |
 | open | [uint64](#uint64) |  |  |
@@ -1632,7 +1632,7 @@
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | createdAt | [int64](#int64) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  |  |
+| status | [Order.Status](#vega.Order.Status) |  | If `status` is `Rejected`, check `reason`. |
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
@@ -1723,11 +1723,11 @@
 | id | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  | do not enforce that price, as Market Order will not have price specified |
+| price | [uint64](#uint64) |  | mandatory for Limit orders, not required for Market orders |
 | size | [uint64](#uint64) |  |  |
-| side | [Side](#vega.Side) |  | make sur for both that they are non nil and the value is part of the respective enums. |
+| side | [Side](#vega.Side) |  |  |
 | TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | do not enforce as not always required althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
+| expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 
 
@@ -1907,9 +1907,9 @@
 | blockHeight | [uint64](#uint64) |  |  |
 | backlogLength | [uint64](#uint64) |  |  |
 | totalPeers | [uint64](#uint64) |  |  |
-| genesisTime | [string](#string) |  |  |
-| currentTime | [string](#string) |  |  |
-| vegaTime | [string](#string) |  |  |
+| genesisTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+| currentTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+| vegaTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
 | status | [ChainStatus](#vega.ChainStatus) |  |  |
 | txPerBlock | [uint64](#uint64) |  |  |
 | averageTxBytes | [uint64](#uint64) |  |  |
@@ -1935,7 +1935,7 @@
 | appVersion | [string](#string) |  |  |
 | chainVersion | [string](#string) |  |  |
 | blockDuration | [uint64](#uint64) |  | nanoseconds |
-| uptime | [string](#string) |  |  |
+| uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
 
 
 
@@ -1959,7 +1959,7 @@
 | aggressor | [Side](#vega.Side) |  |  |
 | buyOrder | [string](#string) |  |  |
 | sellOrder | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 
 
 
@@ -2105,12 +2105,12 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| I1M | 0 |  |
-| I5M | 1 |  |
-| I15M | 2 |  |
-| I1H | 3 |  |
-| I6H | 4 |  |
-| I1D | 5 |  |
+| I1M | 0 | 1 minute |
+| I5M | 1 | 5 minutes |
+| I15M | 2 | 15 minutes |
+| I1H | 3 | 1 hour |
+| I6H | 4 | 6 hours |
+| I1D | 5 | 1 day |
 
 
 
@@ -2133,27 +2133,27 @@
 <a name="vega.Order.TimeInForce"></a>
 
 ### Order.TimeInForce
-
+Order Time in Force
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| GTC | 0 |  |
-| GTT | 1 |  |
-| IOC | 2 |  |
-| FOK | 3 |  |
+| GTC | 0 | good til cancelled |
+| GTT | 1 | good til time |
+| IOC | 2 | immediate or cancel |
+| FOK | 3 | fill or kill |
 
 
 
 <a name="vega.Order.Type"></a>
 
 ### Order.Type
-
+Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LIMIT | 0 | Limit order |
-| MARKET | 1 | Market order type |
-| NETWORK | 2 | order where the initiating party is the network (used for distressed traders) |
+| LIMIT | 0 | used for Limit orders |
+| MARKET | 1 | used for Market orders |
+| NETWORK | 2 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 

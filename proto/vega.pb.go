@@ -49,12 +49,18 @@ func (Side) EnumDescriptor() ([]byte, []int) {
 type Interval int32
 
 const (
-	Interval_I1M  Interval = 0
-	Interval_I5M  Interval = 1
+	// 1 minute
+	Interval_I1M Interval = 0
+	// 5 minutes
+	Interval_I5M Interval = 1
+	// 15 minutes
 	Interval_I15M Interval = 2
-	Interval_I1H  Interval = 3
-	Interval_I6H  Interval = 4
-	Interval_I1D  Interval = 5
+	// 1 hour
+	Interval_I1H Interval = 3
+	// 6 hours
+	Interval_I6H Interval = 4
+	// 1 day
+	Interval_I1D Interval = 5
 )
 
 var Interval_name = map[int32]string{
@@ -264,12 +270,17 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5}
 }
 
+// Order Time in Force
 type Order_TimeInForce int32
 
 const (
+	// good til cancelled
 	Order_GTC Order_TimeInForce = 0
+	// good til time
 	Order_GTT Order_TimeInForce = 1
+	// immediate or cancel
 	Order_IOC Order_TimeInForce = 2
+	// fill or kill
 	Order_FOK Order_TimeInForce = 3
 )
 
@@ -295,11 +306,15 @@ func (Order_TimeInForce) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{4, 0}
 }
 
+// Order Type
 type Order_Type int32
 
 const (
-	Order_LIMIT   Order_Type = 0
-	Order_MARKET  Order_Type = 1
+	// used for Limit orders
+	Order_LIMIT Order_Type = 0
+	// used for Market orders
+	Order_MARKET Order_Type = 1
+	// used for orders where the initiating party is the network (used for distressed traders)
 	Order_NETWORK Order_Type = 2
 )
 
@@ -569,23 +584,24 @@ func (m *RiskResult) GetPredictedNextRiskFactors() map[string]*RiskFactor {
 }
 
 type Order struct {
-	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID             string            `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string            `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Side                 Side              `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	Price                uint64            `protobuf:"varint,5,opt,name=price,proto3" json:"price,omitempty"`
-	Size                 uint64            `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
-	Remaining            uint64            `protobuf:"varint,7,opt,name=remaining,proto3" json:"remaining,omitempty"`
-	TimeInForce          Order_TimeInForce `protobuf:"varint,8,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
-	Type                 Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	CreatedAt            int64             `protobuf:"varint,10,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	Status               Order_Status      `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
-	ExpiresAt            int64             `protobuf:"varint,12,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	Reference            string            `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
-	Reason               OrderError        `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError" json:"reason,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MarketID    string            `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	PartyID     string            `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	Side        Side              `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
+	Price       uint64            `protobuf:"varint,5,opt,name=price,proto3" json:"price,omitempty"`
+	Size        uint64            `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
+	Remaining   uint64            `protobuf:"varint,7,opt,name=remaining,proto3" json:"remaining,omitempty"`
+	TimeInForce Order_TimeInForce `protobuf:"varint,8,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
+	Type        Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
+	CreatedAt   int64             `protobuf:"varint,10,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// If `status` is `Rejected`, check `reason`.
+	Status               Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
+	ExpiresAt            int64        `protobuf:"varint,12,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	Reference            string       `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
+	Reason               OrderError   `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError" json:"reason,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *Order) Reset()         { *m = Order{} }
@@ -806,15 +822,16 @@ func (m *OrderConfirmation) GetPassiveOrdersAffected() []*Order {
 }
 
 type Trade struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Price                uint64   `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
-	Size                 uint64   `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	Buyer                string   `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
-	Seller               string   `protobuf:"bytes,6,opt,name=seller,proto3" json:"seller,omitempty"`
-	Aggressor            Side     `protobuf:"varint,7,opt,name=aggressor,proto3,enum=vega.Side" json:"aggressor,omitempty"`
-	BuyOrder             string   `protobuf:"bytes,8,opt,name=buyOrder,proto3" json:"buyOrder,omitempty"`
-	SellOrder            string   `protobuf:"bytes,9,opt,name=sellOrder,proto3" json:"sellOrder,omitempty"`
+	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MarketID  string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	Price     uint64 `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
+	Size      uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	Buyer     string `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
+	Seller    string `protobuf:"bytes,6,opt,name=seller,proto3" json:"seller,omitempty"`
+	Aggressor Side   `protobuf:"varint,7,opt,name=aggressor,proto3,enum=vega.Side" json:"aggressor,omitempty"`
+	BuyOrder  string `protobuf:"bytes,8,opt,name=buyOrder,proto3" json:"buyOrder,omitempty"`
+	SellOrder string `protobuf:"bytes,9,opt,name=sellOrder,proto3" json:"sellOrder,omitempty"`
+	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	Timestamp            int64    `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -956,7 +973,9 @@ func (m *TradeSet) GetTrades() []*Trade {
 }
 
 type Candle struct {
-	Timestamp            int64    `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// ISO 8601 datetime
 	Datetime             string   `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
 	High                 uint64   `protobuf:"varint,3,opt,name=high,proto3" json:"high,omitempty"`
 	Low                  uint64   `protobuf:"varint,4,opt,name=low,proto3" json:"low,omitempty"`
@@ -1295,11 +1314,14 @@ func (m *PositionTrade) GetPrice() uint64 {
 }
 
 type Statistics struct {
-	BlockHeight              uint64      `protobuf:"varint,1,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
-	BacklogLength            uint64      `protobuf:"varint,2,opt,name=backlogLength,proto3" json:"backlogLength,omitempty"`
-	TotalPeers               uint64      `protobuf:"varint,3,opt,name=totalPeers,proto3" json:"totalPeers,omitempty"`
-	GenesisTime              string      `protobuf:"bytes,4,opt,name=genesisTime,proto3" json:"genesisTime,omitempty"`
-	CurrentTime              string      `protobuf:"bytes,5,opt,name=currentTime,proto3" json:"currentTime,omitempty"`
+	BlockHeight   uint64 `protobuf:"varint,1,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	BacklogLength uint64 `protobuf:"varint,2,opt,name=backlogLength,proto3" json:"backlogLength,omitempty"`
+	TotalPeers    uint64 `protobuf:"varint,3,opt,name=totalPeers,proto3" json:"totalPeers,omitempty"`
+	// ISO 8601 datetime, nanosecond precision
+	GenesisTime string `protobuf:"bytes,4,opt,name=genesisTime,proto3" json:"genesisTime,omitempty"`
+	// ISO 8601 datetime, nanosecond precision
+	CurrentTime string `protobuf:"bytes,5,opt,name=currentTime,proto3" json:"currentTime,omitempty"`
+	// ISO 8601 datetime, nanosecond precision
 	VegaTime                 string      `protobuf:"bytes,6,opt,name=vegaTime,proto3" json:"vegaTime,omitempty"`
 	Status                   ChainStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.ChainStatus" json:"status,omitempty"`
 	TxPerBlock               uint64      `protobuf:"varint,8,opt,name=txPerBlock,proto3" json:"txPerBlock,omitempty"`
@@ -1325,11 +1347,13 @@ type Statistics struct {
 	AppVersionHash           string      `protobuf:"bytes,28,opt,name=appVersionHash,proto3" json:"appVersionHash,omitempty"`
 	AppVersion               string      `protobuf:"bytes,29,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
 	ChainVersion             string      `protobuf:"bytes,30,opt,name=chainVersion,proto3" json:"chainVersion,omitempty"`
-	BlockDuration            uint64      `protobuf:"varint,31,opt,name=blockDuration,proto3" json:"blockDuration,omitempty"`
-	Uptime                   string      `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
-	XXX_NoUnkeyedLiteral     struct{}    `json:"-"`
-	XXX_unrecognized         []byte      `json:"-"`
-	XXX_sizecache            int32       `json:"-"`
+	// nanoseconds
+	BlockDuration uint64 `protobuf:"varint,31,opt,name=blockDuration,proto3" json:"blockDuration,omitempty"`
+	// ISO 8601 datetime, nanosecond precision
+	Uptime               string   `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Statistics) Reset()         { *m = Statistics{} }
@@ -1882,22 +1906,18 @@ func (m *OrderAmendment) GetSide() Side {
 }
 
 type OrderSubmission struct {
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID  string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// do not enforce that price, as Market Order will not have price specified
-	Price uint64 `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
-	Size  uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
-	// make sur for both that they are non nil and the value is part of the respective enums.
-	Side        Side              `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=TimeInForce,proto3,enum=vega.Order_TimeInForce" json:"TimeInForce,omitempty"`
-	// do not enforce as not always required
-	// althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
-	ExpiresAt            int64      `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	Type                 Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MarketID             string            `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	PartyID              string            `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	Price                uint64            `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
+	Size                 uint64            `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	Side                 Side              `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
+	TimeInForce          Order_TimeInForce `protobuf:"varint,7,opt,name=TimeInForce,proto3,enum=vega.Order_TimeInForce" json:"TimeInForce,omitempty"`
+	ExpiresAt            int64             `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	Type                 Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *OrderSubmission) Reset()         { *m = OrderSubmission{} }
