@@ -851,10 +851,13 @@ func (*TradableInstrument) XXX_OneofWrappers() []interface{} {
 }
 
 type Market struct {
-	Id                 string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// 32 pseudo-random upper-case letters and digits
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// a human-understandable name for the Market, perhaps including a currency pair and a maturity date
 	Name               string              `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	TradableInstrument *TradableInstrument `protobuf:"bytes,3,opt,name=tradableInstrument,proto3" json:"tradableInstrument,omitempty"`
-	DecimalPlaces      uint64              `protobuf:"varint,4,opt,name=decimalPlaces,proto3" json:"decimalPlaces,omitempty"`
+	// the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
+	DecimalPlaces uint64 `protobuf:"varint,4,opt,name=decimalPlaces,proto3" json:"decimalPlaces,omitempty"`
 	// Types that are valid to be assigned to TradingMode:
 	//	*Market_Continuous
 	//	*Market_Discrete
