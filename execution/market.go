@@ -634,6 +634,9 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		closedMPs = append(closedMPs, pos)
 	}
 	if networkPos == 0 {
+		m.log.Warn("Network positions is 0 after closing out traders, nothing more to do",
+			logging.String("market-id", m.GetID()))
+
 		// remove accounts, positions and return
 		// from settlement engine first
 		m.settlement.RemoveDistressed(closed)
@@ -760,6 +763,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// get the updated positions
 	evt := m.position.Positions()
+
 	// settle MTM, the positions have changed
 	settle := m.settlement.SettleMTM(m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates
@@ -864,6 +868,11 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()
 		m.marginLevelsBuf.Add(marginLevels)
+
+		m.log.Warn("trader closed-out with success",
+			logging.String("party-id", trader.Party()),
+			logging.String("market-id", m.GetID()))
+
 	}
 	return nil
 }
