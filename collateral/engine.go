@@ -220,8 +220,22 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 
 		// get the state of the accoutns before processing transfers
 		// so they can be used in the marginEvt, and to calculate the missing funds
-		generalAcc, _ := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
-		marginAcc, _ := e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", evt.Party()),
+				logging.String("asset", asset))
+		}
+
+		marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "margin"),
+				logging.String("party-id", evt.Party()),
+				logging.String("asset", asset),
+				logging.String("market-id", settle.MarketID))
+		}
 
 		marginEvt := &marginUpdate{
 			MarketPosition: evt,
@@ -297,8 +311,22 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		}
 
 		// updating the accounts stored in the marginEvt
-		marginEvt.general, _ = e.GetAccountByID(marginEvt.general.GetId())
-		marginEvt.margin, _ = e.GetAccountByID(marginEvt.margin.GetId())
+		marginEvt.general, err = e.GetAccountByID(marginEvt.general.GetId())
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", evt.Party()),
+				logging.String("asset", asset))
+		}
+		marginEvt.margin, err = e.GetAccountByID(marginEvt.margin.GetId())
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "margin"),
+				logging.String("party-id", evt.Party()),
+				logging.String("asset", asset),
+				logging.String("market-id", settle.MarketID))
+		}
+
 		responses = append(responses, res)
 		marginEvts = append(marginEvts, marginEvt)
 	}
@@ -356,8 +384,23 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		}
 		// no transfer needed if transfer is nil, just build the marginUpdate
 		if transfer == nil {
-			marginEvt.general, _ = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
-			marginEvt.margin, _ = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+			marginEvt.general, err = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+			if err != nil {
+				e.log.Error("unable to get party account",
+					logging.String("account-type", "general"),
+					logging.String("party-id", evt.Party()),
+					logging.String("asset", asset))
+			}
+
+			marginEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+			if err != nil {
+				e.log.Error("unable to get party account",
+					logging.String("account-type", "margin"),
+					logging.String("party-id", evt.Party()),
+					logging.String("asset", asset),
+					logging.String("market-id", settle.MarketID))
+			}
+
 			marginEvts = append(marginEvts, marginEvt)
 			continue
 		}
@@ -393,8 +436,23 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			}
 		}
 		// updating the accounts stored in the marginEvt
-		marginEvt.general, _ = e.GetAccountByID(marginEvt.general.GetId())
-		marginEvt.margin, _ = e.GetAccountByID(marginEvt.margin.GetId())
+		marginEvt.general, err = e.GetAccountByID(marginEvt.general.GetId())
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", evt.Party()),
+				logging.String("asset", asset))
+		}
+
+		marginEvt.margin, err = e.GetAccountByID(marginEvt.margin.GetId())
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "margin"),
+				logging.String("party-id", evt.Party()),
+				logging.String("asset", asset),
+				logging.String("market-id", settle.MarketID))
+		}
+
 		responses = append(responses, res)
 		marginEvts = append(marginEvts, marginEvt)
 	}
