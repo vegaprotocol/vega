@@ -8,6 +8,7 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -53,6 +54,19 @@ func NewDefaultConfig() Config {
 		Port:   1789,
 		RsaKey: rsaKeyPath,
 	}
+}
+
+func LoadConfig(path string) (*Config, error) {
+	buf, err := ioutil.ReadFile(filepath.Join(path, configFile))
+	if err != nil {
+		return nil, err
+	}
+	cfg := Config{}
+	if _, err := toml.Decode(string(buf), &cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }
 
 func GenConfig(log *logging.Logger, path string, rewrite, genRsaKey bool) error {

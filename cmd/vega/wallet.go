@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -91,6 +92,31 @@ func (ic *walletCommand) ServiceInit(cmd *cobra.Command, args []string) error {
 }
 
 func (ic *walletCommand) ServiceRun(cmd *cobra.Command, args []string) error {
+	cfg, err := wallet.LoadConfig(ic.rootPath)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	srv := wallet.NewService(ic.Log, cfg)
+	go func() {
+		defer cancel()
+		err := srv.Start()
+		if err != nil {
+			ic.Log.Error("error starting wallet http server", logging.Error(err))
+		}
+	}()
+
+	waitSig(ctx, ic.Log)
+
+	err = srv.Stop()
+	if err != nil {
+		ic.Log.Error("error stopping wallet http server", logging.Error(err))
+	} else {
+		ic.Log.Info("wallet http server stopped with success")
+	}
+
 	return nil
 }
 
