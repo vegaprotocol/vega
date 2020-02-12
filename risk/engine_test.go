@@ -242,6 +242,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		o := &types.Order{
 			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
 			MarketID:    marketID,
+			PartyID:     "A",
 			Side:        v.side,
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
@@ -346,6 +347,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		o := &types.Order{
 			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
 			MarketID:    marketID,
+			PartyID:     "A",
 			Side:        v.side,
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),

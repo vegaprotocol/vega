@@ -24,6 +24,19 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	} else if orderMessage.TimeInForce == types.Order_GTT && orderMessage.ExpiresAt == 0 {
 		// if order is GTT, validate timestamp and convert to block number
 		err = types.ErrInvalidExpirationDatetime
+	} else if len(orderMessage.PartyID) == 0 {
+		err = types.ErrInvalidPartyID
+	} else if orderMessage.Size == 0 {
+		err = types.ErrInvalidSize
+	} else if orderMessage.Remaining > orderMessage.Size {
+		err = types.ErrInvalidRemainingSize
+	} else if orderMessage.Type == types.Order_NETWORK && orderMessage.TimeInForce != types.Order_FOK {
+		err = types.ErrInvalidPersistence
+	} else if orderMessage.TimeInForce == types.Order_GTT && orderMessage.Type != types.Order_LIMIT {
+		err = types.ErrInvalidPersistence
+	} else if orderMessage.Type == types.Order_MARKET &&
+		(orderMessage.TimeInForce == types.Order_GTT || orderMessage.TimeInForce == types.Order_GTC) {
+		err = types.ErrInvalidPersistence
 	}
 	timer.EngineTimeCounterAdd()
 	return

@@ -33,6 +33,11 @@ type OrderBook struct {
 	ordersByID      map[string]*types.Order
 }
 
+func isPersistent(o *types.Order) bool {
+	return o.GetType() == types.Order_LIMIT &&
+		(o.GetTimeInForce() == types.Order_GTC || o.GetTimeInForce() == types.Order_GTT)
+}
+
 // NewOrderBook create an order book with a given name
 // TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
 // framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
@@ -153,10 +158,12 @@ func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
 	return p
 }
 
+// BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
 	return b.buy.BestPriceAndVolume(types.Side_Buy)
 }
 
+// BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
 func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
 	return b.sell.BestPriceAndVolume(types.Side_Sell)
 }
@@ -259,7 +266,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// if order is persistent type add to order book to the correct side
-	if (order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT) && order.Remaining > 0 {
+	if isPersistent(order) && order.Remaining > 0 {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.TimeInForce == types.Order_GTT {
@@ -380,32 +387,14 @@ func (b *OrderBook) RemoveDistressedOrders(
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {
-		total := party.Buy() + party.Sell()
-		if total == 0 {
-			continue
-		}
 		orders := []*types.Order{}
-		if party.Buy() > 0 {
-			i := party.Buy()
-			for _, l := range b.buy.levels {
-				rm := l.getOrdersByParty(party.Party())
-				i -= int64(len(rm))
-				orders = append(orders, rm...)
-				if i == 0 {
-					break
-				}
-			}
+		for _, l := range b.buy.levels {
+			rm := l.getOrdersByParty(party.Party())
+			orders = append(orders, rm...)
 		}
-		if party.Sell() > 0 {
-			i := party.Sell()
-			for _, l := range b.sell.levels {
-				rm := l.getOrdersByParty(party.Party())
-				i -= int64(len(rm))
-				orders = append(orders, rm...)
-				if i == 0 {
-					break
-				}
-			}
+		for _, l := range b.sell.levels {
+			rm := l.getOrdersByParty(party.Party())
+			orders = append(orders, rm...)
 		}
 		for _, o := range orders {
 			confirm, err := b.CancelOrder(o)

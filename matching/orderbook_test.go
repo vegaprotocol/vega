@@ -682,6 +682,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	timeStampOrder := types.Order{
 		Id:        "timestamporderID",
 		MarketID:  market,
+		PartyID:   "A",
 		CreatedAt: 10,
 		Side:      types.Side_Buy,
 		Size:      1,
@@ -1736,6 +1737,8 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	newOrder := &types.Order{
 		MarketID: market,
 		Id:       fmt.Sprintf("V%010d-%010d", 1, 1),
+		PartyID:  "A",
+		Size:     100,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1763,6 +1766,8 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	newOrder := &types.Order{
 		MarketID: market,
 		Id:       "id",
+		PartyID:  "A",
+		Size:     100,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1806,6 +1811,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	newOrder := &types.Order{
 		MarketID:    market,
 		Id:          "123456",
+		PartyID:     "A",
 		Side:        types.Side_Buy,
 		Price:       100,
 		Size:        200,
@@ -1826,6 +1832,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	editedOrder := &types.Order{
 		MarketID:    market,
 		Id:          "123456",
+		PartyID:     "A",
 		Side:        types.Side_Buy,
 		Price:       100,
 		Size:        200,
@@ -1849,6 +1856,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	newOrder := &types.Order{
 		MarketID:    market,
 		Id:          "123456",
+		PartyID:     "A",
 		Side:        types.Side_Buy,
 		Price:       100,
 		Size:        200,
@@ -1908,6 +1916,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	editedOrder := &types.Order{
 		MarketID:    market,
 		Id:          "123456",
+		PartyID:     "A",
 		Side:        types.Side_Sell,
 		Price:       100,
 		Size:        200,

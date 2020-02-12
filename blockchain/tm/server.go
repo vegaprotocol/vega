@@ -7,6 +7,7 @@ import (
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
 // Server is an abstraction over the abci server
@@ -55,6 +56,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
+	srv.SetLogger(&abciLogger{s.log.Named("abci.socket-server")})
 
 	s.log.Info("Starting abci-blockchain socket server",
 		logging.String("addr", s.ServerAddr),
@@ -78,4 +80,24 @@ func (s *Server) Stop() {
 				logging.Error(err))
 		}
 	}
+}
+
+type abciLogger struct {
+	*logging.Logger
+}
+
+func (l *abciLogger) Debug(msg string, keyvals ...interface{}) {
+	l.Debugf("%v %v", msg, append([]interface{}{}, keyvals...))
+}
+
+func (l *abciLogger) Error(msg string, keyvals ...interface{}) {
+	l.Errorf("%v %v", msg, append([]interface{}{}, keyvals...))
+}
+
+func (l *abciLogger) Info(msg string, keyvals ...interface{}) {
+	l.Infof("%v %v", msg, append([]interface{}{}, keyvals...))
+}
+
+func (l *abciLogger) With(keyvals ...interface{}) tmlog.Logger {
+	return l
 }
