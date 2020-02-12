@@ -1,0 +1,151 @@
+package wallet_test
+
+import (
+	"math/rand"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/vega/wallet/crypto"
+
+	"github.com/stretchr/testify/assert"
+)
+
+var (
+	rootDirPath = "/tmp"
+)
+
+func rootDir() string {
+	return filepath.Join(rootDirPath, randSeq(10))
+}
+
+func TestWallet(t *testing.T) {
+	t.Run("create a wallet success", testCreateWallet)
+	t.Run("create a wallet failure", testCreateWalletFailure)
+	t.Run("read a wallet success", testReadWallet)
+	t.Run("read a wallet failure invalid passphrase", testReadWalletFailureInvalidPassphrase)
+	t.Run("read a wallet failure does not exist", testReadWalletFailureDoesNotExist)
+}
+
+func testCreateWallet(t *testing.T) {
+	rootDir := rootDir()
+	fsutil.EnsureDir(rootDir)
+	wallet.EnsureBaseFolder(rootDir)
+
+	w, err := wallet.Create(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotNil(t, w)
+
+	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+func testCreateWalletFailure(t *testing.T) {
+	rootDir := rootDir()
+	fsutil.EnsureDir(rootDir)
+	wallet.EnsureBaseFolder(rootDir)
+
+	// fist time is fine
+	w, err := wallet.Create(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotNil(t, w)
+
+	w, err = wallet.Create(rootDir, "jeremy", "whateverthepassphrase")
+	assert.EqualError(t, err, wallet.ErrWalletAlreadyExist.Error())
+	assert.Nil(t, w)
+
+	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+func testReadWallet(t *testing.T) {
+	rootDir := rootDir()
+	fsutil.EnsureDir(rootDir)
+	wallet.EnsureBaseFolder(rootDir)
+
+	w, err := wallet.Create(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotNil(t, w)
+
+	// no try to read the same wallet
+	w1, err1 := wallet.Read(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err1)
+	assert.NotNil(t, w1)
+
+	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+func testReadWalletFailureDoesNotExist(t *testing.T) {
+	rootDir := rootDir()
+	fsutil.EnsureDir(rootDir)
+	wallet.EnsureBaseFolder(rootDir)
+
+	// try to read a wallet which do not exists
+	w, err := wallet.Read(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.EqualError(t, err, wallet.ErrWalletDoesNotExist.Error())
+	assert.Nil(t, w)
+
+	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+func testReadWalletFailureInvalidPassphrase(t *testing.T) {
+	rootDir := rootDir()
+	fsutil.EnsureDir(rootDir)
+	wallet.EnsureBaseFolder(rootDir)
+
+	w, err := wallet.Create(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotNil(t, w)
+
+	// no try to read the same wallet
+	w1, err1 := wallet.Read(rootDir, "jeremy", "thisisasecurepassph")
+	assert.EqualError(t, err1, "cipher: message authentication failed")
+	assert.Nil(t, w1)
+
+	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+func testAddKeyPairtoWallet(t *testing.T) {
+	rootDir := rootDir()
+	fsutil.EnsureDir(rootDir)
+	wallet.EnsureBaseFolder(rootDir)
+
+	w, err := wallet.Create(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotNil(t, w)
+
+	// now try to read the same wallet
+	w1, err1 := wallet.Read(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err1)
+	assert.NotNil(t, w1)
+	assert.Len(t, w1.Keypairs, 0)
+
+	// create the keypair
+	kp := wallet.NewKeypair(crypto.NewEd25519(), []byte{1, 2, 3, 4}, []byte{4, 3, 2, 1})
+
+	// now try to add the keypair to the wallet
+	w2, err2 := wallet.AddKeypair(&kp, rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err2)
+	assert.NotNil(t, w2)
+
+	// now try to read the same wallet a last time, and make sur the values are right
+	w3, err3 := wallet.Read(rootDir, "jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err3)
+	assert.NotNil(t, w3)
+	assert.Len(t, w1.Keypairs, 1)
+	// check the base64 value of the keypair
+	assert.Equal(t, "AQIDBA==", w.Keypairs[0].Pub)
+	assert.Equal(t, "AQIDBA==", w.Keypairs[0].Priv)
+
+	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(b)
+}
