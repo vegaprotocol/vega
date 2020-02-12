@@ -14,12 +14,8 @@ var (
 	ErrUnimplementedTradingMode = errors.New("unimplemented trading mode")
 	// ErrNilMarket ...
 	ErrNilMarket = errors.New("nil market")
-	// ErrUnimplementedMarket ...
-	ErrUnimplementedMarket = errors.New("unimplemented market")
 	// ErrNilTradableInstrument ...
 	ErrNilTradableInstrument = errors.New("nil tradable instrument")
-	// ErrUnimplementedTradableInstrument ...
-	ErrUnimplementedTradableInstrument = errors.New("unimplemented tradable instrument")
 	// ErrNilOracle ..
 	ErrNilOracle = errors.New("nil oracle")
 	// ErrUnimplementedOracle ...
@@ -34,24 +30,20 @@ var (
 	ErrUnimplementedRiskModel = errors.New("unimplemented risk model")
 	// ErrNilInstrumentMetadata ...
 	ErrNilInstrumentMetadata = errors.New("nil instrument metadata")
-	// ErrUnimplementedInstrumentMetadata ...
-	ErrUnimplementedInstrumentMetadata = errors.New("unimplemented instrument metadata")
 	// ErrNilEthereumEvent ...
 	ErrNilEthereumEvent = errors.New("nil ethereum event")
-	// ErrUnimplementedEthereumEvent ...
-	ErrUnimplementedEthereumEvent = errors.New("unimplemented ethereum event")
 	// ErrNilFuture ...
 	ErrNilFuture = errors.New("nil future")
-	// ErrUnimplementedFuture ...
-	ErrUnimplementedFuture = errors.New("unimplemented future")
 	// ErrNilInstrument ...
 	ErrNilInstrument = errors.New("nil instrument")
-	// ErrUnimplementedInstrument ...
-	ErrUnimplementedInstrument = errors.New("unimplemented instrument")
 	// ErrNilDiscreteTradingDuration ...
 	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
 	// ErrNilContinuousTradingTickSize ...
-	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading ticksize")
+	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
+	// ErrnilScalingFactors...
+	ErrNilScalingFactors = errors.New("nil scaling factors")
+	// ErrNilMarginCalculator
+	ErrNilMarginCalculator = errors.New("nil margin calculator")
 )
 
 // IntoProto ...
@@ -178,12 +170,12 @@ func (i *Instrument) IntoProto() (*types.Instrument, error) {
 }
 
 // IntoProto ...
-func (f *ForwardRiskModel) IntoProto() (*types.TradableInstrument_ForwardRiskModel, error) {
-	return &types.TradableInstrument_ForwardRiskModel{
-		ForwardRiskModel: &types.ForwardRiskModel{
+func (f *LogNormalRiskModel) IntoProto() (*types.TradableInstrument_LogNormalRiskModel, error) {
+	return &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: f.RiskAversionParameter,
 			Tau:                   f.Tau,
-			Params: &types.ModelParamsBS{
+			Params: &types.LogNormalModelParams{
 				Mu:    f.Params.Mu,
 				R:     f.Params.R,
 				Sigma: f.Params.Sigma,
@@ -198,7 +190,7 @@ func (ti *TradableInstrument) riskModelIntoProto(
 		return ErrNilRiskModel
 	}
 	switch rm := ti.RiskModel.(type) {
-	case *ForwardRiskModel:
+	case *LogNormalRiskModel:
 		pti.RiskModel, err = rm.IntoProto()
 	default:
 		err = ErrUnimplementedRiskModel
@@ -216,12 +208,31 @@ func (ti *TradableInstrument) IntoProto() (*types.TradableInstrument, error) {
 			return nil, err
 		}
 	}
+	if ti.MarginCalculator != nil {
+		pti.MarginCalculator, _ = ti.MarginCalculator.IntoProto()
+	}
 	err = ti.riskModelIntoProto(pti)
 	if err != nil {
 		return nil, err
 	}
 
 	return pti, nil
+}
+
+func (m *MarginCalculator) IntoProto() (*types.MarginCalculator, error) {
+	pm := &types.MarginCalculator{}
+	if m.ScalingFactors != nil {
+		pm.ScalingFactors, _ = m.ScalingFactors.IntoProto()
+	}
+	return pm, nil
+}
+
+func (s *ScalingFactors) IntoProto() (*types.ScalingFactors, error) {
+	return &types.ScalingFactors{
+		SearchLevel:       s.SearchLevel,
+		InitialMargin:     s.InitialMargin,
+		CollateralRelease: s.CollateralRelease,
+	}, nil
 }
 
 // IntoProto ...
@@ -375,11 +386,11 @@ func InstrumentFromProto(pi *types.Instrument) (*Instrument, error) {
 }
 
 // ForwardFromProto ...
-func ForwardFromProto(f *types.ForwardRiskModel) (*ForwardRiskModel, error) {
-	return &ForwardRiskModel{
+func ForwardFromProto(f *types.LogNormalRiskModel) (*LogNormalRiskModel, error) {
+	return &LogNormalRiskModel{
 		RiskAversionParameter: f.RiskAversionParameter,
 		Tau:                   f.Tau,
-		Params: &ModelParamsBs{
+		Params: &LogNormalModelParams{
 			Mu:    f.Params.Mu,
 			R:     f.Params.R,
 			Sigma: f.Params.Sigma,
@@ -403,8 +414,8 @@ func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 		return nil, ErrNilRiskModel
 	}
 	switch rmimpl := rm.(type) {
-	case *types.TradableInstrument_ForwardRiskModel:
-		return ForwardFromProto(rmimpl.ForwardRiskModel)
+	case *types.TradableInstrument_LogNormalRiskModel:
+		return ForwardFromProto(rmimpl.LogNormalRiskModel)
 	case *types.TradableInstrument_SimpleRiskModel:
 		return SimpleRiskModelFromProto(rmimpl.SimpleRiskModel)
 	default:
@@ -428,7 +439,36 @@ func TradableInstrumentFromProto(pti *types.TradableInstrument) (*TradableInstru
 	if err != nil {
 		return nil, err
 	}
+	mc, err := MarginCalculatorFromProto(pti.MarginCalculator)
+	if err != nil {
+		return nil, err
+	}
+	ti.MarginCalculator = mc
 	return ti, nil
+}
+
+func MarginCalculatorFromProto(mc *types.MarginCalculator) (*MarginCalculator, error) {
+	if mc == nil {
+		return nil, ErrNilMarginCalculator
+	}
+	m := &MarginCalculator{}
+	sf, err := ScalingFactorsFromProto(mc.ScalingFactors)
+	if err != nil {
+		return nil, err
+	}
+	m.ScalingFactors = sf
+	return m, nil
+}
+
+func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error) {
+	if psf == nil {
+		return nil, ErrNilScalingFactors
+	}
+	return &ScalingFactors{
+		SearchLevel:       psf.SearchLevel,
+		InitialMargin:     psf.InitialMargin,
+		CollateralRelease: psf.CollateralRelease,
+	}, nil
 }
 
 // MarketFromProto ...
@@ -458,7 +498,7 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 // IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
 	if !a.IsValid() {
-		return types.AccountType_NO_ACC
+		return types.AccountType_ALL
 	}
 	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
 }

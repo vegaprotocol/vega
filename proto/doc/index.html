@@ -458,10 +458,6 @@
                 </li>
 
                 <li>
-                  <a href="#vega.ForwardRiskModel"><span class="badge">M</span>ForwardRiskModel</a>
-                </li>
-
-                <li>
                   <a href="#vega.Future"><span class="badge">M</span>Future</a>
                 </li>
 
@@ -474,15 +470,19 @@
                 </li>
 
                 <li>
+                  <a href="#vega.LogNormalModelParams"><span class="badge">M</span>LogNormalModelParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LogNormalRiskModel"><span class="badge">M</span>LogNormalRiskModel</a>
+                </li>
+
+                <li>
                   <a href="#vega.MarginCalculator"><span class="badge">M</span>MarginCalculator</a>
                 </li>
 
                 <li>
                   <a href="#vega.Market"><span class="badge">M</span>Market</a>
-                </li>
-
-                <li>
-                  <a href="#vega.ModelParamsBS"><span class="badge">M</span>ModelParamsBS</a>
                 </li>
 
                 <li>
@@ -542,10 +542,6 @@
 
                 <li>
                   <a href="#vega.MarketDepth"><span class="badge">M</span>MarketDepth</a>
-                </li>
-
-                <li>
-                  <a href="#vega.MarketPosition"><span class="badge">M</span>MarketPosition</a>
                 </li>
 
                 <li>
@@ -826,7 +822,7 @@
                   <td>sinceTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
@@ -1331,6 +1327,13 @@
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>maxDepth</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -1496,7 +1499,7 @@
                   <td>markets</td>
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>a list of Markets </p></td>
                 </tr>
 
             </tbody>
@@ -2177,7 +2180,7 @@
 
                 <tr>
                   <td>positions</td>
-                  <td><a href="#vega.MarketPosition">vega.MarketPosition</a></td>
+                  <td><a href="#vega.Position">vega.Position</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -2227,14 +2230,14 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a party ID </p></td>
                 </tr>
 
                 <tr>
                   <td>password</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a password </p></td>
                 </tr>
 
             </tbody>
@@ -2258,7 +2261,7 @@
                   <td>token</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a token corresponding to the party given in the request, and valid for subsequent requests for that party </p></td>
                 </tr>
 
             </tbody>
@@ -2282,14 +2285,14 @@
                   <td>submission</td>
                   <td><a href="#vega.OrderSubmission">vega.OrderSubmission</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the bulk of the Order, including market, party, price, size, side, time in force, etc. </p></td>
                 </tr>
 
                 <tr>
                   <td>token</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -2560,7 +2563,7 @@
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch, for example <tt>1580473859111222333</tt> corresponds to <tt>2020-01-31T12:30:59.111222333Z</tt> </p></td>
                 </tr>
 
             </tbody>
@@ -2694,45 +2697,45 @@
           <tbody>
 
               <tr>
-                <td>OrdersByMarket</td>
-                <td><a href="#api.OrdersByMarketRequest">OrdersByMarketRequest</a></td>
-                <td><a href="#api.OrdersByMarketResponse">OrdersByMarketResponse</a></td>
-                <td><p>Get Market Orders</p></td>
+                <td>MarketAccounts</td>
+                <td><a href="#api.MarketAccountsRequest">MarketAccountsRequest</a></td>
+                <td><a href="#api.MarketAccountsResponse">MarketAccountsResponse</a></td>
+                <td><p>Get a list of Accounts by Market</p></td>
               </tr>
 
               <tr>
-                <td>OrdersByParty</td>
-                <td><a href="#api.OrdersByPartyRequest">OrdersByPartyRequest</a></td>
-                <td><a href="#api.OrdersByPartyResponse">OrdersByPartyResponse</a></td>
-                <td><p>Get Party Orders</p></td>
+                <td>PartyAccounts</td>
+                <td><a href="#api.PartyAccountsRequest">PartyAccountsRequest</a></td>
+                <td><a href="#api.PartyAccountsResponse">PartyAccountsResponse</a></td>
+                <td><p>Get a list of Accounts by Party</p></td>
               </tr>
 
               <tr>
-                <td>OrderByMarketAndID</td>
-                <td><a href="#api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</a></td>
-                <td><a href="#api.OrderByMarketAndIdResponse">OrderByMarketAndIdResponse</a></td>
-                <td><p>Get Market Order by OrderID</p></td>
+                <td>Candles</td>
+                <td><a href="#api.CandlesRequest">CandlesRequest</a></td>
+                <td><a href="#api.CandlesResponse">CandlesResponse</a></td>
+                <td><p>Get a list of Candles by Market</p></td>
               </tr>
 
               <tr>
-                <td>OrderByReference</td>
-                <td><a href="#api.OrderByReferenceRequest">OrderByReferenceRequest</a></td>
-                <td><a href="#api.OrderByReferenceResponse">OrderByReferenceResponse</a></td>
-                <td><p>Get an Order by Pending Order reference (UUID)</p></td>
+                <td>MarketDataByID</td>
+                <td><a href="#api.MarketDataByIDRequest">MarketDataByIDRequest</a></td>
+                <td><a href="#api.MarketDataByIDResponse">MarketDataByIDResponse</a></td>
+                <td><p>Get Market Data by MarketID</p></td>
+              </tr>
+
+              <tr>
+                <td>MarketsData</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.MarketsDataResponse">MarketsDataResponse</a></td>
+                <td><p>Get a list of Market Data</p></td>
               </tr>
 
               <tr>
                 <td>MarketByID</td>
                 <td><a href="#api.MarketByIDRequest">MarketByIDRequest</a></td>
                 <td><a href="#api.MarketByIDResponse">MarketByIDResponse</a></td>
-                <td><p>Get Market by ID</p></td>
-              </tr>
-
-              <tr>
-                <td>Markets</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.MarketsResponse">MarketsResponse</a></td>
-                <td><p>Get a list of Markets</p></td>
+                <td><p>Get a Market by ID</p></td>
               </tr>
 
               <tr>
@@ -2743,17 +2746,45 @@
               </tr>
 
               <tr>
-                <td>LastTrade</td>
-                <td><a href="#api.LastTradeRequest">LastTradeRequest</a></td>
-                <td><a href="#api.LastTradeResponse">LastTradeResponse</a></td>
-                <td><p>Get latest Market Trade</p></td>
+                <td>Markets</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.MarketsResponse">MarketsResponse</a></td>
+                <td><p>Get a list of Markets</p></td>
               </tr>
 
               <tr>
-                <td>PartyByID</td>
-                <td><a href="#api.PartyByIDRequest">PartyByIDRequest</a></td>
-                <td><a href="#api.PartyByIDResponse">PartyByIDResponse</a></td>
-                <td><p>Get Party by ID</p></td>
+                <td>OrderByMarketAndID</td>
+                <td><a href="#api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</a></td>
+                <td><a href="#api.OrderByMarketAndIdResponse">OrderByMarketAndIdResponse</a></td>
+                <td><p>Get an Order by Market and OrderID</p></td>
+              </tr>
+
+              <tr>
+                <td>OrderByReference</td>
+                <td><a href="#api.OrderByReferenceRequest">OrderByReferenceRequest</a></td>
+                <td><a href="#api.OrderByReferenceResponse">OrderByReferenceResponse</a></td>
+                <td><p>Get an Order by Pending Order reference (UUID)</p></td>
+              </tr>
+
+              <tr>
+                <td>OrdersByMarket</td>
+                <td><a href="#api.OrdersByMarketRequest">OrdersByMarketRequest</a></td>
+                <td><a href="#api.OrdersByMarketResponse">OrdersByMarketResponse</a></td>
+                <td><p>Get a list of Orders by Market</p></td>
+              </tr>
+
+              <tr>
+                <td>OrdersByParty</td>
+                <td><a href="#api.OrdersByPartyRequest">OrdersByPartyRequest</a></td>
+                <td><a href="#api.OrdersByPartyResponse">OrdersByPartyResponse</a></td>
+                <td><p>Get a list of Orders by Party</p></td>
+              </tr>
+
+              <tr>
+                <td>MarginLevels</td>
+                <td><a href="#api.MarginLevelsRequest">MarginLevelsRequest</a></td>
+                <td><a href="#api.MarginLevelsResponse">MarginLevelsResponse</a></td>
+                <td><p>Get Margin Levels by PartyID</p></td>
               </tr>
 
               <tr>
@@ -2764,38 +2795,45 @@
               </tr>
 
               <tr>
-                <td>TradesByMarket</td>
-                <td><a href="#api.TradesByMarketRequest">TradesByMarketRequest</a></td>
-                <td><a href="#api.TradesByMarketResponse">TradesByMarketResponse</a></td>
-                <td><p>Get Market Trades</p></td>
-              </tr>
-
-              <tr>
-                <td>TradesByParty</td>
-                <td><a href="#api.TradesByPartyRequest">TradesByPartyRequest</a></td>
-                <td><a href="#api.TradesByPartyResponse">TradesByPartyResponse</a></td>
-                <td><p>Get Party Trades</p></td>
-              </tr>
-
-              <tr>
-                <td>TradesByOrder</td>
-                <td><a href="#api.TradesByOrderRequest">TradesByOrderRequest</a></td>
-                <td><a href="#api.TradesByOrderResponse">TradesByOrderResponse</a></td>
-                <td><p>Get Order Trades</p></td>
+                <td>PartyByID</td>
+                <td><a href="#api.PartyByIDRequest">PartyByIDRequest</a></td>
+                <td><a href="#api.PartyByIDResponse">PartyByIDResponse</a></td>
+                <td><p>Get a Party by ID</p></td>
               </tr>
 
               <tr>
                 <td>PositionsByParty</td>
                 <td><a href="#api.PositionsByPartyRequest">PositionsByPartyRequest</a></td>
                 <td><a href="#api.PositionsByPartyResponse">PositionsByPartyResponse</a></td>
-                <td><p>Get Party Positions</p></td>
+                <td><p>Get a list of Positions by Party</p></td>
               </tr>
 
               <tr>
-                <td>Candles</td>
-                <td><a href="#api.CandlesRequest">CandlesRequest</a></td>
-                <td><a href="#api.CandlesResponse">CandlesResponse</a></td>
-                <td><p>Get Market Candles</p></td>
+                <td>LastTrade</td>
+                <td><a href="#api.LastTradeRequest">LastTradeRequest</a></td>
+                <td><a href="#api.LastTradeResponse">LastTradeResponse</a></td>
+                <td><p>Get latest Trade</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesByMarket</td>
+                <td><a href="#api.TradesByMarketRequest">TradesByMarketRequest</a></td>
+                <td><a href="#api.TradesByMarketResponse">TradesByMarketResponse</a></td>
+                <td><p>Get a list of Trades by Market</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesByOrder</td>
+                <td><a href="#api.TradesByOrderRequest">TradesByOrderRequest</a></td>
+                <td><a href="#api.TradesByOrderResponse">TradesByOrderResponse</a></td>
+                <td><p>Get a list of Trades by Order</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesByParty</td>
+                <td><a href="#api.TradesByPartyRequest">TradesByPartyRequest</a></td>
+                <td><a href="#api.TradesByPartyResponse">TradesByPartyResponse</a></td>
+                <td><p>Get a list of Trades by Party</p></td>
               </tr>
 
               <tr>
@@ -2813,101 +2851,66 @@
               </tr>
 
               <tr>
-                <td>MarketDataByID</td>
-                <td><a href="#api.MarketDataByIDRequest">MarketDataByIDRequest</a></td>
-                <td><a href="#api.MarketDataByIDResponse">MarketDataByIDResponse</a></td>
-                <td><p>Get Market Data by ID</p></td>
-              </tr>
-
-              <tr>
-                <td>MarketsData</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.MarketsDataResponse">MarketsDataResponse</a></td>
-                <td><p>Get a list of Market Data</p></td>
-              </tr>
-
-              <tr>
-                <td>MarginLevels</td>
-                <td><a href="#api.MarginLevelsRequest">MarginLevelsRequest</a></td>
-                <td><a href="#api.MarginLevelsResponse">MarginLevelsResponse</a></td>
-                <td><p>Get Party Margin Levels</p></td>
-              </tr>
-
-              <tr>
-                <td>OrdersSubscribe</td>
-                <td><a href="#api.OrdersSubscribeRequest">OrdersSubscribeRequest</a></td>
-                <td><a href="#api.OrdersStream">OrdersStream</a> stream</td>
-                <td><p>streams</p></td>
-              </tr>
-
-              <tr>
-                <td>TradesSubscribe</td>
-                <td><a href="#api.TradesSubscribeRequest">TradesSubscribeRequest</a></td>
-                <td><a href="#api.TradesStream">TradesStream</a> stream</td>
-                <td><p></p></td>
+                <td>AccountsSubscribe</td>
+                <td><a href="#api.AccountsSubscribeRequest">AccountsSubscribeRequest</a></td>
+                <td><a href="#vega.Account">.vega.Account</a> stream</td>
+                <td><p>Subscribe to a stream of Accounts</p></td>
               </tr>
 
               <tr>
                 <td>CandlesSubscribe</td>
                 <td><a href="#api.CandlesSubscribeRequest">CandlesSubscribeRequest</a></td>
                 <td><a href="#vega.Candle">.vega.Candle</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>MarketDepthSubscribe</td>
-                <td><a href="#api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</a></td>
-                <td><a href="#vega.MarketDepth">.vega.MarketDepth</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>PositionsSubscribe</td>
-                <td><a href="#api.PositionsSubscribeRequest">PositionsSubscribeRequest</a></td>
-                <td><a href="#vega.MarketPosition">.vega.MarketPosition</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>AccountsSubscribe</td>
-                <td><a href="#api.AccountsSubscribeRequest">AccountsSubscribeRequest</a></td>
-                <td><a href="#vega.Account">.vega.Account</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>TransferResponsesSubscribe</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#vega.TransferResponse">.vega.TransferResponse</a> stream</td>
-                <td><p></p></td>
-              </tr>
-
-              <tr>
-                <td>MarketsDataSubscribe</td>
-                <td><a href="#api.MarketsDataSubscribeRequest">MarketsDataSubscribeRequest</a></td>
-                <td><a href="#vega.MarketData">.vega.MarketData</a> stream</td>
-                <td><p></p></td>
+                <td><p>Subscribe to a stream of Candles</p></td>
               </tr>
 
               <tr>
                 <td>MarginLevelsSubscribe</td>
                 <td><a href="#api.MarginLevelsSubscribeRequest">MarginLevelsSubscribeRequest</a></td>
                 <td><a href="#vega.MarginLevels">.vega.MarginLevels</a> stream</td>
-                <td><p></p></td>
+                <td><p>Subscribe to a stream of Margin Levels</p></td>
               </tr>
 
               <tr>
-                <td>PartyAccounts</td>
-                <td><a href="#api.PartyAccountsRequest">PartyAccountsRequest</a></td>
-                <td><a href="#api.PartyAccountsResponse">PartyAccountsResponse</a></td>
-                <td><p>Get Party accounts</p></td>
+                <td>MarketDepthSubscribe</td>
+                <td><a href="#api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</a></td>
+                <td><a href="#vega.MarketDepth">.vega.MarketDepth</a> stream</td>
+                <td><p>Subscribe to a stream of Market Depth</p></td>
               </tr>
 
               <tr>
-                <td>MarketAccounts</td>
-                <td><a href="#api.MarketAccountsRequest">MarketAccountsRequest</a></td>
-                <td><a href="#api.MarketAccountsResponse">MarketAccountsResponse</a></td>
-                <td><p>Get Market accounts</p></td>
+                <td>MarketsDataSubscribe</td>
+                <td><a href="#api.MarketsDataSubscribeRequest">MarketsDataSubscribeRequest</a></td>
+                <td><a href="#vega.MarketData">.vega.MarketData</a> stream</td>
+                <td><p>Subscribe to a stream of Markets Data</p></td>
+              </tr>
+
+              <tr>
+                <td>OrdersSubscribe</td>
+                <td><a href="#api.OrdersSubscribeRequest">OrdersSubscribeRequest</a></td>
+                <td><a href="#api.OrdersStream">OrdersStream</a> stream</td>
+                <td><p>Subscribe to a stream of Orders</p></td>
+              </tr>
+
+              <tr>
+                <td>PositionsSubscribe</td>
+                <td><a href="#api.PositionsSubscribeRequest">PositionsSubscribeRequest</a></td>
+                <td><a href="#vega.Position">.vega.Position</a> stream</td>
+                <td><p>Subscribe to a stream of Positions</p></td>
+              </tr>
+
+              <tr>
+                <td>TradesSubscribe</td>
+                <td><a href="#api.TradesSubscribeRequest">TradesSubscribeRequest</a></td>
+                <td><a href="#api.TradesStream">TradesStream</a> stream</td>
+                <td><p>Subscribe to a stream of Trades</p></td>
+              </tr>
+
+              <tr>
+                <td>TransferResponsesSubscribe</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#vega.TransferResponse">.vega.TransferResponse</a> stream</td>
+                <td><p>Subscribe to a stream of Transfer Responses</p></td>
               </tr>
 
           </tbody>
@@ -3077,44 +3080,6 @@
 
 
 
-        <h3 id="vega.ForwardRiskModel">ForwardRiskModel</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>riskAversionParameter</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>tau</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>params</td>
-                  <td><a href="#vega.ModelParamsBS">ModelParamsBS</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.Future">Future</h3>
         <p></p>
 
@@ -3250,6 +3215,82 @@
 
 
 
+        <h3 id="vega.LogNormalModelParams">LogNormalModelParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>mu</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>r</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sigma</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.LogNormalRiskModel">LogNormalRiskModel</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>riskAversionParameter</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>tau</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>params</td>
+                  <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.MarginCalculator">MarginCalculator</h3>
         <p></p>
 
@@ -3288,14 +3329,14 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>32 pseudo-random upper-case letters and digits </p></td>
                 </tr>
 
                 <tr>
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>a human-understandable name for the Market, perhaps including a currency pair and a maturity date </p></td>
                 </tr>
 
                 <tr>
@@ -3309,7 +3350,7 @@
                   <td>decimalPlaces</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
                 </tr>
 
                 <tr>
@@ -3322,44 +3363,6 @@
                 <tr>
                   <td>discrete</td>
                   <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="vega.ModelParamsBS">ModelParamsBS</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>mu</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>r</td>
-                  <td><a href="#double">double</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>sigma</td>
-                  <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3489,8 +3492,8 @@
                 </tr>
 
                 <tr>
-                  <td>forwardRiskModel</td>
-                  <td><a href="#vega.ForwardRiskModel">ForwardRiskModel</a></td>
+                  <td>logNormalRiskModel</td>
+                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3627,14 +3630,14 @@
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>datetime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>ISO 8601 datetime </p></td>
                 </tr>
 
                 <tr>
@@ -3967,72 +3970,6 @@
 
 
 
-        <h3 id="vega.MarketPosition">MarketPosition</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>marketID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>realisedVolume</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>realisedPNL</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>unrealisedVolume</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>unrealisedPNL</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>averageEntryPrice</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.NotifyTraderAccount">NotifyTraderAccount</h3>
         <p></p>
 
@@ -4148,7 +4085,7 @@
                   <td>status</td>
                   <td><a href="#vega.Order.Status">Order.Status</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>If <tt>status</tt> is <tt>Rejected</tt>, check <tt>reason</tt>. </p></td>
                 </tr>
 
                 <tr>
@@ -4489,7 +4426,7 @@
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>do not enforce that price, as Market Order will not have price specified </p></td>
+                  <td><p>mandatory for Limit orders, not required for Market orders </p></td>
                 </tr>
 
                 <tr>
@@ -4503,7 +4440,7 @@
                   <td>side</td>
                   <td><a href="#vega.Side">Side</a></td>
                   <td></td>
-                  <td><p>make sur for both that they are non nil and the value is part of the respective enums. </p></td>
+                  <td><p> </p></td>
                 </tr>
 
                 <tr>
@@ -4517,8 +4454,7 @@
                   <td>expiresAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>do not enforce as not always required
-althouth at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it </p></td>
+                  <td><p>mandatory for GTT orders, not required for GTC, IOC, FOK </p></td>
                 </tr>
 
                 <tr>
@@ -4647,7 +4583,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
 
                 <tr>
                   <td>positions</td>
-                  <td><a href="#vega.MarketPosition">MarketPosition</a></td>
+                  <td><a href="#vega.Position">Position</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -4805,13 +4741,6 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                 </tr>
 
                 <tr>
-                  <td>pendingVolume</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
                   <td>realisedPNL</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
@@ -4829,13 +4758,6 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                   <td>averageEntryPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>fifoQueue</td>
-                  <td><a href="#vega.PositionTrade">PositionTrade</a></td>
-                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -5102,21 +5024,21 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                   <td>genesisTime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
                 </tr>
 
                 <tr>
                   <td>currentTime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
                 </tr>
 
                 <tr>
                   <td>vegaTime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
                 </tr>
 
                 <tr>
@@ -5298,7 +5220,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                   <td>uptime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
                 </tr>
 
             </tbody>
@@ -5385,7 +5307,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -5634,7 +5556,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
           <tbody>
 
               <tr>
-                <td>NO_ACC</td>
+                <td>ALL</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
@@ -5706,37 +5628,37 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>I1M</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>1 minute</p></td>
               </tr>
 
               <tr>
                 <td>I5M</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>5 minutes</p></td>
               </tr>
 
               <tr>
                 <td>I15M</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>15 minutes</p></td>
               </tr>
 
               <tr>
                 <td>I1H</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>1 hour</p></td>
               </tr>
 
               <tr>
                 <td>I6H</td>
                 <td>4</td>
-                <td><p></p></td>
+                <td><p>6 hours</p></td>
               </tr>
 
               <tr>
                 <td>I1D</td>
                 <td>5</td>
-                <td><p></p></td>
+                <td><p>1 day</p></td>
               </tr>
 
           </tbody>
@@ -5790,7 +5712,7 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
         </table>
 
         <h3 id="vega.Order.TimeInForce">Order.TimeInForce</h3>
-        <p></p>
+        <p>Order Time in Force</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -5800,32 +5722,32 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>GTC</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
                 <td>GTT</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>good til time</p></td>
               </tr>
 
               <tr>
                 <td>IOC</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
                 <td>FOK</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>fill or kill</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Order.Type">Order.Type</h3>
-        <p></p>
+        <p>Order Type</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -5835,19 +5757,19 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>LIMIT</td>
                 <td>0</td>
-                <td><p>Limit order</p></td>
+                <td><p>used for Limit orders</p></td>
               </tr>
 
               <tr>
                 <td>MARKET</td>
                 <td>1</td>
-                <td><p>Market order type</p></td>
+                <td><p>used for Market orders</p></td>
               </tr>
 
               <tr>
                 <td>NETWORK</td>
                 <td>2</td>
-                <td><p>order where the initiating party is the network (used for distressed traders)</p></td>
+                <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
               </tr>
 
           </tbody>
@@ -5963,6 +5885,18 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
                 <td><p></p></td>
               </tr>
 
+              <tr>
+                <td>INVALID_SIZE</td>
+                <td>17</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>INVALID_PERSISTENCE</td>
+                <td>18</td>
+                <td><p></p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -6036,6 +5970,12 @@ althouth at least check it&#39;s not a negative integer, would be not that very 
               <tr>
                 <td>MARGIN_HIGH</td>
                 <td>6</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>MARGIN_CONFISCATED</td>
+                <td>7</td>
                 <td><p></p></td>
               </tr>
 

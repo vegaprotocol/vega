@@ -38,6 +38,8 @@ var (
 	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
 	// ErrMissingAsset signals that an asset was required but not specified
 	ErrMissingAsset = errors.New("missing asset")
+	// ErrInvalidPartyID signals that the partyID does not exist
+	ErrInvalidPartyID = errors.New("invalid party id")
 )
 
 // TradeOrderService ...

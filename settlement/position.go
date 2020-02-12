@@ -23,9 +23,13 @@ type pos struct {
 }
 
 type settlePos struct {
-	events.MarketPosition
 	marketID string
 	trades   []*pos
+	price    uint64
+	party    string
+
+	margin    uint64 // this field is only used when dealing with distressed traders
+	hasMargin bool
 }
 
 type mtmTransfer struct {
@@ -87,4 +91,20 @@ func (s settlePos) Trades() []events.TradeSettlement {
 // MarketID - market ID for this event
 func (s settlePos) MarketID() string {
 	return s.marketID
+}
+
+// Margin - part of the interface, returns the margin event and a bool indicating whether or not
+// the margin event is nil or not
+func (s settlePos) Margin() (uint64, bool) {
+	return s.margin, s.hasMargin
+}
+
+// Party - required for the SettlePosition interface
+func (s settlePos) Party() string {
+	return s.party
+}
+
+// Price required for the SettlePosition interface
+func (s settlePos) Price() uint64 {
+	return s.price
 }

@@ -121,9 +121,9 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_Buy {
-		pos.buy += int64(order.Size)
+		pos.buy += int64(order.Remaining)
 	} else {
-		pos.sell += int64(order.Size)
+		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
 	return pos, nil
@@ -138,9 +138,9 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 		err = ErrPositionNotFound
 	} else {
 		if order.Side == types.Side_Buy {
-			pos.buy -= int64(order.Size)
+			pos.buy -= int64(order.Remaining)
 		} else {
-			pos.sell -= int64(order.Size)
+			pos.sell -= int64(order.Remaining)
 		}
 	}
 	timer.EngineTimeCounterAdd()
@@ -240,6 +240,9 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
 	ret := make([]events.MarketPosition, 0, len(traders))
 	for _, trader := range traders {
+		e.log.Warn("removing trader from positions engine",
+			logging.String("party-id", trader.Party()))
+
 		party := trader.Party()
 		if current, ok := e.positions[party]; ok {
 			ret = append(ret, current)
@@ -247,8 +250,10 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 		// remove from the map
 		delete(e.positions, party)
 		// remove from the slice
-		for i, v := range e.positionsCpy {
-			if v.Party() == trader.Party() {
+		for i, _ := range e.positionsCpy {
+			if e.positionsCpy[i].Party() == trader.Party() {
+				e.log.Warn("removing trader from positions engine (cpy slice)",
+					logging.String("party-id", trader.Party()))
 				e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
 				break
 			}

@@ -115,7 +115,7 @@
         ]
       }
     },
-    "/markets/data": {
+    "/markets-data": {
       "get": {
         "summary": "Get a list of Market Data",
         "operationId": "MarketsData",
@@ -132,9 +132,34 @@
         ]
       }
     },
+    "/markets-data/{marketID}": {
+      "get": {
+        "summary": "Get Market Data by MarketID",
+        "operationId": "MarketDataByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDataByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}": {
       "get": {
-        "summary": "Get Market by ID",
+        "summary": "Get a Market by ID",
         "operationId": "MarketByID",
         "responses": {
           "200": {
@@ -157,9 +182,40 @@
         ]
       }
     },
+    "/markets/{marketID}/accounts": {
+      "get": {
+        "summary": "Get a list of Accounts by Market",
+        "operationId": "MarketAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketAccountsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "asset",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}/candles": {
       "get": {
-        "summary": "Get Market Candles",
+        "summary": "Get a list of Candles by Market",
         "operationId": "Candles",
         "responses": {
           "200": {
@@ -178,6 +234,7 @@
           },
           {
             "name": "sinceTimestamp",
+            "description": "nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -185,6 +242,7 @@
           },
           {
             "name": "interval",
+            "description": " - I1M: 1 minute\n - I5M: 5 minutes\n - I15M: 15 minutes\n - I1H: 1 hour\n - I6H: 6 hours\n - I1D: 1 day",
             "in": "query",
             "required": false,
             "type": "string",
@@ -197,31 +255,6 @@
               "I1D"
             ],
             "default": "I1M"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/markets/{marketID}/data": {
-      "get": {
-        "summary": "Get Market Data by ID",
-        "operationId": "MarketDataByID",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketDataByIDResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [
@@ -247,6 +280,13 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "maxDepth",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -256,7 +296,7 @@
     },
     "/markets/{marketID}/orders": {
       "get": {
-        "summary": "Get Market Orders",
+        "summary": "Get a list of Orders by Market",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
@@ -309,7 +349,7 @@
     },
     "/markets/{marketID}/orders/{orderID}": {
       "get": {
-        "summary": "Get Market Order by OrderID",
+        "summary": "Get an Order by Market and OrderID",
         "operationId": "OrderByMarketAndID",
         "responses": {
           "200": {
@@ -340,7 +380,7 @@
     },
     "/markets/{marketID}/trades": {
       "get": {
-        "summary": "Get Market Trades",
+        "summary": "Get a list of Trades by Market",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
@@ -386,7 +426,7 @@
     },
     "/markets/{marketID}/trades/latest": {
       "get": {
-        "summary": "Get latest Market Trade",
+        "summary": "Get latest Trade",
         "operationId": "LastTrade",
         "responses": {
           "200": {
@@ -514,7 +554,7 @@
     },
     "/orders/{orderID}/trades": {
       "get": {
-        "summary": "Get Order Trades",
+        "summary": "Get a list of Trades by Order",
         "operationId": "TradesByOrder",
         "responses": {
           "200": {
@@ -581,7 +621,7 @@
     },
     "/parties/{partyID}": {
       "get": {
-        "summary": "Get Party by ID",
+        "summary": "Get a Party by ID",
         "operationId": "PartyByID",
         "responses": {
           "200": {
@@ -606,7 +646,7 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "Get Party accounts",
+        "summary": "Get a list of Accounts by Party",
         "operationId": "PartyAccounts",
         "responses": {
           "200": {
@@ -635,13 +675,13 @@
             "required": false,
             "type": "string",
             "enum": [
-              "NO_ACC",
+              "ALL",
               "INSURANCE",
               "SETTLEMENT",
               "MARGIN",
               "GENERAL"
             ],
-            "default": "NO_ACC"
+            "default": "ALL"
           },
           {
             "name": "asset",
@@ -657,7 +697,7 @@
     },
     "/parties/{partyID}/markets/{marketID}/margin": {
       "get": {
-        "summary": "Get Party Margin Levels",
+        "summary": "Get Margin Levels by PartyID",
         "operationId": "MarginLevels",
         "responses": {
           "200": {
@@ -688,7 +728,7 @@
     },
     "/parties/{partyID}/orders": {
       "get": {
-        "summary": "Get Party Orders",
+        "summary": "Get a list of Orders by Party",
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
@@ -741,7 +781,7 @@
     },
     "/parties/{partyID}/positions": {
       "get": {
-        "summary": "Get Party Positions",
+        "summary": "Get a list of Positions by Party",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -772,7 +812,7 @@
     },
     "/parties/{partyID}/trades": {
       "get": {
-        "summary": "Get Party Trades",
+        "summary": "Get a list of Trades by Party",
         "operationId": "TradesByParty",
         "responses": {
           "200": {
@@ -911,7 +951,9 @@
         "IOC",
         "FOK"
       ],
-      "default": "GTC"
+      "default": "GTC",
+      "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "title": "Order Time in Force"
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -1031,7 +1073,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaMarket"
-          }
+          },
+          "title": "a list of Markets"
         }
       }
     },
@@ -1154,7 +1197,7 @@
         "positions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaMarketPosition"
+            "$ref": "#/definitions/vegaPosition"
           }
         }
       }
@@ -1163,10 +1206,12 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "a party ID"
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "title": "a password"
         }
       }
     },
@@ -1174,7 +1219,8 @@
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "title": "a token corresponding to the party given in the request, and valid for subsequent requests for that party"
         }
       }
     },
@@ -1182,10 +1228,12 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaOrderSubmission"
+          "$ref": "#/definitions/vegaOrderSubmission",
+          "description": "the bulk of the Order, including market, party, price, size, side, time in force, etc."
         },
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
         }
       }
     },
@@ -1238,7 +1286,8 @@
       "properties": {
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`"
         }
       }
     },
@@ -1323,23 +1372,25 @@
     "vegaAccountType": {
       "type": "string",
       "enum": [
-        "NO_ACC",
+        "ALL",
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
         "GENERAL"
       ],
-      "default": "NO_ACC"
+      "default": "ALL"
     },
     "vegaCandle": {
       "type": "object",
       "properties": {
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
         },
         "datetime": {
-          "type": "string"
+          "type": "string",
+          "title": "ISO 8601 datetime"
         },
         "high": {
           "type": "string",
@@ -1425,22 +1476,6 @@
         }
       }
     },
-    "vegaForwardRiskModel": {
-      "type": "object",
-      "properties": {
-        "riskAversionParameter": {
-          "type": "number",
-          "format": "double"
-        },
-        "tau": {
-          "type": "number",
-          "format": "double"
-        },
-        "params": {
-          "$ref": "#/definitions/vegaModelParamsBS"
-        }
-      }
-    },
     "vegaFuture": {
       "type": "object",
       "properties": {
@@ -1506,7 +1541,8 @@
         "I6H",
         "I1D"
       ],
-      "default": "I1M"
+      "default": "I1M",
+      "title": "- I1M: 1 minute\n - I5M: 5 minutes\n - I15M: 15 minutes\n - I1H: 1 hour\n - I6H: 6 hours\n - I1D: 1 day"
     },
     "vegaLedgerEntry": {
       "type": "object",
@@ -1530,6 +1566,39 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "vegaLogNormalModelParams": {
+      "type": "object",
+      "properties": {
+        "mu": {
+          "type": "number",
+          "format": "double"
+        },
+        "r": {
+          "type": "number",
+          "format": "double"
+        },
+        "sigma": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "vegaLogNormalRiskModel": {
+      "type": "object",
+      "properties": {
+        "riskAversionParameter": {
+          "type": "number",
+          "format": "double"
+        },
+        "tau": {
+          "type": "number",
+          "format": "double"
+        },
+        "params": {
+          "$ref": "#/definitions/vegaLogNormalModelParams"
         }
       }
     },
@@ -1579,17 +1648,20 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "32 pseudo-random upper-case letters and digits"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "a human-understandable name for the Market, perhaps including a currency pair and a maturity date"
         },
         "tradableInstrument": {
           "$ref": "#/definitions/vegaTradableInstrument"
         },
         "decimalPlaces": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -1655,54 +1727,6 @@
         }
       }
     },
-    "vegaMarketPosition": {
-      "type": "object",
-      "properties": {
-        "marketID": {
-          "type": "string"
-        },
-        "realisedVolume": {
-          "type": "string",
-          "format": "int64"
-        },
-        "realisedPNL": {
-          "type": "string",
-          "format": "int64"
-        },
-        "unrealisedVolume": {
-          "type": "string",
-          "format": "int64"
-        },
-        "unrealisedPNL": {
-          "type": "string",
-          "format": "int64"
-        },
-        "averageEntryPrice": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "partyID": {
-          "type": "string"
-        }
-      }
-    },
-    "vegaModelParamsBS": {
-      "type": "object",
-      "properties": {
-        "mu": {
-          "type": "number",
-          "format": "double"
-        },
-        "r": {
-          "type": "number",
-          "format": "double"
-        },
-        "sigma": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
     "vegaNotifyTraderAccount": {
       "type": "object",
       "properties": {
@@ -1753,7 +1777,8 @@
           "format": "int64"
         },
         "status": {
-          "$ref": "#/definitions/OrderStatus"
+          "$ref": "#/definitions/OrderStatus",
+          "description": "If `status` is `Rejected`, check `reason`."
         },
         "expiresAt": {
           "type": "string",
@@ -1829,7 +1854,9 @@
         "MARKET_CLOSED",
         "MARGIN_CHECK_FAILED",
         "MISSING_GENERAL_ACCOUNT",
-        "INTERNAL_ERROR"
+        "INTERNAL_ERROR",
+        "INVALID_SIZE",
+        "INVALID_PERSISTENCE"
       ],
       "default": "NONE"
     },
@@ -1847,24 +1874,21 @@
         },
         "price": {
           "type": "string",
-          "format": "uint64",
-          "title": "do not enforce that price, as Market Order will not have price specified"
+          "format": "uint64"
         },
         "size": {
           "type": "string",
           "format": "uint64"
         },
         "side": {
-          "$ref": "#/definitions/vegaSide",
-          "description": "make sur for both that they are non nil and the value is part of the respective enums."
+          "$ref": "#/definitions/vegaSide"
         },
         "TimeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
-          "format": "int64",
-          "title": "do not enforce as not always required\nalthouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+          "format": "int64"
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
@@ -1878,7 +1902,9 @@
         "MARKET",
         "NETWORK"
       ],
-      "default": "LIMIT"
+      "default": "LIMIT",
+      "description": "- LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
+      "title": "Order Type"
     },
     "vegaParty": {
       "type": "object",
@@ -1889,7 +1915,7 @@
         "positions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaMarketPosition"
+            "$ref": "#/definitions/vegaPosition"
           }
         }
       }
@@ -1928,6 +1954,33 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        }
+      }
+    },
+    "vegaPosition": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "openVolume": {
+          "type": "string",
+          "format": "int64"
+        },
+        "realisedPNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "unrealisedPNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -2014,13 +2067,16 @@
           "format": "uint64"
         },
         "genesisTime": {
-          "type": "string"
+          "type": "string",
+          "title": "ISO 8601 datetime, nanosecond precision"
         },
         "currentTime": {
-          "type": "string"
+          "type": "string",
+          "title": "ISO 8601 datetime, nanosecond precision"
         },
         "vegaTime": {
-          "type": "string"
+          "type": "string",
+          "title": "ISO 8601 datetime, nanosecond precision"
         },
         "status": {
           "$ref": "#/definitions/vegaChainStatus"
@@ -2118,10 +2174,12 @@
         },
         "blockDuration": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "nanoseconds"
         },
         "uptime": {
-          "type": "string"
+          "type": "string",
+          "title": "ISO 8601 datetime, nanosecond precision"
         }
       }
     },
@@ -2134,8 +2192,8 @@
         "marginCalculator": {
           "$ref": "#/definitions/vegaMarginCalculator"
         },
-        "forwardRiskModel": {
-          "$ref": "#/definitions/vegaForwardRiskModel"
+        "logNormalRiskModel": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel"
         },
         "externalRiskModel": {
           "$ref": "#/definitions/vegaExternalRiskModel"
@@ -2179,7 +2237,8 @@
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
         }
       }
     },
@@ -2313,17 +2372,17 @@
       },
       "title": "Stream result of vegaMarketDepth"
     },
-    "vegaMarketPosition": {
+    "vegaPosition": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaMarketPosition"
+          "$ref": "#/definitions/vegaPosition"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaMarketPosition"
+      "title": "Stream result of vegaPosition"
     },
     "vegaTransferResponse": {
       "type": "object",

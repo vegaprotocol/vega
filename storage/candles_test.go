@@ -40,8 +40,9 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	// create+start a new buffer
 	buf := buffer.NewCandle(candleStore)
-	// assert.Nil(t, err)
-	buf.Start(testMarket, t0)
+
+	_, err = buf.Start(testMarket, t0)
+	assert.Nil(t, err)
 
 	for idx := range trades {
 		err = buf.AddTrade(*trades[idx])
@@ -114,8 +115,6 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
-
-	fmt.Println(" --- candles ", fmt.Sprintf("%+v", candles))
 
 	assert.Equal(t, 3, len(candles))
 	assert.Equal(t, int64(1542106860000000000), candles[0].Timestamp)

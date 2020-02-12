@@ -56,9 +56,12 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	settleBuf.EXPECT().Flush().AnyTimes()
 	marginLevelsBuf := buffer.NewMarginLevels()
+	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
+	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	lossBuf.EXPECT().Flush().AnyTimes()
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.Nil(t, err)
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)
@@ -147,6 +150,15 @@ func getMarkets(closingAt time.Time) []types.Market {
 
 	execution.SetMarketID(&mkt, 0)
 	return []types.Market{mkt}
+}
+
+func addAccount(market *testMarket, party string) {
+	market.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
+		fmt.Printf("Account: %v\n", acc)
+	})
+	market.partyStore.EXPECT().Add(gomock.Any()).Times(1)
+	market.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party})
+	market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -405,14 +417,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt)
 	defer tm.ctrl.Finish()
-	// add 2 traders to the party engine
-	// this will create 2 traders, credit their account
-	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
-		fmt.Printf("Account: %v\n", acc)
-	})
-	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
-	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
+
+	addAccount(tm, party1)
 
 	// submit orders
 	// party1 buys
@@ -528,11 +534,11 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &types.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &types.ForwardRiskModel{
+				RiskModel: &types.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &types.LogNormalRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &types.ModelParamsBS{
+						Params: &types.LogNormalModelParams{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,
@@ -559,4 +565,46 @@ func TestSetMarketID(t *testing.T) {
 		fmt.Println(marketcfg.Id)
 		assert.NotEqual(t, id, marketcfg.Id)
 	})
+}
+
+func TestMarketCancelOrder(t *testing.T) {
+	party1 := "party1"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, party1)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		TimeInForce: types.Order_GTT,
+		Status:      types.Order_Active,
+		Id:          "someid",
+		Side:        types.Side_Buy,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	cancelled, err := tm.market.CancelOrderByID(confirmation.Order.Id)
+	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
+	assert.NoError(t, err)
+	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
+
+	cancelled, err = tm.market.CancelOrderByID(confirmation.Order.Id)
+	assert.Nil(t, cancelled, "cancelling same order twice should not work")
+	assert.Error(t, err, "it should be an error to cancel same order twice")
+
+	cancelled, err = tm.market.CancelOrderByID("an id that does not exist")
+	assert.Nil(t, cancelled, "cancelling non-exitant order should not work")
+	assert.Error(t, err, "it should be an error to cancel an order that does not exist")
 }

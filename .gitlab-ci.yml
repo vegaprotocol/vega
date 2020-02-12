@@ -9,6 +9,7 @@ variables:
   GOPATH: "${CI_PROJECT_DIR}/go"  # Can only cache files inside ${CI_PROJECT_DIR}
   # There's no recursive expansion of vars.
   BIN_DIR: "${CI_PROJECT_DIR}/go/bin"
+  GOCACHE: "${CI_PROJECT_DIR}/go/cache"
   SRC_DIR: "${CI_PROJECT_DIR}/go/src"
   PKGMOD_DIR: "${CI_PROJECT_DIR}/go/pkg/mod"
   VENDOR_DIR: "${CI_PROJECT_DIR}/vendor"
@@ -16,6 +17,7 @@ variables:
 cache:
   key: ${CI_COMMIT_REF_SLUG}  # one cache per branch
   paths:
+    - ${GOCACHE}
     - ${PKGMOD_DIR}
     - ${VENDOR_DIR}
 
@@ -23,8 +25,8 @@ stages:
   - build
 
 before_script:
-  - mkdir -p "${BIN_DIR}" "${PKGMOD_DIR}" "${SRC_DIR}" "${VENDOR_DIR}"
-  - for d in ${PKGMOD_DIR} ${VENDOR_DIR} ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
+  - mkdir -p "${BIN_DIR}" "${GOCACHE}" "${PKGMOD_DIR}" "${SRC_DIR}" "${VENDOR_DIR}"
+  - for d in "${GOCACHE}" "${PKGMOD_DIR}" "${VENDOR_DIR}" ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
   - find -maxdepth 1 -not -name . -and -not -name go -exec mv '{}' "${SRC_DIR}/" ';'
   - cd "${SRC_DIR}" || exit 1
   # The following git+ssh config enables accessing the quant repo.
@@ -42,7 +44,7 @@ after_script:
   - cd "${CI_PROJECT_DIR}" || exit 1
   - find "${SRC_DIR}" -maxdepth 1 -not -name src -exec mv '{}' ./ ';'
   - rmdir "${SRC_DIR}"
-  - for d in ${PKGMOD_DIR} ${VENDOR_DIR} ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
+  - for d in "${GOCACHE}" "${PKGMOD_DIR}" "${VENDOR_DIR}" ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
   - rm -rf ~/.ssh
 
 build_vega:
@@ -54,6 +56,6 @@ build_vega:
   artifacts:
     paths:
       - ${BIN_DIR}
-    expire_in: 2 weeks
+    expire_in: 4 weeks
 
 # The majority of CI steps are in Drone. See `.drone.yml` for details.

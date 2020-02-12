@@ -32,7 +32,7 @@ type MarketDataStore interface {
 type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
-	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
+	GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error)
 }
 
 // Svc represent the market service
@@ -100,13 +100,13 @@ func (s *Svc) GetAll(ctx context.Context) ([]*types.Market, error) {
 }
 
 // GetDepth returns the market depth for the given market.
-func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types.MarketDepth, err error) {
+func (s *Svc) GetDepth(ctx context.Context, marketID string, limit uint64) (marketDepth *types.MarketDepth, err error) {
 	m, err := s.marketStore.GetByID(marketID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.orderStore.GetMarketDepth(ctx, m.Id)
+	return s.orderStore.GetMarketDepth(ctx, m.Id, limit)
 }
 
 // GetMarketDataByID return the market data for a given market
@@ -158,7 +158,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 				close(depth)
 				return
 			case <-internal: // we don't need the orders, we just need to know there was a change
-				d, err := s.orderStore.GetMarketDepth(ctx, market)
+				d, err := s.orderStore.GetMarketDepth(ctx, market, 0)
 				if err != nil {
 					s.log.Debug(
 						"Failure calculating market depth for subscriber",

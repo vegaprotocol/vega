@@ -11,7 +11,7 @@ type settleConf func(s *Settlement)
 type Settlement struct {
 	mu    *sync.Mutex
 	chBuf int
-	buf   map[string]map[string]events.SettlePosition
+	buf   []events.SettlePosition
 	chans map[int]chan []events.SettlePosition
 	// chans map[int]chan map[string]map[string]types.Position
 	free []int
@@ -29,7 +29,7 @@ func NewSettlement(opts ...settleConf) *Settlement {
 	s := &Settlement{
 		mu:    &sync.Mutex{},
 		chBuf: 1,
-		buf:   map[string]map[string]events.SettlePosition{},
+		buf:   []events.SettlePosition{},
 		chans: map[int]chan []events.SettlePosition{},
 		free:  []int{},
 	}
@@ -42,13 +42,7 @@ func NewSettlement(opts ...settleConf) *Settlement {
 // Add add position data to the buffer
 func (s *Settlement) Add(pos []events.SettlePosition) {
 	s.mu.Lock()
-	for _, p := range pos {
-		mID := p.MarketID()
-		if _, ok := s.buf[mID]; !ok {
-			s.buf[mID] = map[string]events.SettlePosition{}
-		}
-		s.buf[mID][p.Party()] = p
-	}
+	s.buf = append(s.buf, pos...)
 	s.mu.Unlock()
 }
 
@@ -57,27 +51,17 @@ func (s *Settlement) Flush() {
 	s.mu.Lock()
 	buf := s.buf
 	// we've processed the buffer, clear it
-	s.buf = map[string]map[string]events.SettlePosition{}
+	// instanciate a new buffer roughly of the size of the previous one
+	// we can expect roughtly the same amount of event...
+	s.buf = make([]events.SettlePosition, 0, len(buf))
 	// no channels to push to, no need to create slice with data
 	if len(s.chans) == 0 {
 		s.mu.Unlock()
 		return
 	}
-	// rough cap estimate: all markets * size of the first one
-	size := len(buf)
-	for _, m := range buf {
-		size *= len(m)
-		break
-	}
-	positions := make([]events.SettlePosition, 0, size)
-	for _, traders := range buf {
-		for _, t := range traders {
-			positions = append(positions, t)
-		}
-	}
 	// we've got the slice, now pass it on to all "listeners"
 	for _, ch := range s.chans {
-		ch <- positions
+		ch <- buf
 	}
 	s.mu.Unlock()
 }

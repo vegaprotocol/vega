@@ -236,6 +236,47 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 		result, err := execsetup.engine.SubmitOrder(&order)
 		if err != nil {
+			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
+		}
+
+		if int64(len(result.Trades)) != i64val(row, 5) {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
+		}
+	}
+	return nil
+}
+
+func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+		tif, err := tifval(row, 7)
+		if err != nil {
+			return err
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        oty,
+			TimeInForce: tif,
+			CreatedAt:   time.Now().UnixNano(),
+			Reference:   val(row, 8),
+		}
+		result, err := execsetup.engine.SubmitOrder(&order)
+		if err != nil {
 			return err
 		}
 		if int64(len(result.Trades)) != i64val(row, 5) {
@@ -245,26 +286,60 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 	return nil
 }
 
+func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
+	for _, row := range refs.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+
+		cancel := proto.OrderCancellation{
+			OrderID:  o.Id,
+			PartyID:  o.PartyID,
+			MarketID: o.MarketID,
+		}
+
+		_, err = execsetup.engine.CancelOrder(&cancel)
+		if err != nil {
+			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
+		}
+	}
+
+	return nil
+}
+
 func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "trader" {
 			continue
 		}
 
-		account, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		generalAccount, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
-		if account.GetBalance() != i64val(row, 4) {
-			return fmt.Errorf("expected general balance  %d, instead saw %d (trader: %v)", i64val(row, 4), account.GetBalance(), val(row, 0))
+
+		var hasError bool
+
+		if generalAccount.GetBalance() != i64val(row, 4) {
+			hasError = true
 		}
-		account, err = execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
-		if account.GetBalance() != i64val(row, 3) {
-			return fmt.Errorf("expected margin balance  %d, instead saw %d (trader: %v)", i64val(row, 3), account.GetBalance(), val(row, 0))
+		if marginAccount.GetBalance() != i64val(row, 3) {
+			hasError = true
 		}
+
+		if hasError {
+			return fmt.Errorf("expected balances to be margin(%d) general(%v), instead saw margin(%v), general(%v), (trader: %v)", i64val(row, 3), i64val(row, 4), marginAccount.GetBalance(), generalAccount.GetBalance(), val(row, 0))
+		}
+
 	}
 	return nil
 }
@@ -308,7 +383,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 
 		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v", fromAccountID, toAccountID)
+			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
 		}
 		if ledgerEntry.Amount != i64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
@@ -395,17 +470,23 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 			return err
 		}
 
+		var hasError bool
+
 		if ml.MaintenanceMargin != i64val(row, 2) {
-			return fmt.Errorf("invalid maintenance margin, expected %v but got %v", i64val(row, 2), ml.MaintenanceMargin)
+			hasError = true
 		}
 		if ml.SearchLevel != i64val(row, 3) {
-			return fmt.Errorf("invalid search margin, expected %v but got %v", i64val(row, 3), ml.SearchLevel)
+			hasError = true
 		}
 		if ml.InitialMargin != i64val(row, 4) {
-			return fmt.Errorf("invalid initial margin, expected %v but got %v", i64val(row, 4), ml.InitialMargin)
+			hasError = true
 		}
 		if ml.CollateralReleaseLevel != i64val(row, 5) {
-			return fmt.Errorf("invalid collateral release margin, expected %v but got %v", i64val(row, 5), ml.CollateralReleaseLevel)
+			hasError = true
+		}
+		if hasError {
+			return fmt.Errorf(
+				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)", i64val(row, 2), i64val(row, 3), i64val(row, 4), i64val(row, 5), ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, val(row, 0))
 		}
 
 	}
@@ -460,6 +541,78 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 
 	if ordCnt > 0 {
 		return errors.New("some orders were not rejected")
+	}
+	return nil
+}
+
+func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
+	for _, row := range table.Rows {
+		var (
+			retries = 9
+			ok      bool
+		)
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		party := val(row, 0)
+
+		sleepTime := 100 // milliseconds
+		for !ok && retries > 0 {
+			pos, err := execsetup.positionPlugin.GetPositionsByParty(party)
+			if err != nil {
+				return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
+			}
+			if len(pos) <= 0 {
+				return fmt.Errorf("party do not have a position, party(%v)", party)
+			}
+
+			volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 3), i64val(row, 2)
+			if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
+				if retries == 0 {
+					return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
+						party, pos[0].OpenVolume, volume,
+						pos[0].UnrealisedPNL, unrealisedPNL,
+						pos[0].RealisedPNL, realisedPNL)
+				}
+
+				// The positions engine runs asynchronously, so wait for the right numbers to show up.
+				// Sleep times: 100ms, 200ms, 400ms, ..., 51.2s, then give up.
+				time.Sleep(time.Duration(sleepTime) * time.Millisecond)
+				sleepTime *= 2
+				retries -= 1
+
+			} else {
+				ok = !ok
+			}
+		}
+	}
+	return nil
+}
+
+func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
+	markPrice, err := strconv.ParseUint(markPriceStr, 10, 0)
+	if err != nil {
+		return fmt.Errorf("markPrice is not a integer: markPrice(%v), err(%v)", markPriceStr, err)
+	}
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get mark price for market(%v), err(%v)", markPriceStr, err)
+	}
+
+	if mktdata.MarkPrice != markPrice {
+		return fmt.Errorf("mark price if wrong for market(%v), expected(%v) got(%v)", market, markPrice, mktdata.MarkPrice)
+	}
+
+	return nil
+}
+
+func dumpTransfers() error {
+	for _, _v := range execsetup.transfers.data {
+		for _, v := range _v.GetTransfers() {
+			fmt.Printf("transfer: %v\n", *v)
+		}
 	}
 	return nil
 }
@@ -551,11 +704,11 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	}
 
 	if val(row, 5) == "forward" {
-		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_ForwardRiskModel{
-			ForwardRiskModel: &proto.ForwardRiskModel{
+		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
+			LogNormalRiskModel: &proto.LogNormalRiskModel{
 				RiskAversionParameter: f64val(row, 6), // 6
 				Tau:                   f64val(row, 7), // 7
-				Params: &proto.ModelParamsBS{
+				Params: &proto.LogNormalModelParams{
 					Mu:    f64val(row, 8),  // 8
 					R:     f64val(row, 9),  // 9
 					Sigma: f64val(row, 10), //10

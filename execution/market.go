@@ -38,6 +38,8 @@ var (
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 	// ErrMissingGeneralAccountForParty ...
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
+	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
+	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
 
 	networkPartyID = "network"
 )
@@ -139,17 +141,33 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, false)
-
 	asset := tradableInstrument.Instrument.Product.GetAsset()
-	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
-		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
+	book := matching.NewOrderBook(
+		log,
+		matchingConfig,
+		mkt.Id,
+		tradableInstrument.Instrument.InitialMarkPrice,
+		false,
+	)
+	riskEngine := risk.NewEngine(
+		log,
+		riskConfig,
+		tradableInstrument.MarginCalculator,
+		tradableInstrument.RiskModel,
+		getInitialFactors(log, mkt, asset),
+		book,
+		marginLevelsBuf,
+		now.UnixNano(),
+		mkt.GetId(),
+	)
+	settleEngine := settlement.New(
+		log,
+		settlementConfig,
+		tradableInstrument.Instrument.Product,
+		mkt.Id,
+		settlementBuf,
+	)
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id, settlementBuf)
-
-	// start first candle
-	candleBuf.Start(mkt.Id, now)
 
 	market := &Market{
 		log:                log,
@@ -222,9 +240,17 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// Only start candle generation once we have a non-zero(default) time from vega-time service
+	if m.currentTime.IsZero() {
+		_, err := m.candleBuf.Start(m.mkt.Id, t)
+		if err != nil {
+			m.log.Error("error when starting candle generation for market",
+				logging.String("market-id", m.mkt.Id), logging.Error(err))
+		}
+	}
+
 	closed = t.After(m.closingAt)
 	m.closed = closed
-
 	m.currentTime = t
 
 	// TODO(): handle market start time
@@ -495,6 +521,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
+
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug(
@@ -516,11 +543,13 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			if err == nil && len(transfers) > 0 {
 				m.transferBuf.Add(transfers)
 			}
-			err = m.resolveClosedOutTraders(closed, order)
-			if err != nil {
-				m.log.Error("unable to close out traders",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
+			if len(closed) > 0 {
+				err = m.resolveClosedOutTraders(closed, order)
+				if err != nil {
+					m.log.Error("unable to close out traders",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				}
 			}
 		}
 	}
@@ -542,6 +571,9 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
+		m.log.Warn("closing out trader",
+			logging.String("party-id", v.Party()),
+			logging.String("market-id", m.GetID()))
 		distressedPos = append(distressedPos, v)
 	}
 	// cancel pending orders for traders
@@ -553,52 +585,67 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 		return err
 	}
-	if len(rmorders) == 0 {
+	mktID := m.GetID()
+	// push rm orders into buf
+	// and remove the orders from the positions engine
+	for _, o := range rmorders {
+		m.orderBuf.Add(*o)
+		if _, err := m.position.UnregisterOrder(o); err != nil {
+			m.log.Error("unable to unregister order for a distressed party",
+				logging.String("party-id", o.PartyID),
+				logging.String("market-id", mktID),
+				logging.String("order-id", o.Id),
+			)
+		}
+	}
+
+	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
+
+	// we need to check margin requirements again, it's possible for traders to no longer be distressed now that their orders have been removed
+	if len(rmorders) != 0 {
+		var okPos []events.Margin // need to declare this because we want to reassign closed
+		// now that we closed orders, let's run the risk engine again
+		// so it'll separate the positions still in distress from the
+		// which have acceptable margins
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.markPrice)
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			for _, v := range okPos {
+				m.log.Debug("previously distressed party have now an acceptable margin",
+					logging.String("market-id", mktID),
+					logging.String("party-id", v.Party()),
+				)
+			}
+		}
+	}
+
+	// if no position are meant to be closed, just return now.
+	if len(closed) <= 0 {
 		return nil
 	}
 
-	mktID := m.GetID()
-	// remove the orders from the positions engine
-	for _, v := range rmorders {
-		_, err = m.position.UnregisterOrder(v)
-		if err != nil {
-			m.log.Error("unable to unregister order for a distressed party",
-				logging.String("party-id", v.PartyID),
-				logging.String("market-id", mktID),
-				logging.String("order-id", v.Id),
-			)
-		}
-	}
-
-	// now that we closed orders, let's run the risk engine again
-	// so it'll separate the positions still in distress from the
-	// which have acceptable margins
-	okPos, closed := m.risk.ExpectMargins(distressedMarginEvts, m.markPrice)
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		for _, v := range okPos {
-			m.log.Debug("previously distressed party have now an acceptable margin",
-				logging.String("market-id", mktID),
-				logging.String("party-id", v.Party()),
-			)
-		}
-	}
-
+	// we only need the MarketPosition events here, and rather than changing all the calls
+	// we can just keep the MarketPosition bit
+	closedMPs := make([]events.MarketPosition, 0, len(closed))
 	// get the actual position, so we can work out what the total position of the market is going to be
 	var networkPos int64
 	for _, pos := range closed {
 		networkPos += pos.Size()
+		closedMPs = append(closedMPs, pos)
 	}
 	if networkPos == 0 {
+		m.log.Warn("Network positions is 0 after closing out traders, nothing more to do",
+			logging.String("market-id", m.GetID()))
+
 		// remove accounts, positions and return
 		// from settlement engine first
 		m.settlement.RemoveDistressed(closed)
 		// then from positions
-		closed = m.position.RemoveDistressed(closed)
+		closedMPs = m.position.RemoveDistressed(closedMPs)
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
 		var movements *types.TransferResponse
-		movements, err = m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+		movements, err = m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -606,12 +653,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			)
 			return err
 		}
-		// currently just logging ledger movements, will be added to a stream storage engine in time
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug(
-				"Ledger movements after removing distressed traders",
-				logging.String("ledger-dump", fmt.Sprintf("%#v", movements.Transfers)),
-			)
+		if len(movements.Transfers) > 0 {
+			m.transferBuf.Add([]*types.TransferResponse{movements})
 		}
 		return nil
 	}
@@ -648,9 +691,16 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
 	m.orderBuf.Add(no)
-	// if err := m.orders.Post(no); err != nil {
-	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	// }
+
+	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
+	// in the book to 0 out the positions.
+	// in this case we will just return now, cutting off the position resolution
+	// this means that trader still being distressed will stay distressed,
+	// then when a new order is placed, the distressed traders will go again through positions resolution
+	// and if the volume of the book is acceptable, we will then process positions resolutions
+	if no.Remaining == no.Size {
+		return ErrNotEnoughVolumeToZeroOutNetworkOrder
+	}
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
@@ -688,7 +738,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	if err = m.zeroOutNetwork(size, closed, &no, o); err != nil {
+	if err = m.zeroOutNetwork(closedMPs, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -697,9 +747,10 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
 	// insurance pool, which needs to happen before we settle the non-distressed traders
-	closed = m.position.RemoveDistressed(closed)
+	m.settlement.RemoveDistressed(closed)
+	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
-	movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+	movements, err := m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
@@ -707,23 +758,19 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 		return err
 	}
-	// currently just logging ledger movements, will be added to a stream storage engine in time
-	// only actually perform the Sprintf call if we're running on debug level
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug(
-			"Ledger movements after removing distressed traders",
-			logging.String("ledger-dump", fmt.Sprintf("%#v", movements.Transfers)),
-		)
+	if len(movements.Transfers) > 0 {
+		m.transferBuf.Add([]*types.TransferResponse{movements})
 	}
 	// get the updated positions
 	evt := m.position.Positions()
+
 	// settle MTM, the positions have changed
 	settle := m.settlement.SettleMTM(m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
 
-	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle)
+	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug(
 			"ledger movements after MTM on traders who closed out distressed",
@@ -736,42 +783,52 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	return err
 }
 
-func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
+func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, initial *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
 	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice, false)
-	side := types.Side_Sell
-	if settleOrder.Side == side {
-		side = types.Side_Buy
-	}
+	marketID := m.GetID()
 	order := types.Order{
-		MarketID:    m.GetID(),
-		Remaining:   size,
+		MarketID:    marketID,
 		Status:      types.Order_Active,
 		PartyID:     networkPartyID,
-		Side:        side, // assume sell, price is zero in that case anyway
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
 		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
-	order.Size = order.Remaining
-	if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
-		return err
-	}
-	m.orderBuf.Add(order)
 	// traders need to take the opposing side
-	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
+
+	asset, _ := m.mkt.GetAsset()
+	marginLevels := types.MarginLevels{
+		MarketID:  m.mkt.GetId(),
+		Asset:     asset,
+		Timestamp: m.currentTime.UnixNano(),
+	}
+
 	for i, trader := range traders {
+		tSide, nSide := types.Side_Sell, types.Side_Sell // one of them will have to sell
+		if trader.Size() < 0 {
+			tSide = types.Side_Buy
+		} else {
+			nSide = types.Side_Buy
+		}
+		tSize := uint64(math.Abs(float64(trader.Size())))
+		// set order fields (network order)
+		order.Size = tSize
+		order.Remaining = order.Size
+		order.Side = nSide
+		order.Status = types.Order_Active // ensure the status is always active
+		m.idgen.SetID(&order)
 		to := types.Order{
-			MarketID:    m.GetID(),
-			Remaining:   uint64(math.Abs(float64(trader.Size()))),
+			MarketID:    marketID,
+			Remaining:   tSize,
 			Status:      types.Order_Active,
 			PartyID:     trader.Party(),
-			Side:        side,              // assume sell, price is zero in that case anyway
+			Side:        tSide,             // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
@@ -780,16 +837,42 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		}
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
-		// store the trader order, too
-		m.orderBuf.Add(to)
+		if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
+			return err
+		}
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
 		}
+		// store the trader order, too
+		m.orderBuf.Add(to)
+		m.orderBuf.Add(order)
 		// now store the resulting trades:
-		for _, trade := range res.Trades {
+		for idx, trade := range res.Trades {
+			trade.Id = fmt.Sprintf("%s-%010d", to.Id, idx)
+			if order.Side == types.Side_Buy {
+				trade.BuyOrder = order.Id
+				trade.SellOrder = res.PassiveOrdersAffected[idx].Id
+			} else {
+				trade.SellOrder = order.Id
+				trade.BuyOrder = res.PassiveOrdersAffected[idx].Id
+			}
+
 			m.tradeBuf.Add(*trade)
 		}
+
+		for _, o := range res.PassiveOrdersAffected {
+			m.orderBuf.Add(*o)
+		}
+
+		// 0 out margins levels for this trader
+		marginLevels.PartyID = trader.Party()
+		m.marginLevelsBuf.Add(marginLevels)
+
+		m.log.Warn("trader closed-out with success",
+			logging.String("party-id", trader.Party()),
+			logging.String("market-id", m.GetID()))
+
 	}
 	return nil
 }
@@ -824,15 +907,14 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transferResps, closePositions, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
+		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(m.GetID(), riskUpdate)
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferBuf.Add(transferResps)
+		m.transferBuf.Add([]*types.TransferResponse{transfer})
 
-		if len(closePositions) > 0 {
-
-			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
+		if closePos != nil {
+			// if closePose is not nil then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
 
 			m.log.Error("party did not have enough collateral to reach the InitialMargin",
@@ -844,14 +926,12 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Transfers applied for ")
-			for _, tr := range transferResps {
-				for _, v := range tr.GetTransfers() {
-					m.log.Debug(
-						"Ensured margin on order with success",
-						logging.String("transfer", fmt.Sprintf("%v", *v)),
-						logging.String("market-id", m.GetID()),
-					)
-				}
+			for _, v := range transfer.GetTransfers() {
+				m.log.Debug(
+					"Ensured margin on order with success",
+					logging.String("transfer", fmt.Sprintf("%v", *v)),
+					logging.String("market-id", m.GetID()),
+				)
 			}
 		}
 	}
@@ -875,12 +955,6 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) (event
 		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil, nil
 	}
-
-	// push margins into the buffer
-	margins := riskUpdate.MarginLevels()
-	margins.Timestamp = m.currentTime.UnixNano()
-	margins.MarketID = m.GetID()
-	m.marginLevelsBuf.Add(*margins)
 
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Got margins transfer on new order")
@@ -906,7 +980,8 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
-	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle)
+	asset, _ := m.mkt.GetAsset()
+	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to process mark to market settlement (collateral)",
@@ -935,22 +1010,12 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		return nil
 	}
 
-	// push margins into the buffer
-	t := m.currentTime.UnixNano()
-	mktid := m.GetID()
-	for _, riskUpdate := range riskUpdates {
-		margins := riskUpdate.MarginLevels()
-		margins.Timestamp = t
-		margins.MarketID = mktid
-		m.marginLevelsBuf.Add(*margins)
-	}
-
 	timer.EngineTimeCounterAdd()
 	return riskUpdates
 }
 
 // CancelOrder cancels the given order
-func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -959,25 +1024,33 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Validate Market
-	if order.MarketID != m.mkt.Id {
+	if oc.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
-			logging.Order(*order),
+			logging.String("party-id", oc.PartyID),
+			logging.String("order-id", oc.OrderID),
 			logging.String("market", m.mkt.Id))
 
 		return nil, types.ErrInvalidMarketID
 	}
 
+	order, err := m.matching.GetOrderByID(oc.OrderID)
+	if err != nil {
+		return nil, err
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		m.log.Error("Failure after cancel order from matching engine",
-			logging.Order(*order),
-			logging.Error(err))
+			logging.String("party-id", oc.PartyID),
+			logging.String("order-id", oc.OrderID),
+			logging.String("market", m.mkt.Id))
+		logging.Error(err)
 		return nil, err
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
-	m.orderBuf.Add(*order)
-	_, err = m.position.UnregisterOrder(order)
+	m.orderBuf.Add(*cancellation.Order)
+	_, err = m.position.UnregisterOrder(cancellation.Order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
 			logging.Order(*order),
@@ -987,22 +1060,18 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	return cancellation, nil
 }
 
-// DeleteOrder delete the given order from the order book
-func (m *Market) DeleteOrder(order *types.Order) (err error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "DeleteOrder")
-
-	// Validate Market
-	if order.MarketID != m.mkt.Id {
-		m.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("market", m.mkt.Id))
-
-		err = types.ErrInvalidMarketID
-	} else {
-		err = m.matching.DeleteOrder(order)
+// CancelOrderByID locates order by its Id and cancels it
+func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
+	order, err := m.matching.GetOrderByID(orderID)
+	if err != nil {
+		return nil, err
 	}
-	timer.EngineTimeCounterAdd()
-	return
+	cancellation := types.OrderCancellation{
+		OrderID:  order.Id,
+		PartyID:  order.PartyID,
+		MarketID: order.MarketID,
+	}
+	return m.CancelOrder(&cancellation)
 }
 
 // AmendOrder amend an existing order from the order book
@@ -1017,8 +1086,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// Try and locate the existing order specified on the
 	// order book in the matching engine for this market
-	existingOrder, err := m.matching.GetOrderByPartyAndID(
-		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
+	existingOrder, err := m.matching.GetOrderByID(orderAmendment.OrderID)
 	if err != nil {
 		m.log.Error("Invalid order reference",
 			logging.String("id", orderAmendment.GetOrderID()),
@@ -1104,7 +1172,13 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 
 	m.log.Debug("Cancel/replace order")
 
-	cancellation, err := m.CancelOrder(existingOrder)
+	ordCancel := types.OrderCancellation{
+		OrderID:  existingOrder.Id,
+		PartyID:  existingOrder.PartyID,
+		MarketID: existingOrder.MarketID,
+	}
+
+	cancellation, err := m.CancelOrder(&ordCancel)
 	if err != nil || cancellation == nil {
 		if err == nil {
 			err = fmt.Errorf("order cancellation failed (no error given)")

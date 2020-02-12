@@ -182,7 +182,9 @@ func (m *NotifyTraderAccountResponse) GetSubmitted() bool {
 }
 
 type SignInRequest struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// a party ID
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// a password
 	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -229,6 +231,7 @@ func (m *SignInRequest) GetPassword() string {
 }
 
 type SignInResponse struct {
+	// a token corresponding to the party given in the request, and valid for subsequent requests for that party
 	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -268,11 +271,13 @@ func (m *SignInResponse) GetToken() string {
 }
 
 type SubmitOrderRequest struct {
-	Submission           *proto1.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
-	Token                string                  `protobuf:"bytes,101,opt,name=token,proto3" json:"token,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
+	// the bulk of the Order, including market, party, price, size, side, time in force, etc.
+	Submission *proto1.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
+	// a token acquired from a SignIn request and corresponding to the party specified in the `submission`.
+	Token                string   `protobuf:"bytes,101,opt,name=token,proto3" json:"token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *SubmitOrderRequest) Reset()         { *m = SubmitOrderRequest{} }
@@ -1202,7 +1207,7 @@ func (m *AccountsSubscribeRequest) GetType() proto1.AccountType {
 	if m != nil {
 		return m.Type
 	}
-	return proto1.AccountType_NO_ACC
+	return proto1.AccountType_ALL
 }
 
 type OrdersSubscribeRequest struct {
@@ -1777,6 +1782,7 @@ func (m *OrderByReferenceResponse) GetOrder() *proto1.Order {
 }
 
 type MarketsResponse struct {
+	// a list of Markets
 	Markets              []*proto1.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -1816,7 +1822,8 @@ func (m *MarketsResponse) GetMarkets() []*proto1.Market {
 }
 
 type CandlesRequest struct {
-	MarketID             string          `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	SinceTimestamp       int64           `protobuf:"varint,2,opt,name=sinceTimestamp,proto3" json:"sinceTimestamp,omitempty"`
 	Interval             proto1.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
@@ -1911,6 +1918,7 @@ func (m *CandlesResponse) GetCandles() []*proto1.Candle {
 
 type MarketDepthRequest struct {
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	MaxDepth             uint64   `protobuf:"varint,2,opt,name=maxDepth,proto3" json:"maxDepth,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1946,6 +1954,13 @@ func (m *MarketDepthRequest) GetMarketID() string {
 		return m.MarketID
 	}
 	return ""
+}
+
+func (m *MarketDepthRequest) GetMaxDepth() uint64 {
+	if m != nil {
+		return m.MaxDepth
+	}
+	return 0
 }
 
 type MarketDepthResponse struct {
@@ -2145,10 +2160,10 @@ func (m *PositionsByPartyRequest) GetMarketID() string {
 }
 
 type PositionsByPartyResponse struct {
-	Positions            []*proto1.MarketPosition `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+	Positions            []*proto1.Position `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *PositionsByPartyResponse) Reset()         { *m = PositionsByPartyResponse{} }
@@ -2176,7 +2191,7 @@ func (m *PositionsByPartyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PositionsByPartyResponse proto.InternalMessageInfo
 
-func (m *PositionsByPartyResponse) GetPositions() []*proto1.MarketPosition {
+func (m *PositionsByPartyResponse) GetPositions() []*proto1.Position {
 	if m != nil {
 		return m.Positions
 	}
@@ -2184,6 +2199,7 @@ func (m *PositionsByPartyResponse) GetPositions() []*proto1.MarketPosition {
 }
 
 type VegaTimeResponse struct {
+	// nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
 	Timestamp            int64    `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2408,7 +2424,7 @@ func (m *PartyAccountsRequest) GetType() proto1.AccountType {
 	if m != nil {
 		return m.Type
 	}
-	return proto1.AccountType_NO_ACC
+	return proto1.AccountType_ALL
 }
 
 func (m *PartyAccountsRequest) GetAsset() string {
@@ -2695,133 +2711,134 @@ func init() {
 func init() { proto.RegisterFile("proto/api/trading.proto", fileDescriptor_efb848134bda36f4) }
 
 var fileDescriptor_efb848134bda36f4 = []byte{
-	// 2007 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x59, 0xdd, 0x6e, 0x1b, 0xc7,
-	0x15, 0xee, 0x92, 0xb2, 0x7e, 0x8e, 0x64, 0x4a, 0x1a, 0x51, 0x12, 0xb5, 0x52, 0x63, 0x65, 0x63,
-	0x07, 0x4e, 0xd0, 0x90, 0xac, 0xdc, 0xd8, 0x8e, 0x7f, 0x90, 0x58, 0x52, 0x53, 0xb0, 0xb5, 0x1d,
-	0x61, 0xa5, 0xc6, 0x45, 0x81, 0xa2, 0x18, 0x2d, 0xc7, 0xf4, 0x42, 0xe4, 0x2e, 0xbb, 0x3b, 0xb4,
-	0xc0, 0x8b, 0x02, 0xbd, 0xed, 0x45, 0x8b, 0x3e, 0x45, 0x9f, 0xa3, 0x6f, 0x52, 0xa0, 0x4f, 0x52,
-	0xec, 0xcc, 0x99, 0xdd, 0x99, 0xfd, 0xb1, 0x44, 0xc8, 0xb9, 0xe3, 0x9c, 0xff, 0x99, 0x39, 0xe7,
-	0xcc, 0xd9, 0x8f, 0xb0, 0x3d, 0x8e, 0x42, 0x1e, 0x76, 0xe8, 0xd8, 0xef, 0xf0, 0x88, 0xf6, 0xfd,
-	0x60, 0xd0, 0x16, 0x14, 0x52, 0xa7, 0x63, 0xdf, 0x5e, 0x93, 0xdc, 0xf7, 0x6c, 0x40, 0x25, 0xd9,
-	0xde, 0x90, 0x94, 0x11, 0x8d, 0x2e, 0x18, 0x8f, 0x91, 0xb8, 0x3b, 0x08, 0xc3, 0xc1, 0x90, 0x75,
-	0xc4, 0xea, 0x7c, 0xf2, 0xb6, 0xc3, 0x46, 0x63, 0x3e, 0x45, 0xe6, 0xc3, 0x81, 0xcf, 0xdf, 0x4d,
-	0xce, 0xdb, 0x5e, 0x38, 0xea, 0x8c, 0x2e, 0x7d, 0x7e, 0x11, 0x5e, 0x76, 0x06, 0xe1, 0x57, 0x82,
-	0xf9, 0xd5, 0x7b, 0x3a, 0xf4, 0xfb, 0x94, 0x87, 0x51, 0xdc, 0x49, 0x7f, 0x4a, 0x3d, 0xe7, 0x39,
-	0xac, 0xbe, 0xf1, 0xf9, 0xbb, 0x7e, 0x44, 0x2f, 0x5d, 0xf6, 0x97, 0x09, 0x8b, 0x39, 0xf9, 0x12,
-	0x16, 0x2f, 0x91, 0xd4, 0xb2, 0xf6, 0xad, 0xfb, 0xcb, 0x07, 0x8d, 0xb6, 0x88, 0x2d, 0x15, 0x4c,
-	0xf9, 0xce, 0x2f, 0x60, 0x2d, 0x53, 0x8f, 0xc7, 0x61, 0x10, 0x33, 0xd2, 0x82, 0x85, 0x78, 0xe2,
-	0x79, 0x2c, 0x8e, 0x85, 0xfa, 0xa2, 0xab, 0x96, 0xce, 0x2b, 0xb0, 0x5f, 0x87, 0xdc, 0x7f, 0x3b,
-	0x3d, 0x8b, 0x68, 0x9f, 0x45, 0x2f, 0x3c, 0x2f, 0x9c, 0x04, 0x5c, 0xf9, 0xed, 0xc0, 0xad, 0x20,
-	0xe1, 0xa2, 0xd3, 0x1d, 0xe9, 0xb4, 0x4c, 0x41, 0xca, 0x39, 0x4f, 0x61, 0xb7, 0xd4, 0x1c, 0xc6,
-	0xb1, 0x07, 0x4b, 0xf1, 0xe4, 0x7c, 0xe4, 0x73, 0xce, 0xfa, 0x18, 0x49, 0x46, 0x70, 0x9e, 0xc2,
-	0xed, 0x53, 0x7f, 0x10, 0xf4, 0x02, 0xe5, 0xbe, 0x01, 0x35, 0x5f, 0xca, 0x2d, 0xb9, 0x35, 0xbf,
-	0x4f, 0x6c, 0x58, 0x1c, 0xd3, 0x38, 0xbe, 0x0c, 0xa3, 0x7e, 0xab, 0x26, 0xa8, 0xe9, 0xda, 0xf9,
-	0x1c, 0x1a, 0x4a, 0x19, 0x9d, 0x35, 0xe1, 0x16, 0x0f, 0x2f, 0x58, 0x80, 0x06, 0xe4, 0xc2, 0xa1,
-	0x40, 0x4e, 0x85, 0xc7, 0x1f, 0xa2, 0x3e, 0x8b, 0x94, 0xa7, 0xaf, 0x01, 0x44, 0x1c, 0x71, 0xec,
-	0x87, 0x01, 0xee, 0x76, 0x53, 0xee, 0x56, 0xc8, 0x9d, 0xa6, 0x4c, 0x57, 0x13, 0xcc, 0x5c, 0x30,
-	0xdd, 0xc5, 0x00, 0xc8, 0x11, 0x0d, 0x3c, 0x36, 0x34, 0x5c, 0x3c, 0x85, 0x15, 0x4f, 0x50, 0x87,
-	0x94, 0x67, 0x4e, 0xb6, 0x35, 0x27, 0x47, 0x1a, 0xdb, 0x35, 0x84, 0x2b, 0x1c, 0xfd, 0x09, 0xd6,
-	0x5f, 0x8c, 0x58, 0xd0, 0x37, 0xfc, 0x1c, 0xc0, 0x12, 0x4d, 0x88, 0x23, 0x16, 0x70, 0x74, 0xd2,
-	0xd4, 0x9c, 0xbc, 0x50, 0x3c, 0x37, 0x13, 0xab, 0x30, 0x7f, 0x06, 0x7b, 0xaf, 0x68, 0x34, 0xf0,
-	0x83, 0x97, 0xec, 0x3d, 0x1b, 0xc6, 0xa7, 0x93, 0xf3, 0xd8, 0x8b, 0xfc, 0x73, 0xa6, 0x3c, 0xb5,
-	0x60, 0x61, 0x4c, 0x23, 0x3e, 0xed, 0x1d, 0xe3, 0x11, 0xab, 0x65, 0x72, 0x51, 0xb2, 0x50, 0x7a,
-	0xc7, 0xea, 0xa2, 0xd4, 0xda, 0xf9, 0x1d, 0x6c, 0xe8, 0x56, 0x6f, 0x66, 0xec, 0x35, 0x34, 0x4d,
-	0x63, 0x78, 0xf7, 0x0f, 0x61, 0x65, 0xa4, 0xd1, 0x5b, 0xd6, 0x7e, 0xfd, 0xfe, 0xf2, 0x01, 0x91,
-	0xe7, 0x60, 0x68, 0x18, 0x72, 0xce, 0x37, 0xb0, 0xfb, 0x4a, 0x56, 0xf8, 0x31, 0xe5, 0xb4, 0xb0,
-	0x63, 0x3d, 0x14, 0x2b, 0x17, 0xca, 0x03, 0xd8, 0x94, 0xaa, 0x89, 0xe6, 0xe1, 0xb4, 0x77, 0x7c,
-	0x1d, 0xa5, 0xdf, 0xc2, 0x56, 0x5e, 0x09, 0x77, 0xd0, 0x05, 0x18, 0xa5, 0x1c, 0xbc, 0xc7, 0xb5,
-	0x34, 0x7e, 0xa4, 0xbb, 0x9a, 0x8c, 0xd3, 0x13, 0x07, 0xab, 0x62, 0x4f, 0x0d, 0x1d, 0xc0, 0xf2,
-	0x28, 0x23, 0xe3, 0x49, 0x14, 0x2d, 0xe9, 0x42, 0x4e, 0x1b, 0xd6, 0x5e, 0xd2, 0x98, 0x8b, 0x22,
-	0xbe, 0xce, 0x36, 0x1e, 0xc2, 0xba, 0x26, 0x8f, 0x8e, 0x3f, 0x85, 0x5b, 0x49, 0x67, 0x65, 0x18,
-	0xfc, 0xb2, 0x74, 0x29, 0x65, 0x24, 0xc7, 0xe9, 0xc0, 0xba, 0x0c, 0xe1, 0xba, 0xe7, 0xf5, 0x04,
-	0x88, 0xae, 0x80, 0x9e, 0xee, 0xc2, 0xbc, 0x94, 0x40, 0x57, 0x2b, 0xfa, 0xee, 0x5c, 0xe4, 0x25,
-	0x8d, 0xf1, 0x24, 0x49, 0x29, 0xdd, 0x57, 0x65, 0xd6, 0x25, 0x5b, 0xd2, 0xa4, 0xb3, 0x2d, 0x09,
-	0xbe, 0xb9, 0x25, 0x21, 0xe7, 0x4a, 0x8e, 0xf3, 0x18, 0x56, 0x93, 0xb5, 0xcf, 0xb2, 0x64, 0xbc,
-	0x27, 0x9d, 0xf8, 0x4c, 0xe5, 0xa1, 0xa1, 0xa7, 0x78, 0xce, 0x5f, 0xa1, 0x29, 0x0e, 0x27, 0x3e,
-	0x9c, 0x4a, 0xce, 0x4d, 0x2a, 0x83, 0x74, 0x00, 0xc6, 0x74, 0xe0, 0x07, 0xb2, 0xd9, 0xd4, 0x45,
-	0xbc, 0xab, 0x6d, 0x3a, 0xf6, 0xdb, 0x27, 0x29, 0xd9, 0xd5, 0x44, 0x9c, 0x67, 0xb0, 0x99, 0x73,
-	0x8f, 0xe1, 0x7f, 0x06, 0xf3, 0xe2, 0xb6, 0x72, 0xd1, 0xcb, 0x8b, 0x44, 0x96, 0xd3, 0xcd, 0x82,
-	0x37, 0xba, 0x51, 0x0b, 0x16, 0xc2, 0x64, 0x9d, 0x05, 0x8f, 0x4b, 0xdd, 0x1f, 0x6a, 0xcc, 0xe2,
-	0xef, 0x1f, 0x16, 0xb4, 0xf0, 0x75, 0x89, 0x67, 0x29, 0x53, 0xfd, 0x34, 0x6b, 0xe6, 0x69, 0x36,
-	0xe1, 0x16, 0x8d, 0x63, 0xc6, 0xc5, 0x61, 0x2d, 0xb9, 0x72, 0x41, 0xee, 0xc1, 0x1c, 0x9f, 0x8e,
-	0x59, 0x6b, 0x6e, 0xdf, 0xba, 0xdf, 0x38, 0x58, 0x97, 0xb1, 0xa0, 0xe7, 0xb3, 0xe9, 0x98, 0xb9,
-	0x82, 0xed, 0xbc, 0x86, 0x2d, 0xb1, 0x8b, 0x8f, 0x14, 0x4c, 0x62, 0x4f, 0x9e, 0xce, 0x47, 0xb2,
-	0x47, 0x61, 0xfb, 0x88, 0x06, 0xfd, 0xe1, 0x8c, 0x06, 0xbf, 0x84, 0x45, 0x3f, 0xe0, 0x2c, 0x7a,
-	0x4f, 0x87, 0xc2, 0x62, 0x43, 0x0d, 0x1e, 0x3d, 0xa4, 0xba, 0x29, 0x3f, 0xeb, 0x9d, 0xc7, 0x6c,
-	0xcc, 0xdf, 0xcd, 0xd4, 0x3b, 0xbf, 0x86, 0x9d, 0x93, 0x30, 0xf6, 0x93, 0x3c, 0x9c, 0xe1, 0x99,
-	0x71, 0xfe, 0x66, 0xc1, 0xa6, 0x3c, 0xf5, 0xc3, 0x29, 0x16, 0x3b, 0xea, 0x38, 0x79, 0x67, 0x87,
-	0xf3, 0xff, 0xfb, 0xef, 0x9d, 0xda, 0xbe, 0x55, 0x59, 0x21, 0xb5, 0x2b, 0x2b, 0x84, 0x10, 0x98,
-	0x0b, 0xc7, 0x4c, 0x16, 0xd3, 0xa2, 0x2b, 0x7e, 0x3b, 0xcf, 0xd5, 0xbd, 0x67, 0x11, 0x64, 0x69,
-	0x2c, 0x52, 0x3d, 0x97, 0xc6, 0x32, 0xd7, 0x91, 0x95, 0xd4, 0xbc, 0x52, 0x37, 0x6a, 0x7e, 0x3f,
-	0xb7, 0xe7, 0x34, 0xfc, 0x34, 0x5b, 0x3f, 0x4a, 0xf4, 0xcf, 0xb2, 0xf3, 0x2b, 0xd4, 0xfc, 0xd5,
-	0xc1, 0x53, 0xd8, 0x11, 0x04, 0xb5, 0xf5, 0x17, 0x41, 0xbf, 0xd7, 0x9f, 0xe5, 0x06, 0xf6, 0xb3,
-	0xe6, 0x50, 0x33, 0x77, 0xa9, 0x9a, 0xc4, 0xb7, 0x60, 0x97, 0xb9, 0xc8, 0xda, 0xb1, 0x10, 0x34,
-	0xdb, 0xb1, 0x0c, 0x52, 0x72, 0x9c, 0x47, 0xb0, 0x8d, 0x06, 0x5c, 0xf6, 0x96, 0x45, 0x2c, 0xf0,
-	0xd2, 0xbc, 0xda, 0x83, 0xa5, 0x48, 0xd1, 0x30, 0xb3, 0x32, 0x82, 0xf3, 0x1c, 0x5a, 0x45, 0xc5,
-	0xeb, 0xfb, 0xfd, 0x06, 0x56, 0xf1, 0x31, 0x4e, 0xb5, 0x3e, 0x87, 0x05, 0x7c, 0x63, 0xf1, 0x50,
-	0xcd, 0x67, 0x4a, 0x31, 0x9d, 0x7f, 0x59, 0xd0, 0xc0, 0x5a, 0x9d, 0xe5, 0x30, 0xdb, 0xd0, 0x88,
-	0xfd, 0xc0, 0x63, 0x67, 0xfe, 0x88, 0xc5, 0x9c, 0x8e, 0xc6, 0xe2, 0x4c, 0xeb, 0x52, 0x72, 0xed,
-	0x67, 0x6e, 0x8e, 0x6b, 0x94, 0x76, 0xfd, 0xca, 0xd2, 0x5e, 0x4d, 0x23, 0xca, 0x76, 0xe3, 0x49,
-	0x92, 0xb9, 0x1b, 0x29, 0xe7, 0x2a, 0xa6, 0xf3, 0x58, 0xbd, 0xd8, 0xa2, 0x2b, 0xcc, 0xb0, 0x21,
-	0xe7, 0xdf, 0x96, 0x1a, 0x68, 0x50, 0x15, 0x3d, 0x7f, 0xa8, 0x5f, 0x39, 0x50, 0x3f, 0x9f, 0x4c,
-	0x5b, 0x35, 0x7d, 0xc8, 0x39, 0x89, 0x7c, 0x8f, 0x89, 0xf9, 0xce, 0x4d, 0x98, 0xe4, 0x2e, 0xcc,
-	0xc5, 0x6c, 0x98, 0x6c, 0xba, 0x5c, 0x48, 0x70, 0xc9, 0x17, 0xb0, 0x34, 0x54, 0x23, 0x8d, 0x68,
-	0xfe, 0xb9, 0x87, 0x28, 0xe3, 0x3a, 0xc3, 0xec, 0x25, 0xfb, 0xe9, 0xbb, 0x50, 0xd2, 0x71, 0xf2,
-	0xde, 0x66, 0x79, 0x38, 0xdf, 0xc0, 0x76, 0xda, 0x6a, 0x67, 0x6e, 0x3a, 0x1f, 0x1e, 0xc5, 0x5b,
-	0x45, 0xc3, 0xe9, 0x0c, 0xba, 0x34, 0x56, 0x3c, 0x0c, 0xae, 0xa9, 0x27, 0xbf, 0x52, 0x74, 0x33,
-	0x31, 0xa7, 0x0b, 0x6b, 0x3f, 0xb2, 0x01, 0x4d, 0x12, 0x56, 0xff, 0x7e, 0xe4, 0x69, 0x7a, 0x27,
-	0x31, 0xd6, 0xdd, 0x8c, 0xe0, 0xfc, 0x08, 0x70, 0x62, 0xf4, 0xbb, 0xf8, 0xc2, 0x97, 0x62, 0x73,
-	0xae, 0xf8, 0x9d, 0x3c, 0xf1, 0x43, 0x7f, 0xe4, 0x73, 0x11, 0xfc, 0x9c, 0x2b, 0x17, 0xe4, 0x13,
-	0x80, 0x3e, 0x8b, 0x3d, 0x16, 0xf4, 0xfd, 0x60, 0x80, 0xfd, 0x51, 0xa3, 0x38, 0x0f, 0x60, 0x05,
-	0xdf, 0x76, 0x1e, 0x31, 0x3a, 0xba, 0x5e, 0x73, 0x7c, 0x00, 0x2b, 0xf8, 0x80, 0xa7, 0x4a, 0x57,
-	0x5f, 0xce, 0xdf, 0x2d, 0x68, 0x8a, 0x93, 0x53, 0xa3, 0xcd, 0xcd, 0x66, 0x40, 0x35, 0xbb, 0xd4,
-	0x3f, 0x38, 0xbb, 0x64, 0x83, 0xcf, 0x9c, 0x36, 0xf8, 0x38, 0x87, 0xb0, 0x99, 0x0b, 0x05, 0x2f,
-	0xe1, 0x0b, 0x58, 0xa4, 0x48, 0xc3, 0xbd, 0xdc, 0x36, 0x2c, 0xbb, 0x29, 0xdb, 0xe9, 0xa9, 0x6f,
-	0xa2, 0xfc, 0x7e, 0x3e, 0x54, 0xc3, 0x69, 0x38, 0x35, 0x3d, 0x9c, 0x23, 0xf5, 0xa5, 0x74, 0x93,
-	0x78, 0x4e, 0x61, 0xfd, 0xe8, 0x1d, 0xf3, 0x2e, 0xce, 0x92, 0xef, 0xdb, 0xeb, 0xa7, 0xfd, 0x9e,
-	0xfa, 0x3c, 0x36, 0x5f, 0x29, 0xfc, 0x4c, 0xbe, 0x0b, 0x44, 0x37, 0x8a, 0x51, 0x35, 0xa0, 0x16,
-	0x5e, 0x20, 0xc6, 0x51, 0x0b, 0x2f, 0x0e, 0xfe, 0x53, 0x87, 0x05, 0x04, 0x9a, 0xc8, 0x13, 0x58,
-	0xd6, 0x30, 0x08, 0xb2, 0x2d, 0xca, 0xbd, 0x88, 0x4a, 0xd8, 0xf8, 0xbd, 0x7a, 0x22, 0xf3, 0x50,
-	0x0a, 0x3f, 0x81, 0x65, 0x0d, 0x5c, 0x40, 0xdd, 0x22, 0xdc, 0x50, 0xaa, 0xfb, 0x18, 0x20, 0xc3,
-	0x0b, 0xc8, 0x96, 0x50, 0x2d, 0x00, 0x08, 0xa5, 0x9a, 0xbf, 0x84, 0x79, 0x89, 0xae, 0x10, 0x22,
-	0x83, 0xd5, 0x71, 0x1a, 0x7b, 0xc3, 0xa0, 0xe1, 0x01, 0xfc, 0x01, 0x36, 0x4a, 0xa0, 0x20, 0x72,
-	0x47, 0xc8, 0x56, 0x63, 0x4e, 0xf6, 0x7e, 0xb5, 0x00, 0x5a, 0x7e, 0x04, 0x8b, 0x0a, 0xe1, 0x22,
-	0x4d, 0x21, 0x9d, 0xc3, 0xcb, 0xec, 0xcd, 0x1c, 0x15, 0x15, 0x9f, 0x03, 0x64, 0x37, 0x85, 0xfb,
-	0x2f, 0xe4, 0x83, 0xbd, 0x5d, 0xa0, 0x4b, 0xf5, 0x83, 0x7f, 0xae, 0xc3, 0x0a, 0x5e, 0xe1, 0x9f,
-	0xfb, 0x94, 0x53, 0xd2, 0x83, 0x86, 0x39, 0xfc, 0x11, 0x5b, 0xe8, 0x96, 0xce, 0xa4, 0xf6, 0x6e,
-	0x29, 0x0f, 0x43, 0xfb, 0x1e, 0x6e, 0x1b, 0x93, 0x18, 0xd9, 0x31, 0xa4, 0xf5, 0x3e, 0x6d, 0xdb,
-	0x65, 0x2c, 0xb4, 0xf3, 0x7b, 0x20, 0x85, 0x81, 0xe9, 0x98, 0x7c, 0x92, 0x69, 0x94, 0x0d, 0x6b,
-	0xf6, 0x9d, 0x4a, 0x3e, 0x9a, 0xfd, 0x01, 0xd6, 0xf2, 0xd3, 0x10, 0xd9, 0xd3, 0x95, 0xf2, 0xd3,
-	0x95, 0xfd, 0xf3, 0x0a, 0x6e, 0x76, 0x15, 0xd9, 0x87, 0x3c, 0x5e, 0x45, 0x01, 0x0a, 0xc0, 0xab,
-	0x28, 0xf9, 0xe2, 0x7f, 0x04, 0x0b, 0x38, 0x5e, 0x91, 0xad, 0xb6, 0x04, 0x61, 0xdb, 0x0a, 0x84,
-	0x6d, 0xff, 0x7a, 0x34, 0xe6, 0x53, 0xbb, 0xa9, 0xe9, 0x66, 0xcd, 0xe2, 0x3b, 0x58, 0xd6, 0x66,
-	0x0a, 0xa2, 0x3b, 0xd0, 0x07, 0x14, 0xbb, 0x55, 0x64, 0xa0, 0x85, 0x27, 0xb0, 0x94, 0x62, 0x1d,
-	0x44, 0x26, 0x5a, 0x1e, 0x2b, 0xb1, 0xb7, 0xf2, 0xe4, 0x4c, 0x37, 0x05, 0x15, 0x50, 0x37, 0x0f,
-	0x49, 0xa0, 0x6e, 0x11, 0x7b, 0x78, 0x04, 0x0b, 0x08, 0x2c, 0x5c, 0xb1, 0xe5, 0x3c, 0xfc, 0xd0,
-	0x83, 0x86, 0x39, 0x30, 0x60, 0x96, 0x96, 0xce, 0x2c, 0x98, 0xa5, 0x15, 0x13, 0xc6, 0xf7, 0x70,
-	0xdb, 0xc0, 0x08, 0x30, 0x4b, 0xcb, 0x60, 0x0b, 0xdb, 0x2e, 0x63, 0x15, 0xed, 0xc8, 0xfe, 0x62,
-	0xda, 0x31, 0xda, 0x91, 0x5d, 0xc6, 0xca, 0xd2, 0x32, 0x3f, 0x73, 0x60, 0x5a, 0x56, 0xcc, 0x38,
-	0x98, 0x96, 0x95, 0x83, 0xca, 0xaf, 0x60, 0x01, 0x07, 0x5d, 0xb2, 0xa1, 0x3a, 0xab, 0x36, 0x88,
-	0xe3, 0x09, 0xe7, 0x67, 0xe1, 0x87, 0x00, 0xa7, 0x9c, 0x72, 0x3f, 0xe6, 0xbe, 0x57, 0x7d, 0x3b,
-	0x38, 0x69, 0x6a, 0x92, 0xcf, 0x60, 0xf9, 0x37, 0x8c, 0xab, 0x29, 0xa7, 0x52, 0x51, 0x26, 0x4a,
-	0x61, 0x18, 0xea, 0x41, 0xc3, 0xc4, 0x0e, 0xf1, 0x5e, 0x4b, 0x51, 0x48, 0xbc, 0xd7, 0x0a, 0xb0,
-	0xf1, 0x5b, 0x55, 0x15, 0x02, 0xfe, 0xab, 0x0c, 0x44, 0x2f, 0x0a, 0x13, 0x64, 0x3c, 0x82, 0x15,
-	0x1d, 0x55, 0x25, 0xa9, 0x64, 0x1e, 0xe7, 0xb5, 0x77, 0x4a, 0x38, 0xa9, 0x91, 0xd5, 0x1c, 0x86,
-	0x42, 0xf4, 0x9e, 0x99, 0x07, 0x06, 0xec, 0x75, 0x9d, 0x29, 0xa6, 0xac, 0xae, 0x95, 0x18, 0xc9,
-	0x01, 0x27, 0x44, 0x4f, 0xe9, 0x0a, 0x23, 0xfa, 0xa8, 0xd6, 0xb5, 0xc8, 0x77, 0xb0, 0x96, 0x47,
-	0x4b, 0x30, 0xaf, 0x2a, 0x40, 0x14, 0xdb, 0xf8, 0xfa, 0xe9, 0x5a, 0xe4, 0x95, 0x00, 0xa6, 0x0b,
-	0x60, 0x08, 0xd9, 0xcf, 0xf7, 0x95, 0x92, 0x80, 0x74, 0x68, 0x36, 0x11, 0xe9, 0x5a, 0xe4, 0x25,
-	0x90, 0x22, 0x40, 0x82, 0x6d, 0xbd, 0x12, 0x39, 0xb1, 0x4b, 0x67, 0x6c, 0x71, 0x46, 0xeb, 0x05,
-	0xec, 0x8c, 0xc8, 0xca, 0xa8, 0xc2, 0xd4, 0x6c, 0x73, 0xa6, 0xea, 0x5a, 0xe4, 0x35, 0xd8, 0x67,
-	0x11, 0x0d, 0xe2, 0xb7, 0x59, 0x3d, 0x6a, 0xd6, 0xaa, 0x52, 0x68, 0x2b, 0x1d, 0x7b, 0x0d, 0x4d,
-	0xb1, 0xc5, 0x66, 0x19, 0xf4, 0x6e, 0x9c, 0x58, 0x29, 0x2a, 0x6f, 0x17, 0xc0, 0xec, 0xae, 0x45,
-	0x4e, 0xc4, 0xe4, 0x59, 0xfc, 0xef, 0x82, 0x7c, 0x5a, 0xc8, 0xbf, 0x82, 0xbd, 0x92, 0xbf, 0x09,
-	0xba, 0x56, 0xd2, 0xb3, 0x8c, 0x79, 0x18, 0x7b, 0x56, 0xd9, 0xb8, 0x8e, 0x3d, 0xab, 0x7c, 0x7c,
-	0x4e, 0xcb, 0x36, 0x35, 0xa4, 0x97, 0x6d, 0xde, 0xd2, 0x6e, 0x29, 0x4f, 0x9a, 0x3a, 0xbc, 0xf7,
-	0xc7, 0xcf, 0xbc, 0xb0, 0xcf, 0x44, 0xb8, 0xe2, 0x9c, 0xbd, 0x70, 0xd8, 0xf6, 0xe5, 0xdf, 0x96,
-	0x9d, 0xf4, 0xff, 0xcd, 0xf3, 0x79, 0xf1, 0xf3, 0xc1, 0xff, 0x03, 0x00, 0x00, 0xff, 0xff, 0x67,
-	0xb6, 0xc9, 0xfa, 0xf3, 0x1c, 0x00, 0x00,
+	// 2018 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x59, 0xef, 0x6e, 0x1b, 0xc7,
+	0x11, 0xef, 0x91, 0xb2, 0x25, 0x8e, 0x24, 0x4a, 0x5a, 0x51, 0x12, 0x75, 0x56, 0x63, 0xe5, 0x62,
+	0x07, 0x4e, 0x90, 0x90, 0xac, 0xdc, 0xd8, 0x89, 0x6c, 0x21, 0xb1, 0xa4, 0xba, 0x65, 0x6b, 0x3b,
+	0xc2, 0x49, 0x4d, 0x8a, 0x02, 0x45, 0xb1, 0x3a, 0xae, 0xe9, 0x83, 0xc8, 0x3b, 0xf6, 0x6e, 0x65,
+	0x95, 0x1f, 0x0a, 0xf4, 0x63, 0xfb, 0xa1, 0x40, 0x9f, 0xa2, 0xcf, 0xd1, 0x37, 0x29, 0xd0, 0x27,
+	0x29, 0x6e, 0x77, 0xf6, 0x6e, 0xf7, 0xfe, 0x58, 0x22, 0xec, 0x7e, 0xe3, 0xcd, 0xff, 0xdd, 0x99,
+	0x9d, 0x9d, 0xfd, 0x11, 0xb6, 0x26, 0x51, 0xc8, 0xc3, 0x2e, 0x9d, 0xf8, 0x5d, 0x1e, 0xd1, 0x81,
+	0x1f, 0x0c, 0x3b, 0x82, 0x42, 0xea, 0x74, 0xe2, 0xdb, 0xab, 0x92, 0xfb, 0x96, 0x0d, 0xa9, 0x24,
+	0xdb, 0xeb, 0x92, 0x32, 0xa6, 0xd1, 0x05, 0xe3, 0x31, 0x12, 0xef, 0x0c, 0xc3, 0x70, 0x38, 0x62,
+	0x5d, 0xf1, 0x75, 0x7e, 0xf9, 0xba, 0xcb, 0xc6, 0x13, 0x3e, 0x45, 0xe6, 0xa3, 0xa1, 0xcf, 0xdf,
+	0x5c, 0x9e, 0x77, 0xbc, 0x70, 0xdc, 0x1d, 0x5f, 0xf9, 0xfc, 0x22, 0xbc, 0xea, 0x0e, 0xc3, 0x2f,
+	0x05, 0xf3, 0xcb, 0xb7, 0x74, 0xe4, 0x0f, 0x28, 0x0f, 0xa3, 0xb8, 0x9b, 0xfe, 0x94, 0x7a, 0xce,
+	0x01, 0xac, 0xfc, 0xe8, 0xf3, 0x37, 0x83, 0x88, 0x5e, 0xb9, 0xec, 0x4f, 0x97, 0x2c, 0xe6, 0xe4,
+	0x73, 0x58, 0xb8, 0x42, 0x52, 0xdb, 0xda, 0xb5, 0x1e, 0x2c, 0xee, 0x35, 0x3b, 0x22, 0xb6, 0x54,
+	0x30, 0xe5, 0x3b, 0x5f, 0xc0, 0x6a, 0xa6, 0x1e, 0x4f, 0xc2, 0x20, 0x66, 0xa4, 0x0d, 0xf3, 0xf1,
+	0xa5, 0xe7, 0xb1, 0x38, 0x16, 0xea, 0x0b, 0xae, 0xfa, 0x74, 0x5e, 0x82, 0xfd, 0x2a, 0xe4, 0xfe,
+	0xeb, 0xe9, 0x59, 0x44, 0x07, 0x2c, 0x7a, 0xe6, 0x79, 0xe1, 0x65, 0xc0, 0x95, 0xdf, 0x2e, 0xdc,
+	0x0a, 0x12, 0x2e, 0x3a, 0xdd, 0x96, 0x4e, 0xcb, 0x14, 0xa4, 0x9c, 0xf3, 0x04, 0xee, 0x94, 0x9a,
+	0xc3, 0x38, 0x76, 0xa0, 0x11, 0x5f, 0x9e, 0x8f, 0x7d, 0xce, 0xd9, 0x00, 0x23, 0xc9, 0x08, 0xce,
+	0x13, 0x58, 0x3e, 0xf5, 0x87, 0x41, 0x3f, 0x50, 0xee, 0x9b, 0x50, 0xf3, 0xa5, 0x5c, 0xc3, 0xad,
+	0xf9, 0x03, 0x62, 0xc3, 0xc2, 0x84, 0xc6, 0xf1, 0x55, 0x18, 0x0d, 0xda, 0x35, 0x41, 0x4d, 0xbf,
+	0x9d, 0x4f, 0xa1, 0xa9, 0x94, 0xd1, 0x59, 0x0b, 0x6e, 0xf1, 0xf0, 0x82, 0x05, 0x68, 0x40, 0x7e,
+	0x38, 0x14, 0xc8, 0xa9, 0xf0, 0xf8, 0x7d, 0x34, 0x60, 0x91, 0xf2, 0xf4, 0x15, 0x80, 0x88, 0x23,
+	0x8e, 0xfd, 0x30, 0xc0, 0xd5, 0x6e, 0xc8, 0xd5, 0x0a, 0xb9, 0xd3, 0x94, 0xe9, 0x6a, 0x82, 0x99,
+	0x0b, 0xa6, 0xbb, 0x18, 0x02, 0x39, 0xa2, 0x81, 0xc7, 0x46, 0x86, 0x8b, 0x27, 0xb0, 0xe4, 0x09,
+	0xea, 0x88, 0xf2, 0xcc, 0xc9, 0x96, 0xe6, 0xe4, 0x48, 0x63, 0xbb, 0x86, 0x70, 0x85, 0xa3, 0x3f,
+	0xc0, 0xda, 0xb3, 0x31, 0x0b, 0x06, 0x86, 0x9f, 0x3d, 0x68, 0xd0, 0x84, 0x38, 0x66, 0x01, 0x47,
+	0x27, 0x2d, 0xcd, 0xc9, 0x33, 0xc5, 0x73, 0x33, 0xb1, 0x0a, 0xf3, 0x67, 0xb0, 0xf3, 0x92, 0x46,
+	0x43, 0x3f, 0x78, 0xc1, 0xde, 0xb2, 0x51, 0x7c, 0x7a, 0x79, 0x1e, 0x7b, 0x91, 0x7f, 0xce, 0x94,
+	0xa7, 0x36, 0xcc, 0x4f, 0x68, 0xc4, 0xa7, 0xfd, 0x63, 0xdc, 0x62, 0xf5, 0x99, 0x24, 0x4a, 0x1e,
+	0x94, 0xfe, 0xb1, 0x4a, 0x94, 0xfa, 0x76, 0x7e, 0x03, 0xeb, 0xba, 0xd5, 0xf7, 0x33, 0xf6, 0x0a,
+	0x5a, 0xa6, 0x31, 0xcc, 0xfd, 0x23, 0x58, 0x1a, 0x6b, 0xf4, 0xb6, 0xb5, 0x5b, 0x7f, 0xb0, 0xb8,
+	0x47, 0xe4, 0x3e, 0x18, 0x1a, 0x86, 0x9c, 0xf3, 0x0d, 0xdc, 0x79, 0x29, 0x4f, 0xf8, 0x31, 0xe5,
+	0xb4, 0xb0, 0x62, 0x3d, 0x14, 0x2b, 0x17, 0xca, 0x43, 0xd8, 0x90, 0xaa, 0x89, 0xe6, 0xe1, 0xb4,
+	0x7f, 0x7c, 0x13, 0xa5, 0x5f, 0xc3, 0x66, 0x5e, 0x09, 0x57, 0xd0, 0x03, 0x18, 0xa7, 0x1c, 0xcc,
+	0xe3, 0x6a, 0x1a, 0x3f, 0xd2, 0x5d, 0x4d, 0xc6, 0xe9, 0x8b, 0x8d, 0x55, 0xb1, 0xa7, 0x86, 0xf6,
+	0x60, 0x71, 0x9c, 0x91, 0x71, 0x27, 0x8a, 0x96, 0x74, 0x21, 0xa7, 0x03, 0xab, 0x2f, 0x68, 0xcc,
+	0xc5, 0x21, 0xbe, 0xc9, 0x32, 0x1e, 0xc1, 0x9a, 0x26, 0x8f, 0x8e, 0x3f, 0x86, 0x5b, 0x49, 0x67,
+	0x65, 0x18, 0xfc, 0xa2, 0x74, 0x29, 0x65, 0x24, 0xc7, 0xe9, 0xc2, 0x9a, 0x0c, 0xe1, 0xa6, 0xfb,
+	0xb5, 0x0f, 0x44, 0x57, 0x40, 0x4f, 0xf7, 0xe0, 0xb6, 0x94, 0x40, 0x57, 0x4b, 0xfa, 0xea, 0x5c,
+	0xe4, 0x25, 0x8d, 0xf1, 0x24, 0x29, 0x29, 0xdd, 0x57, 0x65, 0xd5, 0x25, 0x4b, 0xd2, 0xa4, 0xb3,
+	0x25, 0x09, 0xbe, 0xb9, 0x24, 0x21, 0xe7, 0x4a, 0x8e, 0xf3, 0x35, 0xac, 0x24, 0xdf, 0x3e, 0xcb,
+	0x8a, 0xf1, 0xbe, 0x74, 0xe2, 0x33, 0x55, 0x87, 0x86, 0x9e, 0xe2, 0x39, 0x7f, 0x81, 0x96, 0xd8,
+	0x9c, 0xf8, 0x70, 0x2a, 0x39, 0xef, 0x73, 0x32, 0x48, 0x17, 0x60, 0x42, 0x87, 0x7e, 0x20, 0x9b,
+	0x4d, 0x5d, 0xc4, 0xbb, 0xd2, 0xa1, 0x13, 0xbf, 0x73, 0x92, 0x92, 0x5d, 0x4d, 0xc4, 0x79, 0x0a,
+	0x1b, 0x39, 0xf7, 0x18, 0xfe, 0x27, 0x70, 0x5b, 0x64, 0x2b, 0x17, 0xbd, 0x4c, 0x24, 0xb2, 0x9c,
+	0x5e, 0x16, 0xbc, 0xd1, 0x8d, 0xda, 0x30, 0x1f, 0x26, 0xdf, 0x59, 0xf0, 0xf8, 0xa9, 0xfb, 0x43,
+	0x8d, 0x59, 0xfc, 0xfd, 0xc3, 0x82, 0x36, 0xde, 0x2e, 0xf1, 0x2c, 0xc7, 0x54, 0xdf, 0xcd, 0x9a,
+	0xb9, 0x9b, 0x2d, 0xb8, 0x45, 0xe3, 0x98, 0x71, 0xb1, 0x59, 0x0d, 0x57, 0x7e, 0x90, 0xfb, 0x30,
+	0xc7, 0xa7, 0x13, 0xd6, 0x9e, 0xdb, 0xb5, 0x1e, 0x34, 0xf7, 0xd6, 0x64, 0x2c, 0xe8, 0xf9, 0x6c,
+	0x3a, 0x61, 0xae, 0x60, 0x3b, 0xaf, 0x60, 0x53, 0xac, 0xe2, 0x03, 0x05, 0x93, 0xd8, 0x93, 0xbb,
+	0xf3, 0x81, 0xec, 0x51, 0xd8, 0x3a, 0xa2, 0xc1, 0x60, 0x34, 0xa3, 0xc1, 0xcf, 0x61, 0xc1, 0x0f,
+	0x38, 0x8b, 0xde, 0xd2, 0x91, 0xb0, 0xd8, 0x54, 0x83, 0x47, 0x1f, 0xa9, 0x6e, 0xca, 0xcf, 0x7a,
+	0xe7, 0x31, 0x9b, 0xf0, 0x37, 0x33, 0xf5, 0xce, 0xaf, 0x60, 0xfb, 0x24, 0x8c, 0xfd, 0xa4, 0x0e,
+	0x67, 0xb8, 0x66, 0x9c, 0xbf, 0x5a, 0xb0, 0x21, 0x77, 0xfd, 0x70, 0x8a, 0x87, 0x1d, 0x75, 0x9c,
+	0xbc, 0xb3, 0xc3, 0xdb, 0xff, 0xfd, 0xcf, 0xdd, 0xda, 0xae, 0x55, 0x79, 0x42, 0x6a, 0xd7, 0x9e,
+	0x10, 0x42, 0x60, 0x2e, 0x9c, 0x30, 0x79, 0x98, 0x16, 0x5c, 0xf1, 0xdb, 0x39, 0x50, 0x79, 0xcf,
+	0x22, 0xc8, 0xca, 0x58, 0x94, 0x7a, 0xae, 0x8c, 0x65, 0xad, 0x23, 0x2b, 0x39, 0xf3, 0x4a, 0xdd,
+	0x38, 0xf3, 0xbb, 0xb9, 0x35, 0xa7, 0xe1, 0xa7, 0xd5, 0xfa, 0x41, 0xa2, 0x7f, 0x9a, 0xed, 0x5f,
+	0xe1, 0xcc, 0x5f, 0x1f, 0x3c, 0x85, 0x6d, 0x41, 0x50, 0x4b, 0x7f, 0x16, 0x0c, 0xfa, 0x83, 0x59,
+	0x32, 0xb0, 0x9b, 0x35, 0x87, 0x9a, 0xb9, 0x4a, 0xd5, 0x24, 0xbe, 0x05, 0xbb, 0xcc, 0x45, 0xd6,
+	0x8e, 0x85, 0xa0, 0xd9, 0x8e, 0x65, 0x90, 0x92, 0xe3, 0x3c, 0x86, 0x2d, 0x34, 0xe0, 0xb2, 0xd7,
+	0x2c, 0x62, 0x81, 0x97, 0xd6, 0xd5, 0x0e, 0x34, 0x22, 0x45, 0xc3, 0xca, 0xca, 0x08, 0xce, 0x01,
+	0xb4, 0x8b, 0x8a, 0x37, 0xf7, 0xfb, 0x0d, 0xac, 0xe0, 0x65, 0x9c, 0x6a, 0x7d, 0x0a, 0xf3, 0x78,
+	0xc7, 0xe2, 0xa6, 0x9a, 0xd7, 0x94, 0x62, 0x3a, 0xff, 0xb4, 0xa0, 0x89, 0x67, 0x75, 0x96, 0xcd,
+	0xec, 0x40, 0x33, 0xf6, 0x03, 0x8f, 0x9d, 0xf9, 0x63, 0x16, 0x73, 0x3a, 0x9e, 0x88, 0x3d, 0xad,
+	0x4b, 0xc9, 0xd5, 0x9f, 0xb8, 0x39, 0xae, 0x71, 0xb4, 0xeb, 0xd7, 0x1e, 0xed, 0x95, 0x34, 0xa2,
+	0x6c, 0x35, 0x9e, 0x24, 0x99, 0xab, 0x91, 0x72, 0xae, 0x62, 0x3a, 0x67, 0xea, 0xc6, 0x16, 0x5d,
+	0x61, 0x96, 0x05, 0x89, 0x86, 0xf1, 0x67, 0xa1, 0x26, 0x96, 0x32, 0xe7, 0xa6, 0xdf, 0xce, 0xbf,
+	0x2c, 0x35, 0xec, 0xa0, 0x59, 0x8c, 0xea, 0x5d, 0xbd, 0xcc, 0x81, 0xfa, 0xf9, 0xe5, 0xb4, 0x5d,
+	0xd3, 0x07, 0xa0, 0x93, 0xc8, 0xf7, 0x98, 0x98, 0xfd, 0xdc, 0x84, 0x49, 0xee, 0xc1, 0x5c, 0xcc,
+	0x46, 0xc9, 0x86, 0x94, 0x0b, 0x09, 0x2e, 0xf9, 0x0c, 0x1a, 0x23, 0x35, 0xee, 0x88, 0x8b, 0x21,
+	0x77, 0x49, 0x65, 0x5c, 0x67, 0x94, 0xdd, 0x72, 0xff, 0xff, 0x0e, 0x95, 0x74, 0xa3, 0xbc, 0xb7,
+	0x59, 0x2e, 0xd5, 0x1f, 0x61, 0x2b, 0x6d, 0xc3, 0x33, 0x37, 0xa4, 0x77, 0x8d, 0xe9, 0xbf, 0x82,
+	0x76, 0xd1, 0x30, 0x46, 0xf6, 0x05, 0x34, 0x26, 0x8a, 0x87, 0xc1, 0x61, 0x21, 0x2a, 0x15, 0x37,
+	0x13, 0x70, 0x7a, 0xb0, 0xfa, 0x03, 0x1b, 0xd2, 0xa4, 0x8c, 0xf5, 0x57, 0x25, 0x4f, 0x8b, 0x3e,
+	0x89, 0xae, 0xee, 0x66, 0x04, 0xe7, 0x07, 0x80, 0x13, 0xa3, 0x0b, 0xc6, 0x17, 0xbe, 0x14, 0x9b,
+	0x73, 0xc5, 0xef, 0xe4, 0xe2, 0x1f, 0xf9, 0x63, 0x9f, 0x63, 0x95, 0xc9, 0x0f, 0xf2, 0x11, 0xc0,
+	0x80, 0xc5, 0x1e, 0x0b, 0x06, 0x7e, 0x30, 0xc4, 0xae, 0xa9, 0x51, 0x9c, 0x87, 0xb0, 0x84, 0x37,
+	0x3e, 0x8f, 0x18, 0x1d, 0xdf, 0xac, 0x65, 0x3e, 0x84, 0x25, 0xbc, 0xd6, 0x53, 0xa5, 0xeb, 0xd3,
+	0xf2, 0x77, 0x0b, 0x5a, 0x62, 0xcf, 0xd4, 0xc0, 0xf3, 0x7e, 0x93, 0xa1, 0x9a, 0x68, 0xea, 0xef,
+	0x9c, 0x68, 0xb2, 0x71, 0x68, 0x4e, 0x1b, 0x87, 0x9c, 0x43, 0xd8, 0xc8, 0x85, 0x82, 0x49, 0xf8,
+	0x0c, 0x16, 0x28, 0xd2, 0x70, 0x2d, 0xcb, 0x86, 0x65, 0x37, 0x65, 0x3b, 0x7d, 0xf5, 0x52, 0xca,
+	0xaf, 0xe7, 0x5d, 0xa7, 0x37, 0x0d, 0xa7, 0xa6, 0x87, 0x73, 0xa4, 0xde, 0x4f, 0xef, 0x13, 0xcf,
+	0x29, 0xac, 0x1d, 0xbd, 0x61, 0xde, 0xc5, 0x59, 0xf2, 0xea, 0xbd, 0x79, 0xc1, 0xef, 0xa8, 0x47,
+	0xb3, 0x79, 0x77, 0xe1, 0xe3, 0xf9, 0x1e, 0x10, 0xdd, 0x28, 0x46, 0xd5, 0x84, 0x5a, 0x78, 0x81,
+	0xc8, 0x47, 0x2d, 0xbc, 0xd8, 0xfb, 0x77, 0x1d, 0xe6, 0x11, 0x7e, 0x22, 0xfb, 0xb0, 0xa8, 0x21,
+	0x13, 0x64, 0x4b, 0x1c, 0xf4, 0x22, 0x56, 0x61, 0xe3, 0x2b, 0xf6, 0x44, 0xd6, 0xa1, 0x14, 0xde,
+	0x87, 0x45, 0x0d, 0x72, 0x40, 0xdd, 0x22, 0x08, 0x51, 0xaa, 0xfb, 0x35, 0x40, 0x86, 0x22, 0x90,
+	0x4d, 0xa1, 0x5a, 0x80, 0x15, 0x4a, 0x35, 0x7f, 0x06, 0xb7, 0x25, 0xe6, 0x42, 0x88, 0x0c, 0x56,
+	0x47, 0x6f, 0xec, 0x75, 0x83, 0x86, 0x1b, 0xf0, 0x3b, 0x58, 0x2f, 0x01, 0x88, 0xc8, 0x5d, 0x21,
+	0x5b, 0x8d, 0x44, 0xd9, 0xbb, 0xd5, 0x02, 0x68, 0xf9, 0x31, 0x2c, 0x28, 0xdc, 0x8b, 0xb4, 0x84,
+	0x74, 0x0e, 0x45, 0xb3, 0x37, 0x72, 0x54, 0x54, 0x3c, 0x00, 0xc8, 0x32, 0x85, 0xeb, 0x2f, 0xd4,
+	0x83, 0xbd, 0x55, 0xa0, 0x4b, 0xf5, 0xbd, 0xbf, 0xad, 0xc1, 0x12, 0xa6, 0xf0, 0x8f, 0x03, 0xca,
+	0x29, 0xe9, 0x43, 0xd3, 0xac, 0x49, 0x62, 0x0b, 0xdd, 0xd2, 0x9a, 0xb7, 0xef, 0x94, 0xf2, 0x30,
+	0xb4, 0xe7, 0xb0, 0x6c, 0x9c, 0x36, 0xb2, 0x8d, 0xdd, 0xbf, 0xd8, 0x0c, 0x6c, 0xbb, 0x8c, 0x85,
+	0x76, 0x7e, 0x0e, 0xf3, 0x78, 0x7f, 0x93, 0x75, 0x55, 0x1a, 0xda, 0x7c, 0x61, 0xb7, 0x4c, 0x22,
+	0x6a, 0xa5, 0x0b, 0x51, 0xe0, 0x84, 0xb1, 0x90, 0x1c, 0xcc, 0x61, 0x2c, 0xa4, 0x80, 0x66, 0x7c,
+	0x0b, 0x8b, 0x1a, 0x36, 0x41, 0x36, 0x3b, 0x12, 0x38, 0xed, 0x28, 0xe0, 0xb4, 0xf3, 0x8b, 0xf1,
+	0x84, 0x4f, 0xed, 0xb6, 0x66, 0xc3, 0x44, 0x31, 0x0e, 0x00, 0xb2, 0x87, 0x3f, 0x26, 0xa9, 0x00,
+	0x1d, 0x60, 0x92, 0x4a, 0x10, 0x82, 0xef, 0x94, 0x7f, 0x31, 0x2e, 0x10, 0x5d, 0x4e, 0x9f, 0x4b,
+	0x8c, 0x00, 0xcc, 0xc9, 0xe2, 0x31, 0xcc, 0x63, 0x5c, 0x95, 0xd1, 0xb7, 0xf4, 0xe8, 0x53, 0xc5,
+	0xdf, 0x02, 0x29, 0x8c, 0xb0, 0xc7, 0xe4, 0x23, 0x21, 0x5b, 0x39, 0x3e, 0xdb, 0x77, 0x2b, 0xf9,
+	0x68, 0xf6, 0x7b, 0x58, 0xcd, 0xcf, 0xa7, 0x64, 0x47, 0x57, 0xca, 0xcf, 0xbb, 0xf6, 0x4f, 0x2b,
+	0xb8, 0x59, 0xb6, 0xcd, 0x97, 0x0c, 0x66, 0xbb, 0xf4, 0x81, 0x85, 0xd9, 0xae, 0x78, 0xfa, 0x3c,
+	0x87, 0x65, 0xe3, 0x59, 0x81, 0x65, 0x5b, 0xf6, 0xd2, 0xb1, 0xed, 0x32, 0x16, 0xda, 0x39, 0x82,
+	0x25, 0x1d, 0xab, 0x23, 0x69, 0x76, 0xf2, 0xe8, 0xa1, 0xbd, 0x5d, 0xc2, 0xc9, 0x12, 0x87, 0x80,
+	0xcc, 0x35, 0x89, 0xcb, 0xc3, 0x36, 0xfb, 0xd0, 0x48, 0x11, 0x20, 0xb2, 0x91, 0x9d, 0x2e, 0xbd,
+	0xe0, 0x36, 0xf3, 0xe4, 0x2c, 0x3b, 0xf9, 0x81, 0x07, 0xb3, 0x53, 0x31, 0x60, 0x61, 0x76, 0x2a,
+	0xa7, 0xa4, 0x7d, 0x68, 0xa4, 0x08, 0x1b, 0x06, 0x93, 0x47, 0xe8, 0x30, 0x98, 0x22, 0x10, 0xd7,
+	0x87, 0xa6, 0x39, 0x15, 0x62, 0x66, 0x4b, 0x07, 0x53, 0xcc, 0x6c, 0xc5, 0x18, 0xf9, 0x1c, 0x96,
+	0x0d, 0xd0, 0x06, 0x33, 0x5b, 0x06, 0xfd, 0xd8, 0x76, 0x19, 0xab, 0x68, 0x47, 0xaf, 0x90, 0x32,
+	0xfc, 0x2b, 0x67, 0xc7, 0xdc, 0x96, 0x47, 0x00, 0xa7, 0x9c, 0x72, 0x3f, 0xe6, 0xbe, 0x57, 0x9d,
+	0x5f, 0x9c, 0xe3, 0x35, 0xc9, 0xa7, 0xb0, 0xf8, 0x4b, 0xc6, 0xd5, 0x24, 0x59, 0xa9, 0x28, 0x37,
+	0xba, 0x30, 0x70, 0x1e, 0xc1, 0x5a, 0x01, 0x7b, 0x22, 0x32, 0x81, 0x55, 0x98, 0x94, 0x6d, 0x4e,
+	0x1f, 0x3d, 0x8b, 0x7c, 0x07, 0xab, 0x79, 0x44, 0x06, 0x4b, 0xa4, 0x02, 0xa8, 0xb1, 0x8d, 0x17,
+	0x56, 0xcf, 0x22, 0x27, 0x62, 0x8e, 0x2a, 0xe2, 0xf3, 0xe4, 0xe3, 0xc2, 0x69, 0x28, 0xd8, 0x2a,
+	0x81, 0xc2, 0x7b, 0x16, 0x79, 0x29, 0xe0, 0xf4, 0x02, 0x84, 0x43, 0x76, 0xf3, 0x6d, 0xb1, 0x60,
+	0x6f, 0xcd, 0x00, 0x94, 0x13, 0x91, 0x9e, 0x45, 0x5e, 0x28, 0x73, 0x26, 0x9a, 0x6e, 0x98, 0x2b,
+	0x05, 0xda, 0xed, 0x02, 0x3e, 0xdd, 0xb3, 0xc8, 0x11, 0xac, 0xe4, 0x20, 0x36, 0xa2, 0x77, 0xa1,
+	0x92, 0x90, 0x34, 0xa6, 0x18, 0xb7, 0x7b, 0x16, 0x79, 0x0e, 0xa4, 0x88, 0x34, 0x61, 0x37, 0xae,
+	0x84, 0xa0, 0xec, 0xdc, 0x83, 0x44, 0x06, 0x93, 0xc3, 0xe7, 0x88, 0x7e, 0x70, 0x2a, 0x82, 0xd1,
+	0x67, 0xff, 0x9e, 0x45, 0x5e, 0x81, 0x7d, 0x16, 0xd1, 0x20, 0x7e, 0x9d, 0x9d, 0x0c, 0xcd, 0x5e,
+	0x55, 0x51, 0x6e, 0xa6, 0x6f, 0x04, 0x43, 0xb3, 0x67, 0x1d, 0xde, 0xff, 0xfd, 0x27, 0x5e, 0x38,
+	0x60, 0x82, 0x2f, 0x94, 0xbc, 0x70, 0xd4, 0xf1, 0xe5, 0xdf, 0x98, 0xdd, 0xf4, 0xff, 0xce, 0xf3,
+	0xdb, 0xe2, 0xe7, 0xc3, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0xee, 0xa3, 0x74, 0x9d, 0x03, 0x1d,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -3112,60 +3129,68 @@ var _Trading_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TradingDataClient interface {
-	// Get Market Orders
-	OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error)
-	// Get Party Orders
-	OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error)
-	// Get Market Order by OrderID
+	// Get a list of Accounts by Market
+	MarketAccounts(ctx context.Context, in *MarketAccountsRequest, opts ...grpc.CallOption) (*MarketAccountsResponse, error)
+	// Get a list of Accounts by Party
+	PartyAccounts(ctx context.Context, in *PartyAccountsRequest, opts ...grpc.CallOption) (*PartyAccountsResponse, error)
+	// Get a list of Candles by Market
+	Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error)
+	// Get Market Data by MarketID
+	MarketDataByID(ctx context.Context, in *MarketDataByIDRequest, opts ...grpc.CallOption) (*MarketDataByIDResponse, error)
+	// Get a list of Market Data
+	MarketsData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsDataResponse, error)
+	// Get a Market by ID
+	MarketByID(ctx context.Context, in *MarketByIDRequest, opts ...grpc.CallOption) (*MarketByIDResponse, error)
+	// Get Market Depth
+	MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error)
+	// Get a list of Markets
+	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsResponse, error)
+	// Get an Order by Market and OrderID
 	OrderByMarketAndID(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error)
 	// Get an Order by Pending Order reference (UUID)
 	OrderByReference(ctx context.Context, in *OrderByReferenceRequest, opts ...grpc.CallOption) (*OrderByReferenceResponse, error)
-	// Get Market by ID
-	MarketByID(ctx context.Context, in *MarketByIDRequest, opts ...grpc.CallOption) (*MarketByIDResponse, error)
-	// Get a list of Markets
-	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsResponse, error)
-	// Get Market Depth
-	MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error)
-	// Get latest Market Trade
-	LastTrade(ctx context.Context, in *LastTradeRequest, opts ...grpc.CallOption) (*LastTradeResponse, error)
-	// Get Party by ID
-	PartyByID(ctx context.Context, in *PartyByIDRequest, opts ...grpc.CallOption) (*PartyByIDResponse, error)
+	// Get a list of Orders by Market
+	OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error)
+	// Get a list of Orders by Party
+	OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error)
+	// Get Margin Levels by PartyID
+	MarginLevels(ctx context.Context, in *MarginLevelsRequest, opts ...grpc.CallOption) (*MarginLevelsResponse, error)
 	// Get a list of Parties
 	Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*PartiesResponse, error)
-	// Get Market Trades
-	TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error)
-	// Get Party Trades
-	TradesByParty(ctx context.Context, in *TradesByPartyRequest, opts ...grpc.CallOption) (*TradesByPartyResponse, error)
-	// Get Order Trades
-	TradesByOrder(ctx context.Context, in *TradesByOrderRequest, opts ...grpc.CallOption) (*TradesByOrderResponse, error)
-	// Get Party Positions
+	// Get a Party by ID
+	PartyByID(ctx context.Context, in *PartyByIDRequest, opts ...grpc.CallOption) (*PartyByIDResponse, error)
+	// Get a list of Positions by Party
 	PositionsByParty(ctx context.Context, in *PositionsByPartyRequest, opts ...grpc.CallOption) (*PositionsByPartyResponse, error)
-	// Get Market Candles
-	Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error)
+	// Get latest Trade
+	LastTrade(ctx context.Context, in *LastTradeRequest, opts ...grpc.CallOption) (*LastTradeResponse, error)
+	// Get a list of Trades by Market
+	TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error)
+	// Get a list of Trades by Order
+	TradesByOrder(ctx context.Context, in *TradesByOrderRequest, opts ...grpc.CallOption) (*TradesByOrderResponse, error)
+	// Get a list of Trades by Party
+	TradesByParty(ctx context.Context, in *TradesByPartyRequest, opts ...grpc.CallOption) (*TradesByPartyResponse, error)
 	// Get Statistics
 	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error)
 	// Get Time
 	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*VegaTimeResponse, error)
-	// Get Market Data by ID
-	MarketDataByID(ctx context.Context, in *MarketDataByIDRequest, opts ...grpc.CallOption) (*MarketDataByIDResponse, error)
-	// Get a list of Market Data
-	MarketsData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsDataResponse, error)
-	// Get Party Margin Levels
-	MarginLevels(ctx context.Context, in *MarginLevelsRequest, opts ...grpc.CallOption) (*MarginLevelsResponse, error)
-	// streams
-	OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error)
-	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error)
-	CandlesSubscribe(ctx context.Context, in *CandlesSubscribeRequest, opts ...grpc.CallOption) (TradingData_CandlesSubscribeClient, error)
-	MarketDepthSubscribe(ctx context.Context, in *MarketDepthSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketDepthSubscribeClient, error)
-	PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingData_PositionsSubscribeClient, error)
+	// Subscribe to a stream of Accounts
 	AccountsSubscribe(ctx context.Context, in *AccountsSubscribeRequest, opts ...grpc.CallOption) (TradingData_AccountsSubscribeClient, error)
-	TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error)
-	MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error)
+	// Subscribe to a stream of Candles
+	CandlesSubscribe(ctx context.Context, in *CandlesSubscribeRequest, opts ...grpc.CallOption) (TradingData_CandlesSubscribeClient, error)
+	// Subscribe to a stream of Margin Levels
 	MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error)
-	// Get Party accounts
-	PartyAccounts(ctx context.Context, in *PartyAccountsRequest, opts ...grpc.CallOption) (*PartyAccountsResponse, error)
-	// Get Market accounts
-	MarketAccounts(ctx context.Context, in *MarketAccountsRequest, opts ...grpc.CallOption) (*MarketAccountsResponse, error)
+	// Subscribe to a stream of Market Depth
+	MarketDepthSubscribe(ctx context.Context, in *MarketDepthSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketDepthSubscribeClient, error)
+	// Subscribe to a stream of Markets Data
+	MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error)
+	// Subscribe to a stream of Orders
+	OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error)
+	// Subscribe to a stream of Positions
+	PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingData_PositionsSubscribeClient, error)
+	// Subscribe to a stream of Trades
+	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error)
+	// Subscribe to a stream of Transfer Responses
+	TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error)
 }
 
 type tradingDataClient struct {
@@ -3176,126 +3201,18 @@ func NewTradingDataClient(cc *grpc.ClientConn) TradingDataClient {
 	return &tradingDataClient{cc}
 }
 
-func (c *tradingDataClient) OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error) {
-	out := new(OrdersByMarketResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/OrdersByMarket", in, out, opts...)
+func (c *tradingDataClient) MarketAccounts(ctx context.Context, in *MarketAccountsRequest, opts ...grpc.CallOption) (*MarketAccountsResponse, error) {
+	out := new(MarketAccountsResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/MarketAccounts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *tradingDataClient) OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error) {
-	out := new(OrdersByPartyResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/OrdersByParty", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) OrderByMarketAndID(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error) {
-	out := new(OrderByMarketAndIdResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/OrderByMarketAndID", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) OrderByReference(ctx context.Context, in *OrderByReferenceRequest, opts ...grpc.CallOption) (*OrderByReferenceResponse, error) {
-	out := new(OrderByReferenceResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/OrderByReference", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) MarketByID(ctx context.Context, in *MarketByIDRequest, opts ...grpc.CallOption) (*MarketByIDResponse, error) {
-	out := new(MarketByIDResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/MarketByID", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsResponse, error) {
-	out := new(MarketsResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/Markets", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error) {
-	out := new(MarketDepthResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/MarketDepth", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) LastTrade(ctx context.Context, in *LastTradeRequest, opts ...grpc.CallOption) (*LastTradeResponse, error) {
-	out := new(LastTradeResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/LastTrade", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) PartyByID(ctx context.Context, in *PartyByIDRequest, opts ...grpc.CallOption) (*PartyByIDResponse, error) {
-	out := new(PartyByIDResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/PartyByID", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*PartiesResponse, error) {
-	out := new(PartiesResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/Parties", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error) {
-	out := new(TradesByMarketResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/TradesByMarket", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) TradesByParty(ctx context.Context, in *TradesByPartyRequest, opts ...grpc.CallOption) (*TradesByPartyResponse, error) {
-	out := new(TradesByPartyResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/TradesByParty", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) TradesByOrder(ctx context.Context, in *TradesByOrderRequest, opts ...grpc.CallOption) (*TradesByOrderResponse, error) {
-	out := new(TradesByOrderResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/TradesByOrder", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) PositionsByParty(ctx context.Context, in *PositionsByPartyRequest, opts ...grpc.CallOption) (*PositionsByPartyResponse, error) {
-	out := new(PositionsByPartyResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/PositionsByParty", in, out, opts...)
+func (c *tradingDataClient) PartyAccounts(ctx context.Context, in *PartyAccountsRequest, opts ...grpc.CallOption) (*PartyAccountsResponse, error) {
+	out := new(PartyAccountsResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/PartyAccounts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3305,24 +3222,6 @@ func (c *tradingDataClient) PositionsByParty(ctx context.Context, in *PositionsB
 func (c *tradingDataClient) Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error) {
 	out := new(CandlesResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/Candles", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error) {
-	out := new(proto1.Statistics)
-	err := c.cc.Invoke(ctx, "/api.trading_data/Statistics", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataClient) GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*VegaTimeResponse, error) {
-	out := new(VegaTimeResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/GetVegaTime", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3347,6 +3246,69 @@ func (c *tradingDataClient) MarketsData(ctx context.Context, in *empty.Empty, op
 	return out, nil
 }
 
+func (c *tradingDataClient) MarketByID(ctx context.Context, in *MarketByIDRequest, opts ...grpc.CallOption) (*MarketByIDResponse, error) {
+	out := new(MarketByIDResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/MarketByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error) {
+	out := new(MarketDepthResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/MarketDepth", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsResponse, error) {
+	out := new(MarketsResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Markets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) OrderByMarketAndID(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error) {
+	out := new(OrderByMarketAndIdResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/OrderByMarketAndID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) OrderByReference(ctx context.Context, in *OrderByReferenceRequest, opts ...grpc.CallOption) (*OrderByReferenceResponse, error) {
+	out := new(OrderByReferenceResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/OrderByReference", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error) {
+	out := new(OrdersByMarketResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/OrdersByMarket", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error) {
+	out := new(OrdersByPartyResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/OrdersByParty", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataClient) MarginLevels(ctx context.Context, in *MarginLevelsRequest, opts ...grpc.CallOption) (*MarginLevelsResponse, error) {
 	out := new(MarginLevelsResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/MarginLevels", in, out, opts...)
@@ -3356,12 +3318,93 @@ func (c *tradingDataClient) MarginLevels(ctx context.Context, in *MarginLevelsRe
 	return out, nil
 }
 
-func (c *tradingDataClient) OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[0], "/api.trading_data/OrdersSubscribe", opts...)
+func (c *tradingDataClient) Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*PartiesResponse, error) {
+	out := new(PartiesResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Parties", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataOrdersSubscribeClient{stream}
+	return out, nil
+}
+
+func (c *tradingDataClient) PartyByID(ctx context.Context, in *PartyByIDRequest, opts ...grpc.CallOption) (*PartyByIDResponse, error) {
+	out := new(PartyByIDResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/PartyByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) PositionsByParty(ctx context.Context, in *PositionsByPartyRequest, opts ...grpc.CallOption) (*PositionsByPartyResponse, error) {
+	out := new(PositionsByPartyResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/PositionsByParty", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) LastTrade(ctx context.Context, in *LastTradeRequest, opts ...grpc.CallOption) (*LastTradeResponse, error) {
+	out := new(LastTradeResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/LastTrade", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error) {
+	out := new(TradesByMarketResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/TradesByMarket", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) TradesByOrder(ctx context.Context, in *TradesByOrderRequest, opts ...grpc.CallOption) (*TradesByOrderResponse, error) {
+	out := new(TradesByOrderResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/TradesByOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) TradesByParty(ctx context.Context, in *TradesByPartyRequest, opts ...grpc.CallOption) (*TradesByPartyResponse, error) {
+	out := new(TradesByPartyResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/TradesByParty", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error) {
+	out := new(proto1.Statistics)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Statistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*VegaTimeResponse, error) {
+	out := new(VegaTimeResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetVegaTime", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) AccountsSubscribe(ctx context.Context, in *AccountsSubscribeRequest, opts ...grpc.CallOption) (TradingData_AccountsSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[0], "/api.trading_data/AccountsSubscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataAccountsSubscribeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -3371,49 +3414,17 @@ func (c *tradingDataClient) OrdersSubscribe(ctx context.Context, in *OrdersSubsc
 	return x, nil
 }
 
-type TradingData_OrdersSubscribeClient interface {
-	Recv() (*OrdersStream, error)
+type TradingData_AccountsSubscribeClient interface {
+	Recv() (*proto1.Account, error)
 	grpc.ClientStream
 }
 
-type tradingDataOrdersSubscribeClient struct {
+type tradingDataAccountsSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataOrdersSubscribeClient) Recv() (*OrdersStream, error) {
-	m := new(OrdersStream)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *tradingDataClient) TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[1], "/api.trading_data/TradesSubscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &tradingDataTradesSubscribeClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TradingData_TradesSubscribeClient interface {
-	Recv() (*TradesStream, error)
-	grpc.ClientStream
-}
-
-type tradingDataTradesSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *tradingDataTradesSubscribeClient) Recv() (*TradesStream, error) {
-	m := new(TradesStream)
+func (x *tradingDataAccountsSubscribeClient) Recv() (*proto1.Account, error) {
+	m := new(proto1.Account)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -3421,7 +3432,7 @@ func (x *tradingDataTradesSubscribeClient) Recv() (*TradesStream, error) {
 }
 
 func (c *tradingDataClient) CandlesSubscribe(ctx context.Context, in *CandlesSubscribeRequest, opts ...grpc.CallOption) (TradingData_CandlesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[2], "/api.trading_data/CandlesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[1], "/api.trading_data/CandlesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3446,6 +3457,38 @@ type tradingDataCandlesSubscribeClient struct {
 
 func (x *tradingDataCandlesSubscribeClient) Recv() (*proto1.Candle, error) {
 	m := new(proto1.Candle)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataClient) MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[2], "/api.trading_data/MarginLevelsSubscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataMarginLevelsSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_MarginLevelsSubscribeClient interface {
+	Recv() (*proto1.MarginLevels, error)
+	grpc.ClientStream
+}
+
+type tradingDataMarginLevelsSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataMarginLevelsSubscribeClient) Recv() (*proto1.MarginLevels, error) {
+	m := new(proto1.MarginLevels)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -3484,104 +3527,8 @@ func (x *tradingDataMarketDepthSubscribeClient) Recv() (*proto1.MarketDepth, err
 	return m, nil
 }
 
-func (c *tradingDataClient) PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingData_PositionsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[4], "/api.trading_data/PositionsSubscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &tradingDataPositionsSubscribeClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TradingData_PositionsSubscribeClient interface {
-	Recv() (*proto1.MarketPosition, error)
-	grpc.ClientStream
-}
-
-type tradingDataPositionsSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *tradingDataPositionsSubscribeClient) Recv() (*proto1.MarketPosition, error) {
-	m := new(proto1.MarketPosition)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *tradingDataClient) AccountsSubscribe(ctx context.Context, in *AccountsSubscribeRequest, opts ...grpc.CallOption) (TradingData_AccountsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[5], "/api.trading_data/AccountsSubscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &tradingDataAccountsSubscribeClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TradingData_AccountsSubscribeClient interface {
-	Recv() (*proto1.Account, error)
-	grpc.ClientStream
-}
-
-type tradingDataAccountsSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *tradingDataAccountsSubscribeClient) Recv() (*proto1.Account, error) {
-	m := new(proto1.Account)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *tradingDataClient) TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[6], "/api.trading_data/TransferResponsesSubscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &tradingDataTransferResponsesSubscribeClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TradingData_TransferResponsesSubscribeClient interface {
-	Recv() (*proto1.TransferResponse, error)
-	grpc.ClientStream
-}
-
-type tradingDataTransferResponsesSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *tradingDataTransferResponsesSubscribeClient) Recv() (*proto1.TransferResponse, error) {
-	m := new(proto1.TransferResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *tradingDataClient) MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[7], "/api.trading_data/MarketsDataSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[4], "/api.trading_data/MarketsDataSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3612,12 +3559,12 @@ func (x *tradingDataMarketsDataSubscribeClient) Recv() (*proto1.MarketData, erro
 	return m, nil
 }
 
-func (c *tradingDataClient) MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[8], "/api.trading_data/MarginLevelsSubscribe", opts...)
+func (c *tradingDataClient) OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[5], "/api.trading_data/OrdersSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataMarginLevelsSubscribeClient{stream}
+	x := &tradingDataOrdersSubscribeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -3627,351 +3574,221 @@ func (c *tradingDataClient) MarginLevelsSubscribe(ctx context.Context, in *Margi
 	return x, nil
 }
 
-type TradingData_MarginLevelsSubscribeClient interface {
-	Recv() (*proto1.MarginLevels, error)
+type TradingData_OrdersSubscribeClient interface {
+	Recv() (*OrdersStream, error)
 	grpc.ClientStream
 }
 
-type tradingDataMarginLevelsSubscribeClient struct {
+type tradingDataOrdersSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataMarginLevelsSubscribeClient) Recv() (*proto1.MarginLevels, error) {
-	m := new(proto1.MarginLevels)
+func (x *tradingDataOrdersSubscribeClient) Recv() (*OrdersStream, error) {
+	m := new(OrdersStream)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *tradingDataClient) PartyAccounts(ctx context.Context, in *PartyAccountsRequest, opts ...grpc.CallOption) (*PartyAccountsResponse, error) {
-	out := new(PartyAccountsResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/PartyAccounts", in, out, opts...)
+func (c *tradingDataClient) PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingData_PositionsSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[6], "/api.trading_data/PositionsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &tradingDataPositionsSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *tradingDataClient) MarketAccounts(ctx context.Context, in *MarketAccountsRequest, opts ...grpc.CallOption) (*MarketAccountsResponse, error) {
-	out := new(MarketAccountsResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/MarketAccounts", in, out, opts...)
+type TradingData_PositionsSubscribeClient interface {
+	Recv() (*proto1.Position, error)
+	grpc.ClientStream
+}
+
+type tradingDataPositionsSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataPositionsSubscribeClient) Recv() (*proto1.Position, error) {
+	m := new(proto1.Position)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataClient) TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[7], "/api.trading_data/TradesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &tradingDataTradesSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_TradesSubscribeClient interface {
+	Recv() (*TradesStream, error)
+	grpc.ClientStream
+}
+
+type tradingDataTradesSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataTradesSubscribeClient) Recv() (*TradesStream, error) {
+	m := new(TradesStream)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataClient) TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[8], "/api.trading_data/TransferResponsesSubscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataTransferResponsesSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_TransferResponsesSubscribeClient interface {
+	Recv() (*proto1.TransferResponse, error)
+	grpc.ClientStream
+}
+
+type tradingDataTransferResponsesSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataTransferResponsesSubscribeClient) Recv() (*proto1.TransferResponse, error) {
+	m := new(proto1.TransferResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // TradingDataServer is the server API for TradingData service.
 type TradingDataServer interface {
-	// Get Market Orders
-	OrdersByMarket(context.Context, *OrdersByMarketRequest) (*OrdersByMarketResponse, error)
-	// Get Party Orders
-	OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error)
-	// Get Market Order by OrderID
+	// Get a list of Accounts by Market
+	MarketAccounts(context.Context, *MarketAccountsRequest) (*MarketAccountsResponse, error)
+	// Get a list of Accounts by Party
+	PartyAccounts(context.Context, *PartyAccountsRequest) (*PartyAccountsResponse, error)
+	// Get a list of Candles by Market
+	Candles(context.Context, *CandlesRequest) (*CandlesResponse, error)
+	// Get Market Data by MarketID
+	MarketDataByID(context.Context, *MarketDataByIDRequest) (*MarketDataByIDResponse, error)
+	// Get a list of Market Data
+	MarketsData(context.Context, *empty.Empty) (*MarketsDataResponse, error)
+	// Get a Market by ID
+	MarketByID(context.Context, *MarketByIDRequest) (*MarketByIDResponse, error)
+	// Get Market Depth
+	MarketDepth(context.Context, *MarketDepthRequest) (*MarketDepthResponse, error)
+	// Get a list of Markets
+	Markets(context.Context, *empty.Empty) (*MarketsResponse, error)
+	// Get an Order by Market and OrderID
 	OrderByMarketAndID(context.Context, *OrderByMarketAndIdRequest) (*OrderByMarketAndIdResponse, error)
 	// Get an Order by Pending Order reference (UUID)
 	OrderByReference(context.Context, *OrderByReferenceRequest) (*OrderByReferenceResponse, error)
-	// Get Market by ID
-	MarketByID(context.Context, *MarketByIDRequest) (*MarketByIDResponse, error)
-	// Get a list of Markets
-	Markets(context.Context, *empty.Empty) (*MarketsResponse, error)
-	// Get Market Depth
-	MarketDepth(context.Context, *MarketDepthRequest) (*MarketDepthResponse, error)
-	// Get latest Market Trade
-	LastTrade(context.Context, *LastTradeRequest) (*LastTradeResponse, error)
-	// Get Party by ID
-	PartyByID(context.Context, *PartyByIDRequest) (*PartyByIDResponse, error)
+	// Get a list of Orders by Market
+	OrdersByMarket(context.Context, *OrdersByMarketRequest) (*OrdersByMarketResponse, error)
+	// Get a list of Orders by Party
+	OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error)
+	// Get Margin Levels by PartyID
+	MarginLevels(context.Context, *MarginLevelsRequest) (*MarginLevelsResponse, error)
 	// Get a list of Parties
 	Parties(context.Context, *empty.Empty) (*PartiesResponse, error)
-	// Get Market Trades
-	TradesByMarket(context.Context, *TradesByMarketRequest) (*TradesByMarketResponse, error)
-	// Get Party Trades
-	TradesByParty(context.Context, *TradesByPartyRequest) (*TradesByPartyResponse, error)
-	// Get Order Trades
-	TradesByOrder(context.Context, *TradesByOrderRequest) (*TradesByOrderResponse, error)
-	// Get Party Positions
+	// Get a Party by ID
+	PartyByID(context.Context, *PartyByIDRequest) (*PartyByIDResponse, error)
+	// Get a list of Positions by Party
 	PositionsByParty(context.Context, *PositionsByPartyRequest) (*PositionsByPartyResponse, error)
-	// Get Market Candles
-	Candles(context.Context, *CandlesRequest) (*CandlesResponse, error)
+	// Get latest Trade
+	LastTrade(context.Context, *LastTradeRequest) (*LastTradeResponse, error)
+	// Get a list of Trades by Market
+	TradesByMarket(context.Context, *TradesByMarketRequest) (*TradesByMarketResponse, error)
+	// Get a list of Trades by Order
+	TradesByOrder(context.Context, *TradesByOrderRequest) (*TradesByOrderResponse, error)
+	// Get a list of Trades by Party
+	TradesByParty(context.Context, *TradesByPartyRequest) (*TradesByPartyResponse, error)
 	// Get Statistics
 	Statistics(context.Context, *empty.Empty) (*proto1.Statistics, error)
 	// Get Time
 	GetVegaTime(context.Context, *empty.Empty) (*VegaTimeResponse, error)
-	// Get Market Data by ID
-	MarketDataByID(context.Context, *MarketDataByIDRequest) (*MarketDataByIDResponse, error)
-	// Get a list of Market Data
-	MarketsData(context.Context, *empty.Empty) (*MarketsDataResponse, error)
-	// Get Party Margin Levels
-	MarginLevels(context.Context, *MarginLevelsRequest) (*MarginLevelsResponse, error)
-	// streams
-	OrdersSubscribe(*OrdersSubscribeRequest, TradingData_OrdersSubscribeServer) error
-	TradesSubscribe(*TradesSubscribeRequest, TradingData_TradesSubscribeServer) error
-	CandlesSubscribe(*CandlesSubscribeRequest, TradingData_CandlesSubscribeServer) error
-	MarketDepthSubscribe(*MarketDepthSubscribeRequest, TradingData_MarketDepthSubscribeServer) error
-	PositionsSubscribe(*PositionsSubscribeRequest, TradingData_PositionsSubscribeServer) error
+	// Subscribe to a stream of Accounts
 	AccountsSubscribe(*AccountsSubscribeRequest, TradingData_AccountsSubscribeServer) error
-	TransferResponsesSubscribe(*empty.Empty, TradingData_TransferResponsesSubscribeServer) error
-	MarketsDataSubscribe(*MarketsDataSubscribeRequest, TradingData_MarketsDataSubscribeServer) error
+	// Subscribe to a stream of Candles
+	CandlesSubscribe(*CandlesSubscribeRequest, TradingData_CandlesSubscribeServer) error
+	// Subscribe to a stream of Margin Levels
 	MarginLevelsSubscribe(*MarginLevelsSubscribeRequest, TradingData_MarginLevelsSubscribeServer) error
-	// Get Party accounts
-	PartyAccounts(context.Context, *PartyAccountsRequest) (*PartyAccountsResponse, error)
-	// Get Market accounts
-	MarketAccounts(context.Context, *MarketAccountsRequest) (*MarketAccountsResponse, error)
+	// Subscribe to a stream of Market Depth
+	MarketDepthSubscribe(*MarketDepthSubscribeRequest, TradingData_MarketDepthSubscribeServer) error
+	// Subscribe to a stream of Markets Data
+	MarketsDataSubscribe(*MarketsDataSubscribeRequest, TradingData_MarketsDataSubscribeServer) error
+	// Subscribe to a stream of Orders
+	OrdersSubscribe(*OrdersSubscribeRequest, TradingData_OrdersSubscribeServer) error
+	// Subscribe to a stream of Positions
+	PositionsSubscribe(*PositionsSubscribeRequest, TradingData_PositionsSubscribeServer) error
+	// Subscribe to a stream of Trades
+	TradesSubscribe(*TradesSubscribeRequest, TradingData_TradesSubscribeServer) error
+	// Subscribe to a stream of Transfer Responses
+	TransferResponsesSubscribe(*empty.Empty, TradingData_TransferResponsesSubscribeServer) error
 }
 
 func RegisterTradingDataServer(s *grpc.Server, srv TradingDataServer) {
 	s.RegisterService(&_TradingData_serviceDesc, srv)
 }
 
-func _TradingData_OrdersByMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OrdersByMarketRequest)
+func _TradingData_MarketAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServer).OrdersByMarket(ctx, in)
+		return srv.(TradingDataServer).MarketAccounts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.trading_data/OrdersByMarket",
+		FullMethod: "/api.trading_data/MarketAccounts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).OrdersByMarket(ctx, req.(*OrdersByMarketRequest))
+		return srv.(TradingDataServer).MarketAccounts(ctx, req.(*MarketAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingData_OrdersByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OrdersByPartyRequest)
+func _TradingData_PartyAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PartyAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServer).OrdersByParty(ctx, in)
+		return srv.(TradingDataServer).PartyAccounts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.trading_data/OrdersByParty",
+		FullMethod: "/api.trading_data/PartyAccounts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).OrdersByParty(ctx, req.(*OrdersByPartyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_OrderByMarketAndID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OrderByMarketAndIdRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).OrderByMarketAndID(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/OrderByMarketAndID",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).OrderByMarketAndID(ctx, req.(*OrderByMarketAndIdRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_OrderByReference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OrderByReferenceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).OrderByReference(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/OrderByReference",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).OrderByReference(ctx, req.(*OrderByReferenceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_MarketByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MarketByIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).MarketByID(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/MarketByID",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).MarketByID(ctx, req.(*MarketByIDRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_Markets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).Markets(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/Markets",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).Markets(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_MarketDepth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MarketDepthRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).MarketDepth(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/MarketDepth",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).MarketDepth(ctx, req.(*MarketDepthRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_LastTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LastTradeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).LastTrade(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/LastTrade",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).LastTrade(ctx, req.(*LastTradeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_PartyByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PartyByIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).PartyByID(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/PartyByID",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).PartyByID(ctx, req.(*PartyByIDRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_Parties_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).Parties(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/Parties",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).Parties(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_TradesByMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TradesByMarketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).TradesByMarket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/TradesByMarket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).TradesByMarket(ctx, req.(*TradesByMarketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_TradesByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TradesByPartyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).TradesByParty(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/TradesByParty",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).TradesByParty(ctx, req.(*TradesByPartyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_TradesByOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TradesByOrderRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).TradesByOrder(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/TradesByOrder",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).TradesByOrder(ctx, req.(*TradesByOrderRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_PositionsByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PositionsByPartyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).PositionsByParty(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/PositionsByParty",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).PositionsByParty(ctx, req.(*PositionsByPartyRequest))
+		return srv.(TradingDataServer).PartyAccounts(ctx, req.(*PartyAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3990,42 +3807,6 @@ func _TradingData_Candles_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServer).Candles(ctx, req.(*CandlesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_Statistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).Statistics(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/Statistics",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).Statistics(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingData_GetVegaTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).GetVegaTime(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/GetVegaTime",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).GetVegaTime(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4066,6 +3847,132 @@ func _TradingData_MarketsData_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingData_MarketByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).MarketByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/MarketByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).MarketByID(ctx, req.(*MarketByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_MarketDepth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketDepthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).MarketDepth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/MarketDepth",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).MarketDepth(ctx, req.(*MarketDepthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_Markets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Markets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Markets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Markets(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_OrderByMarketAndID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderByMarketAndIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).OrderByMarketAndID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/OrderByMarketAndID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).OrderByMarketAndID(ctx, req.(*OrderByMarketAndIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_OrderByReference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderByReferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).OrderByReference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/OrderByReference",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).OrderByReference(ctx, req.(*OrderByReferenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_OrdersByMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrdersByMarketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).OrdersByMarket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/OrdersByMarket",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).OrdersByMarket(ctx, req.(*OrdersByMarketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_OrdersByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrdersByPartyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).OrdersByParty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/OrdersByParty",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).OrdersByParty(ctx, req.(*OrdersByPartyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingData_MarginLevels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MarginLevelsRequest)
 	if err := dec(in); err != nil {
@@ -4084,45 +3991,186 @@ func _TradingData_MarginLevels_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingData_OrdersSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(OrdersSubscribeRequest)
+func _TradingData_Parties_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Parties(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Parties",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Parties(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_PartyByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PartyByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).PartyByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/PartyByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).PartyByID(ctx, req.(*PartyByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_PositionsByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PositionsByPartyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).PositionsByParty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/PositionsByParty",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).PositionsByParty(ctx, req.(*PositionsByPartyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_LastTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LastTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).LastTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/LastTrade",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).LastTrade(ctx, req.(*LastTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_TradesByMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TradesByMarketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).TradesByMarket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/TradesByMarket",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).TradesByMarket(ctx, req.(*TradesByMarketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_TradesByOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TradesByOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).TradesByOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/TradesByOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).TradesByOrder(ctx, req.(*TradesByOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_TradesByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TradesByPartyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).TradesByParty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/TradesByParty",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).TradesByParty(ctx, req.(*TradesByPartyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_Statistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Statistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Statistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Statistics(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_GetVegaTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).GetVegaTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/GetVegaTime",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).GetVegaTime(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_AccountsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AccountsSubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServer).OrdersSubscribe(m, &tradingDataOrdersSubscribeServer{stream})
+	return srv.(TradingDataServer).AccountsSubscribe(m, &tradingDataAccountsSubscribeServer{stream})
 }
 
-type TradingData_OrdersSubscribeServer interface {
-	Send(*OrdersStream) error
+type TradingData_AccountsSubscribeServer interface {
+	Send(*proto1.Account) error
 	grpc.ServerStream
 }
 
-type tradingDataOrdersSubscribeServer struct {
+type tradingDataAccountsSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataOrdersSubscribeServer) Send(m *OrdersStream) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _TradingData_TradesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(TradesSubscribeRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TradingDataServer).TradesSubscribe(m, &tradingDataTradesSubscribeServer{stream})
-}
-
-type TradingData_TradesSubscribeServer interface {
-	Send(*TradesStream) error
-	grpc.ServerStream
-}
-
-type tradingDataTradesSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *tradingDataTradesSubscribeServer) Send(m *TradesStream) error {
+func (x *tradingDataAccountsSubscribeServer) Send(m *proto1.Account) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -4147,6 +4195,27 @@ func (x *tradingDataCandlesSubscribeServer) Send(m *proto1.Candle) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _TradingData_MarginLevelsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(MarginLevelsSubscribeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServer).MarginLevelsSubscribe(m, &tradingDataMarginLevelsSubscribeServer{stream})
+}
+
+type TradingData_MarginLevelsSubscribeServer interface {
+	Send(*proto1.MarginLevels) error
+	grpc.ServerStream
+}
+
+type tradingDataMarginLevelsSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataMarginLevelsSubscribeServer) Send(m *proto1.MarginLevels) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _TradingData_MarketDepthSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(MarketDepthSubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4165,69 +4234,6 @@ type tradingDataMarketDepthSubscribeServer struct {
 }
 
 func (x *tradingDataMarketDepthSubscribeServer) Send(m *proto1.MarketDepth) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _TradingData_PositionsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(PositionsSubscribeRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TradingDataServer).PositionsSubscribe(m, &tradingDataPositionsSubscribeServer{stream})
-}
-
-type TradingData_PositionsSubscribeServer interface {
-	Send(*proto1.MarketPosition) error
-	grpc.ServerStream
-}
-
-type tradingDataPositionsSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *tradingDataPositionsSubscribeServer) Send(m *proto1.MarketPosition) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _TradingData_AccountsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(AccountsSubscribeRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TradingDataServer).AccountsSubscribe(m, &tradingDataAccountsSubscribeServer{stream})
-}
-
-type TradingData_AccountsSubscribeServer interface {
-	Send(*proto1.Account) error
-	grpc.ServerStream
-}
-
-type tradingDataAccountsSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *tradingDataAccountsSubscribeServer) Send(m *proto1.Account) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _TradingData_TransferResponsesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TradingDataServer).TransferResponsesSubscribe(m, &tradingDataTransferResponsesSubscribeServer{stream})
-}
-
-type TradingData_TransferResponsesSubscribeServer interface {
-	Send(*proto1.TransferResponse) error
-	grpc.ServerStream
-}
-
-type tradingDataTransferResponsesSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *tradingDataTransferResponsesSubscribeServer) Send(m *proto1.TransferResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -4252,61 +4258,88 @@ func (x *tradingDataMarketsDataSubscribeServer) Send(m *proto1.MarketData) error
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TradingData_MarginLevelsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(MarginLevelsSubscribeRequest)
+func _TradingData_OrdersSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(OrdersSubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServer).MarginLevelsSubscribe(m, &tradingDataMarginLevelsSubscribeServer{stream})
+	return srv.(TradingDataServer).OrdersSubscribe(m, &tradingDataOrdersSubscribeServer{stream})
 }
 
-type TradingData_MarginLevelsSubscribeServer interface {
-	Send(*proto1.MarginLevels) error
+type TradingData_OrdersSubscribeServer interface {
+	Send(*OrdersStream) error
 	grpc.ServerStream
 }
 
-type tradingDataMarginLevelsSubscribeServer struct {
+type tradingDataOrdersSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataMarginLevelsSubscribeServer) Send(m *proto1.MarginLevels) error {
+func (x *tradingDataOrdersSubscribeServer) Send(m *OrdersStream) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TradingData_PartyAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PartyAccountsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _TradingData_PositionsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PositionsSubscribeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).PartyAccounts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/PartyAccounts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).PartyAccounts(ctx, req.(*PartyAccountsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(TradingDataServer).PositionsSubscribe(m, &tradingDataPositionsSubscribeServer{stream})
 }
 
-func _TradingData_MarketAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MarketAccountsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+type TradingData_PositionsSubscribeServer interface {
+	Send(*proto1.Position) error
+	grpc.ServerStream
+}
+
+type tradingDataPositionsSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataPositionsSubscribeServer) Send(m *proto1.Position) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingData_TradesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(TradesSubscribeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(TradingDataServer).MarketAccounts(ctx, in)
+	return srv.(TradingDataServer).TradesSubscribe(m, &tradingDataTradesSubscribeServer{stream})
+}
+
+type TradingData_TradesSubscribeServer interface {
+	Send(*TradesStream) error
+	grpc.ServerStream
+}
+
+type tradingDataTradesSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataTradesSubscribeServer) Send(m *TradesStream) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingData_TransferResponsesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(empty.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.trading_data/MarketAccounts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).MarketAccounts(ctx, req.(*MarketAccountsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(TradingDataServer).TransferResponsesSubscribe(m, &tradingDataTransferResponsesSubscribeServer{stream})
+}
+
+type TradingData_TransferResponsesSubscribeServer interface {
+	Send(*proto1.TransferResponse) error
+	grpc.ServerStream
+}
+
+type tradingDataTransferResponsesSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataTransferResponsesSubscribeServer) Send(m *proto1.TransferResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 var _TradingData_serviceDesc = grpc.ServiceDesc{
@@ -4314,72 +4347,16 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*TradingDataServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "OrdersByMarket",
-			Handler:    _TradingData_OrdersByMarket_Handler,
+			MethodName: "MarketAccounts",
+			Handler:    _TradingData_MarketAccounts_Handler,
 		},
 		{
-			MethodName: "OrdersByParty",
-			Handler:    _TradingData_OrdersByParty_Handler,
-		},
-		{
-			MethodName: "OrderByMarketAndID",
-			Handler:    _TradingData_OrderByMarketAndID_Handler,
-		},
-		{
-			MethodName: "OrderByReference",
-			Handler:    _TradingData_OrderByReference_Handler,
-		},
-		{
-			MethodName: "MarketByID",
-			Handler:    _TradingData_MarketByID_Handler,
-		},
-		{
-			MethodName: "Markets",
-			Handler:    _TradingData_Markets_Handler,
-		},
-		{
-			MethodName: "MarketDepth",
-			Handler:    _TradingData_MarketDepth_Handler,
-		},
-		{
-			MethodName: "LastTrade",
-			Handler:    _TradingData_LastTrade_Handler,
-		},
-		{
-			MethodName: "PartyByID",
-			Handler:    _TradingData_PartyByID_Handler,
-		},
-		{
-			MethodName: "Parties",
-			Handler:    _TradingData_Parties_Handler,
-		},
-		{
-			MethodName: "TradesByMarket",
-			Handler:    _TradingData_TradesByMarket_Handler,
-		},
-		{
-			MethodName: "TradesByParty",
-			Handler:    _TradingData_TradesByParty_Handler,
-		},
-		{
-			MethodName: "TradesByOrder",
-			Handler:    _TradingData_TradesByOrder_Handler,
-		},
-		{
-			MethodName: "PositionsByParty",
-			Handler:    _TradingData_PositionsByParty_Handler,
+			MethodName: "PartyAccounts",
+			Handler:    _TradingData_PartyAccounts_Handler,
 		},
 		{
 			MethodName: "Candles",
 			Handler:    _TradingData_Candles_Handler,
-		},
-		{
-			MethodName: "Statistics",
-			Handler:    _TradingData_Statistics_Handler,
-		},
-		{
-			MethodName: "GetVegaTime",
-			Handler:    _TradingData_GetVegaTime_Handler,
 		},
 		{
 			MethodName: "MarketDataByID",
@@ -4390,27 +4367,78 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 			Handler:    _TradingData_MarketsData_Handler,
 		},
 		{
+			MethodName: "MarketByID",
+			Handler:    _TradingData_MarketByID_Handler,
+		},
+		{
+			MethodName: "MarketDepth",
+			Handler:    _TradingData_MarketDepth_Handler,
+		},
+		{
+			MethodName: "Markets",
+			Handler:    _TradingData_Markets_Handler,
+		},
+		{
+			MethodName: "OrderByMarketAndID",
+			Handler:    _TradingData_OrderByMarketAndID_Handler,
+		},
+		{
+			MethodName: "OrderByReference",
+			Handler:    _TradingData_OrderByReference_Handler,
+		},
+		{
+			MethodName: "OrdersByMarket",
+			Handler:    _TradingData_OrdersByMarket_Handler,
+		},
+		{
+			MethodName: "OrdersByParty",
+			Handler:    _TradingData_OrdersByParty_Handler,
+		},
+		{
 			MethodName: "MarginLevels",
 			Handler:    _TradingData_MarginLevels_Handler,
 		},
 		{
-			MethodName: "PartyAccounts",
-			Handler:    _TradingData_PartyAccounts_Handler,
+			MethodName: "Parties",
+			Handler:    _TradingData_Parties_Handler,
 		},
 		{
-			MethodName: "MarketAccounts",
-			Handler:    _TradingData_MarketAccounts_Handler,
+			MethodName: "PartyByID",
+			Handler:    _TradingData_PartyByID_Handler,
+		},
+		{
+			MethodName: "PositionsByParty",
+			Handler:    _TradingData_PositionsByParty_Handler,
+		},
+		{
+			MethodName: "LastTrade",
+			Handler:    _TradingData_LastTrade_Handler,
+		},
+		{
+			MethodName: "TradesByMarket",
+			Handler:    _TradingData_TradesByMarket_Handler,
+		},
+		{
+			MethodName: "TradesByOrder",
+			Handler:    _TradingData_TradesByOrder_Handler,
+		},
+		{
+			MethodName: "TradesByParty",
+			Handler:    _TradingData_TradesByParty_Handler,
+		},
+		{
+			MethodName: "Statistics",
+			Handler:    _TradingData_Statistics_Handler,
+		},
+		{
+			MethodName: "GetVegaTime",
+			Handler:    _TradingData_GetVegaTime_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "OrdersSubscribe",
-			Handler:       _TradingData_OrdersSubscribe_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "TradesSubscribe",
-			Handler:       _TradingData_TradesSubscribe_Handler,
+			StreamName:    "AccountsSubscribe",
+			Handler:       _TradingData_AccountsSubscribe_Handler,
 			ServerStreams: true,
 		},
 		{
@@ -4419,23 +4447,13 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
+			StreamName:    "MarginLevelsSubscribe",
+			Handler:       _TradingData_MarginLevelsSubscribe_Handler,
+			ServerStreams: true,
+		},
+		{
 			StreamName:    "MarketDepthSubscribe",
 			Handler:       _TradingData_MarketDepthSubscribe_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "PositionsSubscribe",
-			Handler:       _TradingData_PositionsSubscribe_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "AccountsSubscribe",
-			Handler:       _TradingData_AccountsSubscribe_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "TransferResponsesSubscribe",
-			Handler:       _TradingData_TransferResponsesSubscribe_Handler,
 			ServerStreams: true,
 		},
 		{
@@ -4444,8 +4462,23 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "MarginLevelsSubscribe",
-			Handler:       _TradingData_MarginLevelsSubscribe_Handler,
+			StreamName:    "OrdersSubscribe",
+			Handler:       _TradingData_OrdersSubscribe_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PositionsSubscribe",
+			Handler:       _TradingData_PositionsSubscribe_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "TradesSubscribe",
+			Handler:       _TradingData_TradesSubscribe_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "TransferResponsesSubscribe",
+			Handler:       _TradingData_TransferResponsesSubscribe_Handler,
 			ServerStreams: true,
 		},
 	},
