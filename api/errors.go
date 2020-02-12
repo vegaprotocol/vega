@@ -39,6 +39,8 @@ var (
 	ErrStreamClosed = errors.New("stream closed")
 	// ErrStreamInternal signals to the users that the grpc stream has an internal problem
 	ErrStreamInternal = errors.New("internal stream failure")
+	// ErrNotMapped is when an error cannot be found in the current error map/lookup table
+	ErrNotMapped = errors.New("error not found in error lookup table")
 
 	ErrOrderServiceGetByMarket      = errors.New("failed to get orders for market")
 	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
@@ -75,16 +77,17 @@ var (
 func InitErrorMap() {
 	em := make(map[error]int32)
 	// General
-	em[ErrEmptyMissingMarketID] = 10000
+	em[ErrNotMapped] = 10000
 	em[ErrChainNotConnected] = 10001
 	em[ErrChannelClosed] = 10002
-	em[ErrEmptyMissingOrderID] = 10003
-	em[ErrEmptyMissingOrderReference] = 10004
-	em[ErrEmptyMissingPartyID] = 10005
-	em[ErrEmptyMissingSinceTimestamp] = 10006
-	em[ErrStreamClosed] = 10007
-	em[ErrServerShutdown] = 10008
-	em[ErrStreamInternal] = 10009
+	em[ErrEmptyMissingMarketID] = 10003
+	em[ErrEmptyMissingOrderID] = 10004
+	em[ErrEmptyMissingOrderReference] = 10005
+	em[ErrEmptyMissingPartyID] = 10006
+	em[ErrEmptyMissingSinceTimestamp] = 10007
+	em[ErrStreamClosed] = 10008
+	em[ErrServerShutdown] = 10009
+	em[ErrStreamInternal] = 10010
 	// Orders
 	em[ErrOrderServiceGetByMarket] = 20001
 	em[ErrOrderServiceGetByMarketAndID] = 20002
@@ -119,7 +122,7 @@ func InitErrorMap() {
 }
 
 func apiError(grpcCode codes.Code, errs ...error) error {
-	s := status.Newf(grpcCode, "API call error: %v", grpcCode)
+	s := status.Newf(grpcCode, "%v error", grpcCode)
 
 	for _, err := range errs {
 		detail := types.ErrorDetail{
@@ -128,6 +131,8 @@ func apiError(grpcCode codes.Code, errs ...error) error {
 		vegaCode, found := ErrorMap[err]
 		if found {
 			detail.Code = vegaCode
+		} else {
+			detail.Code = ErrorMap[ErrNotMapped]
 		}
 		s, _ = s.WithDetails(&detail)
 	}
