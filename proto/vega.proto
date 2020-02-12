@@ -7,7 +7,26 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 enum Side { Buy = 0; Sell = 1; }
 
-enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
+enum Interval {
+
+  // 1 minute
+  I1M = 0;
+
+  // 5 minutes
+  I5M = 1;
+
+  // 15 minutes
+  I15M = 2;
+
+  // 1 hour
+  I1H = 3;
+
+  // 6 hours
+  I6H = 4;
+
+  // 1 day
+  I1D = 5;
+}
 
 message Amount {
   string value = 1;
@@ -15,7 +34,7 @@ message Amount {
 
 message Party {
     string id = 1 [(validator.field) = {msg_exists : true}];
-    repeated MarketPosition positions = 2;
+    repeated Position positions = 2;
 }
 
 message RiskFactor {
@@ -36,17 +55,33 @@ message RiskResult {
 }
 
 message Order {
+
+  // Order Time in Force
   enum TimeInForce {
+
+    // good til cancelled
     GTC = 0;
+
+    // good til time
     GTT = 1;
+
+    // immediate or cancel
     IOC = 2;
+
+    // fill or kill
     FOK = 3;
   }
 
+  // Order Type
   enum Type {
-    LIMIT   = 0; // Limit order
-    MARKET  = 1; // Market order type
-    NETWORK = 2; // order where the initiating party is the network (used for distressed traders)
+    // used for Limit orders
+    LIMIT   = 0;
+
+    // used for Market orders
+    MARKET  = 1;
+
+    // used for orders where the initiating party is the network (used for distressed traders)
+    NETWORK = 2;
   }
 
   enum Status {
@@ -68,7 +103,10 @@ message Order {
   TimeInForce timeInForce  = 8;
   Type type = 9;
   int64 createdAt = 10;
+
+  // If `status` is `Rejected`, check `reason`.
   Status status = 11;
+
   int64 expiresAt = 12;
   string reference = 13;
   OrderError reason = 14;
@@ -102,6 +140,8 @@ enum OrderError {
   MARGIN_CHECK_FAILED = 14;
   MISSING_GENERAL_ACCOUNT = 15;
   INTERNAL_ERROR = 16;
+  INVALID_SIZE = 17;
+  INVALID_PERSISTENCE = 18;
 }
 
 message Trade {
@@ -114,6 +154,8 @@ message Trade {
     Side aggressor = 7;
     string buyOrder = 8;
     string sellOrder = 9;
+
+    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
     int64 timestamp = 10;
 }
 
@@ -122,8 +164,13 @@ message TradeSet {
 }
 
 message Candle {
+
+    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
     int64 timestamp = 1;
+
+    // ISO 8601 datetime
     string datetime = 2;
+
     uint64 high = 3;
     uint64 low = 4;
     uint64 open = 5;
@@ -145,25 +192,13 @@ message MarketDepth {
     repeated PriceLevel sell = 3;
 }
 
-message MarketPosition {
-    string marketID = 1;
-    int64 realisedVolume = 2;
-    int64 realisedPNL  = 3;
-    int64 unrealisedVolume = 4;
-    int64 unrealisedPNL = 5;
-    uint64 averageEntryPrice = 6;
-    string partyID = 7;
-}
-
 message Position {
     string marketID = 1;
     string partyID = 2;
     int64 openVolume = 3;
-    int64 pendingVolume = 4;
-    int64 realisedPNL  = 5;
-    int64 unrealisedPNL = 7;
-    uint64 averageEntryPrice = 8;
-    repeated PositionTrade fifoQueue = 9;
+    int64 realisedPNL  = 4;
+    int64 unrealisedPNL = 5;
+    uint64 averageEntryPrice = 6;
 }
 
 message PositionTrade {
@@ -175,9 +210,16 @@ message Statistics {
   uint64 blockHeight = 1;
   uint64 backlogLength = 2;
   uint64 totalPeers = 3;
+
+  // ISO 8601 datetime, nanosecond precision
   string genesisTime = 4;
+
+  // ISO 8601 datetime, nanosecond precision
   string currentTime = 5;
+
+  // ISO 8601 datetime, nanosecond precision
   string vegaTime = 6;
+
   ChainStatus status = 7;
   uint64 txPerBlock = 8;
   uint64 averageTxBytes = 9;
@@ -202,7 +244,11 @@ message Statistics {
   string appVersionHash = 28;
   string appVersion = 29;
   string chainVersion = 30;
-  uint64 blockDuration = 31; // nanoseconds
+
+  // nanoseconds
+  uint64 blockDuration = 31;
+
+  // ISO 8601 datetime, nanosecond precision
   string uptime = 32;
 }
 
@@ -250,15 +296,11 @@ message OrderSubmission {
   string id = 1 [(validator.field) = {string_not_empty: false}];
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
-  // do not enforce that price, as Market Order will not have price specified
-  uint64 price = 4;
+  uint64 price = 4; // mandatory for Limit orders, not required for Market orders
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
-  // make sur for both that they are non nil and the value is part of the respective enums.
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
-  // do not enforce as not always required
-  // althouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it
-  int64 expiresAt = 8;
+  int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
 }
 
@@ -269,7 +311,7 @@ message OrderCancellation {
 }
 
 enum AccountType {
-  NO_ACC = 0;
+  ALL = 0;
   INSURANCE = 1;
   SETTLEMENT = 2;
   MARGIN = 3;
@@ -299,6 +341,7 @@ enum TransferType {
   MTM_WIN = 4;
   MARGIN_LOW = 5;
   MARGIN_HIGH = 6;
+  MARGIN_CONFISCATED = 7;
 }
 
 message Transfer {

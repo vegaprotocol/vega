@@ -173,9 +173,10 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		traded, hasTraded := trades[party]
 		// create (and add position to buffer)
 		sp := &settlePos{
-			MarketPosition: evt,
-			marketID:       e.market,
-			trades:         traded,
+			party:    evt.Party(),
+			price:    evt.Price(),
+			marketID: e.market,
+			trades:   traded,
 		}
 		bufEvents = append(bufEvents, sp)
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
@@ -200,6 +201,11 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		}
 		// we don't need to create a transfer if there's no changes to the balance...
 		if mtmShare == 0 {
+			wins = append(wins, &mtmTransfer{
+				MarketPosition: current,
+				transfer:       nil,
+			})
+
 			continue
 		}
 		settle := &types.Transfer{
@@ -238,13 +244,24 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 
 // RemoveDistressed - remove whatever settlement data we have for distressed traders
 // they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
+func (e *Engine) RemoveDistressed(evts []events.Margin) {
 	e.mu.Lock()
-	for _, trader := range traders {
-		key := trader.Party()
+	bEvts := make([]events.SettlePosition, 0, len(evts))
+	for _, v := range evts {
+		key := v.Party()
+		sp := &settlePos{
+			party:     v.Party(),
+			price:     v.Price(),
+			marketID:  e.market,
+			margin:    v.MarginBalance(),
+			hasMargin: true,
+		}
+		bEvts = append(bEvts, sp)
 		delete(e.pos, key)
 		delete(e.trades, key)
 	}
+	e.buf.Add(bEvts)
+	e.buf.Flush()
 	e.mu.Unlock()
 }
 

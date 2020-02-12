@@ -48,7 +48,7 @@ func (mr *MockProcessorServiceMockRecorder) AmendOrder(arg0 interface{}) *gomock
 }
 
 // CancelOrder mocks base method
-func (m *MockProcessorService) CancelOrder(arg0 *proto.Order) error {
+func (m *MockProcessorService) CancelOrder(arg0 *proto.OrderCancellation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0)
 	ret0, _ := ret[0].(error)

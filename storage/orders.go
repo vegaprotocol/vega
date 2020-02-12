@@ -16,6 +16,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrOrderNotFoundForMarketAndID   = errors.New("order not found for market and id")
+	ErrOrderDoesNotExistForReference = errors.New("order does not exist for reference")
+)
+
 // Order is a package internal data struct that implements the OrderStore interface.
 type Order struct {
 	Config
@@ -181,6 +186,9 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 	marketKey := os.badger.orderMarketKey(market, id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
+		if err == badger.ErrKeyNotFound {
+			return nil, ErrOrderNotFoundForMarketAndID
+		}
 		return nil, err
 	}
 	orderBuf, _ := item.ValueCopy(nil)
@@ -303,32 +311,43 @@ func (os *Order) GetByPartyAndID(ctx context.Context, party string, id string) (
 func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	var order types.Order
 
-	err := os.badger.db.View(func(txn *badger.Txn) error {
+	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
+		defer func() {
+			if err == badger.ErrKeyNotFound {
+				err = ErrOrderDoesNotExistForReference
+			}
+		}()
 		refKey := os.badger.orderReferenceKey(ref)
-		marketKeyItem, err := txn.Get(refKey)
+		var (
+			marketKeyItem, orderItem *badger.Item
+			marketKey, orderBuf      []byte
+		)
+
+		marketKeyItem, err = txn.Get(refKey)
 		if err != nil {
-			return err
+			return
 		}
-		marketKey, err := marketKeyItem.ValueCopy(nil)
+		marketKey, err = marketKeyItem.ValueCopy(nil)
 		if err != nil {
-			return err
+			return
 		}
-		orderItem, err := txn.Get(marketKey)
+		orderItem, err = txn.Get(marketKey)
 		if err != nil {
-			return err
+			return
 		}
-		orderBuf, err := orderItem.ValueCopy(nil)
+		orderBuf, err = orderItem.ValueCopy(nil)
 		if err != nil {
-			return err
+			return
 		}
-		if err := proto.Unmarshal(orderBuf, &order); err != nil {
+		err = proto.Unmarshal(orderBuf, &order)
+		if err != nil {
 			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
 				logging.Error(err),
 				logging.String("badger-key", string(refKey)),
 				logging.String("raw-bytes", string(orderBuf)))
 			return err
 		}
-		return nil
+		return
 	})
 
 	if err != nil {
@@ -339,7 +358,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
+func (os *Order) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
 
 	// validate
 	depth, ok := os.depth[market]
@@ -354,8 +373,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	}
 
 	// load from store
-	buy := depth.BuySide()
-	sell := depth.SellSide()
+	buy := depth.BuySide(limit)
+	sell := depth.SellSide(limit)
 
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
@@ -385,7 +404,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 				// keep running total
 				cumulativeVolume += b.Volume
 				buy[i].CumulativeVolume = cumulativeVolume
-				buyPtr = append(buyPtr, &buy[i].PriceLevel)
+				aCopy := buy[i].PriceLevel
+				buyPtr = append(buyPtr, &aCopy)
 			}
 		}
 	}()
@@ -404,7 +424,8 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 				// keep running total
 				cumulativeVolume += s.Volume
 				sell[i].CumulativeVolume = cumulativeVolume
-				sellPtr = append(sellPtr, &sell[i].PriceLevel)
+				aCopy := sell[i].PriceLevel
+				sellPtr = append(sellPtr, &aCopy)
 			}
 		}
 	}()

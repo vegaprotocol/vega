@@ -17,7 +17,7 @@ var (
 
 type ExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
+	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(w *types.Withdraw) error
@@ -93,6 +93,7 @@ func New(
 		time:       time,
 		processor:  proc,
 		stats:      stats,
+		service:    service,
 	}, nil
 }
 

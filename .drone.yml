@@ -20,12 +20,15 @@ steps:
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     pull: always
     volumes:
+      - name: gocache
+        path: /go/cache
       - name: gopkg
         path: /go/pkg
     environment:
       CGO_ENABLED: "0"
       GO111MODULE: "on"
       GOARCH: amd64
+      GOCACHE: /go/cache
       GOOS: linux
       GITLAB_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: GITLAB_DEPLOY_SSH_KNOWN_HOSTS
@@ -63,9 +66,12 @@ steps:
   - name: test
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
+      - name: gocache
+        path: /go/cache
       - name: gopkg
         path: /go/pkg
-    environment: {}
+    environment:
+      GOCACHE: /go/cache
     commands:
       - make test
     depends_on:
@@ -75,12 +81,15 @@ steps:
   - name: mergerequest
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
+      - name: gocache
+        path: /go/cache
       - name: gopkg
         path: /go/pkg
     environment:
       COL_CYAN: '\033[36;1m'
       COL_GREEN: '\033[32;1m'
       COL_RESET: '\033[0m'
+      GOCACHE: /go/cache
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
@@ -110,9 +119,12 @@ steps:
   - name: test_heavy
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
+      - name: gocache
+        path: /go/cache
       - name: gopkg
         path: /go/pkg
-    environment: {}
+    environment:
+      GOCACHE: /go/cache
     commands:
       - make race
       - make msan
@@ -149,6 +161,8 @@ steps:
           --project1 5531219 --projectname1 client --branch1 develop --file1 'packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql'
           --project2 5726034 --projectname2 trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
           create_mr
+      # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
+      - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires SLACK_HOOK_URL and 3 DEVNET_* vars.
       - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
@@ -203,6 +217,9 @@ volumes:
   - name: dockersock
     host:
       path: /run/docker.sock
+  - name: gocache
+    host:
+      path: /var/lib/drone/volumes/trading-core/gocache
   - name: gopkg
     host:
       path: /var/lib/drone/volumes/trading-core/gopkg

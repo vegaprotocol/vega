@@ -53,10 +53,7 @@ func (this *Instrument) Validate() error {
 	}
 	return nil
 }
-func (this *ModelParamsBS) Validate() error {
-	return nil
-}
-func (this *ForwardRiskModel) Validate() error {
+func (this *LogNormalRiskModel) Validate() error {
 	if this.Params != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
@@ -64,8 +61,7 @@ func (this *ForwardRiskModel) Validate() error {
 	}
 	return nil
 }
-func (this *ExternalRiskModel) Validate() error {
-	// Validation of proto3 map<> fields is unsupported.
+func (this *LogNormalModelParams) Validate() error {
 	return nil
 }
 func (this *SimpleRiskModel) Validate() error {
@@ -77,6 +73,10 @@ func (this *SimpleRiskModel) Validate() error {
 	return nil
 }
 func (this *SimpleModelParams) Validate() error {
+	return nil
+}
+func (this *ExternalRiskModel) Validate() error {
+	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
 func (this *ScalingFactors) Validate() error {
@@ -101,10 +101,10 @@ func (this *TradableInstrument) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("MarginCalculator", err)
 		}
 	}
-	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_ForwardRiskModel); ok {
-		if oneOfNester.ForwardRiskModel != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.ForwardRiskModel); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("ForwardRiskModel", err)
+	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_LogNormalRiskModel); ok {
+		if oneOfNester.LogNormalRiskModel != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LogNormalRiskModel); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LogNormalRiskModel", err)
 			}
 		}
 	}

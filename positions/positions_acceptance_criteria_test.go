@@ -493,9 +493,10 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 		{
 			// add an original buy order for A
 			order: types.Order{
-				Size:    10,
-				PartyID: traderA,
-				Side:    types.Side_Buy,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderA,
+				Side:      types.Side_Buy,
 			},
 			expectedBuy:  10,
 			expectedSell: 0,
@@ -504,9 +505,10 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 		{
 			// add and originak sell order for B
 			order: types.Order{
-				Size:    16,
-				PartyID: traderB,
-				Side:    types.Side_Sell,
+				Size:      16,
+				Remaining: 16,
+				PartyID:   traderB,
+				Side:      types.Side_Sell,
 			},
 			expectedBuy:  0,
 			expectedSell: 16,
@@ -515,9 +517,10 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 		{
 			// update buy order for A
 			order: types.Order{
-				Size:    17,
-				PartyID: traderA,
-				Side:    types.Side_Buy,
+				Size:      17,
+				Remaining: 17,
+				PartyID:   traderA,
+				Side:      types.Side_Buy,
 			},
 			expectedBuy:  27,
 			expectedSell: 0,
@@ -526,9 +529,10 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 		{
 			// update sell order for B
 			order: types.Order{
-				Size:    5,
-				PartyID: traderB,
-				Side:    types.Side_Sell,
+				Size:      5,
+				Remaining: 5,
+				PartyID:   traderB,
+				Side:      types.Side_Sell,
 			},
 			expectedBuy:  0,
 			expectedSell: 21,
@@ -562,14 +566,16 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	}{
 		orders: []types.Order{
 			{
-				Size:    10,
-				PartyID: traderA,
-				Side:    types.Side_Buy,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderA,
+				Side:      types.Side_Buy,
 			},
 			{
-				Size:    16,
-				PartyID: traderB,
-				Side:    types.Side_Sell,
+				Size:      16,
+				Remaining: 16,
+				PartyID:   traderB,
+				Side:      types.Side_Sell,
 			},
 		},
 		expects: map[string]struct {
@@ -653,14 +659,16 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	}{
 		orders: []types.Order{
 			{
-				Size:    10,
-				PartyID: traderA,
-				Side:    types.Side_Buy,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderA,
+				Side:      types.Side_Buy,
 			},
 			{
-				Size:    10,
-				PartyID: traderB,
-				Side:    types.Side_Sell,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderB,
+				Side:      types.Side_Sell,
 			},
 		},
 		expects: map[string]struct {
@@ -744,14 +752,16 @@ func testOrderCancelled(t *testing.T) {
 	}{
 		orders: []types.Order{
 			{
-				Size:    10,
-				PartyID: traderA,
-				Side:    types.Side_Buy,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderA,
+				Side:      types.Side_Buy,
 			},
 			{
-				Size:    10,
-				PartyID: traderB,
-				Side:    types.Side_Sell,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderB,
+				Side:      types.Side_Sell,
 			},
 		},
 		expects: map[string]struct {
@@ -801,14 +811,16 @@ func testOrderCancelled(t *testing.T) {
 	}{
 		orders: []types.Order{
 			{
-				Size:    10,
-				PartyID: traderA,
-				Side:    types.Side_Buy,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderA,
+				Side:      types.Side_Buy,
 			},
 			{
-				Size:    10,
-				PartyID: traderB,
-				Side:    types.Side_Sell,
+				Size:      10,
+				Remaining: 10,
+				PartyID:   traderB,
+				Side:      types.Side_Sell,
 			},
 		},
 		expects: map[string]struct {

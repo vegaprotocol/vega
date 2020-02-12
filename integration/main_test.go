@@ -84,4 +84,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the margins levels for the traders are:$`, theMarginsLevelsForTheTradersAre)
 	s.Step(`^traders place following failing orders:$`, tradersPlaceFollowingFailingOrders)
 	s.Step(`^the following orders are rejected:$`, theFollowingOrdersAreRejected)
+	s.Step(`^traders place following orders with references:$`, tradersPlaceFollowingOrdersWithReferences)
+	s.Step(`^traders cancels the following orders reference:$`, tradersCancelsTheFollowingOrdersReference)
+	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
+	s.Step(`^dump transfers$`, dumpTransfers)
+	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
 }

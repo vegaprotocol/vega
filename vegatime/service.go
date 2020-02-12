@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Svc represents the Service managing time inside vega.
+// Svc represents the Service managing time inside Vega.
 // this is basically based on the time of the chain in use.
 type Svc struct {
 	config Config
@@ -17,7 +17,7 @@ type Svc struct {
 	mu        sync.Mutex
 }
 
-// New instantiate a new vegatime service
+// New instantiates a new vegatime service
 func New(conf Config) *Svc {
 	return &Svc{config: conf}
 }
@@ -37,12 +37,6 @@ func (s *Svc) SetTimeNow(t time.Time) {
 	if s.currentTimestamp.Unix() > 0 {
 		s.previousTimestamp = s.currentTimestamp
 	}
-
-	// Convert unix epoch+nanoseconds into the current UTC date and time
-	// we could pass this in as a var but doing the conversion here isolates
-	// it to this method
-	// s.currentDatetime = epochTimeNano.Datetime().UTC()
-
 	s.currentTimestamp = t
 
 	// Ensure we always set previousTimestamp it'll be 0 on the first block transaction
@@ -58,14 +52,6 @@ func (s *Svc) GetTimeNow() (time.Time, error) {
 	return s.currentTimestamp, nil
 }
 
-func (s *Svc) notify(t time.Time) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, f := range s.listeners {
-		f(t)
-	}
-}
-
 // NotifyOnTick allows other services to register a callback function
 // which will be called once the vega time is updated (SetTimeNow is called)
 func (s *Svc) NotifyOnTick(f func(time.Time)) {
@@ -77,4 +63,12 @@ func (s *Svc) NotifyOnTick(f func(time.Time)) {
 // GetTimeLastBatch returns the previous vega time
 func (s *Svc) GetTimeLastBatch() (time.Time, error) {
 	return s.previousTimestamp, nil
+}
+
+func (s *Svc) notify(t time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, f := range s.listeners {
+		f(t)
+	}
 }

@@ -17,7 +17,7 @@ models:
   Candle:
     model: code.vegaprotocol.io/vega/proto.Candle
   Position:
-    model: code.vegaprotocol.io/vega/proto.MarketPosition
+    model: code.vegaprotocol.io/vega/proto.Position
   PendingOrder:
     model: code.vegaprotocol.io/vega/proto.PendingOrder
   Account:

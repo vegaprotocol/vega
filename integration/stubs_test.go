@@ -121,6 +121,15 @@ type orderStub struct {
 	err  error
 }
 
+func (o *orderStub) getByReference(party, ref string) (proto.Order, error) {
+	for _, v := range o.data {
+		if v.Reference == ref && v.PartyID == party {
+			return v, nil
+		}
+	}
+	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+}
+
 func NewOrderStub() *orderStub {
 	return &orderStub{
 		data: map[string]proto.Order{},

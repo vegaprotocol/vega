@@ -113,10 +113,10 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 			},
-			RiskModel: &gql.ForwardRiskModel{
+			RiskModel: &gql.LogNormalRiskModel{
 				RiskAversionParameter: 0.01,
 				Tau:                   1.0 / 365.25 / 24,
-				Params: &gql.ModelParamsBs{
+				Params: &gql.LogNormalModelParams{
 					Mu:    0,
 					R:     0.016,
 					Sigma: 0.09,
@@ -142,10 +142,10 @@ func TestModelConverters(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &gql.ForwardRiskModel{
+				RiskModel: &gql.LogNormalRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   1.0 / 365.25 / 24,
-					Params: &gql.ModelParamsBs{
+					Params: &gql.LogNormalModelParams{
 						Mu:    0,
 						R:     0.016,
 						Sigma: 0.09,
@@ -342,11 +342,11 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("RiskModelFromProto", func(t *testing.T) {
-		prm := &proto.TradableInstrument_ForwardRiskModel{
-			ForwardRiskModel: &proto.ForwardRiskModel{
+		prm := &proto.TradableInstrument_LogNormalRiskModel{
+			LogNormalRiskModel: &proto.LogNormalRiskModel{
 				RiskAversionParameter: 0.01,
 				Tau:                   1.0 / 365.25 / 24,
-				Params: &proto.ModelParamsBS{
+				Params: &proto.LogNormalModelParams{
 					Mu:    0,
 					R:     0.016,
 					Sigma: 0.09,
@@ -356,7 +356,7 @@ func TestModelConverters(t *testing.T) {
 		rm, err := gql.RiskModelFromProto(prm)
 		assert.NotNil(t, rm)
 		assert.Nil(t, err)
-		_, ok := rm.(*gql.ForwardRiskModel)
+		_, ok := rm.(*gql.LogNormalRiskModel)
 		assert.True(t, ok)
 	})
 
@@ -379,11 +379,18 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-				ForwardRiskModel: &proto.ForwardRiskModel{
+			MarginCalculator: &proto.MarginCalculator{
+				ScalingFactors: &proto.ScalingFactors{
+					SearchLevel:       1.1,
+					InitialMargin:     1.2,
+					CollateralRelease: 1.4,
+				},
+			},
+			RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &proto.LogNormalRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
+					Params: &proto.LogNormalModelParams{
 						Mu:    0,
 						R:     0.016,
 						Sigma: 0.09,
@@ -417,11 +424,18 @@ func TestModelConverters(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-					ForwardRiskModel: &proto.ForwardRiskModel{
+				MarginCalculator: &proto.MarginCalculator{
+					ScalingFactors: &proto.ScalingFactors{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
+					},
+				},
+				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &proto.LogNormalRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.ModelParamsBS{
+						Params: &proto.LogNormalModelParams{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,

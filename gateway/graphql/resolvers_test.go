@@ -9,6 +9,7 @@ import (
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
@@ -92,11 +93,18 @@ func getTestMarket() *types.Market {
 					},
 				},
 			},
-			RiskModel: &types.TradableInstrument_ForwardRiskModel{
-				ForwardRiskModel: &types.ForwardRiskModel{
+			MarginCalculator: &proto.MarginCalculator{
+				ScalingFactors: &proto.ScalingFactors{
+					SearchLevel:       1.1,
+					InitialMargin:     1.2,
+					CollateralRelease: 1.4,
+				},
+			},
+			RiskModel: &types.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &types.LogNormalRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   1.0 / 365.25 / 24,
-					Params: &types.ModelParamsBS{
+					Params: &types.LogNormalModelParams{
 						Mu:    0,
 						R:     0.016,
 						Sigma: 0.09,
@@ -110,12 +118,6 @@ func getTestMarket() *types.Market {
 	}
 }
 
-func getTestParty() *types.Party {
-	return &types.Party{
-		Id: "barney",
-	}
-}
-
 func TestNewResolverRoot_Resolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
 	defer root.Finish()
@@ -126,20 +128,6 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		"BTC/DEC19": getTestMarket(),
 		"ETH/USD18": nil,
 	}
-
-	partyNotExistsErr := errors.New("party does not exist")
-	parties := map[string]*types.Party{
-		"barney": getTestParty(),
-	}
-
-	root.tradingDataClient.EXPECT().PartyByID(gomock.Any(), gomock.Any()).Times(len(parties)).DoAndReturn(func(_ context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
-		m, ok := parties[req.PartyID]
-		assert.True(t, ok)
-		if m == nil {
-			return nil, partyNotExistsErr
-		}
-		return &protoapi.PartyByIDResponse{Party: m}, nil
-	})
 
 	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
 		m, ok := markets[req.MarketID]

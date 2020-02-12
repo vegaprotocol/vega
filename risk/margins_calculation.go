@@ -45,13 +45,15 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		)
 		if slippageVolume > 0 {
 			exitPrice, err := r.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_Buy)
-			if err != nil {
-				r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
+			if err != nil && r.log.GetLevel() == logging.DebugLevel {
+				r.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
 					logging.Error(err))
 			}
-			slippagePerUnit = int64(exitPrice) - markPrice
+			slippagePerUnit = markPrice - int64(exitPrice)
 		}
-		marginMaintenanceLng = float64(slippageVolume)*(float64(slippagePerUnit)+(rf.Long*float64(markPrice))) + (float64(e.Buy()) * rf.Long * float64(markPrice))
+
+		marginMaintenanceLng = float64(max(slippageVolume*slippagePerUnit, 0)) + float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(e.Buy()) * rf.Long *
+			float64(markPrice))
 	}
 	// calculate margin maintenance short only if riskiest is < 0
 	// marginMaintenanceSht will be 0 by default
@@ -63,13 +65,14 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume < 0 {
 			exitPrice, err := r.ob.GetCloseoutPrice(uint64(-slippageVolume), types.Side_Sell)
-			if err != nil {
-				r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
+			if err != nil && r.log.GetLevel() == logging.DebugLevel {
+				r.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
 					logging.Error(err))
 			}
-			slippagePerUnit = int64(exitPrice) - markPrice
+			slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
-		marginMaintenanceSht = float64(-slippageVolume)*(float64(slippagePerUnit)+(rf.Short*float64(markPrice))) + (float64(e.Sell()) * rf.Short * float64(markPrice))
+
+		marginMaintenanceSht = float64(max(abs(slippageVolume)*slippagePerUnit, 0)) + float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(e.Sell())) * rf.Short * float64(markPrice))
 	}
 
 	// the greatest liability is the most positive number
@@ -80,7 +83,14 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		return newMarginLevels(marginMaintenanceSht, r.marginCalculator.ScalingFactors)
 	}
 
-	return nil
+	return &types.MarginLevels{}
+}
+
+func abs(a int64) int64 {
+	if a < 0 {
+		return -a
+	}
+	return a
 }
 
 func max(a, b int64) int64 {

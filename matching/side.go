@@ -102,7 +102,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 }
 
 // RemoveOrder will remove an order from the book
-func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
+func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
 	var i int
 	if o.Side == types.Side_Buy {
@@ -114,7 +114,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	// we did not found the level
 	// then the order do not exists in the price level
 	if i >= len(s.levels) {
-		return types.ErrOrderNotFound
+		return nil, types.ErrOrderNotFound
 	}
 
 	// orders are order by timestamp (CreatedAt)
@@ -123,8 +123,9 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	})
 	// we did not find the order
 	if oidx >= len(s.levels[i].orders) {
-		return types.ErrOrderNotFound
+		return nil, types.ErrOrderNotFound
 	}
+
 	// now we may have a few orders with the same timestamp
 	// lets iterate over them in order to find the right one
 	finaloidx := -1
@@ -136,8 +137,10 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 		oidx++
 	}
 
+	var order *types.Order
 	// remove the order from the
 	if finaloidx != -1 {
+		order = s.levels[i].orders[finaloidx]
 		s.levels[i].removeOrder(finaloidx)
 	}
 
@@ -145,7 +148,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 		s.levels = s.levels[:i+copy(s.levels[i:], s.levels[i+1:])]
 	}
 
-	return nil
+	return order, nil
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
@@ -231,7 +234,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
 		}
 
-		if totalVolumeToFill <= agg.Remaining {
+		if totalVolumeToFill < agg.Remaining {
 			timer.EngineTimeCounterAdd()
 			return trades, impactedOrders, 0
 		}

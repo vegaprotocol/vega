@@ -76,9 +76,9 @@ type TradeService interface {
 	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.MarketPosition, err error)
+	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.Position, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
-	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
+	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.Position, ref uint64)
 	GetTradeSubscribersCount() int32
 	GetPositionsSubscribersCount() int32
 }
@@ -96,7 +96,7 @@ type CandleService interface {
 type MarketService interface {
 	GetByID(ctx context.Context, name string) (*types.Market, error)
 	GetAll(ctx context.Context) ([]*types.Market, error)
-	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
+	GetDepth(ctx context.Context, market string, limit uint64) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 	GetMarketDepthSubscribersCount() int32
 	ObserveMarketsData(ctx context.Context, retries int, marketID string) (<-chan []types.MarketData, uint64)
@@ -116,7 +116,7 @@ type PartyService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
-	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
@@ -304,7 +304,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 	}
 
 	// Query market depth statistics
-	depth, err := h.MarketService.GetDepth(ctx, req.MarketID)
+	depth, err := h.MarketService.GetDepth(ctx, req.MarketID, req.MaxDepth)
 	if err != nil {
 		return nil, err
 	}
@@ -351,6 +351,15 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
+
+	// Check here for a valid marketID so we don't fail later
+	if request.MarketID != "" {
+		_, err := h.MarketService.GetByID(ctx, request.MarketID)
+		if err != nil {
+			return nil, ErrInvalidMarketID
+		}
+	}
+
 	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID, request.MarketID)
 	if err != nil {
 		return nil, err

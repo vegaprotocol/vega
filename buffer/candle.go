@@ -34,14 +34,15 @@ type Candle struct {
 	buf       map[string]map[string]types.Candle
 	store     CandleStore
 	mu        sync.Mutex
-	lastTrade types.Trade
+	lastTrade map[string]types.Trade
 }
 
 // NewCandle instantiate a new candles buffer
 func NewCandle(store CandleStore) *Candle {
 	candl := &Candle{
-		buf:   map[string]map[string]types.Candle{},
-		store: store,
+		buf:       map[string]map[string]types.Candle{},
+		lastTrade: map[string]types.Trade{},
+		store:     store,
 	}
 
 	return candl
@@ -73,7 +74,7 @@ func (c *Candle) Start(marketID string, timestamp time.Time) (map[string]types.C
 		}
 
 		if lastClose == 0 {
-			lastClose = c.lastTrade.Price
+			lastClose = c.lastTrade[marketID].Price
 		}
 
 		c.buf[marketID][bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
@@ -101,7 +102,7 @@ func (c *Candle) AddTrade(trade types.Trade) error {
 			// if doesn't exist create new candle under this buffer key
 			mktBuf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, candl.Interval)
 		}
-		c.lastTrade = trade
+		c.lastTrade[trade.MarketID] = trade
 		c.mu.Unlock()
 	}
 

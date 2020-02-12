@@ -64,7 +64,14 @@ func TestMarketDepth_Hard(t *testing.T) {
 	err = orderStore.SaveBatch(firstBatchOfOrders)
 	assert.NoError(t, err)
 
-	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket, 1)
+
+	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[0].NumberOfOrders)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].CumulativeVolume)
+
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 99)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -118,7 +125,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	// No save batch - should remain unchanged
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 8)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -140,7 +147,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	err = orderStore.SaveBatch(secondBatchOfOrders)
 	assert.NoError(t, err)
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(200), marketDepth.Buy[0].Volume)
@@ -167,7 +174,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	err = orderStore.SaveBatch(firstBatchOfOrders)
 	assert.NoError(t, err)
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(200-100), marketDepth.Buy[0].Volume)
@@ -191,7 +198,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	err = orderStore.SaveBatch(firstBatchOfOrders)
 	assert.NoError(t, err)
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -215,7 +222,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	defer cfunc()
 	// perhaps sleep here in case we need to make sure the context has indeed expired, but starting the 2 routines and the map lookups
 	// alone will take longer than a nanosecond anyway, so there's no need.
-	_, err = orderStore.GetMarketDepth(tctx, testMarket)
+	_, err = orderStore.GetMarketDepth(tctx, testMarket, 0)
 	assert.Equal(t, storage.ErrTimeoutReached, err)
 
 	// OK REMOVE ALL FROM THE SECOND BATCH TOO MUCH
@@ -228,7 +235,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	err = orderStore.SaveBatch(secondBatchOfOrders)
 	assert.NoError(t, err)
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
 
 	assert.Equal(t, 0, len(marketDepth.Buy))
 	// force a context cancel due to timeout, because we can't reduce the timout to below 1 sec through config, set timeout on context here
@@ -252,7 +259,7 @@ func TestOrderBookDepth_Soft(t *testing.T) {
 		marketDepth.Update(elem)
 	}
 
-	buy := marketDepth.BuySide()
+	buy := marketDepth.BuySide(uint64(len(ordersList)))
 	assert.Equal(t, buy[0].Price, uint64(116))
 	assert.Equal(t, buy[0].Volume, uint64(200))
 	assert.Equal(t, buy[0].NumberOfOrders, uint64(2))
@@ -282,7 +289,7 @@ func TestOrderBookDepth_Soft(t *testing.T) {
 	marketDepth.Update(types.Order{Id: "06", Side: types.Side_Buy, Price: 114, Remaining: 80})
 	marketDepth.Update(types.Order{Id: "05", Side: types.Side_Buy, Price: 113, Remaining: 0})
 
-	buy = marketDepth.BuySide()
+	buy = marketDepth.BuySide(0)
 	assert.Equal(t, buy[0].Price, uint64(116))
 	assert.Equal(t, buy[0].Volume, uint64(200))
 	assert.Equal(t, buy[0].NumberOfOrders, uint64(2))
@@ -319,7 +326,7 @@ func TestOrderBookDepth_Soft(t *testing.T) {
 		marketDepth.Update(elem)
 	}
 
-	sell := marketDepth.SellSide()
+	sell := marketDepth.SellSide(uint64(len(ordersList)))
 	assert.Equal(t, sell[0].Price, uint64(119))
 	assert.Equal(t, sell[0].Volume, uint64(100))
 	assert.Equal(t, sell[0].NumberOfOrders, uint64(1))
@@ -349,7 +356,7 @@ func TestOrderBookDepth_Soft(t *testing.T) {
 	marketDepth.Update(types.Order{Id: "12", Side: types.Side_Sell, Price: 120, Remaining: 80})
 	marketDepth.Update(types.Order{Id: "16", Side: types.Side_Sell, Price: 122, Remaining: 0})
 
-	sell = marketDepth.SellSide()
+	sell = marketDepth.SellSide(0)
 	assert.Equal(t, sell[0].Price, uint64(119))
 	assert.Equal(t, sell[0].Volume, uint64(50))
 	assert.Equal(t, sell[0].NumberOfOrders, uint64(1))
@@ -432,7 +439,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	err = orderStore.SaveBatch(orders)
 	assert.NoError(t, err)
 
-	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket, uint64(len(orders)))
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -480,7 +487,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	err = orderStore.SaveBatch(ordersUpdate)
 	assert.NoError(t, err)
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
 
 	// 113 is removed
 
@@ -555,7 +562,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	err = orderStore.SaveBatch(orders)
 	assert.NoError(t, err)
 
-	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket, uint64(len(orders)))
 
 	assert.Equal(t, uint64(111), marketDepth.Sell[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Sell[0].Volume)
@@ -603,7 +610,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	err = orderStore.SaveBatch(ordersUpdate)
 	assert.NoError(t, err)
 
-	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
 
 	assert.Equal(t, uint64(111), marketDepth.Sell[0].Price)
 	assert.Equal(t, uint64(50), marketDepth.Sell[0].Volume)
@@ -674,6 +681,16 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			Price:       1337,
 			Remaining:   1337,
 			TimeInForce: types.Order_FOK,
+		},
+		types.Order{
+			Id:          "199",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_FOK,
+			Type:        types.Order_NETWORK,
 		},
 	}
 

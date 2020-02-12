@@ -33,10 +33,10 @@ func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	}
 }
 
-func (l *PriceLevel) getOrdersByTrader(trader string) []*types.Order {
+func (l *PriceLevel) getOrdersByParty(partyID string) []*types.Order {
 	ret := []*types.Order{}
 	for _, o := range l.orders {
-		if o.PartyID == trader {
+		if o.PartyID == partyID {
 			ret = append(ret, o)
 		}
 	}
@@ -187,7 +187,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, order, volumeToShare, totalVolumeAtTimestamp)
-		if size <= 0 {
+		if size == 0 {
 			panic("Trade.size > order.remaining")
 		}
 

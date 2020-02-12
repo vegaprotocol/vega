@@ -26,7 +26,7 @@ func NewMarketDepth(name string) *Depth {
 // Update the market depth with the given order information. If the order already exists at a price level
 // it will be updated. Note: The total cumulative volume for the market depth is calculated elsewhere.
 func (d *Depth) Update(order types.Order) {
-	if order.TimeInForce != types.Order_IOC && order.TimeInForce != types.Order_FOK && order.Status != types.Order_Rejected {
+	if order.TimeInForce != types.Order_IOC && order.TimeInForce != types.Order_FOK && order.Status != types.Order_Rejected && order.Type != types.Order_NETWORK {
 		if order.Side == types.Side_Buy {
 			d.updateBuySide(order)
 		} else {
@@ -175,14 +175,20 @@ func (d *Depth) updateSellSide(order types.Order) {
 
 // BuySide The buy side price levels (and additional information such as orders,
 // remaining volumes) for the market.
-func (d *Depth) BuySide() []MarketDepthLevel {
-	return d.Buy
+func (d *Depth) BuySide(limit uint64) []MarketDepthLevel {
+	if limit == 0 || limit > uint64(len(d.Buy)) {
+		return d.Buy
+	}
+	return d.Buy[:limit]
 }
 
 // SellSide The sell side price levels (and additional information such as
 // orders, remaining volumes) for the market.
-func (d *Depth) SellSide() []MarketDepthLevel {
-	return d.Sell
+func (d *Depth) SellSide(limit uint64) []MarketDepthLevel {
+	if limit == 0 || limit > uint64(len(d.Sell)) {
+		return d.Sell
+	}
+	return d.Sell[:limit]
 }
 
 // Helper to check for orders that have zero remaining, or a status such as cancelled etc.
