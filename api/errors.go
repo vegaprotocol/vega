@@ -8,7 +8,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Errors
+// ErrorMap contains a mapping between errors and Vega numeric error codes.
+var ErrorMap map[error]int32
+
+// API Errors and descriptions.
 var (
 	// ErrChainNotConnected signals to the user that he cannot access a given endpoint
 	// which require the chain, but the chain is actually offline
@@ -68,9 +71,6 @@ var (
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 )
-
-// ErrorMap contains a mapping between errors and Vega numeric error codes.
-var ErrorMap map[error]int32
 
 func InitErrorMap() {
 	em := make(map[error]int32)
