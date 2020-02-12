@@ -19,6 +19,8 @@ type walletCommand struct {
 	rootPath    string
 	walletOwner string
 	passphrase  string
+	force       bool
+	genRsaKey   bool
 	Log         *logging.Logger
 }
 
@@ -51,6 +53,45 @@ func (ic *walletCommand) Init(c *Cli) {
 	list.Flags().StringVarP(&ic.walletOwner, "name", "n", "", "Name of the wallet to use")
 	list.Flags().StringVarP(&ic.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
 	ic.cmd.AddCommand(list)
+
+	service := &cobra.Command{
+		Use:   "service",
+		Short: "The wallet service",
+		Long:  "Run or initialize the wallet service",
+	}
+	ic.cmd.AddCommand(service)
+
+	serviceInit := &cobra.Command{
+		Use:   "init",
+		Short: "Generate the configuration",
+		Long:  "Generate the configuration for the wallet service",
+		RunE:  ic.ServiceInit,
+	}
+	serviceInit.Flags().StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	serviceInit.Flags().BoolVarP(&ic.force, "force", "f", false, "Erase exiting wallet service configuration at the specified path")
+	serviceInit.Flags().BoolVarP(&ic.genRsaKey, "genrsakey", "g", false, "Generate rsa keys for the jwt tokens")
+	service.AddCommand(serviceInit)
+
+	serviceRun := &cobra.Command{
+		Use:   "run",
+		Short: "Start the vega wallet service",
+		Long:  "Start a vega wallet service behind an http server",
+		RunE:  ic.ServiceRun,
+	}
+	serviceRun.Flags().StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	service.AddCommand(serviceRun)
+}
+
+func (ic *walletCommand) ServiceInit(cmd *cobra.Command, args []string) error {
+	if ok, err := fsutil.PathExists(ic.rootPath); !ok {
+		return fmt.Errorf("invalid root directory path: %v", err)
+	}
+
+	return wallet.GenConfig(ic.Log, ic.rootPath, ic.force, ic.genRsaKey)
+}
+
+func (ic *walletCommand) ServiceRun(cmd *cobra.Command, args []string) error {
+	return nil
 }
 
 func (ic *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
