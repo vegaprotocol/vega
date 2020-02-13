@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -21,9 +20,11 @@ import (
 )
 
 const (
-	namedLogger = "wallet"
-	configFile  = "wallet-service-config.toml"
-	rsaKeyPath  = "wallet_rsa"
+	namedLogger    = "wallet"
+	configFile     = "wallet-service-config.toml"
+	rsaKeyPath     = "wallet_rsa"
+	pubRsaKeyName  = "public.pem"
+	privRsaKeyName = "private.pem"
 )
 
 type Config struct {
@@ -146,11 +147,11 @@ func genRsaKeyFiles(log *logging.Logger, path string, rewrite bool) error {
 		return fmt.Errorf("unable to generate rsa keys: %v", err)
 	}
 
-	if err := savePEMKey(filepath.Join(keyFolderPath, "private.pem"), key); err != nil {
+	if err := savePEMKey(filepath.Join(keyFolderPath, privRsaKeyName), key); err != nil {
 		return fmt.Errorf("unable to write private key: %v", err)
 	}
 
-	if err := savePublicPEMKey(filepath.Join(keyFolderPath, "public.pem"), key.PublicKey); err != nil {
+	if err := savePublicPEMKey(filepath.Join(keyFolderPath, pubRsaKeyName), key.PublicKey); err != nil {
 		return fmt.Errorf("unable to write private key: %v", err)
 	}
 
@@ -175,14 +176,14 @@ func savePEMKey(fileName string, key *rsa.PrivateKey) error {
 }
 
 func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) error {
-	asn1Bytes, err := asn1.Marshal(pubkey)
+	pubBytes, err := x509.MarshalPKIXPublicKey(&pubkey)
 	if err != nil {
 		return err
 	}
 
 	var pemkey = &pem.Block{
 		Type:  "PUBLIC KEY",
-		Bytes: asn1Bytes,
+		Bytes: pubBytes,
 	}
 
 	pemfile, err := os.Create(fileName)
@@ -192,4 +193,16 @@ func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) error {
 	defer pemfile.Close()
 
 	return pem.Encode(pemfile, pemkey)
+}
+
+func readRsaKeys(rootPath string) (pub []byte, priv []byte, err error) {
+	pub, err = ioutil.ReadFile(filepath.Join(rootPath, rsaKeyPath, pubRsaKeyName))
+	if err != nil {
+		return nil, nil, err
+	}
+	priv, err = ioutil.ReadFile(filepath.Join(rootPath, rsaKeyPath, privRsaKeyName))
+	if err != nil {
+		return nil, nil, err
+	}
+	return
 }

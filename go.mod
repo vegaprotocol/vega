@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.1-0.20191216081458-1b0c0742acd3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2

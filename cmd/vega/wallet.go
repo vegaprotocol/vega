@@ -25,9 +25,9 @@ type walletCommand struct {
 	Log         *logging.Logger
 }
 
-func (ic *walletCommand) Init(c *Cli) {
-	ic.cli = c
-	ic.cmd = &cobra.Command{
+func (w *walletCommand) Init(c *Cli) {
+	w.cli = c
+	w.cmd = &cobra.Command{
 		Use:   "wallet",
 		Short: "The wallet subcommand",
 		Long:  "Create and manage wallets",
@@ -37,113 +37,116 @@ func (ic *walletCommand) Init(c *Cli) {
 		Use:   "genkey",
 		Short: "Generate a new keypair for a wallet",
 		Long:  "Generate a new keypair for a wallet, this will implicitly generate a new wallet if none exist for the given name",
-		RunE:  ic.GenKey,
+		RunE:  w.GenKey,
 	}
-	genkey.Flags().StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	genkey.Flags().StringVarP(&ic.walletOwner, "name", "n", "", "Name of the wallet to use")
-	genkey.Flags().StringVarP(&ic.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	ic.cmd.AddCommand(genkey)
+	genkey.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	genkey.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
+	genkey.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
+	w.cmd.AddCommand(genkey)
 
 	list := &cobra.Command{
 		Use:   "list",
 		Short: "List keypairs of a wallet",
 		Long:  "List all the keypairs for a given wallet",
-		RunE:  ic.List,
+		RunE:  w.List,
 	}
-	list.Flags().StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	list.Flags().StringVarP(&ic.walletOwner, "name", "n", "", "Name of the wallet to use")
-	list.Flags().StringVarP(&ic.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	ic.cmd.AddCommand(list)
+	list.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	list.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
+	list.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
+	w.cmd.AddCommand(list)
 
 	service := &cobra.Command{
 		Use:   "service",
 		Short: "The wallet service",
 		Long:  "Run or initialize the wallet service",
 	}
-	ic.cmd.AddCommand(service)
+	w.cmd.AddCommand(service)
 
 	serviceInit := &cobra.Command{
 		Use:   "init",
 		Short: "Generate the configuration",
 		Long:  "Generate the configuration for the wallet service",
-		RunE:  ic.ServiceInit,
+		RunE:  w.ServiceInit,
 	}
-	serviceInit.Flags().StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	serviceInit.Flags().BoolVarP(&ic.force, "force", "f", false, "Erase exiting wallet service configuration at the specified path")
-	serviceInit.Flags().BoolVarP(&ic.genRsaKey, "genrsakey", "g", false, "Generate rsa keys for the jwt tokens")
+	serviceInit.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	serviceInit.Flags().BoolVarP(&w.force, "force", "f", false, "Erase exiting wallet service configuration at the specified path")
+	serviceInit.Flags().BoolVarP(&w.genRsaKey, "genrsakey", "g", false, "Generate rsa keys for the jwt tokens")
 	service.AddCommand(serviceInit)
 
 	serviceRun := &cobra.Command{
 		Use:   "run",
 		Short: "Start the vega wallet service",
 		Long:  "Start a vega wallet service behind an http server",
-		RunE:  ic.ServiceRun,
+		RunE:  w.ServiceRun,
 	}
-	serviceRun.Flags().StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	serviceRun.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
 	service.AddCommand(serviceRun)
 }
 
-func (ic *walletCommand) ServiceInit(cmd *cobra.Command, args []string) error {
-	if ok, err := fsutil.PathExists(ic.rootPath); !ok {
+func (w *walletCommand) ServiceInit(cmd *cobra.Command, args []string) error {
+	if ok, err := fsutil.PathExists(w.rootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
 
-	return wallet.GenConfig(ic.Log, ic.rootPath, ic.force, ic.genRsaKey)
+	return wallet.GenConfig(w.Log, w.rootPath, w.force, w.genRsaKey)
 }
 
-func (ic *walletCommand) ServiceRun(cmd *cobra.Command, args []string) error {
-	cfg, err := wallet.LoadConfig(ic.rootPath)
+func (w *walletCommand) ServiceRun(cmd *cobra.Command, args []string) error {
+	cfg, err := wallet.LoadConfig(w.rootPath)
 	if err != nil {
 		return err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	srv := wallet.NewService(ic.Log, cfg)
+	srv, err := wallet.NewService(w.Log, cfg, w.rootPath)
+	if err != nil {
+		return err
+	}
 	go func() {
 		defer cancel()
 		err := srv.Start()
 		if err != nil {
-			ic.Log.Error("error starting wallet http server", logging.Error(err))
+			w.Log.Error("error starting wallet http server", logging.Error(err))
 		}
 	}()
 
-	waitSig(ctx, ic.Log)
+	waitSig(ctx, w.Log)
 
 	err = srv.Stop()
 	if err != nil {
-		ic.Log.Error("error stopping wallet http server", logging.Error(err))
+		w.Log.Error("error stopping wallet http server", logging.Error(err))
 	} else {
-		ic.Log.Info("wallet http server stopped with success")
+		w.Log.Info("wallet http server stopped with success")
 	}
 
 	return nil
 }
 
-func (ic *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
-	if len(ic.walletOwner) <= 0 {
+func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
+	if len(w.walletOwner) <= 0 {
 		return errors.New("wallet name is required")
 	}
-	if len(ic.passphrase) <= 0 {
+	if len(w.passphrase) <= 0 {
 		return errors.New("passphrase is required")
 	}
 
-	if ok, err := fsutil.PathExists(ic.rootPath); !ok {
+	if ok, err := fsutil.PathExists(w.rootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
 
-	if err := wallet.EnsureBaseFolder(ic.rootPath); err != nil {
+	if err := wallet.EnsureBaseFolder(w.rootPath); err != nil {
 		return fmt.Errorf("unable to initialization root folder: %v", err)
 	}
 
-	_, err := wallet.Read(ic.rootPath, ic.walletOwner, ic.passphrase)
+	_, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
 		if err != wallet.ErrWalletDoesNotExist {
 			// this an invalid key, returning error
 			return fmt.Errorf("unable to decrypt wallet: %v\n", err)
 		}
 		// wallet do not exit, let's try to create it
-		_, err = wallet.Create(ic.rootPath, ic.walletOwner, ic.passphrase)
+		_, err = wallet.Create(w.rootPath, w.walletOwner, w.passphrase)
 		if err != nil {
 			return fmt.Errorf("unable to create wallet: %v", err)
 		}
@@ -159,7 +162,7 @@ func (ic *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 	}
 
 	// now updating the wallet and saving it
-	_, err = wallet.AddKeypair(kp, ic.rootPath, ic.walletOwner, ic.passphrase)
+	_, err = wallet.AddKeypair(kp, w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
 		return fmt.Errorf("unable to add keypair to wallet: %v", err)
 	}
@@ -172,24 +175,24 @@ func (ic *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (ic *walletCommand) List(cmd *cobra.Command, args []string) error {
-	if len(ic.walletOwner) <= 0 {
+func (w *walletCommand) List(cmd *cobra.Command, args []string) error {
+	if len(w.walletOwner) <= 0 {
 		return errors.New("wallet name is required")
 	}
-	if len(ic.passphrase) <= 0 {
+	if len(w.passphrase) <= 0 {
 		return errors.New("passphrase is required")
 	}
 
-	if ok, err := fsutil.PathExists(ic.rootPath); !ok {
+	if ok, err := fsutil.PathExists(w.rootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
 
-	w, err := wallet.Read(ic.rootPath, ic.walletOwner, ic.passphrase)
+	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
 		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
 	}
 
-	buf, err := json.MarshalIndent(w, " ", " ")
+	buf, err := json.MarshalIndent(wal, " ", " ")
 	if err != nil {
 		return fmt.Errorf("unable to indent message: %v", err)
 	}
