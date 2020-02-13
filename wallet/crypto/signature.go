@@ -60,7 +60,10 @@ func (s *SignatureAlgorithm) Name() string {
 }
 
 func (s *SignatureAlgorithm) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.Name())
+	if s != nil {
+		return json.Marshal(s.Name())
+	}
+	return nil, errors.New("nil signature")
 }
 
 func (s *SignatureAlgorithm) UnmarshalJSON(data []byte) error {
