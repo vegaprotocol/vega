@@ -99,7 +99,18 @@ func (a *auth) VerifyToken(token string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	return "", nil
+	// first parse the token
+	claims, err := a.parseToken(token)
+	if err != nil {
+		return "", err
+	}
+
+	wallet, ok := a.sessions[claims.Session]
+	if !ok {
+		return "", ErrSessionNotFound
+	}
+
+	return wallet, nil
 }
 
 func (a *auth) Revoke(token string) error {
@@ -138,7 +149,7 @@ func extractToken(f func(string, http.ResponseWriter, *http.Request)) http.Handl
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		splitToken := strings.Split(token, "Bearer")
-		if len(splitToken) != 2 {
+		if len(splitToken) != 2 || len(splitToken[1]) <= 0 {
 			// invalid token, return an error here
 			writeError(w, ErrInvalidOrMissingToken, http.StatusBadRequest)
 			return

@@ -29,11 +29,11 @@ type Wallet struct {
 }
 
 type Keypair struct {
-	Pub       string
-	Priv      string
-	Algorithm crypto.SignatureAlgorithm
-	Tainted   bool
-	Meta      []Meta
+	Pub       string                    `json:"pub"`
+	Priv      string                    `json:"priv,omitempty"`
+	Algorithm crypto.SignatureAlgorithm `json:"algo"`
+	Tainted   bool                      `json:"tainted"`
+	Meta      []Meta                    `json:"meta"`
 
 	// byte version of the public and private keys
 	// not being marshalled/sent over the network

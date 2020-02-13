@@ -21,6 +21,11 @@ type Service struct {
 }
 
 func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, error) {
+	// ensure the folder exist
+	if err := EnsureBaseFolder(rootPath); err != nil {
+		return nil, err
+	}
+
 	auth, err := newAuth(log, rootPath)
 	if err != nil {
 		return nil, err
@@ -38,6 +43,8 @@ func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, er
 	s.HandleFunc("/api/v1/create", s.createWallet)
 	s.HandleFunc("/api/v1/login", s.login)
 	s.HandleFunc("/api/v1/revoke", extractToken(s.revoke))
+	s.HandleFunc("/api/v1/gen-keys", extractToken(s.generateKeypair))
+	s.HandleFunc("/api/v1/list-keys", extractToken(s.listPublicKeys))
 
 	return s, nil
 }
@@ -136,12 +143,34 @@ func (s *Service) revoke(t string, w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, true, http.StatusOK)
 }
 
-func (h *Service) generateKeypair(w http.ResponseWriter, r *http.Request) {
+func (s *Service) generateKeypair(t string, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
 
+	pubKey, err := s.handler.GenerateKeypair(t)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
+	writeSuccess(w, pubKey, http.StatusOK)
 }
 
-func (h *Service) listPublicKeys(w http.ResponseWriter, r *http.Request) {
+func (s *Service) listPublicKeys(t string, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
 
+	keys, err := s.handler.ListPublicKeys(t)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
+	writeSuccess(w, keys, http.StatusOK)
 }
 
 func (h *Service) signAndSubmitTx(w http.ResponseWriter, r *http.Request) {
