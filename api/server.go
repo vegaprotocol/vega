@@ -49,8 +49,6 @@ type GRPCServer struct {
 
 	statusChecker *monitoring.Status
 
-	errorMap map[error]int32
-
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
