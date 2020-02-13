@@ -37,12 +37,13 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 		handler:  h,
 	}
 
+	// all the endpoints are public for testing purpose
 	s.HandleFunc("/api/v1/health", s.health)
-	s.HandleFunc("/api/v1/create", s.createWallet)
-	s.HandleFunc("/api/v1/login", s.login)
-	s.HandleFunc("/api/v1/revoke", extractToken(s.revoke))
-	s.HandleFunc("/api/v1/gen-keys", extractToken(s.generateKeypair))
-	s.HandleFunc("/api/v1/list-keys", extractToken(s.listPublicKeys))
+	s.HandleFunc("/api/v1/create", s.CreateWallet)
+	s.HandleFunc("/api/v1/login", s.Login)
+	s.HandleFunc("/api/v1/revoke", ExtractToken(s.Revoke))
+	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.generateKeypair))
+	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.listPublicKeys))
 
 	return s, nil
 
@@ -76,7 +77,7 @@ func (s *Service) Stop() error {
 	return s.s.Shutdown(context.Background())
 }
 
-func (s *Service) createWallet(w http.ResponseWriter, r *http.Request) {
+func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
 		return
@@ -109,7 +110,7 @@ func (s *Service) createWallet(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, token, http.StatusOK)
 }
 
-func (s *Service) login(w http.ResponseWriter, r *http.Request) {
+func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
 		return
@@ -141,7 +142,7 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, token, http.StatusOK)
 }
 
-func (s *Service) revoke(t string, w http.ResponseWriter, r *http.Request) {
+func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
 		return

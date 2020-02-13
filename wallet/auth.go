@@ -145,9 +145,15 @@ func (a *auth) parseToken(tokenStr string) (*Claims, error) {
 
 }
 
-func extractToken(f func(string, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+// ExtractToken this is public for testing purposes
+func ExtractToken(f func(string, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
+		if len(token) <= 0 {
+			// invalid token, return an error here
+			writeError(w, ErrInvalidOrMissingToken, http.StatusBadRequest)
+			return
+		}
 		splitToken := strings.Split(token, "Bearer")
 		if len(splitToken) != 2 || len(splitToken[1]) <= 0 {
 			// invalid token, return an error here
