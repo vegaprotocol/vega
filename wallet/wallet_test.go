@@ -14,11 +14,13 @@ import (
 )
 
 var (
-	rootDirPath = "/tmp"
+	rootDirPath = "/tmp/vegatests/wallet/"
 )
 
 func rootDir() string {
-	return filepath.Join(rootDirPath, randSeq(10))
+	path := filepath.Join(rootDirPath, randSeq(10))
+	os.MkdirAll(path, os.ModePerm)
+	return path
 }
 
 func TestWallet(t *testing.T) {

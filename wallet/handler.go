@@ -2,13 +2,13 @@ package wallet
 
 import (
 	"errors"
-	"net/http"
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet Auth
 type Auth interface {
 	NewSession(walletname string) (string, error)
 	VerifyToken(token string) (string, error)
@@ -20,7 +20,7 @@ type walletPassphrase struct {
 	passphrase string
 }
 
-type handler struct {
+type Handler struct {
 	log      *logging.Logger
 	auth     Auth
 	rootPath string
@@ -32,8 +32,8 @@ type handler struct {
 	mu sync.RWMutex
 }
 
-func newHandler(log *logging.Logger, auth Auth, rootPath string) *handler {
-	return &handler{
+func NewHandler(log *logging.Logger, auth Auth, rootPath string) *Handler {
+	return &Handler{
 		log:      log,
 		auth:     auth,
 		rootPath: rootPath,
@@ -42,7 +42,7 @@ func newHandler(log *logging.Logger, auth Auth, rootPath string) *handler {
 }
 
 // return the actual token
-func (h *handler) CreateWallet(wallet, passphrase string) (string, error) {
+func (h *Handler) CreateWallet(wallet, passphrase string) (string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -59,7 +59,7 @@ func (h *handler) CreateWallet(wallet, passphrase string) (string, error) {
 	return h.auth.NewSession(wallet)
 }
 
-func (h *handler) LoginWallet(wallet, passphrase string) (string, error) {
+func (h *Handler) LoginWallet(wallet, passphrase string) (string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	// first check if the user own the wallet
@@ -76,11 +76,11 @@ func (h *handler) LoginWallet(wallet, passphrase string) (string, error) {
 	return h.auth.NewSession(wallet)
 }
 
-func (h *handler) RevokeToken(token string) error {
+func (h *Handler) RevokeToken(token string) error {
 	return h.auth.Revoke(token)
 }
 
-func (h *handler) GenerateKeypair(token string) (string, error) {
+func (h *Handler) GenerateKeypair(token string) (string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -111,7 +111,7 @@ func (h *handler) GenerateKeypair(token string) (string, error) {
 	return kp.Pub, nil
 }
 
-func (h *handler) ListPublicKeys(token string) ([]Keypair, error) {
+func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -139,12 +139,12 @@ func (h *handler) ListPublicKeys(token string) ([]Keypair, error) {
 	return out, nil
 }
 
-func (h *handler) SignAndSubmitTx(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SignAndSubmitTx() {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 }
 
-func (h *handler) SignTx(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SignTx() {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 }

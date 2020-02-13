@@ -17,7 +17,35 @@ type Service struct {
 	cfg     *Config
 	log     *logging.Logger
 	s       *http.Server
-	handler *handler
+	handler WalletHandler
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet WalletHandler
+type WalletHandler interface {
+	CreateWallet(wallet, passphrase string) (string, error)
+	LoginWallet(wallet, passphrase string) (string, error)
+	RevokeToken(token string) error
+	GenerateKeypair(token string) (string, error)
+	ListPublicKeys(token string) ([]Keypair, error)
+}
+
+func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler) (*Service, error) {
+	s := &Service{
+		ServeMux: http.NewServeMux(),
+		log:      log,
+		cfg:      cfg,
+		handler:  h,
+	}
+
+	s.HandleFunc("/api/v1/health", s.health)
+	s.HandleFunc("/api/v1/create", s.createWallet)
+	s.HandleFunc("/api/v1/login", s.login)
+	s.HandleFunc("/api/v1/revoke", extractToken(s.revoke))
+	s.HandleFunc("/api/v1/gen-keys", extractToken(s.generateKeypair))
+	s.HandleFunc("/api/v1/list-keys", extractToken(s.listPublicKeys))
+
+	return s, nil
+
 }
 
 func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, error) {
@@ -30,23 +58,8 @@ func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, er
 	if err != nil {
 		return nil, err
 	}
-	handler := newHandler(log, auth, rootPath)
-
-	s := &Service{
-		ServeMux: http.NewServeMux(),
-		log:      log,
-		cfg:      cfg,
-		handler:  handler,
-	}
-
-	s.HandleFunc("/api/v1/health", s.health)
-	s.HandleFunc("/api/v1/create", s.createWallet)
-	s.HandleFunc("/api/v1/login", s.login)
-	s.HandleFunc("/api/v1/revoke", extractToken(s.revoke))
-	s.HandleFunc("/api/v1/gen-keys", extractToken(s.generateKeypair))
-	s.HandleFunc("/api/v1/list-keys", extractToken(s.listPublicKeys))
-
-	return s, nil
+	handler := NewHandler(log, auth, rootPath)
+	return NewServiceWith(log, cfg, rootPath, handler)
 }
 
 func (s *Service) Start() error {
