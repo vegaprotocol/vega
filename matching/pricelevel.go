@@ -23,6 +23,16 @@ type PriceLevel struct {
 	volume            uint64
 }
 
+func (l *PriceLevel) reduceVolumeAtTS(reduceBy uint64, timestamp int64) {
+	l.volume -= reduceBy
+	for index, vp := range l.volumeAtTimestamp {
+		if vp.ts == timestamp {
+			l.volumeAtTimestamp[index].vol -= reduceBy
+			break
+		}
+	}
+}
+
 // NewPriceLevel instantiate a new PriceLevel
 func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	return &PriceLevel{
