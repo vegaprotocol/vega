@@ -98,6 +98,7 @@ func (w *walletCommand) ServiceRun(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	srv, err := wallet.NewService(w.Log, cfg, w.rootPath)
 	if err != nil {
@@ -169,8 +170,8 @@ func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 
 	// print the new keys for user info
 	fmt.Printf("new generated keys:\n")
-	fmt.Printf("public: 0x%v\n", kp.Pub)
-	fmt.Printf("private: 0x%v\n", kp.Priv)
+	fmt.Printf("public: %v\n", kp.Pub)
+	fmt.Printf("private: %v\n", kp.Priv)
 
 	return nil
 }
