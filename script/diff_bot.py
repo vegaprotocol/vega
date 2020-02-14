@@ -12,8 +12,7 @@ from typing import Any, Dict, Tuple
 
 API_URL = "https://gitlab.com/api/v4"
 
-MAX_MR_DIFF_LEN = 1000
-MAX_SLACK_DIFF_LEN = 3500
+MAX_SLACK_DIFF_LEN = 1500
 
 GitFile = namedtuple("GitFile", "project_id project_name branch file_path")
 
@@ -90,6 +89,29 @@ def get_file_for_branch(
     token: str, project_id: str, branch: str, filename: str
 ) -> Dict[str, Any]:
 
+    # Check for branch existence
+    if branch not in ["master", "develop"]:
+        r = requests.get(
+            API_URL + "/projects/{id}/repository/branches".format(
+                id=project_id),
+            headers=headers(token),
+            params={"search": branch}
+        )
+        if r.status_code != 200:
+            print(
+                "Error: Failed to get list of branches for project {}: "
+                "{}".format(project_id, r.text))
+            print("cURL: curl --header \"PRIVATE-TOKEN: {}\" {}".format(
+                token, r.url))
+            exit(1)
+
+        if branch not in [b["name"] for b in r.json()]:
+            print(
+                "Error: Branch does not exist in project {}: {}".format(
+                    project_id, branch))
+            exit(1)
+
+    # Get file
     r = requests.get(
         API_URL + "/projects/{id}/repository/files/{file_path}".format(
             id=project_id, file_path=urllib.parse.quote_plus(filename)),
@@ -98,7 +120,6 @@ def get_file_for_branch(
     )
     if r.status_code != 200:
         print("Error: Failed to get file: {}".format(r.text))
-        print()
         print("cURL: curl --header \"PRIVATE-TOKEN: {}\" {}".format(
             token, r.url))
         exit(1)
@@ -135,7 +156,6 @@ def slack_notify(hookurl: str, recipient: str, icon: str, text: str) -> None:
     r = requests.post(hookurl, json=req)
     if r.status_code != 200:
         print("Error: Failed to send Slack message: {}".format(r.text))
-        print()
         print("cURL: curl -XPOST -d '{}' {}".format(json.dumps(req), r.url))
         exit(1)
 
@@ -182,18 +202,6 @@ def create_mr(
 
     update_file_on_new_branch(token, f1, newbranch, newcontent64)
 
-    if len(diff) > MAX_MR_DIFF_LEN:
-        d2 = (
-            "```diff\n{}\n```\n\n"
-            "**Diff truncated**\n\n"
-            "<details>\n"
-            "<summary>Full diff</summary>\n\n"
-            "```diff\n{}```\n"
-            "</details>"
-        ).format(diff[:MAX_MR_DIFF_LEN], diff)
-    else:
-        d2 = "```diff\n{}```".format(diff)
-
     req = {
         "id": f1.project_id,
         "source_branch": newbranch,
@@ -201,7 +209,7 @@ def create_mr(
         "title": "Update {} from {} at {}".format(
             basename(f1.file_path),
             f2.project_name, dt),
-        "description": "This MR updates `{}`.\n\n{}".format(f1.file_path, d2),
+        "description": "Update `{}`.\n".format(f1.file_path),
         "labels": "diffbot",
         "remove_source_branch": True,
         "allow_collaboration": True
