@@ -82,7 +82,7 @@ func testHandlerCreateWalletFailureAlreadyExists(t *testing.T) {
 
 	// try to create it again
 	tok, err = h.CreateWallet("jeremy", "we can use a different passphrase yo!")
-	assert.EqualError(t, err, wallet.ErrWalletAlreadyExist.Error())
+	assert.EqualError(t, err, wallet.ErrWalletAlreadyExists.Error())
 	assert.Empty(t, tok)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -93,7 +93,7 @@ func testHandlerLoginFailureOnNonCreatedWallet(t *testing.T) {
 	defer h.ctrl.Finish()
 
 	tok, err := h.LoginWallet("jeremy", "thisisasecurepassphraseinnit")
-	assert.EqualError(t, err, wallet.ErrWalletDoesNotExist.Error())
+	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 	assert.Empty(t, tok)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))

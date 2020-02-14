@@ -54,7 +54,7 @@ func testCreateWalletFailure(t *testing.T) {
 	assert.NotNil(t, w)
 
 	w, err = wallet.Create(rootDir, "jeremy", "whateverthepassphrase")
-	assert.EqualError(t, err, wallet.ErrWalletAlreadyExist.Error())
+	assert.EqualError(t, err, wallet.ErrWalletAlreadyExists.Error())
 	assert.Nil(t, w)
 
 	assert.NoError(t, os.RemoveAll(rootDir))
@@ -84,7 +84,7 @@ func testReadWalletFailureDoesNotExist(t *testing.T) {
 
 	// try to read a wallet which do not exists
 	w, err := wallet.Read(rootDir, "jeremy", "thisisasecurepassphraseinnit")
-	assert.EqualError(t, err, wallet.ErrWalletDoesNotExist.Error())
+	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 	assert.Nil(t, w)
 
 	assert.NoError(t, os.RemoveAll(rootDir))

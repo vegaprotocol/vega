@@ -47,7 +47,7 @@ func (h *Handler) CreateWallet(wallet, passphrase string) (string, error) {
 	defer h.mu.Unlock()
 
 	if _, ok := h.store[wallet]; ok {
-		return "", ErrWalletAlreadyExist
+		return "", ErrWalletAlreadyExists
 	}
 
 	w, err := Create(h.rootPath, wallet, passphrase)
@@ -65,7 +65,7 @@ func (h *Handler) LoginWallet(wallet, passphrase string) (string, error) {
 	// first check if the user own the wallet
 	w, err := Read(h.rootPath, wallet, passphrase)
 	if err != nil {
-		return "", ErrWalletDoesNotExist
+		return "", ErrWalletDoesNotExists
 	}
 
 	// then store it in the memory store then

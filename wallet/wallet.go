@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	ErrWalletAlreadyExist = errors.New("a wallet with the same name already exist")
-	ErrWalletDoesNotExist = errors.New("wallet does not exist")
+	ErrWalletAlreadyExists = errors.New("a wallet with the same name already exists")
+	ErrWalletDoesNotExists = errors.New("wallet does not exists")
 )
 
 const (
@@ -121,7 +121,7 @@ func Create(root, owner, passphrase string) (*Wallet, error) {
 
 	// make sure this do not exists already
 	if ok, _ := fsutil.PathExists(walletpath); ok {
-		return nil, ErrWalletAlreadyExist
+		return nil, ErrWalletAlreadyExists
 	}
 
 	return writeWallet(&w, root, owner, passphrase)
@@ -144,7 +144,7 @@ func Read(root, owner, passphrase string) (*Wallet, error) {
 
 	// make sure this do not exists already
 	if ok, _ := fsutil.PathExists(walletpath); !ok {
-		return nil, ErrWalletDoesNotExist
+		return nil, ErrWalletDoesNotExists
 	}
 
 	// read file
