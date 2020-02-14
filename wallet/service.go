@@ -38,7 +38,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	}
 
 	// all the endpoints are public for testing purpose
-	s.HandleFunc("/api/v1/health", s.health)
+	s.HandleFunc("/api/v1/status", s.health)
 	s.HandleFunc("/api/v1/create", s.CreateWallet)
 	s.HandleFunc("/api/v1/login", s.Login)
 	s.HandleFunc("/api/v1/revoke", ExtractToken(s.Revoke))
@@ -195,6 +195,10 @@ func (h *Service) signTx(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Service) health(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{}"))
 }
