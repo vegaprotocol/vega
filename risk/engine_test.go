@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/events"
@@ -61,12 +62,52 @@ var (
 )
 
 func TestUpdateMargins(t *testing.T) {
+	t.Run("test time update", testMarginLevelsTS)
 	t.Run("Top up margin test", testMarginTopup)
 	t.Run("Noop margin test", testMarginNoop)
 	t.Run("Margin too high (overflow)", testMarginOverflow)
 	t.Run("Update Margin with orders in book", testMarginWithOrderInBook)
 	t.Run("Update Margin with orders in book 2", testMarginWithOrderInBook2)
 	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
+}
+
+func testMarginLevelsTS(t *testing.T) {
+	eng := getTestEngine(t, nil)
+	defer eng.ctrl.Finish()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  10,     // required margin will be > 30 so ensure we don't have enough
+		general: 100000, // plenty of balance for the transfer anyway
+		market:  "ETH/DEC19",
+	}
+
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
+			return markPrice, nil
+		})
+
+	ts := time.Date(2018, time.January, 23, 0, 0, 0, 0, time.UTC)
+	eng.OnTimeUpdate(ts)
+
+	eng.mlbuf.EXPECT().Add(gomock.Any()).Times(1).
+		Do(func(l types.MarginLevels) {
+			assert.Equal(t, ts.UnixNano(), l.Timestamp)
+		})
+
+	evts := []events.Margin{evt}
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
+	assert.Equal(t, 1, len(resp))
+	// ensure we get the correct transfer request back, correct amount etc...
+	trans := resp[0].Transfer()
+	assert.Equal(t, int64(20), trans.Amount.Amount)
+	// min = 17 so we go back to search level
+	assert.Equal(t, int64(17), trans.Amount.MinAmount)
+	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
 
 func testMarginTopup(t *testing.T) {
@@ -83,6 +124,7 @@ func testMarginTopup(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
+	eng.mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -125,6 +167,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 func testMarginNoop(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
+	eng.mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -149,6 +192,7 @@ func testMarginNoop(t *testing.T) {
 func testMarginOverflow(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
+	eng.mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -399,7 +443,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
 	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
-	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	// mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
@@ -417,6 +461,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		ctrl:      ctrl,
 		model:     model,
 		orderbook: ob,
+		mlbuf:     mlbuf,
 	}
 }
 
