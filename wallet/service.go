@@ -42,8 +42,8 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	s.HandleFunc("/api/v1/create", s.CreateWallet)
 	s.HandleFunc("/api/v1/login", s.Login)
 	s.HandleFunc("/api/v1/revoke", ExtractToken(s.Revoke))
-	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.generateKeypair))
-	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.listPublicKeys))
+	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.GenerateKeypair))
+	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.ListPublicKeys))
 
 	return s, nil
 
@@ -157,7 +157,7 @@ func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, true, http.StatusOK)
 }
 
-func (s *Service) generateKeypair(t string, w http.ResponseWriter, r *http.Request) {
+func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
 		return
@@ -172,7 +172,7 @@ func (s *Service) generateKeypair(t string, w http.ResponseWriter, r *http.Reque
 	writeSuccess(w, pubKey, http.StatusOK)
 }
 
-func (s *Service) listPublicKeys(t string, w http.ResponseWriter, r *http.Request) {
+func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
 		return
