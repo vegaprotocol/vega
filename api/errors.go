@@ -41,34 +41,34 @@ var (
 	ErrStreamInternal = errors.New("internal stream failure")
 	// ErrNotMapped is when an error cannot be found in the current error map/lookup table
 	ErrNotMapped = errors.New("error not found in error lookup table")
-
+	// OrderService...
 	ErrOrderServiceGetByMarket      = errors.New("failed to get orders for market")
 	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
 	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
 	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
-
+	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
 	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
 	ErrTradeServiceGetPositionsByParty = errors.New("failed to get positions for party")
 	ErrTradeServiceGetByOrderID        = errors.New("failed to get trades for order ID")
-
+	// MarketService...
 	ErrMarketServiceGetMarkets    = errors.New("failed to get markets")
 	ErrMarketServiceGetByID       = errors.New("failed to get market for ID")
 	ErrMarketServiceGetDepth      = errors.New("failed to get market depth")
 	ErrMarketServiceGetMarketData = errors.New("failed to get market data")
-
+	// AccountService...
 	ErrAccountServiceGetMarketAccounts = errors.New("failed to get market accounts")
 	ErrAccountServiceGetPartyAccounts  = errors.New("failed to get party accounts")
-
+	// RiskService...
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")
-
+	// CandleService...
 	ErrCandleServiceGetCandles = errors.New("failed to get candles")
-
+	// PartyService...
 	ErrPartyServiceGetAll  = errors.New("failed to get parties")
 	ErrPartyServiceGetByID = errors.New("failed to get party for ID")
-
+	// TimeService...
 	ErrTimeServiceGetTimeNow = errors.New("failed to get time now")
-
+	// Blockchain...
 	ErrBlockchainBacklogLength = errors.New("failed to get backlog length from blockchain")
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
