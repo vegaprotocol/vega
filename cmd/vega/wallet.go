@@ -142,7 +142,7 @@ func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 
 	_, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		if err != wallet.ErrWalletDoesNotExist {
+		if err != wallet.ErrWalletDoesNotExists {
 			// this an invalid key, returning error
 			return fmt.Errorf("unable to decrypt wallet: %v\n", err)
 		}
