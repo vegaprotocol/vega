@@ -55,7 +55,7 @@ func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, er
 		return nil, err
 	}
 
-	auth, err := newAuth(log, rootPath)
+	auth, err := NewAuth(log, rootPath)
 	if err != nil {
 		return nil, err
 	}

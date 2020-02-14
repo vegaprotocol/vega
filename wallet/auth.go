@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -35,7 +34,7 @@ type auth struct {
 	mu sync.Mutex
 }
 
-func newAuth(log *logging.Logger, rootPath string) (*auth, error) {
+func NewAuth(log *logging.Logger, rootPath string) (*auth, error) {
 	// get rsa keys
 	pubBuf, privBuf, err := readRsaKeys(rootPath)
 	if err != nil {
@@ -43,12 +42,10 @@ func newAuth(log *logging.Logger, rootPath string) (*auth, error) {
 	}
 	priv, err := jwt.ParseRSAPrivateKeyFromPEM(privBuf)
 	if err != nil {
-		fmt.Printf("bad private key\n")
 		return nil, err
 	}
 	pub, err := jwt.ParseRSAPublicKeyFromPEM(pubBuf)
 	if err != nil {
-		fmt.Printf("bad public key\n")
 		return nil, err
 	}
 
