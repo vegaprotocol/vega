@@ -37,8 +37,9 @@ type ChainStatus struct {
 	status   uint32
 	starting bool
 
-	retriesCount int
-	cfgMu        sync.Mutex
+	retriesCount     int
+	retriesInitCount int
+	cfgMu            sync.Mutex
 
 	cancel            func()
 	onChainDisconnect func()
@@ -66,6 +67,7 @@ func New(log *logging.Logger, conf Config, clt BlockchainClient) *Status {
 			status:            uint32(types.ChainStatus_DISCONNECTED),
 			starting:          true,
 			retriesCount:      int(conf.Retries),
+			retriesInitCount:  int(conf.Retries),
 			cancel:            cancel,
 			onChainDisconnect: nil,
 		},
@@ -180,6 +182,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	}
 
 	if newStatus == types.ChainStatus_CONNECTED {
+		cs.retriesCount = cs.retriesInitCount
 		// Check backlog length
 		utx, err := cs.client.GetUnconfirmedTxCount(context.Background())
 		if err == nil {
