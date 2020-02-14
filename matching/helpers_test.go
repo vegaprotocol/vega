@@ -25,7 +25,7 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100.0)
+	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100)
 	return &tob
 }
 
