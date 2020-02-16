@@ -79,7 +79,7 @@ func (s *tradingService) CheckToken(
 		if err == ErrInvalidCredentials {
 			return &protoapi.CheckTokenResponse{Ok: false}, nil
 		}
-		return nil, apiError(codes.PermissionDenied, err)
+		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.CheckTokenResponse{Ok: true}, nil
