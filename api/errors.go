@@ -42,6 +42,35 @@ var (
 	ErrStreamInternal = errors.New("internal stream failure")
 	// ErrNotMapped is when an error cannot be found in the current error map/lookup table
 	ErrNotMapped = errors.New("error not found in error lookup table")
+	// ErrAuthDisabled signals to the caller that the authentication is disabled
+	ErrAuthDisabled = errors.New("auth disabled")
+	// ErrInvalidCredentials signals that the credentials specified by the client are invalid
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	// ErrMissingToken signals that a token was required but is missing with this request
+	ErrMissingToken = errors.New("missing token")
+	// ErrInvalidToken signals that a token was not valid for this request
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrInvalidMarketID signals that the market ID does not exists
+	ErrInvalidMarketID = errors.New("invalid market ID")
+	// ErrMissingOrder signals that the actual payload is expected to contains an order
+	ErrMissingOrder = errors.New("missing order in request payload")
+	// ErrMissingTraderID signals that the payload is expected to contain a trader id
+	ErrMissingTraderID = errors.New("missing trader id")
+	// ErrMissingPartyID signals that the payload is expected to contain a party id
+	ErrMissingPartyID = errors.New("missing party id")
+	// ErrMalformedRequest signals that the request was malformed
+	ErrMalformedRequest = errors.New("malformed request")
+	// ErrInvalidWithdrawAmount signals that the amount of money to withdraw is invalid
+	// usually the party specified an amount of 0
+	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
+	// ErrMissingAsset signals that an asset was required but not specified
+	ErrMissingAsset = errors.New("missing asset")
+	// ErrSubmitOrder is returned when submitting an order fails for some reason.
+	ErrSubmitOrder = errors.New("submit order failure")
+	// ErrAmendOrder is returned when amending an order fails for some reason.
+	ErrAmendOrder = errors.New("amend order failure")
+	// ErrCancelOrder is returned when cancelling an order fails for some reason.
+	ErrCancelOrder = errors.New("cancel order failure")
 	// OrderService...
 	ErrOrderServiceGetByMarket      = errors.New("failed to get orders for market")
 	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
@@ -91,6 +120,20 @@ func InitErrorMap() {
 	em[ErrStreamClosed] = 10008
 	em[ErrServerShutdown] = 10009
 	em[ErrStreamInternal] = 10010
+	em[ErrInvalidMarketID] = 10011
+	em[ErrMissingOrder] = 10012
+	em[ErrMissingTraderID] = 10013
+	em[ErrMissingPartyID] = 10014
+	em[ErrMalformedRequest] = 10015
+	em[ErrInvalidWithdrawAmount] = 10016
+	em[ErrMissingAsset] = 10017
+	em[ErrSubmitOrder] = 10018
+	em[ErrAmendOrder] = 10019
+	em[ErrCancelOrder] = 10020
+	em[ErrAuthDisabled] = 10021
+	em[ErrInvalidCredentials] = 10022
+	em[ErrMissingToken] = 10023
+	em[ErrInvalidToken] = 10024
 	// Orders
 	em[ErrOrderServiceGetByMarket] = 20001
 	em[ErrOrderServiceGetByMarketAndID] = 20002
