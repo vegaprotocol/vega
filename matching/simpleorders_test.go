@@ -10,7 +10,7 @@ import (
 
 func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -38,7 +38,7 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 
 func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -66,7 +66,7 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 
 func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -94,7 +94,7 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 
 func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -126,7 +126,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
  */
 func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -154,7 +154,7 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 
 func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -185,7 +185,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
  */
 func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -227,7 +227,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 
 func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -269,7 +269,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 
 func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -311,7 +311,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 
 func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -353,7 +353,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 
 func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -395,7 +395,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 
 func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,

@@ -37,11 +37,11 @@ func getCurrentUtcTimestampNano() int64 {
 	return vegatime.Now().UnixNano()
 }
 
-func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
+func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice, proRata)
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice)
 	return &tob
 }
 
@@ -59,7 +59,7 @@ func TestOrderBook_GetClosePNL(t *testing.T) {
 
 func testBestBidPriceAndVolume(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -113,7 +113,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 
 func testBestOfferPriceAndVolume(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -167,7 +167,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 
 func testGetMarketOrderPriceBuy(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -211,7 +211,7 @@ func testGetMarketOrderPriceBuy(t *testing.T) {
 
 func testGetMarketOrderPriceSell(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -255,7 +255,7 @@ func testGetMarketOrderPriceSell(t *testing.T) {
 
 func testGetMarketOrderPriceEmptyBook(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	price := book.MarketOrderPrice(types.Side_Sell)
 	// empty book will return initialMarkPrice
@@ -264,7 +264,7 @@ func testGetMarketOrderPriceEmptyBook(t *testing.T) {
 
 func getClosePNLIncompleteBuy(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -312,7 +312,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 
 func getClosePNLIncompleteSell(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -360,7 +360,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 
 func getClosePNLBuy(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -416,7 +416,7 @@ func getClosePNLBuy(t *testing.T) {
 
 func getClosePNLSell(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
@@ -474,7 +474,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	market := "cancel-returns-order"
 	party := "p1"
 
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	currentTimestamp := getCurrentUtcTimestampNano()
 
@@ -513,7 +513,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
 
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	currentTimestamp := getCurrentUtcTimestampNano()
 	someTimeLater := currentTimestamp + (1000 * 1000)
@@ -677,7 +677,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 //test for order validation
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	timeStampOrder := types.Order{
 		Id:        "timestamporderID",
@@ -723,7 +723,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 
 func TestOrderBook_DeleteOrder(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	newOrder := &types.Order{
@@ -747,837 +747,9 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 	book.PrintState("AFTER REMOVE ORDER")
 }
 
-func TestOrderBook_SubmitOrder(t *testing.T) {
-	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
-	defer book.Finish()
-
-	const numberOfTimestamps = 3
-	m := make(map[int64][]*types.Order, numberOfTimestamps)
-
-	// sell and buy side orders at timestamp 0
-	m[0] = []*types.Order{
-		// Side Sell
-		{
-			MarketID:    market,
-			PartyID:     "A",
-			Side:        types.Side_Sell,
-			Price:       101,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-		{
-			MarketID:    market,
-			PartyID:     "B",
-			Side:        types.Side_Sell,
-			Price:       101,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-		{
-			MarketID:    market,
-			PartyID:     "C",
-			Side:        types.Side_Sell,
-			Price:       102,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-		{
-			MarketID:    market,
-			PartyID:     "D",
-			Side:        types.Side_Sell,
-			Price:       103,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-		// Side Buy
-		{
-			MarketID:    market,
-			PartyID:     "E",
-			Side:        types.Side_Buy,
-			Price:       99,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-		{
-			MarketID:    market,
-			PartyID:     "F",
-			Side:        types.Side_Buy,
-			Price:       99,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-		{
-			MarketID:    market,
-			PartyID:     "G",
-			Side:        types.Side_Buy,
-			Price:       98,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   0,
-		},
-	}
-
-	// sell and buy orders at timestamp 1
-	m[1] = []*types.Order{
-		// Side Sell
-		{
-			MarketID:    market,
-			PartyID:     "M",
-			Side:        types.Side_Sell,
-			Price:       101,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   1,
-		},
-		// Side Buy
-		{
-			MarketID:    market,
-			PartyID:     "N",
-			Side:        types.Side_Buy,
-			Price:       99,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   1,
-		},
-	}
-
-	// sell and buy orders at timestamp 2
-	m[2] = []*types.Order{
-		// Side Sell
-		{
-			MarketID:    market,
-			PartyID:     "R",
-			Side:        types.Side_Sell,
-			Price:       101,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   2,
-		},
-		// Side Buy
-		{
-			MarketID:    market,
-			PartyID:     "S",
-			Side:        types.Side_Buy,
-			Price:       99,
-			Size:        100,
-			Remaining:   100,
-			TimeInForce: types.Order_GTC,
-			CreatedAt:   2,
-		},
-	}
-
-	timestamps := []int64{0, 1, 2}
-	for _, timestamp := range timestamps {
-		for index := range m[timestamp] {
-			confirmation, err := book.SubmitOrder(m[timestamp][index])
-			// this should not return any errors
-			assert.Equal(t, nil, err)
-			// this should not generate any trades
-			assert.Equal(t, 0, len(confirmation.Trades))
-		}
-	}
-
-	scenario := []aggressiveOrderScenario{
-		{
-			// same price level, remaining on the passive
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "X",
-				Side:        types.Side_Buy,
-				Price:       101,
-				Size:        100,
-				Remaining:   100,
-				TimeInForce: types.Order_GTC,
-				CreatedAt:   3,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled,
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      50,
-					Buyer:     "X",
-					Seller:    "A",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      50,
-					Buyer:     "X",
-					Seller:    "B",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "A",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   50,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "B",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   50,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-			},
-		},
-		{
-			// lower price is available on the passive side, 2 orders removed, 1 passive remaining
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "Y",
-				Side:        types.Side_Buy,
-				Price:       102,
-				Size:        150,
-				Remaining:   150,
-				TimeInForce: types.Order_GTC,
-				CreatedAt:   3,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled,
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      50,
-					Buyer:     "Y",
-					Seller:    "A",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      50,
-					Buyer:     "Y",
-					Seller:    "B",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      50,
-					Buyer:     "Y",
-					Seller:    "M",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "A",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "B",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "M",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   50,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   1,
-				},
-			},
-		},
-		{
-			// lower price is available on the passive side, 1 order removed, 1 passive remaining
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "Z",
-				Side:        types.Side_Buy,
-				Price:       102,
-				Size:        70,
-				Remaining:   70,
-				TimeInForce: types.Order_GTC,
-				CreatedAt:   3,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled,
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      50,
-					Buyer:     "Z",
-					Seller:    "M",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      20,
-					Buyer:     "Z",
-					Seller:    "R",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "M",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   1,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "R",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   80,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   2,
-				},
-			},
-		},
-		{
-			// price level jump, lower price is available on the passive side but its entirely consumed,
-			// 1 order removed, 1 passive remaining at higher price level
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "X",
-				Side:        types.Side_Buy,
-				Price:       102,
-				Size:        100,
-				Remaining:   100,
-				TimeInForce: types.Order_GTC,
-				CreatedAt:   3,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled,
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     101,
-					Size:      80,
-					Buyer:     "X",
-					Seller:    "R",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     102,
-					Size:      20,
-					Buyer:     "X",
-					Seller:    "C",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "R",
-					Side:        types.Side_Sell,
-					Price:       101,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   2,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "C",
-					Side:        types.Side_Sell,
-					Price:       102,
-					Size:        100,
-					Remaining:   80,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-			},
-		},
-		{
-			// Sell is aggressive, aggressive at lower price than on the book, pro rata at 99, aggressive is removed
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "Y",
-				Side:        types.Side_Sell,
-				Price:       98,
-				Size:        100,
-				Remaining:   100,
-				TimeInForce: types.Order_GTC,
-				CreatedAt:   4,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled,
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      50,
-					Buyer:     "E",
-					Seller:    "Y",
-					Aggressor: types.Side_Sell,
-				},
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      50,
-					Buyer:     "F",
-					Seller:    "Y",
-					Aggressor: types.Side_Sell,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "E",
-					Side:        types.Side_Buy,
-					Price:       99,
-					Size:        100,
-					Remaining:   50,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "F",
-					Side:        types.Side_Buy,
-					Price:       99,
-					Size:        100,
-					Remaining:   50,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-			},
-		},
-		{
-			// Sell is aggressive, aggressive at exact price, all orders at this price level should be hit
-			// plus order should remain on the sell side of the book at 99 level
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "Z",
-				Side:        types.Side_Sell,
-				Price:       99,
-				Size:        350,
-				Remaining:   350,
-				TimeInForce: types.Order_GTC,
-				CreatedAt:   4,
-			},
-			expectedAggressiveOrderStatus: types.Order_Active,
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      50,
-					Buyer:     "E",
-					Seller:    "Z",
-					Aggressor: types.Side_Sell,
-				},
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      50,
-					Buyer:     "F",
-					Seller:    "Z",
-					Aggressor: types.Side_Sell,
-				},
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      100,
-					Buyer:     "N",
-					Seller:    "Z",
-					Aggressor: types.Side_Sell,
-				},
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      100,
-					Buyer:     "S",
-					Seller:    "Z",
-					Aggressor: types.Side_Sell,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "E",
-					Side:        types.Side_Buy,
-					Price:       99,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "F",
-					Side:        types.Side_Buy,
-					Price:       99,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "N",
-					Side:        types.Side_Buy,
-					Price:       99,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   1,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "S",
-					Side:        types.Side_Buy,
-					Price:       99,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   2,
-				},
-			},
-		},
-		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "XX",
-				Side:        types.Side_Buy,
-				Price:       102,
-				Size:        100,
-				Remaining:   100,
-				TimeInForce: types.Order_FOK, // non-persistent
-				CreatedAt:   4,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled, // FOK but fully filled
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     99,
-					Size:      50,
-					Buyer:     "XX",
-					Seller:    "Z",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     102,
-					Size:      50,
-					Buyer:     "XX",
-					Seller:    "C",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "Z",
-					Side:        types.Side_Sell,
-					Price:       99,
-					Size:        350,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   4,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "C",
-					Side:        types.Side_Sell,
-					Price:       102,
-					Size:        100,
-					Remaining:   30,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-			},
-		},
-		{ // aggressive non-persistent buy order, hits one price levels and is not added to order book
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "YY",
-				Side:        types.Side_Buy,
-				Price:       103,
-				Size:        200,
-				Remaining:   200,
-				TimeInForce: types.Order_IOC, // non-persistent
-				CreatedAt:   5,
-			},
-			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not fully filled so Cancelled
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     102,
-					Size:      30,
-					Buyer:     "YY",
-					Seller:    "C",
-					Aggressor: types.Side_Buy,
-				},
-				{
-					MarketID:  market,
-					Price:     103,
-					Size:      100,
-					Buyer:     "YY",
-					Seller:    "D",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "C",
-					Side:        types.Side_Sell,
-					Price:       102,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-				{
-					MarketID:    market,
-					PartyID:     "D",
-					Side:        types.Side_Sell,
-					Price:       103,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-			},
-		},
-		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "XX",
-				Side:        types.Side_Sell,
-				Price:       96,
-				Size:        2000,
-				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // non-persistent
-				CreatedAt:   5,
-			},
-			expectedAggressiveOrderStatus: types.Order_Stopped, // FOK will be marked STOPPED if not able to fully fill
-			expectedTrades:                []types.Trade{},
-			expectedPassiveOrdersAffected: []types.Order{},
-		},
-		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "XX",
-				Side:        types.Side_Buy,
-				Price:       102,
-				Size:        2000,
-				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // non-persistent
-				CreatedAt:   5,
-			},
-			expectedAggressiveOrderStatus: types.Order_Stopped, // FOK will be marked STOPPED if not able to fully fill
-			expectedTrades:                []types.Trade{},
-			expectedPassiveOrdersAffected: []types.Order{},
-		},
-		{ // aggressive non-persistent buy order, at super low price hits one price levels and is not added to order book
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "ZZ",
-				Side:        types.Side_Sell,
-				Price:       95,
-				Size:        200,
-				Remaining:   200,
-				TimeInForce: types.Order_IOC, // non-persistent
-				CreatedAt:   5,
-			},
-			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC will be marked as cancelled as not fully filled
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     98,
-					Size:      100,
-					Buyer:     "G",
-					Seller:    "ZZ",
-					Aggressor: types.Side_Sell,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "G",
-					Side:        types.Side_Buy,
-					Price:       98,
-					Size:        100,
-					Remaining:   0,
-					TimeInForce: types.Order_GTC,
-					CreatedAt:   0,
-				},
-			},
-		},
-		{
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "ZZ",
-				Side:        types.Side_Sell,
-				Price:       95,
-				Size:        200,
-				Remaining:   200,
-				TimeInForce: types.Order_GTT, // non-persistent
-				CreatedAt:   5,
-				ExpiresAt:   6,
-			},
-			expectedAggressiveOrderStatus: types.Order_Active,
-			expectedTrades:                []types.Trade{},
-			expectedPassiveOrdersAffected: []types.Order{},
-		},
-		{
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "ZXY",
-				Side:        types.Side_Buy,
-				Price:       95,
-				Size:        100,
-				Remaining:   100,
-				TimeInForce: types.Order_FOK, // non-persistent
-				CreatedAt:   6,
-			},
-			expectedAggressiveOrderStatus: types.Order_Filled, // FOK should be fully filled
-			expectedTrades: []types.Trade{
-				{
-					MarketID:  market,
-					Price:     95,
-					Size:      100,
-					Buyer:     "ZXY",
-					Seller:    "ZZ",
-					Aggressor: types.Side_Buy,
-				},
-			},
-			expectedPassiveOrdersAffected: []types.Order{
-				{
-					MarketID:    market,
-					PartyID:     "ZZ",
-					Side:        types.Side_Sell,
-					Price:       95,
-					Size:        200,
-					Remaining:   100,
-					TimeInForce: types.Order_GTT, // non-persistent
-					CreatedAt:   5,
-					ExpiresAt:   7,
-				},
-			},
-		},
-		{ // aggressive non-persistent buy order, hits two price levels and is not added to order book
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "XX",
-				Side:        types.Side_Buy,
-				Price:       102,
-				Size:        2000,
-				Remaining:   2000,
-				TimeInForce: types.Order_FOK, // non-persistent
-				CreatedAt:   6,
-			},
-			expectedAggressiveOrderStatus: types.Order_Stopped, // FOK will be marked STOPPED if not able to fully fill
-			expectedTrades:                []types.Trade{},
-			expectedPassiveOrdersAffected: []types.Order{},
-		},
-		{
-			aggressiveOrder: &types.Order{
-				MarketID:    market,
-				PartyID:     "ZU",
-				Side:        types.Side_Sell,
-				Price:       999,
-				Size:        10,
-				Remaining:   10,
-				TimeInForce: types.Order_IOC,
-				CreatedAt:   7,
-			},
-			expectedAggressiveOrderStatus: types.Order_Cancelled, // IOC and not filled so Cancelled
-			expectedTrades:                []types.Trade{},
-			expectedPassiveOrdersAffected: []types.Order{},
-		},
-		// expect empty book after that as remaining order GTT has to expire
-	}
-
-	for i, s := range scenario {
-		fmt.Println()
-		fmt.Println()
-		fmt.Printf("SCENARIO %d / %d ------------------------------------------------------------------", i+1, len(scenario))
-		fmt.Println()
-		fmt.Println("aggressor: ", s.aggressiveOrder)
-		fmt.Println("expectedPassiveOrdersAffected: ", s.expectedPassiveOrdersAffected)
-		fmt.Println("expectedTrades: ", s.expectedTrades)
-		fmt.Println()
-
-		confirmation, err := book.SubmitOrder(s.aggressiveOrder)
-
-		//this should not return any errors
-		assert.Equal(t, nil, err)
-
-		//ensure the aggressive order has correct status (if FOK, IOC, etc it can be stopped or cancelled)
-		assert.Equal(t, s.expectedAggressiveOrderStatus,
-			confirmation.Order.Status,
-			fmt.Sprintf("aggressive-order = %+v", confirmation.Order))
-
-		//this should not generate any trades
-		assert.Equal(t, len(s.expectedTrades), len(confirmation.Trades))
-
-		fmt.Println("CONFIRMATION types:")
-		fmt.Println("-> Aggressive:", confirmation.Order)
-		fmt.Println("-> Trades :", confirmation.Trades)
-		fmt.Println("-> PassiveOrdersAffected:", confirmation.PassiveOrdersAffected)
-		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
-
-		// trades should match expected trades
-		for i, trade := range confirmation.Trades {
-			expectTrade(t, &s.expectedTrades[i], trade)
-		}
-
-		// orders affected should match expected values
-		for i, orderAffected := range confirmation.PassiveOrdersAffected {
-			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
-		}
-
-		// call remove expired orders every scenario
-		book.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
-	}
-}
-
 func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	newOrder := &types.Order{
@@ -1603,7 +775,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
@@ -1644,7 +816,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 
 func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	logger := logging.NewTestLogger()
@@ -1685,7 +857,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 
 func TestOrderBook_CancelOrderByID(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	logger := logging.NewTestLogger()
@@ -1732,7 +904,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
 		MarketID: market,
@@ -1761,7 +933,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING INVALID ORDER")
 
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
 		MarketID: market,
@@ -1784,28 +956,28 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 
 func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 	// run asserts for protocol trade data
-	assert.Equal(t, expectedTrade.Price, trade.Price)
-	assert.Equal(t, expectedTrade.Size, trade.Size)
-	assert.Equal(t, expectedTrade.Buyer, trade.Buyer)
-	assert.Equal(t, expectedTrade.Seller, trade.Seller)
-	assert.Equal(t, expectedTrade.Aggressor, trade.Aggressor)
+	assert.Equal(t, int(expectedTrade.Price), int(trade.Price), "invalid trade price")
+	assert.Equal(t, int(expectedTrade.Size), int(trade.Size), "invalid trade size")
+	assert.Equal(t, expectedTrade.Buyer, trade.Buyer, "invalid trade buyer")
+	assert.Equal(t, expectedTrade.Seller, trade.Seller, "invalide trade sellet")
+	assert.Equal(t, expectedTrade.Aggressor, trade.Aggressor, "invalid trade aggressor")
 }
 
 func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 	// run asserts for order
-	assert.Equal(t, expectedOrder.MarketID, order.MarketID)
-	assert.Equal(t, expectedOrder.PartyID, order.PartyID)
-	assert.Equal(t, expectedOrder.Side, order.Side)
-	assert.Equal(t, expectedOrder.Price, order.Price)
-	assert.Equal(t, expectedOrder.Size, order.Size)
-	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
-	assert.Equal(t, expectedOrder.TimeInForce, order.TimeInForce)
-	assert.Equal(t, expectedOrder.CreatedAt, order.CreatedAt)
+	assert.Equal(t, expectedOrder.MarketID, order.MarketID, "invalid order market id")
+	assert.Equal(t, expectedOrder.PartyID, order.PartyID, "invalid order party id")
+	assert.Equal(t, expectedOrder.Side, order.Side, "invalid order side")
+	assert.Equal(t, int(expectedOrder.Price), int(order.Price), "invalid order price")
+	assert.Equal(t, int(expectedOrder.Size), int(order.Size), "invalid order size")
+	assert.Equal(t, int(expectedOrder.Remaining), int(order.Remaining), "invalid order remaining")
+	assert.Equal(t, expectedOrder.TimeInForce, order.TimeInForce, "invalid order tif")
+	assert.Equal(t, expectedOrder.CreatedAt, order.CreatedAt, "invalid order created at")
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	newOrder := &types.Order{
@@ -1850,7 +1022,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	newOrder := &types.Order{
@@ -1893,7 +1065,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	newOrder := &types.Order{
@@ -1938,7 +1110,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	logger.Debug("BEGIN AMENDING ORDER")
 
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
 		MarketID:    market,
@@ -1982,7 +1154,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	logger := logging.NewTestLogger()
@@ -2033,7 +1205,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	logger := logging.NewTestLogger()
@@ -2085,7 +1257,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 // ProRata mode OFF which is a default config for vega ME
 func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, false)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// logger := logging.NewTestLogger()
@@ -2425,7 +1597,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 // is not added to the order book.
 func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	market := "testOrderbook"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	logger := logging.NewTestLogger()

@@ -44,7 +44,7 @@ func isPersistent(o *types.Order) bool {
 // book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
 // updated and the new markPrice will be used there.
 func NewOrderBook(log *logging.Logger, config Config, marketID string,
-	initialMarkPrice uint64, proRataMode bool) *OrderBook {
+	initialMarkPrice uint64) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -53,8 +53,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		log:             log,
 		marketID:        marketID,
 		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, proRataMode: proRataMode},
-		sell:            &OrderBookSide{log: log, proRataMode: proRataMode},
+		buy:             &OrderBookSide{log: log},
+		sell:            &OrderBookSide{log: log},
 		Config:          config,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),

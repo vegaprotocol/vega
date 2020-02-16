@@ -21,8 +21,7 @@ var (
 type OrderBookSide struct {
 	log *logging.Logger
 	// Config
-	levels      []*PriceLevel
-	proRataMode bool
+	levels []*PriceLevel
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
@@ -62,16 +61,16 @@ func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64) {
 	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume
 }
 
-func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
+func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1
 	var oldOrder *types.Order
 
 	for idx, priceLevel := range s.levels {
-		if priceLevel.price == orderAmended.Price {
+		if priceLevel.price == orderAmend.Price {
 			priceLevelIndex = idx
 			for j, order := range priceLevel.orders {
-				if order.Id == orderAmended.Id {
+				if order.Id == orderAmend.Id {
 					orderIndex = j
 					oldOrder = order
 					break
@@ -85,19 +84,21 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	if oldOrder.PartyID != orderAmended.PartyID {
+	if oldOrder.PartyID != orderAmend.PartyID {
 		return types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Size < orderAmended.Size {
+	if oldOrder.Remaining < orderAmend.Size {
 		return types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Reference != orderAmended.Reference {
+	if oldOrder.Reference != orderAmend.Reference {
 		return types.ErrOrderAmendFailure
 	}
 
-	s.levels[priceLevelIndex].orders[orderIndex] = orderAmended
+	reduceBy := oldOrder.Remaining - orderAmend.Size
+	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
+	s.levels[priceLevelIndex].reduceVolume(reduceBy)
 	return nil
 }
 
@@ -170,7 +171,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	// this would reallocate sufficiently then
 	// no risk of this being a empty order, as it's overwritten just next with
 	// the slice insert
-	level := NewPriceLevel(price, s.proRataMode)
+	level := NewPriceLevel(price)
 	s.levels = append(s.levels, nil)
 	copy(s.levels[i+1:], s.levels[i:])
 	s.levels[i] = level
