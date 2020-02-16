@@ -1,8 +1,9 @@
 package api
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
+
+	types "code.vegaprotocol.io/vega/proto"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -74,6 +75,8 @@ var (
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 )
 
+// InitErrorMap must be run at least once on start up of API server(s) to register the error mappings
+// that are found/documented as part of the Vega API domain. Useful for i18n and switch statements etc.
 func InitErrorMap() {
 	em := make(map[error]int32)
 	// General
@@ -117,25 +120,40 @@ func InitErrorMap() {
 	em[ErrBlockchainBacklogLength] = 90001
 	em[ErrBlockchainNetworkInfo] = 90002
 	em[ErrBlockchainGenesisTime] = 90003
-
+	// End of mapping
 	ErrorMap = em
 }
 
-func apiError(grpcCode codes.Code, errs ...error) error {
+// apiError is a helper function to build the Vega specific Error Details that
+// can be returned by gRPC API and therefore also REST, GraphQL will be mapped too.
+// It takes a standardised grpcCode, a Vega specific apiError, and optionally one
+// or more internal errors (error from the core, rather than API).
+func apiError(grpcCode codes.Code, apiError error, innerErrors ...error) error {
 	s := status.Newf(grpcCode, "%v error", grpcCode)
-
-	for _, err := range errs {
-		detail := types.ErrorDetail{
-			Message: err.Error(),
-		}
-		vegaCode, found := ErrorMap[err]
-		if found {
-			detail.Code = vegaCode
-		} else {
-			detail.Code = ErrorMap[ErrNotMapped]
-		}
-		s, _ = s.WithDetails(&detail)
+	// Create the API specific error detail for error e.g. missing party ID
+	detail := types.ErrorDetail{
+		Message: apiError.Error(),
 	}
-
+	// Lookup the API specific error in the table, return not found/not mapped
+	// if a code has not yet been added to the map, can happen if developer misses
+	// a step, periodic checking/ownership of API package can keep this up to date.
+	vegaCode, found := ErrorMap[apiError]
+	if found {
+		detail.Code = vegaCode
+	} else {
+		detail.Code = ErrorMap[ErrNotMapped]
+	}
+	// If there is an inner error (and possibly in the future, a config to turn this
+	// level of detail on/off) then process and append to inner.
+	first := true
+	for _, err := range innerErrors {
+		if !first {
+			detail.Inner += ", "
+		}
+		detail.Inner += err.Error()
+		first = false
+	}
+	// Pack the Vega domain specific errorDetails into the status returned by gRPC domain.
+	s, _ = s.WithDetails(&detail)
 	return s.Err()
 }

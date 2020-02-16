@@ -1511,6 +1511,7 @@
 | ----- | ---- | ----- | ----------- |
 | code | [int32](#int32) |  |  |
 | message | [string](#string) |  |  |
+| inner | [string](#string) |  |  |
 
 
 

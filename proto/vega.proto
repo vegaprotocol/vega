@@ -404,4 +404,5 @@ message MarketData {
 message ErrorDetail {
   int32 code = 1;
   string message = 2;
+  string inner = 3;
 }
