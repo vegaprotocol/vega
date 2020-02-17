@@ -184,6 +184,6 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.NoError(t, err)
-	assert.Equal(t, book.getNumberOfBuyLevels(), int(0))
-	assert.Equal(t, book.getNumberOfSellLevels(), int(0))
+	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
+	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 }
