@@ -143,6 +143,9 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	if finaloidx != -1 {
 		order = s.levels[i].orders[finaloidx]
 		s.levels[i].removeOrder(finaloidx)
+	} else {
+		// We could not find the matching order, return an error
+		return nil, types.ErrOrderNotFound
 	}
 
 	if len(s.levels[i].orders) <= 0 {
