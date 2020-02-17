@@ -23,6 +23,10 @@ do
 done
 
 # Generate proto/doc/
+
+# Comment out NotifyTraderAccount (#726)
+patch -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
+
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
 echo -e 'html html\nmarkdown md' | while read -r fileformat fileextension
@@ -45,6 +49,9 @@ sed --in-place -r \
 	-e 's#`([^`]*)`#<tt>\1</tt>#g' \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
 	proto/doc/index.html
+
+# Un-comment NotifyTraderAccount (#726)
+patch --reverse -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
 
 # Generate *.pb.gw.go and *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
