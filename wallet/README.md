@@ -12,16 +12,16 @@ A wallet is composed of a list of key pairs (Ed25519) used to sign transactions 
 
 The package provides a way to generate the configuration of the service before starting it, it can be used through the vega command line like so:
 
-```
-$ vega wallet service init --genrsakey -f
+```shell
+vega wallet service init --genrsakey -f
 ```
 
 Where `--genrsakey` generates an RSA key that will be used to sign your JWT (JSON web token), and `-f` overwrites any existing configuration files (if found).
 In short: this command will generate the RSA key, and the configuration files required by the wallet service.
 
 You can then start your vega service like so:
-```
-$ vega wallet service run
+```shell
+vega wallet service run
 ```
 
 ## Available functionalities
