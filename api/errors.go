@@ -9,9 +9,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ErrorMap contains a mapping between errors and Vega numeric error codes.
-var ErrorMap map[error]int32
-
 // API Errors and descriptions.
 var (
 	// ErrChainNotConnected signals to the user that he cannot access a given endpoint
@@ -104,67 +101,70 @@ var (
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 )
 
-// InitErrorMap must be run at least once on start up of API server(s) to register the error mappings
-// that are found/documented as part of the Vega API domain. Useful for i18n and switch statements etc.
-func InitErrorMap() {
-	em := make(map[error]int32)
+// errorMap contains a mapping between errors and Vega numeric error codes.
+var errorMap = map[error]int32{
 	// General
-	em[ErrNotMapped] = 10000
-	em[ErrChainNotConnected] = 10001
-	em[ErrChannelClosed] = 10002
-	em[ErrEmptyMissingMarketID] = 10003
-	em[ErrEmptyMissingOrderID] = 10004
-	em[ErrEmptyMissingOrderReference] = 10005
-	em[ErrEmptyMissingPartyID] = 10006
-	em[ErrEmptyMissingSinceTimestamp] = 10007
-	em[ErrStreamClosed] = 10008
-	em[ErrServerShutdown] = 10009
-	em[ErrStreamInternal] = 10010
-	em[ErrInvalidMarketID] = 10011
-	em[ErrMissingOrder] = 10012
-	em[ErrMissingTraderID] = 10013
-	em[ErrMissingPartyID] = 10014
-	em[ErrMalformedRequest] = 10015
-	em[ErrInvalidWithdrawAmount] = 10016
-	em[ErrMissingAsset] = 10017
-	em[ErrSubmitOrder] = 10018
-	em[ErrAmendOrder] = 10019
-	em[ErrCancelOrder] = 10020
-	em[ErrAuthDisabled] = 10021
-	em[ErrInvalidCredentials] = 10022
-	em[ErrMissingToken] = 10023
-	em[ErrInvalidToken] = 10024
+	ErrNotMapped:                  10000,
+	ErrChainNotConnected:          10001,
+	ErrChannelClosed:              10002,
+	ErrEmptyMissingMarketID:       10003,
+	ErrEmptyMissingOrderID:        10004,
+	ErrEmptyMissingOrderReference: 10005,
+	ErrEmptyMissingPartyID:        10006,
+	ErrEmptyMissingSinceTimestamp: 10007,
+	ErrStreamClosed:               10008,
+	ErrServerShutdown:             10009,
+	ErrStreamInternal:             10010,
+	ErrInvalidMarketID:            10011,
+	ErrMissingOrder:               10012,
+	ErrMissingTraderID:            10013,
+	ErrMissingPartyID:             10014,
+	ErrMalformedRequest:           10015,
+	ErrInvalidWithdrawAmount:      10016,
+	ErrMissingAsset:               10017,
+	ErrSubmitOrder:                10018,
+	ErrAmendOrder:                 10019,
+	ErrCancelOrder:                10020,
+	ErrAuthDisabled:               10021,
+	ErrInvalidCredentials:         10022,
+	ErrMissingToken:               10023,
+	ErrInvalidToken:               10024,
 	// Orders
-	em[ErrOrderServiceGetByMarket] = 20001
-	em[ErrOrderServiceGetByMarketAndID] = 20002
-	em[ErrOrderServiceGetByParty] = 20003
-	em[ErrOrderServiceGetByReference] = 20004
+	ErrOrderServiceGetByMarket:      20001,
+	ErrOrderServiceGetByMarketAndID: 20002,
+	ErrOrderServiceGetByParty:       20003,
+	ErrOrderServiceGetByReference:   20004,
 	// Markets
-	em[ErrMarketServiceGetMarkets] = 30001
-	em[ErrMarketServiceGetByID] = 30002
-	em[ErrMarketServiceGetDepth] = 30003
-	em[ErrMarketServiceGetMarketData] = 30004
+	ErrMarketServiceGetMarkets:    30001,
+	ErrMarketServiceGetByID:       30002,
+	ErrMarketServiceGetDepth:      30003,
+	ErrMarketServiceGetMarketData: 30004,
 	// Trades
-	em[ErrTradeServiceGetByMarket] = 40001
-	em[ErrTradeServiceGetByParty] = 40002
-	em[ErrTradeServiceGetPositionsByParty] = 40003
-	em[ErrTradeServiceGetByOrderID] = 40004
+	ErrTradeServiceGetByMarket:         40001,
+	ErrTradeServiceGetByParty:          40002,
+	ErrTradeServiceGetPositionsByParty: 40003,
+	ErrTradeServiceGetByOrderID:        40004,
 	// Parties
-	em[ErrPartyServiceGetAll] = 50001
-	em[ErrPartyServiceGetByID] = 50002
+	ErrPartyServiceGetAll:  50001,
+	ErrPartyServiceGetByID: 50002,
 	// Candles
-	em[ErrCandleServiceGetCandles] = 60001
+	ErrCandleServiceGetCandles: 60001,
 	// Risk
-	em[ErrRiskServiceGetMarginLevelsByID] = 70001
+	ErrRiskServiceGetMarginLevelsByID: 70001,
 	// Accounts
-	em[ErrAccountServiceGetMarketAccounts] = 80001
-	em[ErrAccountServiceGetPartyAccounts] = 80002
+	ErrAccountServiceGetMarketAccounts: 80001,
+	ErrAccountServiceGetPartyAccounts:  80002,
 	// Blockchain client
-	em[ErrBlockchainBacklogLength] = 90001
-	em[ErrBlockchainNetworkInfo] = 90002
-	em[ErrBlockchainGenesisTime] = 90003
+	ErrBlockchainBacklogLength: 90001,
+	ErrBlockchainNetworkInfo:   90002,
+	ErrBlockchainGenesisTime:   90003,
 	// End of mapping
-	ErrorMap = em
+}
+
+// ErrorMap returns a map of error to code, which is a mapping between
+// API errors and Vega API specific numeric codes.
+func ErrorMap() map[error]int32 {
+	return errorMap
 }
 
 // apiError is a helper function to build the Vega specific Error Details that
@@ -180,11 +180,11 @@ func apiError(grpcCode codes.Code, apiError error, innerErrors ...error) error {
 	// Lookup the API specific error in the table, return not found/not mapped
 	// if a code has not yet been added to the map, can happen if developer misses
 	// a step, periodic checking/ownership of API package can keep this up to date.
-	vegaCode, found := ErrorMap[apiError]
+	vegaCode, found := errorMap[apiError]
 	if found {
 		detail.Code = vegaCode
 	} else {
-		detail.Code = ErrorMap[ErrNotMapped]
+		detail.Code = errorMap[ErrNotMapped]
 	}
 	// If there is an inner error (and possibly in the future, a config to turn this
 	// level of detail on/off) then process and append to inner.

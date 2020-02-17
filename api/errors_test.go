@@ -7,9 +7,7 @@ import (
 )
 
 func TestErrorMapUniqueCodes(t *testing.T) {
-	api.InitErrorMap()
-	errors := api.ErrorMap
-
+	errors := api.ErrorMap()
 	existing := map[int32]bool{}
 	for key, code := range errors {
 		if _, ok := existing[code]; ok {
