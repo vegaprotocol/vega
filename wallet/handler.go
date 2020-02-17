@@ -35,7 +35,7 @@ func NewHandler(log *logging.Logger, auth Auth, rootPath string) *Handler {
 	}
 }
 
-// return the actual token
+// CreateWallet return the actual token
 func (h *Handler) CreateWallet(wallet, passphrase string) (string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()

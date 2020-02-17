@@ -90,7 +90,7 @@ func (a *auth) NewSession(walletname string) (string, error) {
 	return ss, nil
 }
 
-// returns the walletname associated for this session
+// VerifyToken returns the walletname associated for this session
 func (a *auth) VerifyToken(token string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
