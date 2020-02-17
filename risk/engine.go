@@ -82,6 +82,10 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) OnTimeUpdate(t time.Time) {
+	e.currTime = t.UnixNano()
+}
+
 // ReloadConf update the internal configuration of the risk engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
