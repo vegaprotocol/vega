@@ -235,6 +235,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	m.risk.OnTimeUpdate(t)
+
 	// Only start candle generation once we have a non-zero(default) time from vega-time service
 	if m.currentTime.IsZero() {
 		_, err := m.candleBuf.Start(m.mkt.Id, t)
