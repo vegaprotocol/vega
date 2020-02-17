@@ -525,6 +525,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.ErrorDetail"><span class="badge">M</span>ErrorDetail</a>
+                </li>
+
+                <li>
                   <a href="#vega.FinancialAmount"><span class="badge">M</span>FinancialAmount</a>
                 </li>
 
@@ -3680,6 +3684,44 @@
                   <td><a href="#vega.Interval">Interval</a></td>
                   <td></td>
                   <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ErrorDetail">ErrorDetail</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>code</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 </p></td>
+                </tr>
+
+                <tr>
+                  <td>message</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>a message that describes the error in more detail, should describe the problem encountered. </p></td>
+                </tr>
+
+                <tr>
+                  <td>inner</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>any inner error information that could add more context, or be helpful for error reporting. </p></td>
                 </tr>
 
             </tbody>

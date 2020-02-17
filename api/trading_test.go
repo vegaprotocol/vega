@@ -57,7 +57,8 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 		if err == nil {
 			t.Fatalf("Expected some sort of error, but got none.")
 		}
-		if strings.Contains(err.Error(), "invalid market ID") {
+		fmt.Println(err.Error())
+		if strings.Contains(err.Error(), "Internal error") {
 			return
 		}
 		fmt.Printf("Sleeping for %d milliseconds\n", sleepTime)
@@ -274,7 +275,7 @@ func TestSubmitOrder(t *testing.T) {
 	}
 	c := protoapi.NewTradingClient(conn)
 	pendingOrder, err := c.SubmitOrder(ctx, req)
-	assert.Contains(t, err.Error(), "invalid market ID")
+	assert.Contains(t, err.Error(), "Internal error")
 	assert.Nil(t, pendingOrder)
 
 	g.Stop()

@@ -8,14 +8,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
-	"google.golang.org/grpc"
-
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
 var (
@@ -197,12 +197,11 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 			return nil, err
 		}
 		return []*Market{mkt}, nil
-
 	}
 	res, err := r.tradingDataClient.Markets(ctx, &empty.Empty{})
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	m := make([]*Market, 0, len(res.Markets))
@@ -223,9 +222,8 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
-
 	market, err := MarketFromProto(res.Market)
 	if err != nil {
 		r.log.Error("unable to convert market from proto", logging.Error(err))
@@ -257,7 +255,7 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 	res, err := r.tradingDataClient.Statistics(ctx, &empty.Empty{})
 	if err != nil {
 		r.log.Error("tradingCore client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return res, nil
 }
@@ -267,12 +265,11 @@ func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token 
 		PartyID: partyID,
 		Token:   token,
 	}
-
 	response, err := r.tradingClient.CheckToken(ctx, req)
 	if err != nil {
-		return nil, err
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
 	}
-
 	return &CheckTokenResponse{Ok: response.Ok}, nil
 }
 
@@ -282,23 +279,20 @@ func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token 
 
 type myMarketResolver VegaResolverRoot
 
-func (r *myMarketResolver) Data(
-	ctx context.Context, market *Market,
-) (*types.MarketData, error) {
+func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
 		MarketID: market.ID,
 	}
 	res, err := r.tradingDataClient.MarketDataByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return res.MarketData, nil
 }
 
-func (r *myMarketResolver) Orders(
-	ctx context.Context, market *Market, open *bool, skip *int, first *int, last *int,
-) ([]*types.Order, error) {
+func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
+	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
 	openOnly := open != nil && *open
 	req := protoapi.OrdersByMarketRequest{
@@ -309,7 +303,7 @@ func (r *myMarketResolver) Orders(
 	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return res.Orders, nil
 }
@@ -324,7 +318,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
 	res, err := r.tradingDataClient.TradesByMarket(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	return res.Trades, nil
@@ -334,7 +328,6 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *
 
 	if market == nil {
 		return nil, errors.New("market missing or empty")
-
 	}
 
 	req := protoapi.MarketDepthRequest{MarketID: market.ID}
@@ -350,7 +343,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *
 	res, err := r.tradingDataClient.MarketDepth(ctx, &req)
 	if err != nil {
 		r.log.Error("trading data client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	return &types.MarketDepth{
@@ -385,7 +378,7 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *Market,
 	res, err := r.tradingDataClient.Candles(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return res.Candles, nil
 }
@@ -399,7 +392,7 @@ func (r *myMarketResolver) OrderByReference(ctx context.Context, market *Market,
 	res, err := r.tradingDataClient.OrderByReference(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return res.Order, nil
 }
@@ -422,7 +415,7 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID
 				logging.Error(err),
 				logging.String("market-id", market.ID),
 				logging.String("party-id", *partyID))
-			return []*types.Account{}, err
+			return []*types.Account{}, customErrorFromStatus(err)
 		}
 		return res.Accounts, nil
 	}
@@ -436,7 +429,7 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID
 		r.log.Error("unable to get MarketAccounts",
 			logging.Error(err),
 			logging.String("market-id", market.ID))
-		return []*types.Account{}, err
+		return []*types.Account{}, customErrorFromStatus(err)
 	}
 	return res.Accounts, nil
 }
@@ -480,7 +473,7 @@ func (r *myPartyResolver) Margins(ctx context.Context, party *Party, marketID *s
 	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
 	out = append(out, res.MarginLevels...)
@@ -500,7 +493,7 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
 	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	if len(res.Orders) > 0 {
@@ -529,7 +522,7 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 	res, err := r.tradingDataClient.TradesByParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	if len(res.Trades) > 0 {
@@ -548,7 +541,7 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.P
 	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	if len(res.Positions) > 0 {
 		return res.Positions, nil
@@ -610,7 +603,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 			logging.String("market-id", mktid),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	if len(res.Accounts) > 0 {
@@ -632,7 +625,7 @@ func (r *myMarginLevelsResolver) Market(ctx context.Context, m *types.MarginLeve
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	market, err := MarketFromProto(res.Market)
@@ -715,7 +708,7 @@ func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) 
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	market, err := MarketFromProto(res.Market)
@@ -756,7 +749,7 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 	res, err := r.tradingDataClient.LastTrade(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	return res.Trade, nil
@@ -771,7 +764,7 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return MarketFromProto(res.Market)
 }
@@ -815,7 +808,7 @@ func RejectionReasonFromProtoOrderError(o types.OrderError) (RejectionReason, er
 	case types.OrderError_INTERNAL_ERROR:
 		return RejectionReasonInternalError, nil
 	default:
-		return RejectionReason(""), fmt.Errorf("invalid RejectionReason: %v", o)
+		return "", fmt.Errorf("invalid RejectionReason: %v", o)
 	}
 }
 
@@ -849,12 +842,11 @@ func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market
 	if obj == nil {
 		return nil, errors.New("invalid order")
 	}
-
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return MarketFromProto(res.Market)
 }
@@ -881,12 +873,11 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-
 	req := protoapi.TradesByOrderRequest{OrderID: ord.Id}
 	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return res.Trades, nil
 }
@@ -909,12 +900,11 @@ func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market
 	if obj == nil {
 		return nil, errors.New("invalid trade")
 	}
-
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return MarketFromProto(res.Market)
 }
@@ -1007,7 +997,7 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return MarketFromProto(res.Market)
 }
@@ -1032,11 +1022,9 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 	if obj == nil {
 		return nil, errors.New("invalid position")
 	}
-
 	if len(obj.PartyID) <= 0 {
 		return nil, errors.New("missing party id")
 	}
-
 	req := protoapi.MarginLevelsRequest{
 		PartyID:  obj.PartyID,
 		MarketID: obj.MarketID,
@@ -1044,7 +1032,7 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
 	out = append(out, res.MarginLevels...)
@@ -1125,7 +1113,7 @@ func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, &req)
 	if err != nil {
 		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	return pendingOrder, nil
@@ -1160,7 +1148,7 @@ func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party s
 	}
 	pendingOrder, err := r.tradingClient.CancelOrder(ctx, &req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	return pendingOrder, nil
@@ -1212,7 +1200,7 @@ func (r *myMutationResolver) OrderAmend(ctx context.Context, id string, party st
 	}
 	pendingOrder, err := r.tradingClient.AmendOrder(ctx, &req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	return pendingOrder, nil
@@ -1249,7 +1237,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	}
 	stream, err := r.tradingDataClient.MarginLevelsSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	ch := make(chan *types.MarginLevels)
@@ -1285,7 +1273,7 @@ func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *strin
 	}
 	stream, err := r.tradingDataClient.MarketsDataSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	ch := make(chan *types.MarketData)
@@ -1338,7 +1326,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 	stream, err := r.tradingDataClient.AccountsSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	c := make(chan *types.Account)
@@ -1381,7 +1369,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	}
 	stream, err := r.tradingDataClient.OrdersSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	c := make(chan []*types.Order)
@@ -1424,7 +1412,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	}
 	stream, err := r.tradingDataClient.TradesSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	c := make(chan []*types.Trade)
@@ -1456,7 +1444,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<
 	}
 	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	c := make(chan *types.Position)
@@ -1488,7 +1476,7 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	}
 	stream, err := r.tradingDataClient.MarketDepthSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	c := make(chan *types.MarketDepth)
@@ -1527,7 +1515,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 	}
 	stream, err := r.tradingDataClient.CandlesSubscribe(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 
 	c := make(chan *types.Candle)
@@ -1597,7 +1585,7 @@ func (r *myPendingOrderResolver) Market(ctx context.Context, pord *types.Pending
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, err
+		return nil, customErrorFromStatus(err)
 	}
 	return MarketFromProto(res.Market)
 }
@@ -1646,7 +1634,7 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 		res, err := r.tradingDataClient.MarketByID(ctx, &req)
 		if err != nil {
 			r.log.Error("tradingData client", logging.Error(err))
-			return nil, err
+			return nil, customErrorFromStatus(err)
 		}
 		return MarketFromProto(res.Market)
 	}

@@ -400,3 +400,12 @@ message MarketData {
   string market = 7;
   int64 timestamp = 8;
 }
+
+message ErrorDetail {
+  // a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
+  int32 code = 1;
+  // a message that describes the error in more detail, should describe the problem encountered.
+  string message = 2;
+  // any inner error information that could add more context, or be helpful for error reporting.
+  string inner = 3;
+}

@@ -97,6 +97,7 @@
     - [Account](#vega.Account)
     - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
+    - [ErrorDetail](#vega.ErrorDetail)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
@@ -1494,6 +1495,23 @@
 | close | [uint64](#uint64) |  |  |
 | volume | [uint64](#uint64) |  |  |
 | interval | [Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="vega.ErrorDetail"></a>
+
+### ErrorDetail
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| code | [int32](#int32) |  | a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 |
+| message | [string](#string) |  | a message that describes the error in more detail, should describe the problem encountered. |
+| inner | [string](#string) |  | any inner error information that could add more context, or be helpful for error reporting. |
 
 
 
