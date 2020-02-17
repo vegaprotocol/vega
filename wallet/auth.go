@@ -21,7 +21,7 @@ var (
 
 type auth struct {
 	log *logging.Logger
-	// sessionID -> wallet naem
+	// sessionID -> wallet name
 	sessions    map[string]string
 	privKey     *rsa.PrivateKey
 	pubKey      *rsa.PublicKey
