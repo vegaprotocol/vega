@@ -15,11 +15,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-const (
-	//  7 days, needs to be in seconds for the token
-	tokenExpiry = time.Hour * 24 * 7
-)
-
 var (
 	ErrSessionNotFound = errors.New("session not found")
 )
@@ -27,14 +22,15 @@ var (
 type auth struct {
 	log *logging.Logger
 	// sessionID -> wallet naem
-	sessions map[string]string
-	privKey  *rsa.PrivateKey
-	pubKey   *rsa.PublicKey
+	sessions    map[string]string
+	privKey     *rsa.PrivateKey
+	pubKey      *rsa.PublicKey
+	tokenExpiry time.Duration
 
 	mu sync.Mutex
 }
 
-func NewAuth(log *logging.Logger, rootPath string) (*auth, error) {
+func NewAuth(log *logging.Logger, rootPath string, tokenExpiry time.Duration) (*auth, error) {
 	// get rsa keys
 	pubBuf, privBuf, err := readRsaKeys(rootPath)
 	if err != nil {
@@ -74,7 +70,7 @@ func (a *auth) NewSession(walletname string) (string, error) {
 		Wallet:  walletname,
 		StandardClaims: jwt.StandardClaims{
 			// these are seconds
-			ExpiresAt: jwt.NewTime((float64)(time.Now().Add(tokenExpiry).Unix())),
+			ExpiresAt: jwt.NewTime((float64)(time.Now().Add(a.tokenExpiry).Unix())),
 			Issuer:    "vega wallet",
 		},
 	}

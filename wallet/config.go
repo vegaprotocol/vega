@@ -25,6 +25,9 @@ const (
 	rsaKeyPath     = "wallet_rsa"
 	pubRsaKeyName  = "public.pem"
 	privRsaKeyName = "private.pem"
+
+	//  7 days, needs to be in seconds for the token
+	tokenExpiry = time.Hour * 24 * 7
 )
 
 type Config struct {
@@ -46,7 +49,7 @@ type NodeConfig struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:       encoding.LogLevel{Level: logging.InfoLevel},
-		TokenExpiry: encoding.Duration{Duration: 30 * time.Minute},
+		TokenExpiry: encoding.Duration{Duration: tokenExpiry},
 		Node: NodeConfig{
 			IP:   "0.0.0.0",
 			Port: 3002,
