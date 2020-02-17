@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/rs/cors"
 )
 
@@ -27,6 +28,8 @@ type WalletHandler interface {
 	RevokeToken(token string) error
 	GenerateKeypair(token, passphrase string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
+	SignTx(token, tx, pubkey string) (SignedBundle, error)
+	SignAndPropagateTx(token, tx, pubkey string) (SignedBundle, error)
 }
 
 func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler) (*Service, error) {
@@ -44,6 +47,8 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	s.HandleFunc("/api/v1/revoke", ExtractToken(s.Revoke))
 	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.GenerateKeypair))
 	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.ListPublicKeys))
+	s.HandleFunc("/api/v1/sign", ExtractToken(s.SignTx))
+	s.HandleFunc("/api/v1/sign-and-submit", ExtractToken(s.SignAndSubmitTx))
 
 	return s, nil
 
@@ -199,11 +204,39 @@ func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Reques
 	writeSuccess(w, keys, http.StatusOK)
 }
 
-func (h *Service) signAndSubmitTx(w http.ResponseWriter, r *http.Request) {
+func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
+
+	req := struct {
+		Tx     string `json:"tx"`
+		PubKey string `json:"pubKey"`
+	}{}
+	if err := unmarshalBody(r, &req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if len(req.Tx) <= 0 {
+		writeError(w, newError("missing tx field"), http.StatusBadRequest)
+		return
+	}
+	if len(req.PubKey) <= 0 {
+		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
+		return
+	}
+
+	sb, err := s.handler.SignTx(t, req.Tx, req.PubKey)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
+	writeSuccess(w, sb, http.StatusOK)
 }
 
-func (h *Service) signTx(w http.ResponseWriter, r *http.Request) {
-
+func (h *Service) SignAndSubmitTx(t string, w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Service) health(w http.ResponseWriter, r *http.Request) {
