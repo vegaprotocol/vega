@@ -1159,6 +1159,42 @@
         }
       }
     },
+    "apiPrepareAmendOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareCancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareSubmitOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
     "apiSignInRequest": {
       "type": "object",
       "properties": {
@@ -1837,6 +1873,9 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },

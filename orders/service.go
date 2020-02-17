@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -97,6 +98,25 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
+func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error) {
+	if err := s.validateOrderSubmission(submission); err != nil {
+		return nil, err
+	}
+	submission.Reference = uuid.NewV4().String()
+	return &types.PendingOrder{
+		Reference:   submission.Reference,
+		Price:       submission.Price,
+		TimeInForce: submission.TimeInForce,
+		Side:        submission.Side,
+		MarketID:    submission.MarketID,
+		Size:        submission.Size,
+		PartyID:     submission.PartyID,
+		Id:          submission.Id,
+		Type:        submission.Type,
+		Status:      types.Order_Active,
+	}, nil
+}
+
 // CreateOrder validate and create a new order
 func (s *Svc) CreateOrder(
 	ctx context.Context,
@@ -152,6 +172,36 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	return nil
 }
 
+func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
+	if err := order.Validate(); err != nil {
+		return nil, errors.Wrap(err, "order cancellation invalid")
+	}
+	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	if o.Status == types.Order_Cancelled {
+		return nil, errors.New("order has already been cancelled")
+	}
+	if o.Remaining == 0 {
+		return nil, errors.New("order has been fully filled")
+	}
+	if o.PartyID != order.PartyID {
+		return nil, errors.New("party mis-match cannot cancel order")
+	}
+	return &types.PendingOrder{
+		Reference:   o.Reference,
+		Price:       o.Price,
+		TimeInForce: o.TimeInForce,
+		Side:        o.Side,
+		MarketID:    o.MarketID,
+		Size:        o.Size,
+		PartyID:     o.PartyID,
+		Status:      types.Order_Cancelled,
+		Id:          o.Id,
+	}, nil
+}
+
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
 func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
 	if err := order.Validate(); err != nil {
@@ -183,6 +233,46 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		Side:        o.Side,
 		MarketID:    o.MarketID,
 		Size:        o.Size,
+		PartyID:     o.PartyID,
+		Status:      types.Order_Cancelled,
+		Id:          o.Id,
+	}, nil
+}
+
+func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
+	if err := amendment.Validate(); err != nil {
+		return nil, errors.Wrap(err, "order amendment validation failed")
+	}
+	// Validate order exists using read store
+	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
+	if err != nil {
+		return nil, err
+	}
+
+	if o.PartyID != amendment.PartyID {
+		return nil, errors.New("party mis-match cannot cancel order")
+	}
+
+	if o.Status != types.Order_Active {
+		return nil, errors.New("order is not active")
+	}
+
+	// if order is GTT convert datetime to blockchain ts
+	if o.TimeInForce == types.Order_GTT {
+		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
+		if err != nil {
+			s.log.Error("unable to get expiration time", logging.Error(err))
+			return nil, err
+		}
+	}
+
+	return &types.PendingOrder{
+		Reference:   o.Reference,
+		Price:       amendment.Price,
+		TimeInForce: o.TimeInForce,
+		Side:        o.Side,
+		MarketID:    o.MarketID,
+		Size:        amendment.Size,
 		PartyID:     o.PartyID,
 		Status:      types.Order_Cancelled,
 		Id:          o.Id,
