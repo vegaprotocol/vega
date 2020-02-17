@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -88,7 +87,7 @@ func (h *Handler) GenerateKeypair(token, passphrase string) (string, error) {
 	if !ok {
 		// this should never happen as we cannot have a valid session
 		// without the actual wallet being loaded in memory but...
-		return "", errors.New("could not found wallet")
+		return "", ErrWalletDoesNotExists
 	}
 
 	kp, err := GenKeypair(crypto.Ed25519)
@@ -119,7 +118,7 @@ func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
 	if !ok {
 		// this should never happen as we cannot have a valid session
 		// without the actual wallet being loaded in memory but...
-		return nil, errors.New("could not found wallet")
+		return nil, ErrWalletDoesNotExists
 	}
 
 	// copy all keys so we do not propagate private keys

@@ -1,7 +1,8 @@
 package wallet_test
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -147,7 +148,8 @@ var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 func randSeq(n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = chars[rand.Intn(len(chars))]
+		v, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		b[i] = chars[v.Int64()]
 	}
 	return string(b)
 }

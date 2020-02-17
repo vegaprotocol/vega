@@ -113,7 +113,7 @@ func GenConfig(log *logging.Logger, path string, rewrite, genRsaKey bool) error 
 	log.Info("wallet service configuration generated successfully", logging.String("path", confPath))
 
 	if genRsaKey {
-		if err := genRsaKeyFiles(log, path, rewrite); err != nil {
+		if err := GenRsaKeyFiles(log, path, rewrite); err != nil {
 			return err
 		}
 	}
@@ -121,7 +121,7 @@ func GenConfig(log *logging.Logger, path string, rewrite, genRsaKey bool) error 
 	return nil
 }
 
-func genRsaKeyFiles(log *logging.Logger, path string, rewrite bool) error {
+func GenRsaKeyFiles(log *logging.Logger, path string, rewrite bool) error {
 	keyFolderPath := filepath.Join(path, rsaKeyPath)
 	confPathExists, _ := fsutil.PathExists(keyFolderPath)
 	if confPathExists {

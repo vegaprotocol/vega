@@ -46,10 +46,11 @@ func NewAuth(log *logging.Logger, rootPath string, tokenExpiry time.Duration) (*
 	}
 
 	return &auth{
-		sessions: map[string]string{},
-		privKey:  priv,
-		pubKey:   pub,
-		log:      log,
+		sessions:    map[string]string{},
+		privKey:     priv,
+		pubKey:      pub,
+		log:         log,
+		tokenExpiry: tokenExpiry,
 	}, nil
 }
 
@@ -63,6 +64,8 @@ func (a *auth) NewSession(walletname string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
+	expiresAt := time.Now().Add(a.tokenExpiry)
+
 	session := genSession()
 	// Create the Claims
 	claims := &Claims{
@@ -70,7 +73,7 @@ func (a *auth) NewSession(walletname string) (string, error) {
 		Wallet:  walletname,
 		StandardClaims: jwt.StandardClaims{
 			// these are seconds
-			ExpiresAt: jwt.NewTime((float64)(time.Now().Add(a.tokenExpiry).Unix())),
+			ExpiresAt: jwt.NewTime((float64)(expiresAt.Unix())),
 			Issuer:    "vega wallet",
 		},
 	}

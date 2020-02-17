@@ -192,7 +192,7 @@ func testVerifyTokenWalletNotFound(t *testing.T) {
 		Return("jeremy", nil)
 
 	key, err := h.GenerateKeypair("yolo token", "whatever")
-	assert.EqualError(t, err, "could not found wallet")
+	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 	assert.Empty(t, key)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -224,7 +224,7 @@ func testListPubWalletNotFound(t *testing.T) {
 		Return("jeremy", nil)
 
 	key, err := h.ListPublicKeys("yolo token")
-	assert.EqualError(t, err, "could not found wallet")
+	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 	assert.Empty(t, key)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
