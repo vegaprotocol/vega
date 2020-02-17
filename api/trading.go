@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"crypto"
 	"fmt"
 	"sync"
 
@@ -11,7 +12,9 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -189,6 +192,30 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 	}, nil
 }
 
+func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+	proto, command, err := txDecode(req.Data)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+	validator, err := wcrypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMissingAsset)
+	}
+	if ok := validator.Verify(crypto.PublicKey(req.Auth.PublicKey), proto, req.Sig); !ok {
+		return nil, apiError(codes.PermissionDenied, ErrInvalidToken)
+	}
+	switch command {
+	case blockchain.SubmitOrderCommand:
+		cmd := types.OrderSubmission{}
+		if err := proto.Unmarshal(&cmd, proto); err != nil {
+			return nil, apiError(codes.InvalidArgument, err)
+		}
+	}
+	return &protoapi.SubmitTransactionResponse{
+		Success: true,
+	}, nil
+}
+
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
 func (s *tradingService) SubmitOrder(
 	ctx context.Context, req *protoapi.SubmitOrderRequest,
@@ -334,4 +361,16 @@ func (s *tradingService) Withdraw(
 func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
 	commandInput := append([]byte{byte(cmd)}, input...)
 	return append(uuid.NewV4().Bytes(), commandInput...), nil
+}
+
+// txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
+// strategy, we have a simple and efficient encoding at present. A partner encode function
+// can be found in the blockchain client.
+func txDecode(input []byte) ([]byte, blockchain.Command, error) {
+	// Input is typically the bytes that arrive in raw format after consensus is reached.
+	// Split the transaction dropping the unification bytes (uuid&pipe)
+	if len(input) <= 37 {
+		return nil, 0, errors.New("payload size is incorrect should be > 37 bytes")
+	}
+	return input[37:], blockchain.Command(input[36]), nil
 }

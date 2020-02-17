@@ -54,6 +54,8 @@
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
+    - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
+    - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
     - [TradesByMarketRequest](#api.TradesByMarketRequest)
     - [TradesByMarketResponse](#api.TradesByMarketResponse)
     - [TradesByOrderRequest](#api.TradesByOrderRequest)
@@ -936,6 +938,39 @@
 
 
 
+<a name="api.SubmitTransactionRequest"></a>
+
+### SubmitTransactionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  |  |
+| address | [bytes](#bytes) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="api.SubmitTransactionResponse"></a>
+
+### SubmitTransactionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| success | [bool](#bool) |  |  |
+
+
+
+
+
+
 <a name="api.TradesByMarketRequest"></a>
 
 ### TradesByMarketRequest
@@ -1127,6 +1162,7 @@
 | SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
+| SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 
 
 <a name="api.trading_data"></a>

@@ -1230,6 +1230,15 @@
         }
       }
     },
+    "apiSubmitTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "apiTradesByMarketResponse": {
       "type": "object",
       "properties": {

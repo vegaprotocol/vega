@@ -379,6 +379,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.SubmitTransactionRequest"><span class="badge">M</span>SubmitTransactionRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.SubmitTransactionResponse"><span class="badge">M</span>SubmitTransactionResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.TradesByMarketRequest"><span class="badge">M</span>TradesByMarketRequest</a>
                 </li>
 
@@ -2355,6 +2363,75 @@
 
 
 
+        <h3 id="api.SubmitTransactionRequest">SubmitTransactionRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sig</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.SubmitTransactionResponse">SubmitTransactionResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.TradesByMarketRequest">TradesByMarketRequest</h3>
         <p></p>
 
@@ -2749,6 +2826,13 @@
                 <td><a href="#api.CheckTokenRequest">CheckTokenRequest</a></td>
                 <td><a href="#api.CheckTokenResponse">CheckTokenResponse</a></td>
                 <td><p>Check an API token</p></td>
+              </tr>
+
+              <tr>
+                <td>SubmitTransaction</td>
+                <td><a href="#api.SubmitTransactionRequest">SubmitTransactionRequest</a></td>
+                <td><a href="#api.SubmitTransactionResponse">SubmitTransactionResponse</a></td>
+                <td><p>Submit a signed transaction</p></td>
               </tr>
 
           </tbody>
