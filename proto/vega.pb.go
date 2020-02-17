@@ -2703,8 +2703,11 @@ func (m *MarketData) GetTimestamp() int64 {
 }
 
 type ErrorDetail struct {
-	Code                 int32    `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	Message              string   `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
+	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	// a message that describes the error in more detail, should describe the problem encountered.
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// any inner error information that could add more context, or be helpful for error reporting.
 	Inner                string   `protobuf:"bytes,3,opt,name=inner,proto3" json:"inner,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
