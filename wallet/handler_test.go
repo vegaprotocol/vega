@@ -153,7 +153,7 @@ func testVerifyTokenSuccess(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).Times(2).
 		Return("jeremy", nil)
 
-	key, err := h.GenerateKeypair(tok)
+	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
@@ -174,7 +174,7 @@ func testVerifyTokenInvalidToken(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).Times(1).
 		Return("", errors.New("bad token"))
 
-	key, err := h.GenerateKeypair("yolo token")
+	key, err := h.GenerateKeypair("yolo token", "whatever")
 	assert.EqualError(t, err, "bad token")
 	assert.Empty(t, key)
 
@@ -191,7 +191,7 @@ func testVerifyTokenWalletNotFound(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).Times(1).
 		Return("jeremy", nil)
 
-	key, err := h.GenerateKeypair("yolo token")
+	key, err := h.GenerateKeypair("yolo token", "whatever")
 	assert.EqualError(t, err, "could not found wallet")
 	assert.Empty(t, key)
 

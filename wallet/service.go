@@ -25,7 +25,7 @@ type WalletHandler interface {
 	CreateWallet(wallet, passphrase string) (string, error)
 	LoginWallet(wallet, passphrase string) (string, error)
 	RevokeToken(token string) error
-	GenerateKeypair(token string) (string, error)
+	GenerateKeypair(token, passphrase string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
 }
 
@@ -163,7 +163,19 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	pubKey, err := s.handler.GenerateKeypair(t)
+	req := struct {
+		Passphrase string `json:"passphrase"`
+	}{}
+	if err := unmarshalBody(r, &req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if len(req.Passphrase) <= 0 {
+		writeError(w, newError("missing passphrase field"), http.StatusBadRequest)
+		return
+	}
+
+	pubKey, err := s.handler.GenerateKeypair(t, req.Passphrase)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
