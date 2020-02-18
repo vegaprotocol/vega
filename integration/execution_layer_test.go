@@ -575,7 +575,7 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 	}
 
 	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-		party, pos[0].OpenVolume, volume, pos[0].UnrealisedPNL, unrealisedPNL, pos[0].RealisedPNL, realisedPNL)
+		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPNL, realisedPNL, pos[0].RealisedPNL)
 }
 
 func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
