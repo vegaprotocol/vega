@@ -19,19 +19,22 @@ import (
 type testService struct {
 	*wallet.Service
 
-	ctrl    *gomock.Controller
-	handler *mocks.MockWalletHandler
+	ctrl        *gomock.Controller
+	handler     *mocks.MockWalletHandler
+	nodeForward *mocks.MockNodeForward
 }
 
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	handler := mocks.NewMockWalletHandler(ctrl)
+	nodeForward := mocks.NewMockNodeForward(ctrl)
 	// no needs of the conf or path as we do not run an actual service
-	s, _ := wallet.NewServiceWith(logging.NewTestLogger(), nil, "", handler)
+	s, _ := wallet.NewServiceWith(logging.NewTestLogger(), nil, "", handler, nodeForward)
 	return &testService{
-		Service: s,
-		ctrl:    ctrl,
-		handler: handler,
+		Service:     s,
+		ctrl:        ctrl,
+		handler:     handler,
+		nodeForward: nodeForward,
 	}
 }
 

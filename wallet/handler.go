@@ -184,14 +184,3 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 		PubKey: kp.pubBytes,
 	}, nil
 }
-
-func (h *Handler) SignAndPropagateTx(token, tx, pubkey string) (SignedBundle, error) {
-	sb, err := h.SignTx(token, tx, pubkey)
-	if err != nil {
-		return SignedBundle{}, err
-	}
-
-	// we were able to sign the transaction, send it to the node then
-
-	return sb, nil
-}

@@ -15,10 +15,11 @@ import (
 type Service struct {
 	*http.ServeMux
 
-	cfg     *Config
-	log     *logging.Logger
-	s       *http.Server
-	handler WalletHandler
+	cfg         *Config
+	log         *logging.Logger
+	s           *http.Server
+	handler     WalletHandler
+	nodeForward NodeForward
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet WalletHandler
@@ -29,15 +30,20 @@ type WalletHandler interface {
 	GenerateKeypair(token, passphrase string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
 	SignTx(token, tx, pubkey string) (SignedBundle, error)
-	SignAndPropagateTx(token, tx, pubkey string) (SignedBundle, error)
 }
 
-func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler) (*Service, error) {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
+type NodeForward interface {
+	Send(*SignedBundle) error
+}
+
+func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler, n NodeForward) (*Service, error) {
 	s := &Service{
-		ServeMux: http.NewServeMux(),
-		log:      log,
-		cfg:      cfg,
-		handler:  h,
+		ServeMux:    http.NewServeMux(),
+		log:         log,
+		cfg:         cfg,
+		handler:     h,
+		nodeForward: n,
 	}
 
 	// all the endpoints are public for testing purpose
@@ -48,24 +54,28 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.GenerateKeypair))
 	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.ListPublicKeys))
 	s.HandleFunc("/api/v1/sign", ExtractToken(s.SignTx))
-	s.HandleFunc("/api/v1/sign-and-submit", ExtractToken(s.SignAndSubmitTx))
 
 	return s, nil
 
 }
 
 func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, error) {
+	log = log.Named(namedLogger)
+
 	// ensure the folder exist
 	if err := EnsureBaseFolder(rootPath); err != nil {
 		return nil, err
 	}
-
 	auth, err := NewAuth(log, rootPath, cfg.TokenExpiry.Get())
 	if err != nil {
 		return nil, err
 	}
+	nodeForward, err := NewNodeForward(log, cfg.Node)
+	if err != nil {
+		return nil, err
+	}
 	handler := NewHandler(log, auth, rootPath)
-	return NewServiceWith(log, cfg, rootPath, handler)
+	return NewServiceWith(log, cfg, rootPath, handler, nodeForward)
 }
 
 func (s *Service) Start() error {
@@ -211,8 +221,9 @@ func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := struct {
-		Tx     string `json:"tx"`
-		PubKey string `json:"pubKey"`
+		Tx        string `json:"tx"`
+		PubKey    string `json:"pubKey"`
+		Propagate bool   `json:"propagate"`
 	}{}
 	if err := unmarshalBody(r, &req); err != nil {
 		writeError(w, err, http.StatusBadRequest)
@@ -233,10 +244,15 @@ func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeSuccess(w, sb, http.StatusOK)
-}
+	if req.Propagate {
+		err := s.nodeForward.Send(&sb)
+		if err != nil {
+			writeError(w, newError(err.Error()), http.StatusInternalServerError)
+			return
+		}
+	}
 
-func (h *Service) SignAndSubmitTx(t string, w http.ResponseWriter, r *http.Request) {
+	writeSuccess(w, sb, http.StatusOK)
 }
 
 func (h *Service) health(w http.ResponseWriter, r *http.Request) {
