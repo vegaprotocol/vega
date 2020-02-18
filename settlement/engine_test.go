@@ -112,7 +112,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now())
+	got, err := engine.Settle(time.Now(), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -138,7 +138,7 @@ func testSettleExpiryFail(t *testing.T) {
 	positions := engine.getExpiryPositions(data...)
 	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now())
+	empty, err := engine.Settle(time.Now(), 0)
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -440,7 +440,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now)
+			_, err := engine.Settle(now, 0)
 			assert.NoError(t, err)
 		}()
 	}
