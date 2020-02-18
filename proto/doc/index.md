@@ -29,6 +29,8 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [NotifyTraderAccountRequest](#api.NotifyTraderAccountRequest)
+    - [NotifyTraderAccountResponse](#api.NotifyTraderAccountResponse)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
@@ -101,6 +103,7 @@
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
+    - [NotifyTraderAccount](#vega.NotifyTraderAccount)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
     - [OrderCancellation](#vega.OrderCancellation)
@@ -133,6 +136,7 @@
     - [Order.Type](#vega.Order.Type)
     - [OrderError](#vega.OrderError)
     - [Side](#vega.Side)
+    - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
 
 
@@ -534,6 +538,36 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | markets | [vega.Market](#vega.Market) | repeated | a list of Markets |
+
+
+
+
+
+
+<a name="api.NotifyTraderAccountRequest"></a>
+
+### NotifyTraderAccountRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| notif | [vega.NotifyTraderAccount](#vega.NotifyTraderAccount) |  |  |
+
+
+
+
+
+
+<a name="api.NotifyTraderAccountResponse"></a>
+
+### NotifyTraderAccountResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submitted | [bool](#bool) |  |  |
 
 
 
@@ -1070,6 +1104,7 @@
 | CancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Cancel an Order |
 | AmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Amend an Order |
 | SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
+| NotifyTraderAccount | [NotifyTraderAccountRequest](#api.NotifyTraderAccountRequest) | [NotifyTraderAccountResponse](#api.NotifyTraderAccountResponse) | Request balance increase |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 
@@ -1582,6 +1617,22 @@
 
 
 
+<a name="vega.NotifyTraderAccount"></a>
+
+### NotifyTraderAccount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| traderID | [string](#string) |  |  |
+| amount | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="vega.Order"></a>
 
 ### Order
@@ -1928,6 +1979,7 @@
 | buyOrder | [string](#string) |  |  |
 | sellOrder | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| type | [Trade.Type](#vega.Trade.Type) |  |  |
 
 
 
@@ -2163,6 +2215,19 @@ Order Type
 | ---- | ------ | ----------- |
 | Buy | 0 |  |
 | Sell | 1 |  |
+
+
+
+<a name="vega.Trade.Type"></a>
+
+### Trade.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEFAULT | 0 |  |
+| NETWORK_CLOSE_OUT_GOOD | 1 |  |
+| NETWORK_CLOSE_OUT_BAD | 2 |  |
 
 
 

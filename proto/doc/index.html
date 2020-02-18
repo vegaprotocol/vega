@@ -279,6 +279,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.NotifyTraderAccountRequest"><span class="badge">M</span>NotifyTraderAccountRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.NotifyTraderAccountResponse"><span class="badge">M</span>NotifyTraderAccountResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.OrderByMarketAndIdRequest"><span class="badge">M</span>OrderByMarketAndIdRequest</a>
                 </li>
 
@@ -541,6 +549,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NotifyTraderAccount"><span class="badge">M</span>NotifyTraderAccount</a>
+                </li>
+
+                <li>
                   <a href="#vega.Order"><span class="badge">M</span>Order</a>
                 </li>
 
@@ -663,6 +675,10 @@
 
                 <li>
                   <a href="#vega.Side"><span class="badge">E</span>Side</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Trade.Type"><span class="badge">E</span>Trade.Type</a>
                 </li>
 
                 <li>
@@ -1492,6 +1508,54 @@
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
                   <td><p>a list of Markets </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.NotifyTraderAccountRequest">NotifyTraderAccountRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>notif</td>
+                  <td><a href="#vega.NotifyTraderAccount">vega.NotifyTraderAccount</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.NotifyTraderAccountResponse">NotifyTraderAccountResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>submitted</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -2605,6 +2669,13 @@
                 <td><a href="#api.SignInRequest">SignInRequest</a></td>
                 <td><a href="#api.SignInResponse">SignInResponse</a></td>
                 <td><p>Sign In</p></td>
+              </tr>
+
+              <tr>
+                <td>NotifyTraderAccount</td>
+                <td><a href="#api.NotifyTraderAccountRequest">NotifyTraderAccountRequest</a></td>
+                <td><a href="#api.NotifyTraderAccountResponse">NotifyTraderAccountResponse</a></td>
+                <td><p>Request balance increase</p></td>
               </tr>
 
               <tr>
@@ -3945,6 +4016,37 @@
 
 
 
+        <h3 id="vega.NotifyTraderAccount">NotifyTraderAccount</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>traderID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.Order">Order</h3>
         <p></p>
 
@@ -5254,6 +5356,13 @@
                   <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.Trade.Type">Trade.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -5861,6 +5970,35 @@
               <tr>
                 <td>Sell</td>
                 <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Trade.Type">Trade.Type</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>DEFAULT</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NETWORK_CLOSE_OUT_GOOD</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NETWORK_CLOSE_OUT_BAD</td>
+                <td>2</td>
                 <td><p></p></td>
               </tr>
 
