@@ -1959,7 +1959,8 @@ type Mutation {
     expiration: String
     "type of the order"
     type: OrderType!
-  ): PendingOrder!
+  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
+
 
   """
   Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -1972,7 +1973,7 @@ type Mutation {
     partyId: String!
     "ID of the market where to find the order"
     marketId: String!
-  ): PendingOrder!
+  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
 
   """
   Send a amend order request into VEGA network, this does not immediately amend an order.
@@ -1989,7 +1990,7 @@ type Mutation {
     size: String!
     "New expiration time"
     expiration: String
-  ): PendingOrder!
+  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
 
 
   "sign a party in using an username and password, then return a token"
@@ -1997,7 +1998,7 @@ type Mutation {
     "ID of the party to get logged in"
     id: String!
     "Password of the party"
-    password: String!): String!
+    password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
 }
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
