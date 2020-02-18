@@ -46,6 +46,8 @@ func TestService(t *testing.T) {
 	t.Run("gen keypair fail invalid request", testServiceGenKeypairFailInvalidRequest)
 	t.Run("list keypair ok", testServiceListPublicKeysOK)
 	t.Run("list keypair fail invalid request", testServiceListPublicKeysFailInvalidRequest)
+	t.Run("sign ok", testServiceSignOK)
+	t.Run("sign fail invalid request", testServiceSignFailInvalidRequest)
 }
 
 func testServiceCreateWalletOK(t *testing.T) {
@@ -281,4 +283,78 @@ func testServiceListPublicKeysFailInvalidRequest(t *testing.T) {
 
 	resp = w.Result()
 	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+}
+
+func testServiceSignOK(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).Return(wallet.SignedBundle{}, nil)
+	payload := `{"tx": "some data", "pubKey": "asdasasdasd"}`
+	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.SignTx)(w, r)
+
+	resp := w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusOK)
+}
+
+func testServiceSignFailInvalidRequest(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	// InvalidMethod
+	r := httptest.NewRequest("GET", "http://example.com/create", nil)
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.SignTx)(w, r)
+
+	resp := w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
+	// invalid token
+	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r.Header.Add("Authorization", "Bearer")
+
+	w = httptest.NewRecorder()
+
+	wallet.ExtractToken(s.SignTx)(w, r)
+
+	resp = w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
+	// no token
+	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	w = httptest.NewRecorder()
+
+	wallet.ExtractToken(s.SignTx)(w, r)
+
+	resp = w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
+	// token but invalid payload
+	payload := `{"t": "some data", "pubKey": "asdasasdasd"}`
+	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	w = httptest.NewRecorder()
+	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+
+	wallet.ExtractToken(s.SignTx)(w, r)
+
+	resp = w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
+	payload = `{"tx": "some data", "puey": "asdasasdasd"}`
+	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	w = httptest.NewRecorder()
+	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+
+	wallet.ExtractToken(s.SignTx)(w, r)
+
+	resp = w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+
 }

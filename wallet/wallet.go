@@ -8,8 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"golang.org/x/crypto/ed25519"
-
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 )
@@ -87,8 +85,8 @@ func GenKeypair(algorithm string) (*Keypair, error) {
 		return nil, err
 	}
 
-	privBytes := priv.(ed25519.PrivateKey)
-	pubBytes := pub.(ed25519.PublicKey)
+	privBytes := priv.([]byte)
+	pubBytes := pub.([]byte)
 	return &Keypair{
 		Priv:      hex.EncodeToString(privBytes),
 		Pub:       hex.EncodeToString(pubBytes),

@@ -1,6 +1,7 @@
 package wallet_test
 
 import (
+	"encoding/base64"
 	"errors"
 	"os"
 	"testing"
@@ -8,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/mocks"
 
 	"github.com/golang/mock/gomock"
@@ -48,6 +50,8 @@ func TestHandler(t *testing.T) {
 	t.Run("generate keypair failure - wallet not found", testVerifyTokenWalletNotFound)
 	t.Run("list public key failure - invalid token", testListPubInvalidToken)
 	t.Run("list public key failure - wallet not found", testListPubWalletNotFound)
+	t.Run("sign tx - success", testSignTxSuccess)
+	// t.Run("list public key failure - wallet not found", testListPubWalletNotFound)
 }
 
 func testHandlerCreateWalletThenLogin(t *testing.T) {
@@ -226,6 +230,40 @@ func testListPubWalletNotFound(t *testing.T) {
 	key, err := h.ListPublicKeys("yolo token")
 	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 	assert.Empty(t, key)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testSignTxSuccess(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// then start the test
+	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
+		Return("jeremy", nil)
+
+	// first create the wallet
+	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
+		Return("some fake token", nil)
+
+	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tok)
+
+	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, key)
+
+	message := "hello world."
+
+	signedBundle, err := h.SignTx(tok, base64.StdEncoding.EncodeToString([]byte(message)), key)
+	assert.NoError(t, err)
+
+	// verify signature then
+	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	assert.NoError(t, err)
+
+	assert.True(t, alg.Verify(signedBundle.PubKey, []byte(message), signedBundle.Sig))
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }
