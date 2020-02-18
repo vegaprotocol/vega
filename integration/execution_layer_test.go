@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/proto"
 
-	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
 
