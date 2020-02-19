@@ -52,6 +52,7 @@ type Blockchain interface {
 	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
+	SubmitTransaction(ctx context.Context, raw []byte) (bool, error)
 }
 
 // Svc represents the order service
@@ -96,6 +97,10 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
+}
+
+func (s *Svc) SubmitTransaction(ctx context.Context, raw []byte) (bool, error) {
+	return s.blockchain.SubmitTransaction(ctx, raw)
 }
 
 func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error) {

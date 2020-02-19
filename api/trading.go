@@ -27,6 +27,7 @@ type TradeOrderService interface {
 	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
+	SubmitTransaction(ctx context.Context, raw []byte) (bool, error)
 	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
@@ -194,27 +195,16 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
-	rawProto, command, err := txDecode(req.Data)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
 	validator, err := wcrypto.NewSignatureAlgorithm(wcrypto.Ed25519)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMissingAsset)
 	}
-	if ok := validator.Verify(crypto.PublicKey(req.GetPubKey()), rawProto, req.Sig); !ok {
+	if ok := validator.Verify(crypto.PublicKey(req.GetPubKey()), req.Data, req.Sig); !ok {
 		return nil, apiError(codes.PermissionDenied, ErrInvalidToken)
 	}
-	switch command {
-	case blockchain.SubmitOrderCommand:
-		cmd := types.OrderSubmission{}
-		if err := proto.Unmarshal(rawProto, &cmd); err != nil {
-			return nil, apiError(codes.InvalidArgument, err)
-		}
-	default:
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Data); err != nil || !ok {
+		return nil, apiError(codes.Internal, err)
 	}
-	// @TODO -> actually submit the transaction
 	return &protoapi.SubmitTransactionResponse{
 		Success: true,
 	}, nil
