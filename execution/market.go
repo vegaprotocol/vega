@@ -270,7 +270,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	if closed {
 		// call settlement and stuff
-		positions, err := m.settlement.Settle(t)
+		positions, err := m.settlement.Settle(t, m.markPrice)
 		if err != nil {
 			m.log.Error(
 				"Failed to get settle positions on market close",
