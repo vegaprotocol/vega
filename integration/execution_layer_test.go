@@ -546,7 +546,7 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 }
 
 func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
-	var retries = 9
+	var retries = 2
 
 	party, volume, realisedPNL, unrealisedPNL := val(row, 0), i64val(row, 1), i64val(row, 3), i64val(row, 2)
 
