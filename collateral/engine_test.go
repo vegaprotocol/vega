@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/collateral/mocks"
+	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -1086,6 +1087,128 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+func TestMarginUpdates(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	list := make([]events.Risk, 1)
+
+	list[0] = riskFake{
+		asset:  testMarketAsset,
+		amount: 100,
+		transfer: &types.Transfer{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				MinAmount: 100,
+				Amount:    100,
+				Asset:     testMarketAsset,
+			},
+			Type: types.TransferType_MARGIN_LOW,
+		},
+	}
+
+	resp, margin, err := eng.Engine.MarginUpdate(testMarketID, list)
+	assert.Nil(t, err)
+	assert.Equal(t, len(margin), 0)
+	assert.Equal(t, len(resp), 1)
+	assert.Equal(t, resp[0].Transfers[0].Amount, int64(100))
+}
+
+func TestClearMarket(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	parties := []string{trader}
+
+	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
+
+	assert.Nil(t, err)
+	assert.Equal(t, len(responses), 1)
+}
+
+func TestClearMarketNoMargin(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+
+	parties := []string{trader}
+
+	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
+
+	assert.Error(t, err)
+	assert.Equal(t, len(responses), 0)
+}
+
+func TestWithdrawalOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw(trader, testMarketAsset, 100)
+	assert.Nil(t, err)
+}
+
+func TestWithdrawalExact(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw(trader, testMarketAsset, 500)
+	assert.Nil(t, err)
+}
+
+func TestWithdrawalNotEnough(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw(trader, testMarketAsset, 600)
+	assert.Error(t, err)
+}
+
 func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	tt := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
@@ -1107,6 +1230,7 @@ func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEng
 	buf := mocks.NewMockAccountBuffer(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	conf := collateral.NewDefaultConfig()
+	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	buf.EXPECT().Add(gomock.Any()).Times(2)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
