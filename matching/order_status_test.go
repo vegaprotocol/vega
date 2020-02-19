@@ -143,7 +143,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
-	// now place our fok order to be filled
+	// now place our IOC order to be filled
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     partyID2,
@@ -207,7 +207,6 @@ func testGTCActive(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -232,7 +231,6 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -262,7 +260,6 @@ func testGTCCancelledNotFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -461,7 +458,6 @@ func testGTTActive(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -487,7 +483,6 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -518,7 +513,6 @@ func testGTTCancelledNotFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -549,7 +543,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
+	// place a first order to sit in the book, be partially filled
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -592,7 +586,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
+	// place a first order to sit in the book, be partially filled, and cancelled
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -726,7 +720,7 @@ func testGTTExpiredNotFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
+	// place a first order to sit in the book, and expired
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
@@ -757,7 +751,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	// place a first order to sit in the book, be partially filled, and stopped
+	// place a first order to sit in the book, be partially filled, and expired
 	order1 := types.Order{
 		Id:          orderID,
 		MarketID:    market,
