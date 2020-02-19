@@ -718,6 +718,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
+			// setup the type of the trade to network
+			// this trade did happen with a GOOD trader to
+			// 0 out the BAD trader position
+			trade.Type = types.Trade_NETWORK_CLOSE_OUT_GOOD
+
 			m.tradeBuf.Add(*trade)
 
 			// Save to trade buffer for generating candles etc
@@ -784,11 +789,10 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
-	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice)
 	marketID := m.GetID()
 	order := types.Order{
 		MarketID:    marketID,
-		Status:      types.Order_Active,
+		Status:      types.Order_Filled,
 		PartyID:     networkPartyID,
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
@@ -796,8 +800,6 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
-	// traders need to take the opposing side
-	// @TODO get trader positions, submit orders for each
 
 	asset, _ := m.mkt.GetAsset()
 	marginLevels := types.MarginLevels{
@@ -814,53 +816,61 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			nSide = types.Side_Buy
 		}
 		tSize := uint64(math.Abs(float64(trader.Size())))
+
 		// set order fields (network order)
 		order.Size = tSize
 		order.Remaining = order.Size
 		order.Side = nSide
 		order.Status = types.Order_Active // ensure the status is always active
 		m.idgen.SetID(&order)
-		to := types.Order{
+
+		// this is the party order
+		partyOrder := types.Order{
 			MarketID:    marketID,
+			Size:        tSize,
 			Remaining:   tSize,
-			Status:      types.Order_Active,
+			Status:      types.Order_Filled,
 			PartyID:     trader.Party(),
 			Side:        tSide,             // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
 			TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_NETWORK,
 		}
-		to.Size = to.Remaining
-		m.idgen.SetID(&to)
-		if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
-			return err
-		}
-		res, err := tmpOrderBook.SubmitOrder(&to)
-		if err != nil {
-			return err
-		}
+		m.idgen.SetID(&partyOrder)
+
 		// store the trader order, too
-		m.orderBuf.Add(to)
+		m.orderBuf.Add(partyOrder)
 		m.orderBuf.Add(order)
-		// now store the resulting trades:
-		for idx, trade := range res.Trades {
-			trade.Id = fmt.Sprintf("%s-%010d", to.Id, idx)
-			if order.Side == types.Side_Buy {
-				trade.BuyOrder = order.Id
-				trade.SellOrder = res.PassiveOrdersAffected[idx].Id
-			} else {
-				trade.SellOrder = order.Id
-				trade.BuyOrder = res.PassiveOrdersAffected[idx].Id
-			}
 
-			m.tradeBuf.Add(*trade)
+		// now let's create the trade between the party and network
+		var (
+			buyOrder  *types.Order
+			sellOrder *types.Order
+		)
+		if order.Side == types.Side_Buy {
+			buyOrder = &order
+			sellOrder = &partyOrder
+		} else {
+			sellOrder = &order
+			buyOrder = &partyOrder
 		}
 
-		for _, o := range res.PassiveOrdersAffected {
-			m.orderBuf.Add(*o)
+		trade := types.Trade{
+			Id:        fmt.Sprintf("%s-%010d", partyOrder.Id, 1),
+			MarketID:  partyOrder.MarketID,
+			Price:     partyOrder.Price,
+			Size:      partyOrder.Size,
+			Aggressor: order.Side, // we consider network to be agressor
+			BuyOrder:  buyOrder.Id,
+			SellOrder: sellOrder.Id,
+			Buyer:     buyOrder.PartyID,
+			Seller:    sellOrder.PartyID,
+			Timestamp: partyOrder.CreatedAt,
+			Type:      types.Trade_NETWORK_CLOSE_OUT_BAD,
 		}
+		m.tradeBuf.Add(trade)
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()

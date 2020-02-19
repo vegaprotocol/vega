@@ -133,6 +133,7 @@
     - [Order.Type](#vega.Order.Type)
     - [OrderError](#vega.OrderError)
     - [Side](#vega.Side)
+    - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
 
 
@@ -1928,6 +1929,7 @@
 | buyOrder | [string](#string) |  |  |
 | sellOrder | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| type | [Trade.Type](#vega.Trade.Type) |  |  |
 
 
 
@@ -2163,6 +2165,19 @@ Order Type
 | ---- | ------ | ----------- |
 | Buy | 0 |  |
 | Sell | 1 |  |
+
+
+
+<a name="vega.Trade.Type"></a>
+
+### Trade.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEFAULT | 0 |  |
+| NETWORK_CLOSE_OUT_GOOD | 1 |  |
+| NETWORK_CLOSE_OUT_BAD | 2 |  |
 
 
 

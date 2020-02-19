@@ -145,18 +145,26 @@ enum OrderError {
 }
 
 message Trade {
-    string id = 1;
-    string marketID = 2;
-    uint64 price = 3;
-    uint64 size = 4;
-    string buyer = 5;
-    string seller = 6;
-    Side aggressor = 7;
-    string buyOrder = 8;
-    string sellOrder = 9;
 
-    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-    int64 timestamp = 10;
+  enum Type {
+    DEFAULT = 0;
+    NETWORK_CLOSE_OUT_GOOD = 1;
+    NETWORK_CLOSE_OUT_BAD = 2;
+  }
+
+  string id = 1;
+  string marketID = 2;
+  uint64 price = 3;
+  uint64 size = 4;
+  string buyer = 5;
+  string seller = 6;
+  Side aggressor = 7;
+  string buyOrder = 8;
+  string sellOrder = 9;
+
+  // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+  int64 timestamp = 10;
+  Type type = 11;
 }
 
 message TradeSet {
