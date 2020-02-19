@@ -2097,6 +2097,7 @@
 | Stopped | 3 |  |
 | Filled | 4 |  |
 | Rejected | 5 |  |
+| PartiallyFilled | 6 |  |
 
 
 

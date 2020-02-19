@@ -200,7 +200,15 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	order.Status = types.Order_Cancelled
+	if order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT {
+		if order.Remaining != order.Size {
+			order.Status = types.Order_PartiallyFilled
+		} else {
+			order.Status = types.Order_Cancelled
+		}
+	} else {
+		order.Status = types.Order_Cancelled
+	}
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -294,8 +302,13 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
 	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
-		// IOC so we set status as Cancelled.
-		order.Status = types.Order_Cancelled
+		// Stopped as not filled at all
+		if order.Remaining == order.Size {
+			order.Status = types.Order_Stopped
+		} else {
+			// IOC so we set status as Cancelled.
+			order.Status = types.Order_PartiallyFilled
+		}
 	}
 
 	// What is Fill Or Kill?
@@ -356,11 +369,17 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	if len(expiredOrders) <= 0 {
 		return nil
 	}
+	out := make([]types.Order, 0, len(expiredOrders))
 
 	// delete the orders now
 	for at := range expiredOrders {
-		b.DeleteOrder(&expiredOrders[at])
-		expiredOrders[at].Status = types.Order_Expired
+		order, _ := b.DeleteOrder(&expiredOrders[at])
+		if order.Remaining == order.Size {
+			order.Status = types.Order_Expired
+		} else {
+			order.Status = types.Order_PartiallyFilled
+		}
+		out = append(out, *order)
 	}
 
 	if b.LogRemovedOrdersDebug {
@@ -369,7 +388,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			logging.Int("expired-orders", len(expiredOrders)))
 	}
 
-	return expiredOrders
+	return out
 }
 
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
@@ -413,6 +432,8 @@ func (b *OrderBook) RemoveDistressedOrders(
 				// let's see whether we need to handle this further down
 				continue
 			}
+			// here we set the status of the order as stopped as the system triggered it as well.
+			confirm.Order.Status = types.Order_Stopped
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}

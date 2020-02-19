@@ -912,7 +912,8 @@
         "Cancelled",
         "Stopped",
         "Filled",
-        "Rejected"
+        "Rejected",
+        "PartiallyFilled"
       ],
       "default": "Active"
     },
