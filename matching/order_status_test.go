@@ -23,6 +23,21 @@ func TestOrderStatuses(t *testing.T) {
 	t.Run("GTC - cancelled partially filled", testGTCCancelledPartiallyFilled)
 	t.Run("GTC - stopped partially filled", testGTCStoppedPartiallyFilled)
 	t.Run("GTC - filled", testGTCFilled)
+
+	t.Run("GTT - active", testGTTActive)
+	t.Run("GTT - expired not filled", testGTTExpiredNotFilled)
+	t.Run("GTT - cancelled not filled", testGTTCancelledNotFilled)
+	t.Run("GTT - stopped not filled", testGTTStoppedNotFilled)
+	t.Run("GTT - active partially filled", testGTTActivePartiallyFilled)
+	t.Run("GTT - expired partially filled", testGTTExpiredPartiallyFilled)
+	t.Run("GTT - cancelled partially filled", testGTTCancelledPartiallyFilled)
+	t.Run("GTT - stopped partially filled", testGTTStoppedPartiallyFilled)
+	t.Run("GTT - filled", testGTTFilled)
+
+	// the following test from the specs is not added as it is not possible to test through the order book.
+	// and it's not possible for an order to become expired once it's been filled as the order is removed
+	// from the book, and the book is setting up orders.
+	// |      GTT      |   Yes   |   Yes   |         No        |         No        |      Filled      |
 }
 
 func testFOKStopped(t *testing.T) {
@@ -436,6 +451,347 @@ func testGTCFilled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_Filled, order.Status)
+}
+
+func testGTTActive(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_Active, order1.Status)
+}
+
+func testGTTStoppedNotFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// then stop the order
+	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
+	assert.NoError(t, err)
+	assert.Len(t, rmOrders, 1)
+	assert.Equal(t, types.Order_Stopped, rmOrders[0].Status)
+}
+
+func testGTTCancelledNotFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// then stop the order
+	confirm, err := book.CancelOrder(&order1)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
+}
+
+func testGTTActivePartiallyFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	partyID2 := "p2"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// now place our order which will consume some of the first order
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     partyID2,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Len(t, confirm.PassiveOrdersAffected, 1)
+	assert.Equal(t, types.Order_Active, confirm.PassiveOrdersAffected[0].Status)
+}
+
+func testGTTCancelledPartiallyFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	partyID2 := "p2"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// now place our order which will consume some of the first order
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     partyID2,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err = book.SubmitOrder(&order)
+	assert.NoError(t, err)
+
+	// then stop the order
+	confirm, err := book.CancelOrder(&order1)
+	assert.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_PartiallyFilled, confirm.Order.Status)
+}
+
+func testGTTStoppedPartiallyFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	partyID2 := "p2"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// now place our order which will consume some of the first order
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     partyID2,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err = book.SubmitOrder(&order)
+	assert.NoError(t, err)
+
+	// then stop the order
+	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
+	assert.NoError(t, err)
+	assert.Len(t, rmOrders, 1)
+	assert.Equal(t, types.Order_Stopped, rmOrders[0].Status)
+}
+
+func testGTTFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	partyID2 := "p2"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book
+	order1 := types.Order{
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// now place our GTT order to be filled
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     partyID2,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirm.Trades))
+	assert.Equal(t, types.Order_Filled, order.Status)
+}
+
+func testGTTExpiredNotFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// then remove expired, set 1 sec after order exp time.
+	orders := book.RemoveExpiredOrders(11)
+	assert.Len(t, orders, 1)
+	assert.Equal(t, types.Order_Expired, orders[0].Status)
+}
+
+func testGTTExpiredPartiallyFilled(t *testing.T) {
+	market := "testMarket"
+	partyID1 := "p1"
+	partyID2 := "p2"
+	orderID := "v0000000000000-0000001"
+
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// place a first order to sit in the book, be partially filled, and stopped
+	order1 := types.Order{
+		Id:          orderID,
+		MarketID:    market,
+		PartyID:     partyID1,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err := book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+
+	// now place our order which will consume some of the first order
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     partyID2,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTT,
+		Type:        types.Order_LIMIT,
+		ExpiresAt:   10,
+	}
+	_, err = book.SubmitOrder(&order)
+	assert.NoError(t, err)
+
+	// then remove expired, set 1 sec after order exp time.
+	orders := book.RemoveExpiredOrders(11)
+	assert.Len(t, orders, 1)
+	assert.Equal(t, types.Order_PartiallyFilled, orders[0].Status)
 }
 
 type marketPositionFake struct {

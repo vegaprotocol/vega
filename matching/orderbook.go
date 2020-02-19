@@ -200,7 +200,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	if order.TimeInForce == types.Order_GTC {
+	if order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT {
 		if order.Remaining != order.Size {
 			order.Status = types.Order_PartiallyFilled
 		} else {
@@ -369,11 +369,17 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	if len(expiredOrders) <= 0 {
 		return nil
 	}
+	out := make([]types.Order, 0, len(expiredOrders))
 
 	// delete the orders now
 	for at := range expiredOrders {
-		b.DeleteOrder(&expiredOrders[at])
-		expiredOrders[at].Status = types.Order_Expired
+		order, _ := b.DeleteOrder(&expiredOrders[at])
+		if order.Remaining == order.Size {
+			order.Status = types.Order_Expired
+		} else {
+			order.Status = types.Order_PartiallyFilled
+		}
+		out = append(out, *order)
 	}
 
 	if b.LogRemovedOrdersDebug {
@@ -382,7 +388,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			logging.Int("expired-orders", len(expiredOrders)))
 	}
 
-	return expiredOrders
+	return out
 }
 
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
