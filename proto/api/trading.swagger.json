@@ -2183,8 +2183,20 @@
           "type": "string",
           "format": "int64",
           "description": "nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "type": {
+          "$ref": "#/definitions/vegaTradeType"
         }
       }
+    },
+    "vegaTradeType": {
+      "type": "string",
+      "enum": [
+        "DEFAULT",
+        "NETWORK_CLOSE_OUT_GOOD",
+        "NETWORK_CLOSE_OUT_BAD"
+      ],
+      "default": "DEFAULT"
     },
     "vegaTransferBalance": {
       "type": "object",
