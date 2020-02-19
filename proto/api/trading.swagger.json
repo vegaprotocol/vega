@@ -1827,7 +1827,7 @@
         "side": {
           "$ref": "#/definitions/vegaSide"
         },
-        "TimeInForce": {
+        "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
@@ -1874,7 +1874,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "TimeInForce": {
+        "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "side": {
