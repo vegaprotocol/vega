@@ -1695,7 +1695,7 @@
 | price | [uint64](#uint64) |  | mandatory for Limit orders, not required for Market orders |
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  |  |
-| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 
@@ -1730,7 +1730,7 @@
 | ----- | ---- | ----- | ----------- |
 | reference | [string](#string) |  |  |
 | price | [uint64](#uint64) |  |  |
-| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | side | [Side](#vega.Side) |  |  |
 | marketID | [string](#string) |  |  |
 | size | [uint64](#uint64) |  |  |
