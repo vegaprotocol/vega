@@ -85,6 +85,7 @@ type PartyService interface {
 // BlockchainClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
+	SubmitTransaction(ctx context.Context, raw []byte) (bool, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)

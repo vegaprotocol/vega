@@ -171,6 +171,21 @@ func (mr *MockBlockchainClientMockRecorder) NotifyTraderAccount(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockBlockchainClient)(nil).NotifyTraderAccount), arg0, arg1)
 }
 
+// SubmitTransaction mocks base method
+func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 []byte) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransaction indicates an expected call of SubmitTransaction
+func (mr *MockBlockchainClientMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchainClient)(nil).SubmitTransaction), arg0, arg1)
+}
+
 // Withdraw mocks base method
 func (m *MockBlockchainClient) Withdraw(arg0 context.Context, arg1 *proto.Withdraw) (bool, error) {
 	m.ctrl.T.Helper()
