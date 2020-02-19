@@ -10,6 +10,72 @@ schema {
 type Mutation {
 
   """
+  Send a submit order request to be prepared, and returns a pending order + blob of the transaction to submit.
+  The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
+  """
+  prepareOrderSubmit(
+    "ID of the market to place the order"
+    marketId: String!
+    "ID of the party placing the order"
+    partyId: String!
+    "Price of the asset"
+    price: String
+    "Size ofthe order"
+    size: String!
+    "Side of the order (Buy or Sell)"
+    side: Side!
+    "TimeInForce of the order"
+    timeInForce: OrderTimeInForce!
+    "exiration of the the order"
+    expiration: String
+    "type of the order"
+    type: OrderType!
+  ): PreparedSubmitOrder!
+
+  """
+  Send a cancel order request to be prepared. Returns a pending order + blob of the transaction to submit.
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
+  """
+  prepareOrderCancel(
+    "ID of the order to cancel"
+    id: ID!
+    "ID of the party placing the order"
+    partyId: String!
+    "ID of the market where to find the order"
+    marketId: String!
+  ): PreparedCancelOrder!
+
+  """
+  Send an amend order request to be prepared. Returns a pending order + blob of the transaction to submit.
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation
+  """
+  prepareOrderAmend(
+    "ID of the order to amend"
+    id: ID!
+    "ID of the party which created the order"
+    partyId: String!
+    "New price for this order"
+    price: String!
+    "New size for this order"
+    size: String!
+    "New expiration time"
+    expiration: String
+  ): PreparedAmendOrder!
+
+  """
+  Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
+  It validates the signature, and sends the transaction out for consensus
+  """
+  submitTransaction(
+    " The signed transaction
+    data: String!
+    " The signature
+    sig: String!
+    " The authentication to verify the signature (pubkey or address, only pubkey ATM)
+    auth: Auth!
+  ): TransactionSubmitted!
+
+  """
   Send a submit order request into VEGA network, this does not immediately create the order.
   It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
   """
@@ -71,6 +137,7 @@ type Mutation {
     "Password of the party"
     password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
 }
+
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
 type Subscription {
@@ -180,6 +247,41 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+}
+
+union Auth = Address | Pubkey
+
+type Address {
+  address: String!
+}
+
+type Pubkey {
+  pubkey: String!
+}
+
+type PreparedSubmitOrder {
+  " blob: the raw transaction to sign & submit
+  blob: String!
+  " The pending order
+  pendingOrder: PendingOrder!
+}
+
+type PreparedCancelOrder {
+  " blob: the raw transaction to sign & submit
+  blob: String!
+  " The pending order
+  pendingOrder: PendingOrder!
+}
+
+type PreparedAmendOrder {
+  " blob: the raw transaction to sign & submit
+  blob: String!
+  " The pending order
+  pendingOrder: PendingOrder!
+}
+
+type TransactionSubmitted {
+  success: Boolean!
 }
 
 "An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted."

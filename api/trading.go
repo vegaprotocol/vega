@@ -13,6 +13,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -193,24 +194,27 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
-	proto, command, err := txDecode(req.Data)
+	rawProto, command, err := txDecode(req.Data)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	validator, err := wcrypto.NewSignatureAlgorithm(crypto.Ed25519)
+	validator, err := wcrypto.NewSignatureAlgorithm(wcrypto.Ed25519)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMissingAsset)
 	}
-	if ok := validator.Verify(crypto.PublicKey(req.Auth.PublicKey), proto, req.Sig); !ok {
+	if ok := validator.Verify(crypto.PublicKey(req.GetPubKey()), rawProto, req.Sig); !ok {
 		return nil, apiError(codes.PermissionDenied, ErrInvalidToken)
 	}
 	switch command {
 	case blockchain.SubmitOrderCommand:
 		cmd := types.OrderSubmission{}
-		if err := proto.Unmarshal(&cmd, proto); err != nil {
+		if err := proto.Unmarshal(rawProto, &cmd); err != nil {
 			return nil, apiError(codes.InvalidArgument, err)
 		}
+	default:
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
+	// @TODO -> actually submit the transaction
 	return &protoapi.SubmitTransactionResponse{
 		Success: true,
 	}, nil
