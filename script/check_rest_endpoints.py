@@ -34,7 +34,7 @@ def main():
         (method, rule[method])
         for method in ["delete", "get", "post", "put"]
         for rule in bindings["http"]["rules"]
-        if method in rule
+        if method in rule and rule[method] != "/fountain"  # 726
     ])
 
     swagger = json.load(open(args.swagger))

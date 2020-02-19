@@ -71,33 +71,6 @@
         ]
       }
     },
-    "/fountain": {
-      "post": {
-        "summary": "Request balance increase",
-        "operationId": "NotifyTraderAccount",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiNotifyTraderAccountResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiNotifyTraderAccountRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
@@ -1078,23 +1051,6 @@
         }
       }
     },
-    "apiNotifyTraderAccountRequest": {
-      "type": "object",
-      "properties": {
-        "notif": {
-          "$ref": "#/definitions/vegaNotifyTraderAccount"
-        }
-      }
-    },
-    "apiNotifyTraderAccountResponse": {
-      "type": "object",
-      "properties": {
-        "submitted": {
-          "type": "boolean",
-          "format": "boolean"
-        }
-      }
-    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -1724,18 +1680,6 @@
           "items": {
             "$ref": "#/definitions/vegaPriceLevel"
           }
-        }
-      }
-    },
-    "vegaNotifyTraderAccount": {
-      "type": "object",
-      "properties": {
-        "traderID": {
-          "type": "string"
-        },
-        "amount": {
-          "type": "string",
-          "format": "uint64"
         }
       }
     },
