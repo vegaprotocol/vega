@@ -175,6 +175,27 @@ type Party struct {
 	Margins []*proto.MarginLevels `json:"margins"`
 }
 
+type PreparedAmendOrder struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
+	// The pending order
+	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
+}
+
+type PreparedCancelOrder struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
+	// The pending order
+	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
+}
+
+type PreparedSubmitOrder struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
+	// The pending order
+	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
+}
+
 type ScalingFactors struct {
 	// the scaling factor that determines the margin level at which we have to search for more money
 	SearchLevel float64 `json:"searchLevel"`
@@ -208,6 +229,10 @@ type TradableInstrument struct {
 	RiskModel RiskModel `json:"riskModel"`
 	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
+}
+
+type TransactionSubmitted struct {
+	Success bool `json:"success"`
 }
 
 // The various account types we have (used by collateral)

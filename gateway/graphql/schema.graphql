@@ -47,7 +47,7 @@ type Mutation {
 
   """
   Send an amend order request to be prepared. Returns a pending order + blob of the transaction to submit.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
   """
   prepareOrderAmend(
     "ID of the order to amend"
@@ -67,12 +67,14 @@ type Mutation {
   It validates the signature, and sends the transaction out for consensus
   """
   submitTransaction(
-    " The signed transaction
+    "The signed transaction"
     data: String!
-    " The signature
+    "The signature"
     sig: String!
-    " The authentication to verify the signature (pubkey or address, only pubkey ATM)
-    auth: Auth!
+    "address is one of 2 possible auth values, currently only pubkey is used"
+    address: String
+    "pubkey is used to verify the signature, currently the only supported one"
+    pubkey: String
   ): TransactionSubmitted!
 
   """
@@ -249,34 +251,24 @@ type MarketData {
   timestamp: String!
 }
 
-union Auth = Address | Pubkey
-
-type Address {
-  address: String!
-}
-
-type Pubkey {
-  pubkey: String!
-}
-
 type PreparedSubmitOrder {
-  " blob: the raw transaction to sign & submit
+  "blob: the raw transaction to sign & submit"
   blob: String!
-  " The pending order
+  "The pending order"
   pendingOrder: PendingOrder!
 }
 
 type PreparedCancelOrder {
-  " blob: the raw transaction to sign & submit
+  "blob: the raw transaction to sign & submit"
   blob: String!
-  " The pending order
+  "The pending order"
   pendingOrder: PendingOrder!
 }
 
 type PreparedAmendOrder {
-  " blob: the raw transaction to sign & submit
+  "blob: the raw transaction to sign & submit"
   blob: String!
-  " The pending order
+  "The pending order"
   pendingOrder: PendingOrder!
 }
 
