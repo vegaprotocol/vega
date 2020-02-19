@@ -294,8 +294,13 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
 	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
-		// IOC so we set status as Cancelled.
-		order.Status = types.Order_Cancelled
+		// Stopped as not filled at all
+		if order.Remaining == order.Size {
+			order.Status = types.Order_Stopped
+		} else {
+			// IOC so we set status as Cancelled.
+			order.Status = types.Order_PartiallyFilled
+		}
 	}
 
 	// What is Fill Or Kill?
@@ -413,6 +418,8 @@ func (b *OrderBook) RemoveDistressedOrders(
 				// let's see whether we need to handle this further down
 				continue
 			}
+			// here we set the status of the order as stopped as the system triggered it as well.
+			confirm.Order.Status = types.Order_Stopped
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}
