@@ -2033,6 +2033,9 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },
@@ -2095,9 +2098,6 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
-        },
-        "reference": {
-          "type": "string"
         }
       }
     },
