@@ -107,7 +107,9 @@ func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSub
 	if err := s.validateOrderSubmission(submission); err != nil {
 		return nil, err
 	}
-	submission.Reference = uuid.NewV4().String()
+	if submission.Reference == "" {
+		submission.Reference = uuid.NewV4().String()
+	}
 	return &types.PendingOrder{
 		Reference:   submission.Reference,
 		Price:       submission.Price,
@@ -252,10 +254,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
 		return nil, err
-	}
-
-	if o.PartyID != amendment.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
 	}
 
 	if o.Status != types.Order_Active {
