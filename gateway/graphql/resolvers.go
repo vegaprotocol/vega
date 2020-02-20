@@ -2,6 +2,8 @@ package gql
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -1055,18 +1057,34 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig st
 	if address == nil && pubkey == nil {
 		return nil, errors.New("auth missing: either address or pubkey needs to be set")
 	}
+	decodedData, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	decodedSig, err := base64.StdEncoding.DecodeString(sig)
+	if err != nil {
+		return nil, err
+	}
 	req := &protoapi.SubmitTransactionRequest{
-		Data: []byte(data),
-		Sig:  []byte(sig),
+		Data: decodedData,
+		Sig:  decodedSig,
 	}
 	if pubkey != nil {
+		pk, err := hex.DecodeString(*pubkey)
+		if err != nil {
+			return nil, err
+		}
 		req.Auth = &protoapi.SubmitTransactionRequest_PubKey{
-			PubKey: []byte(*pubkey),
+			PubKey: pk,
 		}
 	} else {
+		addr, err := hex.DecodeString(*address)
+		if err != nil {
+			return nil, err
+		}
 		// address is guaranteed to be set here...
 		req.Auth = &protoapi.SubmitTransactionRequest_Address{
-			Address: []byte(*address),
+			Address: addr,
 		}
 	}
 	res, err := r.tradingClient.SubmitTransaction(ctx, req)
@@ -1149,7 +1167,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedSubmitOrder{
-		Blob:         string(resp.Blob),
+		Blob:         base64.StdEncoding.EncodeToString(resp.Blob),
 		PendingOrder: resp.PendingOrder,
 	}, nil
 }
@@ -1260,7 +1278,7 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedCancelOrder{
-		Blob:         string(pendingOrder.Blob),
+		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 		PendingOrder: pendingOrder.PendingOrder,
 	}, nil
 
@@ -1348,7 +1366,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedAmendOrder{
-		Blob:         string(pendingOrder.Blob),
+		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 		PendingOrder: pendingOrder.PendingOrder,
 	}, nil
 }
