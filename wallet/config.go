@@ -143,7 +143,7 @@ func GenRsaKeyFiles(log *logging.Logger, path string, rewrite bool) error {
 		return fmt.Errorf("unable to create the rsa key folder: %v", err)
 	}
 
-	bitSize := 2048
+	bitSize := 4096
 
 	key, err := rsa.GenerateKey(rand.Reader, bitSize)
 	if err != nil {
@@ -171,7 +171,7 @@ func savePEMKey(fileName string, key *rsa.PrivateKey) error {
 	defer outFile.Close()
 
 	var privateKey = &pem.Block{
-		Type:  "PRIVATE KEY",
+		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}
 
