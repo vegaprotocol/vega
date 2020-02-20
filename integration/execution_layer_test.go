@@ -559,8 +559,11 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
 		}
 
-		if len(pos) == 1 && pos[0].OpenVolume == volume && pos[0].RealisedPNL == realisedPNL && pos[0].UnrealisedPNL == unrealisedPNL {
-			return nil
+		if len(pos) == 1 {
+			// we have a position
+			if pos[0].OpenVolume == volume && pos[0].RealisedPNL == realisedPNL && pos[0].UnrealisedPNL == unrealisedPNL {
+				return nil
+			}
 		}
 
 		// The positions engine runs asynchronously, so wait for the right numbers to show up.
