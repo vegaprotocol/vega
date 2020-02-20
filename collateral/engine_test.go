@@ -880,6 +880,29 @@ func TestFinalSettlementNoTransfers(t *testing.T) {
 	assert.Equal(t, 0, len(responses))
 }
 
+func TestFinalSettlementNoSystemAccounts(t *testing.T) {
+	price := int64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	pos := []*types.Transfer{
+		{
+			Owner: "testTrader",
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -price,
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_LOSS,
+		},
+	}
+
+	responses, err := eng.FinalSettlement("invalidMarketID", pos)
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(responses))
+}
+
 func TestGetPartyMarginNoAccounts(t *testing.T) {
 	price := int64(1000)
 
@@ -1157,7 +1180,7 @@ func TestClearMarketNoMargin(t *testing.T) {
 
 	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
 
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, len(responses), 0)
 }
 
@@ -1207,6 +1230,34 @@ func TestWithdrawalNotEnough(t *testing.T) {
 
 	err = eng.Engine.Withdraw(trader, testMarketAsset, 600)
 	assert.Error(t, err)
+}
+
+func TestOnChainTimeUpdate(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+
+	// Hard to test this so for now I am just setting the value
+	// and if it does not crash I am happy
+	now := time.Now()
+	eng.Engine.OnChainTimeUpdate(now)
+}
+
+func TestReloadConfig(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+
+	// Check that the log level is currently `debug`
+	assert.Equal(t, eng.Engine.Level.Level, logging.DebugLevel)
+
+	// Create a new config and make some changes to it
+	newConfig := collateral.NewDefaultConfig()
+	newConfig.Level = encoding.LogLevel{
+		Level: logging.InfoLevel,
+	}
+	eng.Engine.ReloadConf(newConfig)
+
+	// Verify that the log level has been changed
+	assert.Equal(t, eng.Engine.Level.Level, logging.InfoLevel)
 }
 
 func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {
