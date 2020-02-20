@@ -2,14 +2,21 @@ package api
 
 import (
 	"context"
+	"crypto"
 	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/auth"
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
+
+	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 )
@@ -17,6 +24,10 @@ import (
 // TradeOrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeOrderService
 type TradeOrderService interface {
+	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
+	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
+	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
+	SubmitTransaction(ctx context.Context, raw []byte) (bool, error)
 	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
@@ -126,6 +137,76 @@ func (s *tradingService) SignIn(
 
 	return &protoapi.SignInResponse{
 		Token: tkn,
+	}, nil
+}
+
+func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
+	pending, err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
+	}
+	raw, err := proto.Marshal(req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrSubmitOrder)
+	}
+	if raw, err = txEncode(raw, blockchain.SubmitOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrSubmitOrder)
+	}
+	return &protoapi.PrepareSubmitOrderResponse{
+		Blob:         raw,
+		PendingOrder: pending,
+	}, nil
+}
+
+func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
+	pending, err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder)
+	}
+	raw, err := proto.Marshal(req.Cancellation)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder)
+	}
+	if raw, err = txEncode(raw, blockchain.CancelOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder)
+	}
+	return &protoapi.PrepareCancelOrderResponse{
+		Blob:         raw,
+		PendingOrder: pending,
+	}, nil
+}
+
+func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
+	pending, err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder)
+	}
+	raw, err := proto.Marshal(req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder)
+	}
+	if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder)
+	}
+	return &protoapi.PrepareAmendOrderResponse{
+		Blob:         raw,
+		PendingOrder: pending,
+	}, nil
+}
+
+func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+	validator, err := wcrypto.NewSignatureAlgorithm(wcrypto.Ed25519)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMissingAsset)
+	}
+	if ok := validator.Verify(crypto.PublicKey(req.GetPubKey()), req.Data, req.Sig); !ok {
+		return nil, apiError(codes.PermissionDenied, ErrInvalidToken)
+	}
+	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Data); err != nil || !ok {
+		return nil, apiError(codes.Internal, err)
+	}
+	return &protoapi.SubmitTransactionResponse{
+		Success: true,
 	}, nil
 }
 
@@ -269,4 +350,21 @@ func (s *tradingService) Withdraw(
 	return &protoapi.WithdrawResponse{
 		Success: ok,
 	}, nil
+}
+
+func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
+	commandInput := append([]byte{byte(cmd)}, input...)
+	return append(uuid.NewV4().Bytes(), commandInput...), nil
+}
+
+// txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
+// strategy, we have a simple and efficient encoding at present. A partner encode function
+// can be found in the blockchain client.
+func txDecode(input []byte) ([]byte, blockchain.Command, error) {
+	// Input is typically the bytes that arrive in raw format after consensus is reached.
+	// Split the transaction dropping the unification bytes (uuid&pipe)
+	if len(input) <= 37 {
+		return nil, 0, errors.New("payload size is incorrect should be > 37 bytes")
+	}
+	return input[37:], blockchain.Command(input[36]), nil
 }

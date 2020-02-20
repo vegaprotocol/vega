@@ -19,6 +19,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *SubmitTransactionRequest) Validate() error {
+	return nil
+}
+func (this *SubmitTransactionResponse) Validate() error {
+	return nil
+}
 func (this *WithdrawRequest) Validate() error {
 	if this.Withdraw != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdraw); err != nil {
@@ -45,6 +51,30 @@ func (this *SignInRequest) Validate() error {
 	return nil
 }
 func (this *SignInResponse) Validate() error {
+	return nil
+}
+func (this *PrepareSubmitOrderResponse) Validate() error {
+	if this.PendingOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareCancelOrderResponse) Validate() error {
+	if this.PendingOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareAmendOrderResponse) Validate() error {
+	if this.PendingOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
+		}
+	}
 	return nil
 }
 func (this *SubmitOrderRequest) Validate() error {
