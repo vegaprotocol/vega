@@ -2,6 +2,8 @@ package gql
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -28,7 +30,13 @@ var (
 // TradingClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingClient
 type TradingClient interface {
+	// prepare calls (unary-like calls)
+	PrepareSubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareSubmitOrderResponse, error)
+	PrepareAmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareAmendOrderResponse, error)
+	PrepareCancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareCancelOrderResponse, error)
 	// unary calls - writes
+	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
+	// old requests
 	SubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
@@ -1045,6 +1053,125 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
+func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig string, address, pubkey *string) (*TransactionSubmitted, error) {
+	if address == nil && pubkey == nil {
+		return nil, errors.New("auth missing: either address or pubkey needs to be set")
+	}
+	decodedData, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	decodedSig, err := base64.StdEncoding.DecodeString(sig)
+	if err != nil {
+		return nil, err
+	}
+	req := &protoapi.SubmitTransactionRequest{
+		Data: decodedData,
+		Sig:  decodedSig,
+	}
+	if pubkey != nil {
+		pk, err := hex.DecodeString(*pubkey)
+		if err != nil {
+			return nil, err
+		}
+		req.Auth = &protoapi.SubmitTransactionRequest_PubKey{
+			PubKey: pk,
+		}
+	} else {
+		addr, err := hex.DecodeString(*address)
+		if err != nil {
+			return nil, err
+		}
+		// address is guaranteed to be set here...
+		req.Auth = &protoapi.SubmitTransactionRequest_Address{
+			Address: addr,
+		}
+	}
+	res, err := r.tradingClient.SubmitTransaction(ctx, req)
+	if err != nil {
+		r.log.Error("Failed to submit transaction", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return &TransactionSubmitted{
+		Success: res.Success,
+	}, nil
+}
+
+func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*PreparedSubmitOrder, error) {
+
+	order := &types.OrderSubmission{}
+
+	tkn := gateway.TokenFromContext(ctx)
+
+	var (
+		p   uint64
+		err error
+	)
+
+	// We need to convert strings to uint64 (JS doesn't yet support uint64)
+	if price != nil {
+		p, err = safeStringUint64(*price)
+		if err != nil {
+			return nil, err
+		}
+	}
+	order.Price = p
+	s, err := safeStringUint64(size)
+	if err != nil {
+		return nil, err
+	}
+	order.Size = s
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketID = market
+	if len(party) <= 0 {
+		return nil, errors.New("party missing or empty")
+	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
+	order.PartyID = party
+	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
+		return nil, err
+	}
+	if order.Side, err = parseSide(&side); err != nil {
+		return nil, err
+	}
+	if order.Type, err = parseOrderType(ty); err != nil {
+		return nil, err
+	}
+
+	// GTT must have an expiration value
+	if order.TimeInForce == types.Order_GTT && expiration != nil {
+		var expiresAt time.Time
+		expiresAt, err = vegatime.Parse(*expiration)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
+		}
+
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpiresAt = expiresAt.UnixNano()
+	}
+
+	req := protoapi.SubmitOrderRequest{
+		Submission: order,
+		Token:      tkn,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	resp, err := r.tradingClient.PrepareSubmitOrder(ctx, &req)
+	if err != nil {
+		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return &PreparedSubmitOrder{
+		Blob:         base64.StdEncoding.EncodeToString(resp.Blob),
+		PendingOrder: resp.PendingOrder,
+	}, nil
+}
+
 func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, party string,
 	price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
 	ty OrderType) (*types.PendingOrder, error) {
@@ -1120,6 +1247,42 @@ func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, par
 
 }
 
+func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, party string, market string) (*PreparedCancelOrder, error) {
+	order := &types.OrderCancellation{}
+
+	tkn := gateway.TokenFromContext(ctx)
+
+	// Cancellation currently only requires ID and Market to be set, all other fields will be added
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketID = market
+	if len(id) == 0 {
+		return nil, errors.New("id missing or empty")
+	}
+	order.OrderID = id
+	if len(party) == 0 {
+		return nil, errors.New("party missing or empty")
+	}
+
+	order.PartyID = party
+
+	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
+
+	req := protoapi.CancelOrderRequest{
+		Cancellation: order,
+		Token:        tkn,
+	}
+	pendingOrder, err := r.tradingClient.PrepareCancelOrder(ctx, &req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	return &PreparedCancelOrder{
+		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
+		PendingOrder: pendingOrder.PendingOrder,
+	}, nil
+
+}
 func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {
 	order := &types.OrderCancellation{}
 
@@ -1155,6 +1318,58 @@ func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party s
 
 }
 
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string) (*PreparedAmendOrder, error) {
+	order := &types.OrderAmendment{}
+
+	tkn := gateway.TokenFromContext(ctx)
+
+	// Cancellation currently only requires ID and Market to be set, all other fields will be added
+	if len(id) == 0 {
+		return nil, errors.New("id missing or empty")
+	}
+	order.OrderID = id
+	if len(party) == 0 {
+		return nil, errors.New("party missing or empty")
+	}
+	order.PartyID = party
+
+	var err error
+	order.Price, err = strconv.ParseUint(price, 10, 64)
+	if err != nil {
+		r.log.Error("unable to convert price from string in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid price, could not convert to unsigned int")
+	}
+
+	order.Size, err = strconv.ParseUint(size, 10, 64)
+	if err != nil {
+		r.log.Error("unable to convert size from string in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid size, could not convert to unsigned int")
+	}
+
+	if expiration != nil {
+		expiresAt, err := vegatime.Parse(*expiration)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
+		}
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpiresAt = expiresAt.UnixNano()
+	}
+
+	req := protoapi.AmendOrderRequest{
+		Amendment: order,
+		Token:     tkn,
+	}
+	pendingOrder, err := r.tradingClient.PrepareAmendOrder(ctx, &req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	return &PreparedAmendOrder{
+		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
+		PendingOrder: pendingOrder.PendingOrder,
+	}, nil
+}
 func (r *myMutationResolver) OrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string) (*types.PendingOrder, error) {
 	order := &types.OrderAmendment{}
 

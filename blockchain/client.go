@@ -35,6 +35,19 @@ func newClient(clt chainClientImpl) *Client {
 	}
 }
 
+func (c *Client) SubmitTransaction(ctx context.Context, raw []byte) (bool, error) {
+	_, command, err := txDecode(raw)
+	if err != nil {
+		return false, err
+	}
+	// if the command is invalid, the String() func will return an empty string
+	if command.String() == "" {
+		// @TODO create err variable
+		return false, errors.New("invalid command")
+	}
+	return c.clt.SendTransaction(ctx, raw)
+}
+
 // CancelOrder will send a cancel order transaction to the blockchain
 func (c *Client) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
 	return c.sendCancellationCommand(ctx, order, CancelOrderCommand)

@@ -449,6 +449,109 @@
         ]
       }
     },
+    "/orders/prepare": {
+      "post": {
+        "summary": "Prepare a submit order request",
+        "operationId": "PrepareSubmitOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareSubmitOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiSubmitOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/{amendment.orderID}": {
+      "put": {
+        "summary": "Amend an Order",
+        "operationId": "PrepareAmendOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "amendment.orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAmendOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/{cancellation.orderID}": {
+      "delete": {
+        "summary": "Cancel an Order",
+        "operationId": "PrepareCancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cancellation.orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cancellation.marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "cancellation.partyID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/orders/{amendment.orderID}": {
       "put": {
         "summary": "Amend an Order",
@@ -901,6 +1004,33 @@
           "trading_data"
         ]
       }
+    },
+    "/transaction": {
+      "post": {
+        "summary": "Submit a signed transaction",
+        "operationId": "SubmitTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiSubmitTransactionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiSubmitTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1159,6 +1289,42 @@
         }
       }
     },
+    "apiPrepareAmendOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareCancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareSubmitOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
     "apiSignInRequest": {
       "type": "object",
       "properties": {
@@ -1191,6 +1357,36 @@
         "token": {
           "type": "string",
           "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
+        }
+      }
+    },
+    "apiSubmitTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "sig": {
+          "type": "string",
+          "format": "byte"
+        },
+        "address": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pubKey": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "apiSubmitTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -1837,6 +2033,9 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },

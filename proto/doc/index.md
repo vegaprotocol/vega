@@ -48,9 +48,14 @@
     - [PositionsByPartyRequest](#api.PositionsByPartyRequest)
     - [PositionsByPartyResponse](#api.PositionsByPartyResponse)
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
+    - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
+    - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
+    - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
+    - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
     - [TradesByMarketRequest](#api.TradesByMarketRequest)
     - [TradesByMarketResponse](#api.TradesByMarketResponse)
     - [TradesByOrderRequest](#api.TradesByOrderRequest)
@@ -838,6 +843,54 @@
 
 
 
+<a name="api.PrepareAmendOrderResponse"></a>
+
+### PrepareAmendOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareCancelOrderResponse"></a>
+
+### PrepareCancelOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareSubmitOrderResponse"></a>
+
+### PrepareSubmitOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+
+
+
+
+
+
 <a name="api.SignInRequest"></a>
 
 ### SignInRequest
@@ -879,6 +932,39 @@
 | ----- | ---- | ----- | ----------- |
 | submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
 | token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
+
+
+
+
+
+
+<a name="api.SubmitTransactionRequest"></a>
+
+### SubmitTransactionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  |  |
+| address | [bytes](#bytes) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="api.SubmitTransactionResponse"></a>
+
+### SubmitTransactionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| success | [bool](#bool) |  |  |
 
 
 
@@ -1067,12 +1153,16 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
+| PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
+| PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
 | SubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Submit an Order |
 | CancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Cancel an Order |
 | AmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Amend an Order |
 | SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
+| SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 
 
 <a name="api.trading_data"></a>
@@ -1698,6 +1788,7 @@
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
+| reference | [string](#string) |  |  |
 
 
 
