@@ -52,10 +52,9 @@ Feature: Position resolution case 4
       | buySideProvider  | ETH/DEC19 | buy  |      1 | 12000000 |                1 | LIMIT | GTC |
 
 # check positions
-# See #679.
-#    Then position API produce the following:
-#     | trader           | volume | unrealisedPNL | realisedPNL |
-#     | designatedLooser |    290 |    -870000000 |           0 |
+    Then position API produce the following:
+     | trader           | volume | unrealisedPNL | realisedPNL |
+     | designatedLooser |    290 |    -870000000 |           0 |
 
 # checking margins
     Then I expect the trader to have a margin:

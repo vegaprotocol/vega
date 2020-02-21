@@ -49,13 +49,10 @@ Feature: Test loss socialization case 1
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
       | trader2 | ETH/DEC19 | buy  |    100 |   180 |                0 | LIMIT | GTC |
       | trader3 | ETH/DEC19 | sell |    100 |   180 |                1 | LIMIT | GTC |
-# check positions
-# See #679.
-#    Then position API produce the following:
-#      | trader  | volume | unrealisedPNL | realisedPNL |
-#      | trader1 |      0 |             0 |       -5000 |
-#      | trader2 |    200 |          8000 |       -3000 |
-#      | trader3 |   -100 |             0 |           0 |
-#    And the insurance pool balance is "0" for the market "ETH/DEC19"
-    Then the insurance pool balance is "0" for the market "ETH/DEC19"
+    Then position API produce the following:
+      | trader  | volume | unrealisedPNL | realisedPNL |
+      | trader1 |      0 |             0 |       -5000 |
+      | trader2 |    200 |          8000 |       -3000 |
+      | trader3 |   -100 |             0 |           0 |
+    And the insurance pool balance is "0" for the market "ETH/DEC19"
     And All balances cumulated are worth "200105000"
