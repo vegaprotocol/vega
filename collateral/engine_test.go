@@ -956,8 +956,8 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 	}
 
 	responses, err := eng.FinalSettlement(testMarketID, pos)
-	assert.Error(t, err)
-	assert.Equal(t, 0, len(responses))
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(responses))
 }
 
 func TestGetPartyMarginNoAccounts(t *testing.T) {
