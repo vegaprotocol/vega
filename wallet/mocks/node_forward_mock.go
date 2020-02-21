@@ -6,6 +6,7 @@ package mocks
 
 import (
 	wallet "code.vegaprotocol.io/vega/wallet"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,15 +35,15 @@ func (m *MockNodeForward) EXPECT() *MockNodeForwardMockRecorder {
 }
 
 // Send mocks base method
-func (m *MockNodeForward) Send(arg0 *wallet.SignedBundle) error {
+func (m *MockNodeForward) Send(arg0 context.Context, arg1 *wallet.SignedBundle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
+	ret := m.ctrl.Call(m, "Send", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send
-func (mr *MockNodeForwardMockRecorder) Send(arg0 interface{}) *gomock.Call {
+func (mr *MockNodeForwardMockRecorder) Send(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockNodeForward)(nil).Send), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockNodeForward)(nil).Send), arg0, arg1)
 }
