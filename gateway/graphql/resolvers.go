@@ -1182,8 +1182,6 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		return nil, errors.New("party missing or empty")
 	}
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
 	order.PartyID = party
 	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
 		return nil, err
@@ -1257,8 +1255,6 @@ func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	if len(party) <= 0 {
 		return nil, errors.New("party missing or empty")
 	}
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	order.PartyID = party
 	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
