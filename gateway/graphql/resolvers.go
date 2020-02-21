@@ -252,10 +252,16 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.P
 }
 
 func (r *myQueryResolver) Party(ctx context.Context, name string) (*types.Party, error) {
-
-	// todo: call party service to load party by ID
-
-	return &types.Party{Id: name}, nil
+	if len(name) == 0 {
+		return nil, errors.New("invalid party")
+	}
+	req := protoapi.PartyByIDRequest{PartyID: name}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
 }
 
 func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
@@ -650,10 +656,16 @@ func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevel
 	if m == nil {
 		return nil, errors.New("nil order")
 	}
-	// todo: call party service to load party by ID
-	return &types.Party{
-		Id: m.PartyID,
-	}, nil
+	if len(m.PartyID) == 0 {
+		return nil, errors.New("invalid party")
+	}
+	req := protoapi.PartyByIDRequest{PartyID: m.PartyID}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
 }
 
 func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -892,14 +904,20 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	}
 	return res.Trades, nil
 }
-func (r *myOrderResolver) Party(ctx context.Context, ord *types.Order) (*types.Party, error) {
-	if ord == nil {
+func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types.Party, error) {
+	if order == nil {
 		return nil, errors.New("nil order")
 	}
-	// todo: call party service to load party by ID
-	return &types.Party{
-		Id: ord.PartyID,
-	}, nil
+	if len(order.PartyID) == 0 {
+		return nil, errors.New("invalid party")
+	}
+	req := protoapi.PartyByIDRequest{PartyID: order.PartyID}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
 }
 
 // END: Order Resolver
@@ -1843,8 +1861,16 @@ func (r *myPendingOrderResolver) Party(ctx context.Context, pendingOrder *types.
 	if pendingOrder == nil {
 		return nil, nil
 	}
-	// todo: call party service to load party by ID
-	return &types.Party{Id: pendingOrder.PartyID}, nil
+	if len(pendingOrder.PartyID) == 0 {
+		return nil, errors.New("invalid party")
+	}
+	req := protoapi.PartyByIDRequest{PartyID: pendingOrder.PartyID}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
 }
 
 func (r *myPendingOrderResolver) Size(ctx context.Context, obj *types.PendingOrder) (*string, error) {
