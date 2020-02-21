@@ -240,23 +240,22 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	return market, nil
 }
 
-func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*Party, error) {
+func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.Party, error) {
 	if name == nil {
 		return nil, errors.New("all parties not implemented")
 	}
-	pty, err := r.Party(ctx, *name)
+	party, err := r.Party(ctx, *name)
 	if err != nil {
 		return nil, err
 	}
-	return []*Party{
-		{ID: pty.ID},
-	}, nil
+	return []*types.Party{party}, nil
 }
 
-func (r *myQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
-	// GraphQL party/parties call always returns a simple party object by design (even if not in vega store yet)
-	// Future: Party logic will be improved when we add auth/signing of txn
-	return &Party{ID: name}, nil
+func (r *myQueryResolver) Party(ctx context.Context, name string) (*types.Party, error) {
+
+	// todo: call party service to load party by ID
+
+	return &types.Party{Id: name}, nil
 }
 
 func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
@@ -469,14 +468,16 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
-func (r *myPartyResolver) Margins(ctx context.Context, party *Party, marketID *string) ([]*types.MarginLevels, error) {
-	var mktid string
+func (r *myPartyResolver) Margins(ctx context.Context,
+	party *types.Party, marketID *string) ([]*types.MarginLevels, error) {
+
+	var marketId string
 	if marketID != nil {
-		mktid = *marketID
+		marketId = *marketID
 	}
 	req := protoapi.MarginLevelsRequest{
-		PartyID:  party.ID,
-		MarketID: mktid,
+		PartyID:  party.Id,
+		MarketID: marketId,
 	}
 	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
 	if err != nil {
@@ -488,13 +489,13 @@ func (r *myPartyResolver) Margins(ctx context.Context, party *Party, marketID *s
 	return out, nil
 }
 
-func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
+func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	openOnly := open != nil && *open
 	req := protoapi.OrdersByPartyRequest{
-		PartyID:    party.ID,
+		PartyID:    party.Id,
 		Open:       openOnly,
 		Pagination: p,
 	}
@@ -512,7 +513,7 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
 	}
 }
 
-func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
+func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 	market *string, skip *int, first *int, last *int) ([]*types.Trade, error) {
 
 	var mkt string
@@ -522,7 +523,7 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByPartyRequest{
-		PartyID:    party.ID,
+		PartyID:    party.Id,
 		MarketID:   mkt,
 		Pagination: p,
 	}
@@ -541,11 +542,11 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 	}
 }
 
-func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.Position, error) {
-	if pty == nil {
+func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]*types.Position, error) {
+	if party == nil {
 		return nil, errors.New("nil party")
 	}
-	req := protoapi.PositionsByPartyRequest{PartyID: pty.ID}
+	req := protoapi.PositionsByPartyRequest{PartyID: party.Id}
 	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -574,8 +575,9 @@ func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
 	}
 }
 
-func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
-	if pty == nil {
+func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
+	marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
+	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
 	var (
@@ -598,7 +600,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		}
 	}
 	req := protoapi.PartyAccountsRequest{
-		PartyID:  pty.ID,
+		PartyID:  party.Id,
 		MarketID: mktid,
 		Asset:    asst,
 		Type:     accTy,
@@ -607,7 +609,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 	if err != nil {
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
-			logging.String("party-id", pty.ID),
+			logging.String("party-id", party.Id),
 			logging.String("market-id", mktid),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
@@ -644,12 +646,13 @@ func (r *myMarginLevelsResolver) Market(ctx context.Context, m *types.MarginLeve
 	return market, nil
 }
 
-func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevels) (*Party, error) {
+func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevels) (*types.Party, error) {
 	if m == nil {
 		return nil, errors.New("nil order")
 	}
-	return &Party{
-		ID: m.PartyID,
+	// todo: call party service to load party by ID
+	return &types.Party{
+		Id: m.PartyID,
 	}, nil
 }
 
@@ -889,12 +892,13 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	}
 	return res.Trades, nil
 }
-func (r *myOrderResolver) Party(ctx context.Context, ord *types.Order) (*Party, error) {
+func (r *myOrderResolver) Party(ctx context.Context, ord *types.Order) (*types.Party, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-	return &Party{
-		ID: ord.PartyID,
+	// todo: call party service to load party by ID
+	return &types.Party{
+		Id: ord.PartyID,
 	}, nil
 }
 
@@ -927,6 +931,36 @@ func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, e
 }
 func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
+}
+func (r *myTradeResolver) Buyer(ctx context.Context, obj *types.Trade) (*types.Party, error) {
+	if obj == nil {
+		return nil, errors.New("invalid trade")
+	}
+	if len(obj.Buyer) == 0 {
+		return nil, errors.New("invalid buyer")
+	}
+	req := protoapi.PartyByIDRequest{PartyID: obj.Buyer}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
+}
+func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.Party, error) {
+	if obj == nil {
+		return nil, errors.New("invalid trade")
+	}
+	if len(obj.Seller) == 0 {
+		return nil, errors.New("invalid seller")
+	}
+	req := protoapi.PartyByIDRequest{PartyID: obj.Seller}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
 }
 
 // END: Trade Resolver
@@ -1805,11 +1839,12 @@ func (r *myPendingOrderResolver) Market(ctx context.Context, pord *types.Pending
 	return MarketFromProto(res.Market)
 }
 
-func (r *myPendingOrderResolver) Party(ctx context.Context, pord *types.PendingOrder) (*Party, error) {
-	if pord == nil {
+func (r *myPendingOrderResolver) Party(ctx context.Context, pendingOrder *types.PendingOrder) (*types.Party, error) {
+	if pendingOrder == nil {
 		return nil, nil
 	}
-	return &Party{ID: pord.PartyID}, nil
+	// todo: call party service to load party by ID
+	return &types.Party{Id: pendingOrder.PartyID}, nil
 }
 
 func (r *myPendingOrderResolver) Size(ctx context.Context, obj *types.PendingOrder) (*string, error) {
