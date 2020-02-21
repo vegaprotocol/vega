@@ -54,10 +54,11 @@ Feature: Position esolution case 4
     And the mark price for the market "ETH/DEC19" is "300"
 
 #check positions
-   Then position API produce the following:
-     | trader           | volume | unrealisedPNL | realisedPNL |
-     | designatedLooser |      0 |             0 |      -10000 |
-     | buySideProvider  |    101 |         11500 |       -1500 |
+# See #679.
+#   Then position API produce the following:
+#     | trader           | volume | unrealisedPNL | realisedPNL |
+#     | designatedLooser |      0 |             0 |      -10000 |
+#     | buySideProvider  |    101 |         11500 |       -1500 |
 
 # checking margins
     Then I expect the trader to have a margin:
