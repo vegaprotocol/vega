@@ -1,10 +1,9 @@
-package collateral_test
+package collateral
 
 import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
@@ -21,7 +20,7 @@ const (
 )
 
 type testEngine struct {
-	*collateral.Engine
+	*Engine
 	ctrl               *gomock.Controller
 	buf                *mocks.MockAccountBuffer
 	lossBuf            *mocks.MockLossSocializationBuf
@@ -89,7 +88,7 @@ func testAddMarginAccountFail(t *testing.T) {
 
 	// create trader
 	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
-	assert.Error(t, err, collateral.ErrNoGeneralAccountWhenCreateMarginAccount)
+	assert.Error(t, err, ErrNoGeneralAccountWhenCreateMarginAccount)
 
 }
 
@@ -237,7 +236,7 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 	resp, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Nil(t, resp)
 	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	assert.Equal(t, ErrAccountDoesNotExist, err)
 }
 
 func testDistributeWin(t *testing.T) {
@@ -604,7 +603,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
 	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	assert.Equal(t, ErrAccountDoesNotExist, err)
 }
 
 func testRemoveDistressedNoBalance(t *testing.T) {
@@ -634,7 +633,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
 	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	assert.Equal(t, ErrAccountDoesNotExist, err)
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
@@ -903,6 +902,64 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 	assert.Equal(t, 0, len(responses))
 }
 
+func TestFinalSettlementNoSettlementAccount(t *testing.T) {
+	price := int64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	// Find the ID for the settlement account
+	settlementID := eng.accountID(testMarketID, "", "BTC", types.AccountType_SETTLEMENT)
+
+	assert.NotNil(t, settlementID)
+
+	err := eng.removeAccount(settlementID)
+	assert.NoError(t, err)
+
+	pos := []*types.Transfer{
+		{
+			Owner: "testTrader",
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -price,
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_LOSS,
+		},
+	}
+
+	responses, err := eng.FinalSettlement(testMarketID, pos)
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(responses))
+}
+
+func TestFinalSettlementNotEnoughMargin(t *testing.T) {
+	price := int64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	_ = eng.Engine.CreatePartyGeneralAccount("testTrader", testMarketAsset)
+	_, err := eng.Engine.CreatePartyMarginAccount("testTrader", testMarketID, testMarketAsset)
+
+	pos := []*types.Transfer{
+		{
+			Owner: "testTrader",
+			Size:  100,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_LOSS,
+		},
+	}
+
+	responses, err := eng.FinalSettlement(testMarketID, pos)
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(responses))
+}
+
 func TestGetPartyMarginNoAccounts(t *testing.T) {
 	price := int64(1000)
 
@@ -1105,7 +1162,7 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 
 	resp, closed, err := eng.Engine.MarginUpdateOnOrder(testMarketID, evt)
 	assert.NotNil(t, err)
-	assert.Error(t, err, collateral.ErrMinAmountNotReached.Error())
+	assert.Error(t, err, ErrMinAmountNotReached.Error())
 	assert.NotNil(t, closed)
 	assert.Nil(t, resp)
 }
@@ -1250,7 +1307,7 @@ func TestReloadConfig(t *testing.T) {
 	assert.Equal(t, eng.Engine.Level.Level, logging.DebugLevel)
 
 	// Create a new config and make some changes to it
-	newConfig := collateral.NewDefaultConfig()
+	newConfig := NewDefaultConfig()
 	newConfig.Level = encoding.LogLevel{
 		Level: logging.InfoLevel,
 	}
@@ -1280,13 +1337,13 @@ func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEng
 	ctrl := gomock.NewController(t)
 	buf := mocks.NewMockAccountBuffer(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
-	conf := collateral.NewDefaultConfig()
+	conf := NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	buf.EXPECT().Add(gomock.Any()).Times(2)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
 
-	eng, err := collateral.New(logging.NewTestLogger(), conf, buf, lossBuf, time.Now())
+	eng, err := New(logging.NewTestLogger(), conf, buf, lossBuf, time.Now())
 	assert.Nil(t, err)
 
 	// create market and traders used for tests
@@ -1304,9 +1361,9 @@ func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEng
 	}
 }
 
-func (te *testEngine) Finish() {
-	te.systemAccs = nil
-	te.ctrl.Finish()
+func (e *testEngine) Finish() {
+	e.systemAccs = nil
+	e.ctrl.Finish()
 }
 
 type marketPositionFake struct {
