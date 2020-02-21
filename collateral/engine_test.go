@@ -1333,38 +1333,6 @@ func TestChangeBalance(t *testing.T) {
 	assert.Error(t, err, ErrAccountDoesNotExist)
 }
 
-func TestIsLoss(t *testing.T) {
-	eng := getTestEngine(t, testMarketID, 0)
-	defer eng.Finish()
-
-	transfer := types.Transfer{
-		Type: types.TransferType_LOSS,
-	}
-
-	assert.Equal(t, eng.Engine.isLoss(&transfer), true)
-
-	transfer.Type = types.TransferType_MTM_LOSS
-	assert.Equal(t, eng.Engine.isLoss(&transfer), true)
-
-	transfer.Type = types.TransferType_CLOSE
-	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
-
-	transfer.Type = types.TransferType_MARGIN_CONFISCATED
-	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
-
-	transfer.Type = types.TransferType_MARGIN_HIGH
-	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
-
-	transfer.Type = types.TransferType_MARGIN_LOW
-	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
-
-	transfer.Type = types.TransferType_MTM_WIN
-	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
-
-	transfer.Type = types.TransferType_WIN
-	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
-}
-
 func TestOnChainTimeUpdate(t *testing.T) {
 	eng := getTestEngine(t, testMarketID, 0)
 	defer eng.Finish()

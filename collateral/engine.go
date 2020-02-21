@@ -155,7 +155,6 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 	mevt := &marginUpdate{}
 	// get the component that calculates the loss socialisation etc... if needed
 	for _, transfer := range transfers {
-		// loss := isLoss(transfer)
 		req, err := e.getTransferRequest(transfer, settle, insurance, mevt)
 		if err != nil {
 			e.log.Error(
@@ -591,10 +590,6 @@ func (e *Engine) MarginUpdateOnOrder(
 	}
 
 	return res, nil, nil
-}
-
-func (e *Engine) isLoss(t *types.Transfer) bool {
-	return (t.Type == types.TransferType_LOSS || t.Type == types.TransferType_MTM_LOSS)
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
