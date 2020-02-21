@@ -42,7 +42,7 @@ type Config struct {
 type NodeConfig struct {
 	Port    int
 	IP      string
-	Retries int
+	Retries uint64
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

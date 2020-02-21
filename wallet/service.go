@@ -34,7 +34,7 @@ type WalletHandler interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
 type NodeForward interface {
-	Send(*SignedBundle) error
+	Send(context.Context, *SignedBundle) error
 }
 
 func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler, n NodeForward) (*Service, error) {
@@ -245,7 +245,7 @@ func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Propagate {
-		err := s.nodeForward.Send(&sb)
+		err := s.nodeForward.Send(r.Context(), &sb)
 		if err != nil {
 			writeError(w, newError(err.Error()), http.StatusInternalServerError)
 			return

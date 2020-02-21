@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"crypto"
 	"fmt"
 	"sync"
 
@@ -12,9 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -27,7 +25,7 @@ type TradeOrderService interface {
 	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
-	SubmitTransaction(ctx context.Context, raw []byte) (bool, error)
+	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
@@ -152,6 +150,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	if raw, err = txEncode(raw, blockchain.SubmitOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder)
 	}
+	fmt.Printf("BEFORE: %v\n", string(raw))
 	return &protoapi.PrepareSubmitOrderResponse{
 		Blob:         raw,
 		PendingOrder: pending,
@@ -195,14 +194,8 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
-	validator, err := wcrypto.NewSignatureAlgorithm(wcrypto.Ed25519)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrMissingAsset)
-	}
-	if ok := validator.Verify(crypto.PublicKey(req.GetPubKey()), req.Data, req.Sig); !ok {
-		return nil, apiError(codes.PermissionDenied, ErrInvalidToken)
-	}
-	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Data); err != nil || !ok {
+	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
+		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 	return &protoapi.SubmitTransactionResponse{
@@ -353,9 +346,18 @@ func (s *tradingService) Withdraw(
 }
 
 func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
+	prefix := uuid.NewV4().String()
+	prefixBytes := []byte(prefix)
 	commandInput := append([]byte{byte(cmd)}, input...)
-	return append(uuid.NewV4().Bytes(), commandInput...), nil
+	return append(prefixBytes, commandInput...), nil
 }
+
+/*
+func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
+	commandInput := append([]byte{byte(cmd)}, input...)
+	return append([]byte(uuid.NewV4().String()), commandInput...), nil
+}
+*/
 
 // txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
 // strategy, we have a simple and efficient encoding at present. A partner encode function

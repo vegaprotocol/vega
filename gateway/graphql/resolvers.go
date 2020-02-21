@@ -1066,15 +1066,17 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig st
 		return nil, err
 	}
 	req := &protoapi.SubmitTransactionRequest{
-		Data: decodedData,
-		Sig:  decodedSig,
+		Tx: &types.SignedBundle{
+			Data: decodedData,
+			Sig:  decodedSig,
+		},
 	}
 	if pubkey != nil {
 		pk, err := hex.DecodeString(*pubkey)
 		if err != nil {
 			return nil, err
 		}
-		req.Auth = &protoapi.SubmitTransactionRequest_PubKey{
+		req.Tx.Auth = &types.SignedBundle_PubKey{
 			PubKey: pk,
 		}
 	} else {
@@ -1083,7 +1085,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig st
 			return nil, err
 		}
 		// address is guaranteed to be set here...
-		req.Auth = &protoapi.SubmitTransactionRequest_Address{
+		req.Tx.Auth = &types.SignedBundle_Address{
 			Address: addr,
 		}
 	}

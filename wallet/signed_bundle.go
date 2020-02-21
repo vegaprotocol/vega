@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // here we implement Marhsalling for the SignedBundle
@@ -27,11 +29,22 @@ type signedBundleStrings struct {
 	PubKey string `json:"pubKey"`
 }
 
-func (s *SignedBundle) MarshalJSON() ([]byte, error) {
+func (s SignedBundle) MarshalJSON() ([]byte, error) {
 	stringBundle := signedBundleStrings{
 		Data:   base64.StdEncoding.EncodeToString(s.Data),
 		Sig:    base64.StdEncoding.EncodeToString(s.Sig),
 		PubKey: hex.EncodeToString(s.PubKey),
 	}
 	return json.Marshal(stringBundle)
+}
+
+func (s *SignedBundle) IntoProto() *types.SignedBundle {
+	return &types.SignedBundle{
+		Data: s.Data,
+		Sig:  s.Sig,
+		Auth: &types.SignedBundle_PubKey{
+			PubKey: s.PubKey,
+		},
+	}
+
 }

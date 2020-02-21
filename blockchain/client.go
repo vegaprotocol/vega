@@ -3,6 +3,7 @@ package blockchain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -35,17 +36,34 @@ func newClient(clt chainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransaction(ctx context.Context, raw []byte) (bool, error) {
-	_, command, err := txDecode(raw)
+func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
+	// first verify the transaction in the bundle is valid + signature is OK
+	_, command, err := txDecode(bundle.Data)
 	if err != nil {
 		return false, err
 	}
+
 	// if the command is invalid, the String() func will return an empty string
 	if command.String() == "" {
 		// @TODO create err variable
-		return false, errors.New("invalid command")
+		return false, fmt.Errorf("invalid command: %v", int(command))
 	}
-	return c.clt.SendTransaction(ctx, raw)
+
+	// check sig
+	if err := verifyBundle(nil, bundle); err != nil {
+		return false, err
+	}
+
+	// marshal the bundle then
+	bundleBytes, err := proto.Marshal(bundle)
+	if err != nil {
+		return false, err
+	}
+	if len(bundleBytes) == 0 {
+		return false, errors.New("order message empty after marshal")
+	}
+
+	return c.sendTx(ctx, bundleBytes, CommandKindSigned)
 }
 
 // CancelOrder will send a cancel order transaction to the blockchain
@@ -195,7 +213,11 @@ func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (su
 	}
 
 	// Fire off the transaction for consensus
-	return c.clt.SendTransaction(ctx, bytes)
+	return c.sendTx(ctx, bytes, CommandKindUnsigned)
+}
+
+func (c *Client) sendTx(ctx context.Context, bytes []byte, cmdKind CommandKind) (bool, error) {
+	return c.clt.SendTransaction(ctx, append([]byte{byte(cmdKind)}, bytes...))
 }
 
 func txEncode(input []byte, cmd Command) (proto []byte, err error) {
