@@ -127,6 +127,7 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 			// bad trader
 			pos.adjustment += float64(amountLoss)
 		}
+		pos.RealisedPNLFP += float64(amountLoss)
 		pos.RealisedPNL += amountLoss
 
 		p.data[marketID][partyID] = pos
@@ -135,6 +136,9 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 
 func (p *Positions) updateData(raw []events.SettlePosition) {
 	for _, sp := range raw {
+		if sp == nil {
+			continue
+		}
 		mID, tID := sp.MarketID(), sp.Party()
 		if _, ok := p.data[mID]; !ok {
 			p.data[mID] = map[string]Position{}
@@ -238,6 +242,7 @@ func openV(p *Position, openedVolume int64, tradedPrice uint64) {
 func mtm(p *Position, markPrice uint64) {
 	if p.OpenVolume == 0 {
 		p.UnrealisedPNLFP = 0
+		p.UnrealisedPNL = 0
 		return
 	}
 	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
@@ -248,11 +253,13 @@ func updatePosition(p *Position, e events.SettlePosition) {
 	// with a trader who was closed out...
 	if margin, ok := e.Margin(); ok {
 		p.RealisedPNL += p.UnrealisedPNL
+		p.RealisedPNLFP += p.UnrealisedPNLFP
 		p.OpenVolume = 0
 		p.UnrealisedPNL = 0
 		p.AverageEntryPrice = 0
 		// realised P&L includes whatever we had in margin account at this point
 		p.RealisedPNL -= int64(margin)
+		p.RealisedPNLFP -= float64(margin)
 		// @TODO average entry price shouldn't be affected(?)
 		// the volume now is zero, though, so we'll end up moving this position to storage
 		p.UnrealisedPNLFP = 0

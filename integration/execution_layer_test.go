@@ -564,6 +564,8 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 			// we have a position
 			if pos[0].OpenVolume == volume && pos[0].RealisedPNL == realisedPNL && pos[0].UnrealisedPNL == unrealisedPNL {
 				return nil
+			} else {
+				break
 			}
 			// @FIXME: This is a temp fix for the API values not being what we expect at times
 			//         we need to take a closer look at this at some point
