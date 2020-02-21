@@ -35,7 +35,7 @@ else
 	endif
 endif
 
-.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks
+.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help integrationtest retest test lint mocks
 
 all: build
 
@@ -45,6 +45,9 @@ lint: ## Lint the files
 	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
 	rm -f "$$t" ; \
 	exit "$$code"
+
+retest: ## Re-run all unit tests
+	@go test -count=1 ./...
 
 test: ## Run unit tests
 	@go test ./...
