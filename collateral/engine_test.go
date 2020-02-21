@@ -956,8 +956,8 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 	}
 
 	responses, err := eng.FinalSettlement(testMarketID, pos)
-	assert.Error(t, err, ErrMinAmountNotReached)
-	assert.Equal(t, 0, len(responses))
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(responses))
 }
 
 func TestGetPartyMarginNoAccounts(t *testing.T) {
@@ -1287,6 +1287,82 @@ func TestWithdrawalNotEnough(t *testing.T) {
 
 	err = eng.Engine.Withdraw(trader, testMarketAsset, 600)
 	assert.Error(t, err)
+}
+
+func TestWithdrawalInvalidAccount(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw("invalid", testMarketAsset, 600)
+	assert.Error(t, err)
+}
+
+func TestChangeBalance(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+
+	eng.Engine.IncrementBalance(acc, 500)
+	account, err := eng.Engine.GetAccountByID(acc)
+	assert.NoError(t, err)
+	assert.Equal(t, account.Balance, int64(500))
+
+	eng.Engine.IncrementBalance(acc, 250)
+	account, err = eng.Engine.GetAccountByID(acc)
+	assert.Equal(t, account.Balance, int64(750))
+
+	eng.Engine.UpdateBalance(acc, 666)
+	account, err = eng.Engine.GetAccountByID(acc)
+	assert.Equal(t, account.Balance, int64(666))
+
+	err = eng.Engine.IncrementBalance("invalid", 200)
+	assert.Error(t, err, ErrAccountDoesNotExist)
+
+	err = eng.Engine.UpdateBalance("invalid", 300)
+	assert.Error(t, err, ErrAccountDoesNotExist)
+}
+
+func TestIsLoss(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+
+	transfer := types.Transfer{
+		Type: types.TransferType_LOSS,
+	}
+
+	assert.Equal(t, eng.Engine.isLoss(&transfer), true)
+
+	transfer.Type = types.TransferType_MTM_LOSS
+	assert.Equal(t, eng.Engine.isLoss(&transfer), true)
+
+	transfer.Type = types.TransferType_CLOSE
+	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
+
+	transfer.Type = types.TransferType_MARGIN_CONFISCATED
+	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
+
+	transfer.Type = types.TransferType_MARGIN_HIGH
+	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
+
+	transfer.Type = types.TransferType_MARGIN_LOW
+	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
+
+	transfer.Type = types.TransferType_MTM_WIN
+	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
+
+	transfer.Type = types.TransferType_WIN
+	assert.Equal(t, eng.Engine.isLoss(&transfer), false)
 }
 
 func TestOnChainTimeUpdate(t *testing.T) {

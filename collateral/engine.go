@@ -593,7 +593,7 @@ func (e *Engine) MarginUpdateOnOrder(
 	return res, nil, nil
 }
 
-func isLoss(t *types.Transfer) bool {
+func (e *Engine) isLoss(t *types.Transfer) bool {
 	return (t.Type == types.TransferType_LOSS || t.Type == types.TransferType_MTM_LOSS)
 }
 
@@ -779,13 +779,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			break
 		}
 	}
-
-	// If the amount is > 0 here then we have not been able to transfer everything
-	// We return an error so upstream can handle it
-	if amount > 0 {
-		return &ret, ErrMinAmountNotReached
-	}
-
 	return &ret, nil
 }
 
