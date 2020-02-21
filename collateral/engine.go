@@ -779,6 +779,13 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			break
 		}
 	}
+
+	// If the amount is > 0 here then we have not been able to transfer everything
+	// We return an error so upstream can handle it
+	if amount > 0 {
+		return &ret, ErrMinAmountNotReached
+	}
+
 	return &ret, nil
 }
 

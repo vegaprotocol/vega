@@ -934,9 +934,9 @@ func TestFinalSettlementNoSettlementAccount(t *testing.T) {
 }
 
 func TestFinalSettlementNotEnoughMargin(t *testing.T) {
-	price := int64(1000)
+	amount := int64(1000)
 
-	eng := getTestEngine(t, testMarketID, price/2)
+	eng := getTestEngine(t, testMarketID, amount/2)
 	defer eng.Finish()
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -948,7 +948,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 			Owner: "testTrader",
 			Size:  100,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: -amount,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -956,8 +956,8 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 	}
 
 	responses, err := eng.FinalSettlement(testMarketID, pos)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(responses))
+	assert.Error(t, err, ErrMinAmountNotReached)
+	assert.Equal(t, 0, len(responses))
 }
 
 func TestGetPartyMarginNoAccounts(t *testing.T) {
