@@ -195,5 +195,5 @@ func (d *Depth) SellSide(limit uint64) []MarketDepthLevel {
 // When calculating depth for a side they shouldn't be included (and removed if already exist).
 // A fresh order with zero remaining will never be added to a price level.
 func (d *Depth) isInvalid(order types.Order) bool {
-	return order.Remaining == uint64(0) || order.Status == types.Order_Cancelled || order.Status == types.Order_Expired
+	return order.Remaining == uint64(0) || order.Status == types.Order_Cancelled || order.Status == types.Order_Expired || order.Status == types.Order_PartiallyFilled || order.Status == types.Order_Stopped
 }

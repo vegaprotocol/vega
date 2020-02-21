@@ -175,10 +175,14 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		OrderAmend  func(childComplexity int, id string, partyID string, price string, size string, expiration *string) int
-		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
-		Signin      func(childComplexity int, id string, password string) int
+		OrderAmend         func(childComplexity int, id string, partyID string, price string, size string, expiration *string) int
+		OrderCancel        func(childComplexity int, id string, partyID string, marketID string) int
+		OrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		PrepareOrderAmend  func(childComplexity int, id string, partyID string, price string, size string, expiration *string) int
+		PrepareOrderCancel func(childComplexity int, id string, partyID string, marketID string) int
+		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		Signin             func(childComplexity int, id string, password string) int
+		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
 	}
 
 	Order struct {
@@ -228,6 +232,21 @@ type ComplexityRoot struct {
 		OpenVolume        func(childComplexity int) int
 		RealisedPnl       func(childComplexity int) int
 		UnrealisedPnl     func(childComplexity int) int
+	}
+
+	PreparedAmendOrder struct {
+		Blob         func(childComplexity int) int
+		PendingOrder func(childComplexity int) int
+	}
+
+	PreparedCancelOrder struct {
+		Blob         func(childComplexity int) int
+		PendingOrder func(childComplexity int) int
+	}
+
+	PreparedSubmitOrder struct {
+		Blob         func(childComplexity int) int
+		PendingOrder func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -321,6 +340,10 @@ type ComplexityRoot struct {
 		Seller    func(childComplexity int) int
 		Size      func(childComplexity int) int
 	}
+
+	TransactionSubmitted struct {
+		Success func(childComplexity int) int
+	}
 }
 
 type AccountResolver interface {
@@ -374,6 +397,10 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
+	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*PreparedSubmitOrder, error)
+	PrepareOrderCancel(ctx context.Context, id string, partyID string, marketID string) (*PreparedCancelOrder, error)
+	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, size string, expiration *string) (*PreparedAmendOrder, error)
+	SubmitTransaction(ctx context.Context, data string, sig string, address *string, pubkey *string) (*TransactionSubmitted, error)
 	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
 	OrderAmend(ctx context.Context, id string, partyID string, price string, size string, expiration *string) (*proto.PendingOrder, error)
@@ -1025,6 +1052,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
 
+	case "Mutation.prepareOrderAmend":
+		if e.complexity.Mutation.PrepareOrderAmend == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_prepareOrderAmend_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["expiration"].(*string)), true
+
+	case "Mutation.prepareOrderCancel":
+		if e.complexity.Mutation.PrepareOrderCancel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_prepareOrderCancel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PrepareOrderCancel(childComplexity, args["id"].(string), args["partyId"].(string), args["marketId"].(string)), true
+
+	case "Mutation.prepareOrderSubmit":
+		if e.complexity.Mutation.PrepareOrderSubmit == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_prepareOrderSubmit_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+
 	case "Mutation.signin":
 		if e.complexity.Mutation.Signin == nil {
 			break
@@ -1036,6 +1099,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Signin(childComplexity, args["id"].(string), args["password"].(string)), true
+
+	case "Mutation.submitTransaction":
+		if e.complexity.Mutation.SubmitTransaction == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_submitTransaction_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string)), true
 
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -1315,6 +1390,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Position.UnrealisedPnl(childComplexity), true
+
+	case "PreparedAmendOrder.blob":
+		if e.complexity.PreparedAmendOrder.Blob == nil {
+			break
+		}
+
+		return e.complexity.PreparedAmendOrder.Blob(childComplexity), true
+
+	case "PreparedAmendOrder.pendingOrder":
+		if e.complexity.PreparedAmendOrder.PendingOrder == nil {
+			break
+		}
+
+		return e.complexity.PreparedAmendOrder.PendingOrder(childComplexity), true
+
+	case "PreparedCancelOrder.blob":
+		if e.complexity.PreparedCancelOrder.Blob == nil {
+			break
+		}
+
+		return e.complexity.PreparedCancelOrder.Blob(childComplexity), true
+
+	case "PreparedCancelOrder.pendingOrder":
+		if e.complexity.PreparedCancelOrder.PendingOrder == nil {
+			break
+		}
+
+		return e.complexity.PreparedCancelOrder.PendingOrder(childComplexity), true
+
+	case "PreparedSubmitOrder.blob":
+		if e.complexity.PreparedSubmitOrder.Blob == nil {
+			break
+		}
+
+		return e.complexity.PreparedSubmitOrder.Blob(childComplexity), true
+
+	case "PreparedSubmitOrder.pendingOrder":
+		if e.complexity.PreparedSubmitOrder.PendingOrder == nil {
+			break
+		}
+
+		return e.complexity.PreparedSubmitOrder.PendingOrder(childComplexity), true
 
 	case "PriceLevel.cumulativeVolume":
 		if e.complexity.PriceLevel.CumulativeVolume == nil {
@@ -1836,6 +1953,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Size(childComplexity), true
 
+	case "TransactionSubmitted.success":
+		if e.complexity.TransactionSubmitted.Success == nil {
+			break
+		}
+
+		return e.complexity.TransactionSubmitted.Success(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1939,6 +2063,74 @@ schema {
 type Mutation {
 
   """
+  Send a submit order request to be prepared, and returns a pending order + blob of the transaction to submit.
+  The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
+  """
+  prepareOrderSubmit(
+    "ID of the market to place the order"
+    marketId: String!
+    "ID of the party placing the order"
+    partyId: String!
+    "Price of the asset"
+    price: String
+    "Size ofthe order"
+    size: String!
+    "Side of the order (Buy or Sell)"
+    side: Side!
+    "TimeInForce of the order"
+    timeInForce: OrderTimeInForce!
+    "exiration of the the order"
+    expiration: String
+    "type of the order"
+    type: OrderType!
+  ): PreparedSubmitOrder!
+
+  """
+  Send a cancel order request to be prepared. Returns a pending order + blob of the transaction to submit.
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
+  """
+  prepareOrderCancel(
+    "ID of the order to cancel"
+    id: ID!
+    "ID of the party placing the order"
+    partyId: String!
+    "ID of the market where to find the order"
+    marketId: String!
+  ): PreparedCancelOrder!
+
+  """
+  Send an amend order request to be prepared. Returns a pending order + blob of the transaction to submit.
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
+  """
+  prepareOrderAmend(
+    "ID of the order to amend"
+    id: ID!
+    "ID of the party which created the order"
+    partyId: String!
+    "New price for this order"
+    price: String!
+    "New size for this order"
+    size: String!
+    "New expiration time"
+    expiration: String
+  ): PreparedAmendOrder!
+
+  """
+  Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
+  It validates the signature, and sends the transaction out for consensus
+  """
+  submitTransaction(
+    "The signed transaction"
+    data: String!
+    "The signature"
+    sig: String!
+    "address is one of 2 possible auth values, currently only pubkey is used"
+    address: String
+    "pubkey is used to verify the signature, currently the only supported one"
+    pubkey: String
+  ): TransactionSubmitted!
+
+  """
   Send a submit order request into VEGA network, this does not immediately create the order.
   It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
   """
@@ -1959,7 +2151,8 @@ type Mutation {
     expiration: String
     "type of the order"
     type: OrderType!
-  ): PendingOrder!
+  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
+
 
   """
   Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -1972,7 +2165,7 @@ type Mutation {
     partyId: String!
     "ID of the market where to find the order"
     marketId: String!
-  ): PendingOrder!
+  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
 
   """
   Send a amend order request into VEGA network, this does not immediately amend an order.
@@ -1989,7 +2182,7 @@ type Mutation {
     size: String!
     "New expiration time"
     expiration: String
-  ): PendingOrder!
+  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
 
 
   "sign a party in using an username and password, then return a token"
@@ -1997,8 +2190,9 @@ type Mutation {
     "ID of the party to get logged in"
     id: String!
     "Password of the party"
-    password: String!): String!
+    password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
 }
+
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
 type Subscription {
@@ -2108,6 +2302,31 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+}
+
+type PreparedSubmitOrder {
+  "blob: the raw transaction to sign & submit"
+  blob: String!
+  "The pending order"
+  pendingOrder: PendingOrder!
+}
+
+type PreparedCancelOrder {
+  "blob: the raw transaction to sign & submit"
+  blob: String!
+  "The pending order"
+  pendingOrder: PendingOrder!
+}
+
+type PreparedAmendOrder {
+  "blob: the raw transaction to sign & submit"
+  blob: String!
+  "The pending order"
+  pendingOrder: PendingOrder!
+}
+
+type TransactionSubmitted {
+  success: Boolean!
 }
 
 "An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted."
@@ -3150,6 +3369,152 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["price"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["price"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["size"]; ok {
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["size"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["expiration"]; ok {
+		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["expiration"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_prepareOrderCancel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["price"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["price"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["size"]; ok {
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["size"] = arg3
+	var arg4 Side
+	if tmp, ok := rawArgs["side"]; ok {
+		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["side"] = arg4
+	var arg5 OrderTimeInForce
+	if tmp, ok := rawArgs["timeInForce"]; ok {
+		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["timeInForce"] = arg5
+	var arg6 *string
+	if tmp, ok := rawArgs["expiration"]; ok {
+		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["expiration"] = arg6
+	var arg7 OrderType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg7
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_signin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3169,6 +3534,44 @@ func (ec *executionContext) field_Mutation_signin_args(ctx context.Context, rawA
 		}
 	}
 	args["password"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["data"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["data"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["sig"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sig"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["address"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["pubkey"]; ok {
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pubkey"] = arg3
 	return args, nil
 }
 
@@ -6079,6 +6482,182 @@ func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field gr
 	return ec.marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_prepareOrderSubmit_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PreparedSubmitOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPreparedSubmitOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedSubmitOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_prepareOrderCancel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_prepareOrderCancel_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PrepareOrderCancel(rctx, args["id"].(string), args["partyId"].(string), args["marketId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PreparedCancelOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPreparedCancelOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedCancelOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_prepareOrderAmend(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_prepareOrderAmend_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["expiration"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PreparedAmendOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPreparedAmendOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedAmendOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_submitTransaction_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TransactionSubmitted)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7593,6 +8172,228 @@ func (ec *executionContext) _Position_margins(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevelsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedAmendOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedAmendOrder) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedAmendOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Blob, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedAmendOrder_pendingOrder(ctx context.Context, field graphql.CollectedField, obj *PreparedAmendOrder) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedAmendOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PendingOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.PendingOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedCancelOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedCancelOrder) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedCancelOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Blob, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedCancelOrder_pendingOrder(ctx context.Context, field graphql.CollectedField, obj *PreparedCancelOrder) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedCancelOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PendingOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.PendingOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedSubmitOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedSubmitOrder) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedSubmitOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Blob, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedSubmitOrder_pendingOrder(ctx context.Context, field graphql.CollectedField, obj *PreparedSubmitOrder) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedSubmitOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PendingOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.PendingOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) (ret graphql.Marshaler) {
@@ -10217,6 +11018,43 @@ func (ec *executionContext) _Trade_createdAt(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TransactionSubmitted",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -12432,6 +13270,26 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "prepareOrderSubmit":
+			out.Values[i] = ec._Mutation_prepareOrderSubmit(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "prepareOrderCancel":
+			out.Values[i] = ec._Mutation_prepareOrderCancel(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "prepareOrderAmend":
+			out.Values[i] = ec._Mutation_prepareOrderAmend(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "submitTransaction":
+			out.Values[i] = ec._Mutation_submitTransaction(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "orderSubmit":
 			out.Values[i] = ec._Mutation_orderSubmit(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -12956,6 +13814,102 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 				res = ec._Position_margins(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var preparedAmendOrderImplementors = []string{"PreparedAmendOrder"}
+
+func (ec *executionContext) _PreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedAmendOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, preparedAmendOrderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PreparedAmendOrder")
+		case "blob":
+			out.Values[i] = ec._PreparedAmendOrder_blob(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pendingOrder":
+			out.Values[i] = ec._PreparedAmendOrder_pendingOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var preparedCancelOrderImplementors = []string{"PreparedCancelOrder"}
+
+func (ec *executionContext) _PreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedCancelOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, preparedCancelOrderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PreparedCancelOrder")
+		case "blob":
+			out.Values[i] = ec._PreparedCancelOrder_blob(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pendingOrder":
+			out.Values[i] = ec._PreparedCancelOrder_pendingOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var preparedSubmitOrderImplementors = []string{"PreparedSubmitOrder"}
+
+func (ec *executionContext) _PreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedSubmitOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, preparedSubmitOrderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PreparedSubmitOrder")
+		case "blob":
+			out.Values[i] = ec._PreparedSubmitOrder_blob(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pendingOrder":
+			out.Values[i] = ec._PreparedSubmitOrder_pendingOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13743,6 +14697,33 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var transactionSubmittedImplementors = []string{"TransactionSubmitted"}
+
+func (ec *executionContext) _TransactionSubmitted(ctx context.Context, sel ast.SelectionSet, obj *TransactionSubmitted) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, transactionSubmittedImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TransactionSubmitted")
+		case "success":
+			out.Values[i] = ec._TransactionSubmitted_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -14309,6 +15290,48 @@ func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Position(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPreparedAmendOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, v PreparedAmendOrder) graphql.Marshaler {
+	return ec._PreparedAmendOrder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPreparedAmendOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, v *PreparedAmendOrder) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PreparedAmendOrder(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPreparedCancelOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, v PreparedCancelOrder) graphql.Marshaler {
+	return ec._PreparedCancelOrder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPreparedCancelOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, v *PreparedCancelOrder) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PreparedCancelOrder(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPreparedSubmitOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, v PreparedSubmitOrder) graphql.Marshaler {
+	return ec._PreparedSubmitOrder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPreparedSubmitOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, v *PreparedSubmitOrder) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PreparedSubmitOrder(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPriceLevel2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v proto.PriceLevel) graphql.Marshaler {
 	return ec._PriceLevel(ctx, sel, &v)
 }
@@ -14502,6 +15525,20 @@ func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._TradingMode(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTransactionSubmitted2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx context.Context, sel ast.SelectionSet, v TransactionSubmitted) graphql.Marshaler {
+	return ec._TransactionSubmitted(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx context.Context, sel ast.SelectionSet, v *TransactionSubmitted) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TransactionSubmitted(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

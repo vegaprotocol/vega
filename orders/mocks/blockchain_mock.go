@@ -78,3 +78,18 @@ func (mr *MockBlockchainMockRecorder) CreateOrder(arg0, arg1 interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockBlockchain)(nil).CreateOrder), arg0, arg1)
 }
+
+// SubmitTransaction mocks base method
+func (m *MockBlockchain) SubmitTransaction(arg0 context.Context, arg1 []byte) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransaction indicates an expected call of SubmitTransaction
+func (mr *MockBlockchainMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransaction), arg0, arg1)
+}

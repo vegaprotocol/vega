@@ -674,7 +674,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			TimeInForce: types.Order_IOC,
 		},
 		types.Order{
-			Id:          "99",
+			Id:          "100",
 			Side:        types.Side_Sell,
 			MarketID:    testMarket,
 			PartyID:     testPartyA,
@@ -691,6 +691,18 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			Remaining:   1337,
 			TimeInForce: types.Order_FOK,
 			Type:        types.Order_NETWORK,
+			Reference:   "close-out distressed", // this is a close out order from the network
+		},
+		types.Order{
+			Id:          "200",
+			Side:        types.Side_Sell,
+			MarketID:    testMarket,
+			PartyID:     testPartyA,
+			Price:       1337,
+			Remaining:   1337,
+			TimeInForce: types.Order_FOK,
+			Type:        types.Order_NETWORK,
+			Reference:   "distressed-t1-p2", // this is a close out order from the network
 		},
 	}
 
@@ -700,5 +712,133 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 	}
 	assert.Len(t, depth.Buy, 0)
 	assert.Len(t, depth.Sell, 0)
+}
 
+func TestOrderBookStoppedOrder(t *testing.T) {
+	ctx := context.Background()
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	assert.Nil(t, err)
+	defer orderStore.Close()
+
+	orders := []types.Order{
+		{
+			Id:        fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side:      types.Side_Sell,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     113,
+			Remaining: 100,
+			Status:    types.Order_Active,
+		},
+	}
+
+	err = orderStore.SaveBatch(orders)
+	assert.NoError(t, err)
+
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket, uint64(len(orders)))
+
+	assert.Len(t, marketDepth.Sell, 1)
+	assert.Equal(t, uint64(113), marketDepth.Sell[0].Price)
+	assert.Equal(t, uint64(100), marketDepth.Sell[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Sell[0].NumberOfOrders)
+	assert.Equal(t, uint64(100), marketDepth.Sell[0].CumulativeVolume)
+
+	ordersUpdate := []types.Order{
+		{
+			Id:        orders[0].Id,
+			Side:      types.Side_Sell,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     113,
+			Remaining: 100,
+			Status:    types.Order_Stopped,
+		},
+	}
+
+	err = orderStore.SaveBatch(ordersUpdate)
+	assert.NoError(t, err)
+
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
+	assert.Len(t, marketDepth.Sell, 0)
+}
+
+func TestOrderBookPartiallyFilledOrder(t *testing.T) {
+	ctx := context.Background()
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	assert.Nil(t, err)
+	defer orderStore.Close()
+
+	orders := []types.Order{
+		{
+			Id:        fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side:      types.Side_Sell,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     113,
+			Remaining: 100,
+			Status:    types.Order_Active,
+		},
+	}
+
+	err = orderStore.SaveBatch(orders)
+	assert.NoError(t, err)
+
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket, uint64(len(orders)))
+
+	assert.Len(t, marketDepth.Sell, 1)
+	assert.Equal(t, uint64(113), marketDepth.Sell[0].Price)
+	assert.Equal(t, uint64(100), marketDepth.Sell[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Sell[0].NumberOfOrders)
+	assert.Equal(t, uint64(100), marketDepth.Sell[0].CumulativeVolume)
+
+	// update it
+	ordersUpdate := []types.Order{
+		{
+			Id:        orders[0].Id,
+			Side:      types.Side_Sell,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     113,
+			Remaining: 80,
+			Status:    types.Order_Active,
+		},
+	}
+
+	err = orderStore.SaveBatch(ordersUpdate)
+	assert.NoError(t, err)
+
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, uint64(len(orders)))
+	assert.Len(t, marketDepth.Sell, 1)
+	assert.Equal(t, uint64(113), marketDepth.Sell[0].Price)
+	assert.Equal(t, 80, int(marketDepth.Sell[0].Volume))
+	assert.Equal(t, uint64(1), marketDepth.Sell[0].NumberOfOrders)
+	assert.Equal(t, 80, int(marketDepth.Sell[0].CumulativeVolume))
+
+	// then stop it so it gets partially filled
+	// and remove tfrom the depth
+	ordersUpdate = []types.Order{
+		{
+			Id:        orders[0].Id,
+			Side:      types.Side_Sell,
+			MarketID:  testMarket,
+			PartyID:   testPartyA,
+			Price:     113,
+			Remaining: 80,
+			Status:    types.Order_PartiallyFilled,
+		},
+	}
+
+	err = orderStore.SaveBatch(ordersUpdate)
+	assert.NoError(t, err)
+
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket, 0)
+	assert.Len(t, marketDepth.Sell, 0)
 }

@@ -91,6 +91,7 @@ message Order {
     Stopped = 3;
     Filled = 4;
     Rejected = 5;
+    PartiallyFilled = 6;
   }
 
   string id = 1;
@@ -145,18 +146,26 @@ enum OrderError {
 }
 
 message Trade {
-    string id = 1;
-    string marketID = 2;
-    uint64 price = 3;
-    uint64 size = 4;
-    string buyer = 5;
-    string seller = 6;
-    Side aggressor = 7;
-    string buyOrder = 8;
-    string sellOrder = 9;
 
-    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-    int64 timestamp = 10;
+  enum Type {
+    DEFAULT = 0;
+    NETWORK_CLOSE_OUT_GOOD = 1;
+    NETWORK_CLOSE_OUT_BAD = 2;
+  }
+
+  string id = 1;
+  string marketID = 2;
+  uint64 price = 3;
+  uint64 size = 4;
+  string buyer = 5;
+  string seller = 6;
+  Side aggressor = 7;
+  string buyOrder = 8;
+  string sellOrder = 9;
+
+  // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+  int64 timestamp = 10;
+  Type type = 11;
 }
 
 message TradeSet {
@@ -261,7 +270,7 @@ enum ChainStatus {
 message PendingOrder {
   string reference = 1;
   uint64 price = 2;
-  Order.TimeInForce TimeInForce = 3;
+  Order.TimeInForce timeInForce = 3;
   Side side = 4;
   string marketID = 5;
   uint64 size = 6;
@@ -299,9 +308,10 @@ message OrderSubmission {
   uint64 price = 4; // mandatory for Limit orders, not required for Market orders
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
   Side side = 6 [(validator.field) = {is_in_enum: true}];
-  Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
+  Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
   int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
+  string reference = 10;
 }
 
 message OrderCancellation {

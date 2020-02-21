@@ -12,6 +12,15 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service trading {
 
+  // Prepare a submit order request
+  rpc PrepareSubmitOrder(SubmitOrderRequest) returns (PrepareSubmitOrderResponse);
+
+  // Cancel an Order
+  rpc PrepareCancelOrder(CancelOrderRequest) returns (PrepareCancelOrderResponse);
+
+  // Amend an Order
+  rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
+
   // Submit an Order
   rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
 
@@ -32,6 +41,22 @@ service trading {
 
   // Check an API token
   rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse);
+
+  // Submit a signed transaction
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+}
+
+message SubmitTransactionRequest {
+  bytes data = 1;
+  bytes sig = 2;
+  oneof auth {
+    bytes address = 101;
+    bytes pubKey = 102;
+  }
+}
+
+message SubmitTransactionResponse {
+  bool success = 1;
 }
 
 message WithdrawRequest {
@@ -63,6 +88,21 @@ message SignInResponse {
 
   // a token corresponding to the party given in the request, and valid for subsequent requests for that party
   string token = 1;
+}
+
+message PrepareSubmitOrderResponse {
+  bytes blob = 1;
+  vega.PendingOrder pendingOrder = 2;
+}
+
+message PrepareCancelOrderResponse {
+  bytes blob = 1;
+  vega.PendingOrder pendingOrder = 2;
+}
+
+message PrepareAmendOrderResponse {
+  bytes blob = 1;
+  vega.PendingOrder pendingOrder = 2;
 }
 
 message SubmitOrderRequest {

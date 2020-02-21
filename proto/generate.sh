@@ -50,10 +50,24 @@ sed --in-place -r \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
 	proto/doc/index.html
 
+# Generate *.swagger.json
+grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
+find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
+do
+	protoc \
+		-I. \
+		-Iproto \
+		-Ivendor \
+		-Ivendor/github.com/google/protobuf/src \
+		--go_out="plugins=grpc,$paths:." \
+		--swagger_out="logtostderr=true,$grpc_api_configuration:." \
+		"$protofile"
+done
+
 # Un-comment NotifyTraderAccount (#726)
 patch --reverse -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
 
-# Generate *.pb.gw.go and *.swagger.json
+# Generate *.pb.gw.go
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
@@ -65,7 +79,6 @@ do
 		--go_out="plugins=grpc,$paths:." \
 		--govalidators_out="$paths:." \
 		--grpc-gateway_out="logtostderr=true,$grpc_api_configuration,$paths:." \
-		--swagger_out="logtostderr=true,$grpc_api_configuration:." \
 		"$protofile"
 done
 

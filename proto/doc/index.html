@@ -355,6 +355,18 @@
                 </li>
 
                 <li>
+                  <a href="#api.PrepareAmendOrderResponse"><span class="badge">M</span>PrepareAmendOrderResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareCancelOrderResponse"><span class="badge">M</span>PrepareCancelOrderResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareSubmitOrderResponse"><span class="badge">M</span>PrepareSubmitOrderResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.SignInRequest"><span class="badge">M</span>SignInRequest</a>
                 </li>
 
@@ -364,6 +376,14 @@
 
                 <li>
                   <a href="#api.SubmitOrderRequest"><span class="badge">M</span>SubmitOrderRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.SubmitTransactionRequest"><span class="badge">M</span>SubmitTransactionRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.SubmitTransactionResponse"><span class="badge">M</span>SubmitTransactionResponse</a>
                 </li>
 
                 <li>
@@ -663,6 +683,10 @@
 
                 <li>
                   <a href="#vega.Side"><span class="badge">E</span>Side</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Trade.Type"><span class="badge">E</span>Trade.Type</a>
                 </li>
 
                 <li>
@@ -2160,6 +2184,99 @@
 
 
 
+        <h3 id="api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingOrder</td>
+                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PrepareCancelOrderResponse">PrepareCancelOrderResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingOrder</td>
+                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PrepareSubmitOrderResponse">PrepareSubmitOrderResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingOrder</td>
+                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.SignInRequest">SignInRequest</h3>
         <p></p>
 
@@ -2237,6 +2354,75 @@
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.SubmitTransactionRequest">SubmitTransactionRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sig</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.SubmitTransactionResponse">SubmitTransactionResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -2580,6 +2766,27 @@
           <tbody>
 
               <tr>
+                <td>PrepareSubmitOrder</td>
+                <td><a href="#api.SubmitOrderRequest">SubmitOrderRequest</a></td>
+                <td><a href="#api.PrepareSubmitOrderResponse">PrepareSubmitOrderResponse</a></td>
+                <td><p>Prepare a submit order request</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareCancelOrder</td>
+                <td><a href="#api.CancelOrderRequest">CancelOrderRequest</a></td>
+                <td><a href="#api.PrepareCancelOrderResponse">PrepareCancelOrderResponse</a></td>
+                <td><p>Cancel an Order</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareAmendOrder</td>
+                <td><a href="#api.AmendOrderRequest">AmendOrderRequest</a></td>
+                <td><a href="#api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</a></td>
+                <td><p>Amend an Order</p></td>
+              </tr>
+
+              <tr>
                 <td>SubmitOrder</td>
                 <td><a href="#api.SubmitOrderRequest">SubmitOrderRequest</a></td>
                 <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
@@ -2619,6 +2826,13 @@
                 <td><a href="#api.CheckTokenRequest">CheckTokenRequest</a></td>
                 <td><a href="#api.CheckTokenResponse">CheckTokenResponse</a></td>
                 <td><p>Check an API token</p></td>
+              </tr>
+
+              <tr>
+                <td>SubmitTransaction</td>
+                <td><a href="#api.SubmitTransactionRequest">SubmitTransactionRequest</a></td>
+                <td><a href="#api.SubmitTransactionResponse">SubmitTransactionResponse</a></td>
+                <td><p>Submit a signed transaction</p></td>
               </tr>
 
           </tbody>
@@ -4388,7 +4602,7 @@
                 </tr>
 
                 <tr>
-                  <td>TimeInForce</td>
+                  <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -4404,6 +4618,13 @@
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.Order.Type">Order.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4480,7 +4701,7 @@
                 </tr>
 
                 <tr>
-                  <td>TimeInForce</td>
+                  <td>timeInForce</td>
                   <td>
                     <ul>
 
@@ -4591,7 +4812,7 @@
                 </tr>
 
                 <tr>
-                  <td>TimeInForce</td>
+                  <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -5254,6 +5475,13 @@
                   <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.Trade.Type">Trade.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -5652,6 +5880,12 @@
                 <td><p></p></td>
               </tr>
 
+              <tr>
+                <td>PartiallyFilled</td>
+                <td>6</td>
+                <td><p></p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -5861,6 +6095,35 @@
               <tr>
                 <td>Sell</td>
                 <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Trade.Type">Trade.Type</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>DEFAULT</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NETWORK_CLOSE_OUT_GOOD</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NETWORK_CLOSE_OUT_BAD</td>
+                <td>2</td>
                 <td><p></p></td>
               </tr>
 
