@@ -150,7 +150,6 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	if raw, err = txEncode(raw, blockchain.SubmitOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder)
 	}
-	fmt.Printf("BEFORE: %v\n", string(raw))
 	return &protoapi.PrepareSubmitOrderResponse{
 		Blob:         raw,
 		PendingOrder: pending,
