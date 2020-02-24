@@ -9,7 +9,6 @@ import (
 	"context"
 	"sync"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/plugins"
@@ -200,13 +199,92 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 		price:      1000,
 	}
 	lsch <- []events.LossSocialization{lsevt}
-	time.Sleep(1 * time.Second)
+	lsch <- []events.LossSocialization{} // ensure previous event was processed
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
 	assert.Equal(t, 700, int(pp[0].RealisedPNL))
 	assert.Equal(t, 0, int(pp[0].UnrealisedPNL))
+}
+
+func TestDistressedTraderUpdate(t *testing.T) {
+	position := getPosPlugin(t)
+	defer position.Finish()
+	ch := make(chan []events.SettlePosition)
+	ref := 1
+	lsch := make(chan []events.LossSocialization)
+	market := "market-id"
+	position.pos.EXPECT().Subscribe().Times(1).Return(ch, ref)
+	position.ls.EXPECT().Subscribe().Times(1).Return(lsch, ref)
+	position.pos.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
+		if ch != nil {
+			close(ch)
+			ch = nil
+		}
+	})
+	position.Start(position.ctx)
+	ps := posStub{
+		mID:   market,
+		party: "trader1",
+		size:  0,
+		price: 1000,
+		trades: []events.TradeSettlement{
+			tradeStub{
+				size:  2,
+				price: 1000,
+			},
+			tradeStub{
+				size:  3,
+				price: 1200,
+			},
+		},
+	}
+	ch <- []events.SettlePosition{ps}
+	pp, err := position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	// average entry price should be 1k
+	// initialy calculation say the RealisedPNL should be 1000
+	assert.Equal(t, 0, int(pp[0].RealisedPNL))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
+
+	// then we process the event for LossSocialization
+	lsevt := lsStub{
+		market:     market,
+		party:      "trader1",
+		amountLoss: -300,
+		price:      1000,
+	}
+	lsch <- []events.LossSocialization{lsevt}
+	lsch <- []events.LossSocialization{} // ensure the previous events were processed
+	pp, err = position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	// with the changes, the RealisedPNL should be 700
+	assert.Equal(t, -300, int(pp[0].RealisedPNL))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
+	// now assume this trader is distressed, and we've taken all their funds
+	ps = posStub{
+		mID:       market,
+		party:     "trader1",
+		size:      0,
+		hasMargin: true,
+		margin:    100,
+	}
+	ch <- []events.SettlePosition{ps}
+	ch <- []events.SettlePosition{} // ensure the empty array is read. This ensures the actual event was processed
+	pp, err = position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	assert.Equal(t, 0, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, -1000, int(pp[0].RealisedPNL))
 }
 
 func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
@@ -264,7 +342,7 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 		price:      1000,
 	}
 	lsch <- []events.LossSocialization{lsevt}
-	time.Sleep(1 * time.Second)
+	lsch <- []events.LossSocialization{} // when this is read, the actual event was processed
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))

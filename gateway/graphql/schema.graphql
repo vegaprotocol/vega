@@ -868,10 +868,16 @@ type Trade {
   market: Market!
 
   "The order that bought"
-  buyer: String!
+  buyOrder: String!
 
   "The order that sold"
-  seller: String!
+  sellOrder: String!
+
+  "The party that bought"
+  buyer: Party!
+
+  "The party that sold"
+  seller: Party!
 
   "The aggressor indicates whether this trade was related to a BUY or SELL"
   aggressor: Side!
