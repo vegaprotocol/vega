@@ -9,7 +9,7 @@
 
 paths="paths=source_relative"
 
-# Generate *.pb.go and *.validator.pb.go
+# proto (excl subdirs): Generate *.pb.go and *.validator.pb.go
 find proto -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
 	protoc \
@@ -50,7 +50,7 @@ sed --in-place -r \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
 	proto/doc/index.html
 
-# Generate *.swagger.json
+# proto/api: Generate *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
@@ -59,7 +59,6 @@ do
 		-Iproto \
 		-Ivendor \
 		-Ivendor/github.com/google/protobuf/src \
-		--go_out="plugins=grpc,$paths:." \
 		--swagger_out="logtostderr=true,$grpc_api_configuration:." \
 		"$protofile"
 done
@@ -67,8 +66,7 @@ done
 # Un-comment NotifyTraderAccount (#726)
 patch --reverse -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
 
-# Generate *.pb.gw.go
-grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
+# Generate *.validator.pb.go, *.pb.gw.go
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
 	protoc \
