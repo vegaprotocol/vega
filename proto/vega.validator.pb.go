@@ -241,3 +241,6 @@ func (this *MarketData) Validate() error {
 func (this *ErrorDetail) Validate() error {
 	return nil
 }
+func (this *SignedBundle) Validate() error {
+	return nil
+}

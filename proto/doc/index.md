@@ -121,6 +121,7 @@
     - [RiskResult](#vega.RiskResult)
     - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
     - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
+    - [SignedBundle](#vega.SignedBundle)
     - [Statistics](#vega.Statistics)
     - [Trade](#vega.Trade)
     - [TradeSet](#vega.TradeSet)
@@ -946,10 +947,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [bytes](#bytes) |  |  |
-| sig | [bytes](#bytes) |  |  |
-| address | [bytes](#bytes) |  |  |
-| pubKey | [bytes](#bytes) |  |  |
+| tx | [vega.SignedBundle](#vega.SignedBundle) |  |  |
 
 
 
@@ -1950,6 +1948,24 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [RiskFactor](#vega.RiskFactor) |  |  |
+
+
+
+
+
+
+<a name="vega.SignedBundle"></a>
+
+### SignedBundle
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  |  |
+| address | [bytes](#bytes) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
 
 
 

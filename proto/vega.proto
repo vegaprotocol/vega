@@ -419,3 +419,12 @@ message ErrorDetail {
   // any inner error information that could add more context, or be helpful for error reporting.
   string inner = 3;
 }
+
+message SignedBundle {
+  bytes data = 1;
+  bytes sig = 2;
+  oneof auth {
+    bytes address = 101;
+    bytes pubKey = 102;
+  }
+}
