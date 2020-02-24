@@ -164,6 +164,12 @@ func testCreateOrderFailExpiracySetForNonGTT(t *testing.T) {
 	pendingOrder, err = svc.svc.CreateOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiracy.Error())
+
+	// ensure it works with a 0 expiry
+	order.ExpiresAt = 0
+	pendingOrder, err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
+	assert.NotNil(t, pendingOrder)
+	assert.NoError(t, err)
 }
 
 func testOrderExpired(t *testing.T) {
