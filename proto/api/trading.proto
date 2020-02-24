@@ -239,12 +239,12 @@ service trading_data {
 }
 
 message MarginLevelsSubscribeRequest {
-  string partyID = 1;
+  string partyID = 1 [(validator.field) = {msg_exists : true }];
   string marketID = 2;
 }
 
 message MarginLevelsRequest {
-  string partyID = 1;
+  string partyID = 1 [(validator.field) = {msg_exists : true }];
   string marketID = 2;
 }
 
@@ -257,7 +257,7 @@ message MarketsDataSubscribeRequest {
 }
 
 message MarketDataByIDRequest {
-  string marketID = 1;
+  string marketID = 1 [(validator.field) = {msg_exists : true }];
 }
 
 message MarketDataByIDResponse {
@@ -269,7 +269,7 @@ message MarketsDataResponse {
 }
 
 message LastTradeRequest {
-  string marketID = 1;
+  string marketID = 1 [(validator.field) = {msg_exists : true }];
 }
 
 message LastTradeResponse {
@@ -277,7 +277,7 @@ message LastTradeResponse {
 }
 
 message MarketByIDRequest {
-  string marketID = 1;
+  string marketID = 1 [(validator.field) = {msg_exists : true }];
 }
 
 message MarketByIDResponse {
@@ -285,7 +285,7 @@ message MarketByIDResponse {
 }
 
 message PartyByIDRequest {
-  string partyID = 1;
+  string partyID = 1 [(validator.field) = {msg_exists : true }];
 }
 
 message PartyByIDResponse {
@@ -332,12 +332,12 @@ message TradesSubscribeRequest {
 }
 
 message CandlesSubscribeRequest {
-  string marketID = 1;
+  string marketID = 1 [(validator.field) = {msg_exists : true}];
   vega.Interval interval = 2;
 }
 
 message MarketDepthSubscribeRequest {
-  string marketID = 1;
+  string marketID = 1 [(validator.field) = {msg_exists : true}];
 }
 
 message PositionsSubscribeRequest {
@@ -374,7 +374,7 @@ message OrderByMarketAndIdResponse {
 }
 
 message OrderByReferenceRequest {
-  string reference = 1;
+  string reference = 1 [(validator.field) = {msg_exists : true }];
 }
 
 message OrderByReferenceResponse {
