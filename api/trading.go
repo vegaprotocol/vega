@@ -13,7 +13,6 @@ import (
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -349,23 +348,4 @@ func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
 	prefixBytes := []byte(prefix)
 	commandInput := append([]byte{byte(cmd)}, input...)
 	return append(prefixBytes, commandInput...), nil
-}
-
-/*
-func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
-	commandInput := append([]byte{byte(cmd)}, input...)
-	return append([]byte(uuid.NewV4().String()), commandInput...), nil
-}
-*/
-
-// txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
-// strategy, we have a simple and efficient encoding at present. A partner encode function
-// can be found in the blockchain client.
-func txDecode(input []byte) ([]byte, blockchain.Command, error) {
-	// Input is typically the bytes that arrive in raw format after consensus is reached.
-	// Split the transaction dropping the unification bytes (uuid&pipe)
-	if len(input) <= 37 {
-		return nil, 0, errors.New("payload size is incorrect should be > 37 bytes")
-	}
-	return input[37:], blockchain.Command(input[36]), nil
 }
