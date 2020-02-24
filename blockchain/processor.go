@@ -283,33 +283,23 @@ func (p *Processor) processSigned(payload []byte) error {
 			return err
 		}
 		err = p.blockchainService.SubmitOrder(order)
-		if err != nil {
-			return err
-		}
 	case CancelOrderCommand:
 		order, err := p.getOrderCancellation(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.CancelOrder(order)
-		if err != nil {
-			return err
-		}
 	case AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.AmendOrder(order)
-		if err != nil {
-			return err
-		}
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
 		err = fmt.Errorf("unknown command received: %s", cmd)
 	}
 	return err
-
 }
 
 func (p *Processor) processUnsigned(payload []byte) error {
@@ -328,45 +318,30 @@ func (p *Processor) processUnsigned(payload []byte) error {
 			return err
 		}
 		err = p.blockchainService.SubmitOrder(order)
-		if err != nil {
-			return err
-		}
 	case CancelOrderCommand:
 		order, err := p.getOrderCancellation(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.CancelOrder(order)
-		if err != nil {
-			return err
-		}
 	case AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.AmendOrder(order)
-		if err != nil {
-			return err
-		}
 	case NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.NotifyTraderAccount(notify)
-		if err != nil {
-			return err
-		}
 	case WithdrawCommand:
 		w, err := p.getWithdraw(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.Withdraw(w)
-		if err != nil {
-			return err
-		}
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
 		err = fmt.Errorf("unknown command received: %s", cmd)
