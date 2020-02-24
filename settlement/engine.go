@@ -254,7 +254,7 @@ func (e *Engine) RemoveDistressed(evts []events.Margin) {
 			party:     v.Party(),
 			price:     v.Price(),
 			marketID:  e.market,
-			margin:    v.MarginBalance(),
+			margin:    v.MarginBalance() + v.GeneralBalance(),
 			hasMargin: true,
 		}
 		bEvts = append(bEvts, sp)
