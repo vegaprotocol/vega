@@ -146,8 +146,9 @@ type tradingDataService struct {
 func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 
-	if request.MarketID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	err := request.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	p := defaultPagination
@@ -174,8 +175,9 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 func (h *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 
-	if request.PartyID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	err := request.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	p := defaultPagination
@@ -211,12 +213,11 @@ func (h *tradingDataService) Markets(ctx context.Context, request *empty.Empty) 
 func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
-	if request.MarketID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	err := request.Validate()
+	if err != nil {
+		return nil, err
 	}
-	if request.OrderID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingOrderID)
-	}
+
 	order, err := h.OrderService.GetByMarketAndID(ctx, request.MarketID, request.OrderID)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarketAndID, err)
@@ -229,9 +230,12 @@ func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 
 // OrderByReference provides the (possibly not yet accepted/rejected) order.
 func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
-	if req.Reference == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingOrderReference)
+
+	err := req.Validate()
+	if err != nil {
+		return nil, err
 	}
+
 	order, err := h.OrderService.GetByReference(ctx, req.Reference)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByReference, err)
@@ -247,16 +251,12 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 func (h *tradingDataService) Candles(ctx context.Context,
 	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
 
-	marketID := request.MarketID
-	if marketID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	err := request.Validate()
+	if err != nil {
+		return nil, err
 	}
 
-	if request.SinceTimestamp == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingSinceTimestamp)
-	}
-
-	c, err := h.CandleService.GetCandles(ctx, marketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
+	c, err := h.CandleService.GetCandles(ctx, request.MarketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandles, err)
 	}
@@ -269,8 +269,10 @@ func (h *tradingDataService) Candles(ctx context.Context,
 // MarketDepth provides the order book for a given market, and also returns the most recent trade
 // for the given market.
 func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
-	if req.MarketID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+
+	err := req.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	// Query market depth statistics
@@ -298,8 +300,10 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 // TradesByMarket provides a list of trades for a given market.
 // Pagination: Optional. If not provided, defaults are used.
 func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
-	if request.MarketID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+
+	err := request.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	p := defaultPagination
@@ -318,8 +322,10 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 
 // PositionsByParty provides a list of positions for a given party.
 func (h *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
-	if request.PartyID == "" {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+
+	err := request.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	// Check here for a valid marketID so we don't fail later
@@ -341,9 +347,12 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 
 // MarginLevels returns the current margin levels for a given party and market.
 func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
-	if len(req.PartyID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+
+	err := req.Validate()
+	if err != nil {
+		return nil, err
 	}
+
 	mls, err := h.RiskService.GetMarginLevelsByID(req.PartyID, req.MarketID)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrRiskServiceGetMarginLevelsByID, err)
@@ -360,9 +369,12 @@ func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 
 // MarketDataByID provides market data for the given ID.
 func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
-	if len(req.MarketID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+
+	err := req.Validate()
+	if err != nil {
+		return nil, err
 	}
+
 	md, err := h.MarketService.GetMarketDataByID(req.MarketID)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMarketServiceGetMarketData, err)
@@ -601,8 +613,9 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	if len(req.GetPartyID()) <= 0 {
-		return apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	err := req.Validate()
+	if err != nil {
+		return err
 	}
 
 	marginLevelsChan, ref := h.RiskService.ObserveMarginLevels(ctx, h.Config.StreamRetries, req.PartyID, req.MarketID)
@@ -611,7 +624,6 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 		h.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	var err error
 	for {
 		select {
 		case mls := <-marginLevelsChan:
@@ -732,6 +744,7 @@ func (h *tradingDataService) OrdersSubscribe(
 		err               error
 		marketID, partyID *string
 	)
+
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
 	}

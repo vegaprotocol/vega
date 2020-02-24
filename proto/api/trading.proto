@@ -239,12 +239,12 @@ service trading_data {
 }
 
 message MarginLevelsSubscribeRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true }];
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
   string marketID = 2;
 }
 
 message MarginLevelsRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true }];
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
   string marketID = 2;
 }
 
@@ -257,7 +257,7 @@ message MarketsDataSubscribeRequest {
 }
 
 message MarketDataByIDRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true }];
+  string marketID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message MarketDataByIDResponse {
@@ -269,7 +269,7 @@ message MarketsDataResponse {
 }
 
 message LastTradeRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true }];
+  string marketID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message LastTradeResponse {
@@ -277,7 +277,7 @@ message LastTradeResponse {
 }
 
 message MarketByIDRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true }];
+  string marketID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message MarketByIDResponse {
@@ -285,7 +285,7 @@ message MarketByIDResponse {
 }
 
 message PartyByIDRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true }];
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message PartyByIDResponse {
@@ -332,12 +332,12 @@ message TradesSubscribeRequest {
 }
 
 message CandlesSubscribeRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
   vega.Interval interval = 2;
 }
 
 message MarketDepthSubscribeRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 message PositionsSubscribeRequest {
@@ -345,7 +345,7 @@ message PositionsSubscribeRequest {
 }
 
 message OrdersByMarketRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
   Pagination pagination = 2;
   bool open = 3;
 }
@@ -355,7 +355,7 @@ message OrdersByMarketResponse {
 }
 
 message OrdersByPartyRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true }];
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
   Pagination pagination = 2;
   bool open = 3;
 }
@@ -365,8 +365,8 @@ message OrdersByPartyResponse {
 }
 
 message OrderByMarketAndIdRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true }];
-  string orderID = 2 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {string_not_empty : true }];
+  string orderID = 2 [(validator.field) = {string_not_empty : true}];
 }
 
 message OrderByMarketAndIdResponse {
@@ -374,7 +374,7 @@ message OrderByMarketAndIdResponse {
 }
 
 message OrderByReferenceRequest {
-  string reference = 1 [(validator.field) = {msg_exists : true }];
+  string reference = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message OrderByReferenceResponse {
@@ -388,7 +388,7 @@ message MarketsResponse {
 }
 
 message CandlesRequest {
-  string marketID = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
 
   // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
@@ -401,7 +401,7 @@ message CandlesResponse {
 }
 
 message MarketDepthRequest {
-  string marketID = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 1 [(validator.field) = {string_not_empty: true}];
   uint64 maxDepth = 2;
 }
 
@@ -413,7 +413,7 @@ message MarketDepthResponse {
 }
 
 message TradesByMarketRequest {
-  string marketID = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 1 [(validator.field) = {string_not_empty: true}];
   Pagination pagination = 2;
 }
 
@@ -422,7 +422,7 @@ message TradesByMarketResponse {
 }
 
 message PositionsByPartyRequest{
-  string partyID = 1 [(validator.field) = {msg_exists: true}];
+  string partyID = 1 [(validator.field) = {string_not_empty: true}];
   string marketID = 2;
 }
 
@@ -471,8 +471,8 @@ message MarketAccountsResponse {
 }
 
 message CheckTokenRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true}];
-  string token = 2 [(validator.field) = {msg_exists : true}];
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  string token = 2 [(validator.field) = {string_not_empty : true}];
 }
 
 message CheckTokenResponse {
