@@ -172,7 +172,7 @@ func (mr *MockBlockchainClientMockRecorder) NotifyTraderAccount(arg0, arg1 inter
 }
 
 // SubmitTransaction mocks base method
-func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 []byte) (bool, error) {
+func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
 	ret0, _ := ret[0].(bool)

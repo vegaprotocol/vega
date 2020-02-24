@@ -47,12 +47,7 @@ service trading {
 }
 
 message SubmitTransactionRequest {
-  bytes data = 1;
-  bytes sig = 2;
-  oneof auth {
-    bytes address = 101;
-    bytes pubKey = 102;
-  }
+  vega.SignedBundle tx = 1;
 }
 
 message SubmitTransactionResponse {

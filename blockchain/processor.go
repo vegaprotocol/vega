@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -8,6 +9,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+)
+
+var (
+	ErrOrderSubmissionPartyAndPubKeyDoesNotMatch   = errors.New("order submission party and pubkey does not match")
+	ErrOrderCancellationPartyAndPubKeyDoesNotMatch = errors.New("order cancellation party and pubkey does not match")
+	ErrOrderAmendmentPartyAndPubKeyDoesNotMatch    = errors.New("order amendment party and pubkey does not match")
 )
 
 // ProcessorService ...
@@ -65,6 +72,32 @@ func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
 	return order, nil
 }
 
+func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
+	orderSubmission := &types.OrderSubmission{}
+	err := proto.Unmarshal(payload, orderSubmission)
+	if err != nil {
+		return nil, err
+	}
+
+	order := types.Order{
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		Side:        orderSubmission.Side,
+		TimeInForce: orderSubmission.TimeInForce,
+		Type:        orderSubmission.Type,
+		ExpiresAt:   orderSubmission.ExpiresAt,
+		Reference:   orderSubmission.Reference,
+		Status:      types.Order_Active,
+		CreatedAt:   0,
+		Remaining:   orderSubmission.Size,
+	}
+
+	return &order, nil
+}
+
 func (p *Processor) getOrderCancellation(payload []byte) (*types.OrderCancellation, error) {
 	order := &types.OrderCancellation{}
 	err := proto.Unmarshal(payload, order)
@@ -107,11 +140,25 @@ func (p *Processor) Validate(payload []byte) error {
 	if seen, err := p.hasSeen(payload); seen {
 		return errors.Wrap(err, "error during hasSeen (validate)")
 	}
+
+	// is that a signed or unsigned command?
+	switch CommandKind(payload[0]) {
+	case CommandKindSigned:
+		return p.validateSigned(payload[1:])
+	case CommandKindUnsigned:
+		return p.validateUnsigned(payload[1:])
+	default:
+		return errors.New("unknown command kind when validating payload")
+	}
+}
+
+func (p *Processor) validateUnsigned(payload []byte) error {
 	// Attempt to decode transaction payload
 	_, cmd, err := txDecode(payload)
 	if err != nil {
 		return errors.Wrap(err, "error decoding payload")
 	}
+
 	// Ensure valid VEGA app command
 	switch cmd {
 	case
@@ -122,11 +169,68 @@ func (p *Processor) Validate(payload []byte) error {
 		WithdrawCommand:
 		// Add future valid VEGA commands here
 		return nil
+	default:
+		return errors.New("unknown command when validating payload")
 	}
-	return errors.New("unknown command when validating payload")
+}
 
-	// todo: Validation required here using blockchain service (gitlab.com/vega-protocol/trading-core/issues/177)
-	//p.blockchainService.ValidateOrder()
+func (p *Processor) validateSigned(payload []byte) error {
+	// first unmarshal the bundle
+	bundle := &types.SignedBundle{}
+	err := proto.Unmarshal(payload, bundle)
+	if err != nil {
+		p.log.Error("unable to unmarshal signed bundle", logging.Error(err))
+		return err
+	}
+
+	// verify the signature
+	if err := verifyBundle(p.log, bundle); err != nil {
+		p.log.Error("error verifying bundle", logging.Error(err))
+		return err
+	}
+
+	data, cmd, err := txDecode(bundle.Data)
+	if err != nil {
+		return errors.Wrap(err, "error decoding payload")
+	}
+
+	// then ensure the command is understood by the core.
+	// + validate pub key = partyID in tx
+	switch cmd {
+	case SubmitOrderCommand:
+		order, err := p.getOrderSubmission(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		if order.PartyID != hex.EncodeToString(bundle.GetPubKey()) {
+			return ErrOrderSubmissionPartyAndPubKeyDoesNotMatch
+		}
+		return nil
+	case CancelOrderCommand:
+		order, err := p.getOrderCancellation(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		if order.PartyID != hex.EncodeToString(bundle.GetPubKey()) {
+			return ErrOrderSubmissionPartyAndPubKeyDoesNotMatch
+		}
+		return nil
+	case AmendOrderCommand:
+		order, err := p.getOrderAmendment(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		if order.PartyID != hex.EncodeToString(bundle.GetPubKey()) {
+			return ErrOrderSubmissionPartyAndPubKeyDoesNotMatch
+		}
+		return nil
+	default:
+		return errors.New("unknown command when validating payload")
+	}
+
 }
 
 // Process performs validation and then sends the command and data to
@@ -144,11 +248,68 @@ func (p *Processor) Process(payload []byte) error {
 	}
 	p.seenPayloads[*payloadHash] = 0xF
 
+	// first is that a signed or unsigned command?
+	switch CommandKind(payload[0]) {
+	case CommandKindSigned:
+		return p.processSigned(payload[1:])
+	case CommandKindUnsigned:
+		return p.processUnsigned(payload[1:])
+	default:
+		return errors.New("unknown command when validating payload")
+	}
+
+}
+
+// we do not verify signature again as we exect it to be verified earlier already
+func (p *Processor) processSigned(payload []byte) error {
+	// first unmarshal the bundle
+	bundle := &types.SignedBundle{}
+	err := proto.Unmarshal(payload, bundle)
+	if err != nil {
+		p.log.Error("unable to unmarshal signed bundle", logging.Error(err))
+		return err
+	}
+
+	// Attempt to decode transaction payload
+	data, cmd, err := txDecode(bundle.Data)
+	if err != nil {
+		return errors.Wrap(err, "error decoding payload")
+	}
+
+	switch cmd {
+	case SubmitOrderCommand:
+		order, err := p.getOrderSubmission(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.SubmitOrder(order)
+	case CancelOrderCommand:
+		order, err := p.getOrderCancellation(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.CancelOrder(order)
+	case AmendOrderCommand:
+		order, err := p.getOrderAmendment(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.AmendOrder(order)
+	default:
+		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
+		err = fmt.Errorf("unknown command received: %s", cmd)
+	}
+	return err
+}
+
+func (p *Processor) processUnsigned(payload []byte) error {
 	// Attempt to decode transaction payload
 	data, cmd, err := txDecode(payload)
 	if err != nil {
 		return errors.Wrap(err, "error decoding payload")
 	}
+
+	// Ensure valid VEGA app command
 	// Process known command types
 	switch cmd {
 	case SubmitOrderCommand:
@@ -157,50 +318,35 @@ func (p *Processor) Process(payload []byte) error {
 			return err
 		}
 		err = p.blockchainService.SubmitOrder(order)
-		if err != nil {
-			return err
-		}
 	case CancelOrderCommand:
 		order, err := p.getOrderCancellation(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.CancelOrder(order)
-		if err != nil {
-			return err
-		}
 	case AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.AmendOrder(order)
-		if err != nil {
-			return err
-		}
 	case NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.NotifyTraderAccount(notify)
-		if err != nil {
-			return err
-		}
 	case WithdrawCommand:
 		w, err := p.getWithdraw(data)
 		if err != nil {
 			return err
 		}
 		err = p.blockchainService.Withdraw(w)
-		if err != nil {
-			return err
-		}
 	default:
-		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
-		return fmt.Errorf("unknown command received: %s", cmd)
+		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
+		err = fmt.Errorf("unknown command received: %s", cmd)
 	}
-	return nil
+	return err
 }
 
 // hasSeen helper performs duplicate checking on an incoming transaction payload.

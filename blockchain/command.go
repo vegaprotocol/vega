@@ -1,5 +1,16 @@
 package blockchain
 
+// CommandKind
+type CommandKind byte
+
+const (
+	CommandKindSigned   CommandKind = 0x10
+	CommandKindUnsigned CommandKind = 0x11
+)
+
+// Command ...
+type Command byte
+
 // Custom blockchain command encoding, lighter-weight than proto
 const (
 	// SubmitOrderCommand ...
@@ -11,11 +22,8 @@ const (
 	// NotifyTraderAccountCommand ...
 	NotifyTraderAccountCommand Command = 0x43
 	// WithdrawCommant ...
-	WithdrawCommand = 0x44
+	WithdrawCommand Command = 0x44
 )
-
-// Command ...
-type Command byte
 
 var commandName = map[Command]string{
 	SubmitOrderCommand:         "Submit Order",
@@ -25,9 +33,22 @@ var commandName = map[Command]string{
 	WithdrawCommand:            "Withdraw",
 }
 
+var commandKindName = map[CommandKind]string{
+	CommandKindSigned:   "SignedTx",
+	CommandKindUnsigned: "UnsignedTx",
+}
+
 // String return the
 func (cmd Command) String() string {
 	s, ok := commandName[cmd]
+	if ok {
+		return s
+	}
+	return ""
+}
+
+func (cmd CommandKind) String() string {
+	s, ok := commandKindName[cmd]
 	if ok {
 		return s
 	}

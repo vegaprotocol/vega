@@ -8,8 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"golang.org/x/crypto/ed25519"
-
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 )
@@ -87,8 +85,8 @@ func GenKeypair(algorithm string) (*Keypair, error) {
 		return nil, err
 	}
 
-	privBytes := priv.(ed25519.PrivateKey)
-	pubBytes := pub.(ed25519.PublicKey)
+	privBytes := priv.([]byte)
+	pubBytes := pub.([]byte)
 	return &Keypair{
 		Priv:      hex.EncodeToString(privBytes),
 		Pub:       hex.EncodeToString(pubBytes),
@@ -186,4 +184,12 @@ func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 	f.Close()
 
 	return w, nil
+}
+
+func Sign(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte) []byte {
+	return alg.Sign(kp.privBytes, message)
+}
+
+func Verify(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte, sig []byte) bool {
+	return alg.Verify(kp.pubBytes, message, sig)
 }
