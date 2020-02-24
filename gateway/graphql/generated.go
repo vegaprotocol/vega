@@ -205,7 +205,7 @@ type ComplexityRoot struct {
 
 	Party struct {
 		Accounts  func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
-		ID        func(childComplexity int) int
+		Id        func(childComplexity int) int
 		Margins   func(childComplexity int, marketID *string) int
 		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
@@ -332,11 +332,13 @@ type ComplexityRoot struct {
 
 	Trade struct {
 		Aggressor func(childComplexity int) int
+		BuyOrder  func(childComplexity int) int
 		Buyer     func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Market    func(childComplexity int) int
 		Price     func(childComplexity int) int
+		SellOrder func(childComplexity int) int
 		Seller    func(childComplexity int) int
 		Size      func(childComplexity int) int
 	}
@@ -365,7 +367,7 @@ type CandleResolver interface {
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *proto.MarginLevels) (*Market, error)
 
-	Party(ctx context.Context, obj *proto.MarginLevels) (*Party, error)
+	Party(ctx context.Context, obj *proto.MarginLevels) (*proto.Party, error)
 	MaintenanceLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	SearchLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	InitialLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
@@ -413,7 +415,7 @@ type OrderResolver interface {
 	Market(ctx context.Context, obj *proto.Order) (*Market, error)
 	Size(ctx context.Context, obj *proto.Order) (string, error)
 	Remaining(ctx context.Context, obj *proto.Order) (string, error)
-	Party(ctx context.Context, obj *proto.Order) (*Party, error)
+	Party(ctx context.Context, obj *proto.Order) (*proto.Party, error)
 	CreatedAt(ctx context.Context, obj *proto.Order) (string, error)
 	ExpiresAt(ctx context.Context, obj *proto.Order) (*string, error)
 	Status(ctx context.Context, obj *proto.Order) (OrderStatus, error)
@@ -423,11 +425,11 @@ type OrderResolver interface {
 	RejectionReason(ctx context.Context, obj *proto.Order) (*RejectionReason, error)
 }
 type PartyResolver interface {
-	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
-	Trades(ctx context.Context, obj *Party, marketID *string, skip *int, first *int, last *int) ([]*proto.Trade, error)
-	Accounts(ctx context.Context, obj *Party, marketID *string, asset *string, typeArg *AccountType) ([]*proto.Account, error)
-	Positions(ctx context.Context, obj *Party) ([]*proto.Position, error)
-	Margins(ctx context.Context, obj *Party, marketID *string) ([]*proto.MarginLevels, error)
+	Orders(ctx context.Context, obj *proto.Party, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
+	Trades(ctx context.Context, obj *proto.Party, marketID *string, skip *int, first *int, last *int) ([]*proto.Trade, error)
+	Accounts(ctx context.Context, obj *proto.Party, marketID *string, asset *string, typeArg *AccountType) ([]*proto.Account, error)
+	Positions(ctx context.Context, obj *proto.Party) ([]*proto.Position, error)
+	Margins(ctx context.Context, obj *proto.Party, marketID *string) ([]*proto.MarginLevels, error)
 }
 type PendingOrderResolver interface {
 	Price(ctx context.Context, obj *proto.PendingOrder) (*string, error)
@@ -435,7 +437,7 @@ type PendingOrderResolver interface {
 	Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error)
 	Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error)
 	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
-	Party(ctx context.Context, obj *proto.PendingOrder) (*Party, error)
+	Party(ctx context.Context, obj *proto.PendingOrder) (*proto.Party, error)
 	Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error)
 	Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error)
 }
@@ -456,8 +458,8 @@ type PriceLevelResolver interface {
 type QueryResolver interface {
 	Markets(ctx context.Context, id *string) ([]*Market, error)
 	Market(ctx context.Context, id string) (*Market, error)
-	Parties(ctx context.Context, id *string) ([]*Party, error)
-	Party(ctx context.Context, id string) (*Party, error)
+	Parties(ctx context.Context, id *string) ([]*proto.Party, error)
+	Party(ctx context.Context, id string) (*proto.Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
 	CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error)
 }
@@ -496,6 +498,8 @@ type SubscriptionResolver interface {
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
 
+	Buyer(ctx context.Context, obj *proto.Trade) (*proto.Party, error)
+	Seller(ctx context.Context, obj *proto.Trade) (*proto.Party, error)
 	Aggressor(ctx context.Context, obj *proto.Trade) (Side, error)
 	Price(ctx context.Context, obj *proto.Trade) (string, error)
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
@@ -1230,11 +1234,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*AccountType)), true
 
 	case "Party.id":
-		if e.complexity.Party.ID == nil {
+		if e.complexity.Party.Id == nil {
 			break
 		}
 
-		return e.complexity.Party.ID(childComplexity), true
+		return e.complexity.Party.Id(childComplexity), true
 
 	case "Party.margins":
 		if e.complexity.Party.Margins == nil {
@@ -1904,6 +1908,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Aggressor(childComplexity), true
 
+	case "Trade.buyOrder":
+		if e.complexity.Trade.BuyOrder == nil {
+			break
+		}
+
+		return e.complexity.Trade.BuyOrder(childComplexity), true
+
 	case "Trade.buyer":
 		if e.complexity.Trade.Buyer == nil {
 			break
@@ -1938,6 +1949,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Trade.Price(childComplexity), true
+
+	case "Trade.sellOrder":
+		if e.complexity.Trade.SellOrder == nil {
+			break
+		}
+
+		return e.complexity.Trade.SellOrder(childComplexity), true
 
 	case "Trade.seller":
 		if e.complexity.Trade.Seller == nil {
@@ -2921,10 +2939,16 @@ type Trade {
   market: Market!
 
   "The order that bought"
-  buyer: String!
+  buyOrder: String!
 
   "The order that sold"
-  seller: String!
+  sellOrder: String!
+
+  "The party that bought"
+  buyer: Party!
+
+  "The party that sold"
+  seller: Party!
 
   "The aggressor indicates whether this trade was related to a BUY or SELL"
   aggressor: Side!
@@ -5382,10 +5406,10 @@ func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Party)
+	res := resTmp.(*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_maintenanceLevel(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -7124,10 +7148,10 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Party)
+	res := resTmp.(*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -7377,7 +7401,7 @@ func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field gr
 	return ec.marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7396,7 +7420,7 @@ func (ec *executionContext) _Party_id(ctx context.Context, field graphql.Collect
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7414,7 +7438,7 @@ func (ec *executionContext) _Party_id(ctx context.Context, field graphql.Collect
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7455,7 +7479,7 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7496,7 +7520,7 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTradeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7537,7 +7561,7 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAccountᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7571,7 +7595,7 @@ func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.
 	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPositionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7881,10 +7905,10 @@ func (ec *executionContext) _PendingOrder_party(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Party)
+	res := resTmp.(*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
@@ -8661,10 +8685,10 @@ func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Party)
+	res := resTmp.([]*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPartyᚄ(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPartyᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_party(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8702,10 +8726,10 @@ func (ec *executionContext) _Query_party(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Party)
+	res := resTmp.(*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10796,7 +10820,7 @@ func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.Col
 	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+func (ec *executionContext) _Trade_buyOrder(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10815,7 +10839,7 @@ func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Buyer, nil
+		return obj.BuyOrder, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10833,7 +10857,7 @@ func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+func (ec *executionContext) _Trade_sellOrder(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10852,7 +10876,7 @@ func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Seller, nil
+		return obj.SellOrder, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10868,6 +10892,80 @@ func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().Buyer(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.Party)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().Seller(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.Party)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -13525,7 +13623,7 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 
 var partyImplementors = []string{"Party"}
 
-func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, obj *Party) graphql.Marshaler {
+func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, obj *proto.Party) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, partyImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14620,16 +14718,44 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		case "buyOrder":
+			out.Values[i] = ec._Trade_buyOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sellOrder":
+			out.Values[i] = ec._Trade_sellOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "buyer":
-			out.Values[i] = ec._Trade_buyer(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_buyer(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "seller":
-			out.Values[i] = ec._Trade_seller(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_seller(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "aggressor":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -15248,11 +15374,11 @@ func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
+func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx context.Context, sel ast.SelectionSet, v proto.Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
+func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx context.Context, sel ast.SelectionSet, v *proto.Party) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16142,11 +16268,11 @@ func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return v
 }
 
-func (ec *executionContext) marshalOParty2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx context.Context, sel ast.SelectionSet, v proto.Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPartyᚄ(ctx context.Context, sel ast.SelectionSet, v []*Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPartyᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Party) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -16173,7 +16299,7 @@ func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, sel, v[i])
+			ret[i] = ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16186,7 +16312,7 @@ func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx context.Context, sel ast.SelectionSet, v *proto.Party) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
