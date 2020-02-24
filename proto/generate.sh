@@ -77,6 +77,7 @@ do
 		-Ivendor \
 		-Ivendor/github.com/google/protobuf/src \
 		--go_out="plugins=grpc,$paths:." \
+		--govalidators_out="$paths:." \
 		--grpc-gateway_out="logtostderr=true,$grpc_api_configuration,$paths:." \
 		"$protofile"
 done
