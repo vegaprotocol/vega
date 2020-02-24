@@ -4,8 +4,6 @@ import (
 	"crypto"
 	"encoding/json"
 	"errors"
-
-	"golang.org/x/crypto/ed25519"
 )
 
 const (
@@ -48,11 +46,11 @@ func (s *SignatureAlgorithm) GenKey() (crypto.PublicKey, crypto.PrivateKey, erro
 }
 
 func (s *SignatureAlgorithm) Sign(priv crypto.PrivateKey, buf []byte) []byte {
-	return s.impl.Sign(priv.(ed25519.PrivateKey), buf)
+	return s.impl.Sign(priv, buf)
 }
 
 func (s *SignatureAlgorithm) Verify(pub crypto.PublicKey, message, sig []byte) bool {
-	return s.impl.Verify(pub.(ed25519.PublicKey), message, sig)
+	return s.impl.Verify(pub, message, sig)
 }
 
 func (s *SignatureAlgorithm) Name() string {

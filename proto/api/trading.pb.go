@@ -26,15 +26,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type SubmitTransactionRequest struct {
-	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	Sig  []byte `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
-	// Types that are valid to be assigned to Auth:
-	//	*SubmitTransactionRequest_Address
-	//	*SubmitTransactionRequest_PubKey
-	Auth                 isSubmitTransactionRequest_Auth `protobuf_oneof:"auth"`
-	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
-	XXX_unrecognized     []byte                          `json:"-"`
-	XXX_sizecache        int32                           `json:"-"`
+	Tx                   *proto1.SignedBundle `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *SubmitTransactionRequest) Reset()         { *m = SubmitTransactionRequest{} }
@@ -62,63 +57,11 @@ func (m *SubmitTransactionRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SubmitTransactionRequest proto.InternalMessageInfo
 
-func (m *SubmitTransactionRequest) GetData() []byte {
+func (m *SubmitTransactionRequest) GetTx() *proto1.SignedBundle {
 	if m != nil {
-		return m.Data
+		return m.Tx
 	}
 	return nil
-}
-
-func (m *SubmitTransactionRequest) GetSig() []byte {
-	if m != nil {
-		return m.Sig
-	}
-	return nil
-}
-
-type isSubmitTransactionRequest_Auth interface {
-	isSubmitTransactionRequest_Auth()
-}
-
-type SubmitTransactionRequest_Address struct {
-	Address []byte `protobuf:"bytes,101,opt,name=address,proto3,oneof"`
-}
-
-type SubmitTransactionRequest_PubKey struct {
-	PubKey []byte `protobuf:"bytes,102,opt,name=pubKey,proto3,oneof"`
-}
-
-func (*SubmitTransactionRequest_Address) isSubmitTransactionRequest_Auth() {}
-
-func (*SubmitTransactionRequest_PubKey) isSubmitTransactionRequest_Auth() {}
-
-func (m *SubmitTransactionRequest) GetAuth() isSubmitTransactionRequest_Auth {
-	if m != nil {
-		return m.Auth
-	}
-	return nil
-}
-
-func (m *SubmitTransactionRequest) GetAddress() []byte {
-	if x, ok := m.GetAuth().(*SubmitTransactionRequest_Address); ok {
-		return x.Address
-	}
-	return nil
-}
-
-func (m *SubmitTransactionRequest) GetPubKey() []byte {
-	if x, ok := m.GetAuth().(*SubmitTransactionRequest_PubKey); ok {
-		return x.PubKey
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*SubmitTransactionRequest) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*SubmitTransactionRequest_Address)(nil),
-		(*SubmitTransactionRequest_PubKey)(nil),
-	}
 }
 
 type SubmitTransactionResponse struct {

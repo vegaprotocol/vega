@@ -40,8 +40,9 @@ type Config struct {
 }
 
 type NodeConfig struct {
-	Port int
-	IP   string
+	Port    int
+	IP      string
+	Retries uint64
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -51,8 +52,9 @@ func NewDefaultConfig() Config {
 		Level:       encoding.LogLevel{Level: logging.InfoLevel},
 		TokenExpiry: encoding.Duration{Duration: tokenExpiry},
 		Node: NodeConfig{
-			IP:   "127.0.0.1",
-			Port: 3002,
+			IP:      "127.0.0.1",
+			Port:    3002,
+			Retries: 5,
 		},
 		IP:     "0.0.0.0",
 		Port:   1789,

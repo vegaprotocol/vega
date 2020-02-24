@@ -1363,21 +1363,8 @@
     "apiSubmitTransactionRequest": {
       "type": "object",
       "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte"
-        },
-        "sig": {
-          "type": "string",
-          "format": "byte"
-        },
-        "address": {
-          "type": "string",
-          "format": "byte"
-        },
-        "pubKey": {
-          "type": "string",
-          "format": "byte"
+        "tx": {
+          "$ref": "#/definitions/vegaSignedBundle"
         }
       }
     },
@@ -2173,6 +2160,27 @@
         "Sell"
       ],
       "default": "Buy"
+    },
+    "vegaSignedBundle": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "sig": {
+          "type": "string",
+          "format": "byte"
+        },
+        "address": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pubKey": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "vegaSimpleModelParams": {
       "type": "object",

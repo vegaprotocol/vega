@@ -1,10 +1,18 @@
 package wallet
 
 import (
+	"encoding/base64"
+	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet/crypto"
+)
+
+var (
+	ErrPubKeyDoesNotExists  = errors.New("public key does not exists")
+	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
+	ErrPubKeyIsTainted      = errors.New("public key is tainted")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet Auth
@@ -133,12 +141,97 @@ func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
 	return out, nil
 }
 
-func (h *Handler) SignAndSubmitTx() {
+func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+
+	// first the transaction would be in base64, let's decode
+	rawtx, err := base64.StdEncoding.DecodeString(tx)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
+	// then get the wallet name out of the token
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return SignedBundle{}, ErrWalletDoesNotExists
+	}
+
+	// let's retrieve the private key from the public key
+	var kp *Keypair
+	for i := range w.Keypairs {
+		if w.Keypairs[i].Pub == pubkey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	// we did not find this pub key
+	if kp == nil {
+		return SignedBundle{}, ErrPubKeyDoesNotExists
+	}
+
+	if kp.Tainted {
+		return SignedBundle{}, ErrPubKeyIsTainted
+	}
+
+	// then lets sign the stuff and return it
+	sig := kp.Algorithm.Sign(kp.privBytes, rawtx)
+
+	return SignedBundle{
+		Data:   rawtx,
+		Sig:    sig,
+		PubKey: kp.pubBytes,
+	}, nil
 }
 
-func (h *Handler) SignTx() {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return ErrWalletDoesNotExists
+	}
+
+	// let's retrieve the private key from the public key
+	var kp *Keypair
+	for i := range w.Keypairs {
+		if w.Keypairs[i].Pub == pubkey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	// we did not find this pub key
+	if kp == nil {
+		return ErrPubKeyDoesNotExists
+	}
+
+	if kp.Tainted {
+		return ErrPubKeyAlreadyTainted
+	}
+
+	kp.Tainted = true
+
+	_, err = writeWallet(&w, h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
+	h.store[wname] = w
+	return nil
+
 }
