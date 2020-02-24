@@ -72,6 +72,32 @@ func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
 	return order, nil
 }
 
+func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
+	orderSubmission := &types.OrderSubmission{}
+	err := proto.Unmarshal(payload, orderSubmission)
+	if err != nil {
+		return nil, err
+	}
+
+	order := types.Order{
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		Side:        orderSubmission.Side,
+		TimeInForce: orderSubmission.TimeInForce,
+		Type:        orderSubmission.Type,
+		ExpiresAt:   orderSubmission.ExpiresAt,
+		Reference:   orderSubmission.Reference,
+		Status:      types.Order_Active,
+		CreatedAt:   0,
+		Remaining:   orderSubmission.Size,
+	}
+
+	return &order, nil
+}
+
 func (p *Processor) getOrderCancellation(payload []byte) (*types.OrderCancellation, error) {
 	order := &types.OrderCancellation{}
 	err := proto.Unmarshal(payload, order)
@@ -122,7 +148,7 @@ func (p *Processor) Validate(payload []byte) error {
 	case CommandKindUnsigned:
 		return p.validateUnsigned(payload[1:])
 	default:
-		return errors.New("unknown command when validating payload")
+		return errors.New("unknown command kind when validating payload")
 	}
 }
 
@@ -163,7 +189,7 @@ func (p *Processor) validateSigned(payload []byte) error {
 		return err
 	}
 
-	data, cmd, err := txDecode(payload)
+	data, cmd, err := txDecode(bundle.Data)
 	if err != nil {
 		return errors.Wrap(err, "error decoding payload")
 	}
@@ -172,7 +198,7 @@ func (p *Processor) validateSigned(payload []byte) error {
 	// + validate pub key = partyID in tx
 	switch cmd {
 	case SubmitOrderCommand:
-		order, err := p.getOrder(data)
+		order, err := p.getOrderSubmission(data)
 		if err != nil {
 			return err
 		}
@@ -244,7 +270,46 @@ func (p *Processor) processSigned(payload []byte) error {
 		return err
 	}
 
-	return p.processUnsigned(bundle.Data)
+	// Attempt to decode transaction payload
+	data, cmd, err := txDecode(bundle.Data)
+	if err != nil {
+		return errors.Wrap(err, "error decoding payload")
+	}
+
+	switch cmd {
+	case SubmitOrderCommand:
+		order, err := p.getOrderSubmission(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.SubmitOrder(order)
+		if err != nil {
+			return err
+		}
+	case CancelOrderCommand:
+		order, err := p.getOrderCancellation(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.CancelOrder(order)
+		if err != nil {
+			return err
+		}
+	case AmendOrderCommand:
+		order, err := p.getOrderAmendment(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.AmendOrder(order)
+		if err != nil {
+			return err
+		}
+	default:
+		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
+		err = fmt.Errorf("unknown command received: %s", cmd)
+	}
+	return err
+
 }
 
 func (p *Processor) processUnsigned(payload []byte) error {
