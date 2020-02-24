@@ -296,7 +296,7 @@ func (p *Processor) processSigned(payload []byte) error {
 		}
 		err = p.blockchainService.AmendOrder(order)
 	default:
-		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
+		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		err = fmt.Errorf("unknown command received: %s", cmd)
 	}
 	return err
@@ -343,7 +343,7 @@ func (p *Processor) processUnsigned(payload []byte) error {
 		}
 		err = p.blockchainService.Withdraw(w)
 	default:
-		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
+		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		err = fmt.Errorf("unknown command received: %s", cmd)
 	}
 	return err
