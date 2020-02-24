@@ -45,6 +45,7 @@ models:
       orderByReference:
         resolver: true
   Party:
+    model: code.vegaprotocol.io/vega/proto.Party
     fields:
       orders:
         resolver: true
