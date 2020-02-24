@@ -525,13 +525,20 @@ func TestPositionSpecSuite(t *testing.T) {
 				}
 			})
 			position.ls.EXPECT().Unsubscribe(ref).MinTimes(1).MaxTimes(2).DoAndReturn(func(_ int) {
-				if ch != nil {
-					close(ch)
-					ch = nil
+				if lsch != nil {
+					close(lsch)
+					lsch = nil
 				}
 			})
 			position.Start(position.ctx)
 			ch <- []events.SettlePosition{ps}
+			// ensure the settleposition was consumed and processed, by pushing an empty slice
+			// this is blocking, and will only unblock after the slice above is consumed
+			ch <- []events.SettlePosition{}
+			// though we're not using this, let's make sure this channel has seen some "action", too
+			// this ensures that the consume loop has seen 2 iterations prior to us making the call
+			// to GetPositionsByMarket, data is certain to be up to date
+			lsch <- []events.LossSocialization{}
 			pp, err := position.GetPositionsByMarket(market)
 			assert.NoError(t, err)
 			assert.NotZero(t, len(pp))
