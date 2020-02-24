@@ -1333,16 +1333,6 @@ func TestChangeBalance(t *testing.T) {
 	assert.Error(t, err, ErrAccountDoesNotExist)
 }
 
-func TestOnChainTimeUpdate(t *testing.T) {
-	eng := getTestEngine(t, testMarketID, 0)
-	defer eng.Finish()
-
-	// Hard to test this so for now I am just setting the value
-	// and if it does not crash I am happy
-	now := time.Now()
-	eng.Engine.OnChainTimeUpdate(now)
-}
-
 func TestReloadConfig(t *testing.T) {
 	eng := getTestEngine(t, testMarketID, 0)
 	defer eng.Finish()
