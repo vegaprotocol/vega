@@ -26,6 +26,8 @@ var (
 	ErrInvalidPriceForLimitOrder = errors.New("invalid limit order (missing required price)")
 	// ErrInvalidPriceForMarketOrder signals that a price was specified for a market order but not price is required
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
+	// ErrNonGTTOrderWithExpiracy signals that a non GTT order what set with an expiracy
+	ErrNonGTTOrderWithExpiracy = errors.New("non GTT order with expiracy")
 )
 
 // TimeService ...
@@ -163,6 +165,10 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return err
 		}
+	}
+
+	if sub.TimeInForce != types.Order_GTT && sub.ExpiresAt != 0 {
+		return ErrNonGTTOrderWithExpiracy
 	}
 
 	if sub.Type == types.Order_MARKET && sub.Price != 0 {
