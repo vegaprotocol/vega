@@ -1802,7 +1802,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
-| positions | [Position](#vega.Position) | repeated |  |
 
 
 
