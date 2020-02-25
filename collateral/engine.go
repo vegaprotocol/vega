@@ -30,6 +30,7 @@ var (
 	ErrAccountDoesNotExist                     = errors.New("account do not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
+	ErrInvalidTransfersBatch                   = errors.New("Number of debit and credit transfers do not match up")
 )
 
 // AccountBuffer ...
@@ -132,6 +133,27 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	return
 }
 
+// Part of the spec says that a batch of transfers must have an equal amount of debit and credit actions
+// This function will check the batch for this rule and return an error if not met
+func (e *Engine) validateTransfers(transfers []*types.Transfer) error {
+	var debit uint64
+	var credit uint64
+
+	for _, transfer := range transfers {
+		if transfer.GetType() == types.TransferType_LOSS ||
+			transfer.GetType() == types.TransferType_MTM_LOSS {
+			debit += transfer.GetSize()
+		} else {
+			credit += transfer.GetSize()
+		}
+	}
+
+	if credit != debit {
+		return ErrInvalidTransfersBatch
+	}
+	return nil
+}
+
 // FinalSettlement will process the list of transfer instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
 // other transfer types have dedicated funcs (MartToMarket, MarginUpdate)
@@ -140,6 +162,12 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 	if len(transfers) == 0 {
 		return nil, nil
 	}
+
+	err := e.validateTransfers(transfers)
+	if err != nil {
+		return nil, err
+	}
+
 	responses := make([]*types.TransferResponse, 0, len(transfers))
 	asset := transfers[0].Amount.Asset
 	// This is where we'll implement everything
@@ -187,6 +215,23 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 	return responses, nil
 }
 
+// Part of the spec says that a batch of transfers must have an equal amount of debit and credit actions
+// This function will check the batch for this rule and return an error if not met
+func (e *Engine) validateEventTransfers(transfers []events.Transfer) error {
+	var current int64
+
+	e.log.Errorf("In validateEventTransfers with %d items\n", len(transfers))
+
+	for i, transfer := range transfers {
+		current += transfer.Size()
+	}
+
+	if current != 0 {
+		return ErrInvalidTransfersBatch
+	}
+	return nil
+}
+
 // MarkToMarket will run the mark to market settlement over a given set of positions
 // return ledger move stuff here, too (separate return value, because we need to stream those)
 func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error) {
@@ -194,6 +239,12 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 	if len(transfers) == 0 {
 		return nil, nil, nil
 	}
+
+	err := e.validateEventTransfers(transfers)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	marginEvts := make([]events.Margin, 0, len(transfers))
 	responses := make([]*types.TransferResponse, 0, len(transfers))
 
