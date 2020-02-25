@@ -30,7 +30,7 @@ var (
 	ErrAccountDoesNotExist                     = errors.New("account do not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
-	ErrInvalidTransfersBatch                   = errors.New("Number of debit and credit transfers do not match up")
+	ErrInvalidTransfersBatch                   = errors.New("value of debit and credit transfers do not match up")
 )
 
 // AccountBuffer ...
@@ -136,19 +136,15 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 // Part of the spec says that a batch of transfers must have an equal amount of debit and credit actions
 // This function will check the batch for this rule and return an error if not met
 func (e *Engine) validateTransfers(transfers []*types.Transfer) error {
-	var debit uint64
-	var credit uint64
+	var current int64
 
 	for _, transfer := range transfers {
-		if transfer.GetType() == types.TransferType_LOSS ||
-			transfer.GetType() == types.TransferType_MTM_LOSS {
-			debit += transfer.GetSize()
-		} else {
-			credit += transfer.GetSize()
+		if transfer != nil {
+			current += transfer.GetAmount().GetAmount()
 		}
 	}
 
-	if credit != debit {
+	if current != 0 {
 		return ErrInvalidTransfersBatch
 	}
 	return nil
@@ -220,10 +216,11 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 func (e *Engine) validateEventTransfers(transfers []events.Transfer) error {
 	var current int64
 
-	e.log.Errorf("In validateEventTransfers with %d items\n", len(transfers))
-
-	for i, transfer := range transfers {
-		current += transfer.Size()
+	for _, transfer := range transfers {
+		trans := transfer.Transfer()
+		if trans != nil {
+			current += trans.GetAmount().GetAmount()
+		}
 	}
 
 	if current != 0 {
