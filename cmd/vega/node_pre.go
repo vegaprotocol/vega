@@ -29,7 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
-	"code.vegaprotocol.io/vega/vegatimeance"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -299,7 +299,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
 
-	l.governanceService = governance.NewService()
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.timeService, l.blockchainClient)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
@@ -319,3 +320,4 @@ func (l *NodeCommand) SetUlimits() error {
 		Cur: l.conf.UlimitNOFile,
 	})
 }
+
