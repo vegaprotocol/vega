@@ -2042,12 +2042,6 @@
       "properties": {
         "id": {
           "type": "string"
-        },
-        "positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPosition"
-          }
         }
       }
     },
