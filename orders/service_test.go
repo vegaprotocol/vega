@@ -57,6 +57,7 @@ func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - successful", testOrderSuccess)
 	t.Run("Create order - expired", testOrderExpired)
 	t.Run("Create order - blockchain error", testOrderBlockchainError)
+	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
 }
 
 func testPrepareOrderSuccess(t *testing.T) {
@@ -149,6 +150,26 @@ func testPrepareOrderExpired(t *testing.T) {
 	pendingOrder, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
+}
+
+func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
+	order := orderSubmission
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+	order.ExpiresAt = 12346
+	order.TimeInForce = types.Order_GTC
+	pendingOrder, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
+	assert.Nil(t, pendingOrder)
+	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
+	pendingOrder, err = svc.svc.CreateOrder(context.Background(), &order)
+	assert.Nil(t, pendingOrder)
+	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
+
+	// ensure it works with a 0 expiry
+	order.ExpiresAt = 0
+	pendingOrder, err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
+	assert.NotNil(t, pendingOrder)
+	assert.NoError(t, err)
 }
 
 func testOrderExpired(t *testing.T) {
