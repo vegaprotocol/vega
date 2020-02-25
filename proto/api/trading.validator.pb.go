@@ -431,3 +431,19 @@ func (this *CheckTokenRequest) Validate() error {
 func (this *CheckTokenResponse) Validate() error {
 	return nil
 }
+func (this *SubmitProposalRequest) Validate() error {
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
+		}
+	}
+	return nil
+}
+func (this *SubmitProposalResponse) Validate() error {
+	if this.Proposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+		}
+	}
+	return nil
+}

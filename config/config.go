@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -50,6 +51,7 @@ type Config struct {
 	Auth       auth.Config
 	Metrics    metrics.Config
 	Transfers  transfers.Config
+	Governance orders.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -84,6 +86,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Auth:           auth.NewDefaultConfig(),
 		Metrics:        metrics.NewDefaultConfig(),
 		Transfers:      transfers.NewDefaultConfig(),
+		Governance:     governance.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,

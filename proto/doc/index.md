@@ -54,6 +54,8 @@
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
+    - [SubmitProposalRequest](#api.SubmitProposalRequest)
+    - [SubmitProposalResponse](#api.SubmitProposalResponse)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
     - [TradesByMarketRequest](#api.TradesByMarketRequest)
@@ -70,8 +72,25 @@
 
 
 
+    - [governance](#api.governance)
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
+
+
+- [proto/governance.proto](#proto/governance.proto)
+    - [NetworkConfiguration](#vega.NetworkConfiguration)
+    - [Proposal](#vega.Proposal)
+    - [Proposal.Terms](#vega.Proposal.Terms)
+    - [Proposal.Terms.NewMarket](#vega.Proposal.Terms.NewMarket)
+    - [Proposal.Terms.Parameters](#vega.Proposal.Terms.Parameters)
+    - [Proposal.Terms.UpdateMarket](#vega.Proposal.Terms.UpdateMarket)
+    - [Proposal.Terms.UpdateNetwork](#vega.Proposal.Terms.UpdateNetwork)
+    - [Vote](#vega.Vote)
+
+    - [Proposal.State](#vega.Proposal.State)
+    - [Vote.Value](#vega.Vote.Value)
+
+
 
 
 - [proto/markets.proto](#proto/markets.proto)
@@ -938,6 +957,37 @@
 
 
 
+<a name="api.SubmitProposalRequest"></a>
+
+### SubmitProposalRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submission | [vega.Proposal.Terms](#vega.Proposal.Terms) |  | proposal terms submitted to the network |
+| token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
+
+
+
+
+
+
+<a name="api.SubmitProposalResponse"></a>
+
+### SubmitProposalResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposal | [vega.Proposal](#vega.Proposal) |  | proposal terms submitted to the network |
+
+
+
+
+
+
 <a name="api.SubmitTransactionRequest"></a>
 
 ### SubmitTransactionRequest
@@ -1146,6 +1196,16 @@
 
 
 
+<a name="api.governance"></a>
+
+### governance
+TODO: move to governance.proto instead
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| Propose | [SubmitProposalRequest](#api.SubmitProposalRequest) | [SubmitProposalResponse](#api.SubmitProposalResponse) |  |
+
+
 <a name="api.trading"></a>
 
 ### trading
@@ -1203,6 +1263,179 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+
+
+
+
+
+<a name="proto/governance.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/governance.proto
+
+
+
+<a name="vega.NetworkConfiguration"></a>
+
+### NetworkConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| minCloseInDays | [uint64](#uint64) |  |  |
+| maxCloseInDays | [uint64](#uint64) |  |  |
+| minEnactInDays | [uint64](#uint64) |  |  |
+| maxEnactInDays | [uint64](#uint64) |  |  |
+| minParticipationStake | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.Proposal"></a>
+
+### Proposal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| state | [Proposal.State](#vega.Proposal.State) |  |  |
+| author | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
+| proposal | [Proposal.Terms](#vega.Proposal.Terms) |  |  |
+| votes | [Vote](#vega.Vote) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Proposal.Terms"></a>
+
+### Proposal.Terms
+Proposal terms
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| parameters | [Proposal.Terms.Parameters](#vega.Proposal.Terms.Parameters) |  |  |
+| updateMarket | [Proposal.Terms.UpdateMarket](#vega.Proposal.Terms.UpdateMarket) |  |  |
+| newMarket | [Proposal.Terms.NewMarket](#vega.Proposal.Terms.NewMarket) |  |  |
+| updateNetwork | [Proposal.Terms.UpdateNetwork](#vega.Proposal.Terms.UpdateNetwork) |  |  |
+
+
+
+
+
+
+<a name="vega.Proposal.Terms.NewMarket"></a>
+
+### Proposal.Terms.NewMarket
+Market market = 1 [(validator.field) = {msg_exists: true}];
+
+
+
+
+
+
+<a name="vega.Proposal.Terms.Parameters"></a>
+
+### Proposal.Terms.Parameters
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| closeInDays | [uint64](#uint64) |  |  |
+| enactInDays | [uint64](#uint64) |  |  |
+| minParticipationStake | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.Proposal.Terms.UpdateMarket"></a>
+
+### Proposal.Terms.UpdateMarket
+
+
+
+
+
+
+
+<a name="vega.Proposal.Terms.UpdateNetwork"></a>
+
+### Proposal.Terms.UpdateNetwork
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  |  |
+
+
+
+
+
+
+<a name="vega.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| voter | [string](#string) |  |  |
+| value | [Vote.Value](#vega.Vote.Value) |  |  |
+| stake | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+
+
+<a name="vega.Proposal.State"></a>
+
+### Proposal.State
+Proposal state transition:
+Open -&gt;
+  - Passed -&gt; Enacted.
+  - Rejected.
+Proposal can enter Failed state from any other state.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| FAILED | 0 | Proposal became invalid and cannot be processed. |
+| OPEN | 1 | Proposal is open for voting. |
+| PASSED | 2 | Proposal has gained enough support to be executed. |
+| REJECTED | 3 | Proposal has could not gain enough support to be executed. |
+| ENACTED | 4 | Proposal has been executed and the changes under this proposal have now been applied. |
+
+
+
+<a name="vega.Vote.Value"></a>
+
+### Vote.Value
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NO | 0 |  |
+| YES | 1 |  |
+
+
+
+
+
 
 
 
