@@ -51,7 +51,7 @@ type Config struct {
 	Auth       auth.Config
 	Metrics    metrics.Config
 	Transfers  transfers.Config
-	Governance orders.Config
+	Governance governance.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
