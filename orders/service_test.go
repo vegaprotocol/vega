@@ -57,7 +57,7 @@ func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - successful", testOrderSuccess)
 	t.Run("Create order - expired", testOrderExpired)
 	t.Run("Create order - blockchain error", testOrderBlockchainError)
-	t.Run("Create order - error expiracy set for non gtt", testCreateOrderFailExpiracySetForNonGTT)
+	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
 }
 
 func testPrepareOrderSuccess(t *testing.T) {
@@ -152,7 +152,7 @@ func testPrepareOrderExpired(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func testCreateOrderFailExpiracySetForNonGTT(t *testing.T) {
+func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	order := orderSubmission
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -160,10 +160,10 @@ func testCreateOrderFailExpiracySetForNonGTT(t *testing.T) {
 	order.TimeInForce = types.Order_GTC
 	pendingOrder, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
-	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiracy.Error())
+	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 	pendingOrder, err = svc.svc.CreateOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
-	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiracy.Error())
+	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 
 	// ensure it works with a 0 expiry
 	order.ExpiresAt = 0
