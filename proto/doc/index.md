@@ -1301,6 +1301,7 @@ TODO: move to governance.proto instead
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
 | state | [Proposal.State](#vega.Proposal.State) |  |  |
 | author | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  |  |

@@ -2239,6 +2239,9 @@
         "id": {
           "type": "string"
         },
+        "reference": {
+          "type": "string"
+        },
         "state": {
           "$ref": "#/definitions/ProposalState"
         },
