@@ -36,8 +36,8 @@ func (this *Vote) Validate() error {
 	return nil
 }
 func (this *Proposal) Validate() error {
-	if this.Id == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Id", fmt.Errorf(`value '%v' must not be an empty string`, this.Id))
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
 	}
 	if _, ok := Proposal_State_name[int32(this.State)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("State", fmt.Errorf(`value '%v' must be a valid Proposal_State field`, this.State))
