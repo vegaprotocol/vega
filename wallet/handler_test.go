@@ -447,7 +447,7 @@ func testUpdateMetaSuccess(t *testing.T) {
 	assert.NotEmpty(t, key)
 
 	// add meta
-	err = h.UpdateMeta(tok, key, "thisisasecurepassphraseinnit", []wallet.Meta{wallet.Meta{"primary", "yes"}})
+	err = h.UpdateMeta(tok, key, "thisisasecurepassphraseinnit", []wallet.Meta{wallet.Meta{Key: "primary", Value: "yes"}})
 	assert.NoError(t, err)
 
 	// now make sure we have the new key saved

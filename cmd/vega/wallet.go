@@ -441,7 +441,7 @@ func (w *walletCommand) Metas(cmd *cobra.Command, args []string) error {
 			if len(metaVal) != 2 {
 				return fmt.Errorf("invalid meta format")
 			}
-			meta = append(meta, wallet.Meta{metaVal[0], metaVal[1]})
+			meta = append(meta, wallet.Meta{Key: metaVal[0], Value: metaVal[1]})
 		}
 
 	}
