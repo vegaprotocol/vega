@@ -493,18 +493,27 @@ func (this *CheckTokenRequest) Validate() error {
 func (this *CheckTokenResponse) Validate() error {
 	return nil
 }
-func (this *SubmitProposalRequest) Validate() error {
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
+func (this *PrepareProposalRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
+	}
+	if nil == this.Proposal {
+		return github_com_mwitkow_go_proto_validators.FieldError("Proposal", fmt.Errorf("message must exist"))
+	}
+	if this.Proposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
 		}
 	}
 	return nil
 }
-func (this *SubmitProposalResponse) Validate() error {
-	if this.Proposal != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+func (this *PrepareProposalResponse) Validate() error {
+	if this.PendingProposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingProposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingProposal", err)
 		}
 	}
 	return nil

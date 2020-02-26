@@ -37,11 +37,18 @@ type AccountService interface {
 	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 
+// GovernanceService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
+type GovernanceService interface {
+	PrepareProposal(ctx context.Context, author string, reference string, submission *types.Proposal_Terms) (*types.Proposal, error)
+}
+
 type tradingService struct {
 	log               *logging.Logger
 	tradeOrderService TradeOrderService
 	accountService    AccountService
 	marketService     MarketService
+	governanceService GovernanceService
 	statusChecker     *monitoring.Status
 
 	authEnabled bool
@@ -341,6 +348,12 @@ func (s *tradingService) Withdraw(
 	return &protoapi.WithdrawResponse{
 		Success: ok,
 	}, nil
+}
+
+func (s *tradingService) PrepareProposal(
+	ctx context.Context, req *protoapi.PrepareProposalRequest,
+) (*protoapi.PrepareProposalResponse, error) {
+	return nil, nil
 }
 
 func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
