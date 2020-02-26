@@ -21,16 +21,9 @@ type Accounts interface {
 	GetTotalTokens() int64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/prop_buf_mock.go -package mocks code.vegaprotocol.io/vega/governance ProposalBuf
-type ProposalBuf interface {
-	Add(Proposal)
-	Flush()
-}
-
 type Engine struct {
 	Config
 	accs        Accounts
-	buf         ProposalBuf
 	log         *logging.Logger
 	mu          sync.Mutex
 	currentTime int64
@@ -53,11 +46,10 @@ type Proposal struct {
 	err           error
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf ProposalBuf, now time.Time) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, accs Accounts, now time.Time) *Engine {
 	return &Engine{
 		Config:      cfg,
 		accs:        accs,
-		buf:         buf,
 		log:         log,
 		currentTime: now.UnixNano(),
 		proposals:   map[string]*Proposal{},
@@ -81,7 +73,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // OnChainUpdate - update curtime, expire proposals
-func (e *Engine) OnChainTimeUpdate(t time.Time) {
+func (e *Engine) OnChainTimeUpdate(t time.Time) []*Proposal {
 	e.currentTime = t.UnixNano()
 	expired := []*Proposal{}
 	for k, p := range e.proposals {
@@ -91,11 +83,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) {
 			delete(e.proposals, k)
 		}
 	}
-	// @TODO this is just a hack, we should make sure we're not going to flush at the wrong time
-	go func() {
-		e.checkProposals(expired)
-		e.buf.Flush()
-	}()
+	return e.checkProposals(expired)
 }
 
 func (e *Engine) AddProposal(p Proposal) error {
@@ -127,7 +115,8 @@ func (e *Engine) AddVote(v Vote) error {
 	return nil
 }
 
-func (e *Engine) checkProposals(proposals []*Proposal) {
+func (e *Engine) checkProposals(proposals []*Proposal) []*Proposal {
+	accepted := make([]*Proposal, 0, len(proposals))
 	buf := map[string]*types.Account{}
 	for _, p := range proposals {
 		totalYES := int64(0)
@@ -151,6 +140,9 @@ func (e *Engine) checkProposals(proposals []*Proposal) {
 			// percentage should be N/100 so we can multiply the total by this value and get the answer
 			p.approved = (req <= float64(totalYES)) // N% of total votes should be reached
 		}
-		e.buf.Add(*p)
+		if p.approved {
+			accepted = append(accepted, p)
+		}
 	}
+	return accepted
 }
