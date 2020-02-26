@@ -18,6 +18,8 @@ const (
 	// if needed
 	systemOwner = "*"
 	noMarket    = "!"
+
+	TokenAsset = "_t0k3n_"
 )
 
 var (
@@ -30,6 +32,7 @@ var (
 	ErrAccountDoesNotExist                     = errors.New("account do not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
+	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 )
 
 // AccountBuffer ...
@@ -51,9 +54,10 @@ type Engine struct {
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	accs       map[string]*types.Account
-	buf        AccountBuffer
-	lossSocBuf LossSocializationBuf
+	accs        map[string]*types.Account
+	buf         AccountBuffer
+	lossSocBuf  LossSocializationBuf
+	totalTokens uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
@@ -909,6 +913,19 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 		e.accs[generalID] = &acc
 		e.buf.Add(acc)
 	}
+	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_GENERAL)
+	if _, ok := e.accs[tID]; !ok {
+		acc := types.Account{
+			Id:       tID,
+			Asset:    TokenAsset,
+			MarketID: noMarket,
+			Balance:  0,
+			Owner:    partyID,
+			Type:     types.AccountType_GENERAL,
+		}
+		e.accs[tID] = &acc
+		e.buf.Add(acc)
+	}
 
 	return generalID
 }
@@ -1026,6 +1043,10 @@ func (e *Engine) UpdateBalance(id string, balance uint64) error {
 	if !ok {
 		return ErrAccountDoesNotExist
 	}
+	if acc.Asset == TokenAsset {
+		e.totalTokens -= uint64(acc.Balance)
+		e.totalTokens += uint64(balance)
+	}
 	acc.Balance = balance
 	e.buf.Add(*acc)
 	return nil
@@ -1039,6 +1060,13 @@ func (e *Engine) IncrementBalance(id string, inc uint64) error {
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance += inc
+	if acc.Asset == TokenAsset {
+		if inc < 0 {
+			e.totalTokens -= uint64(inc * -1)
+		} else {
+			e.totalTokens += uint64(inc)
+		}
+	}
 	e.buf.Add(*acc)
 	return nil
 }
@@ -1063,6 +1091,22 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	}
 	acccpy := *acc
 	return &acccpy, nil
+}
+
+// GetPartyTokenBalance - get the token account for a given user
+func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
+	tID := e.accountID(noMarket, id, TokenAsset, types.AccountType_GENERAL)
+	acc, ok := e.accs[tID]
+	if !ok {
+		return nil, ErrPartyHasNoTokenAccount
+	}
+	cpy := *acc
+	return &cpy, nil
+}
+
+// GetTotalTokens - returns total amount of tokens in the network
+func (e *Engine) GetTotalTokens() uint64 {
+	return e.totalTokens
 }
 
 func (e *Engine) removeAccount(id string) error {
