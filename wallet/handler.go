@@ -233,5 +233,44 @@ func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
 
 	h.store[wname] = w
 	return nil
+}
 
+func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return ErrWalletDoesNotExists
+	}
+
+	// let's retrieve the private key from the public key
+	var kp *Keypair
+	for i := range w.Keypairs {
+		if w.Keypairs[i].Pub == pubkey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	// we did not find this pub key
+	if kp == nil {
+		return ErrPubKeyDoesNotExists
+	}
+
+	kp.Meta = meta
+
+	_, err = writeWallet(&w, h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
+	h.store[wname] = w
+	return nil
 }
