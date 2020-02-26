@@ -35,16 +35,6 @@ var (
 	Version = ""
 )
 
-var aboutVega = `
- __      __  ______    _____
- \ \    / / |  ____|  / ____|     /\
-  \ \  / /  | |__    | |  __     /  \
-   \ \ \/   |  __|   | | |_ |   / /\ \
-    \ \     | |____  | |__| |  / ____ \
-     \/     |______|  \_____| /_/    \_\
-
-`
-
 // NewCli creates an instance of 'Cli'.
 func NewCli() *Cli {
 	if len(VersionHash) <= 0 {
@@ -64,7 +54,6 @@ func NewCli() *Cli {
 		rootCmd: &cobra.Command{
 			Use:               "vega",
 			Short:             "Smart infrastructure for a better financial system.",
-			Long:              aboutVega,
 			DisableAutoGenTag: true,
 			Version:           fmt.Sprintf("%v (%v)", Version, VersionHash),
 		},
