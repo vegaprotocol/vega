@@ -170,8 +170,8 @@ func testTransferLoss(t *testing.T) {
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
-	// total balance of settlement account should be 4 times price
-	assert.Equal(t, 4*price, resp.Balances[0].Balance+responses[1].Balances[0].Balance)
+	// total balance of settlement account should be 3 times price
+	assert.Equal(t, 3*price, resp.Balances[0].Balance+responses[1].Balances[0].Balance)
 	// there should be 2 ledger moves
 	assert.Equal(t, 1, len(resp.Transfers))
 }
