@@ -1382,6 +1382,18 @@
         }
       }
     },
+    "apiPrepareProposalResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingProposal": {
+          "$ref": "#/definitions/vegaProposal"
+        }
+      }
+    },
     "apiPrepareSubmitOrderResponse": {
       "type": "object",
       "properties": {
@@ -1426,15 +1438,6 @@
         "token": {
           "type": "string",
           "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
-        }
-      }
-    },
-    "apiSubmitProposalResponse": {
-      "type": "object",
-      "properties": {
-        "proposal": {
-          "$ref": "#/definitions/vegaProposal",
-          "title": "proposal terms submitted to the network"
         }
       }
     },
@@ -2261,11 +2264,11 @@
         "reference": {
           "type": "string"
         },
-        "state": {
-          "$ref": "#/definitions/ProposalState"
-        },
         "author": {
           "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/ProposalState"
         },
         "timestamp": {
           "type": "string",

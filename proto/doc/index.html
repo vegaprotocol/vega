@@ -363,6 +363,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.PrepareProposalRequest"><span class="badge">M</span>PrepareProposalRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareProposalResponse"><span class="badge">M</span>PrepareProposalResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.PrepareSubmitOrderResponse"><span class="badge">M</span>PrepareSubmitOrderResponse</a>
                 </li>
 
@@ -376,14 +384,6 @@
 
                 <li>
                   <a href="#api.SubmitOrderRequest"><span class="badge">M</span>SubmitOrderRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.SubmitProposalRequest"><span class="badge">M</span>SubmitProposalRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.SubmitProposalResponse"><span class="badge">M</span>SubmitProposalResponse</a>
                 </li>
 
                 <li>
@@ -440,10 +440,6 @@
 
 
 
-
-                <li>
-                  <a href="#api.governance"><span class="badge">S</span>governance</a>
-                </li>
 
                 <li>
                   <a href="#api.trading"><span class="badge">S</span>trading</a>
@@ -2309,6 +2305,124 @@
 
 
 
+        <h3 id="api.PrepareProposalRequest">PrepareProposalRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>proposal</td>
+                  <td><a href="#vega.Proposal.Terms">vega.Proposal.Terms</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>proposal</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.PrepareProposalResponse">PrepareProposalResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingProposal</td>
+                  <td><a href="#vega.Proposal">vega.Proposal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.PrepareSubmitOrderResponse">PrepareSubmitOrderResponse</h3>
         <p></p>
 
@@ -2417,61 +2531,6 @@
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.SubmitProposalRequest">SubmitProposalRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>submission</td>
-                  <td><a href="#vega.Proposal.Terms">vega.Proposal.Terms</a></td>
-                  <td></td>
-                  <td><p>proposal terms submitted to the network </p></td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.SubmitProposalResponse">SubmitProposalResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>proposal</td>
-                  <td><a href="#vega.Proposal">vega.Proposal</a></td>
-                  <td></td>
-                  <td><p>proposal terms submitted to the network </p></td>
                 </tr>
 
             </tbody>
@@ -2875,25 +2934,6 @@
 
 
 
-        <h3 id="api.governance">governance</h3>
-        <p>TODO: move to governance.proto instead</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-
-              <tr>
-                <td>Propose</td>
-                <td><a href="#api.SubmitProposalRequest">SubmitProposalRequest</a></td>
-                <td><a href="#api.SubmitProposalResponse">SubmitProposalResponse</a></td>
-                <td><p></p></td>
-              </tr>
-
-          </tbody>
-        </table>
-
-
         <h3 id="api.trading">trading</h3>
         <p></p>
         <table class="enum-table">
@@ -2970,6 +3010,13 @@
                 <td><a href="#api.SubmitTransactionRequest">SubmitTransactionRequest</a></td>
                 <td><a href="#api.SubmitTransactionResponse">SubmitTransactionResponse</a></td>
                 <td><p>Submit a signed transaction</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareProposal</td>
+                <td><a href="#vega.Proposal.Terms">.vega.Proposal.Terms</a></td>
+                <td><a href="#api.PrepareProposalResponse">PrepareProposalResponse</a></td>
+                <td><p>Prepare proposal that can be sent out to the chain (via SubmitTransaction)</p></td>
               </tr>
 
           </tbody>
@@ -3317,15 +3364,15 @@
                 </tr>
 
                 <tr>
-                  <td>state</td>
-                  <td><a href="#vega.Proposal.State">Proposal.State</a></td>
+                  <td>author</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>author</td>
-                  <td><a href="#string">string</a></td>
+                  <td>state</td>
+                  <td><a href="#vega.Proposal.State">Proposal.State</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3379,22 +3426,22 @@
                 </tr>
 
                 <tr>
-                  <td>state</td>
+                  <td>author</td>
                   <td>
                     <ul>
 
-                      <li>is_in_enum: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
                 </tr>
 
                 <tr>
-                  <td>author</td>
+                  <td>state</td>
                   <td>
                     <ul>
 
-                      <li>string_not_empty: true</li>
+                      <li>is_in_enum: true</li>
 
                     </ul>
                   </td>

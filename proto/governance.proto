@@ -79,8 +79,8 @@ message Proposal {
 
   string        id        = 1;
   string        reference = 2 [(validator.field) = {string_not_empty : true}];
-  State         state     = 3 [(validator.field) = {is_in_enum: true}];
-  string        author    = 4 [(validator.field) = {string_not_empty : true}];
+  string        author    = 3 [(validator.field) = {string_not_empty : true}];
+  State         state     = 4 [(validator.field) = {is_in_enum: true}];
   int64         timestamp = 5;
   Terms         proposal  = 6 [(validator.field) = {msg_exists: true}];
   repeated Vote votes     = 7;

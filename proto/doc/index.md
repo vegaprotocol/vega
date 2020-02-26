@@ -50,12 +50,12 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareProposalRequest](#api.PrepareProposalRequest)
+    - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
-    - [SubmitProposalRequest](#api.SubmitProposalRequest)
-    - [SubmitProposalResponse](#api.SubmitProposalResponse)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
     - [TradesByMarketRequest](#api.TradesByMarketRequest)
@@ -72,7 +72,6 @@
 
 
 
-    - [governance](#api.governance)
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
 
@@ -894,6 +893,39 @@
 
 
 
+<a name="api.PrepareProposalRequest"></a>
+
+### PrepareProposalRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
+| proposal | [vega.Proposal.Terms](#vega.Proposal.Terms) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareProposalResponse"></a>
+
+### PrepareProposalResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingProposal | [vega.Proposal](#vega.Proposal) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareSubmitOrderResponse"></a>
 
 ### PrepareSubmitOrderResponse
@@ -951,37 +983,6 @@
 | ----- | ---- | ----- | ----------- |
 | submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
 | token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
-
-
-
-
-
-
-<a name="api.SubmitProposalRequest"></a>
-
-### SubmitProposalRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| submission | [vega.Proposal.Terms](#vega.Proposal.Terms) |  | proposal terms submitted to the network |
-| token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
-
-
-
-
-
-
-<a name="api.SubmitProposalResponse"></a>
-
-### SubmitProposalResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| proposal | [vega.Proposal](#vega.Proposal) |  | proposal terms submitted to the network |
 
 
 
@@ -1196,16 +1197,6 @@
 
 
 
-<a name="api.governance"></a>
-
-### governance
-TODO: move to governance.proto instead
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Propose | [SubmitProposalRequest](#api.SubmitProposalRequest) | [SubmitProposalResponse](#api.SubmitProposalResponse) |  |
-
-
 <a name="api.trading"></a>
 
 ### trading
@@ -1223,6 +1214,7 @@ TODO: move to governance.proto instead
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
+| PrepareProposal | [.vega.Proposal.Terms](#vega.Proposal.Terms) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 
 
 <a name="api.trading_data"></a>
@@ -1304,8 +1296,8 @@ TODO: move to governance.proto instead
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | reference | [string](#string) |  |  |
-| state | [Proposal.State](#vega.Proposal.State) |  |  |
 | author | [string](#string) |  |  |
+| state | [Proposal.State](#vega.Proposal.State) |  |  |
 | timestamp | [int64](#int64) |  |  |
 | proposal | [Proposal.Terms](#vega.Proposal.Terms) |  |  |
 | votes | [Vote](#vega.Vote) | repeated |  |

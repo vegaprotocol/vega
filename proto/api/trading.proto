@@ -45,6 +45,19 @@ service trading {
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+
+
+  // Governance
+  //TODO: Governance should go into an independent service, this location is temporary
+  
+  // Prepare proposal that can be sent out to the chain (via SubmitTransaction)
+  rpc PrepareProposal(vega.Proposal.Terms) returns (PrepareProposalResponse);
+
+  //TODO
+  // rpc CanPropose
+  // rpc Vote
+  // rpc GetProposal
+  // rpc GetProposals
 }
 
 message SubmitTransactionRequest {
@@ -480,26 +493,13 @@ message CheckTokenResponse {
   bool ok = 1;
 }
 
-//TODO: move to governance.proto instead
-service governance {
-  rpc Propose(SubmitProposalRequest) returns (SubmitProposalResponse);
-
-  //TODO
-  // rpc CanPropose
-  // rpc Vote
-  // rpc GetProposal
-  // rpc GetProposals
+message PrepareProposalRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  string reference = 2 [(validator.field) = {string_not_empty : true}];
+  vega.Proposal.Terms proposal = 3 [(validator.field) = {msg_exists : true}];
 }
 
-
-message SubmitProposalRequest {
-  // proposal terms submitted to the network
-  vega.Proposal.Terms submission = 1;
-
-  // a token acquired from a SignIn request and corresponding to the party specified in the `submission`.
-  string token = 101;
-}
-message SubmitProposalResponse {
-  // proposal terms submitted to the network
-  vega.Proposal proposal = 1;
+message PrepareProposalResponse {
+  bytes blob = 1;
+  vega.Proposal pendingProposal = 2;
 }
