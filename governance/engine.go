@@ -15,19 +15,28 @@ var (
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
 )
 
+// Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
 	GetPartyTokenAccount(id string) (*types.Account, error)
 	GetTotalTokens() int64
 }
 
+// Buffer ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
+type Buffer interface {
+	Add(*Proposal)
+	Flush()
+}
+
 type Engine struct {
 	Config
-	accs        Accounts
-	log         *logging.Logger
-	mu          sync.Mutex
-	currentTime int64
-	proposals   map[string]*Proposal
+	accs         Accounts
+	log          *logging.Logger
+	mu           sync.Mutex
+	currentTime  int64
+	proposals    map[string]*Proposal
+	proposalRefs map[string]*Proposal
 }
 
 type Vote struct {
@@ -81,6 +90,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*Proposal {
 		if p.validUntil < e.currentTime {
 			expired = append(expired, p)
 			delete(e.proposals, k)
+			delete(e.proposalRefs, p.reference) // remove from ref map, too
 		}
 	}
 	return e.checkProposals(expired)
@@ -99,6 +109,7 @@ func (e *Engine) AddProposal(p Proposal) error {
 		p.no = []Vote{}
 	}
 	e.proposals[p.id] = &p
+	e.proposalRefs[p.reference] = &p
 	return nil
 }
 
