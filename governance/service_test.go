@@ -83,7 +83,7 @@ func TestPrepareProposal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
 	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
-	assert.EqualValues(t, testAuthor, proposal.Party)
+	assert.EqualValues(t, testAuthor, proposal.PartyID)
 	assert.EqualValues(t, types.Proposal_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
