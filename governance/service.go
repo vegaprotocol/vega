@@ -91,9 +91,6 @@ func (service *Svc) PrepareProposal(
 	if err := service.ValidateTerms(terms); err != nil {
 		return nil, err
 	}
-	if !service.CanPropose(party) {
-		return nil, ErrPartyCannotPropose
-	}
 	if len(reference) <= 0 {
 		reference = fmt.Sprintf("proposal#%s", uuid.NewV4().String())
 	}
@@ -110,12 +107,6 @@ func (service *Svc) PrepareProposal(
 		Terms:     terms,
 		Votes:     nil,
 	}, nil
-}
-
-// CanPropose checks if the party is allowed to submit new proposals
-func (service *Svc) CanPropose(party string) bool {
-	//TODO: read stake from somewhere
-	return true
 }
 
 // ValidateTerms performs sanity checks:
