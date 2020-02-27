@@ -77,11 +77,13 @@ func TestPrepareProposal(t *testing.T) {
 	rightNow := time.Now()
 	svc.time.EXPECT().GetTimeNow().Times(1).Return(rightNow, nil)
 
-	proposal, err := svc.gov.PrepareProposal(svc.ctx, "test-author", "", &terms)
+	testAuthor := "test-author"
+	proposal, err := svc.gov.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
 	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
+	assert.EqualValues(t, testAuthor, proposal.Party)
 	assert.EqualValues(t, types.Proposal_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }

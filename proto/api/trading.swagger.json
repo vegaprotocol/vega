@@ -2264,7 +2264,7 @@
         "reference": {
           "type": "string"
         },
-        "author": {
+        "party": {
           "type": "string"
         },
         "state": {
