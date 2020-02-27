@@ -87,3 +87,25 @@ func TestPrepareProposal(t *testing.T) {
 	assert.EqualValues(t, types.Proposal_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
+
+func TestPrepareEmptyProposal(t *testing.T) {
+	svc := newTestServiceBundle(t)
+
+	updateNetwork := types.Proposal_Terms_UpdateNetwork{
+		Changes: &types.NetworkConfiguration{},
+	}
+	terms := types.Proposal_Terms{
+		Parameters: &types.Proposal_Terms_Parameters{},
+		Change: &types.Proposal_Terms_UpdateNetwork_{
+			UpdateNetwork: &updateNetwork,
+		},
+	}
+
+	svc.time.EXPECT().GetTimeNow().MaxTimes(0)
+
+	proposal, err := svc.gov.PrepareProposal(svc.ctx, "", "", &terms)
+
+	assert.Error(t, err)
+	assert.Nil(t, proposal)
+	assert.Contains(t, err.Error(), "proposal validation failed")
+}
