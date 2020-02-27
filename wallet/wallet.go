@@ -162,6 +162,10 @@ func Read(root, owner, passphrase string) (*Wallet, error) {
 	return w, json.Unmarshal(decBuf, w)
 }
 
+func Write(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
+	return writeWallet(w, root, owner, passphrase)
+}
+
 func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 	// build walletpath
 	walletpath := filepath.Join(root, walletBaseFolder, owner)

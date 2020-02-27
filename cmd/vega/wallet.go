@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
@@ -26,6 +27,7 @@ type walletCommand struct {
 	pubkey      string
 	force       bool
 	genRsaKey   bool
+	metas       string
 	Log         *logging.Logger
 }
 
@@ -85,6 +87,31 @@ func (w *walletCommand) Init(c *Cli) {
 	verify.Flags().StringVarP(&w.sig, "signature", "s", "", "Signature to be verified (base64)")
 	verify.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
 	w.cmd.AddCommand(verify)
+
+	taint := &cobra.Command{
+		Use:   "taint",
+		Short: "Taint a public key",
+		Long:  "Taint a public key",
+		RunE:  w.Taint,
+	}
+	taint.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	taint.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
+	taint.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
+	taint.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
+	w.cmd.AddCommand(taint)
+
+	metas := &cobra.Command{
+		Use:   "meta",
+		Short: "Add metadata to a public key",
+		Long:  "Add a list of metadata to a public key",
+		RunE:  w.Metas,
+	}
+	metas.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	metas.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
+	metas.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
+	metas.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
+	metas.Flags().StringVarP(&w.metas, "metas", "m", "", `A list of metadata e.g: "primary:true;asset;BTC"`)
+	w.cmd.AddCommand(metas)
 
 	service := &cobra.Command{
 		Use:   "service",
@@ -273,6 +300,9 @@ func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
 	if kp == nil {
 		return fmt.Errorf("unknown public key: %v", w.pubkey)
 	}
+	if kp.Tainted {
+		return fmt.Errorf("key is tainted: %v", w.pubkey)
+	}
 
 	alg, _ := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	sig := base64.StdEncoding.EncodeToString(wallet.Sign(alg, kp, dataBuf))
@@ -328,6 +358,99 @@ func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
 
 	alg, _ := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	fmt.Printf("%v\n", wallet.Verify(alg, kp, dataBuf, sigBuf))
+
+	return nil
+}
+
+func (w *walletCommand) Taint(cmd *cobra.Command, args []string) error {
+	if len(w.walletOwner) <= 0 {
+		return errors.New("wallet name is required")
+	}
+	if len(w.passphrase) <= 0 {
+		return errors.New("passphrase is required")
+	}
+
+	if ok, err := fsutil.PathExists(w.rootPath); !ok {
+		return fmt.Errorf("invalid root directory path: %v", err)
+	}
+
+	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
+	if err != nil {
+		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+	}
+
+	var kp *wallet.Keypair
+	for i, v := range wal.Keypairs {
+		if v.Pub == w.pubkey {
+			kp = &wal.Keypairs[i]
+		}
+	}
+	if kp == nil {
+		return fmt.Errorf("unknown public key: %v", w.pubkey)
+	}
+
+	if kp.Tainted {
+		return fmt.Errorf("key %v is already tainted", w.pubkey)
+	}
+
+	kp.Tainted = true
+
+	_, err = wallet.Write(wal, w.rootPath, w.walletOwner, w.passphrase)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *walletCommand) Metas(cmd *cobra.Command, args []string) error {
+	if len(w.walletOwner) <= 0 {
+		return errors.New("wallet name is required")
+	}
+	if len(w.passphrase) <= 0 {
+		return errors.New("passphrase is required")
+	}
+	if len(w.pubkey) <= 0 {
+		return errors.New("pubkey is required")
+	}
+	if ok, err := fsutil.PathExists(w.rootPath); !ok {
+		return fmt.Errorf("invalid root directory path: %v", err)
+	}
+
+	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
+	if err != nil {
+		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+	}
+
+	var kp *wallet.Keypair
+	for i, v := range wal.Keypairs {
+		if v.Pub == w.pubkey {
+			kp = &wal.Keypairs[i]
+		}
+	}
+	if kp == nil {
+		return fmt.Errorf("unknown public key: %v", w.pubkey)
+	}
+
+	var meta []wallet.Meta
+	if len(w.metas) > 0 {
+		// expect ; separated metas
+		metasSplit := strings.Split(w.metas, ";")
+		for _, v := range metasSplit {
+			metaVal := strings.Split(v, ":")
+			if len(metaVal) != 2 {
+				return fmt.Errorf("invalid meta format")
+			}
+			meta = append(meta, wallet.Meta{Key: metaVal[0], Value: metaVal[1]})
+		}
+
+	}
+
+	kp.Meta = meta
+	_, err = wallet.Write(wal, w.rootPath, w.walletOwner, w.passphrase)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

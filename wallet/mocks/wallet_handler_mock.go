@@ -121,3 +121,31 @@ func (mr *MockWalletHandlerMockRecorder) SignTx(arg0, arg1, arg2 interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTx", reflect.TypeOf((*MockWalletHandler)(nil).SignTx), arg0, arg1, arg2)
 }
+
+// TaintKey mocks base method
+func (m *MockWalletHandler) TaintKey(arg0, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TaintKey", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TaintKey indicates an expected call of TaintKey
+func (mr *MockWalletHandlerMockRecorder) TaintKey(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TaintKey", reflect.TypeOf((*MockWalletHandler)(nil).TaintKey), arg0, arg1, arg2)
+}
+
+// UpdateMeta mocks base method
+func (m *MockWalletHandler) UpdateMeta(arg0, arg1, arg2 string, arg3 []wallet.Meta) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMeta", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMeta indicates an expected call of UpdateMeta
+func (mr *MockWalletHandlerMockRecorder) UpdateMeta(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMeta", reflect.TypeOf((*MockWalletHandler)(nil).UpdateMeta), arg0, arg1, arg2, arg3)
+}

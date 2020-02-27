@@ -30,6 +30,8 @@ type WalletHandler interface {
 	GenerateKeypair(token, passphrase string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
 	SignTx(token, tx, pubkey string) (SignedBundle, error)
+	TaintKey(token, pubkey, passphrase string) error
+	UpdateMeta(token, pubkey, passphrase string, meta []Meta) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
@@ -54,6 +56,8 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.GenerateKeypair))
 	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.ListPublicKeys))
 	s.HandleFunc("/api/v1/sign", ExtractToken(s.SignTx))
+	s.HandleFunc("/api/v1/taint-key", ExtractToken(s.TaintKey))
+	s.HandleFunc("/api/v1/update-key-meta", ExtractToken(s.UpdateMeta))
 
 	return s, nil
 
@@ -180,6 +184,7 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 
 	req := struct {
 		Passphrase string `json:"passphrase"`
+		Meta       []Meta `json:"meta"`
 	}{}
 	if err := unmarshalBody(r, &req); err != nil {
 		writeError(w, err, http.StatusBadRequest)
@@ -194,6 +199,15 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
+	}
+
+	// if any meta specified, lets add them
+	if len(req.Meta) > 0 {
+		err := s.handler.UpdateMeta(t, pubKey, req.Passphrase, req.Meta)
+		if err != nil {
+			writeError(w, newError(err.Error()), http.StatusForbidden)
+			return
+		}
 	}
 
 	writeSuccess(w, pubKey, http.StatusOK)
@@ -253,6 +267,71 @@ func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeSuccess(w, sb, http.StatusOK)
+}
+
+func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
+
+	req := struct {
+		PubKey     string `json:"pubKey"`
+		Passphrase string `json:"passphrase"`
+	}{}
+	if err := unmarshalBody(r, &req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if len(req.PubKey) <= 0 {
+		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
+		return
+	}
+	if len(req.Passphrase) <= 0 {
+		writeError(w, newError("missing passphrase field"), http.StatusBadRequest)
+		return
+	}
+
+	err := s.handler.TaintKey(t, req.PubKey, req.Passphrase)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
+	writeSuccess(w, true, http.StatusOK)
+}
+
+func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
+
+	req := struct {
+		PubKey     string `json:"pubKey"`
+		Passphrase string `json:"passphrase"`
+		Meta       []Meta `json:"meta"`
+	}{}
+	if err := unmarshalBody(r, &req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if len(req.PubKey) <= 0 {
+		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
+		return
+	}
+	if len(req.Passphrase) <= 0 {
+		writeError(w, newError("missing passphrase field"), http.StatusBadRequest)
+		return
+	}
+
+	err := s.handler.UpdateMeta(t, req.PubKey, req.Passphrase, req.Meta)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
+	writeSuccess(w, true, http.StatusOK)
 }
 
 func (h *Service) health(w http.ResponseWriter, r *http.Request) {

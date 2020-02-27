@@ -33,8 +33,7 @@ message Amount {
 }
 
 message Party {
-    string id = 1 [(validator.field) = {msg_exists : true}];
-    repeated Position positions = 2;
+  string id = 1 [(validator.field) = {msg_exists : true}];
 }
 
 message RiskFactor {

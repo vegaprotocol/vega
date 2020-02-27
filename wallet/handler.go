@@ -10,7 +10,9 @@ import (
 )
 
 var (
-	ErrPubKeyDoesNotExists = errors.New("public key does not exists")
+	ErrPubKeyDoesNotExists  = errors.New("public key does not exists")
+	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
+	ErrPubKeyIsTainted      = errors.New("public key is tainted")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet Auth
@@ -175,6 +177,10 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 		return SignedBundle{}, ErrPubKeyDoesNotExists
 	}
 
+	if kp.Tainted {
+		return SignedBundle{}, ErrPubKeyIsTainted
+	}
+
 	// then lets sign the stuff and return it
 	sig := kp.Algorithm.Sign(kp.privBytes, rawtx)
 
@@ -183,4 +189,88 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 		Sig:    sig,
 		PubKey: kp.pubBytes,
 	}, nil
+}
+
+func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return ErrWalletDoesNotExists
+	}
+
+	// let's retrieve the private key from the public key
+	var kp *Keypair
+	for i := range w.Keypairs {
+		if w.Keypairs[i].Pub == pubkey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	// we did not find this pub key
+	if kp == nil {
+		return ErrPubKeyDoesNotExists
+	}
+
+	if kp.Tainted {
+		return ErrPubKeyAlreadyTainted
+	}
+
+	kp.Tainted = true
+
+	_, err = writeWallet(&w, h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
+	h.store[wname] = w
+	return nil
+}
+
+func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return ErrWalletDoesNotExists
+	}
+
+	// let's retrieve the private key from the public key
+	var kp *Keypair
+	for i := range w.Keypairs {
+		if w.Keypairs[i].Pub == pubkey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	// we did not find this pub key
+	if kp == nil {
+		return ErrPubKeyDoesNotExists
+	}
+
+	kp.Meta = meta
+
+	_, err = writeWallet(&w, h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
+	h.store[wname] = w
+	return nil
 }
