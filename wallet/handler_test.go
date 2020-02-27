@@ -375,7 +375,7 @@ func testTaintKeyPubKeyDoesNotExists(t *testing.T) {
 
 	// taint the key
 	err = h.TaintKey(tok, "some key", "thisisasecurepassphraseinnit")
-	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExists.Error())
+	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExist.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }
@@ -496,7 +496,7 @@ func testUpdateMetaPubKeyDoesNotExists(t *testing.T) {
 
 	// update meta
 	err = h.UpdateMeta(tok, "some key", "thisisasecurepassphraseinnit", []wallet.Meta{})
-	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExists.Error())
+	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExist.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }

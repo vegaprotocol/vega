@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrPubKeyDoesNotExists  = errors.New("public key does not exists")
+	ErrPubKeyDoesNotExist   = errors.New("public key does not exist")
 	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
 	ErrPubKeyIsTainted      = errors.New("public key is tainted")
 )
@@ -113,6 +113,36 @@ func (h *Handler) GenerateKeypair(token, passphrase string) (string, error) {
 	return kp.Pub, nil
 }
 
+func (h *Handler) GetPublicKey(token, pubKey string) (*Keypair, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return nil, ErrWalletDoesNotExists
+	}
+
+	// copy the key so we do not propagate private keys
+	for _, v := range w.Keypairs {
+		if v.Pub != pubKey {
+			continue
+		}
+		out := v
+		out.Priv = ""
+		out.privBytes = []byte{}
+		return &out, nil
+	}
+
+	return nil, ErrPubKeyDoesNotExist
+}
+
 func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -174,7 +204,7 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 	}
 	// we did not find this pub key
 	if kp == nil {
-		return SignedBundle{}, ErrPubKeyDoesNotExists
+		return SignedBundle{}, ErrPubKeyDoesNotExist
 	}
 
 	if kp.Tainted {
@@ -217,7 +247,7 @@ func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
 	}
 	// we did not find this pub key
 	if kp == nil {
-		return ErrPubKeyDoesNotExists
+		return ErrPubKeyDoesNotExist
 	}
 
 	if kp.Tainted {
@@ -261,7 +291,7 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 	}
 	// we did not find this pub key
 	if kp == nil {
-		return ErrPubKeyDoesNotExists
+		return ErrPubKeyDoesNotExist
 	}
 
 	kp.Meta = meta

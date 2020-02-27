@@ -64,8 +64,8 @@ func (k *Keypair) UnmarshalJSON(data []byte) error {
 }
 
 type Meta struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func New(owner string) Wallet {
