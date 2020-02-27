@@ -79,7 +79,7 @@ message Proposal {
 
   string        id        = 1;
   string        reference = 2;
-  string        party     = 3 [(validator.field) = {string_not_empty : true}];
+  string        partyID   = 3 [(validator.field) = {string_not_empty : true}];
   State         state     = 4 [(validator.field) = {is_in_enum: true}];
   int64         timestamp = 5;
   Terms         terms     = 6 [(validator.field) = {msg_exists: true}];
