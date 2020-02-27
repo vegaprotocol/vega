@@ -11,7 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
-	"github.com/tj/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type testSvc struct {
