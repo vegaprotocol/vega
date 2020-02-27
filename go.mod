@@ -14,7 +14,6 @@ require (
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/btree v1.0.0
-	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/websocket v1.4.1
 	github.com/grpc-ecosystem/grpc-gateway v1.9.0
@@ -29,8 +28,6 @@ require (
 	github.com/spf13/viper v1.5.0
 	github.com/stretchr/testify v1.4.0
 	github.com/tendermint/tendermint v0.32.9
-	github.com/tj/assert v0.0.0-20190920132354-ee03d75cd160
-	github.com/vegaprotocol/modvendor v0.0.2 // indirect
 	github.com/vektah/gqlparser v1.2.0
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
