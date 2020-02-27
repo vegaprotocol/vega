@@ -284,3 +284,33 @@ func TestSubmitOrder(t *testing.T) {
 
 	g.Stop()
 }
+
+func TestPrepareProposal(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
+	defer cancel()
+
+	g, tidy, conn, err := getTestGRPCServer(t, ctx, 64201, true)
+	if err != nil {
+		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+	}
+	defer tidy()
+
+	client := protoapi.NewTradingClient(conn)
+	assert.NotNil(t, client)
+
+	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
+		PartyID: "invalid-party",
+		Proposal: &types.Proposal_Terms{
+			Parameters: &types.Proposal_Terms_Parameters{},
+			Change: &types.Proposal_Terms_UpdateNetwork_{
+				UpdateNetwork: &types.Proposal_Terms_UpdateNetwork{
+					Changes: &types.NetworkConfiguration{},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Error(), "Internal error")
+	assert.Nil(t, proposal)
+
+	g.Stop()
+}
