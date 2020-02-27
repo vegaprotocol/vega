@@ -30,6 +30,7 @@ func TestWallet(t *testing.T) {
 	t.Run("read a wallet success", testReadWallet)
 	t.Run("read a wallet failure invalid passphrase", testReadWalletFailureInvalidPassphrase)
 	t.Run("read a wallet failure does not exist", testReadWalletFailureDoesNotExist)
+	t.Run("add a keypair to a wallet", testAddKeyPairtoWallet)
 }
 
 func testCreateWallet(t *testing.T) {
@@ -124,7 +125,7 @@ func testAddKeyPairtoWallet(t *testing.T) {
 	assert.Len(t, w1.Keypairs, 0)
 
 	// create the keypair
-	kp := wallet.NewKeypair(crypto.NewEd25519(), []byte{1, 2, 3, 4}, []byte{4, 3, 2, 1})
+	kp := wallet.NewKeypair(crypto.NewEd25519(), []byte{1, 2, 3, 255}, []byte{253, 3, 2, 1})
 
 	// now try to add the keypair to the wallet
 	w2, err2 := wallet.AddKeypair(&kp, rootDir, "jeremy", "thisisasecurepassphraseinnit")
@@ -135,10 +136,10 @@ func testAddKeyPairtoWallet(t *testing.T) {
 	w3, err3 := wallet.Read(rootDir, "jeremy", "thisisasecurepassphraseinnit")
 	assert.NoError(t, err3)
 	assert.NotNil(t, w3)
-	assert.Len(t, w1.Keypairs, 1)
-	// check the base64 value of the keypair
-	assert.Equal(t, "AQIDBA==", w.Keypairs[0].Pub)
-	assert.Equal(t, "AQIDBA==", w.Keypairs[0].Priv)
+	assert.Len(t, w3.Keypairs, 1)
+	// check the hex value of the keypair
+	assert.Equal(t, "010203ff", w3.Keypairs[0].Pub)
+	assert.Equal(t, "fd030201", w3.Keypairs[0].Priv)
 
 	assert.NoError(t, os.RemoveAll(rootDir))
 }

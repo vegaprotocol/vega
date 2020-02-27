@@ -60,6 +60,9 @@ func (k *Keypair) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	k.privBytes, err = hex.DecodeString(k.Priv)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

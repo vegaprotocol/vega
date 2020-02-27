@@ -15,6 +15,7 @@ var (
 	ErrPubKeyIsTainted      = errors.New("public key is tainted")
 )
 
+// Auth ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet Auth
 type Auth interface {
 	NewSession(walletname string) (string, error)

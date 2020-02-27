@@ -23,6 +23,7 @@ type Service struct {
 	nodeForward NodeForward
 }
 
+// WalletHandler ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet WalletHandler
 type WalletHandler interface {
 	CreateWallet(wallet, passphrase string) (string, error)
@@ -36,6 +37,7 @@ type WalletHandler interface {
 	UpdateMeta(token, pubkey, passphrase string, meta []Meta) error
 }
 
+// NodeForward ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
 type NodeForward interface {
 	Send(context.Context, *SignedBundle) error
@@ -357,16 +359,16 @@ var (
 	ErrInvalidOrMissingToken = newError("invalid or missing token")
 )
 
-type HttpError struct {
+type HTTPError struct {
 	ErrorStr string `json:"error"`
 }
 
-func (e HttpError) Error() string {
+func (e HTTPError) Error() string {
 	return e.ErrorStr
 }
 
-func newError(e string) HttpError {
-	return HttpError{
+func newError(e string) HTTPError {
+	return HTTPError{
 		ErrorStr: e,
 	}
 }
