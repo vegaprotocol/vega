@@ -102,7 +102,7 @@ func (service *Svc) PrepareProposal(
 		return nil, err
 	}
 	return &types.Proposal{
-		Id:        "", // to be filled on submission
+		Id:        "", // to be filled after submission
 		Reference: reference,
 		PartyID:   party,
 		State:     types.Proposal_OPEN,
