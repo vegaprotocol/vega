@@ -28,6 +28,7 @@ require (
 	github.com/spf13/viper v1.5.0
 	github.com/stretchr/testify v1.4.0
 	github.com/tendermint/tendermint v0.32.9
+	github.com/vegaprotocol/modvendor v0.0.2 // indirect
 	github.com/vektah/gqlparser v1.2.0
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
