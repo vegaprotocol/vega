@@ -40,7 +40,7 @@ type AccountService interface {
 // GovernanceService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
-	PrepareProposal(ctx context.Context, author string, reference string, submission *types.Proposal_Terms) (*types.Proposal, error)
+	PrepareProposal(ctx context.Context, author, reference string, terms *types.Proposal_Terms) (*types.Proposal, error)
 }
 
 type tradingService struct {
@@ -353,7 +353,22 @@ func (s *tradingService) Withdraw(
 func (s *tradingService) PrepareProposal(
 	ctx context.Context, req *protoapi.PrepareProposalRequest,
 ) (*protoapi.PrepareProposalResponse, error) {
-	return nil, nil
+	proposal, err := s.governanceService.PrepareProposal(ctx,
+		req.PartyID, req.Reference, req.Proposal)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
+	}
+	raw, err := proto.Marshal(proposal) // marshal whole proposal
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareProposal)
+	}
+	if raw, err = txEncode(raw, blockchain.NewProposal); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareProposal)
+	}
+	return &protoapi.PrepareProposalResponse{
+		Blob:            raw,
+		PendingProposal: proposal,
+	}, nil
 }
 
 func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {

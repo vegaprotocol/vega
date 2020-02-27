@@ -1212,7 +1212,7 @@
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
-| PrepareProposal | [.vega.Proposal.Terms](#vega.Proposal.Terms) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
+| PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 
 
 <a name="api.trading_data"></a>
@@ -1297,7 +1297,7 @@
 | author | [string](#string) |  |  |
 | state | [Proposal.State](#vega.Proposal.State) |  |  |
 | timestamp | [int64](#int64) |  |  |
-| proposal | [Proposal.Terms](#vega.Proposal.Terms) |  |  |
+| terms | [Proposal.Terms](#vega.Proposal.Terms) |  |  |
 | votes | [Vote](#vega.Vote) | repeated |  |
 
 

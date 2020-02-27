@@ -2255,7 +2255,7 @@
           "type": "string",
           "format": "int64"
         },
-        "proposal": {
+        "terms": {
           "$ref": "#/definitions/ProposalTerms"
         },
         "votes": {

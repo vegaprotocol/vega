@@ -36,21 +36,18 @@ func (this *Vote) Validate() error {
 	return nil
 }
 func (this *Proposal) Validate() error {
-	if this.Reference == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
-	}
 	if this.Author == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Author", fmt.Errorf(`value '%v' must not be an empty string`, this.Author))
 	}
 	if _, ok := Proposal_State_name[int32(this.State)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("State", fmt.Errorf(`value '%v' must be a valid Proposal_State field`, this.State))
 	}
-	if nil == this.Proposal {
-		return github_com_mwitkow_go_proto_validators.FieldError("Proposal", fmt.Errorf("message must exist"))
+	if nil == this.Terms {
+		return github_com_mwitkow_go_proto_validators.FieldError("Terms", fmt.Errorf("message must exist"))
 	}
-	if this.Proposal != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+	if this.Terms != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Terms); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Terms", err)
 		}
 	}
 	for _, item := range this.Votes {
