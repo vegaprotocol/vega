@@ -23,6 +23,8 @@ const (
 	NotifyTraderAccountCommand Command = 0x43
 	// WithdrawCommant ...
 	WithdrawCommand Command = 0x44
+	// NewProposal ...
+	NewProposalCommand Command = 0x45
 )
 
 var commandName = map[Command]string{
