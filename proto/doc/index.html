@@ -4026,6 +4026,562 @@
 
 
       <div class="file-heading">
+        <h2 id="proto/governance.proto">proto/governance.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+
+        <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>minCloseInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxCloseInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>minEnactInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxEnactInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>minParticipationStake</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Proposal">Proposal</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>state</td>
+                  <td><a href="#vega.Proposal.State">Proposal.State</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>timestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>terms</td>
+                  <td><a href="#vega.Proposal.Terms">Proposal.Terms</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>votes</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>state</td>
+                  <td>
+                    <ul>
+
+                      <li>is_in_enum: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>terms</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.Proposal.Terms">Proposal.Terms</h3>
+        <p>Proposal terms</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>parameters</td>
+                  <td><a href="#vega.Proposal.Terms.Parameters">Proposal.Terms.Parameters</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>updateMarket</td>
+                  <td><a href="#vega.Proposal.Terms.UpdateMarket">Proposal.Terms.UpdateMarket</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>newMarket</td>
+                  <td><a href="#vega.Proposal.Terms.NewMarket">Proposal.Terms.NewMarket</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>updateNetwork</td>
+                  <td><a href="#vega.Proposal.Terms.UpdateNetwork">Proposal.Terms.UpdateNetwork</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>parameters</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.Proposal.Terms.NewMarket">Proposal.Terms.NewMarket</h3>
+        <p>Market market = 1 [(validator.field) = {msg_exists: true}];</p>
+
+
+
+
+
+        <h3 id="vega.Proposal.Terms.Parameters">Proposal.Terms.Parameters</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>closeInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>enactInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>minParticipationStake</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>closeInDays</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>enactInDays</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minParticipationStake</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.Proposal.Terms.UpdateMarket">Proposal.Terms.UpdateMarket</h3>
+        <p></p>
+
+
+
+
+
+        <h3 id="vega.Proposal.Terms.UpdateNetwork">Proposal.Terms.UpdateNetwork</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>changes</td>
+                  <td><a href="#vega.NetworkConfiguration">NetworkConfiguration</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>changes</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.Vote">Vote</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>voter</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#vega.Vote.Value">Vote.Value</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>stake</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>voter</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>value</td>
+                  <td>
+                    <ul>
+
+                      <li>is_in_enum: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>stake</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+
+
+        <h3 id="vega.Proposal.State">Proposal.State</h3>
+        <p>Proposal state transition:</p><p>Open -></p><p>- Passed -> Enacted.</p><p>- Rejected.</p><p>Proposal can enter Failed state from any other state.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>FAILED</td>
+                <td>0</td>
+                <td><p>Proposal became invalid and cannot be processed.</p></td>
+              </tr>
+
+              <tr>
+                <td>OPEN</td>
+                <td>1</td>
+                <td><p>Proposal is open for voting.</p></td>
+              </tr>
+
+              <tr>
+                <td>PASSED</td>
+                <td>2</td>
+                <td><p>Proposal has gained enough support to be executed.</p></td>
+              </tr>
+
+              <tr>
+                <td>REJECTED</td>
+                <td>3</td>
+                <td><p>Proposal has could not gain enough support to be executed.</p></td>
+              </tr>
+
+              <tr>
+                <td>ENACTED</td>
+                <td>4</td>
+                <td><p>Proposal has been executed and the changes under this proposal have now been applied.</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Vote.Value">Vote.Value</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>NO</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>YES</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+
+      <div class="file-heading">
         <h2 id="proto/markets.proto">proto/markets.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
