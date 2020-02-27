@@ -14,48 +14,47 @@ import (
 	"github.com/tj/assert"
 )
 
-type testSvcBundle struct {
+type testSvc struct {
+	*governance.Svc
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
 
 	time *mocks.MockTimeService
-	gov  *governance.Svc
 }
 
-func newTestServiceBundle(t *testing.T) *testSvcBundle {
+func newTestService(t *testing.T) *testSvc {
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	svc := governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), time)
-	assert.NotNil(t, svc)
-
-	return &testSvcBundle{
+	result := &testSvc{
 		ctrl:  ctrl,
 		ctx:   ctx,
 		cfunc: cfunc,
 		time:  time,
-		gov:   svc,
 	}
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), time)
+	assert.NotNil(t, result.Svc)
+	return result
 }
 
 func TestGovernanceService(t *testing.T) {
-	svc := newTestServiceBundle(t)
+	svc := newTestService(t)
 
-	cfg := svc.gov.Config
+	cfg := svc.Config
 	cfg.Level.Level = logging.DebugLevel
-	svc.gov.ReloadConf(cfg)
-	assert.Equal(t, svc.gov.Config.Level.Level, logging.DebugLevel)
+	svc.ReloadConf(cfg)
+	assert.Equal(t, svc.Config.Level.Level, logging.DebugLevel)
 
 	cfg.Level.Level = logging.InfoLevel
-	svc.gov.ReloadConf(cfg)
-	assert.Equal(t, svc.gov.Config.Level.Level, logging.InfoLevel)
+	svc.ReloadConf(cfg)
+	assert.Equal(t, svc.Config.Level.Level, logging.InfoLevel)
 }
 
 func TestPrepareProposal(t *testing.T) {
-	svc := newTestServiceBundle(t)
+	svc := newTestService(t)
 
 	updateNetwork := types.Proposal_Terms_UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
@@ -78,7 +77,7 @@ func TestPrepareProposal(t *testing.T) {
 	svc.time.EXPECT().GetTimeNow().Times(1).Return(rightNow, nil)
 
 	testAuthor := "test-author"
-	proposal, err := svc.gov.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
@@ -89,7 +88,7 @@ func TestPrepareProposal(t *testing.T) {
 }
 
 func TestPrepareEmptyProposal(t *testing.T) {
-	svc := newTestServiceBundle(t)
+	svc := newTestService(t)
 
 	updateNetwork := types.Proposal_Terms_UpdateNetwork{
 		Changes: &types.NetworkConfiguration{},
@@ -103,7 +102,7 @@ func TestPrepareEmptyProposal(t *testing.T) {
 
 	svc.time.EXPECT().GetTimeNow().MaxTimes(0)
 
-	proposal, err := svc.gov.PrepareProposal(svc.ctx, "", "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
 
 	assert.Error(t, err)
 	assert.Nil(t, proposal)
@@ -111,13 +110,13 @@ func TestPrepareEmptyProposal(t *testing.T) {
 }
 
 func TestValidateTerms(t *testing.T) {
-	svc := newTestServiceBundle(t)
+	svc := newTestService(t)
 
 	updateNetwork := types.Proposal_Terms_UpdateNetwork{
 		Changes: &types.NetworkConfiguration{},
 	}
 
-	err := svc.gov.ValidateTerms(&types.Proposal_Terms{
+	err := svc.ValidateTerms(&types.Proposal_Terms{
 		Parameters: &types.Proposal_Terms_Parameters{},
 		Change: &types.Proposal_Terms_UpdateNetwork_{
 			UpdateNetwork: &updateNetwork,
