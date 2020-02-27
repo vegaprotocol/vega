@@ -83,7 +83,7 @@ func (service *Svc) PrepareProposal(
 	return &types.Proposal{
 		Id:        "", // to be filled on submission
 		Reference: reference,
-		Party:     party,
+		PartyID:   party,
 		State:     types.Proposal_OPEN,
 		Timestamp: now.Unix(),
 		Terms:     terms,
@@ -93,6 +93,7 @@ func (service *Svc) PrepareProposal(
 
 // CanPropose checks if the party is allowed to submit new proposals
 func (service *Svc) CanPropose(party string) bool {
+
 	return true
 }
 
