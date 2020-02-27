@@ -1294,7 +1294,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | reference | [string](#string) |  |  |
-| author | [string](#string) |  |  |
+| party | [string](#string) |  |  |
 | state | [Proposal.State](#vega.Proposal.State) |  |  |
 | timestamp | [int64](#int64) |  |  |
 | terms | [Proposal.Terms](#vega.Proposal.Terms) |  |  |

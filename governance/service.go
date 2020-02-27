@@ -14,6 +14,8 @@ import (
 var (
 	// ErrInvalidProposalTermsFmt is returned if basic validation has failed
 	ErrInvalidProposalTermsFmt = errors.New("invalid proposal terms format")
+	// ErrPartyCannotPropose is returned when proposing party does not have sufficient stake
+	ErrPartyCannotPropose = errors.New("party cannot submit new proposals")
 )
 
 // TimeService ...
@@ -62,10 +64,13 @@ func (service *Svc) ReloadConf(cfg Config) {
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
 func (service *Svc) PrepareProposal(
-	ctx context.Context, author string, reference string, terms *types.Proposal_Terms,
+	ctx context.Context, party string, reference string, terms *types.Proposal_Terms,
 ) (*types.Proposal, error) {
-	if err := service.validateProposal(terms); err != nil {
+	if err := service.ValidateTerms(terms); err != nil {
 		return nil, err
+	}
+	if !service.CanPropose(party) {
+		return nil, ErrPartyCannotPropose
 	}
 	if len(reference) <= 0 {
 		service.referenceCounter++
@@ -78,7 +83,7 @@ func (service *Svc) PrepareProposal(
 	return &types.Proposal{
 		Id:        "", // to be filled on submission
 		Reference: reference,
-		Author:    author,
+		Party:     party,
 		State:     types.Proposal_OPEN,
 		Timestamp: now.Unix(),
 		Terms:     terms,
@@ -86,15 +91,17 @@ func (service *Svc) PrepareProposal(
 	}, nil
 }
 
-// validateProposal performs basic consistency checks:
-// - user ability to submit new proposals;
+// CanPropose checks if the party is allowed to submit new proposals
+func (service *Svc) CanPropose(party string) bool {
+	return true
+}
+
+// ValidateTerms performs sanity checks:
 // - network time restrictions parameters (voting duration, enactment date time);
 // - network minimum participation requirement parameter.
-func (service *Svc) validateProposal(proposal *types.Proposal_Terms) error {
-	//TODO: check if proposal.Author is valid (not just empty)
-	//TODO: proposal.Parameters have to be checked against network parameters
+func (service *Svc) ValidateTerms(proposal *types.Proposal_Terms) error {
 	if err := proposal.Validate(); err != nil {
-		return errors.Wrap(err, "order validation failed")
+		return errors.Wrap(err, "proposal validation failed")
 	}
 	return nil
 }
