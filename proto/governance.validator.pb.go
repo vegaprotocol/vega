@@ -18,9 +18,6 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *NetworkConfiguration) Validate() error {
-	if !(this.MinParticipationStake > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))
-	}
 	return nil
 }
 func (this *Vote) Validate() error {
@@ -92,11 +89,14 @@ func (this *Proposal_Terms) Validate() error {
 	return nil
 }
 func (this *Proposal_Terms_Parameters) Validate() error {
+	if !(this.CloseInDays > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("CloseInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.CloseInDays))
+	}
+	if !(this.EnactInDays > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("EnactInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactInDays))
+	}
 	if !(this.MinParticipationStake > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))
-	}
-	if !(this.MinParticipationStake < 100) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be less than '100'`, this.MinParticipationStake))
 	}
 	return nil
 }
