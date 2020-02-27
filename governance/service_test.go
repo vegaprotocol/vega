@@ -1,7 +1,9 @@
 package governance_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -12,36 +14,48 @@ import (
 	"github.com/tj/assert"
 )
 
-type testSvc struct {
-	ctrl *gomock.Controller
+type testSvcBundle struct {
+	ctrl  *gomock.Controller
+	ctx   context.Context
+	cfunc context.CancelFunc
 
-	time  *mocks.MockTimeService
-	block *mocks.MockBlockchain
-	svc   *governance.Svc
+	time *mocks.MockTimeService
+	gov  *governance.Svc
 }
 
-func newTestService(t *testing.T) *testSvc {
-
+func newTestServiceBundle(t *testing.T) *testSvcBundle {
 	ctrl := gomock.NewController(t)
-
 	time := mocks.NewMockTimeService(ctrl)
-	block := mocks.NewMockBlockchain(ctrl)
-	return &testSvc{
+
+	ctx, cfunc := context.WithCancel(context.Background())
+
+	svc := governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), time)
+	assert.NotNil(t, svc)
+
+	return &testSvcBundle{
 		ctrl:  ctrl,
+		ctx:   ctx,
+		cfunc: cfunc,
 		time:  time,
-		block: block,
-		svc:   governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), time, block),
+		gov:   svc,
 	}
 }
 
-func TestGovernanceEngine(t *testing.T) {
-	engine := newTestService(t)
-	assert.NotNil(t, engine)
+func TestGovernanceService(t *testing.T) {
+	svc := newTestServiceBundle(t)
+
+	cfg := svc.gov.Config
+	cfg.Level.Level = logging.DebugLevel
+	svc.gov.ReloadConf(cfg)
+	assert.Equal(t, svc.gov.Config.Level.Level, logging.DebugLevel)
+
+	cfg.Level.Level = logging.InfoLevel
+	svc.gov.ReloadConf(cfg)
+	assert.Equal(t, svc.gov.Config.Level.Level, logging.InfoLevel)
 }
 
-func TestValidateProposal(t *testing.T) {
-	s := newTestService(t)
-	assert.NotNil(t, s.svc)
+func TestPrepareProposal(t *testing.T) {
+	svc := newTestServiceBundle(t)
 
 	updateNetwork := types.Proposal_Terms_UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
@@ -49,8 +63,7 @@ func TestValidateProposal(t *testing.T) {
 			MaxCloseInDays: 1000,
 		},
 	}
-
-	proposal := types.Proposal_Terms{
+	terms := types.Proposal_Terms{
 		Parameters: &types.Proposal_Terms_Parameters{
 			CloseInDays:           30,
 			EnactInDays:           31,
@@ -60,36 +73,15 @@ func TestValidateProposal(t *testing.T) {
 			UpdateNetwork: &updateNetwork,
 		},
 	}
-	err := s.svc.ValidateProposal(&proposal)
+
+	rightNow := time.Now()
+	svc.time.EXPECT().GetTimeNow().Times(1).Return(rightNow, nil)
+
+	proposal, err := svc.gov.PrepareProposal(svc.ctx, "test-author", "", &terms)
+
 	assert.NoError(t, err)
-}
-
-func TestSubmitProposal(t *testing.T) {
-	s := newTestService(t)
-	assert.NotNil(t, s.svc)
-
-	updateNetwork := types.Proposal_Terms_UpdateNetwork{
-		Changes: &types.NetworkConfiguration{
-			MinCloseInDays:        10,
-			MaxCloseInDays:        100,
-			MinParticipationStake: 70,
-		},
-	}
-
-	proposal := types.Proposal_Terms{
-		Parameters: &types.Proposal_Terms_Parameters{
-			CloseInDays:           300,
-			EnactInDays:           301,
-			MinParticipationStake: 80,
-		},
-		Change: &types.Proposal_Terms_UpdateNetwork_{
-			UpdateNetwork: &updateNetwork,
-		},
-	}
-	confirmation, err := s.svc.SubmitProposal(&proposal)
-	assert.NoError(t, err)
-	assert.NotNil(t, confirmation)
-	assert.EqualValues(t, proposal, *confirmation.Proposal)
-	assert.NotEmpty(t, confirmation.Id)
-	assert.EqualValues(t, types.Proposal_OPEN, confirmation.State)
+	assert.NotNil(t, proposal)
+	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
+	assert.EqualValues(t, types.Proposal_OPEN, proposal.State)
+	assert.EqualValues(t, terms, *proposal.Terms)
 }
