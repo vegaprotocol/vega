@@ -51,7 +51,7 @@ service trading {
   //TODO: Governance should go into an independent service, this location is temporary
   
   // Prepare proposal that can be sent out to the chain (via SubmitTransaction)
-  rpc PrepareProposal(vega.Proposal.Terms) returns (PrepareProposalResponse);
+  rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
 
   //TODO
   // rpc CanPropose

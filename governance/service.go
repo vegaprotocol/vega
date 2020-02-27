@@ -2,12 +2,12 @@ package governance
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
 )
 
@@ -22,34 +22,25 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
-// Blockchain ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/governance  Blockchain
-type Blockchain interface {
-	SubmitTransaction(ctx context.Context, raw []byte) (bool, error)
-}
-
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log *logging.Logger
-
-	mu sync.Mutex
-
-	timeService TimeService
-	blockchain  Blockchain
+	log              *logging.Logger
+	mu               sync.Mutex
+	timeService      TimeService
+	referenceCounter uint64
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, time TimeService, client Blockchain) *Svc {
+func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	return &Svc{
-		Config: cfg,
-		log:    log,
-
-		timeService: time,
-		blockchain:  client,
+		Config:           cfg,
+		log:              log,
+		timeService:      time,
+		referenceCounter: 0,
 	}
 }
 
@@ -69,6 +60,32 @@ func (service *Svc) ReloadConf(cfg Config) {
 	service.mu.Unlock()
 }
 
+// PrepareProposal performs basic validation and bundles together fields required for a proposal
+func (service *Svc) PrepareProposal(
+	ctx context.Context, author string, reference string, terms *types.Proposal_Terms,
+) (*types.Proposal, error) {
+	if err := service.validateProposal(terms); err != nil {
+		return nil, err
+	}
+	if len(reference) <= 0 {
+		service.referenceCounter++
+		reference = fmt.Sprintf("proposal#%d", service.referenceCounter)
+	}
+	now, err := service.timeService.GetTimeNow()
+	if err != nil {
+		return nil, err
+	}
+	return &types.Proposal{
+		Id:        "", // to be filled on submission
+		Reference: reference,
+		Author:    author,
+		State:     types.Proposal_OPEN,
+		Timestamp: now.Unix(),
+		Terms:     terms,
+		Votes:     nil,
+	}, nil
+}
+
 // validateProposal performs basic consistency checks:
 // - user ability to submit new proposals;
 // - network time restrictions parameters (voting duration, enactment date time);
@@ -80,34 +97,4 @@ func (service *Svc) validateProposal(proposal *types.Proposal_Terms) error {
 		return errors.Wrap(err, "order validation failed")
 	}
 	return nil
-}
-
-// submitProposal validates a proposal and submits it to the chain if valid
-func (service *Svc) submitProposal(author string, proposal *types.Proposal_Terms) (*types.Proposal, error) {
-	if err := service.validateProposal(proposal); err != nil {
-		return nil, err
-	}
-
-	return &types.Proposal{
-		Id:        "", ///< generate id, perhaps by simply last known proposal + 1
-		State:     types.Proposal_OPEN,
-		Author:    author,
-		Timestamp: time.Now().Unix(),
-		Proposal:  proposal,
-		Votes:     nil, ///< submitter's stake
-	}, nil
-}
-
-// Propose allows submitting new proposals
-//TODO: this should probably go into a separate type in api package
-func (service *Svc) Propose(ctx context.Context, proposalRequest *api.SubmitProposalRequest) (*api.SubmitProposalResponse, error) {
-	author := "xxxxxxxxxxx" ///< derive from proposalRequest.Token
-
-	proposal, err := service.submitProposal(author, proposalRequest.Submission)
-	if err != nil {
-		return nil, err
-	}
-	return &api.SubmitProposalResponse{
-		Proposal: proposal,
-	}, nil
 }

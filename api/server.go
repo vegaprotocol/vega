@@ -186,6 +186,7 @@ func (g *GRPCServer) Start() {
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
+		governanceService: g.governanceService,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
@@ -210,8 +211,6 @@ func (g *GRPCServer) Start() {
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
-
-	protoapi.RegisterGovernanceServer(g.srv, g.governanceService)
 
 	err = g.srv.Serve(lis)
 	if err != nil {
