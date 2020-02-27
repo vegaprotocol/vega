@@ -673,19 +673,19 @@ func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels)
 }
 
 func (r *myMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.CollateralReleaseLevel, 10), nil
+	return strconv.FormatUint(m.CollateralReleaseLevel, 10), nil
 }
 
 func (r *myMarginLevelsResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.InitialMargin, 10), nil
+	return strconv.FormatUint(m.InitialMargin, 10), nil
 }
 
 func (r *myMarginLevelsResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.SearchLevel, 10), nil
+	return strconv.FormatUint(m.SearchLevel, 10), nil
 }
 
 func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.MaintenanceMargin, 10), nil
+	return strconv.FormatUint(m.MaintenanceMargin, 10), nil
 }
 
 func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {

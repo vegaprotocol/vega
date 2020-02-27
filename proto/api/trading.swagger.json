@@ -1496,7 +1496,7 @@
         },
         "balance": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "asset": {
           "type": "string"
@@ -1695,7 +1695,7 @@
         },
         "amount": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "reference": {
           "type": "string"
@@ -1755,19 +1755,19 @@
       "properties": {
         "maintenanceMargin": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "searchLevel": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "initialMargin": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "collateralReleaseLevel": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "partyID": {
           "type": "string"
@@ -2283,31 +2283,31 @@
         },
         "orderSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "tradeSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "candleSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "marketDepthSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "positionsSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "accountSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "marketDataSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "appVersionHash": {
           "type": "string"
@@ -2408,7 +2408,7 @@
         },
         "balance": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         }
       }
     },

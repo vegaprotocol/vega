@@ -16,7 +16,8 @@ var ErrInvalidPartyId = errors.New("party id is not valid")
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
 	CreatePartyGeneralAccount(partyID, asset string) string
-	IncrementBalance(id string, amount int64) error
+	IncrementBalance(id string, amount uint64) error
+	DecrementBalance(id string, amount uint64) error
 	GetAccountByID(id string) (*types.Account, error)
 }
 
@@ -65,7 +66,7 @@ func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error)
 
 // NotifyTraderAccountWithTopUpAmount will create a new party in the system
 // and top-up it general account with the given amount
-func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *types.NotifyTraderAccount, amount int64) error {
+func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *types.NotifyTraderAccount, amount uint64) error {
 	return p.notifyTraderAccount(notify, amount)
 }
 
@@ -121,7 +122,7 @@ func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	if notify.Amount == 0 {
 		return p.notifyTraderAccount(notify, 1000000000) // 10000.00000
 	}
-	return p.notifyTraderAccount(notify, int64(notify.Amount))
+	return p.notifyTraderAccount(notify, notify.Amount)
 }
 
 func (p *Party) addMarket(market types.Market) {
@@ -137,7 +138,7 @@ func (p *Party) addParty(ptyID, mktID string) {
 	p.partyByMarket[mktID][ptyID] = struct{}{}
 }
 
-func (p *Party) creditGeneralAccount(accountID string, amount int64) error {
+func (p *Party) creditGeneralAccount(accountID string, amount uint64) error {
 
 	if err := p.collateral.IncrementBalance(accountID, amount); err != nil {
 		p.log.Error("unable to top-up general account", logging.Error(err))
@@ -153,13 +154,13 @@ func (p *Party) creditGeneralAccount(accountID string, amount int64) error {
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("account top-up",
 			logging.String("party-id", accountID),
-			logging.Int64("top-up-amount", amount),
-			logging.Int64("new-balance", acc.Balance))
+			logging.Uint64("top-up-amount", amount),
+			logging.Uint64("new-balance", acc.Balance))
 	}
 	return nil
 }
 
-func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount int64) error {
+func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount uint64) error {
 	if notify == nil {
 		return ErrNotifyPartyIdMissing
 	}
