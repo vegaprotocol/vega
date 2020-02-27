@@ -497,9 +497,6 @@ func (this *PrepareProposalRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if this.Reference == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
-	}
 	if nil == this.Proposal {
 		return github_com_mwitkow_go_proto_validators.FieldError("Proposal", fmt.Errorf("message must exist"))
 	}

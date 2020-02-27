@@ -490,7 +490,7 @@ message CheckTokenResponse {
 
 message PrepareProposalRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
-  string reference = 2 [(validator.field) = {string_not_empty : true}];
+  string reference = 2;
   vega.Proposal.Terms proposal = 3 [(validator.field) = {msg_exists : true}];
 }
 
