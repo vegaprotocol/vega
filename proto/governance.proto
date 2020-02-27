@@ -13,7 +13,7 @@ message NetworkConfiguration {
   uint64  minEnactInDays  = 3;
   uint64  maxEnactInDays  = 4;
 
-  uint64 minParticipationStake = 5 [(validator.field) = {int_gt: 0}];
+  uint64 minParticipationStake = 5;
 }
 
 
@@ -33,9 +33,9 @@ message Proposal {
   // Proposal terms
   message Terms {
     message Parameters {
-      uint64 closeInDays           = 1;
-      uint64 enactInDays           = 2;
-      uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0, int_lt: 100}];
+      uint64 closeInDays           = 1 [(validator.field) = {int_gt: 0}];
+      uint64 enactInDays           = 2 [(validator.field) = {int_gt: 0}];
+      uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0}];
     }
   
     message UpdateMarket {
