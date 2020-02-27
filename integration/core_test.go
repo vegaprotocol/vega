@@ -15,7 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 
-	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
 

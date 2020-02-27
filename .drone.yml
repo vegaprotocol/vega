@@ -73,7 +73,7 @@ steps:
     environment:
       GOCACHE: /go/cache
     commands:
-      - make test
+      - make retest
     depends_on:
       - build
 

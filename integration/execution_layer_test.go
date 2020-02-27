@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/proto"
 
-	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -546,7 +546,7 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 }
 
 func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
-	var retries = 9
+	var retries = 2
 
 	party, volume, realisedPNL, unrealisedPNL := val(row, 0), i64val(row, 1), i64val(row, 3), i64val(row, 2)
 
@@ -575,7 +575,7 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 	}
 
 	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-		party, pos[0].OpenVolume, volume, pos[0].UnrealisedPNL, unrealisedPNL, pos[0].RealisedPNL, realisedPNL)
+		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPNL, realisedPNL, pos[0].RealisedPNL)
 }
 
 func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
