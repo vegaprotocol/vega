@@ -66,35 +66,35 @@ func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 }
 
 // ReloadConf updates the internal configuration of the collateral engine
-func (service *Svc) ReloadConf(cfg Config) {
-	service.log.Info("reloading configuration")
-	if service.log.GetLevel() != cfg.Level.Get() {
-		service.log.Info("updating log level",
-			logging.String("old", service.log.GetLevel().String()),
+func (s *Svc) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		service.log.SetLevel(cfg.Level.Get())
+		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	service.mu.Lock()
-	service.Config = cfg
-	service.mu.Unlock()
+	s.mu.Lock()
+	s.Config = cfg
+	s.mu.Unlock()
 }
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
-func (service *Svc) PrepareProposal(
+func (s *Svc) PrepareProposal(
 	ctx context.Context, party string, reference string, terms *types.Proposal_Terms,
 ) (*types.Proposal, error) {
-	if !service.Config.Enabled {
+	if !s.Config.Enabled {
 		return nil, ErrGovernanceDisabled
 	}
-	if err := service.ValidateTerms(terms); err != nil {
+	if err := s.ValidateTerms(terms); err != nil {
 		return nil, err
 	}
 	if len(reference) <= 0 {
 		reference = fmt.Sprintf("proposal#%s", uuid.NewV4().String())
 	}
-	now, err := service.timeService.GetTimeNow()
+	now, err := s.timeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
@@ -112,24 +112,24 @@ func (service *Svc) PrepareProposal(
 // ValidateTerms performs sanity checks:
 // - network time restrictions parameters (voting duration, enactment date time);
 // - network minimum participation requirement parameter.
-func (service *Svc) ValidateTerms(terms *types.Proposal_Terms) error {
+func (s *Svc) ValidateTerms(terms *types.Proposal_Terms) error {
 	if err := terms.Validate(); err != nil {
 		return errors.Wrap(err, "proposal validation failed")
 	}
 
-	if terms.Parameters.MinParticipationStake < service.MinParticipationStake {
+	if terms.Parameters.MinParticipationStake < s.MinParticipationStake {
 		return fmt.Errorf("minimum participation stake parameter must be at least %d",
-			service.MinParticipationStake)
+			s.MinParticipationStake)
 	}
-	if terms.Parameters.CloseInDays < service.MinCloseInDays ||
-		terms.Parameters.CloseInDays > service.MaxCloseInDays {
+	if terms.Parameters.CloseInDays < s.MinCloseInDays ||
+		terms.Parameters.CloseInDays > s.MaxCloseInDays {
 		return fmt.Errorf("close day must be between %d and %d",
-			service.MinCloseInDays, service.MaxCloseInDays)
+			s.MinCloseInDays, s.MaxCloseInDays)
 	}
-	if terms.Parameters.EnactInDays < service.MinEnactInDays ||
-		terms.Parameters.EnactInDays > service.MaxEnactInDays {
+	if terms.Parameters.EnactInDays < s.MinEnactInDays ||
+		terms.Parameters.EnactInDays > s.MaxEnactInDays {
 		return fmt.Errorf("enactment day must be between %d and %d",
-			service.MinEnactInDays, service.MaxEnactInDays)
+			s.MinEnactInDays, s.MaxEnactInDays)
 	}
 
 	return nil
