@@ -4,6 +4,7 @@ require (
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.10.2
 	github.com/DATA-DOG/godog v0.7.13
+	github.com/Workiva/go-datastructures v1.0.50
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.1-0.20191216081458-1b0c0742acd3

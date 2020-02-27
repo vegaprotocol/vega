@@ -16,6 +16,8 @@ var (
 	ErrInvalidProposalTermsFmt = errors.New("invalid proposal terms format")
 	// ErrPartyCannotPropose is returned when proposing party does not have sufficient stake
 	ErrPartyCannotPropose = errors.New("party cannot submit new proposals")
+	// ErrGovernanceDisabled is returned if governance API was used when disabled
+	ErrGovernanceDisabled = errors.New("governance API has been disabled")
 )
 
 // TimeService ...
@@ -24,12 +26,22 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
+type networkParameters struct {
+	minCloseInDays        uint64
+	maxCloseInDays        uint64
+	minEnactInDays        uint64
+	maxEnactInDays        uint64
+	minParticipationStake uint64
+}
+
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log              *logging.Logger
-	mu               sync.Mutex
-	timeService      TimeService
+	log         *logging.Logger
+	mu          sync.Mutex
+	timeService TimeService
+
+	parameters       networkParameters
 	referenceCounter uint64
 }
 
@@ -39,9 +51,16 @@ func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 	log.SetLevel(cfg.Level.Get())
 
 	return &Svc{
-		Config:           cfg,
-		log:              log,
-		timeService:      time,
+		Config:      cfg,
+		log:         log,
+		timeService: time,
+		parameters: networkParameters{
+			minCloseInDays:        cfg.MinCloseInDays,
+			maxCloseInDays:        cfg.MaxCloseInDays,
+			minEnactInDays:        cfg.MinEnactInDays,
+			maxEnactInDays:        cfg.MaxEnactInDays,
+			minParticipationStake: cfg.MinParticipationStake,
+		},
 		referenceCounter: 0,
 	}
 }
@@ -66,6 +85,9 @@ func (service *Svc) ReloadConf(cfg Config) {
 func (service *Svc) PrepareProposal(
 	ctx context.Context, party string, reference string, terms *types.Proposal_Terms,
 ) (*types.Proposal, error) {
+	if !service.Config.Enabled {
+		return nil, ErrGovernanceDisabled
+	}
 	if err := service.ValidateTerms(terms); err != nil {
 		return nil, err
 	}
@@ -93,16 +115,32 @@ func (service *Svc) PrepareProposal(
 
 // CanPropose checks if the party is allowed to submit new proposals
 func (service *Svc) CanPropose(party string) bool {
-
+	//TODO: read stake from somewhere
 	return true
 }
 
 // ValidateTerms performs sanity checks:
 // - network time restrictions parameters (voting duration, enactment date time);
 // - network minimum participation requirement parameter.
-func (service *Svc) ValidateTerms(proposal *types.Proposal_Terms) error {
-	if err := proposal.Validate(); err != nil {
+func (service *Svc) ValidateTerms(terms *types.Proposal_Terms) error {
+	if err := terms.Validate(); err != nil {
 		return errors.Wrap(err, "proposal validation failed")
 	}
+
+	if terms.Parameters.MinParticipationStake < service.MinParticipationStake {
+		return fmt.Errorf("minimum participation stake parameter must be at least %d",
+			service.MinParticipationStake)
+	}
+	if terms.Parameters.CloseInDays < service.MinCloseInDays ||
+		terms.Parameters.CloseInDays > service.MaxCloseInDays {
+		return fmt.Errorf("close day must be between %d and %d",
+			service.MinCloseInDays, service.MaxCloseInDays)
+	}
+	if terms.Parameters.EnactInDays < service.MinEnactInDays ||
+		terms.Parameters.EnactInDays > service.MaxEnactInDays {
+		return fmt.Errorf("enactment day must be between %d and %d",
+			service.MinEnactInDays, service.MaxEnactInDays)
+	}
+
 	return nil
 }
