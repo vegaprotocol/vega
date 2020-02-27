@@ -8,7 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -41,8 +43,7 @@ type Svc struct {
 	mu          sync.Mutex
 	timeService TimeService
 
-	parameters       networkParameters
-	referenceCounter uint64
+	parameters networkParameters
 }
 
 // NewService creates new governance service instance
@@ -61,7 +62,6 @@ func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 			maxEnactInDays:        cfg.MaxEnactInDays,
 			minParticipationStake: cfg.MinParticipationStake,
 		},
-		referenceCounter: 0,
 	}
 }
 
@@ -95,8 +95,7 @@ func (service *Svc) PrepareProposal(
 		return nil, ErrPartyCannotPropose
 	}
 	if len(reference) <= 0 {
-		service.referenceCounter++
-		reference = fmt.Sprintf("proposal#%d", service.referenceCounter)
+		reference = fmt.Sprintf("proposal#%s", uuid.NewV4().String())
 	}
 	now, err := service.timeService.GetTimeNow()
 	if err != nil {
