@@ -4,6 +4,7 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 
 import "proto/vega.proto";
 import "proto/markets.proto";
+import "proto/governance.proto";
 
 package api;
 
@@ -472,4 +473,28 @@ message CheckTokenRequest {
 
 message CheckTokenResponse {
   bool ok = 1;
+}
+
+//TODO: move to governance.proto instead
+service governance {
+  rpc Propose(SubmitProposalRequest) returns (SubmitProposalResponse);
+
+  //TODO
+  // rpc CanPropose
+  // rpc Vote
+  // rpc GetProposal
+  // rpc GetProposals
+}
+
+
+message SubmitProposalRequest {
+  // proposal terms submitted to the network
+  vega.Proposal.Terms submission = 1;
+
+  // a token acquired from a SignIn request and corresponding to the party specified in the `submission`.
+  string token = 101;
+}
+message SubmitProposalResponse {
+  // proposal terms submitted to the network
+  vega.Proposal proposal = 1;
 }
