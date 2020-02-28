@@ -100,7 +100,7 @@ func (s *Svc) PrepareProposal(
 		return nil, err
 	}
 	if len(reference) <= 0 {
-		reference = fmt.Sprintf("proposal#%s", uuid.NewV4().String())
+		reference = uuid.NewV4().String()
 	}
 	return &types.Proposal{
 		Id:        "", // to be filled after submission
