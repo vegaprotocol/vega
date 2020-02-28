@@ -96,11 +96,9 @@ func (s *Svc) PrepareProposal(
 		reference = uuid.NewV4().String()
 	}
 	return &types.Proposal{
-		Id:        "", // to be filled after submission
 		Reference: reference,
 		PartyID:   party,
 		State:     types.Proposal_OPEN,
-		Timestamp: 0, // to be filled after submission
 		Terms:     terms,
 	}, nil
 }
