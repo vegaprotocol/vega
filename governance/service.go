@@ -22,6 +22,14 @@ var (
 	ErrGovernanceDisabled = errors.New("governance API has been disabled")
 )
 
+const (
+	defaultMinCloseInDays        = 2
+	defaultMaxCloseInDays        = 365
+	defaultMinEnactInDays        = 3
+	defaultMaxEnactInDays        = 365
+	defaultMinParticipationStake = 1
+)
+
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
@@ -56,11 +64,11 @@ func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 		log:         log,
 		timeService: time,
 		parameters: networkParameters{
-			minCloseInDays:        cfg.MinCloseInDays,
-			maxCloseInDays:        cfg.MaxCloseInDays,
-			minEnactInDays:        cfg.MinEnactInDays,
-			maxEnactInDays:        cfg.MaxEnactInDays,
-			minParticipationStake: cfg.MinParticipationStake,
+			minCloseInDays:        defaultMinCloseInDays,
+			maxCloseInDays:        defaultMaxCloseInDays,
+			minEnactInDays:        defaultMinEnactInDays,
+			maxEnactInDays:        defaultMaxEnactInDays,
+			minParticipationStake: defaultMinParticipationStake,
 		},
 	}
 }
