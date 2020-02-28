@@ -48,16 +48,9 @@ service trading {
 
 
   // Governance
-  //TODO: Governance should go into an independent service, this location is temporary
   
   // Prepare proposal that can be sent out to the chain (via SubmitTransaction)
   rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
-
-  //TODO
-  // rpc CanPropose
-  // rpc Vote
-  // rpc GetProposal
-  // rpc GetProposals
 }
 
 message SubmitTransactionRequest {
