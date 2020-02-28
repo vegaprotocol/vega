@@ -11,10 +11,10 @@ import (
 func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) *types.MarginLevels {
 	maintenance = math.Ceil(maintenance)
 	return &types.MarginLevels{
-		MaintenanceMargin:      int64(maintenance),
-		SearchLevel:            int64(maintenance * scalingFactors.SearchLevel),
-		InitialMargin:          int64(maintenance * scalingFactors.InitialMargin),
-		CollateralReleaseLevel: int64(maintenance * scalingFactors.CollateralRelease),
+		MaintenanceMargin:      uint64(maintenance),
+		SearchLevel:            uint64(maintenance * scalingFactors.SearchLevel),
+		InitialMargin:          uint64(maintenance * scalingFactors.InitialMargin),
+		CollateralReleaseLevel: uint64(maintenance * scalingFactors.CollateralRelease),
 	}
 }
 

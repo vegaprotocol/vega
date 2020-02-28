@@ -1509,7 +1509,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | owner | [string](#string) |  |  |
-| balance | [int64](#int64) |  |  |
+| balance | [uint64](#uint64) |  |  |
 | asset | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | type | [AccountType](#vega.AccountType) |  |  |
@@ -1600,7 +1600,7 @@
 | ----- | ---- | ----- | ----------- |
 | fromAccount | [string](#string) |  |  |
 | toAccount | [string](#string) |  |  |
-| amount | [int64](#int64) |  |  |
+| amount | [uint64](#uint64) |  |  |
 | reference | [string](#string) |  |  |
 | type | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  |  |
@@ -1618,10 +1618,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maintenanceMargin | [int64](#int64) |  |  |
-| searchLevel | [int64](#int64) |  |  |
-| initialMargin | [int64](#int64) |  |  |
-| collateralReleaseLevel | [int64](#int64) |  |  |
+| maintenanceMargin | [uint64](#uint64) |  |  |
+| searchLevel | [uint64](#uint64) |  |  |
+| initialMargin | [uint64](#uint64) |  |  |
+| collateralReleaseLevel | [uint64](#uint64) |  |  |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | asset | [string](#string) |  |  |
@@ -1999,13 +1999,13 @@
 | totalCreateOrder | [uint64](#uint64) |  |  |
 | totalOrders | [uint64](#uint64) |  |  |
 | totalTrades | [uint64](#uint64) |  |  |
-| orderSubscriptions | [int32](#int32) |  |  |
-| tradeSubscriptions | [int32](#int32) |  |  |
-| candleSubscriptions | [int32](#int32) |  |  |
-| marketDepthSubscriptions | [int32](#int32) |  |  |
-| positionsSubscriptions | [int32](#int32) |  |  |
-| accountSubscriptions | [int32](#int32) |  |  |
-| marketDataSubscriptions | [int32](#int32) |  |  |
+| orderSubscriptions | [uint32](#uint32) |  |  |
+| tradeSubscriptions | [uint32](#uint32) |  |  |
+| candleSubscriptions | [uint32](#uint32) |  |  |
+| marketDepthSubscriptions | [uint32](#uint32) |  |  |
+| positionsSubscriptions | [uint32](#uint32) |  |  |
+| accountSubscriptions | [uint32](#uint32) |  |  |
+| marketDataSubscriptions | [uint32](#uint32) |  |  |
 | appVersionHash | [string](#string) |  |  |
 | appVersion | [string](#string) |  |  |
 | chainVersion | [string](#string) |  |  |
@@ -2084,7 +2084,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | account | [Account](#vega.Account) |  |  |
-| balance | [int64](#int64) |  |  |
+| balance | [uint64](#uint64) |  |  |
 
 
 

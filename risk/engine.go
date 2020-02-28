@@ -155,7 +155,7 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 
 	// there's not enought monies in the accounts of the party,
 	// we break from here
-	if int64(evt.MarginBalance()+evt.GeneralBalance()) < margins.InitialMargin {
+	if evt.MarginBalance()+evt.GeneralBalance() < margins.InitialMargin {
 		return nil, ErrInsufficientFundsForInitialMargin
 	}
 
@@ -163,7 +163,7 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 	e.marginsLevelsBuf.Add(*margins)
 
 	// margins are sufficient, nothing to update
-	if int64(curBalance) >= margins.InitialMargin {
+	if curBalance >= margins.InitialMargin {
 		return nil, nil
 	}
 
@@ -174,8 +174,8 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 		Type:  types.TransferType_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:     evt.Asset(),
-			Amount:    margins.InitialMargin - int64(curBalance),
-			MinAmount: margins.InitialMargin - int64(curBalance),
+			Amount:    int64(margins.InitialMargin - curBalance),
+			MinAmount: int64(margins.InitialMargin - curBalance),
 		},
 	}
 
@@ -225,7 +225,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			)
 		}
 
-		curMargin := int64(evt.MarginBalance())
+		curMargin := evt.MarginBalance()
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.CollateralReleaseLevel {
 			// propagate margins then continue
@@ -241,7 +241,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = margins.SearchLevel - curMargin
+				minAmount = int64(margins.SearchLevel - curMargin)
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -252,7 +252,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
 					Asset:     evt.Asset(),
-					Amount:    margins.InitialMargin - curMargin,
+					Amount:    int64(margins.InitialMargin - curMargin),
 					MinAmount: minAmount,
 				},
 			}
@@ -264,7 +264,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:     evt.Asset(),
-					Amount:    curMargin - margins.InitialMargin,
+					Amount:    int64(curMargin - margins.InitialMargin),
 					MinAmount: 0,
 				},
 			}
@@ -306,7 +306,7 @@ func (e *Engine) ExpectMargins(
 			)
 		}
 
-		curMargin := int64(evt.MarginBalance())
+		curMargin := evt.MarginBalance()
 		if curMargin > margins.MaintenanceMargin {
 			okMargins = append(okMargins, evt)
 		} else {

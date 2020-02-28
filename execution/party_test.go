@@ -63,7 +63,7 @@ func TestNewParty(t *testing.T) {
 	res = party.GetByMarket(testMarketID)
 	assert.Equal(t, 1, len(res))
 
-	err = party.NotifyTraderAccountWithTopUpAmount(&notify2, int64(4567))
+	err = party.NotifyTraderAccountWithTopUpAmount(&notify2, uint64(4567))
 	assert.NoError(t, err)
 
 	res = party.GetByMarket(testMarketID)
