@@ -53,7 +53,7 @@ func TestGovernanceService(t *testing.T) {
 	assert.Equal(t, svc.Config.Level.Level, logging.InfoLevel)
 }
 
-func TestPrepareProposal(t *testing.T) {
+func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
 
 	updateNetwork := types.Proposal_Terms_UpdateNetwork{
@@ -87,7 +87,7 @@ func TestPrepareProposal(t *testing.T) {
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
 
-func TestPrepareEmptyProposal(t *testing.T) {
+func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
 
 	updateNetwork := types.Proposal_Terms_UpdateNetwork{
@@ -107,6 +107,11 @@ func TestPrepareEmptyProposal(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, proposal)
 	assert.Contains(t, err.Error(), "proposal validation failed")
+}
+
+func TestPrepareProposal(t *testing.T) {
+	t.Run("Prepare a normal proposal", testPrepareProposalNormal)
+	t.Run("Prepare an empty proposal", testPrepareProposalEmpty)
 }
 
 func TestValidateTerms(t *testing.T) {
