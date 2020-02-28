@@ -467,13 +467,13 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		TotalOrders:              h.Stats.Blockchain.TotalOrders(),
 		TotalTrades:              h.Stats.Blockchain.TotalTrades(),
 		BlockDuration:            h.Stats.Blockchain.BlockDuration(),
-		OrderSubscriptions:       h.OrderService.GetOrderSubscribersCount(),
-		TradeSubscriptions:       h.TradeService.GetTradeSubscribersCount(),
-		PositionsSubscriptions:   h.TradeService.GetPositionsSubscribersCount(),
-		MarketDepthSubscriptions: h.MarketService.GetMarketDepthSubscribersCount(),
-		CandleSubscriptions:      h.CandleService.GetCandleSubscribersCount(),
-		AccountSubscriptions:     h.AccountsService.GetAccountSubscribersCount(),
-		MarketDataSubscriptions:  h.MarketService.GetMarketDataSubscribersCount(),
+		OrderSubscriptions:       uint32(h.OrderService.GetOrderSubscribersCount()),
+		TradeSubscriptions:       uint32(h.TradeService.GetTradeSubscribersCount()),
+		PositionsSubscriptions:   uint32(h.TradeService.GetPositionsSubscribersCount()),
+		MarketDepthSubscriptions: uint32(h.MarketService.GetMarketDepthSubscribersCount()),
+		CandleSubscriptions:      uint32(h.CandleService.GetCandleSubscribersCount()),
+		AccountSubscriptions:     uint32(h.AccountsService.GetAccountSubscribersCount()),
+		MarketDataSubscriptions:  uint32(h.MarketService.GetMarketDataSubscribersCount()),
 	}, nil
 }
 

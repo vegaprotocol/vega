@@ -673,19 +673,19 @@ func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels)
 }
 
 func (r *myMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.CollateralReleaseLevel, 10), nil
+	return strconv.FormatUint(m.CollateralReleaseLevel, 10), nil
 }
 
 func (r *myMarginLevelsResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.InitialMargin, 10), nil
+	return strconv.FormatUint(m.InitialMargin, 10), nil
 }
 
 func (r *myMarginLevelsResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.SearchLevel, 10), nil
+	return strconv.FormatUint(m.SearchLevel, 10), nil
 }
 
 func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatInt(m.MaintenanceMargin, 10), nil
+	return strconv.FormatUint(m.MaintenanceMargin, 10), nil
 }
 
 func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -2001,4 +2001,24 @@ func (r *myStatisticsResolver) TotalTrades(ctx context.Context, obj *types.Stati
 
 func (r *myStatisticsResolver) BlockDuration(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.BlockDuration), nil
+}
+
+func (r *myStatisticsResolver) CandleSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.CandleSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.MarketDepthSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.OrderSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) PositionsSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.PositionsSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.TradeSubscriptions), nil
 }

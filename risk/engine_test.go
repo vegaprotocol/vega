@@ -319,10 +319,10 @@ func testMarginWithOrderInBook(t *testing.T) {
 	}
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
-	assert.Equal(t, int64(542), margins.MaintenanceMargin)
-	assert.Equal(t, int64(542*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
-	assert.Equal(t, int64(542*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
-	assert.Equal(t, int64(542*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
+	assert.Equal(t, uint64(542), margins.MaintenanceMargin)
+	assert.Equal(t, uint64(542*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, uint64(542*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, uint64(542*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
 }
 
 // testcase 1 from: https://drive.google.com/file/d/1B8-rLK2NB6rWvjzZX9sLtqOQzLz8s2ky/view
@@ -427,10 +427,10 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	}
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
-	assert.Equal(t, int64(277), margins.MaintenanceMargin)
-	assert.Equal(t, int64(277*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
-	assert.Equal(t, int64(277*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
-	assert.Equal(t, int64(277*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
+	assert.Equal(t, uint64(277), margins.MaintenanceMargin)
+	assert.Equal(t, uint64(277*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, uint64(277*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, uint64(277*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {

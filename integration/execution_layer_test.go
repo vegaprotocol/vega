@@ -325,14 +325,14 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 
 		var hasError bool
 
-		if generalAccount.GetBalance() != i64val(row, 4) {
+		if generalAccount.GetBalance() != u64val(row, 4) {
 			hasError = true
 		}
 		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
-		if marginAccount.GetBalance() != i64val(row, 3) {
+		if marginAccount.GetBalance() != u64val(row, 3) {
 			hasError = true
 		}
 
@@ -370,7 +370,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		for _, v := range execsetup.transfers.data {
 			for _, _v := range v.GetTransfers() {
 				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
-					if _v.Amount != i64val(row, 5) {
+					if _v.Amount != u64val(row, 5) {
 						continue
 					}
 					ledgerEntry = _v
@@ -385,7 +385,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		if ledgerEntry == nil {
 			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
 		}
-		if ledgerEntry.Amount != i64val(row, 5) {
+		if ledgerEntry.Amount != u64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
 		}
 	}
@@ -395,7 +395,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 }
 
 func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
-	amount, _ := strconv.ParseInt(amountstr, 10, 0)
+	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	acc, err := execsetup.accounts.getMarketSettlementAccount(market)
 	if err != nil {
 		return err
@@ -407,7 +407,7 @@ func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string
 }
 
 func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
-	amount, _ := strconv.ParseInt(amountstr, 10, 0)
+	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	acc, err := execsetup.accounts.getMarketInsurancePoolAccount(market)
 	if err != nil {
 		return err
@@ -472,23 +472,22 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 
 		var hasError bool
 
-		if ml.MaintenanceMargin != i64val(row, 2) {
+		if ml.MaintenanceMargin != u64val(row, 2) {
 			hasError = true
 		}
-		if ml.SearchLevel != i64val(row, 3) {
+		if ml.SearchLevel != u64val(row, 3) {
 			hasError = true
 		}
-		if ml.InitialMargin != i64val(row, 4) {
+		if ml.InitialMargin != u64val(row, 4) {
 			hasError = true
 		}
-		if ml.CollateralReleaseLevel != i64val(row, 5) {
+		if ml.CollateralReleaseLevel != u64val(row, 5) {
 			hasError = true
 		}
 		if hasError {
 			return fmt.Errorf(
 				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)", i64val(row, 2), i64val(row, 3), i64val(row, 4), i64val(row, 5), ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, val(row, 0))
 		}
-
 	}
 	return nil
 }
