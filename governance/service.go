@@ -94,16 +94,12 @@ func (s *Svc) PrepareProposal(
 	if len(reference) <= 0 {
 		reference = fmt.Sprintf("proposal#%s", uuid.NewV4().String())
 	}
-	now, err := s.timeService.GetTimeNow()
-	if err != nil {
-		return nil, err
-	}
 	return &types.Proposal{
 		Id:        "", // to be filled after submission
 		Reference: reference,
 		PartyID:   party,
 		State:     types.Proposal_OPEN,
-		Timestamp: now.Unix(),
+		Timestamp: 0,
 		Terms:     terms,
 		Votes:     nil,
 	}, nil
