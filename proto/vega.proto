@@ -242,13 +242,13 @@ message Statistics {
   uint64 totalCreateOrder = 18;
   uint64 totalOrders = 19;
   uint64 totalTrades = 20;
-  int32 orderSubscriptions = 21;
-  int32 tradeSubscriptions = 22;
-  int32 candleSubscriptions = 23;
-  int32 marketDepthSubscriptions = 24;
-  int32 positionsSubscriptions = 25;
-  int32 accountSubscriptions = 26;
-  int32 marketDataSubscriptions = 27;
+  uint32 orderSubscriptions = 21;
+  uint32 tradeSubscriptions = 22;
+  uint32 candleSubscriptions = 23;
+  uint32 marketDepthSubscriptions = 24;
+  uint32 positionsSubscriptions = 25;
+  uint32 accountSubscriptions = 26;
+  uint32 marketDataSubscriptions = 27;
   string appVersionHash = 28;
   string appVersion = 29;
   string chainVersion = 30;
@@ -330,7 +330,7 @@ enum AccountType {
 message Account {
   string id = 1;
   string owner = 2;
-  int64 balance = 3;
+  uint64 balance = 3;
   string asset = 4;
   string marketID = 5;
   AccountType type = 6;
@@ -372,7 +372,7 @@ message TransferRequest {
 message LedgerEntry {
   string fromAccount = 1;
   string toAccount = 2;
-  int64 amount = 3;
+  uint64 amount = 3;
   string reference = 4;
   string type = 5;
   int64 timestamp = 6;
@@ -380,7 +380,7 @@ message LedgerEntry {
 
 message TransferBalance {
   Account account = 1;
-  int64 balance = 2;
+  uint64 balance = 2;
 }
 
 message TransferResponse {
@@ -389,10 +389,10 @@ message TransferResponse {
 }
 
 message MarginLevels {
-  int64 maintenanceMargin = 1;
-  int64 searchLevel = 2;
-  int64 initialMargin = 3;
-  int64 collateralReleaseLevel = 4;
+  uint64 maintenanceMargin = 1;
+  uint64 searchLevel = 2;
+  uint64 initialMargin = 3;
+  uint64 collateralReleaseLevel = 4;
   string partyID = 5;
   string marketID = 6;
   string asset = 7;
