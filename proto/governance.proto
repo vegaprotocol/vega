@@ -25,7 +25,6 @@ message Vote {
 
     string voter = 1 [(validator.field) = {string_not_empty : true}];
     Value  value = 2 [(validator.field) = {is_in_enum : true}];
-    uint64 stake = 3 [(validator.field) = {int_gt: 0}];
 }
 
 
