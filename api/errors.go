@@ -101,7 +101,7 @@ var (
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 	// Governance...
 	// ErrPrepareProposal is returned when preparation of a governance proposal fails for some reason.
-	ErrPrepareProposal = errors.New("prepare proposal failure")
+	ErrPrepareProposal = errors.New("failed to prepare a proposal")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
