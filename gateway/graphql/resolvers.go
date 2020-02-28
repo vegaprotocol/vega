@@ -2002,3 +2002,23 @@ func (r *myStatisticsResolver) TotalTrades(ctx context.Context, obj *types.Stati
 func (r *myStatisticsResolver) BlockDuration(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.BlockDuration), nil
 }
+
+func (r *myStatisticsResolver) CandleSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.CandleSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.MarketDepthSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.OrderSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) PositionsSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.PositionsSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.TradeSubscriptions), nil
+}
