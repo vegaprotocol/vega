@@ -99,7 +99,7 @@ func (s *Svc) PrepareProposal(
 		Reference: reference,
 		PartyID:   party,
 		State:     types.Proposal_OPEN,
-		Timestamp: 0,
+		Timestamp: 0, // to be filled after submission
 		Terms:     terms,
 		Votes:     nil,
 	}, nil
