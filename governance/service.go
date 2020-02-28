@@ -16,10 +16,6 @@ import (
 var (
 	// ErrInvalidProposalTermsFmt is returned if basic validation has failed
 	ErrInvalidProposalTermsFmt = errors.New("invalid proposal terms format")
-	// ErrPartyCannotPropose is returned when proposing party does not have sufficient stake
-	ErrPartyCannotPropose = errors.New("party cannot submit new proposals")
-	// ErrGovernanceDisabled is returned if governance API was used when disabled
-	ErrGovernanceDisabled = errors.New("governance API has been disabled")
 )
 
 const (
@@ -93,9 +89,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 func (s *Svc) PrepareProposal(
 	ctx context.Context, party string, reference string, terms *types.Proposal_Terms,
 ) (*types.Proposal, error) {
-	if !s.Config.Enabled {
-		return nil, ErrGovernanceDisabled
-	}
 	if err := s.validateTerms(terms); err != nil {
 		return nil, err
 	}
