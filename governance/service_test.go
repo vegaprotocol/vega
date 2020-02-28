@@ -113,19 +113,3 @@ func TestPrepareProposal(t *testing.T) {
 	t.Run("Prepare a normal proposal", testPrepareProposalNormal)
 	t.Run("Prepare an empty proposal", testPrepareProposalEmpty)
 }
-
-func TestValidateTerms(t *testing.T) {
-	svc := newTestService(t)
-
-	updateNetwork := types.Proposal_Terms_UpdateNetwork{
-		Changes: &types.NetworkConfiguration{},
-	}
-
-	err := svc.ValidateTerms(&types.Proposal_Terms{
-		Parameters: &types.Proposal_Terms_Parameters{},
-		Change: &types.Proposal_Terms_UpdateNetwork_{
-			UpdateNetwork: &updateNetwork,
-		},
-	})
-	assert.Error(t, err)
-}

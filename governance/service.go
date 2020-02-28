@@ -96,7 +96,7 @@ func (s *Svc) PrepareProposal(
 	if !s.Config.Enabled {
 		return nil, ErrGovernanceDisabled
 	}
-	if err := s.ValidateTerms(terms); err != nil {
+	if err := s.validateTerms(terms); err != nil {
 		return nil, err
 	}
 	if len(reference) <= 0 {
@@ -113,27 +113,27 @@ func (s *Svc) PrepareProposal(
 	}, nil
 }
 
-// ValidateTerms performs sanity checks:
+// validateTerms performs sanity checks:
 // - network time restrictions parameters (voting duration, enactment date time);
 // - network minimum participation requirement parameter.
-func (s *Svc) ValidateTerms(terms *types.Proposal_Terms) error {
+func (s *Svc) validateTerms(terms *types.Proposal_Terms) error {
 	if err := terms.Validate(); err != nil {
 		return errors.Wrap(err, "proposal validation failed")
 	}
 
-	if terms.Parameters.MinParticipationStake < s.MinParticipationStake {
+	if terms.Parameters.MinParticipationStake < s.parameters.minParticipationStake {
 		return fmt.Errorf("minimum participation stake parameter must be at least %d",
-			s.MinParticipationStake)
+			s.parameters.minParticipationStake)
 	}
-	if terms.Parameters.CloseInDays < s.MinCloseInDays ||
-		terms.Parameters.CloseInDays > s.MaxCloseInDays {
+	if terms.Parameters.CloseInDays < s.parameters.minCloseInDays ||
+		terms.Parameters.CloseInDays > s.parameters.maxCloseInDays {
 		return fmt.Errorf("close day must be between %d and %d",
-			s.MinCloseInDays, s.MaxCloseInDays)
+			s.parameters.minCloseInDays, s.parameters.maxCloseInDays)
 	}
-	if terms.Parameters.EnactInDays < s.MinEnactInDays ||
-		terms.Parameters.EnactInDays > s.MaxEnactInDays {
+	if terms.Parameters.EnactInDays < s.parameters.minEnactInDays ||
+		terms.Parameters.EnactInDays > s.parameters.maxEnactInDays {
 		return fmt.Errorf("enactment day must be between %d and %d",
-			s.MinEnactInDays, s.MaxEnactInDays)
+			s.parameters.minEnactInDays, s.parameters.maxEnactInDays)
 	}
 
 	return nil
