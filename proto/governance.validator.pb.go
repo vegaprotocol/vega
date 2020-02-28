@@ -27,9 +27,6 @@ func (this *Vote) Validate() error {
 	if _, ok := Vote_Value_name[int32(this.Value)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Vote_Value field`, this.Value))
 	}
-	if !(this.Stake > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Stake", fmt.Errorf(`value '%v' must be greater than '0'`, this.Stake))
-	}
 	return nil
 }
 func (this *Proposal) Validate() error {

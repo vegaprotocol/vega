@@ -2573,10 +2573,6 @@
         },
         "value": {
           "$ref": "#/definitions/VoteValue"
-        },
-        "stake": {
-          "type": "string",
-          "format": "uint64"
         }
       }
     },

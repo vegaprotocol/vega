@@ -1385,7 +1385,6 @@ Market market = 1 [(validator.field) = {msg_exists: true}];
 | ----- | ---- | ----- | ----------- |
 | voter | [string](#string) |  |  |
 | value | [Vote.Value](#vega.Vote.Value) |  |  |
-| stake | [uint64](#uint64) |  |  |
 
 
 
