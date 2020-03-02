@@ -300,10 +300,9 @@ func TestPrepareProposal(t *testing.T) {
 
 	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
 		PartyID: "invalid-party",
-		Proposal: &types.Proposal_Terms{
-			Parameters: &types.Proposal_Terms_Parameters{},
-			Change: &types.Proposal_Terms_UpdateNetwork_{
-				UpdateNetwork: &types.Proposal_Terms_UpdateNetwork{
+		Proposal: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateNetwork{
+				UpdateNetwork: &types.UpdateNetwork{
 					Changes: &types.NetworkConfiguration{},
 				},
 			},
