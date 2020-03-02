@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/collateral/mocks"
+	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -78,7 +79,7 @@ func testAddMarginAccount(t *testing.T) {
 	// test balance is 0 when created
 	acc, err := eng.Engine.GetAccountByID(margin)
 	assert.Nil(t, err)
-	assert.Equal(t, int64(0), acc.Balance)
+	assert.Equal(t, uint64(0), acc.Balance)
 }
 
 func testAddMarginAccountFail(t *testing.T) {
@@ -108,12 +109,12 @@ func testAddTrader(t *testing.T) {
 	err = eng.Engine.UpdateBalance(general, 100000)
 	assert.Nil(t, err)
 
-	expectedGeneralBalance := int64(100000)
+	expectedGeneralBalance := uint64(100000)
 
 	// check the amount on each account now
 	acc, err := eng.Engine.GetAccountByID(margin)
 	assert.Nil(t, err)
-	assert.Equal(t, int64(0), acc.Balance)
+	assert.Equal(t, uint64(0), acc.Balance)
 
 	acc, err = eng.Engine.GetAccountByID(general)
 	assert.Nil(t, err)
@@ -124,7 +125,7 @@ func testAddTrader(t *testing.T) {
 func testTransferLoss(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, price*5)
 	defer eng.Finish()
@@ -147,7 +148,7 @@ func testTransferLoss(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -156,7 +157,7 @@ func testTransferLoss(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -177,7 +178,7 @@ func testTransferLoss(t *testing.T) {
 
 func testTransferComplexLoss(t *testing.T) {
 	trader := "test-trader"
-	half := int64(500)
+	half := uint64(500)
 	price := half * 2
 
 	eng := getTestEngine(t, testMarketID, price*5)
@@ -198,7 +199,7 @@ func testTransferComplexLoss(t *testing.T) {
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Asset:  "BTC",
-				Amount: -price,
+				Amount: int64(-price),
 			},
 			Type: types.TransferType_LOSS,
 		},
@@ -242,7 +243,7 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 func testDistributeWin(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, price)
 	defer eng.Finish()
@@ -270,7 +271,7 @@ func testDistributeWin(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_WIN,
@@ -279,7 +280,7 @@ func testDistributeWin(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_WIN,
@@ -323,7 +324,7 @@ func testDistributeWin(t *testing.T) {
 func testProcessBoth(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, price*3)
 	defer eng.Finish()
@@ -347,7 +348,7 @@ func testProcessBoth(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -356,7 +357,7 @@ func testProcessBoth(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -365,7 +366,7 @@ func testProcessBoth(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_WIN,
@@ -374,7 +375,7 @@ func testProcessBoth(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_WIN,
@@ -408,7 +409,7 @@ func testProcessBoth(t *testing.T) {
 func testProcessBothProRated(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, price/2)
 	defer eng.Finish()
@@ -431,7 +432,7 @@ func testProcessBothProRated(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -440,7 +441,7 @@ func testProcessBothProRated(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_LOSS,
@@ -449,7 +450,7 @@ func testProcessBothProRated(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_WIN,
@@ -458,7 +459,7 @@ func testProcessBothProRated(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_WIN,
@@ -485,7 +486,7 @@ func testProcessBothProRated(t *testing.T) {
 func testProcessBothProRatedMTM(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, price/2)
 	defer eng.Finish()
@@ -509,7 +510,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_MTM_LOSS,
@@ -518,7 +519,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_MTM_LOSS,
@@ -527,7 +528,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_MTM_WIN,
@@ -536,7 +537,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_MTM_WIN,
@@ -566,7 +567,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 func testRemoveDistressedBalance(t *testing.T) {
 	trader := "test-trader"
 
-	insBalance := int64(1000)
+	insBalance := uint64(1000)
 	eng := getTestEngine(t, testMarketID, insBalance)
 	defer eng.Finish()
 
@@ -609,7 +610,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 func testRemoveDistressedNoBalance(t *testing.T) {
 	trader := "test-trader"
 
-	insBalance := int64(1000)
+	insBalance := uint64(1000)
 	eng := getTestEngine(t, testMarketID, insBalance)
 	defer eng.Finish()
 
@@ -641,7 +642,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 func testMTMSuccess(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, price/2)
 	defer eng.Finish()
@@ -669,7 +670,7 @@ func testMTMSuccess(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_LOSS,
@@ -678,7 +679,7 @@ func testMTMSuccess(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: -price,
+				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_LOSS,
@@ -687,7 +688,7 @@ func testMTMSuccess(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_WIN,
@@ -696,7 +697,7 @@ func testMTMSuccess(t *testing.T) {
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: price,
+				Amount: int64(price),
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_WIN,
@@ -716,6 +717,272 @@ func testMTMSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
+}
+
+func TestInvalidMarketID(t *testing.T) {
+	trader := "test-trader"
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	// create trader accounts
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	_ = eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	pos := []*types.Transfer{
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-price),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+	}
+	transfers := eng.getTestMTMTransfer(pos)
+
+	invalidMarketID := testMarketID + "invalid"
+	evts, raw, err := eng.MarkToMarket(invalidMarketID, transfers, "BTC")
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(raw))
+	assert.Empty(t, evts)
+}
+
+func TestEmptyTransfer(t *testing.T) {
+	trader := "test-trader"
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	// create trader accounts
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	_ = eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	pos := []*types.Transfer{
+		{
+			Owner: trader,
+			Size:  0,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-price),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+	}
+	transfers := eng.getTestMTMTransfer(pos)
+
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(raw))
+	assert.Empty(t, evts)
+}
+
+func TestNoMarginAccount(t *testing.T) {
+	trader := "test-trader"
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	// create trader accounts
+	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
+	_ = eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+
+	pos := []*types.Transfer{
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-price),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+	}
+	transfers := eng.getTestMTMTransfer(pos)
+
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(raw))
+	assert.Empty(t, evts)
+}
+
+func TestNoGeneralAccount(t *testing.T) {
+	trader := "test-trader"
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	pos := []*types.Transfer{
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-price),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+	}
+	transfers := eng.getTestMTMTransfer(pos)
+
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(raw))
+	assert.Empty(t, evts)
+}
+
+func TestMTMNoTransfers(t *testing.T) {
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	pos := []*types.Transfer{}
+	transfers := eng.getTestMTMTransfer(pos)
+
+	// Empty list of transfers
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers, "BTC")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(raw))
+	assert.Empty(t, evts)
+
+	// List with a single nil value
+	mt := mtmFake{
+		t:     nil,
+		party: "test-trader",
+	}
+	transfers = append(transfers, mt)
+	evts, raw, err = eng.MarkToMarket(testMarketID, transfers, "BTC")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(raw))
+	assert.Equal(t, len(evts), 1)
+}
+
+func TestFinalSettlementNoTransfers(t *testing.T) {
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	pos := []*types.Transfer{}
+
+	responses, err := eng.FinalSettlement(testMarketID, pos)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(responses))
+}
+
+func TestFinalSettlementNoSystemAccounts(t *testing.T) {
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	pos := []*types.Transfer{
+		{
+			Owner: "testTrader",
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-price),
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_LOSS,
+		},
+	}
+
+	responses, err := eng.FinalSettlement("invalidMarketID", pos)
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(responses))
+}
+
+func TestFinalSettlementNotEnoughMargin(t *testing.T) {
+	amount := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, amount/2)
+	defer eng.Finish()
+
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	_ = eng.Engine.CreatePartyGeneralAccount("testTrader", testMarketAsset)
+	_, err := eng.Engine.CreatePartyMarginAccount("testTrader", testMarketID, testMarketAsset)
+
+	pos := []*types.Transfer{
+		{
+			Owner: "testTrader",
+			Size:  100,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-amount),
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_LOSS,
+		},
+	}
+
+	responses, err := eng.FinalSettlement(testMarketID, pos)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(responses))
+}
+
+func TestGetPartyMarginNoAccounts(t *testing.T) {
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	marketPos := mtmFake{
+		party: "test-trader",
+	}
+
+	margin, err := eng.GetPartyMargin(marketPos, "BTC", testMarketID)
+	assert.Nil(t, margin)
+	assert.Error(t, err)
+}
+
+func TestGetPartyMarginNoMarginAccounts(t *testing.T) {
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
+	_ = eng.Engine.CreatePartyGeneralAccount("test-trader", testMarketAsset)
+
+	marketPos := mtmFake{
+		party: "test-trader",
+	}
+
+	margin, err := eng.GetPartyMargin(marketPos, "BTC", testMarketID)
+	assert.Nil(t, margin)
+	assert.Error(t, err)
+}
+
+func TestGetPartyMarginEmpty(t *testing.T) {
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
+	_ = eng.Engine.CreatePartyGeneralAccount("test-trader", testMarketAsset)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
+	_, err := eng.Engine.CreatePartyMarginAccount("test-trader", testMarketID, testMarketAsset)
+
+	marketPos := mtmFake{
+		party: "test-trader",
+	}
+
+	margin, err := eng.GetPartyMargin(marketPos, "BTC", testMarketID)
+	assert.NotNil(t, margin)
+	assert.Equal(t, margin.MarginBalance(), uint64(0))
+	assert.Equal(t, margin.GeneralBalance(), uint64(0))
+	assert.NoError(t, err)
 }
 
 func TestMTMLossSocialization(t *testing.T) {
@@ -786,10 +1053,10 @@ func TestMTMLossSocialization(t *testing.T) {
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		if acc.Owner == winTrader1 && acc.Type == types.AccountType_MARGIN {
-			assert.Equal(t, acc.Balance, int64(1066))
+			assert.Equal(t, acc.Balance, uint64(1066))
 		}
 		if acc.Owner == winTrader2 && acc.Type == types.AccountType_MARGIN {
-			assert.Equal(t, acc.Balance, int64(534))
+			assert.Equal(t, acc.Balance, uint64(534))
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
@@ -828,7 +1095,7 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 
 	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
 		if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
-			assert.Equal(t, acc.Balance, int64(100))
+			assert.Equal(t, acc.Balance, uint64(100))
 		}
 	})
 	resp, closed, err := eng.Engine.MarginUpdateOnOrder(testMarketID, evt)
@@ -870,24 +1137,212 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+func TestMarginUpdates(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	list := make([]events.Risk, 1)
+
+	list[0] = riskFake{
+		asset:  testMarketAsset,
+		amount: 100,
+		transfer: &types.Transfer{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				MinAmount: 100,
+				Amount:    100,
+				Asset:     testMarketAsset,
+			},
+			Type: types.TransferType_MARGIN_LOW,
+		},
+	}
+
+	resp, margin, err := eng.Engine.MarginUpdate(testMarketID, list)
+	assert.Nil(t, err)
+	assert.Equal(t, len(margin), 0)
+	assert.Equal(t, len(resp), 1)
+	assert.Equal(t, resp[0].Transfers[0].Amount, uint64(100))
+}
+
+func TestClearMarket(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	parties := []string{trader}
+
+	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
+
+	assert.Nil(t, err)
+	assert.Equal(t, len(responses), 1)
+}
+
+func TestClearMarketNoMargin(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+
+	parties := []string{trader}
+
+	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(responses), 0)
+}
+
+func TestWithdrawalOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw(trader, testMarketAsset, 100)
+	assert.Nil(t, err)
+}
+
+func TestWithdrawalExact(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw(trader, testMarketAsset, 500)
+	assert.Nil(t, err)
+}
+
+func TestWithdrawalNotEnough(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw(trader, testMarketAsset, 600)
+	assert.Error(t, err)
+}
+
+func TestWithdrawalInvalidAccount(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	eng.Engine.IncrementBalance(acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.Withdraw("invalid", testMarketAsset, 600)
+	assert.Error(t, err)
+}
+
+func TestChangeBalance(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	acc := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+
+	eng.Engine.IncrementBalance(acc, 500)
+	account, err := eng.Engine.GetAccountByID(acc)
+	assert.NoError(t, err)
+	assert.Equal(t, account.Balance, uint64(500))
+
+	eng.Engine.IncrementBalance(acc, 250)
+	account, err = eng.Engine.GetAccountByID(acc)
+	assert.Equal(t, account.Balance, uint64(750))
+
+	eng.Engine.UpdateBalance(acc, 666)
+	account, err = eng.Engine.GetAccountByID(acc)
+	assert.Equal(t, account.Balance, uint64(666))
+
+	err = eng.Engine.IncrementBalance("invalid", 200)
+	assert.Error(t, err, collateral.ErrAccountDoesNotExist)
+
+	err = eng.Engine.UpdateBalance("invalid", 300)
+	assert.Error(t, err, collateral.ErrAccountDoesNotExist)
+}
+
+func TestReloadConfig(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+
+	// Check that the log level is currently `debug`
+	assert.Equal(t, eng.Engine.Level.Level, logging.DebugLevel)
+
+	// Create a new config and make some changes to it
+	newConfig := collateral.NewDefaultConfig()
+	newConfig.Level = encoding.LogLevel{
+		Level: logging.InfoLevel,
+	}
+	eng.Engine.ReloadConf(newConfig)
+
+	// Verify that the log level has been changed
+	assert.Equal(t, eng.Engine.Level.Level, logging.InfoLevel)
+}
+
 func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	tt := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
 
-		mt := mtmFake{
-			t:     t,
-			party: t.Owner,
+		// Apply some limited validation here so we can filter out bad transfers
+		if t.GetSize() != 0 {
+			mt := mtmFake{
+				t:     t,
+				party: t.Owner,
+			}
+			tt = append(tt, mt)
 		}
-		tt = append(tt, mt)
 	}
 	return tt
 }
 
-func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEngine {
+func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEngine {
 	ctrl := gomock.NewController(t)
 	buf := mocks.NewMockAccountBuffer(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	conf := collateral.NewDefaultConfig()
+	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	buf.EXPECT().Add(gomock.Any()).Times(2)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
@@ -910,9 +1365,9 @@ func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEng
 	}
 }
 
-func (te *testEngine) Finish() {
-	te.systemAccs = nil
-	te.ctrl.Finish()
+func (e *testEngine) Finish() {
+	e.systemAccs = nil
+	e.ctrl.Finish()
 }
 
 type marketPositionFake struct {

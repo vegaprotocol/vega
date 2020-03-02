@@ -158,6 +158,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	assert.Nil(t, vMarkets)
 
 	name = "barney"
+	root.tradingDataClient.EXPECT().PartyByID(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.PartyByIDResponse{Party: &types.Party{Id: name}}, nil)
 	vParties, err := root.Query().Parties(ctx, &name)
 	assert.Nil(t, err)
 	assert.NotNil(t, vParties)

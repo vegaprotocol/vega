@@ -11,7 +11,7 @@ import (
 
 func TestOrderBookInvalid_emptyMarketID(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    "",
@@ -30,7 +30,7 @@ func TestOrderBookInvalid_emptyMarketID(t *testing.T) {
 
 func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -49,7 +49,7 @@ func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 
 func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -68,7 +68,7 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 
 func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -87,7 +87,7 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 
 func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -106,7 +106,7 @@ func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {
 
 func TestOrderBookInvalid_GTCMarket(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -125,7 +125,7 @@ func TestOrderBookInvalid_GTCMarket(t *testing.T) {
 
 func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -144,7 +144,7 @@ func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
 
 func TestOrderBookInvalid_GTTMarket(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -164,7 +164,7 @@ func TestOrderBookInvalid_GTTMarket(t *testing.T) {
 
 func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,
@@ -184,7 +184,7 @@ func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
 
 func TestOrderBookInvalid_IOCNetwork(t *testing.T) {
 	market := "testMarket"
-	book := getTestOrderBook(t, market, true)
+	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
 		MarketID:    market,

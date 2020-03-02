@@ -29,8 +29,6 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
-    - [NotifyTraderAccountRequest](#api.NotifyTraderAccountRequest)
-    - [NotifyTraderAccountResponse](#api.NotifyTraderAccountResponse)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
@@ -50,9 +48,14 @@
     - [PositionsByPartyRequest](#api.PositionsByPartyRequest)
     - [PositionsByPartyResponse](#api.PositionsByPartyResponse)
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
+    - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
+    - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
+    - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
+    - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
     - [TradesByMarketRequest](#api.TradesByMarketRequest)
     - [TradesByMarketResponse](#api.TradesByMarketResponse)
     - [TradesByOrderRequest](#api.TradesByOrderRequest)
@@ -97,12 +100,12 @@
     - [Account](#vega.Account)
     - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
+    - [ErrorDetail](#vega.ErrorDetail)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
-    - [NotifyTraderAccount](#vega.NotifyTraderAccount)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
     - [OrderCancellation](#vega.OrderCancellation)
@@ -118,6 +121,7 @@
     - [RiskResult](#vega.RiskResult)
     - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
     - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
+    - [SignedBundle](#vega.SignedBundle)
     - [Statistics](#vega.Statistics)
     - [Trade](#vega.Trade)
     - [TradeSet](#vega.TradeSet)
@@ -135,6 +139,7 @@
     - [Order.Type](#vega.Order.Type)
     - [OrderError](#vega.OrderError)
     - [Side](#vega.Side)
+    - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
 
 
@@ -542,36 +547,6 @@
 
 
 
-<a name="api.NotifyTraderAccountRequest"></a>
-
-### NotifyTraderAccountRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| notif | [vega.NotifyTraderAccount](#vega.NotifyTraderAccount) |  |  |
-
-
-
-
-
-
-<a name="api.NotifyTraderAccountResponse"></a>
-
-### NotifyTraderAccountResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| submitted | [bool](#bool) |  |  |
-
-
-
-
-
-
 <a name="api.OrderByMarketAndIdRequest"></a>
 
 ### OrderByMarketAndIdRequest
@@ -869,6 +844,54 @@
 
 
 
+<a name="api.PrepareAmendOrderResponse"></a>
+
+### PrepareAmendOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareCancelOrderResponse"></a>
+
+### PrepareCancelOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareSubmitOrderResponse"></a>
+
+### PrepareSubmitOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+
+
+
+
+
+
 <a name="api.SignInRequest"></a>
 
 ### SignInRequest
@@ -910,6 +933,36 @@
 | ----- | ---- | ----- | ----------- |
 | submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
 | token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
+
+
+
+
+
+
+<a name="api.SubmitTransactionRequest"></a>
+
+### SubmitTransactionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [vega.SignedBundle](#vega.SignedBundle) |  |  |
+
+
+
+
+
+
+<a name="api.SubmitTransactionResponse"></a>
+
+### SubmitTransactionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| success | [bool](#bool) |  |  |
 
 
 
@@ -1098,13 +1151,16 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
+| PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
+| PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
 | SubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Submit an Order |
 | CancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Cancel an Order |
 | AmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Amend an Order |
 | SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
-| NotifyTraderAccount | [NotifyTraderAccountRequest](#api.NotifyTraderAccountRequest) | [NotifyTraderAccountResponse](#api.NotifyTraderAccountResponse) | Request balance increase |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
+| SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 
 
 <a name="api.trading_data"></a>
@@ -1453,7 +1509,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | owner | [string](#string) |  |  |
-| balance | [int64](#int64) |  |  |
+| balance | [uint64](#uint64) |  |  |
 | asset | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | type | [AccountType](#vega.AccountType) |  |  |
@@ -1500,6 +1556,23 @@
 
 
 
+<a name="vega.ErrorDetail"></a>
+
+### ErrorDetail
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| code | [int32](#int32) |  | a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 |
+| message | [string](#string) |  | a message that describes the error in more detail, should describe the problem encountered. |
+| inner | [string](#string) |  | any inner error information that could add more context, or be helpful for error reporting. |
+
+
+
+
+
+
 <a name="vega.FinancialAmount"></a>
 
 ### FinancialAmount
@@ -1527,7 +1600,7 @@
 | ----- | ---- | ----- | ----------- |
 | fromAccount | [string](#string) |  |  |
 | toAccount | [string](#string) |  |  |
-| amount | [int64](#int64) |  |  |
+| amount | [uint64](#uint64) |  |  |
 | reference | [string](#string) |  |  |
 | type | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  |  |
@@ -1545,10 +1618,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maintenanceMargin | [int64](#int64) |  |  |
-| searchLevel | [int64](#int64) |  |  |
-| initialMargin | [int64](#int64) |  |  |
-| collateralReleaseLevel | [int64](#int64) |  |  |
+| maintenanceMargin | [uint64](#uint64) |  |  |
+| searchLevel | [uint64](#uint64) |  |  |
+| initialMargin | [uint64](#uint64) |  |  |
+| collateralReleaseLevel | [uint64](#uint64) |  |  |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | asset | [string](#string) |  |  |
@@ -1592,22 +1665,6 @@
 | marketID | [string](#string) |  |  |
 | buy | [PriceLevel](#vega.PriceLevel) | repeated |  |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated |  |
-
-
-
-
-
-
-<a name="vega.NotifyTraderAccount"></a>
-
-### NotifyTraderAccount
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| traderID | [string](#string) |  |  |
-| amount | [uint64](#uint64) |  |  |
 
 
 
@@ -1726,9 +1783,10 @@
 | price | [uint64](#uint64) |  | mandatory for Limit orders, not required for Market orders |
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  |  |
-| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
+| reference | [string](#string) |  |  |
 
 
 
@@ -1744,7 +1802,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
-| positions | [Position](#vega.Position) | repeated |  |
 
 
 
@@ -1761,7 +1818,7 @@
 | ----- | ---- | ----- | ----------- |
 | reference | [string](#string) |  |  |
 | price | [uint64](#uint64) |  |  |
-| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | side | [Side](#vega.Side) |  |  |
 | marketID | [string](#string) |  |  |
 | size | [uint64](#uint64) |  |  |
@@ -1896,6 +1953,24 @@
 
 
 
+<a name="vega.SignedBundle"></a>
+
+### SignedBundle
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  |  |
+| address | [bytes](#bytes) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="vega.Statistics"></a>
 
 ### Statistics
@@ -1924,13 +1999,13 @@
 | totalCreateOrder | [uint64](#uint64) |  |  |
 | totalOrders | [uint64](#uint64) |  |  |
 | totalTrades | [uint64](#uint64) |  |  |
-| orderSubscriptions | [int32](#int32) |  |  |
-| tradeSubscriptions | [int32](#int32) |  |  |
-| candleSubscriptions | [int32](#int32) |  |  |
-| marketDepthSubscriptions | [int32](#int32) |  |  |
-| positionsSubscriptions | [int32](#int32) |  |  |
-| accountSubscriptions | [int32](#int32) |  |  |
-| marketDataSubscriptions | [int32](#int32) |  |  |
+| orderSubscriptions | [uint32](#uint32) |  |  |
+| tradeSubscriptions | [uint32](#uint32) |  |  |
+| candleSubscriptions | [uint32](#uint32) |  |  |
+| marketDepthSubscriptions | [uint32](#uint32) |  |  |
+| positionsSubscriptions | [uint32](#uint32) |  |  |
+| accountSubscriptions | [uint32](#uint32) |  |  |
+| marketDataSubscriptions | [uint32](#uint32) |  |  |
 | appVersionHash | [string](#string) |  |  |
 | appVersion | [string](#string) |  |  |
 | chainVersion | [string](#string) |  |  |
@@ -1960,6 +2035,7 @@
 | buyOrder | [string](#string) |  |  |
 | sellOrder | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| type | [Trade.Type](#vega.Trade.Type) |  |  |
 
 
 
@@ -2008,7 +2084,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | account | [Account](#vega.Account) |  |  |
-| balance | [int64](#int64) |  |  |
+| balance | [uint64](#uint64) |  |  |
 
 
 
@@ -2127,6 +2203,7 @@
 | Stopped | 3 |  |
 | Filled | 4 |  |
 | Rejected | 5 |  |
+| PartiallyFilled | 6 |  |
 
 
 
@@ -2195,6 +2272,19 @@ Order Type
 | ---- | ------ | ----------- |
 | Buy | 0 |  |
 | Sell | 1 |  |
+
+
+
+<a name="vega.Trade.Type"></a>
+
+### Trade.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEFAULT | 0 |  |
+| NETWORK_CLOSE_OUT_GOOD | 1 |  |
+| NETWORK_CLOSE_OUT_BAD | 2 |  |
 
 
 

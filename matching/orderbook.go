@@ -16,6 +16,7 @@ var (
 	// in the book to achieve a given operation
 	ErrNotEnoughOrders   = errors.New("insufficient orders")
 	ErrOrderDoesNotExist = errors.New("order does not exist")
+	ErrInvalidVolume     = errors.New("invalid volume")
 )
 
 // OrderBook represents the book holding all orders in the system.
@@ -44,7 +45,7 @@ func isPersistent(o *types.Order) bool {
 // book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
 // updated and the new markPrice will be used there.
 func NewOrderBook(log *logging.Logger, config Config, marketID string,
-	initialMarkPrice uint64, proRataMode bool) *OrderBook {
+	initialMarkPrice uint64) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -53,8 +54,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		log:             log,
 		marketID:        marketID,
 		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, proRataMode: proRataMode},
-		sell:            &OrderBookSide{log: log, proRataMode: proRataMode},
+		buy:             &OrderBookSide{log: log},
+		sell:            &OrderBookSide{log: log},
 		Config:          config,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
@@ -86,6 +87,10 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price uint64
 		err   error
 	)
+
+	if volume == 0 {
+		return 0, ErrInvalidVolume
+	}
 	vol := volume
 	if side == types.Side_Sell {
 		levels := b.sell.getLevels()
@@ -110,29 +115,29 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 			}
 		}
 		return price / (volume - vol), err
-	}
-	levels := b.buy.getLevels()
-	for i := len(levels) - 1; i >= 0; i-- {
-		lvl := levels[i]
-		if lvl.volume >= vol {
-			price += lvl.price * vol
-			return price / volume, err
+	} else {
+		levels := b.buy.getLevels()
+		for i := len(levels) - 1; i >= 0; i-- {
+			lvl := levels[i]
+			if lvl.volume >= vol {
+				price += lvl.price * vol
+				return price / volume, err
+			}
+			price += lvl.price * lvl.volume
+			vol -= lvl.volume
 		}
-		price += lvl.price * lvl.volume
-		vol -= lvl.volume
-	}
-	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
-	if vol != 0 {
-		err = ErrNotEnoughOrders
-		// TODO(jeremy): there's no orders in the book so return the markPrice
-		// this is a temporary fix for nice-net and this behaviour will need
-		// to be properly specified and handled in the future.
-		if vol == volume {
-			return b.lastTradedPrice, err
+		// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+		if vol != 0 {
+			err = ErrNotEnoughOrders
+			// TODO(jeremy): there's no orders in the book so return the markPrice
+			// this is a temporary fix for nice-net and this behaviour will need
+			// to be properly specified and handled in the future.
+			if vol == volume {
+				return b.lastTradedPrice, err
+			}
 		}
-
+		return price / (volume - vol), err
 	}
-	return price / (volume - vol), err
 }
 
 // MarketOrderPrice return the price that would be applied for a market
@@ -195,7 +200,15 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	order.Status = types.Order_Cancelled
+	if order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT {
+		if order.Remaining != order.Size {
+			order.Status = types.Order_PartiallyFilled
+		} else {
+			order.Status = types.Order_Cancelled
+		}
+	} else {
+		order.Status = types.Order_Cancelled
+	}
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -289,8 +302,13 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
 	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
-		// IOC so we set status as Cancelled.
-		order.Status = types.Order_Cancelled
+		// Stopped as not filled at all
+		if order.Remaining == order.Size {
+			order.Status = types.Order_Stopped
+		} else {
+			// IOC so we set status as Cancelled.
+			order.Status = types.Order_PartiallyFilled
+		}
 	}
 
 	// What is Fill Or Kill?
@@ -351,11 +369,17 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	if len(expiredOrders) <= 0 {
 		return nil
 	}
+	out := make([]types.Order, 0, len(expiredOrders))
 
 	// delete the orders now
 	for at := range expiredOrders {
-		b.DeleteOrder(&expiredOrders[at])
-		expiredOrders[at].Status = types.Order_Expired
+		order, _ := b.DeleteOrder(&expiredOrders[at])
+		if order.Remaining == order.Size {
+			order.Status = types.Order_Expired
+		} else {
+			order.Status = types.Order_PartiallyFilled
+		}
+		out = append(out, *order)
 	}
 
 	if b.LogRemovedOrdersDebug {
@@ -364,7 +388,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			logging.Int("expired-orders", len(expiredOrders)))
 	}
 
-	return expiredOrders
+	return out
 }
 
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
@@ -408,6 +432,8 @@ func (b *OrderBook) RemoveDistressedOrders(
 				// let's see whether we need to handle this further down
 				continue
 			}
+			// here we set the status of the order as stopped as the system triggered it as well.
+			confirm.Order.Status = types.Order_Stopped
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}

@@ -33,8 +33,7 @@ message Amount {
 }
 
 message Party {
-    string id = 1 [(validator.field) = {msg_exists : true}];
-    repeated Position positions = 2;
+  string id = 1 [(validator.field) = {msg_exists : true}];
 }
 
 message RiskFactor {
@@ -91,6 +90,7 @@ message Order {
     Stopped = 3;
     Filled = 4;
     Rejected = 5;
+    PartiallyFilled = 6;
   }
 
   string id = 1;
@@ -145,18 +145,26 @@ enum OrderError {
 }
 
 message Trade {
-    string id = 1;
-    string marketID = 2;
-    uint64 price = 3;
-    uint64 size = 4;
-    string buyer = 5;
-    string seller = 6;
-    Side aggressor = 7;
-    string buyOrder = 8;
-    string sellOrder = 9;
 
-    // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-    int64 timestamp = 10;
+  enum Type {
+    DEFAULT = 0;
+    NETWORK_CLOSE_OUT_GOOD = 1;
+    NETWORK_CLOSE_OUT_BAD = 2;
+  }
+
+  string id = 1;
+  string marketID = 2;
+  uint64 price = 3;
+  uint64 size = 4;
+  string buyer = 5;
+  string seller = 6;
+  Side aggressor = 7;
+  string buyOrder = 8;
+  string sellOrder = 9;
+
+  // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+  int64 timestamp = 10;
+  Type type = 11;
 }
 
 message TradeSet {
@@ -234,13 +242,13 @@ message Statistics {
   uint64 totalCreateOrder = 18;
   uint64 totalOrders = 19;
   uint64 totalTrades = 20;
-  int32 orderSubscriptions = 21;
-  int32 tradeSubscriptions = 22;
-  int32 candleSubscriptions = 23;
-  int32 marketDepthSubscriptions = 24;
-  int32 positionsSubscriptions = 25;
-  int32 accountSubscriptions = 26;
-  int32 marketDataSubscriptions = 27;
+  uint32 orderSubscriptions = 21;
+  uint32 tradeSubscriptions = 22;
+  uint32 candleSubscriptions = 23;
+  uint32 marketDepthSubscriptions = 24;
+  uint32 positionsSubscriptions = 25;
+  uint32 accountSubscriptions = 26;
+  uint32 marketDataSubscriptions = 27;
   string appVersionHash = 28;
   string appVersion = 29;
   string chainVersion = 30;
@@ -261,7 +269,7 @@ enum ChainStatus {
 message PendingOrder {
   string reference = 1;
   uint64 price = 2;
-  Order.TimeInForce TimeInForce = 3;
+  Order.TimeInForce timeInForce = 3;
   Side side = 4;
   string marketID = 5;
   uint64 size = 6;
@@ -299,9 +307,10 @@ message OrderSubmission {
   uint64 price = 4; // mandatory for Limit orders, not required for Market orders
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
   Side side = 6 [(validator.field) = {is_in_enum: true}];
-  Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
+  Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
   int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
+  string reference = 10;
 }
 
 message OrderCancellation {
@@ -321,7 +330,7 @@ enum AccountType {
 message Account {
   string id = 1;
   string owner = 2;
-  int64 balance = 3;
+  uint64 balance = 3;
   string asset = 4;
   string marketID = 5;
   AccountType type = 6;
@@ -363,7 +372,7 @@ message TransferRequest {
 message LedgerEntry {
   string fromAccount = 1;
   string toAccount = 2;
-  int64 amount = 3;
+  uint64 amount = 3;
   string reference = 4;
   string type = 5;
   int64 timestamp = 6;
@@ -371,7 +380,7 @@ message LedgerEntry {
 
 message TransferBalance {
   Account account = 1;
-  int64 balance = 2;
+  uint64 balance = 2;
 }
 
 message TransferResponse {
@@ -380,10 +389,10 @@ message TransferResponse {
 }
 
 message MarginLevels {
-  int64 maintenanceMargin = 1;
-  int64 searchLevel = 2;
-  int64 initialMargin = 3;
-  int64 collateralReleaseLevel = 4;
+  uint64 maintenanceMargin = 1;
+  uint64 searchLevel = 2;
+  uint64 initialMargin = 3;
+  uint64 collateralReleaseLevel = 4;
   string partyID = 5;
   string marketID = 6;
   string asset = 7;
@@ -399,4 +408,22 @@ message MarketData {
   uint64 midPrice = 6;
   string market = 7;
   int64 timestamp = 8;
+}
+
+message ErrorDetail {
+  // a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
+  int32 code = 1;
+  // a message that describes the error in more detail, should describe the problem encountered.
+  string message = 2;
+  // any inner error information that could add more context, or be helpful for error reporting.
+  string inner = 3;
+}
+
+message SignedBundle {
+  bytes data = 1;
+  bytes sig = 2;
+  oneof auth {
+    bytes address = 101;
+    bytes pubKey = 102;
+  }
 }

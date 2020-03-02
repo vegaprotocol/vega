@@ -6,45 +6,25 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/auth"
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"github.com/pkg/errors"
-	"golang.org/x/crypto/bcrypt"
-)
 
-var (
-	// ErrAuthDisabled signals to the caller that the authentication is disabled
-	ErrAuthDisabled = errors.New("auth disabled")
-	// ErrInvalidCredentials signals that the credentials specified by the client are invalid
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	// ErrInvalidMarketID signals that the market ID does not exists
-	ErrInvalidMarketID = errors.New("invalid market ID")
-	// ErrAuthRequired signals that authentication is required to reach this endpoint
-	ErrAuthRequired = errors.New("auth required")
-	// ErrMissingOrder signals that the actual payload is expected to contains an order
-	ErrMissingOrder = errors.New("missing order in request payload")
-	// ErrMissingTraderID signals that the payload is expected to contain a trader id
-	ErrMissingTraderID = errors.New("missing trader id")
-	// ErrMissingPartyID signals that the payload is expected to contain a party id
-	ErrMissingPartyID = errors.New("missing party id")
-	// ErrMissingToken signals that a token was required but is missing with this request
-	ErrMissingToken = errors.New("missing token")
-	// ErrMalformedRequest signals that the request was malformed
-	ErrMalformedRequest = errors.New("malformed request")
-	// ErrInvalidWithdrawAmount signals that the amount of money to withdraw is invalid
-	// usually the party specified an amount of 0
-	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
-	// ErrMissingAsset signals that an asset was required but not specified
-	ErrMissingAsset = errors.New("missing asset")
-	// ErrInvalidPartyID signals that the partyID does not exist
-	ErrInvalidPartyID = errors.New("invalid party id")
+	"github.com/golang/protobuf/proto"
+	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc/codes"
 )
 
 // TradeOrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeOrderService
 type TradeOrderService interface {
+	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
+	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
+	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
+	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
@@ -90,16 +70,16 @@ func (s *tradingService) CheckToken(
 	ctx context.Context, req *protoapi.CheckTokenRequest,
 ) (*protoapi.CheckTokenResponse, error) {
 	if req == nil {
-		return nil, ErrMalformedRequest
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
 	if !s.authEnabled {
-		return nil, ErrAuthDisabled
+		return nil, apiError(codes.InvalidArgument, ErrAuthDisabled)
 	}
 	if len(req.PartyID) <= 0 {
-		return nil, ErrMissingPartyID
+		return nil, apiError(codes.InvalidArgument, ErrMissingPartyID)
 	}
 	if len(req.Token) <= 0 {
-		return nil, ErrMissingToken
+		return nil, apiError(codes.InvalidArgument, ErrMissingToken)
 	}
 
 	err := s.validateToken(req.PartyID, req.Token)
@@ -107,7 +87,7 @@ func (s *tradingService) CheckToken(
 		if err == ErrInvalidCredentials {
 			return &protoapi.CheckTokenResponse{Ok: false}, nil
 		}
-		return nil, err
+		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.CheckTokenResponse{Ok: true}, nil
@@ -117,13 +97,13 @@ func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
 	if req == nil {
-		return nil, ErrMalformedRequest
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
 	if len(req.Id) <= 0 {
-		return nil, ErrInvalidCredentials
+		return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
 	}
 	if len(req.Password) <= 0 {
-		return nil, ErrInvalidCredentials
+		return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
 	}
 
 	var tkn string
@@ -133,7 +113,7 @@ func (s *tradingService) SignIn(
 	defer s.mu.Unlock()
 
 	if !s.authEnabled {
-		return nil, ErrAuthDisabled
+		return nil, apiError(codes.PermissionDenied, ErrAuthDisabled)
 	}
 	for _, v := range s.parties {
 		if v.ID == req.Id {
@@ -142,18 +122,82 @@ func (s *tradingService) SignIn(
 					logging.String("user-id", v.ID),
 					logging.Error(err),
 				)
-				return nil, ErrInvalidCredentials
+				return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
 			}
 			tkn = v.Token
 		}
 	}
 
 	if len(tkn) <= 0 {
-		return nil, ErrInvalidCredentials
+		return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
 	}
 
 	return &protoapi.SignInResponse{
 		Token: tkn,
+	}, nil
+}
+
+func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
+	pending, err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
+	}
+	raw, err := proto.Marshal(req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrSubmitOrder)
+	}
+	if raw, err = txEncode(raw, blockchain.SubmitOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrSubmitOrder)
+	}
+	return &protoapi.PrepareSubmitOrderResponse{
+		Blob:         raw,
+		PendingOrder: pending,
+	}, nil
+}
+
+func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
+	pending, err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder)
+	}
+	raw, err := proto.Marshal(req.Cancellation)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder)
+	}
+	if raw, err = txEncode(raw, blockchain.CancelOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder)
+	}
+	return &protoapi.PrepareCancelOrderResponse{
+		Blob:         raw,
+		PendingOrder: pending,
+	}, nil
+}
+
+func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
+	pending, err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder)
+	}
+	raw, err := proto.Marshal(req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder)
+	}
+	if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder)
+	}
+	return &protoapi.PrepareAmendOrderResponse{
+		Blob:         raw,
+		PendingOrder: pending,
+	}, nil
+}
+
+func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
+		s.log.Error("unable to submit transaction", logging.Error(err))
+		return nil, apiError(codes.Internal, err)
+	}
+	return &protoapi.SubmitTransactionResponse{
+		Success: true,
 	}, nil
 }
 
@@ -162,24 +206,22 @@ func (s *tradingService) SubmitOrder(
 	ctx context.Context, req *protoapi.SubmitOrderRequest,
 ) (*types.PendingOrder, error) {
 	if req == nil {
-		return nil, ErrMalformedRequest
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
 	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return nil, ErrChainNotConnected
+		return nil, apiError(codes.Internal, ErrChainNotConnected)
 	}
 	if req.Submission == nil {
-		return nil, ErrMissingOrder
+		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
 	}
 
 	// check auth if required
 	if s.authEnabled {
 		if len(req.Token) <= 0 {
-			s.log.Debug("missing token")
-			return nil, errors.New("missing auth token")
+			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
 		}
 		if err := s.validateToken(req.Submission.PartyID, req.Token); err != nil {
-			s.log.Debug("token error", logging.Error(err))
-			return nil, err
+			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
 		}
 	}
 
@@ -189,10 +231,14 @@ func (s *tradingService) SubmitOrder(
 		s.log.Error("Invalid Market ID during SubmitOrder",
 			logging.String("marketID", req.Submission.MarketID),
 		)
-		return nil, ErrInvalidMarketID
+		return nil, apiError(codes.Internal, ErrInvalidMarketID)
 	}
 
-	return s.tradeOrderService.CreateOrder(ctx, req.Submission)
+	po, err := s.tradeOrderService.CreateOrder(ctx, req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
+	}
+	return po, nil
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
@@ -200,28 +246,30 @@ func (s *tradingService) CancelOrder(
 	ctx context.Context, req *protoapi.CancelOrderRequest,
 ) (*types.PendingOrder, error) {
 	if req == nil {
-		return nil, ErrMalformedRequest
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
 	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return nil, ErrChainNotConnected
+		return nil, apiError(codes.Internal, ErrChainNotConnected)
 	}
 	if req.Cancellation == nil {
-		return nil, ErrMissingOrder
+		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
 	}
 
 	// check auth if required
 	if s.authEnabled {
 		if len(req.Token) <= 0 {
-			s.log.Debug("missing token")
-			return nil, errors.New("missing auth token")
+			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
 		}
 		if err := s.validateToken(req.Cancellation.PartyID, req.Token); err != nil {
-			s.log.Debug("token error", logging.Error(err))
-			return nil, err
+			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
 		}
 	}
 
-	return s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
+	po, err := s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCancelOrder, err)
+	}
+	return po, nil
 }
 
 // AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
@@ -229,40 +277,42 @@ func (s *tradingService) AmendOrder(
 	ctx context.Context, req *protoapi.AmendOrderRequest,
 ) (*types.PendingOrder, error) {
 	if req == nil {
-		return nil, ErrMalformedRequest
+		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
 	if req.Amendment == nil {
-		return nil, ErrMissingOrder
+		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
 	}
 
 	// check auth if required
 	if s.authEnabled {
 		if len(req.Token) <= 0 {
-			s.log.Debug("missing token")
-			return nil, errors.New("missing auth token")
+			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
 		}
 		if err := s.validateToken(req.Amendment.PartyID, req.Token); err != nil {
-			s.log.Debug("token error", logging.Error(err))
-			return nil, err
+			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
 		}
 	}
 
-	return s.tradeOrderService.AmendOrder(ctx, req.Amendment)
+	po, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	return po, nil
 }
 
 func (s *tradingService) NotifyTraderAccount(
 	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
 ) (*protoapi.NotifyTraderAccountResponse, error) {
 	if req == nil || req.Notif == nil {
-		return nil, ErrMalformedRequest
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 	if len(req.Notif.TraderID) <= 0 {
-		return nil, ErrMissingTraderID
+		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
 	}
 
 	submitted, err := s.accountService.NotifyTraderAccount(ctx, req.Notif)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.NotifyTraderAccountResponse{
@@ -274,22 +324,28 @@ func (s *tradingService) Withdraw(
 	ctx context.Context, req *protoapi.WithdrawRequest,
 ) (*protoapi.WithdrawResponse, error) {
 	if len(req.Withdraw.PartyID) <= 0 {
-		return nil, ErrMissingTraderID
+		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
 	}
 	if len(req.Withdraw.Asset) <= 0 {
-		return nil, ErrMissingAsset
+		return nil, apiError(codes.InvalidArgument, ErrMissingAsset)
 	}
-
 	if req.Withdraw.Amount == 0 {
-		return nil, ErrInvalidWithdrawAmount
+		return nil, apiError(codes.InvalidArgument, ErrInvalidWithdrawAmount)
 	}
 
 	ok, err := s.accountService.Withdraw(ctx, req.Withdraw)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.WithdrawResponse{
 		Success: ok,
 	}, nil
+}
+
+func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
+	prefix := uuid.NewV4().String()
+	prefixBytes := []byte(prefix)
+	commandInput := append([]byte{byte(cmd)}, input...)
+	return append(prefixBytes, commandInput...), nil
 }

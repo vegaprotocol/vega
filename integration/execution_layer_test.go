@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/proto"
 
-	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -325,14 +325,14 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 
 		var hasError bool
 
-		if generalAccount.GetBalance() != i64val(row, 4) {
+		if generalAccount.GetBalance() != u64val(row, 4) {
 			hasError = true
 		}
 		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
-		if marginAccount.GetBalance() != i64val(row, 3) {
+		if marginAccount.GetBalance() != u64val(row, 3) {
 			hasError = true
 		}
 
@@ -370,7 +370,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		for _, v := range execsetup.transfers.data {
 			for _, _v := range v.GetTransfers() {
 				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
-					if _v.Amount != i64val(row, 5) {
+					if _v.Amount != u64val(row, 5) {
 						continue
 					}
 					ledgerEntry = _v
@@ -385,7 +385,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		if ledgerEntry == nil {
 			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
 		}
-		if ledgerEntry.Amount != i64val(row, 5) {
+		if ledgerEntry.Amount != u64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
 		}
 	}
@@ -395,7 +395,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 }
 
 func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
-	amount, _ := strconv.ParseInt(amountstr, 10, 0)
+	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	acc, err := execsetup.accounts.getMarketSettlementAccount(market)
 	if err != nil {
 		return err
@@ -407,7 +407,7 @@ func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string
 }
 
 func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
-	amount, _ := strconv.ParseInt(amountstr, 10, 0)
+	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	acc, err := execsetup.accounts.getMarketInsurancePoolAccount(market)
 	if err != nil {
 		return err
@@ -472,23 +472,22 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 
 		var hasError bool
 
-		if ml.MaintenanceMargin != i64val(row, 2) {
+		if ml.MaintenanceMargin != u64val(row, 2) {
 			hasError = true
 		}
-		if ml.SearchLevel != i64val(row, 3) {
+		if ml.SearchLevel != u64val(row, 3) {
 			hasError = true
 		}
-		if ml.InitialMargin != i64val(row, 4) {
+		if ml.InitialMargin != u64val(row, 4) {
 			hasError = true
 		}
-		if ml.CollateralReleaseLevel != i64val(row, 5) {
+		if ml.CollateralReleaseLevel != u64val(row, 5) {
 			hasError = true
 		}
 		if hasError {
 			return fmt.Errorf(
 				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)", i64val(row, 2), i64val(row, 3), i64val(row, 4), i64val(row, 5), ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, val(row, 0))
 		}
-
 	}
 	return nil
 }
@@ -545,46 +544,46 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	return nil
 }
 
+func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
+	var retries = 2
+
+	party, volume, realisedPNL, unrealisedPNL := val(row, 0), i64val(row, 1), i64val(row, 3), i64val(row, 2)
+
+	var pos []*proto.Position
+	sleepTime := 100 // milliseconds
+	for retries > 0 {
+		pos, err = execsetup.positionPlugin.GetPositionsByParty(party)
+		if err != nil {
+			// Do not retry. Fail immediately.
+			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
+		}
+
+		if len(pos) == 1 && pos[0].OpenVolume == volume && pos[0].RealisedPNL == realisedPNL && pos[0].UnrealisedPNL == unrealisedPNL {
+			return nil
+		}
+
+		// The positions engine runs asynchronously, so wait for the right numbers to show up.
+		// Sleep times: 100ms, 200ms, 400ms, ..., 51.2s, then give up.
+		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
+		sleepTime *= 2
+		retries--
+	}
+
+	if len(pos) <= 0 {
+		return fmt.Errorf("party do not have a position, party(%v)", party)
+	}
+
+	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
+		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPNL, realisedPNL, pos[0].RealisedPNL)
+}
+
 func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 	for _, row := range table.Rows {
-		var (
-			retries = 9
-			ok      bool
-		)
 		if val(row, 0) == "trader" {
 			continue
 		}
-
-		party := val(row, 0)
-
-		sleepTime := 100 // milliseconds
-		for !ok && retries > 0 {
-			pos, err := execsetup.positionPlugin.GetPositionsByParty(party)
-			if err != nil {
-				return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
-			}
-			if len(pos) <= 0 {
-				return fmt.Errorf("party do not have a position, party(%v)", party)
-			}
-
-			volume, realisedPNL, unrealisedPNL := i64val(row, 1), i64val(row, 3), i64val(row, 2)
-			if pos[0].OpenVolume != volume || pos[0].RealisedPNL != realisedPNL || pos[0].UnrealisedPNL != unrealisedPNL {
-				if retries == 0 {
-					return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-						party, pos[0].OpenVolume, volume,
-						pos[0].UnrealisedPNL, unrealisedPNL,
-						pos[0].RealisedPNL, realisedPNL)
-				}
-
-				// The positions engine runs asynchronously, so wait for the right numbers to show up.
-				// Sleep times: 100ms, 200ms, 400ms, ..., 51.2s, then give up.
-				time.Sleep(time.Duration(sleepTime) * time.Millisecond)
-				sleepTime *= 2
-				retries -= 1
-
-			} else {
-				ok = !ok
-			}
+		if err := positionAPIProduceTheFollowingRow(row); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -606,6 +605,30 @@ func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
 	}
 
 	return nil
+}
+
+func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
+	var err error
+	for _, row := range trades.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+		ok := false
+		party, side, volume := val(row, 0), sideval(row, 1), u64val(row, 2)
+		for _, v := range execsetup.trades.data {
+			if (v.Buyer == party || v.Seller == party) && v.Aggressor == side && v.Size == volume {
+				ok = true
+				break
+			}
+		}
+
+		if !ok {
+			err = fmt.Errorf("expecting trade was missing: %v, %v, %v", party, side, volume)
+			break
+		}
+	}
+
+	return err
 }
 
 func dumpTransfers() error {

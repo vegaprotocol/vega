@@ -3,11 +3,13 @@ module code.vegaprotocol.io/vega
 require (
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.10.2
-	github.com/DATA-DOG/godog v0.7.13
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
+	github.com/cenkalti/backoff/v4 v4.0.0
+	github.com/cucumber/godog v0.8.1
 	github.com/dgraph-io/badger/v2 v2.0.1-0.20191216081458-1b0c0742acd3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
@@ -19,7 +21,6 @@ require (
 	github.com/mwitkow/go-proto-validators v0.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.3
-	github.com/prometheus/common v0.4.0
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0

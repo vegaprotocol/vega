@@ -279,14 +279,6 @@
                 </li>
 
                 <li>
-                  <a href="#api.NotifyTraderAccountRequest"><span class="badge">M</span>NotifyTraderAccountRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.NotifyTraderAccountResponse"><span class="badge">M</span>NotifyTraderAccountResponse</a>
-                </li>
-
-                <li>
                   <a href="#api.OrderByMarketAndIdRequest"><span class="badge">M</span>OrderByMarketAndIdRequest</a>
                 </li>
 
@@ -363,6 +355,18 @@
                 </li>
 
                 <li>
+                  <a href="#api.PrepareAmendOrderResponse"><span class="badge">M</span>PrepareAmendOrderResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareCancelOrderResponse"><span class="badge">M</span>PrepareCancelOrderResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareSubmitOrderResponse"><span class="badge">M</span>PrepareSubmitOrderResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.SignInRequest"><span class="badge">M</span>SignInRequest</a>
                 </li>
 
@@ -372,6 +376,14 @@
 
                 <li>
                   <a href="#api.SubmitOrderRequest"><span class="badge">M</span>SubmitOrderRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.SubmitTransactionRequest"><span class="badge">M</span>SubmitTransactionRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.SubmitTransactionResponse"><span class="badge">M</span>SubmitTransactionResponse</a>
                 </li>
 
                 <li>
@@ -525,6 +537,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.ErrorDetail"><span class="badge">M</span>ErrorDetail</a>
+                </li>
+
+                <li>
                   <a href="#vega.FinancialAmount"><span class="badge">M</span>FinancialAmount</a>
                 </li>
 
@@ -542,10 +558,6 @@
 
                 <li>
                   <a href="#vega.MarketDepth"><span class="badge">M</span>MarketDepth</a>
-                </li>
-
-                <li>
-                  <a href="#vega.NotifyTraderAccount"><span class="badge">M</span>NotifyTraderAccount</a>
                 </li>
 
                 <li>
@@ -606,6 +618,10 @@
 
                 <li>
                   <a href="#vega.RiskResult.RiskFactorsEntry"><span class="badge">M</span>RiskResult.RiskFactorsEntry</a>
+                </li>
+
+                <li>
+                  <a href="#vega.SignedBundle"><span class="badge">M</span>SignedBundle</a>
                 </li>
 
                 <li>
@@ -671,6 +687,10 @@
 
                 <li>
                   <a href="#vega.Side"><span class="badge">E</span>Side</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Trade.Type"><span class="badge">E</span>Trade.Type</a>
                 </li>
 
                 <li>
@@ -853,7 +873,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -931,6 +951,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.CheckTokenRequest">CheckTokenRequest</h3>
         <p></p>
@@ -977,7 +1024,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -988,7 +1035,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -1048,6 +1095,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.LastTradeResponse">LastTradeResponse</h3>
         <p></p>
@@ -1103,6 +1177,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.MarginLevelsResponse">MarginLevelsResponse</h3>
         <p></p>
@@ -1154,6 +1255,33 @@
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -1237,6 +1365,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.MarketByIDResponse">MarketByIDResponse</h3>
         <p></p>
@@ -1281,6 +1436,33 @@
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -1355,7 +1537,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -1436,6 +1618,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.MarketsDataResponse">MarketsDataResponse</h3>
         <p></p>
@@ -1509,54 +1718,6 @@
 
 
 
-        <h3 id="api.NotifyTraderAccountRequest">NotifyTraderAccountRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>notif</td>
-                  <td><a href="#vega.NotifyTraderAccount">vega.NotifyTraderAccount</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.NotifyTraderAccountResponse">NotifyTraderAccountResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>submitted</td>
-                  <td><a href="#bool">bool</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</h3>
         <p></p>
 
@@ -1602,7 +1763,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -1613,7 +1774,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -1669,6 +1830,33 @@
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>reference</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -1750,7 +1938,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -1839,7 +2027,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -2085,6 +2273,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.PartyByIDResponse">PartyByIDResponse</h3>
         <p></p>
@@ -2155,7 +2370,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -2205,6 +2420,99 @@
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingOrder</td>
+                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PrepareCancelOrderResponse">PrepareCancelOrderResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingOrder</td>
+                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PrepareSubmitOrderResponse">PrepareSubmitOrderResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pendingOrder</td>
+                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2302,6 +2610,54 @@
 
 
 
+        <h3 id="api.SubmitTransactionRequest">SubmitTransactionRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>tx</td>
+                  <td><a href="#vega.SignedBundle">vega.SignedBundle</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.SubmitTransactionResponse">SubmitTransactionResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.TradesByMarketRequest">TradesByMarketRequest</h3>
         <p></p>
 
@@ -2347,7 +2703,7 @@
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>
@@ -2636,6 +2992,27 @@
           <tbody>
 
               <tr>
+                <td>PrepareSubmitOrder</td>
+                <td><a href="#api.SubmitOrderRequest">SubmitOrderRequest</a></td>
+                <td><a href="#api.PrepareSubmitOrderResponse">PrepareSubmitOrderResponse</a></td>
+                <td><p>Prepare a submit order request</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareCancelOrder</td>
+                <td><a href="#api.CancelOrderRequest">CancelOrderRequest</a></td>
+                <td><a href="#api.PrepareCancelOrderResponse">PrepareCancelOrderResponse</a></td>
+                <td><p>Cancel an Order</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareAmendOrder</td>
+                <td><a href="#api.AmendOrderRequest">AmendOrderRequest</a></td>
+                <td><a href="#api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</a></td>
+                <td><p>Amend an Order</p></td>
+              </tr>
+
+              <tr>
                 <td>SubmitOrder</td>
                 <td><a href="#api.SubmitOrderRequest">SubmitOrderRequest</a></td>
                 <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
@@ -2664,13 +3041,6 @@
               </tr>
 
               <tr>
-                <td>NotifyTraderAccount</td>
-                <td><a href="#api.NotifyTraderAccountRequest">NotifyTraderAccountRequest</a></td>
-                <td><a href="#api.NotifyTraderAccountResponse">NotifyTraderAccountResponse</a></td>
-                <td><p>Request balance increase</p></td>
-              </tr>
-
-              <tr>
                 <td>Withdraw</td>
                 <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
                 <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
@@ -2682,6 +3052,13 @@
                 <td><a href="#api.CheckTokenRequest">CheckTokenRequest</a></td>
                 <td><a href="#api.CheckTokenResponse">CheckTokenResponse</a></td>
                 <td><p>Check an API token</p></td>
+              </tr>
+
+              <tr>
+                <td>SubmitTransaction</td>
+                <td><a href="#api.SubmitTransactionRequest">SubmitTransactionRequest</a></td>
+                <td><a href="#api.SubmitTransactionResponse">SubmitTransactionResponse</a></td>
+                <td><p>Submit a signed transaction</p></td>
               </tr>
 
           </tbody>
@@ -3559,7 +3936,7 @@
 
                 <tr>
                   <td>balance</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3689,6 +4066,44 @@
 
 
 
+        <h3 id="vega.ErrorDetail">ErrorDetail</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>code</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 </p></td>
+                </tr>
+
+                <tr>
+                  <td>message</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>a message that describes the error in more detail, should describe the problem encountered. </p></td>
+                </tr>
+
+                <tr>
+                  <td>inner</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>any inner error information that could add more context, or be helpful for error reporting. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.FinancialAmount">FinancialAmount</h3>
         <p></p>
 
@@ -3753,7 +4168,7 @@
 
                 <tr>
                   <td>amount</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3798,28 +4213,28 @@
 
                 <tr>
                   <td>maintenanceMargin</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>searchLevel</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>initialMargin</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>collateralReleaseLevel</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3960,37 +4375,6 @@
                   <td>sell</td>
                   <td><a href="#vega.PriceLevel">PriceLevel</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="vega.NotifyTraderAccount">NotifyTraderAccount</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>traderID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>amount</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
                   <td><p> </p></td>
                 </tr>
 
@@ -4444,7 +4828,7 @@
                 </tr>
 
                 <tr>
-                  <td>TimeInForce</td>
+                  <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -4460,6 +4844,13 @@
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.Order.Type">Order.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4536,7 +4927,7 @@
                 </tr>
 
                 <tr>
-                  <td>TimeInForce</td>
+                  <td>timeInForce</td>
                   <td>
                     <ul>
 
@@ -4578,13 +4969,6 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>positions</td>
-                  <td><a href="#vega.Position">Position</a></td>
-                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -4647,7 +5031,7 @@
                 </tr>
 
                 <tr>
-                  <td>TimeInForce</td>
+                  <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -4989,6 +5373,51 @@
 
 
 
+        <h3 id="vega.SignedBundle">SignedBundle</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sig</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.Statistics">Statistics</h3>
         <p></p>
 
@@ -5141,49 +5570,49 @@
 
                 <tr>
                   <td>orderSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>tradeSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>candleSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>marketDepthSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>positionsSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>accountSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>marketDataSubscriptions</td>
-                  <td><a href="#int32">int32</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5310,6 +5739,13 @@
                   <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.Trade.Type">Trade.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -5405,7 +5841,7 @@
 
                 <tr>
                   <td>balance</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5708,6 +6144,12 @@
                 <td><p></p></td>
               </tr>
 
+              <tr>
+                <td>PartiallyFilled</td>
+                <td>6</td>
+                <td><p></p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -5917,6 +6359,35 @@
               <tr>
                 <td>Sell</td>
                 <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Trade.Type">Trade.Type</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>DEFAULT</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NETWORK_CLOSE_OUT_GOOD</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NETWORK_CLOSE_OUT_BAD</td>
+                <td>2</td>
                 <td><p></p></td>
               </tr>
 

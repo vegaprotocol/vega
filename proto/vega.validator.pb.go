@@ -21,13 +21,6 @@ func (this *Amount) Validate() error {
 	return nil
 }
 func (this *Party) Validate() error {
-	for _, item := range this.Positions {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Positions", err)
-			}
-		}
-	}
 	return nil
 }
 func (this *RiskFactor) Validate() error {
@@ -236,5 +229,11 @@ func (this *MarginLevels) Validate() error {
 	return nil
 }
 func (this *MarketData) Validate() error {
+	return nil
+}
+func (this *ErrorDetail) Validate() error {
+	return nil
+}
+func (this *SignedBundle) Validate() error {
 	return nil
 }
