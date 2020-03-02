@@ -315,7 +315,10 @@ func (e *Engine) ExpectMargins(
 }
 
 func (m marginChange) Amount() int64 {
-	return m.Transfer().GetAmount().GetAmount()
+	if m.transfer == nil {
+		return 0
+	}
+	return m.transfer.Amount.Amount
 }
 
 // Transfer - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer
