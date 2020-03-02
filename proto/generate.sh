@@ -9,7 +9,7 @@
 
 paths="paths=source_relative"
 
-# Generate *.pb.go and *.validator.pb.go
+# proto (excl subdirs): Generate *.pb.go and *.validator.pb.go
 find proto -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
 	protoc \
@@ -23,6 +23,10 @@ do
 done
 
 # Generate proto/doc/
+
+# Comment out NotifyTraderAccount (#726)
+patch -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
+
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
 echo -e 'html html\nmarkdown md' | while read -r fileformat fileextension
@@ -46,8 +50,23 @@ sed --in-place -r \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
 	proto/doc/index.html
 
-# Generate *.pb.gw.go and *.swagger.json
+# proto/api: Generate *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
+find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
+do
+	protoc \
+		-I. \
+		-Iproto \
+		-Ivendor \
+		-Ivendor/github.com/google/protobuf/src \
+		--swagger_out="logtostderr=true,$grpc_api_configuration:." \
+		"$protofile"
+done
+
+# Un-comment NotifyTraderAccount (#726)
+patch --reverse -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
+
+# Generate *.validator.pb.go, *.pb.gw.go
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
 	protoc \
@@ -58,7 +77,6 @@ do
 		--go_out="plugins=grpc,$paths:." \
 		--govalidators_out="$paths:." \
 		--grpc-gateway_out="logtostderr=true,$grpc_api_configuration,$paths:." \
-		--swagger_out="logtostderr=true,$grpc_api_configuration:." \
 		"$protofile"
 done
 

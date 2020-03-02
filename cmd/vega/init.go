@@ -136,6 +136,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		- Maturity dates should be not all the same, for variety.
 	*/
 	skels := []struct {
+		id                    string
 		decimalPlaces         uint64
 		baseName              string
 		settlementAsset       string
@@ -147,6 +148,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		riskAversionParameter float64
 	}{
 		{
+			id:                    "VHSRA2G5MDFKREFJ5TOAGHZBBDGCYS67",
 			decimalPlaces:         5,
 			baseName:              "ETH",
 			quoteName:             "USD",
@@ -158,6 +160,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			sigma:                 1.5,
 		},
 		{
+			id:                    "LBXRA65PN4FN5HBWRI2YBCOYDG2PBGYU",
 			decimalPlaces:         5,
 			baseName:              "GBP",
 			quoteName:             "USD",
@@ -169,6 +172,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			sigma:                 0.09,
 		},
 		{
+			id:                    "RTJVFCMFZZQQLLYVSXTWEN62P6AH6OCN",
 			decimalPlaces:         5,
 			baseName:              "ETH",
 			quoteName:             "BTC",
@@ -188,6 +192,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		monYearUpper := strings.ToUpper(monYear)
 
 		mkt := proto.Market{
+			Id:            skel.id,
 			Name:          fmt.Sprintf("%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
 			DecimalPlaces: skel.decimalPlaces,
 			TradableInstrument: &proto.TradableInstrument{
@@ -252,7 +257,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 }
 
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
-	execution.SetMarketID(mkt, seq)
 	m := jsonpb.Marshaler{
 		Indent: "  ",
 	}

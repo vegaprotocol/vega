@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 )
 
@@ -20,11 +21,15 @@ func getCurrentUtcTimestampNano() int64 {
 	return vegatime.Now().UnixNano()
 }
 
-func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
+func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100.0, proRata)
+	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100)
+
+	// Turn on all the debug levels so we can cover more lines of code
+	tob.OrderBook.LogPriceLevelsDebug = true
+	tob.OrderBook.LogRemovedOrdersDebug = true
 	return &tob
 }
 
@@ -48,6 +53,21 @@ func (ob *OrderBook) getTotalBuyVolume() uint64 {
 		volume += pl.volume
 	}
 	return volume
+}
+
+func (ob *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
+	if side == types.Side_Buy {
+		priceLevel := ob.buy.getPriceLevel(price, side)
+		if priceLevel != nil {
+			return priceLevel.volume
+		}
+	} else {
+		priceLevel := ob.sell.getPriceLevel(price, side)
+		if priceLevel != nil {
+			return priceLevel.volume
+		}
+	}
+	return 0
 }
 
 func (ob *OrderBook) getTotalSellVolume() uint64 {

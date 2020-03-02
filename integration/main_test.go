@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/DATA-DOG/godog"
-	"github.com/DATA-DOG/godog/colors"
-	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
+	"github.com/cucumber/godog/gherkin"
 )
 
 var (
@@ -89,4 +89,5 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
 	s.Step(`^dump transfers$`, dumpTransfers)
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
+	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
 }

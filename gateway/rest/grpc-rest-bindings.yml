@@ -45,6 +45,17 @@ http:
 
 
     # Orders
+    - selector: api.trading.SubmitTransaction
+      post: '/transaction'
+      body: "*"
+    - selector: api.trading.PrepareSubmitOrder
+      post: '/orders/prepare'
+      body: "*"
+    - selector: api.trading.PrepareCancelOrder
+      delete: '/orders/prepare/{cancellation.orderID}'
+    - selector: api.trading.PrepareAmendOrder
+      put: '/orders/prepare/{amendment.orderID}'
+      body: "*"
     - selector: api.trading.SubmitOrder
       post: '/orders'
       body: "*"

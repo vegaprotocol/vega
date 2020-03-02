@@ -1,6 +1,7 @@
 package settlement
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -98,9 +99,9 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions
-func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, lastMarkPrice uint64) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	positions, err := e.settleAll()
+	positions, err := e.settleAll(lastMarkPrice)
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -253,7 +254,7 @@ func (e *Engine) RemoveDistressed(evts []events.Margin) {
 			party:     v.Party(),
 			price:     v.Price(),
 			marketID:  e.market,
-			margin:    v.MarginBalance(),
+			margin:    v.MarginBalance() + v.GeneralBalance(),
 			hasMargin: true,
 		}
 		bEvts = append(bEvts, sp)
@@ -265,9 +266,27 @@ func (e *Engine) RemoveDistressed(evts []events.Margin) {
 	e.mu.Unlock()
 }
 
+func (e *Engine) getSettlementProduct(lastMarkPrice uint64) (Product, error) {
+	switch e.Config.FinalSettlement.Get() {
+	case FinalSettlementOracle:
+		return e.product, nil
+	case FinalSettlementMarkPrice:
+		return &lastMarkPriceSettlement{lastMarkPrice, e.product.GetAsset()}, nil
+	default:
+		// can't happen at this point but...
+		return nil, errors.New("invalid configuration: unknow final settlement")
+	}
+}
+
 // simplified settle call
-func (e *Engine) settleAll() ([]*types.Transfer, error) {
+func (e *Engine) settleAll(lastMarkPrice uint64) ([]*types.Transfer, error) {
 	e.mu.Lock()
+
+	settleProd, err := e.getSettlementProduct(lastMarkPrice)
+	if err != nil {
+		return nil, err
+	}
+
 	// there should be as many positions as there are traders (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
 	// traders who are in the black should be appended (collect first).
@@ -281,7 +300,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 		e.log.Debug("Settling position for trader", logging.String("trader-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, err := e.product.Settle(pos.price, pos.size)
+		amt, err := settleProd.Settle(pos.price, pos.size)
 		// for now, product.Settle returns the total value, we need to only settle the delta between a traders current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -357,4 +376,20 @@ func calcMTM(markPrice, size, price int64, trades []*pos) (mtmShare int64) {
 		mtmShare += (markPrice - int64(c.price)) * c.size
 	}
 	return
+}
+
+type lastMarkPriceSettlement struct {
+	markPrice uint64
+	asset     string
+}
+
+func (l *lastMarkPriceSettlement) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
+	return &types.FinancialAmount{
+		Asset:  l.asset,
+		Amount: int64((l.markPrice - entryPrice)) * netPosition,
+	}, nil
+}
+
+func (l *lastMarkPriceSettlement) GetAsset() string {
+	return l.asset
 }

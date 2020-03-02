@@ -159,20 +159,25 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
-// Represents a party on Vega, could be an ethereum wallet address in the future
-type Party struct {
-	// Party identifier
-	ID string `json:"id"`
-	// Orders relating to a party
-	Orders []*proto.Order `json:"orders"`
-	// Trades relating to a party (specifically where party is either buyer OR seller)
-	Trades []*proto.Trade `json:"trades"`
-	// Collateral accounts relating to a party
-	Accounts []*proto.Account `json:"accounts"`
-	// Trading positions relating to a party
-	Positions []*proto.Position `json:"positions"`
-	// marginLevels
-	Margins []*proto.MarginLevels `json:"margins"`
+type PreparedAmendOrder struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
+	// The pending order
+	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
+}
+
+type PreparedCancelOrder struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
+	// The pending order
+	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
+}
+
+type PreparedSubmitOrder struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
+	// The pending order
+	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type ScalingFactors struct {
@@ -208,6 +213,10 @@ type TradableInstrument struct {
 	RiskModel RiskModel `json:"riskModel"`
 	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
+}
+
+type TransactionSubmitted struct {
+	Success bool `json:"success"`
 }
 
 // The various account types we have (used by collateral)

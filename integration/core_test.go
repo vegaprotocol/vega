@@ -15,7 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 
-	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -179,11 +179,11 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		if err != nil {
 			return err
 		}
-		marginBal, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
+		marginBal, err := strconv.ParseUint(row.Cells[2].Value, 10, 64)
 		if err != nil {
 			return err
 		}
-		generalBal, err := strconv.ParseInt(row.Cells[3].Value, 10, 64)
+		generalBal, err := strconv.ParseUint(row.Cells[3].Value, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -289,11 +289,11 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 			continue
 		}
 		trader := row.Cells[0].Value
-		margin, err := strconv.ParseInt(row.Cells[4].Value, 10, 64)
+		margin, err := strconv.ParseUint(row.Cells[4].Value, 10, 64)
 		if err != nil {
 			return err
 		}
-		general, err := strconv.ParseInt(row.Cells[5].Value, 10, 64)
+		general, err := strconv.ParseUint(row.Cells[5].Value, 10, 64)
 		if err != nil {
 			return err
 		}

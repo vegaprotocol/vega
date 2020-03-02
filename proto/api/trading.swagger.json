@@ -71,33 +71,6 @@
         ]
       }
     },
-    "/fountain": {
-      "post": {
-        "summary": "Request balance increase",
-        "operationId": "NotifyTraderAccount",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiNotifyTraderAccountResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiNotifyTraderAccountRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
@@ -469,6 +442,109 @@
             "schema": {
               "$ref": "#/definitions/apiSubmitOrderRequest"
             }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare": {
+      "post": {
+        "summary": "Prepare a submit order request",
+        "operationId": "PrepareSubmitOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareSubmitOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiSubmitOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/{amendment.orderID}": {
+      "put": {
+        "summary": "Amend an Order",
+        "operationId": "PrepareAmendOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "amendment.orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAmendOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/{cancellation.orderID}": {
+      "delete": {
+        "summary": "Cancel an Order",
+        "operationId": "PrepareCancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cancellation.orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cancellation.marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "cancellation.partyID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -928,6 +1004,33 @@
           "trading_data"
         ]
       }
+    },
+    "/transaction": {
+      "post": {
+        "summary": "Submit a signed transaction",
+        "operationId": "SubmitTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiSubmitTransactionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiSubmitTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -939,7 +1042,8 @@
         "Cancelled",
         "Stopped",
         "Filled",
-        "Rejected"
+        "Rejected",
+        "PartiallyFilled"
       ],
       "default": "Active"
     },
@@ -1078,23 +1182,6 @@
         }
       }
     },
-    "apiNotifyTraderAccountRequest": {
-      "type": "object",
-      "properties": {
-        "notif": {
-          "$ref": "#/definitions/vegaNotifyTraderAccount"
-        }
-      }
-    },
-    "apiNotifyTraderAccountResponse": {
-      "type": "object",
-      "properties": {
-        "submitted": {
-          "type": "boolean",
-          "format": "boolean"
-        }
-      }
-    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -1202,6 +1289,42 @@
         }
       }
     },
+    "apiPrepareAmendOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareCancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareSubmitOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingOrder": {
+          "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
     "apiSignInRequest": {
       "type": "object",
       "properties": {
@@ -1234,6 +1357,23 @@
         "token": {
           "type": "string",
           "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
+        }
+      }
+    },
+    "apiSubmitTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "tx": {
+          "$ref": "#/definitions/vegaSignedBundle"
+        }
+      }
+    },
+    "apiSubmitTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -1356,7 +1496,7 @@
         },
         "balance": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "asset": {
           "type": "string"
@@ -1555,7 +1695,7 @@
         },
         "amount": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "reference": {
           "type": "string"
@@ -1615,19 +1755,19 @@
       "properties": {
         "maintenanceMargin": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "searchLevel": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "initialMargin": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "collateralReleaseLevel": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         },
         "partyID": {
           "type": "string"
@@ -1724,18 +1864,6 @@
           "items": {
             "$ref": "#/definitions/vegaPriceLevel"
           }
-        }
-      }
-    },
-    "vegaNotifyTraderAccount": {
-      "type": "object",
-      "properties": {
-        "traderID": {
-          "type": "string"
-        },
-        "amount": {
-          "type": "string",
-          "format": "uint64"
         }
       }
     },
@@ -1883,7 +2011,7 @@
         "side": {
           "$ref": "#/definitions/vegaSide"
         },
-        "TimeInForce": {
+        "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
@@ -1892,6 +2020,9 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },
@@ -1911,12 +2042,6 @@
       "properties": {
         "id": {
           "type": "string"
-        },
-        "positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPosition"
-          }
         }
       }
     },
@@ -1930,7 +2055,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "TimeInForce": {
+        "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "side": {
@@ -2029,6 +2154,27 @@
         "Sell"
       ],
       "default": "Buy"
+    },
+    "vegaSignedBundle": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "sig": {
+          "type": "string",
+          "format": "byte"
+        },
+        "address": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pubKey": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
     "vegaSimpleModelParams": {
       "type": "object",
@@ -2137,31 +2283,31 @@
         },
         "orderSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "tradeSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "candleSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "marketDepthSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "positionsSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "accountSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "marketDataSubscriptions": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "appVersionHash": {
           "type": "string"
@@ -2239,8 +2385,20 @@
           "type": "string",
           "format": "int64",
           "description": "nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "type": {
+          "$ref": "#/definitions/vegaTradeType"
         }
       }
+    },
+    "vegaTradeType": {
+      "type": "string",
+      "enum": [
+        "DEFAULT",
+        "NETWORK_CLOSE_OUT_GOOD",
+        "NETWORK_CLOSE_OUT_BAD"
+      ],
+      "default": "DEFAULT"
     },
     "vegaTransferBalance": {
       "type": "object",
@@ -2250,7 +2408,7 @@
         },
         "balance": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         }
       }
     },

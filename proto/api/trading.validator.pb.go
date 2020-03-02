@@ -19,6 +19,17 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *SubmitTransactionRequest) Validate() error {
+	if this.Tx != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Tx); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Tx", err)
+		}
+	}
+	return nil
+}
+func (this *SubmitTransactionResponse) Validate() error {
+	return nil
+}
 func (this *WithdrawRequest) Validate() error {
 	if this.Withdraw != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdraw); err != nil {
@@ -47,6 +58,30 @@ func (this *SignInRequest) Validate() error {
 func (this *SignInResponse) Validate() error {
 	return nil
 }
+func (this *PrepareSubmitOrderResponse) Validate() error {
+	if this.PendingOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareCancelOrderResponse) Validate() error {
+	if this.PendingOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareAmendOrderResponse) Validate() error {
+	if this.PendingOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
+		}
+	}
+	return nil
+}
 func (this *SubmitOrderRequest) Validate() error {
 	if this.Submission != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
@@ -72,9 +107,15 @@ func (this *AmendOrderRequest) Validate() error {
 	return nil
 }
 func (this *MarginLevelsSubscribeRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *MarginLevelsRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *MarginLevelsResponse) Validate() error {
@@ -91,6 +132,9 @@ func (this *MarketsDataSubscribeRequest) Validate() error {
 	return nil
 }
 func (this *MarketDataByIDRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	return nil
 }
 func (this *MarketDataByIDResponse) Validate() error {
@@ -112,6 +156,9 @@ func (this *MarketsDataResponse) Validate() error {
 	return nil
 }
 func (this *LastTradeRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	return nil
 }
 func (this *LastTradeResponse) Validate() error {
@@ -123,6 +170,9 @@ func (this *LastTradeResponse) Validate() error {
 	return nil
 }
 func (this *MarketByIDRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	return nil
 }
 func (this *MarketByIDResponse) Validate() error {
@@ -134,6 +184,9 @@ func (this *MarketByIDResponse) Validate() error {
 	return nil
 }
 func (this *PartyByIDRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *PartyByIDResponse) Validate() error {
@@ -195,15 +248,24 @@ func (this *TradesSubscribeRequest) Validate() error {
 	return nil
 }
 func (this *CandlesSubscribeRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	return nil
 }
 func (this *MarketDepthSubscribeRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	return nil
 }
 func (this *PositionsSubscribeRequest) Validate() error {
 	return nil
 }
 func (this *OrdersByMarketRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	if this.Pagination != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
@@ -222,6 +284,9 @@ func (this *OrdersByMarketResponse) Validate() error {
 	return nil
 }
 func (this *OrdersByPartyRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	if this.Pagination != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
@@ -240,6 +305,12 @@ func (this *OrdersByPartyResponse) Validate() error {
 	return nil
 }
 func (this *OrderByMarketAndIdRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	if this.OrderID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("OrderID", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderID))
+	}
 	return nil
 }
 func (this *OrderByMarketAndIdResponse) Validate() error {
@@ -251,6 +322,9 @@ func (this *OrderByMarketAndIdResponse) Validate() error {
 	return nil
 }
 func (this *OrderByReferenceRequest) Validate() error {
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
+	}
 	return nil
 }
 func (this *OrderByReferenceResponse) Validate() error {
@@ -272,6 +346,9 @@ func (this *MarketsResponse) Validate() error {
 	return nil
 }
 func (this *CandlesRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	if !(this.SinceTimestamp > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("SinceTimestamp", fmt.Errorf(`value '%v' must be greater than '0'`, this.SinceTimestamp))
 	}
@@ -288,6 +365,9 @@ func (this *CandlesResponse) Validate() error {
 	return nil
 }
 func (this *MarketDepthRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	return nil
 }
 func (this *MarketDepthResponse) Validate() error {
@@ -313,6 +393,9 @@ func (this *MarketDepthResponse) Validate() error {
 	return nil
 }
 func (this *TradesByMarketRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
 	if this.Pagination != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
@@ -331,6 +414,9 @@ func (this *TradesByMarketResponse) Validate() error {
 	return nil
 }
 func (this *PositionsByPartyRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *PositionsByPartyResponse) Validate() error {
@@ -396,6 +482,12 @@ func (this *MarketAccountsResponse) Validate() error {
 	return nil
 }
 func (this *CheckTokenRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	if this.Token == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Token", fmt.Errorf(`value '%v' must not be an empty string`, this.Token))
+	}
 	return nil
 }
 func (this *CheckTokenResponse) Validate() error {

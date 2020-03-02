@@ -40,7 +40,7 @@ Feature: Position esolution case 3
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader          | id        | type | volume | price | resulting trades | type  | tif | reference      |
-      | buySideProvider | ETH/DEC19 | buy  |    400 |    40  |                0 | LIMIT | GTC | buy-provider-2 |
+      | buySideProvider | ETH/DEC19 | buy  |    400 |    40 |                0 | LIMIT | GTC | buy-provider-2 |
 
 # check the trader accounts
     Then I expect the trader to have a margin:

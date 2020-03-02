@@ -78,3 +78,63 @@ func (mr *MockTradeOrderServiceMockRecorder) CreateOrder(arg0, arg1 interface{})
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockTradeOrderService)(nil).CreateOrder), arg0, arg1)
 }
+
+// PrepareAmendOrder mocks base method
+func (m *MockTradeOrderService) PrepareAmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*proto.PendingOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrepareAmendOrder", arg0, arg1)
+	ret0, _ := ret[0].(*proto.PendingOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareAmendOrder indicates an expected call of PrepareAmendOrder
+func (mr *MockTradeOrderServiceMockRecorder) PrepareAmendOrder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareAmendOrder", reflect.TypeOf((*MockTradeOrderService)(nil).PrepareAmendOrder), arg0, arg1)
+}
+
+// PrepareCancelOrder mocks base method
+func (m *MockTradeOrderService) PrepareCancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.PendingOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrepareCancelOrder", arg0, arg1)
+	ret0, _ := ret[0].(*proto.PendingOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareCancelOrder indicates an expected call of PrepareCancelOrder
+func (mr *MockTradeOrderServiceMockRecorder) PrepareCancelOrder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareCancelOrder", reflect.TypeOf((*MockTradeOrderService)(nil).PrepareCancelOrder), arg0, arg1)
+}
+
+// PrepareSubmitOrder mocks base method
+func (m *MockTradeOrderService) PrepareSubmitOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (*proto.PendingOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrepareSubmitOrder", arg0, arg1)
+	ret0, _ := ret[0].(*proto.PendingOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareSubmitOrder indicates an expected call of PrepareSubmitOrder
+func (mr *MockTradeOrderServiceMockRecorder) PrepareSubmitOrder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareSubmitOrder", reflect.TypeOf((*MockTradeOrderService)(nil).PrepareSubmitOrder), arg0, arg1)
+}
+
+// SubmitTransaction mocks base method
+func (m *MockTradeOrderService) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransaction indicates an expected call of SubmitTransaction
+func (mr *MockTradeOrderServiceMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockTradeOrderService)(nil).SubmitTransaction), arg0, arg1)
+}
