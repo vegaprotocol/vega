@@ -34,6 +34,7 @@ type TradingClient interface {
 	PrepareSubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareSubmitOrderResponse, error)
 	PrepareAmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareAmendOrderResponse, error)
 	PrepareCancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareCancelOrderResponse, error)
+	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
 	// old requests
@@ -1333,6 +1334,12 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 	}, nil
 
 }
+
+func (r *myMutationResolver) PrepareProposal(
+	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
+	return nil, nil
+}
+
 func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {
 	order := &types.OrderCancellation{}
 

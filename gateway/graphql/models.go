@@ -18,6 +18,10 @@ type Product interface {
 	IsProduct()
 }
 
+type ProposalChange interface {
+	IsProposalChange()
+}
+
 type RiskModel interface {
 	IsRiskModel()
 }
@@ -159,6 +163,18 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
+// Incomplete change definiotion for governance proposal terms
+// TODO: complete the type
+type NewMarket struct {
+	MarketID string `json:"marketId"`
+}
+
+func (NewMarket) IsProposalChange() {}
+
+type NewMarketInput struct {
+	MarketID string `json:"marketId"`
+}
+
 type PreparedAmendOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
@@ -173,11 +189,57 @@ type PreparedCancelOrder struct {
 	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
+type PreparedProposal struct {
+	// Raw transaction data to sign & submit
+	Blob string `json:"blob"`
+	// The pending proposal
+	PendingProposal *Proposal `json:"pendingProposal"`
+}
+
 type PreparedSubmitOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
 	// The pending order
 	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
+}
+
+type Proposal struct {
+	// Proposal id that is filled by VEGA once proposal reaches the network
+	ID *string `json:"id"`
+	// A UUID reference to aid tracking proposals on VEGA
+	Reference string `json:"reference"`
+	// An id of the party that prepared the proposal
+	PartyID string `json:"partyId"`
+	// State of the proposal
+	State ProposalState `json:"state"`
+	// time at which the proposal has reached the network
+	Timestamp string `json:"timestamp"`
+	// Terms of the proposal
+	Terms *ProposalTerms `json:"terms"`
+}
+
+type ProposalTerms struct {
+	// Duration (in days) before voting is closed for this proposal
+	CloseInDays int `json:"closeInDays"`
+	// Duration (in days) before this is executed (if passed)
+	EnactInDays int `json:"enactInDays"`
+	// Minimum participation stake required for this proposal to pass
+	MinParticipationStake int `json:"minParticipationStake"`
+	// Actual change being introduced by the proposal
+	Change ProposalChange `json:"change"`
+}
+
+type ProposalTermsInput struct {
+	// Duration (in days) before voting is closed for this proposal
+	CloseInDays int `json:"closeInDays"`
+	// Duration (in days) before this is executed (if passed)
+	EnactInDays int `json:"enactInDays"`
+	// Minimum participation stake required for this proposal to pass
+	MinParticipationStake int `json:"minParticipationStake"`
+	// Actual change being introduced by the proposal
+	UpdateMarket  *UpdateMarketInput  `json:"updateMarket"`
+	NewMarket     *NewMarketInput     `json:"newMarket"`
+	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
 }
 
 type ScalingFactors struct {
@@ -217,6 +279,62 @@ type TradableInstrument struct {
 
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
+}
+
+// Incomplete change definiotion for governance proposal terms
+// TODO: complete the type
+type UpdateMarket struct {
+	MarketID string `json:"marketId"`
+}
+
+func (UpdateMarket) IsProposalChange() {}
+
+type UpdateMarketInput struct {
+	MarketID string `json:"marketId"`
+}
+
+// Allows submitting a proposal for changing governance network parameters
+type UpdateNetwork struct {
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to close voting. Value represents duration in days.
+	MinCloseInDays *int `json:"minCloseInDays"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to close voting. Value represents duration in days.
+	MaxCloseInDays *int `json:"maxCloseInDays"`
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in days.
+	MinEnactInDays *int `json:"minEnactInDays"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in days.
+	MaxEnactInDays *int `json:"maxEnactInDays"`
+	// Network parameter that restricts the minimum participation stake
+	// required for a proposal to pass.
+	MinParticipationStake *int `json:"minParticipationStake"`
+}
+
+func (UpdateNetwork) IsProposalChange() {}
+
+// Allows submitting a proposal for changing governance network parameters
+type UpdateNetworkInput struct {
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to close voting. Value represents duration in days.
+	MinCloseInDays *int `json:"minCloseInDays"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to close voting. Value represents duration in days.
+	MaxCloseInDays *int `json:"maxCloseInDays"`
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in days.
+	MinEnactInDays *int `json:"minEnactInDays"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in days.
+	MaxEnactInDays *int `json:"maxEnactInDays"`
+	// Network parameter that restricts the minimum participation stake
+	// required for a proposal to pass.
+	MinParticipationStake *int `json:"minParticipationStake"`
 }
 
 // The various account types we have (used by collateral)
@@ -477,6 +595,63 @@ func (e *OrderType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Varoius states a proposal can transition through:
+//   Open ->
+//       - Passed -> Enacted.
+//       - Rejected.
+//   Proposal can enter Failed state from any other state.
+type ProposalState string
+
+const (
+	// Proposal became invalid and cannot be processed
+	ProposalStateFailed ProposalState = "Failed"
+	// Proposal is open for voting
+	ProposalStateOpen ProposalState = "Open"
+	// Proposal has gained enough support to be executed
+	ProposalStatePassed ProposalState = "Passed"
+	// Proposal has could not gain enough support to be executed
+	ProposalStateRejected ProposalState = "Rejected"
+	// Proposal has been executed and the changes under this proposal have now been applied
+	ProposalStateEnacted ProposalState = "Enacted"
+)
+
+var AllProposalState = []ProposalState{
+	ProposalStateFailed,
+	ProposalStateOpen,
+	ProposalStatePassed,
+	ProposalStateRejected,
+	ProposalStateEnacted,
+}
+
+func (e ProposalState) IsValid() bool {
+	switch e {
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateRejected, ProposalStateEnacted:
+		return true
+	}
+	return false
+}
+
+func (e ProposalState) String() string {
+	return string(e)
+}
+
+func (e *ProposalState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ProposalState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ProposalState", str)
+	}
+	return nil
+}
+
+func (e ProposalState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
