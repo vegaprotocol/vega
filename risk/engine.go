@@ -30,8 +30,7 @@ type MarginLevelsBuf interface {
 }
 
 type marginChange struct {
-	events.Margin       // previous event that caused this change
-	amount        int64 // the amount we need to move (positive is move to margin, neg == move to general)
+	events.Margin // previous event that caused this change
 	transfer      *types.Transfer
 	margins       *types.MarginLevels
 }
@@ -181,7 +180,6 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 
 	return &marginChange{
 		Margin:   evt,
-		amount:   trnsfr.Amount.Amount,
 		transfer: trnsfr,
 		margins:  margins,
 	}, nil
@@ -275,7 +273,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 		risk := &marginChange{
 			Margin:   evt,
-			amount:   trnsfr.Amount.Amount,
 			transfer: trnsfr,
 			margins:  margins,
 		}
@@ -318,7 +315,7 @@ func (e *Engine) ExpectMargins(
 }
 
 func (m marginChange) Amount() int64 {
-	return m.amount
+	return m.Transfer().GetAmount().GetAmount()
 }
 
 // Transfer - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer
