@@ -152,8 +152,6 @@ type Mutation {
     id: String!
     "Password of the party"
     password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
-
-  
 }
 
 
