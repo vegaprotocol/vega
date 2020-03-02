@@ -4,7 +4,6 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
-//import "markets.proto";
 
 message NetworkConfiguration {
   uint64  minCloseInDays = 1;
@@ -17,9 +16,10 @@ message NetworkConfiguration {
 }
 
 message UpdateMarket {
+  //TODO
 }
 message NewMarket {
-  //Market market = 1 [(validator.field) = {msg_exists: true}];
+  //TODO
 }
 message UpdateNetwork {
   NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
