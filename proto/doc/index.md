@@ -78,12 +78,11 @@
 
 - [proto/governance.proto](#proto/governance.proto)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
+    - [NewMarket](#vega.NewMarket)
     - [Proposal](#vega.Proposal)
-    - [Proposal.Terms](#vega.Proposal.Terms)
-    - [Proposal.Terms.NewMarket](#vega.Proposal.Terms.NewMarket)
-    - [Proposal.Terms.Parameters](#vega.Proposal.Terms.Parameters)
-    - [Proposal.Terms.UpdateMarket](#vega.Proposal.Terms.UpdateMarket)
-    - [Proposal.Terms.UpdateNetwork](#vega.Proposal.Terms.UpdateNetwork)
+    - [ProposalTerms](#vega.ProposalTerms)
+    - [UpdateMarket](#vega.UpdateMarket)
+    - [UpdateNetwork](#vega.UpdateNetwork)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
@@ -904,7 +903,7 @@
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
 | reference | [string](#string) |  |  |
-| proposal | [vega.Proposal.Terms](#vega.Proposal.Terms) |  |  |
+| proposal | [vega.ProposalTerms](#vega.ProposalTerms) |  |  |
 
 
 
@@ -1284,6 +1283,16 @@
 
 
 
+<a name="vega.NewMarket"></a>
+
+### NewMarket
+TODO
+
+
+
+
+
+
 <a name="vega.Proposal"></a>
 
 ### Proposal
@@ -1297,45 +1306,16 @@
 | partyID | [string](#string) |  |  |
 | state | [Proposal.State](#vega.Proposal.State) |  |  |
 | timestamp | [int64](#int64) |  |  |
-| terms | [Proposal.Terms](#vega.Proposal.Terms) |  |  |
-| votes | [Vote](#vega.Vote) | repeated |  |
+| terms | [ProposalTerms](#vega.ProposalTerms) |  |  |
 
 
 
 
 
 
-<a name="vega.Proposal.Terms"></a>
+<a name="vega.ProposalTerms"></a>
 
-### Proposal.Terms
-Proposal terms
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| parameters | [Proposal.Terms.Parameters](#vega.Proposal.Terms.Parameters) |  |  |
-| updateMarket | [Proposal.Terms.UpdateMarket](#vega.Proposal.Terms.UpdateMarket) |  |  |
-| newMarket | [Proposal.Terms.NewMarket](#vega.Proposal.Terms.NewMarket) |  |  |
-| updateNetwork | [Proposal.Terms.UpdateNetwork](#vega.Proposal.Terms.UpdateNetwork) |  |  |
-
-
-
-
-
-
-<a name="vega.Proposal.Terms.NewMarket"></a>
-
-### Proposal.Terms.NewMarket
-Market market = 1 [(validator.field) = {msg_exists: true}];
-
-
-
-
-
-
-<a name="vega.Proposal.Terms.Parameters"></a>
-
-### Proposal.Terms.Parameters
+### ProposalTerms
 
 
 
@@ -1344,25 +1324,28 @@ Market market = 1 [(validator.field) = {msg_exists: true}];
 | closeInDays | [uint64](#uint64) |  |  |
 | enactInDays | [uint64](#uint64) |  |  |
 | minParticipationStake | [uint64](#uint64) |  |  |
+| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
+| newMarket | [NewMarket](#vega.NewMarket) |  |  |
+| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
 
 
 
 
 
 
-<a name="vega.Proposal.Terms.UpdateMarket"></a>
+<a name="vega.UpdateMarket"></a>
 
-### Proposal.Terms.UpdateMarket
-
-
-
+### UpdateMarket
+TODO
 
 
 
 
-<a name="vega.Proposal.Terms.UpdateNetwork"></a>
 
-### Proposal.Terms.UpdateNetwork
+
+<a name="vega.UpdateNetwork"></a>
+
+### UpdateNetwork
 
 
 
@@ -1385,6 +1368,7 @@ Market market = 1 [(validator.field) = {msg_exists: true}];
 | ----- | ---- | ----- | ----------- |
 | voter | [string](#string) |  |  |
 | value | [Vote.Value](#vega.Vote.Value) |  |  |
+| proposalID | [string](#string) |  |  |
 
 
 

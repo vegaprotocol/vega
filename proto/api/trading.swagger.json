@@ -1071,63 +1071,6 @@
       "default": "FAILED",
       "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Rejected.\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal became invalid and cannot be processed.\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal has could not gain enough support to be executed.\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
-    "ProposalTerms": {
-      "type": "object",
-      "properties": {
-        "parameters": {
-          "$ref": "#/definitions/TermsParameters"
-        },
-        "updateMarket": {
-          "$ref": "#/definitions/TermsUpdateMarket"
-        },
-        "newMarket": {
-          "$ref": "#/definitions/TermsNewMarket"
-        },
-        "updateNetwork": {
-          "$ref": "#/definitions/TermsUpdateNetwork"
-        }
-      },
-      "title": "Proposal terms"
-    },
-    "TermsNewMarket": {
-      "type": "object"
-    },
-    "TermsParameters": {
-      "type": "object",
-      "properties": {
-        "closeInDays": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "enactInDays": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "minParticipationStake": {
-          "type": "string",
-          "format": "uint64"
-        }
-      }
-    },
-    "TermsUpdateMarket": {
-      "type": "object"
-    },
-    "TermsUpdateNetwork": {
-      "type": "object",
-      "properties": {
-        "changes": {
-          "$ref": "#/definitions/vegaNetworkConfiguration"
-        }
-      }
-    },
-    "VoteValue": {
-      "type": "string",
-      "enum": [
-        "NO",
-        "YES"
-      ],
-      "default": "NO"
-    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -1973,6 +1916,9 @@
         }
       }
     },
+    "vegaNewMarket": {
+      "type": "object"
+    },
     "vegaOrder": {
       "type": "object",
       "properties": {
@@ -2256,13 +2202,33 @@
           "format": "int64"
         },
         "terms": {
-          "$ref": "#/definitions/ProposalTerms"
+          "$ref": "#/definitions/vegaProposalTerms"
+        }
+      }
+    },
+    "vegaProposalTerms": {
+      "type": "object",
+      "properties": {
+        "closeInDays": {
+          "type": "string",
+          "format": "uint64"
         },
-        "votes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
+        "enactInDays": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "minParticipationStake": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "updateMarket": {
+          "$ref": "#/definitions/vegaUpdateMarket"
+        },
+        "newMarket": {
+          "$ref": "#/definitions/vegaNewMarket"
+        },
+        "updateNetwork": {
+          "$ref": "#/definitions/vegaUpdateNetwork"
         }
       }
     },
@@ -2565,14 +2531,14 @@
         }
       }
     },
-    "vegaVote": {
+    "vegaUpdateMarket": {
+      "type": "object"
+    },
+    "vegaUpdateNetwork": {
       "type": "object",
       "properties": {
-        "voter": {
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/definitions/VoteValue"
+        "changes": {
+          "$ref": "#/definitions/vegaNetworkConfiguration"
         }
       }
     },

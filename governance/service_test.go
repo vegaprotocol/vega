@@ -56,19 +56,17 @@ func TestGovernanceService(t *testing.T) {
 func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
 
-	updateNetwork := types.Proposal_Terms_UpdateNetwork{
+	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
 			MinCloseInDays: 100,
 			MaxCloseInDays: 1000,
 		},
 	}
-	terms := types.Proposal_Terms{
-		Parameters: &types.Proposal_Terms_Parameters{
-			CloseInDays:           30,
-			EnactInDays:           31,
-			MinParticipationStake: 50,
-		},
-		Change: &types.Proposal_Terms_UpdateNetwork_{
+	terms := types.ProposalTerms{
+		CloseInDays:           30,
+		EnactInDays:           31,
+		MinParticipationStake: 50,
+		Change: &types.ProposalTerms_UpdateNetwork{
 			UpdateNetwork: &updateNetwork,
 		},
 	}
@@ -90,12 +88,11 @@ func testPrepareProposalNormal(t *testing.T) {
 func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
 
-	updateNetwork := types.Proposal_Terms_UpdateNetwork{
+	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{},
 	}
-	terms := types.Proposal_Terms{
-		Parameters: &types.Proposal_Terms_Parameters{},
-		Change: &types.Proposal_Terms_UpdateNetwork_{
+	terms := types.ProposalTerms{
+		Change: &types.ProposalTerms_UpdateNetwork{
 			UpdateNetwork: &updateNetwork,
 		},
 	}

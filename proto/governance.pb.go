@@ -21,31 +21,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type Vote_Value int32
-
-const (
-	Vote_NO  Vote_Value = 0
-	Vote_YES Vote_Value = 1
-)
-
-var Vote_Value_name = map[int32]string{
-	0: "NO",
-	1: "YES",
-}
-
-var Vote_Value_value = map[string]int32{
-	"NO":  0,
-	"YES": 1,
-}
-
-func (x Vote_Value) String() string {
-	return proto.EnumName(Vote_Value_name, int32(x))
-}
-
-func (Vote_Value) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{1, 0}
-}
-
 // Proposal state transition:
 // Open ->
 //   - Passed -> Enacted.
@@ -87,7 +62,32 @@ func (x Proposal_State) String() string {
 }
 
 func (Proposal_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2, 0}
+	return fileDescriptor_c891e73c7d2524a3, []int{5, 0}
+}
+
+type Vote_Value int32
+
+const (
+	Vote_NO  Vote_Value = 0
+	Vote_YES Vote_Value = 1
+)
+
+var Vote_Value_name = map[int32]string{
+	0: "NO",
+	1: "YES",
+}
+
+var Vote_Value_value = map[string]int32{
+	"NO":  0,
+	"YES": 1,
+}
+
+func (x Vote_Value) String() string {
+	return proto.EnumName(Vote_Value_name, int32(x))
+}
+
+func (Vote_Value) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c891e73c7d2524a3, []int{6, 0}
 }
 
 type NetworkConfiguration struct {
@@ -161,71 +161,243 @@ func (m *NetworkConfiguration) GetMinParticipationStake() uint64 {
 	return 0
 }
 
-type Vote struct {
-	Voter                string     `protobuf:"bytes,1,opt,name=voter,proto3" json:"voter,omitempty"`
-	Value                Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+type UpdateMarket struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Vote) Reset()         { *m = Vote{} }
-func (m *Vote) String() string { return proto.CompactTextString(m) }
-func (*Vote) ProtoMessage()    {}
-func (*Vote) Descriptor() ([]byte, []int) {
+func (m *UpdateMarket) Reset()         { *m = UpdateMarket{} }
+func (m *UpdateMarket) String() string { return proto.CompactTextString(m) }
+func (*UpdateMarket) ProtoMessage()    {}
+func (*UpdateMarket) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c891e73c7d2524a3, []int{1}
 }
 
-func (m *Vote) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Vote.Unmarshal(m, b)
+func (m *UpdateMarket) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateMarket.Unmarshal(m, b)
 }
-func (m *Vote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Vote.Marshal(b, m, deterministic)
+func (m *UpdateMarket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateMarket.Marshal(b, m, deterministic)
 }
-func (m *Vote) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Vote.Merge(m, src)
+func (m *UpdateMarket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateMarket.Merge(m, src)
 }
-func (m *Vote) XXX_Size() int {
-	return xxx_messageInfo_Vote.Size(m)
+func (m *UpdateMarket) XXX_Size() int {
+	return xxx_messageInfo_UpdateMarket.Size(m)
 }
-func (m *Vote) XXX_DiscardUnknown() {
-	xxx_messageInfo_Vote.DiscardUnknown(m)
+func (m *UpdateMarket) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateMarket.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Vote proto.InternalMessageInfo
+var xxx_messageInfo_UpdateMarket proto.InternalMessageInfo
 
-func (m *Vote) GetVoter() string {
+type NewMarket struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NewMarket) Reset()         { *m = NewMarket{} }
+func (m *NewMarket) String() string { return proto.CompactTextString(m) }
+func (*NewMarket) ProtoMessage()    {}
+func (*NewMarket) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c891e73c7d2524a3, []int{2}
+}
+
+func (m *NewMarket) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NewMarket.Unmarshal(m, b)
+}
+func (m *NewMarket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NewMarket.Marshal(b, m, deterministic)
+}
+func (m *NewMarket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NewMarket.Merge(m, src)
+}
+func (m *NewMarket) XXX_Size() int {
+	return xxx_messageInfo_NewMarket.Size(m)
+}
+func (m *NewMarket) XXX_DiscardUnknown() {
+	xxx_messageInfo_NewMarket.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NewMarket proto.InternalMessageInfo
+
+type UpdateNetwork struct {
+	Changes              *NetworkConfiguration `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *UpdateNetwork) Reset()         { *m = UpdateNetwork{} }
+func (m *UpdateNetwork) String() string { return proto.CompactTextString(m) }
+func (*UpdateNetwork) ProtoMessage()    {}
+func (*UpdateNetwork) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c891e73c7d2524a3, []int{3}
+}
+
+func (m *UpdateNetwork) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateNetwork.Unmarshal(m, b)
+}
+func (m *UpdateNetwork) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateNetwork.Marshal(b, m, deterministic)
+}
+func (m *UpdateNetwork) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateNetwork.Merge(m, src)
+}
+func (m *UpdateNetwork) XXX_Size() int {
+	return xxx_messageInfo_UpdateNetwork.Size(m)
+}
+func (m *UpdateNetwork) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateNetwork.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateNetwork proto.InternalMessageInfo
+
+func (m *UpdateNetwork) GetChanges() *NetworkConfiguration {
 	if m != nil {
-		return m.Voter
+		return m.Changes
 	}
-	return ""
+	return nil
 }
 
-func (m *Vote) GetValue() Vote_Value {
+type ProposalTerms struct {
+	CloseInDays           uint64 `protobuf:"varint,1,opt,name=closeInDays,proto3" json:"closeInDays,omitempty"`
+	EnactInDays           uint64 `protobuf:"varint,2,opt,name=enactInDays,proto3" json:"enactInDays,omitempty"`
+	MinParticipationStake uint64 `protobuf:"varint,3,opt,name=minParticipationStake,proto3" json:"minParticipationStake,omitempty"`
+	// Types that are valid to be assigned to Change:
+	//	*ProposalTerms_UpdateMarket
+	//	*ProposalTerms_NewMarket
+	//	*ProposalTerms_UpdateNetwork
+	Change               isProposalTerms_Change `protobuf_oneof:"change"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *ProposalTerms) Reset()         { *m = ProposalTerms{} }
+func (m *ProposalTerms) String() string { return proto.CompactTextString(m) }
+func (*ProposalTerms) ProtoMessage()    {}
+func (*ProposalTerms) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c891e73c7d2524a3, []int{4}
+}
+
+func (m *ProposalTerms) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProposalTerms.Unmarshal(m, b)
+}
+func (m *ProposalTerms) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProposalTerms.Marshal(b, m, deterministic)
+}
+func (m *ProposalTerms) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProposalTerms.Merge(m, src)
+}
+func (m *ProposalTerms) XXX_Size() int {
+	return xxx_messageInfo_ProposalTerms.Size(m)
+}
+func (m *ProposalTerms) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProposalTerms.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProposalTerms proto.InternalMessageInfo
+
+func (m *ProposalTerms) GetCloseInDays() uint64 {
 	if m != nil {
-		return m.Value
+		return m.CloseInDays
 	}
-	return Vote_NO
+	return 0
+}
+
+func (m *ProposalTerms) GetEnactInDays() uint64 {
+	if m != nil {
+		return m.EnactInDays
+	}
+	return 0
+}
+
+func (m *ProposalTerms) GetMinParticipationStake() uint64 {
+	if m != nil {
+		return m.MinParticipationStake
+	}
+	return 0
+}
+
+type isProposalTerms_Change interface {
+	isProposalTerms_Change()
+}
+
+type ProposalTerms_UpdateMarket struct {
+	UpdateMarket *UpdateMarket `protobuf:"bytes,101,opt,name=updateMarket,proto3,oneof"`
+}
+
+type ProposalTerms_NewMarket struct {
+	NewMarket *NewMarket `protobuf:"bytes,102,opt,name=newMarket,proto3,oneof"`
+}
+
+type ProposalTerms_UpdateNetwork struct {
+	UpdateNetwork *UpdateNetwork `protobuf:"bytes,103,opt,name=updateNetwork,proto3,oneof"`
+}
+
+func (*ProposalTerms_UpdateMarket) isProposalTerms_Change() {}
+
+func (*ProposalTerms_NewMarket) isProposalTerms_Change() {}
+
+func (*ProposalTerms_UpdateNetwork) isProposalTerms_Change() {}
+
+func (m *ProposalTerms) GetChange() isProposalTerms_Change {
+	if m != nil {
+		return m.Change
+	}
+	return nil
+}
+
+func (m *ProposalTerms) GetUpdateMarket() *UpdateMarket {
+	if x, ok := m.GetChange().(*ProposalTerms_UpdateMarket); ok {
+		return x.UpdateMarket
+	}
+	return nil
+}
+
+func (m *ProposalTerms) GetNewMarket() *NewMarket {
+	if x, ok := m.GetChange().(*ProposalTerms_NewMarket); ok {
+		return x.NewMarket
+	}
+	return nil
+}
+
+func (m *ProposalTerms) GetUpdateNetwork() *UpdateNetwork {
+	if x, ok := m.GetChange().(*ProposalTerms_UpdateNetwork); ok {
+		return x.UpdateNetwork
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ProposalTerms) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ProposalTerms_UpdateMarket)(nil),
+		(*ProposalTerms_NewMarket)(nil),
+		(*ProposalTerms_UpdateNetwork)(nil),
+	}
 }
 
 type Proposal struct {
-	Id                   string          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Reference            string          `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	PartyID              string          `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	State                Proposal_State  `protobuf:"varint,4,opt,name=state,proto3,enum=vega.Proposal_State" json:"state,omitempty"`
-	Timestamp            int64           `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Terms                *Proposal_Terms `protobuf:"bytes,6,opt,name=terms,proto3" json:"terms,omitempty"`
-	Votes                []*Vote         `protobuf:"bytes,7,rep,name=votes,proto3" json:"votes,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+	Id                   string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Reference            string         `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
+	PartyID              string         `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	State                Proposal_State `protobuf:"varint,4,opt,name=state,proto3,enum=vega.Proposal_State" json:"state,omitempty"`
+	Timestamp            int64          `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Terms                *ProposalTerms `protobuf:"bytes,6,opt,name=terms,proto3" json:"terms,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
 func (m *Proposal) Reset()         { *m = Proposal{} }
 func (m *Proposal) String() string { return proto.CompactTextString(m) }
 func (*Proposal) ProtoMessage()    {}
 func (*Proposal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2}
+	return fileDescriptor_c891e73c7d2524a3, []int{5}
 }
 
 func (m *Proposal) XXX_Unmarshal(b []byte) error {
@@ -281,338 +453,123 @@ func (m *Proposal) GetTimestamp() int64 {
 	return 0
 }
 
-func (m *Proposal) GetTerms() *Proposal_Terms {
+func (m *Proposal) GetTerms() *ProposalTerms {
 	if m != nil {
 		return m.Terms
 	}
 	return nil
 }
 
-func (m *Proposal) GetVotes() []*Vote {
+type Vote struct {
+	Voter                string     `protobuf:"bytes,1,opt,name=voter,proto3" json:"voter,omitempty"`
+	Value                Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
+	ProposalID           string     `protobuf:"bytes,3,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *Vote) Reset()         { *m = Vote{} }
+func (m *Vote) String() string { return proto.CompactTextString(m) }
+func (*Vote) ProtoMessage()    {}
+func (*Vote) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c891e73c7d2524a3, []int{6}
+}
+
+func (m *Vote) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Vote.Unmarshal(m, b)
+}
+func (m *Vote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Vote.Marshal(b, m, deterministic)
+}
+func (m *Vote) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Vote.Merge(m, src)
+}
+func (m *Vote) XXX_Size() int {
+	return xxx_messageInfo_Vote.Size(m)
+}
+func (m *Vote) XXX_DiscardUnknown() {
+	xxx_messageInfo_Vote.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Vote proto.InternalMessageInfo
+
+func (m *Vote) GetVoter() string {
 	if m != nil {
-		return m.Votes
+		return m.Voter
 	}
-	return nil
+	return ""
 }
 
-// Proposal terms
-type Proposal_Terms struct {
-	Parameters *Proposal_Terms_Parameters `protobuf:"bytes,1,opt,name=parameters,proto3" json:"parameters,omitempty"`
-	// Types that are valid to be assigned to Change:
-	//	*Proposal_Terms_UpdateMarket_
-	//	*Proposal_Terms_NewMarket_
-	//	*Proposal_Terms_UpdateNetwork_
-	Change               isProposal_Terms_Change `protobuf_oneof:"change"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
-}
-
-func (m *Proposal_Terms) Reset()         { *m = Proposal_Terms{} }
-func (m *Proposal_Terms) String() string { return proto.CompactTextString(m) }
-func (*Proposal_Terms) ProtoMessage()    {}
-func (*Proposal_Terms) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2, 0}
-}
-
-func (m *Proposal_Terms) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Proposal_Terms.Unmarshal(m, b)
-}
-func (m *Proposal_Terms) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Proposal_Terms.Marshal(b, m, deterministic)
-}
-func (m *Proposal_Terms) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proposal_Terms.Merge(m, src)
-}
-func (m *Proposal_Terms) XXX_Size() int {
-	return xxx_messageInfo_Proposal_Terms.Size(m)
-}
-func (m *Proposal_Terms) XXX_DiscardUnknown() {
-	xxx_messageInfo_Proposal_Terms.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Proposal_Terms proto.InternalMessageInfo
-
-func (m *Proposal_Terms) GetParameters() *Proposal_Terms_Parameters {
+func (m *Vote) GetValue() Vote_Value {
 	if m != nil {
-		return m.Parameters
+		return m.Value
 	}
-	return nil
+	return Vote_NO
 }
 
-type isProposal_Terms_Change interface {
-	isProposal_Terms_Change()
-}
-
-type Proposal_Terms_UpdateMarket_ struct {
-	UpdateMarket *Proposal_Terms_UpdateMarket `protobuf:"bytes,101,opt,name=updateMarket,proto3,oneof"`
-}
-
-type Proposal_Terms_NewMarket_ struct {
-	NewMarket *Proposal_Terms_NewMarket `protobuf:"bytes,102,opt,name=newMarket,proto3,oneof"`
-}
-
-type Proposal_Terms_UpdateNetwork_ struct {
-	UpdateNetwork *Proposal_Terms_UpdateNetwork `protobuf:"bytes,103,opt,name=updateNetwork,proto3,oneof"`
-}
-
-func (*Proposal_Terms_UpdateMarket_) isProposal_Terms_Change() {}
-
-func (*Proposal_Terms_NewMarket_) isProposal_Terms_Change() {}
-
-func (*Proposal_Terms_UpdateNetwork_) isProposal_Terms_Change() {}
-
-func (m *Proposal_Terms) GetChange() isProposal_Terms_Change {
+func (m *Vote) GetProposalID() string {
 	if m != nil {
-		return m.Change
+		return m.ProposalID
 	}
-	return nil
-}
-
-func (m *Proposal_Terms) GetUpdateMarket() *Proposal_Terms_UpdateMarket {
-	if x, ok := m.GetChange().(*Proposal_Terms_UpdateMarket_); ok {
-		return x.UpdateMarket
-	}
-	return nil
-}
-
-func (m *Proposal_Terms) GetNewMarket() *Proposal_Terms_NewMarket {
-	if x, ok := m.GetChange().(*Proposal_Terms_NewMarket_); ok {
-		return x.NewMarket
-	}
-	return nil
-}
-
-func (m *Proposal_Terms) GetUpdateNetwork() *Proposal_Terms_UpdateNetwork {
-	if x, ok := m.GetChange().(*Proposal_Terms_UpdateNetwork_); ok {
-		return x.UpdateNetwork
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*Proposal_Terms) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*Proposal_Terms_UpdateMarket_)(nil),
-		(*Proposal_Terms_NewMarket_)(nil),
-		(*Proposal_Terms_UpdateNetwork_)(nil),
-	}
-}
-
-type Proposal_Terms_Parameters struct {
-	CloseInDays           uint64   `protobuf:"varint,1,opt,name=closeInDays,proto3" json:"closeInDays,omitempty"`
-	EnactInDays           uint64   `protobuf:"varint,2,opt,name=enactInDays,proto3" json:"enactInDays,omitempty"`
-	MinParticipationStake uint64   `protobuf:"varint,3,opt,name=minParticipationStake,proto3" json:"minParticipationStake,omitempty"`
-	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
-	XXX_unrecognized      []byte   `json:"-"`
-	XXX_sizecache         int32    `json:"-"`
-}
-
-func (m *Proposal_Terms_Parameters) Reset()         { *m = Proposal_Terms_Parameters{} }
-func (m *Proposal_Terms_Parameters) String() string { return proto.CompactTextString(m) }
-func (*Proposal_Terms_Parameters) ProtoMessage()    {}
-func (*Proposal_Terms_Parameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2, 0, 0}
-}
-
-func (m *Proposal_Terms_Parameters) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Proposal_Terms_Parameters.Unmarshal(m, b)
-}
-func (m *Proposal_Terms_Parameters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Proposal_Terms_Parameters.Marshal(b, m, deterministic)
-}
-func (m *Proposal_Terms_Parameters) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proposal_Terms_Parameters.Merge(m, src)
-}
-func (m *Proposal_Terms_Parameters) XXX_Size() int {
-	return xxx_messageInfo_Proposal_Terms_Parameters.Size(m)
-}
-func (m *Proposal_Terms_Parameters) XXX_DiscardUnknown() {
-	xxx_messageInfo_Proposal_Terms_Parameters.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Proposal_Terms_Parameters proto.InternalMessageInfo
-
-func (m *Proposal_Terms_Parameters) GetCloseInDays() uint64 {
-	if m != nil {
-		return m.CloseInDays
-	}
-	return 0
-}
-
-func (m *Proposal_Terms_Parameters) GetEnactInDays() uint64 {
-	if m != nil {
-		return m.EnactInDays
-	}
-	return 0
-}
-
-func (m *Proposal_Terms_Parameters) GetMinParticipationStake() uint64 {
-	if m != nil {
-		return m.MinParticipationStake
-	}
-	return 0
-}
-
-type Proposal_Terms_UpdateMarket struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Proposal_Terms_UpdateMarket) Reset()         { *m = Proposal_Terms_UpdateMarket{} }
-func (m *Proposal_Terms_UpdateMarket) String() string { return proto.CompactTextString(m) }
-func (*Proposal_Terms_UpdateMarket) ProtoMessage()    {}
-func (*Proposal_Terms_UpdateMarket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2, 0, 1}
-}
-
-func (m *Proposal_Terms_UpdateMarket) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Proposal_Terms_UpdateMarket.Unmarshal(m, b)
-}
-func (m *Proposal_Terms_UpdateMarket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Proposal_Terms_UpdateMarket.Marshal(b, m, deterministic)
-}
-func (m *Proposal_Terms_UpdateMarket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proposal_Terms_UpdateMarket.Merge(m, src)
-}
-func (m *Proposal_Terms_UpdateMarket) XXX_Size() int {
-	return xxx_messageInfo_Proposal_Terms_UpdateMarket.Size(m)
-}
-func (m *Proposal_Terms_UpdateMarket) XXX_DiscardUnknown() {
-	xxx_messageInfo_Proposal_Terms_UpdateMarket.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Proposal_Terms_UpdateMarket proto.InternalMessageInfo
-
-type Proposal_Terms_NewMarket struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Proposal_Terms_NewMarket) Reset()         { *m = Proposal_Terms_NewMarket{} }
-func (m *Proposal_Terms_NewMarket) String() string { return proto.CompactTextString(m) }
-func (*Proposal_Terms_NewMarket) ProtoMessage()    {}
-func (*Proposal_Terms_NewMarket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2, 0, 2}
-}
-
-func (m *Proposal_Terms_NewMarket) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Proposal_Terms_NewMarket.Unmarshal(m, b)
-}
-func (m *Proposal_Terms_NewMarket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Proposal_Terms_NewMarket.Marshal(b, m, deterministic)
-}
-func (m *Proposal_Terms_NewMarket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proposal_Terms_NewMarket.Merge(m, src)
-}
-func (m *Proposal_Terms_NewMarket) XXX_Size() int {
-	return xxx_messageInfo_Proposal_Terms_NewMarket.Size(m)
-}
-func (m *Proposal_Terms_NewMarket) XXX_DiscardUnknown() {
-	xxx_messageInfo_Proposal_Terms_NewMarket.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Proposal_Terms_NewMarket proto.InternalMessageInfo
-
-type Proposal_Terms_UpdateNetwork struct {
-	Changes              *NetworkConfiguration `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
-}
-
-func (m *Proposal_Terms_UpdateNetwork) Reset()         { *m = Proposal_Terms_UpdateNetwork{} }
-func (m *Proposal_Terms_UpdateNetwork) String() string { return proto.CompactTextString(m) }
-func (*Proposal_Terms_UpdateNetwork) ProtoMessage()    {}
-func (*Proposal_Terms_UpdateNetwork) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c891e73c7d2524a3, []int{2, 0, 3}
-}
-
-func (m *Proposal_Terms_UpdateNetwork) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Proposal_Terms_UpdateNetwork.Unmarshal(m, b)
-}
-func (m *Proposal_Terms_UpdateNetwork) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Proposal_Terms_UpdateNetwork.Marshal(b, m, deterministic)
-}
-func (m *Proposal_Terms_UpdateNetwork) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proposal_Terms_UpdateNetwork.Merge(m, src)
-}
-func (m *Proposal_Terms_UpdateNetwork) XXX_Size() int {
-	return xxx_messageInfo_Proposal_Terms_UpdateNetwork.Size(m)
-}
-func (m *Proposal_Terms_UpdateNetwork) XXX_DiscardUnknown() {
-	xxx_messageInfo_Proposal_Terms_UpdateNetwork.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Proposal_Terms_UpdateNetwork proto.InternalMessageInfo
-
-func (m *Proposal_Terms_UpdateNetwork) GetChanges() *NetworkConfiguration {
-	if m != nil {
-		return m.Changes
-	}
-	return nil
+	return ""
 }
 
 func init() {
-	proto.RegisterEnum("vega.Vote_Value", Vote_Value_name, Vote_Value_value)
 	proto.RegisterEnum("vega.Proposal_State", Proposal_State_name, Proposal_State_value)
+	proto.RegisterEnum("vega.Vote_Value", Vote_Value_name, Vote_Value_value)
 	proto.RegisterType((*NetworkConfiguration)(nil), "vega.NetworkConfiguration")
-	proto.RegisterType((*Vote)(nil), "vega.Vote")
+	proto.RegisterType((*UpdateMarket)(nil), "vega.UpdateMarket")
+	proto.RegisterType((*NewMarket)(nil), "vega.NewMarket")
+	proto.RegisterType((*UpdateNetwork)(nil), "vega.UpdateNetwork")
+	proto.RegisterType((*ProposalTerms)(nil), "vega.ProposalTerms")
 	proto.RegisterType((*Proposal)(nil), "vega.Proposal")
-	proto.RegisterType((*Proposal_Terms)(nil), "vega.Proposal.Terms")
-	proto.RegisterType((*Proposal_Terms_Parameters)(nil), "vega.Proposal.Terms.Parameters")
-	proto.RegisterType((*Proposal_Terms_UpdateMarket)(nil), "vega.Proposal.Terms.UpdateMarket")
-	proto.RegisterType((*Proposal_Terms_NewMarket)(nil), "vega.Proposal.Terms.NewMarket")
-	proto.RegisterType((*Proposal_Terms_UpdateNetwork)(nil), "vega.Proposal.Terms.UpdateNetwork")
+	proto.RegisterType((*Vote)(nil), "vega.Vote")
 }
 
 func init() { proto.RegisterFile("proto/governance.proto", fileDescriptor_c891e73c7d2524a3) }
 
 var fileDescriptor_c891e73c7d2524a3 = []byte{
-	// 678 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0xcd, 0x6e, 0xda, 0x4c,
-	0x14, 0xc5, 0x80, 0xf9, 0xb9, 0x24, 0xc8, 0x1a, 0xe5, 0xfb, 0x64, 0x59, 0x51, 0x21, 0x2c, 0x2a,
-	0x36, 0xb1, 0x25, 0x52, 0x75, 0x15, 0x55, 0x0a, 0xc1, 0xcd, 0x8f, 0x1a, 0x82, 0x4c, 0x1a, 0xb5,
-	0xdd, 0x4d, 0xcc, 0xc4, 0xb1, 0xc0, 0x1e, 0x6b, 0x3c, 0x40, 0xf3, 0x06, 0x79, 0x8a, 0x3e, 0x49,
-	0xdf, 0x25, 0x52, 0xd6, 0x7d, 0x88, 0xca, 0x33, 0xc6, 0x98, 0x94, 0x76, 0x65, 0xcf, 0xb9, 0xe7,
-	0x9c, 0x7b, 0xe7, 0xd8, 0x33, 0xf0, 0x7f, 0xc4, 0x28, 0xa7, 0x96, 0x47, 0x17, 0x84, 0x85, 0x38,
-	0x74, 0x89, 0x29, 0x00, 0x54, 0x5e, 0x10, 0x0f, 0x1b, 0xef, 0x3d, 0x9f, 0x3f, 0xcc, 0xef, 0x4c,
-	0x97, 0x06, 0x56, 0xb0, 0xf4, 0xf9, 0x94, 0x2e, 0x2d, 0x8f, 0x1e, 0x0a, 0xca, 0xe1, 0x02, 0xcf,
-	0xfc, 0x09, 0xe6, 0x94, 0xc5, 0x56, 0xf6, 0x2a, 0xd5, 0x9d, 0x5f, 0x0a, 0xec, 0x0d, 0x09, 0x5f,
-	0x52, 0x36, 0x3d, 0xa5, 0xe1, 0xbd, 0xef, 0xcd, 0x19, 0xe6, 0x3e, 0x0d, 0xd1, 0x5b, 0x68, 0x06,
-	0x7e, 0x78, 0x3a, 0xa3, 0x31, 0xb9, 0x08, 0x07, 0xf8, 0x31, 0xd6, 0x95, 0xb6, 0xd2, 0x2d, 0x3b,
-	0xaf, 0x50, 0xc1, 0xc3, 0xdf, 0xf3, 0xbc, 0x62, 0xca, 0xdb, 0x40, 0x53, 0x3f, 0x3b, 0xc4, 0x2e,
-	0x4f, 0x79, 0xa5, 0xcc, 0x2f, 0x87, 0xa6, 0x7e, 0x79, 0x5e, 0x39, 0xf3, 0xcb, 0xf3, 0xde, 0xc1,
-	0x7f, 0x81, 0x1f, 0x8e, 0x30, 0xe3, 0xbe, 0xeb, 0x47, 0x62, 0xe6, 0x31, 0xc7, 0x53, 0xa2, 0xab,
-	0x82, 0xbe, 0xbd, 0xd8, 0xa1, 0x50, 0xbe, 0xa5, 0x9c, 0xa0, 0x7d, 0x50, 0x17, 0x94, 0x13, 0x26,
-	0x36, 0x55, 0xef, 0x57, 0x5e, 0x9e, 0x5b, 0xc5, 0x2f, 0x8a, 0x23, 0x41, 0x64, 0x81, 0xba, 0xc0,
-	0xb3, 0x39, 0x11, 0x5b, 0x69, 0xf6, 0x34, 0x33, 0x89, 0xd8, 0x4c, 0x84, 0xe6, 0x6d, 0x82, 0xf7,
-	0xab, 0x2f, 0xcf, 0xad, 0xd2, 0x93, 0x92, 0x08, 0x92, 0x75, 0x47, 0x07, 0x55, 0x14, 0x50, 0x05,
-	0x8a, 0xc3, 0x6b, 0xad, 0x80, 0xaa, 0x50, 0xfa, 0x6a, 0x8f, 0x35, 0xa5, 0xf3, 0x54, 0x85, 0xda,
-	0x88, 0xd1, 0x88, 0xc6, 0x78, 0x86, 0x9a, 0x50, 0xf4, 0x27, 0xb2, 0xa5, 0x53, 0xf4, 0x27, 0x68,
-	0x1f, 0xea, 0x8c, 0xdc, 0x13, 0x46, 0x42, 0x57, 0xf6, 0xaa, 0x3b, 0x6b, 0x00, 0xb5, 0xa1, 0x1a,
-	0x61, 0xc6, 0x1f, 0x2f, 0x06, 0x22, 0xaa, 0xf5, 0x94, 0x2b, 0x18, 0x1d, 0x81, 0x1a, 0x73, 0xcc,
-	0x89, 0x88, 0xa8, 0xd9, 0xdb, 0x93, 0x73, 0xae, 0xda, 0x99, 0xe3, 0xa4, 0x96, 0x9b, 0x55, 0x70,
-	0x93, 0xa6, 0xdc, 0x0f, 0x48, 0xcc, 0x71, 0x10, 0x89, 0xb0, 0x4a, 0xce, 0x1a, 0x40, 0x3d, 0x50,
-	0x39, 0x61, 0x41, 0xac, 0x57, 0xda, 0x4a, 0xb7, 0xf1, 0x87, 0xe5, 0x4d, 0x52, 0x93, 0x83, 0xb4,
-	0x15, 0x47, 0x52, 0x51, 0x5b, 0x86, 0x19, 0xeb, 0xd5, 0x76, 0xa9, 0xdb, 0xe8, 0xc1, 0x3a, 0x2e,
-	0x19, 0x68, 0x6c, 0xfc, 0x2c, 0x83, 0x2a, 0xa4, 0xe8, 0x0c, 0x20, 0xc2, 0x0c, 0x07, 0x84, 0x13,
-	0x26, 0x7f, 0xa9, 0x46, 0xaf, 0xb5, 0xad, 0x89, 0x39, 0xca, 0x68, 0x59, 0xbf, 0x9c, 0x14, 0x9d,
-	0xc1, 0xce, 0x3c, 0x9a, 0x60, 0x4e, 0xae, 0x30, 0x9b, 0x12, 0xae, 0x13, 0x61, 0x75, 0xb0, 0xd5,
-	0xea, 0x73, 0x8e, 0x78, 0x5e, 0x70, 0x36, 0x84, 0xe8, 0x03, 0xd4, 0x43, 0xb2, 0x4c, 0x5d, 0xee,
-	0x85, 0xcb, 0x9b, 0xad, 0x2e, 0xc3, 0x15, 0xeb, 0xbc, 0xe0, 0xac, 0x25, 0xe8, 0x12, 0x76, 0xa5,
-	0x5f, 0x7a, 0x8c, 0x74, 0x4f, 0x78, 0x74, 0xfe, 0x31, 0x49, 0xca, 0x3c, 0x2f, 0x38, 0x9b, 0x52,
-	0xe3, 0x87, 0x02, 0xb0, 0xde, 0x37, 0xea, 0x42, 0xc3, 0x7d, 0x7d, 0x00, 0x65, 0x18, 0x5a, 0xc1,
-	0xc9, 0x97, 0x12, 0x26, 0xc9, 0x1d, 0x99, 0xe2, 0x26, 0x33, 0x57, 0x42, 0xc7, 0x7f, 0x3b, 0x37,
-	0xa5, 0x0d, 0xcd, 0x76, 0x92, 0xd1, 0x84, 0x9d, 0x7c, 0x98, 0x46, 0x03, 0xea, 0x59, 0x2c, 0xc6,
-	0x15, 0xec, 0x6e, 0xec, 0x0f, 0x1d, 0x43, 0xd5, 0x7d, 0xc0, 0xa1, 0x47, 0x56, 0x5f, 0xda, 0x90,
-	0xa1, 0x6c, 0xbb, 0x70, 0xb2, 0x8f, 0xbc, 0x92, 0xf4, 0x6b, 0x50, 0x91, 0xaf, 0x9d, 0x01, 0xa8,
-	0xe2, 0x5f, 0x46, 0x00, 0x95, 0x8f, 0x27, 0x17, 0x9f, 0xec, 0x81, 0x56, 0x40, 0x35, 0x28, 0x5f,
-	0x8f, 0xec, 0xa1, 0xa6, 0x24, 0xe8, 0xe8, 0x64, 0x3c, 0xb6, 0x07, 0x5a, 0x11, 0xed, 0x40, 0xcd,
-	0xb1, 0x2f, 0xed, 0xd3, 0x1b, 0x7b, 0xa0, 0x95, 0x50, 0x03, 0xaa, 0xf6, 0xf0, 0x44, 0x2c, 0xca,
-	0xfd, 0x83, 0x6f, 0x2d, 0x97, 0x4e, 0x88, 0x18, 0x41, 0x5c, 0x7e, 0x2e, 0x9d, 0x99, 0x3e, 0xb5,
-	0x92, 0xb5, 0x25, 0x80, 0xbb, 0x8a, 0x78, 0x1c, 0xfd, 0x0e, 0x00, 0x00, 0xff, 0xff, 0x68, 0x8e,
-	0x7e, 0x48, 0x6c, 0x05, 0x00, 0x00,
+	// 642 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x94, 0x5d, 0x4e, 0xdb, 0x4c,
+	0x14, 0x86, 0x63, 0x27, 0xce, 0xcf, 0x09, 0xe4, 0xb3, 0xe6, 0xa3, 0x95, 0x85, 0x2a, 0x41, 0x7d,
+	0x81, 0xb8, 0xc1, 0x56, 0xa1, 0xaa, 0x2a, 0x95, 0x1b, 0x42, 0x5c, 0x41, 0x55, 0x42, 0xe4, 0x50,
+	0xd4, 0xf6, 0x6e, 0x70, 0x06, 0x33, 0x4a, 0xec, 0xb1, 0xc6, 0x93, 0xa4, 0xec, 0xa0, 0x3b, 0xe8,
+	0x0e, 0xba, 0xa1, 0x2e, 0x00, 0x89, 0xeb, 0x2e, 0xa2, 0xf2, 0x8c, 0x13, 0x26, 0x94, 0x5e, 0x25,
+	0xf3, 0x9e, 0xf7, 0xfc, 0x3d, 0x39, 0x0a, 0x3c, 0xcf, 0x38, 0x13, 0xcc, 0x8f, 0xd9, 0x8c, 0xf0,
+	0x14, 0xa7, 0x11, 0xf1, 0xa4, 0x80, 0x6a, 0x33, 0x12, 0xe3, 0xcd, 0x37, 0x31, 0x15, 0x37, 0xd3,
+	0x2b, 0x2f, 0x62, 0x89, 0x9f, 0xcc, 0xa9, 0x18, 0xb3, 0xb9, 0x1f, 0xb3, 0x3d, 0x69, 0xd9, 0x9b,
+	0xe1, 0x09, 0x1d, 0x61, 0xc1, 0x78, 0xee, 0x2f, 0xbf, 0xaa, 0x6c, 0xf7, 0xb7, 0x01, 0x1b, 0x7d,
+	0x22, 0xe6, 0x8c, 0x8f, 0x8f, 0x59, 0x7a, 0x4d, 0xe3, 0x29, 0xc7, 0x82, 0xb2, 0x14, 0xed, 0x40,
+	0x27, 0xa1, 0xe9, 0xf1, 0x84, 0xe5, 0xe4, 0x34, 0xed, 0xe1, 0xdb, 0xdc, 0x31, 0xb6, 0x8d, 0xdd,
+	0x5a, 0xf8, 0x48, 0x95, 0x3e, 0xfc, 0x4d, 0xf7, 0x99, 0xa5, 0x6f, 0x45, 0x2d, 0xeb, 0x05, 0x29,
+	0x8e, 0x44, 0xe9, 0xab, 0x2e, 0xeb, 0x69, 0x6a, 0x59, 0x4f, 0xf7, 0xd5, 0x96, 0xf5, 0x74, 0xdf,
+	0x6b, 0x78, 0x96, 0xd0, 0x74, 0x80, 0xb9, 0xa0, 0x11, 0xcd, 0xe4, 0xcc, 0x43, 0x81, 0xc7, 0xc4,
+	0xb1, 0xa4, 0xfd, 0xe9, 0xa0, 0xdb, 0x81, 0xb5, 0x4f, 0xd9, 0x08, 0x0b, 0x72, 0x86, 0xf9, 0x98,
+	0x08, 0xb7, 0x0d, 0xad, 0x3e, 0x99, 0x97, 0x8f, 0x33, 0x58, 0x57, 0xc1, 0x12, 0x08, 0x3a, 0x84,
+	0x46, 0x74, 0x83, 0xd3, 0x98, 0xa8, 0xe5, 0xdb, 0xfb, 0x9b, 0x5e, 0x01, 0xdb, 0x7b, 0x0a, 0x58,
+	0xb7, 0x7e, 0x7f, 0xb7, 0x65, 0x6e, 0x1b, 0xe1, 0x22, 0xc5, 0xfd, 0x65, 0xc2, 0xfa, 0x80, 0xb3,
+	0x8c, 0xe5, 0x78, 0x72, 0x41, 0x78, 0x92, 0xa3, 0x5d, 0x68, 0x47, 0x8f, 0x81, 0xaa, 0x3c, 0xbb,
+	0x12, 0xea, 0xa1, 0xc2, 0x49, 0x34, 0x04, 0xe6, 0xaa, 0x53, 0x0b, 0xa1, 0xc3, 0x7f, 0x71, 0xa8,
+	0xae, 0xe4, 0x3c, 0x6d, 0x42, 0x6f, 0x61, 0x6d, 0xaa, 0xf1, 0x70, 0x88, 0x5c, 0x13, 0xa9, 0x35,
+	0x75, 0x52, 0x27, 0x95, 0x70, 0xc5, 0x89, 0x7c, 0x68, 0xa5, 0x0b, 0x72, 0xce, 0xb5, 0x4c, 0xfb,
+	0x6f, 0x41, 0x67, 0xbe, 0xcc, 0x79, 0xf0, 0xa0, 0x77, 0xb0, 0x3e, 0xd5, 0xe9, 0x3a, 0xb1, 0x4c,
+	0xfa, 0x5f, 0xef, 0x55, 0x86, 0x4e, 0x2a, 0xe1, 0xaa, 0xb7, 0xdb, 0x84, 0xba, 0xc2, 0xea, 0xfe,
+	0x34, 0xa1, 0xb9, 0xa0, 0x8a, 0x3a, 0x60, 0xd2, 0x91, 0xe4, 0xd8, 0x0a, 0x4d, 0x3a, 0x42, 0x2f,
+	0xa0, 0xc5, 0xc9, 0x35, 0xe1, 0x24, 0x8d, 0x88, 0x84, 0xd6, 0x0a, 0x1f, 0x04, 0xb4, 0x0d, 0x8d,
+	0x0c, 0x73, 0x71, 0x7b, 0xda, 0x93, 0x70, 0x5a, 0x0a, 0xce, 0x67, 0x23, 0x5c, 0xc8, 0xe8, 0x00,
+	0xac, 0x5c, 0x60, 0x41, 0xe4, 0xcd, 0x75, 0xf6, 0x37, 0xd4, 0x6c, 0x8b, 0x76, 0xde, 0xb0, 0x88,
+	0x75, 0x1b, 0xf7, 0x77, 0x5b, 0xd5, 0xef, 0x86, 0x11, 0x2a, 0x6f, 0xd1, 0x54, 0xd0, 0x84, 0xe4,
+	0x02, 0x27, 0x99, 0xbc, 0xbe, 0x6a, 0xf8, 0x20, 0xa0, 0x57, 0x60, 0x89, 0xe2, 0xc7, 0x77, 0xea,
+	0xfa, 0xba, 0x2b, 0x77, 0xb1, 0x3c, 0x1d, 0xe5, 0x74, 0x7b, 0x60, 0xc9, 0x4e, 0x08, 0xa0, 0xfe,
+	0xfe, 0xe8, 0xf4, 0x63, 0xd0, 0xb3, 0x2b, 0xa8, 0x09, 0xb5, 0xf3, 0x41, 0xd0, 0xb7, 0x8d, 0x42,
+	0x1d, 0x1c, 0x0d, 0x87, 0x41, 0xcf, 0x36, 0xd1, 0x1a, 0x34, 0xc3, 0xe0, 0x43, 0x70, 0x7c, 0x11,
+	0xf4, 0xec, 0x2a, 0x6a, 0x43, 0x23, 0xe8, 0x1f, 0xc9, 0x47, 0xcd, 0xfd, 0x61, 0x40, 0xed, 0x92,
+	0xc9, 0xf9, 0xac, 0x19, 0x13, 0x84, 0x2b, 0x4e, 0xcb, 0xa5, 0x95, 0x88, 0x7c, 0xb0, 0x66, 0x78,
+	0x32, 0x55, 0xb8, 0x3a, 0xfb, 0xb6, 0x9a, 0xaf, 0x48, 0xf4, 0x2e, 0x0b, 0x5d, 0x5b, 0x57, 0xfa,
+	0xd0, 0x0e, 0x40, 0x56, 0x4e, 0xff, 0x17, 0x48, 0x2d, 0xe2, 0x3a, 0x60, 0xc9, 0x02, 0xa8, 0x0e,
+	0x66, 0xff, 0xdc, 0xae, 0xa0, 0x06, 0x54, 0xbf, 0x04, 0x43, 0xdb, 0xe8, 0xbe, 0xfc, 0xba, 0x15,
+	0xb1, 0x11, 0x91, 0x9d, 0xe4, 0xbf, 0x50, 0xc4, 0x26, 0x1e, 0x65, 0x7e, 0xf1, 0xf6, 0xa5, 0x70,
+	0x55, 0x97, 0x1f, 0x07, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xff, 0xfa, 0xd9, 0xa6, 0xf5, 0x04,
+	0x00, 0x00,
 }

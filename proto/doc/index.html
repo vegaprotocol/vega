@@ -462,27 +462,23 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NewMarket"><span class="badge">M</span>NewMarket</a>
+                </li>
+
+                <li>
                   <a href="#vega.Proposal"><span class="badge">M</span>Proposal</a>
                 </li>
 
                 <li>
-                  <a href="#vega.Proposal.Terms"><span class="badge">M</span>Proposal.Terms</a>
+                  <a href="#vega.ProposalTerms"><span class="badge">M</span>ProposalTerms</a>
                 </li>
 
                 <li>
-                  <a href="#vega.Proposal.Terms.NewMarket"><span class="badge">M</span>Proposal.Terms.NewMarket</a>
+                  <a href="#vega.UpdateMarket"><span class="badge">M</span>UpdateMarket</a>
                 </li>
 
                 <li>
-                  <a href="#vega.Proposal.Terms.Parameters"><span class="badge">M</span>Proposal.Terms.Parameters</a>
-                </li>
-
-                <li>
-                  <a href="#vega.Proposal.Terms.UpdateMarket"><span class="badge">M</span>Proposal.Terms.UpdateMarket</a>
-                </li>
-
-                <li>
-                  <a href="#vega.Proposal.Terms.UpdateNetwork"><span class="badge">M</span>Proposal.Terms.UpdateNetwork</a>
+                  <a href="#vega.UpdateNetwork"><span class="badge">M</span>UpdateNetwork</a>
                 </li>
 
                 <li>
@@ -2578,7 +2574,7 @@
 
                 <tr>
                   <td>proposal</td>
-                  <td><a href="#vega.Proposal.Terms">vega.Proposal.Terms</a></td>
+                  <td><a href="#vega.ProposalTerms">vega.ProposalTerms</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3527,6 +3523,13 @@
 
 
 
+        <h3 id="vega.NewMarket">NewMarket</h3>
+        <p>TODO</p>
+
+
+
+
+
         <h3 id="vega.Proposal">Proposal</h3>
         <p></p>
 
@@ -3574,15 +3577,8 @@
 
                 <tr>
                   <td>terms</td>
-                  <td><a href="#vega.Proposal.Terms">Proposal.Terms</a></td>
+                  <td><a href="#vega.ProposalTerms">ProposalTerms</a></td>
                   <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>votes</td>
-                  <td><a href="#vega.Vote">Vote</a></td>
-                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -3642,8 +3638,8 @@
 
 
 
-        <h3 id="vega.Proposal.Terms">Proposal.Terms</h3>
-        <p>Proposal terms</p>
+        <h3 id="vega.ProposalTerms">ProposalTerms</h3>
+        <p></p>
 
 
           <table class="field-table">
@@ -3653,101 +3649,43 @@
             <tbody>
 
                 <tr>
-                  <td>parameters</td>
-                  <td><a href="#vega.Proposal.Terms.Parameters">Proposal.Terms.Parameters</a></td>
+                  <td>closeInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>enactInDays</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>minParticipationStake</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>updateMarket</td>
-                  <td><a href="#vega.Proposal.Terms.UpdateMarket">Proposal.Terms.UpdateMarket</a></td>
+                  <td><a href="#vega.UpdateMarket">UpdateMarket</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>newMarket</td>
-                  <td><a href="#vega.Proposal.Terms.NewMarket">Proposal.Terms.NewMarket</a></td>
+                  <td><a href="#vega.NewMarket">NewMarket</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>updateNetwork</td>
-                  <td><a href="#vega.Proposal.Terms.UpdateNetwork">Proposal.Terms.UpdateNetwork</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>parameters</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="vega.Proposal.Terms.NewMarket">Proposal.Terms.NewMarket</h3>
-        <p>Market market = 1 [(validator.field) = {msg_exists: true}];</p>
-
-
-
-
-
-        <h3 id="vega.Proposal.Terms.Parameters">Proposal.Terms.Parameters</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>closeInDays</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>enactInDays</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>minParticipationStake</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#vega.UpdateNetwork">UpdateNetwork</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3808,14 +3746,14 @@
 
 
 
-        <h3 id="vega.Proposal.Terms.UpdateMarket">Proposal.Terms.UpdateMarket</h3>
-        <p></p>
+        <h3 id="vega.UpdateMarket">UpdateMarket</h3>
+        <p>TODO</p>
 
 
 
 
 
-        <h3 id="vega.Proposal.Terms.UpdateNetwork">Proposal.Terms.UpdateNetwork</h3>
+        <h3 id="vega.UpdateNetwork">UpdateNetwork</h3>
         <p></p>
 
 
@@ -3890,6 +3828,13 @@
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>proposalID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -3923,6 +3868,17 @@
                     <ul>
 
                       <li>is_in_enum: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>proposalID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
 
                     </ul>
                   </td>

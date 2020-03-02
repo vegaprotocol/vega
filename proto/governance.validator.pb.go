@@ -20,12 +20,53 @@ var _ = math.Inf
 func (this *NetworkConfiguration) Validate() error {
 	return nil
 }
-func (this *Vote) Validate() error {
-	if this.Voter == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Voter", fmt.Errorf(`value '%v' must not be an empty string`, this.Voter))
+func (this *UpdateMarket) Validate() error {
+	return nil
+}
+func (this *NewMarket) Validate() error {
+	return nil
+}
+func (this *UpdateNetwork) Validate() error {
+	if nil == this.Changes {
+		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
 	}
-	if _, ok := Vote_Value_name[int32(this.Value)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Vote_Value field`, this.Value))
+	if this.Changes != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Changes); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
+		}
+	}
+	return nil
+}
+func (this *ProposalTerms) Validate() error {
+	if !(this.CloseInDays > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("CloseInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.CloseInDays))
+	}
+	if !(this.EnactInDays > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("EnactInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactInDays))
+	}
+	if !(this.MinParticipationStake > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))
+	}
+	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateMarket); ok {
+		if oneOfNester.UpdateMarket != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateMarket); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("UpdateMarket", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetChange().(*ProposalTerms_NewMarket); ok {
+		if oneOfNester.NewMarket != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.NewMarket); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("NewMarket", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateNetwork); ok {
+		if oneOfNester.UpdateNetwork != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateNetwork); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("UpdateNetwork", err)
+			}
+		}
 	}
 	return nil
 }
@@ -44,73 +85,17 @@ func (this *Proposal) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Terms", err)
 		}
 	}
-	for _, item := range this.Votes {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Votes", err)
-			}
-		}
-	}
 	return nil
 }
-func (this *Proposal_Terms) Validate() error {
-	if nil == this.Parameters {
-		return github_com_mwitkow_go_proto_validators.FieldError("Parameters", fmt.Errorf("message must exist"))
+func (this *Vote) Validate() error {
+	if this.Voter == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Voter", fmt.Errorf(`value '%v' must not be an empty string`, this.Voter))
 	}
-	if this.Parameters != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Parameters); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Parameters", err)
-		}
+	if _, ok := Vote_Value_name[int32(this.Value)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Vote_Value field`, this.Value))
 	}
-	if oneOfNester, ok := this.GetChange().(*Proposal_Terms_UpdateMarket_); ok {
-		if oneOfNester.UpdateMarket != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateMarket); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("UpdateMarket", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetChange().(*Proposal_Terms_NewMarket_); ok {
-		if oneOfNester.NewMarket != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.NewMarket); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("NewMarket", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetChange().(*Proposal_Terms_UpdateNetwork_); ok {
-		if oneOfNester.UpdateNetwork != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateNetwork); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("UpdateNetwork", err)
-			}
-		}
-	}
-	return nil
-}
-func (this *Proposal_Terms_Parameters) Validate() error {
-	if !(this.CloseInDays > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("CloseInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.CloseInDays))
-	}
-	if !(this.EnactInDays > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("EnactInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactInDays))
-	}
-	if !(this.MinParticipationStake > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))
-	}
-	return nil
-}
-func (this *Proposal_Terms_UpdateMarket) Validate() error {
-	return nil
-}
-func (this *Proposal_Terms_NewMarket) Validate() error {
-	return nil
-}
-func (this *Proposal_Terms_UpdateNetwork) Validate() error {
-	if nil == this.Changes {
-		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
-	}
-	if this.Changes != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Changes); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
-		}
+	if this.ProposalID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProposalID", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalID))
 	}
 	return nil
 }
