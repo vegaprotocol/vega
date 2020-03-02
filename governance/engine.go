@@ -15,6 +15,17 @@ var (
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
 )
 
+const (
+	StatusOpen     ProposalStatus = "open"
+	StatusPassed   ProposalStatus = "passed"
+	StatusRejected ProposalStatus = "rejected"
+	StatusEnacted  ProposalStatus = "enacted"
+	StatusFailed   ProposalStatus = "failed"
+)
+
+// ProposalStatus ...
+type ProposalStatus string
+
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
@@ -25,13 +36,14 @@ type Accounts interface {
 // Buffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
 type Buffer interface {
-	Add(*Proposal)
+	Add(Proposal)
 	Flush()
 }
 
 type Engine struct {
 	Config
 	accs         Accounts
+	buf          Buffer
 	log          *logging.Logger
 	mu           sync.Mutex
 	currentTime  int64
@@ -51,14 +63,16 @@ type Proposal struct {
 	yes, no       []Vote // when no votes reaches 100 - percentage + 1 or yes reaches %+1, we know what to do
 	ttl           int64
 	validUntil    int64
+	status        ProposalStatus
 	approved      bool // this will be a special type
 	err           error
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, now time.Time) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now time.Time) *Engine {
 	return &Engine{
 		Config:      cfg,
 		accs:        accs,
+		buf:         buf,
 		log:         log,
 		currentTime: now.UnixNano(),
 		proposals:   map[string]*Proposal{},
@@ -97,8 +111,8 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*Proposal {
 }
 
 func (e *Engine) AddProposal(p Proposal) error {
-	_, ok := e.proposals[p.id]
-	if ok {
+	// @TODO -> we probably should keep proposals in memory here
+	if cp, ok := e.proposals[p.id]; ok && cp.status == p.status {
 		return ErrProposalIsDuplicate
 	}
 	if len(p.yes) == 0 {
@@ -108,8 +122,15 @@ func (e *Engine) AddProposal(p Proposal) error {
 	if len(p.no) == 0 {
 		p.no = []Vote{}
 	}
-	e.proposals[p.id] = &p
-	e.proposalRefs[p.reference] = &p
+	// if the proposal is no longer open, remove from active pool
+	if p.status != StatusOpen {
+		delete(e.proposals, p.id)
+		delete(e.proposalRefs, p.reference)
+	} else {
+		e.proposals[p.id] = &p
+		e.proposalRefs[p.reference] = &p
+	}
+	e.buf.Add(p)
 	return nil
 }
 
@@ -123,6 +144,7 @@ func (e *Engine) AddVote(v Vote) error {
 	} else {
 		p.no = append(p.no, v)
 	}
+	e.buf.Add(*p)
 	return nil
 }
 
@@ -151,9 +173,12 @@ func (e *Engine) checkProposals(proposals []*Proposal) []*Proposal {
 			// percentage should be N/100 so we can multiply the total by this value and get the answer
 			p.approved = (req <= float64(totalYES)) // N% of total votes should be reached
 		}
+		p.status = StatusRejected
 		if p.approved {
 			accepted = append(accepted, p)
+			p.status = StatusPassed
 		}
+		e.buf.Add(*p)
 	}
 	return accepted
 }
