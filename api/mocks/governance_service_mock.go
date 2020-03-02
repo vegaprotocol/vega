@@ -35,7 +35,7 @@ func (m *MockGovernanceService) EXPECT() *MockGovernanceServiceMockRecorder {
 }
 
 // PrepareProposal mocks base method
-func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1, arg2 string, arg3 *proto.Proposal_Terms) (*proto.Proposal, error) {
+func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1, arg2 string, arg3 *proto.ProposalTerms) (*proto.Proposal, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*proto.Proposal)
