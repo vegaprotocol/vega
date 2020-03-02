@@ -16,44 +16,27 @@ message NetworkConfiguration {
   uint64 minParticipationStake = 5;
 }
 
-
-message Vote {
-    enum Value {
-        NO  = 0;
-        YES = 1;
-    }
-
-    string voter = 1 [(validator.field) = {string_not_empty : true}];
-    Value  value = 2 [(validator.field) = {is_in_enum : true}];
+message UpdateMarket {
+}
+message NewMarket {
+  //Market market = 1 [(validator.field) = {msg_exists: true}];
+}
+message UpdateNetwork {
+  NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
+message ProposalTerms {
+  uint64 closeInDays           = 1 [(validator.field) = {int_gt: 0}];
+  uint64 enactInDays           = 2 [(validator.field) = {int_gt: 0}];
+  uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0}];
+  oneof change {
+    UpdateMarket  updateMarket  = 101;
+    NewMarket     newMarket     = 102;
+    UpdateNetwork updateNetwork = 103;
+  };
+}
 
 message Proposal {
-  // Proposal terms
-  message Terms {
-    message Parameters {
-      uint64 closeInDays           = 1 [(validator.field) = {int_gt: 0}];
-      uint64 enactInDays           = 2 [(validator.field) = {int_gt: 0}];
-      uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0}];
-    }
-  
-    message UpdateMarket {
-    }
-    message NewMarket {
-      //Market market = 1 [(validator.field) = {msg_exists: true}];
-    }
-    message UpdateNetwork {
-      NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
-    }
-  
-    Parameters    parameters  = 1 [(validator.field) = {msg_exists: true}];
-    oneof change {
-      UpdateMarket  updateMarket  = 101;
-      NewMarket     newMarket     = 102;
-      UpdateNetwork updateNetwork = 103;
-    };
-  }
-
   // Proposal state transition:
   // Open ->
   //   - Passed -> Enacted.
@@ -81,6 +64,16 @@ message Proposal {
   string        partyID   = 3 [(validator.field) = {string_not_empty : true}];
   State         state     = 4 [(validator.field) = {is_in_enum: true}];
   int64         timestamp = 5;
-  Terms         terms     = 6 [(validator.field) = {msg_exists: true}];
-  repeated Vote votes     = 7;
+  ProposalTerms terms     = 6 [(validator.field) = {msg_exists: true}];
+}
+
+message Vote {
+  enum Value {
+      NO  = 0;
+      YES = 1;
+  }
+
+  string voter      = 1 [(validator.field) = {string_not_empty : true}];
+  Value  value      = 2 [(validator.field) = {is_in_enum : true}];
+  string proposalID = 3 [(validator.field) = {string_not_empty : true}];
 }
