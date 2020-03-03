@@ -1363,10 +1363,10 @@ func (r *myMutationResolver) PrepareProposal(
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
 			Timestamp: timestamp,
 			Terms: &ProposalTerms{
-				CloseInDays:           int(pendingProposal.PendingProposal.Terms.CloseInDays),
-				EnactInDays:           int(pendingProposal.PendingProposal.Terms.EnactInDays),
+				ClosingTimestamp:      time.Unix(pendingProposal.PendingProposal.Terms.ClosingTimestamp, 0).String(),
+				EnactmentTimestamp:    time.Unix(pendingProposal.PendingProposal.Terms.EnactmentTimestamp, 0).String(),
 				MinParticipationStake: int(pendingProposal.PendingProposal.Terms.MinParticipationStake),
-				Change:                pendingProposal.PendingProposal.Terms.Change,
+				Change:                nil,
 			},
 		},
 	}, nil
