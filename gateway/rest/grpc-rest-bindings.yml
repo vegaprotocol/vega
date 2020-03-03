@@ -90,7 +90,7 @@ http:
 
     # Governance
     - selector: api.trading.PrepareProposal
-      post: '/governance/proposal'
+      post: '/governance/proposals'
       body: "*"
 
     # Miscellaneous
