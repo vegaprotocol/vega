@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"unicode"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -284,7 +285,7 @@ func checkPassphrase(pass string) bool {
 	if len(pass) < 8 {
 		return false
 	}
-	ok := true
+	var ok int64
 	wg := sync.WaitGroup{}
 	wg.Add(4)
 	runes := []rune(pass)
@@ -295,7 +296,7 @@ func checkPassphrase(pass string) bool {
 				return
 			}
 		}
-		ok = false
+		atomic.AddInt64(&ok, 1)
 	}()
 	go func() {
 		defer wg.Done()
@@ -304,7 +305,7 @@ func checkPassphrase(pass string) bool {
 				return
 			}
 		}
-		ok = false
+		atomic.AddInt64(&ok, 1)
 	}()
 	go func() {
 		defer wg.Done()
@@ -313,7 +314,7 @@ func checkPassphrase(pass string) bool {
 				return
 			}
 		}
-		ok = false
+		atomic.AddInt64(&ok, 1)
 	}()
 	go func() {
 		defer wg.Done()
@@ -322,8 +323,8 @@ func checkPassphrase(pass string) bool {
 				return
 			}
 		}
-		ok = false
+		atomic.AddInt64(&ok, 1)
 	}()
 	wg.Wait()
-	return ok
+	return (ok == 0)
 }
