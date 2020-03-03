@@ -67,3 +67,17 @@ func PathExists(path string) (bool, error) {
 	}
 	return false, err
 }
+
+// FileExists similar to PathExists, but ensures the path is to a file, not a directory
+func FileExists(path string) (bool, error) {
+	fs, err := os.Stat(path)
+	if err == nil {
+		// fileStat -> is not a directory
+		ok := !fs.IsDir()
+		return ok, nil
+	}
+	if os.IsNotExist(err) {
+		return false, &PathNotFound{path}
+	}
+	return false, err
+}

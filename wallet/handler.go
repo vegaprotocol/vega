@@ -84,6 +84,14 @@ func (h *Handler) LoginWallet(wallet, passphrase string) (string, error) {
 	return h.auth.NewSession(wallet)
 }
 
+func (h *Handler) WalletPath(token string) (string, error) {
+	wallet, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return "", err
+	}
+	return WalletPath(h.rootPath, wallet)
+}
+
 func (h *Handler) RevokeToken(token string) error {
 	return h.auth.Revoke(token)
 }

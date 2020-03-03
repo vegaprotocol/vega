@@ -125,6 +125,15 @@ func Create(root, owner, passphrase string) (*Wallet, error) {
 	return writeWallet(&w, root, owner, passphrase)
 }
 
+// WalletPath get the path to the wallet file, check if actually is a file
+func WalletPath(root, owner string) (string, error) {
+	path := filepath.Join(root, walletBaseFolder, owner)
+	if ok, err := fsutil.FileExists(path); !ok || err != nil {
+		return "", ErrWalletDoesNotExists
+	}
+	return path, nil
+}
+
 func AddKeypair(kp *Keypair, root, owner, passphrase string) (*Wallet, error) {
 	w, err := Read(root, owner, passphrase)
 	if err != nil {
