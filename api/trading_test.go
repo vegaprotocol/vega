@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/api/mocks"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -215,6 +216,8 @@ func getTestGRPCServer(
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
 
+	governanceService := governance.NewService(logger, conf.Governance, timeService)
+
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -229,6 +232,7 @@ func getTestGRPCServer(
 		accountService,
 		transferResponseService,
 		riskService,
+		governanceService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
@@ -277,6 +281,35 @@ func TestSubmitOrder(t *testing.T) {
 	pendingOrder, err := c.SubmitOrder(ctx, req)
 	assert.Contains(t, err.Error(), "Internal error")
 	assert.Nil(t, pendingOrder)
+
+	g.Stop()
+}
+
+func TestPrepareProposal(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
+	defer cancel()
+
+	g, tidy, conn, err := getTestGRPCServer(t, ctx, 64201, true)
+	if err != nil {
+		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+	}
+	defer tidy()
+
+	client := protoapi.NewTradingClient(conn)
+	assert.NotNil(t, client)
+
+	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
+		PartyID: "invalid-party",
+		Proposal: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateNetwork{
+				UpdateNetwork: &types.UpdateNetwork{
+					Changes: &types.NetworkConfiguration{},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Error(), "Internal error")
+	assert.Nil(t, proposal)
 
 	g.Stop()
 }

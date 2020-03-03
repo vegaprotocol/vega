@@ -2,12 +2,15 @@ package gql
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/gqlerror"
 	"google.golang.org/grpc/status"
 
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -125,4 +128,63 @@ func customErrorFromStatus(err error) error {
 		}
 	}
 	return err
+}
+
+func timestampToString(timestampInSeconds int64) string {
+	return vegatime.Format(vegatime.Unix(timestampInSeconds, 0))
+}
+
+func parseTimestamp(timestamp string) (int64, error) {
+	converted, err := vegatime.Parse(timestamp)
+	if err != nil {
+		return 0, err
+	}
+	return converted.UTC().Unix(), nil
+}
+
+func convertProposalTermsInput(terms ProposalTermsInput) (*types.ProposalTerms, error) {
+	closing, err := parseTimestamp(terms.ClosingTimestamp)
+	if err != nil {
+		return nil, errors.Wrap(err, "closingTimestamp is invalid")
+	}
+	enactment, err := parseTimestamp(terms.EnactmentTimestamp)
+	if err != nil {
+		return nil, errors.Wrap(err, "enactmentTimestamp is invalid")
+	}
+
+	result := &types.ProposalTerms{
+		ClosingTimestamp:      closing,
+		EnactmentTimestamp:    enactment,
+		MinParticipationStake: uint64(terms.MinParticipationStake),
+	}
+	if terms.UpdateMarket != nil {
+		result.Change = &types.ProposalTerms_UpdateMarket{}
+	} else if terms.NewMarket != nil {
+		result.Change = &types.ProposalTerms_NewMarket{}
+	} else if terms.UpdateNetwork != nil {
+		result.Change = &types.ProposalTerms_UpdateMarket{}
+	} else {
+		return nil, errors.New("updateMarket, newMarket or updateNetwork must be set")
+	}
+
+	return result, nil
+}
+
+func convertProposalTerms(terms *types.ProposalTerms) (*ProposalTerms, error) {
+	if terms.MinParticipationStake > math.MaxInt32 {
+		return nil, errors.New("minParticipationStake contains too large value")
+	}
+	result := &ProposalTerms{
+		ClosingTimestamp:      timestampToString(terms.ClosingTimestamp),
+		EnactmentTimestamp:    timestampToString(terms.EnactmentTimestamp),
+		MinParticipationStake: int(terms.MinParticipationStake),
+	}
+	if terms.GetUpdateMarket() != nil {
+		result.Change = nil
+	} else if terms.GetNewMarket() != nil {
+		result.Change = nil
+	} else if terms.GetUpdateNetwork() != nil {
+		result.Change = nil
+	}
+	return result, nil
 }
