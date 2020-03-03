@@ -163,7 +163,7 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
-// Incomplete change definiotion for governance proposal terms
+// Incomplete change definition for governance proposal terms
 // TODO: complete the type
 type NewMarket struct {
 	MarketID string `json:"marketId"`
@@ -281,7 +281,7 @@ type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }
 
-// Incomplete change definiotion for governance proposal terms
+// Incomplete change definition for governance proposal terms
 // TODO: complete the type
 type UpdateMarket struct {
 	MarketID string `json:"marketId"`

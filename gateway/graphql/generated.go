@@ -3309,7 +3309,7 @@ enum AccountType {
 
 
 """
-Incomplete change definiotion for governance proposal terms
+Incomplete change definition for governance proposal terms
 TODO: complete the type
 """
 type UpdateMarket {
@@ -3320,7 +3320,7 @@ input UpdateMarketInput {
 }
 
 """
-Incomplete change definiotion for governance proposal terms
+Incomplete change definition for governance proposal terms
 TODO: complete the type
 """
 type NewMarket {
