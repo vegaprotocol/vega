@@ -1368,7 +1368,7 @@ func (r *myMutationResolver) PrepareProposal(
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
 		PendingProposal: &Proposal{
-			ID:        &pendingProposal.PendingProposal.Id,
+			ID:        &pendingProposal.PendingProposal.ID,
 			Reference: pendingProposal.PendingProposal.Reference,
 			PartyID:   pendingProposal.PendingProposal.PartyID,
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
