@@ -2011,6 +2011,10 @@
         },
         "reason": {
           "$ref": "#/definitions/vegaOrderError"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
