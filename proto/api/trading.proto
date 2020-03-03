@@ -4,6 +4,7 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 
 import "proto/vega.proto";
 import "proto/markets.proto";
+import "proto/governance.proto";
 
 package api;
 
@@ -44,6 +45,12 @@ service trading {
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+
+
+  // Governance
+  
+  // Prepare proposal that can be sent out to the chain (via SubmitTransaction)
+  rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
 }
 
 message SubmitTransactionRequest {
@@ -472,4 +479,15 @@ message CheckTokenRequest {
 
 message CheckTokenResponse {
   bool ok = 1;
+}
+
+message PrepareProposalRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  string reference = 2;
+  vega.ProposalTerms proposal = 3 [(validator.field) = {msg_exists : true}];
+}
+
+message PrepareProposalResponse {
+  bytes blob = 1;
+  vega.Proposal pendingProposal = 2;
 }

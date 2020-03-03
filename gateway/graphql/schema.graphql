@@ -63,6 +63,20 @@ type Mutation {
   ): PreparedAmendOrder!
 
   """
+  Prepare a proposal so it can be sent into the network.
+  Returns a pending proposal along with a transaction blob ready for submission.
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
+  """
+  prepareProposal(
+    "ID of the party which created this proposal"
+    partyId: String!
+    "A UUID reference for the caller to aid in tracking operations on VEGA"
+    reference: String
+    "Terms of the proposal"
+    proposalTerms: ProposalTermsInput!
+  ): PreparedProposal!
+
+  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -1036,4 +1050,163 @@ enum AccountType {
   Margin
   "General account - the account containing 'unused' collateral for traders"
   General
+}
+
+
+"""
+Incomplete change definition for governance proposal terms
+TODO: complete the type
+"""
+type UpdateMarket {
+  marketId: String!
+}
+input UpdateMarketInput {
+  marketId: String! 
+}
+
+"""
+Incomplete change definition for governance proposal terms
+TODO: complete the type
+"""
+type NewMarket {
+  marketId: String!
+}
+input NewMarketInput {
+  marketId: String!
+}
+
+"Allows submitting a proposal for changing governance network parameters"
+type UpdateNetwork {
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  minCloseInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  maxCloseInSeconds: Int
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  minEnactInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  maxEnactInSeconds: Int
+
+  """
+  Network parameter that restricts the minimum participation stake
+  required for a proposal to pass.
+  """
+  minParticipationStake: Int
+}
+
+"Allows submitting a proposal for changing governance network parameters"
+input UpdateNetworkInput {
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  minCloseInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  maxCloseInSeconds: Int
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  minEnactInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  maxEnactInSeconds: Int
+
+  """
+  Network parameter that restricts the minimum participation stake
+  required for a proposal to pass.
+  """
+  minParticipationStake: Int
+}
+
+
+union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
+# there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
+
+type ProposalTerms {
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
+  "Minimum participation stake required for this proposal to pass"
+  minParticipationStake: Int!
+  "Actual change being introduced by the proposal"
+  change: ProposalChange
+}
+
+input ProposalTermsInput {
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
+  "Minimum participation stake required for this proposal to pass"
+  minParticipationStake: Int!
+  "Actual change being introduced by the proposal"
+  
+  updateMarket: UpdateMarketInput 
+  newMarket: NewMarketInput
+  updateNetwork: UpdateNetworkInput
+}
+
+"""
+Varoius states a proposal can transition through:
+  Open ->
+      - Passed -> Enacted.
+      - Rejected.
+  Proposal can enter Failed state from any other state.
+"""
+enum ProposalState {
+  "Proposal became invalid and cannot be processed"
+  Failed
+  "Proposal is open for voting"
+  Open
+  "Proposal has gained enough support to be executed"
+  Passed
+  "Proposal has could not gain enough support to be executed"
+  Rejected
+  "Proposal has been executed and the changes under this proposal have now been applied"
+  Enacted
+}
+
+
+type Proposal {
+  "Proposal id that is filled by VEGA once proposal reaches the network"
+  id: ID
+  "A UUID reference to aid tracking proposals on VEGA"
+  reference: String!
+  "An id of the party that prepared the proposal"
+  partyId: String!
+  "State of the proposal"
+  state: ProposalState!
+  "time at which the proposal has reached the network"
+  timestamp: String!
+  "Terms of the proposal"
+  terms: ProposalTerms!
+}
+
+type PreparedProposal {
+  "Raw transaction data to sign & submit"
+  blob: String!
+  "The pending proposal"
+  pendingProposal: Proposal!
 }
