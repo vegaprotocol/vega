@@ -88,6 +88,11 @@ http:
       post: '/parties/{withdraw.partyID}/withdrawals'
       body: '*'
 
+    # Proposals
+    - selector: api.trading.PrepareProposal
+      post: '/proposal'
+      body: "*"
+
     # Miscellaneous
     - selector: api.trading.NotifyTraderAccount
       post: '/fountain'

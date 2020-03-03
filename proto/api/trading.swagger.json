@@ -971,6 +971,33 @@
         ]
       }
     },
+    "/proposal": {
+      "post": {
+        "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
+        "operationId": "PrepareProposal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareProposalResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareProposalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
         "summary": "Get Statistics",
@@ -1323,6 +1350,20 @@
         },
         "pendingOrder": {
           "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareProposalRequest": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposalTerms"
         }
       }
     },
