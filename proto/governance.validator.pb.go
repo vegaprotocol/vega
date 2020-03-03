@@ -38,11 +38,11 @@ func (this *UpdateNetwork) Validate() error {
 	return nil
 }
 func (this *ProposalTerms) Validate() error {
-	if !(this.CloseInDays > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("CloseInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.CloseInDays))
+	if !(this.ClosingTimestamp > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ClosingTimestamp", fmt.Errorf(`value '%v' must be greater than '0'`, this.ClosingTimestamp))
 	}
-	if !(this.EnactInDays > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("EnactInDays", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactInDays))
+	if !(this.EnactmentTimestamp > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("EnactmentTimestamp", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactmentTimestamp))
 	}
 	if !(this.MinParticipationStake > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))

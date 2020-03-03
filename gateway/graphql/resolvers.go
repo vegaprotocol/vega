@@ -1337,7 +1337,39 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 
 func (r *myMutationResolver) PrepareProposal(
 	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
-	return nil, nil
+	if len(partyID) <= 0 {
+		return nil, errors.New("partyId missing or empty")
+	}
+
+	request := protoapi.PrepareProposalRequest{
+		PartyID: partyID,
+	}
+
+	if reference != nil {
+		request.Reference = *reference
+	}
+	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &request)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	timestamp := vegatime.Format(vegatime.UnixNano(pendingProposal.PendingProposal.Timestamp))
+
+	return &PreparedProposal{
+		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
+		PendingProposal: &Proposal{
+			ID:        &pendingProposal.PendingProposal.Id,
+			Reference: pendingProposal.PendingProposal.Reference,
+			PartyID:   pendingProposal.PendingProposal.PartyID,
+			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
+			Timestamp: timestamp,
+			Terms: &ProposalTerms{
+				CloseInDays:           int(pendingProposal.PendingProposal.Terms.CloseInDays),
+				EnactInDays:           int(pendingProposal.PendingProposal.Terms.EnactInDays),
+				MinParticipationStake: int(pendingProposal.PendingProposal.Terms.MinParticipationStake),
+				Change:                pendingProposal.PendingProposal.Terms.Change,
+			},
+		},
+	}, nil
 }
 
 func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {

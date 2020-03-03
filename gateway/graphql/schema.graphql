@@ -1144,10 +1144,10 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Duration (in days) before voting is closed for this proposal"
-  closeInDays: Int!
-  "Duration (in days) before this is executed (if passed)"
-  enactInDays: Int!
+  "Duration (in seconds) before voting is closed for this proposal"
+  closeInSeconds: Int!
+  "Duration (in seconds) before this is executed (if passed)"
+  enactInSeconds: Int!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
@@ -1155,10 +1155,10 @@ type ProposalTerms {
 }
 
 input ProposalTermsInput {
-  "Duration (in days) before voting is closed for this proposal"
-  closeInDays: Int!
-  "Duration (in days) before this is executed (if passed)"
-  enactInDays: Int!
+  "Duration (in seconds) before voting is closed for this proposal"
+  closeInSeconds: Int!
+  "Duration (in seconds) before this is executed (if passed)"
+  enactInSeconds: Int!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"

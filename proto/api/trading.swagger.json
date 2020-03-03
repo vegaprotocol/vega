@@ -1069,7 +1069,7 @@
         "ENACTED"
       ],
       "default": "FAILED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Rejected.\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal became invalid and cannot be processed.\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal has could not gain enough support to be executed.\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Rejected.\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal became invalid and cannot be processed.\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal could not gain enough support to be executed.\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -1894,19 +1894,19 @@
     "vegaNetworkConfiguration": {
       "type": "object",
       "properties": {
-        "minCloseInDays": {
+        "minCloseInSeconds": {
           "type": "string",
           "format": "uint64"
         },
-        "maxCloseInDays": {
+        "maxCloseInSeconds": {
           "type": "string",
           "format": "uint64"
         },
-        "minEnactInDays": {
+        "minEnactInSeconds": {
           "type": "string",
           "format": "uint64"
         },
-        "maxEnactInDays": {
+        "maxEnactInSeconds": {
           "type": "string",
           "format": "uint64"
         },
@@ -2209,13 +2209,13 @@
     "vegaProposalTerms": {
       "type": "object",
       "properties": {
-        "closeInDays": {
+        "closingTimestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
-        "enactInDays": {
+        "enactmentTimestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "minParticipationStake": {
           "type": "string",

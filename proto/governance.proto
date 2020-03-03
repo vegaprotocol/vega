@@ -6,11 +6,11 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 message NetworkConfiguration {
-  uint64  minCloseInDays = 1;
-  uint64  maxCloseInDays = 2;
+  uint64 minCloseInSeconds = 1;
+  uint64 maxCloseInSeconds = 2;
 
-  uint64  minEnactInDays  = 3;
-  uint64  maxEnactInDays  = 4;
+  uint64 minEnactInSeconds  = 3;
+  uint64 maxEnactInSeconds  = 4;
 
   uint64 minParticipationStake = 5;
 }
@@ -26,8 +26,8 @@ message UpdateNetwork {
 }
 
 message ProposalTerms {
-  uint64 closeInDays           = 1 [(validator.field) = {int_gt: 0}];
-  uint64 enactInDays           = 2 [(validator.field) = {int_gt: 0}];
+  int64 closingTimestamp       = 1 [(validator.field) = {int_gt: 0}];
+  int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
   uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0}];
   oneof change {
     UpdateMarket  updateMarket  = 101;
@@ -52,7 +52,7 @@ message Proposal {
     // Proposal has gained enough support to be executed.
     PASSED    = 2;
 
-    // Proposal has could not gain enough support to be executed.
+    // Proposal could not gain enough support to be executed.
     REJECTED  = 3;
 
     // Proposal has been executed and the changes under this proposal have now been applied.

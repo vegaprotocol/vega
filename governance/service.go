@@ -19,10 +19,10 @@ var (
 )
 
 const (
-	defaultMinCloseInDays        = 2
-	defaultMaxCloseInDays        = 365
-	defaultMinEnactInDays        = 3
-	defaultMaxEnactInDays        = 365
+	defaultMinCloseInSeconds     = 2 * 24 * 60 * 60
+	defaultMaxCloseInSeconds     = 365 * 24 * 60 * 60
+	defaultMinEnactInSeconds     = 3 * 24 * 60 * 60
+	defaultMaxEnactInSeconds     = 365 * 24 * 60 * 60
 	defaultMinParticipationStake = 1
 )
 
@@ -33,10 +33,10 @@ type TimeService interface {
 }
 
 type networkParameters struct {
-	minCloseInDays        uint64
-	maxCloseInDays        uint64
-	minEnactInDays        uint64
-	maxEnactInDays        uint64
+	minCloseInSeconds     int64
+	maxCloseInSeconds     int64
+	minEnactInSeconds     int64
+	maxEnactInSeconds     int64
 	minParticipationStake uint64
 }
 
@@ -60,10 +60,10 @@ func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 		log:         log,
 		timeService: time,
 		parameters: networkParameters{
-			minCloseInDays:        defaultMinCloseInDays,
-			maxCloseInDays:        defaultMaxCloseInDays,
-			minEnactInDays:        defaultMinEnactInDays,
-			maxEnactInDays:        defaultMaxEnactInDays,
+			minCloseInSeconds:     defaultMinCloseInSeconds,
+			maxCloseInSeconds:     defaultMaxCloseInSeconds,
+			minEnactInSeconds:     defaultMinEnactInSeconds,
+			maxEnactInSeconds:     defaultMaxEnactInSeconds,
 			minParticipationStake: defaultMinParticipationStake,
 		},
 	}
@@ -115,15 +115,27 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return fmt.Errorf("minimum participation stake parameter must be at least %d",
 			s.parameters.minParticipationStake)
 	}
-	if terms.CloseInDays < s.parameters.minCloseInDays ||
-		terms.CloseInDays > s.parameters.maxCloseInDays {
-		return fmt.Errorf("close day must be between %d and %d",
-			s.parameters.minCloseInDays, s.parameters.maxCloseInDays)
+
+	now, err := s.timeService.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "proposal validation failed")
 	}
-	if terms.EnactInDays < s.parameters.minEnactInDays ||
-		terms.EnactInDays > s.parameters.maxEnactInDays {
+
+	minClose := now.Add(time.Duration(s.parameters.minCloseInSeconds) * time.Second)
+	maxClose := now.Add(time.Duration(s.parameters.maxCloseInSeconds) * time.Second)
+
+	if terms.ClosingTimestamp < minClose.UTC().Unix() ||
+		terms.ClosingTimestamp > maxClose.UTC().Unix() {
+		return fmt.Errorf("close day must be between %d and %d",
+			s.parameters.minCloseInSeconds, s.parameters.maxCloseInSeconds)
+	}
+
+	minEnact := now.Add(time.Duration(s.parameters.minEnactInSeconds) * time.Second)
+	maxEnact := now.Add(time.Duration(s.parameters.maxEnactInSeconds) * time.Second)
+	if terms.EnactmentTimestamp < minEnact.UTC().Unix() ||
+		terms.EnactmentTimestamp > maxEnact.UTC().Unix() {
 		return fmt.Errorf("enactment day must be between %d and %d",
-			s.parameters.minEnactInDays, s.parameters.maxEnactInDays)
+			s.parameters.minEnactInSeconds, s.parameters.maxEnactInSeconds)
 	}
 
 	return nil

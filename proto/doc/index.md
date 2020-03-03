@@ -1272,10 +1272,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| minCloseInDays | [uint64](#uint64) |  |  |
-| maxCloseInDays | [uint64](#uint64) |  |  |
-| minEnactInDays | [uint64](#uint64) |  |  |
-| maxEnactInDays | [uint64](#uint64) |  |  |
+| minCloseInSeconds | [uint64](#uint64) |  |  |
+| maxCloseInSeconds | [uint64](#uint64) |  |  |
+| minEnactInSeconds | [uint64](#uint64) |  |  |
+| maxEnactInSeconds | [uint64](#uint64) |  |  |
 | minParticipationStake | [uint64](#uint64) |  |  |
 
 
@@ -1321,8 +1321,8 @@ TODO
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| closeInDays | [uint64](#uint64) |  |  |
-| enactInDays | [uint64](#uint64) |  |  |
+| closingTimestamp | [int64](#int64) |  |  |
+| enactmentTimestamp | [int64](#int64) |  |  |
 | minParticipationStake | [uint64](#uint64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
@@ -1391,7 +1391,7 @@ Proposal can enter Failed state from any other state.
 | FAILED | 0 | Proposal became invalid and cannot be processed. |
 | OPEN | 1 | Proposal is open for voting. |
 | PASSED | 2 | Proposal has gained enough support to be executed. |
-| REJECTED | 3 | Proposal has could not gain enough support to be executed. |
+| REJECTED | 3 | Proposal could not gain enough support to be executed. |
 | ENACTED | 4 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 

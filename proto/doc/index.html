@@ -3482,28 +3482,28 @@
             <tbody>
 
                 <tr>
-                  <td>minCloseInDays</td>
+                  <td>minCloseInSeconds</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>maxCloseInDays</td>
+                  <td>maxCloseInSeconds</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>minEnactInDays</td>
+                  <td>minEnactInSeconds</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>maxEnactInDays</td>
+                  <td>maxEnactInSeconds</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -3649,15 +3649,15 @@
             <tbody>
 
                 <tr>
-                  <td>closeInDays</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td>closingTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>enactInDays</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td>enactmentTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3707,7 +3707,7 @@
               <tbody>
 
                 <tr>
-                  <td>closeInDays</td>
+                  <td>closingTimestamp</td>
                   <td>
                     <ul>
 
@@ -3718,7 +3718,7 @@
                 </tr>
 
                 <tr>
-                  <td>enactInDays</td>
+                  <td>enactmentTimestamp</td>
                   <td>
                     <ul>
 
@@ -3922,7 +3922,7 @@
               <tr>
                 <td>REJECTED</td>
                 <td>3</td>
-                <td><p>Proposal has could not gain enough support to be executed.</p></td>
+                <td><p>Proposal could not gain enough support to be executed.</p></td>
               </tr>
 
               <tr>
