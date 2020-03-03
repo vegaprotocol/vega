@@ -1352,7 +1352,7 @@ func (r *myMutationResolver) PrepareProposal(
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	timestamp := vegatime.Format(vegatime.UnixNano(pendingProposal.PendingProposal.Timestamp))
+	timestamp := vegatime.Format(vegatime.Unix(pendingProposal.PendingProposal.Timestamp, 0))
 
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
@@ -1363,8 +1363,8 @@ func (r *myMutationResolver) PrepareProposal(
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
 			Timestamp: timestamp,
 			Terms: &ProposalTerms{
-				ClosingTimestamp:      time.Unix(pendingProposal.PendingProposal.Terms.ClosingTimestamp, 0).String(),
-				EnactmentTimestamp:    time.Unix(pendingProposal.PendingProposal.Terms.EnactmentTimestamp, 0).String(),
+				ClosingTimestamp:      vegatime.Format(vegatime.Unix(pendingProposal.PendingProposal.Terms.ClosingTimestamp, 0)),
+				EnactmentTimestamp:    vegatime.Format(vegatime.Unix(pendingProposal.PendingProposal.Terms.EnactmentTimestamp, 0)),
 				MinParticipationStake: int(pendingProposal.PendingProposal.Terms.MinParticipationStake),
 				Change:                nil,
 			},
