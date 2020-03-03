@@ -2,21 +2,19 @@ package governance
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
 
 var (
-	// ErrInvalidProposalTermsFmt is returned if basic validation has failed
-	ErrInvalidProposalTermsFmt = errors.New("invalid proposal terms format")
+	// ErrInvalidProposalTerms is returned if basic validation has failed
+	ErrInvalidProposalTerms = errors.New("invalid proposal terms")
 )
 
 const (
@@ -109,34 +107,26 @@ func (s *Svc) PrepareProposal(
 // - network minimum participation requirement parameter.
 func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	if err := terms.Validate(); err != nil {
-		return errors.Wrap(err, "proposal validation failed")
-	}
-
-	if terms.MinParticipationStake < s.parameters.minParticipationStake {
-		return fmt.Errorf("minimum participation stake parameter must be at least %d",
-			s.parameters.minParticipationStake)
+		return ErrInvalidProposalTerms
 	}
 
 	now, err := s.timeService.GetTimeNow()
 	if err != nil {
-		return errors.Wrap(err, "proposal validation failed")
+		return err
 	}
 
 	minClose := now.Add(time.Duration(s.parameters.minCloseInSeconds) * time.Second)
-	maxClose := now.Add(time.Duration(s.parameters.maxCloseInSeconds) * time.Second)
-
-	if terms.ClosingTimestamp < minClose.UTC().Unix() ||
-		terms.ClosingTimestamp > maxClose.UTC().Unix() {
-		return fmt.Errorf("close day must be between %s and %s",
-			vegatime.Format(minClose), vegatime.Format(maxClose))
+	// we can only check if the closing ts was in the past "too far in the future" might not apply
+	// after the same proposal reaches the core (post consensus)
+	if terms.ClosingTimestamp < minClose.UTC().Unix() {
+		return ErrInvalidProposalTerms
 	}
 
 	minEnact := now.Add(time.Duration(s.parameters.minEnactInSeconds) * time.Second)
-	maxEnact := now.Add(time.Duration(s.parameters.maxEnactInSeconds) * time.Second)
-	if terms.EnactmentTimestamp < minEnact.UTC().Unix() ||
-		terms.EnactmentTimestamp > maxEnact.UTC().Unix() {
-		return fmt.Errorf("enactment day must be between %s and %s",
-			vegatime.Format(minEnact), vegatime.Format(maxEnact))
+	// again: we can only check if the enactment TS is in the past, future checks aren't guaranteed
+	// to produce the same results post chain
+	if terms.EnactmentTimestamp < minEnact.UTC().Unix() {
+		return ErrInvalidProposalTerms
 	}
 
 	return nil

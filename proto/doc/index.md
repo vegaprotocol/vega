@@ -1301,7 +1301,7 @@ TODO
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
+| ID | [string](#string) |  |  |
 | reference | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
 | state | [Proposal.State](#vega.Proposal.State) |  |  |
@@ -1383,16 +1383,19 @@ TODO
 Proposal state transition:
 Open -&gt;
   - Passed -&gt; Enacted.
-  - Rejected.
+  - Passed -&gt; Failed.
+  - Declined
+Rejected
 Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| FAILED | 0 | Proposal became invalid and cannot be processed. |
+| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
 | OPEN | 1 | Proposal is open for voting. |
 | PASSED | 2 | Proposal has gained enough support to be executed. |
-| REJECTED | 3 | Proposal could not gain enough support to be executed. |
-| ENACTED | 4 | Proposal has been executed and the changes under this proposal have now been applied. |
+| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
+| DECLINED | 4 | Proposal didn&#39;t get enough votes |
+| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 
 
