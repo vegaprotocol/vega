@@ -277,8 +277,8 @@ type ComplexityRoot struct {
 
 	ProposalTerms struct {
 		Change                func(childComplexity int) int
-		CloseInDays           func(childComplexity int) int
-		EnactInDays           func(childComplexity int) int
+		ClosingTimestamp      func(childComplexity int) int
+		EnactmentTimestamp    func(childComplexity int) int
 		MinParticipationStake func(childComplexity int) int
 	}
 
@@ -378,10 +378,10 @@ type ComplexityRoot struct {
 	}
 
 	UpdateNetwork struct {
-		MaxCloseInDays        func(childComplexity int) int
-		MaxEnactInDays        func(childComplexity int) int
-		MinCloseInDays        func(childComplexity int) int
-		MinEnactInDays        func(childComplexity int) int
+		MaxCloseInSeconds     func(childComplexity int) int
+		MaxEnactInSeconds     func(childComplexity int) int
+		MinCloseInSeconds     func(childComplexity int) int
+		MinEnactInSeconds     func(childComplexity int) int
 		MinParticipationStake func(childComplexity int) int
 	}
 }
@@ -1586,19 +1586,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.Change(childComplexity), true
 
-	case "ProposalTerms.closeInDays":
-		if e.complexity.ProposalTerms.CloseInDays == nil {
+	case "ProposalTerms.closingTimestamp":
+		if e.complexity.ProposalTerms.ClosingTimestamp == nil {
 			break
 		}
 
-		return e.complexity.ProposalTerms.CloseInDays(childComplexity), true
+		return e.complexity.ProposalTerms.ClosingTimestamp(childComplexity), true
 
-	case "ProposalTerms.enactInDays":
-		if e.complexity.ProposalTerms.EnactInDays == nil {
+	case "ProposalTerms.enactmentTimestamp":
+		if e.complexity.ProposalTerms.EnactmentTimestamp == nil {
 			break
 		}
 
-		return e.complexity.ProposalTerms.EnactInDays(childComplexity), true
+		return e.complexity.ProposalTerms.EnactmentTimestamp(childComplexity), true
 
 	case "ProposalTerms.minParticipationStake":
 		if e.complexity.ProposalTerms.MinParticipationStake == nil {
@@ -2127,33 +2127,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateMarket.MarketID(childComplexity), true
 
-	case "UpdateNetwork.maxCloseInDays":
-		if e.complexity.UpdateNetwork.MaxCloseInDays == nil {
+	case "UpdateNetwork.maxCloseInSeconds":
+		if e.complexity.UpdateNetwork.MaxCloseInSeconds == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MaxCloseInDays(childComplexity), true
+		return e.complexity.UpdateNetwork.MaxCloseInSeconds(childComplexity), true
 
-	case "UpdateNetwork.maxEnactInDays":
-		if e.complexity.UpdateNetwork.MaxEnactInDays == nil {
+	case "UpdateNetwork.maxEnactInSeconds":
+		if e.complexity.UpdateNetwork.MaxEnactInSeconds == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MaxEnactInDays(childComplexity), true
+		return e.complexity.UpdateNetwork.MaxEnactInSeconds(childComplexity), true
 
-	case "UpdateNetwork.minCloseInDays":
-		if e.complexity.UpdateNetwork.MinCloseInDays == nil {
+	case "UpdateNetwork.minCloseInSeconds":
+		if e.complexity.UpdateNetwork.MinCloseInSeconds == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MinCloseInDays(childComplexity), true
+		return e.complexity.UpdateNetwork.MinCloseInSeconds(childComplexity), true
 
-	case "UpdateNetwork.minEnactInDays":
-		if e.complexity.UpdateNetwork.MinEnactInDays == nil {
+	case "UpdateNetwork.minEnactInSeconds":
+		if e.complexity.UpdateNetwork.MinEnactInSeconds == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MinEnactInDays(childComplexity), true
+		return e.complexity.UpdateNetwork.MinEnactInSeconds(childComplexity), true
 
 	case "UpdateNetwork.minParticipationStake":
 		if e.complexity.UpdateNetwork.MinParticipationStake == nil {
@@ -3334,26 +3334,26 @@ input NewMarketInput {
 type UpdateNetwork {
   """
   Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  minCloseInDays: Int
+  minCloseInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  maxCloseInDays: Int
+  maxCloseInSeconds: Int
   """
   Network parameter that restricts when the earliest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  minEnactInDays: Int
+  minEnactInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  maxEnactInDays: Int
+  maxEnactInSeconds: Int
 
   """
   Network parameter that restricts the minimum participation stake
@@ -3366,26 +3366,26 @@ type UpdateNetwork {
 input UpdateNetworkInput {
   """
   Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  minCloseInDays: Int
+  minCloseInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  maxCloseInDays: Int
+  maxCloseInSeconds: Int
   """
   Network parameter that restricts when the earliest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  minEnactInDays: Int
+  minEnactInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  maxEnactInDays: Int
+  maxEnactInSeconds: Int
 
   """
   Network parameter that restricts the minimum participation stake
@@ -3399,10 +3399,10 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Duration (in days) before voting is closed for this proposal"
-  closeInDays: Int!
-  "Duration (in days) before this is executed (if passed)"
-  enactInDays: Int!
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
@@ -3410,10 +3410,10 @@ type ProposalTerms {
 }
 
 input ProposalTermsInput {
-  "Duration (in days) before voting is closed for this proposal"
-  closeInDays: Int!
-  "Duration (in days) before this is executed (if passed)"
-  enactInDays: Int!
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
@@ -9328,7 +9328,7 @@ func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.C
 	return ec.marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalTerms(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalTerms_closeInDays(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalTerms_closingTimestamp(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9347,7 +9347,7 @@ func (ec *executionContext) _ProposalTerms_closeInDays(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CloseInDays, nil
+		return obj.ClosingTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9359,13 +9359,13 @@ func (ec *executionContext) _ProposalTerms_closeInDays(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalTerms_enactInDays(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalTerms_enactmentTimestamp(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9384,7 +9384,7 @@ func (ec *executionContext) _ProposalTerms_enactInDays(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EnactInDays, nil
+		return obj.EnactmentTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9396,10 +9396,10 @@ func (ec *executionContext) _ProposalTerms_enactInDays(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_minParticipationStake(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
@@ -12095,7 +12095,7 @@ func (ec *executionContext) _UpdateMarket_marketId(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_minCloseInDays(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_minCloseInSeconds(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -12114,7 +12114,7 @@ func (ec *executionContext) _UpdateNetwork_minCloseInDays(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MinCloseInDays, nil
+		return obj.MinCloseInSeconds, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12129,7 +12129,7 @@ func (ec *executionContext) _UpdateNetwork_minCloseInDays(ctx context.Context, f
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_maxCloseInDays(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_maxCloseInSeconds(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -12148,7 +12148,7 @@ func (ec *executionContext) _UpdateNetwork_maxCloseInDays(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MaxCloseInDays, nil
+		return obj.MaxCloseInSeconds, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12163,7 +12163,7 @@ func (ec *executionContext) _UpdateNetwork_maxCloseInDays(ctx context.Context, f
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_minEnactInDays(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_minEnactInSeconds(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -12182,7 +12182,7 @@ func (ec *executionContext) _UpdateNetwork_minEnactInDays(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MinEnactInDays, nil
+		return obj.MinEnactInSeconds, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12197,7 +12197,7 @@ func (ec *executionContext) _UpdateNetwork_minEnactInDays(ctx context.Context, f
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_maxEnactInDays(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_maxEnactInSeconds(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -12216,7 +12216,7 @@ func (ec *executionContext) _UpdateNetwork_maxEnactInDays(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MaxEnactInDays, nil
+		return obj.MaxEnactInSeconds, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13440,15 +13440,15 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
-		case "closeInDays":
+		case "closingTimestamp":
 			var err error
-			it.CloseInDays, err = ec.unmarshalNInt2int(ctx, v)
+			it.ClosingTimestamp, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "enactInDays":
+		case "enactmentTimestamp":
 			var err error
-			it.EnactInDays, err = ec.unmarshalNInt2int(ctx, v)
+			it.EnactmentTimestamp, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13506,27 +13506,27 @@ func (ec *executionContext) unmarshalInputUpdateNetworkInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
-		case "minCloseInDays":
+		case "minCloseInSeconds":
 			var err error
-			it.MinCloseInDays, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.MinCloseInSeconds, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "maxCloseInDays":
+		case "maxCloseInSeconds":
 			var err error
-			it.MaxCloseInDays, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.MaxCloseInSeconds, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "minEnactInDays":
+		case "minEnactInSeconds":
 			var err error
-			it.MinEnactInDays, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.MinEnactInSeconds, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "maxEnactInDays":
+		case "maxEnactInSeconds":
 			var err error
-			it.MaxEnactInDays, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.MaxEnactInSeconds, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15489,13 +15489,13 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ProposalTerms")
-		case "closeInDays":
-			out.Values[i] = ec._ProposalTerms_closeInDays(ctx, field, obj)
+		case "closingTimestamp":
+			out.Values[i] = ec._ProposalTerms_closingTimestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "enactInDays":
-			out.Values[i] = ec._ProposalTerms_enactInDays(ctx, field, obj)
+		case "enactmentTimestamp":
+			out.Values[i] = ec._ProposalTerms_enactmentTimestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16308,14 +16308,14 @@ func (ec *executionContext) _UpdateNetwork(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateNetwork")
-		case "minCloseInDays":
-			out.Values[i] = ec._UpdateNetwork_minCloseInDays(ctx, field, obj)
-		case "maxCloseInDays":
-			out.Values[i] = ec._UpdateNetwork_maxCloseInDays(ctx, field, obj)
-		case "minEnactInDays":
-			out.Values[i] = ec._UpdateNetwork_minEnactInDays(ctx, field, obj)
-		case "maxEnactInDays":
-			out.Values[i] = ec._UpdateNetwork_maxEnactInDays(ctx, field, obj)
+		case "minCloseInSeconds":
+			out.Values[i] = ec._UpdateNetwork_minCloseInSeconds(ctx, field, obj)
+		case "maxCloseInSeconds":
+			out.Values[i] = ec._UpdateNetwork_maxCloseInSeconds(ctx, field, obj)
+		case "minEnactInSeconds":
+			out.Values[i] = ec._UpdateNetwork_minEnactInSeconds(ctx, field, obj)
+		case "maxEnactInSeconds":
+			out.Values[i] = ec._UpdateNetwork_maxEnactInSeconds(ctx, field, obj)
 		case "minParticipationStake":
 			out.Values[i] = ec._UpdateNetwork_minParticipationStake(ctx, field, obj)
 		default:

@@ -219,10 +219,10 @@ type Proposal struct {
 }
 
 type ProposalTerms struct {
-	// Duration (in days) before voting is closed for this proposal
-	CloseInDays int `json:"closeInDays"`
-	// Duration (in days) before this is executed (if passed)
-	EnactInDays int `json:"enactInDays"`
+	// Timestamp when voting is closes for this proposal
+	ClosingTimestamp string `json:"closingTimestamp"`
+	// Timestamp when this proposal is executed (if passed)
+	EnactmentTimestamp string `json:"enactmentTimestamp"`
 	// Minimum participation stake required for this proposal to pass
 	MinParticipationStake int `json:"minParticipationStake"`
 	// Actual change being introduced by the proposal
@@ -230,10 +230,10 @@ type ProposalTerms struct {
 }
 
 type ProposalTermsInput struct {
-	// Duration (in days) before voting is closed for this proposal
-	CloseInDays int `json:"closeInDays"`
-	// Duration (in days) before this is executed (if passed)
-	EnactInDays int `json:"enactInDays"`
+	// Timestamp when voting is closes for this proposal
+	ClosingTimestamp string `json:"closingTimestamp"`
+	// Timestamp when this proposal is executed (if passed)
+	EnactmentTimestamp string `json:"enactmentTimestamp"`
 	// Minimum participation stake required for this proposal to pass
 	MinParticipationStake int `json:"minParticipationStake"`
 	// Actual change being introduced by the proposal
@@ -296,19 +296,19 @@ type UpdateMarketInput struct {
 // Allows submitting a proposal for changing governance network parameters
 type UpdateNetwork struct {
 	// Network parameter that restricts when the earliest a proposal
-	// can be set to close voting. Value represents duration in days.
-	MinCloseInDays *int `json:"minCloseInDays"`
+	// can be set to close voting. Value represents duration in seconds.
+	MinCloseInSeconds *int `json:"minCloseInSeconds"`
 	// Network parameter that restricts when the latest a proposal
-	// can be set to close voting. Value represents duration in days.
-	MaxCloseInDays *int `json:"maxCloseInDays"`
+	// can be set to close voting. Value represents duration in seconds.
+	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
 	// Network parameter that restricts when the earliest a proposal
 	// can be set to be executed (if that proposal passed).
-	// Value represents duration in days.
-	MinEnactInDays *int `json:"minEnactInDays"`
+	// Value represents duration in seconds.
+	MinEnactInSeconds *int `json:"minEnactInSeconds"`
 	// Network parameter that restricts when the latest a proposal
 	// can be set to be executed (if that proposal passed).
-	// Value represents duration in days.
-	MaxEnactInDays *int `json:"maxEnactInDays"`
+	// Value represents duration in seconds.
+	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
 	// Network parameter that restricts the minimum participation stake
 	// required for a proposal to pass.
 	MinParticipationStake *int `json:"minParticipationStake"`
@@ -319,19 +319,19 @@ func (UpdateNetwork) IsProposalChange() {}
 // Allows submitting a proposal for changing governance network parameters
 type UpdateNetworkInput struct {
 	// Network parameter that restricts when the earliest a proposal
-	// can be set to close voting. Value represents duration in days.
-	MinCloseInDays *int `json:"minCloseInDays"`
+	// can be set to close voting. Value represents duration in seconds.
+	MinCloseInSeconds *int `json:"minCloseInSeconds"`
 	// Network parameter that restricts when the latest a proposal
-	// can be set to close voting. Value represents duration in days.
-	MaxCloseInDays *int `json:"maxCloseInDays"`
+	// can be set to close voting. Value represents duration in seconds.
+	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
 	// Network parameter that restricts when the earliest a proposal
 	// can be set to be executed (if that proposal passed).
-	// Value represents duration in days.
-	MinEnactInDays *int `json:"minEnactInDays"`
+	// Value represents duration in seconds.
+	MinEnactInSeconds *int `json:"minEnactInSeconds"`
 	// Network parameter that restricts when the latest a proposal
 	// can be set to be executed (if that proposal passed).
-	// Value represents duration in days.
-	MaxEnactInDays *int `json:"maxEnactInDays"`
+	// Value represents duration in seconds.
+	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
 	// Network parameter that restricts the minimum participation stake
 	// required for a proposal to pass.
 	MinParticipationStake *int `json:"minParticipationStake"`

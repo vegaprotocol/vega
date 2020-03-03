@@ -1079,26 +1079,26 @@ input NewMarketInput {
 type UpdateNetwork {
   """
   Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  minCloseInDays: Int
+  minCloseInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  maxCloseInDays: Int
+  maxCloseInSeconds: Int
   """
   Network parameter that restricts when the earliest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  minEnactInDays: Int
+  minEnactInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  maxEnactInDays: Int
+  maxEnactInSeconds: Int
 
   """
   Network parameter that restricts the minimum participation stake
@@ -1111,26 +1111,26 @@ type UpdateNetwork {
 input UpdateNetworkInput {
   """
   Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  minCloseInDays: Int
+  minCloseInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in days.
+  can be set to close voting. Value represents duration in seconds.
   """
-  maxCloseInDays: Int
+  maxCloseInSeconds: Int
   """
   Network parameter that restricts when the earliest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  minEnactInDays: Int
+  minEnactInSeconds: Int
   """
   Network parameter that restricts when the latest a proposal
   can be set to be executed (if that proposal passed).
-  Value represents duration in days.
+  Value represents duration in seconds.
   """
-  maxEnactInDays: Int
+  maxEnactInSeconds: Int
 
   """
   Network parameter that restricts the minimum participation stake
@@ -1144,10 +1144,10 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Duration (in seconds) before voting is closed for this proposal"
-  closeInSeconds: Int!
-  "Duration (in seconds) before this is executed (if passed)"
-  enactInSeconds: Int!
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
@@ -1155,10 +1155,10 @@ type ProposalTerms {
 }
 
 input ProposalTermsInput {
-  "Duration (in seconds) before voting is closed for this proposal"
-  closeInSeconds: Int!
-  "Duration (in seconds) before this is executed (if passed)"
-  enactInSeconds: Int!
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
