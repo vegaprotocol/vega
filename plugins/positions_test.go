@@ -138,6 +138,7 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 		},
 	}
 	ch <- []events.SettlePosition{ps}
+	ch <- []events.SettlePosition{}
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
@@ -184,6 +185,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 		},
 	}
 	ch <- []events.SettlePosition{ps}
+	ch <- []events.SettlePosition{}
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
@@ -247,6 +249,7 @@ func TestDistressedTraderUpdate(t *testing.T) {
 		},
 	}
 	ch <- []events.SettlePosition{ps}
+	ch <- []events.SettlePosition{}
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
@@ -326,6 +329,7 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 		},
 	}
 	ch <- []events.SettlePosition{ps}
+	ch <- []events.SettlePosition{}
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
@@ -391,9 +395,11 @@ func TestProcessBufferData(t *testing.T) {
 	wg.Add(2)
 	go func() {
 		ch <- []events.SettlePosition{ps}
+		ch <- []events.SettlePosition{}
 		wg.Done()
 	}()
 	ch <- []events.SettlePosition{ps}
+	ch <- []events.SettlePosition{}
 	ps.party = "trader2"
 	ps.size = -10
 	ps.trades[0] = tradeStub{
@@ -402,6 +408,7 @@ func TestProcessBufferData(t *testing.T) {
 	}
 	go func() {
 		ch <- []events.SettlePosition{ps}
+		ch <- []events.SettlePosition{}
 		wg.Done()
 	}()
 	wg.Wait()
