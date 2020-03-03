@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -126,16 +127,16 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 
 	if terms.ClosingTimestamp < minClose.UTC().Unix() ||
 		terms.ClosingTimestamp > maxClose.UTC().Unix() {
-		return fmt.Errorf("close day must be between %d and %d",
-			s.parameters.minCloseInSeconds, s.parameters.maxCloseInSeconds)
+		return fmt.Errorf("close day must be between %s and %s",
+			vegatime.Format(minClose), vegatime.Format(maxClose))
 	}
 
 	minEnact := now.Add(time.Duration(s.parameters.minEnactInSeconds) * time.Second)
 	maxEnact := now.Add(time.Duration(s.parameters.maxEnactInSeconds) * time.Second)
 	if terms.EnactmentTimestamp < minEnact.UTC().Unix() ||
 		terms.EnactmentTimestamp > maxEnact.UTC().Unix() {
-		return fmt.Errorf("enactment day must be between %d and %d",
-			s.parameters.minEnactInSeconds, s.parameters.maxEnactInSeconds)
+		return fmt.Errorf("enactment day must be between %s and %s",
+			vegatime.Format(minEnact), vegatime.Format(maxEnact))
 	}
 
 	return nil
