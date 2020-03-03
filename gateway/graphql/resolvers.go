@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -18,6 +17,8 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -1340,20 +1341,38 @@ func (r *myMutationResolver) PrepareProposal(
 	if len(partyID) <= 0 {
 		return nil, errors.New("partyId missing or empty")
 	}
-
-	request := protoapi.PrepareProposalRequest{
-		PartyID: partyID,
+	if proposalTerms.MinParticipationStake < 0 {
+		return nil, errors.New("minParticipationStake is invalid, must be positive")
 	}
 
+	var ref string
 	if reference != nil {
-		request.Reference = *reference
+		ref = *reference
+	}
+
+	closing, err := parseTimestamp(proposalTerms.ClosingTimestamp)
+	if err != nil {
+		return nil, errors.Wrap(err, "closingTimestamp is invalid")
+	}
+	enactment, err := parseTimestamp(proposalTerms.EnactmentTimestamp)
+	if err != nil {
+		return nil, errors.Wrap(err, "enactmentTimestamp is invalid")
+	}
+
+	request := protoapi.PrepareProposalRequest{
+		PartyID:   partyID,
+		Reference: ref,
+		Proposal: &types.ProposalTerms{
+			ClosingTimestamp:      closing,
+			EnactmentTimestamp:    enactment,
+			MinParticipationStake: uint64(proposalTerms.MinParticipationStake),
+			Change:                nil,
+		},
 	}
 	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &request)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	timestamp := vegatime.Format(vegatime.Unix(pendingProposal.PendingProposal.Timestamp, 0))
-
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
 		PendingProposal: &Proposal{
@@ -1361,10 +1380,10 @@ func (r *myMutationResolver) PrepareProposal(
 			Reference: pendingProposal.PendingProposal.Reference,
 			PartyID:   pendingProposal.PendingProposal.PartyID,
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
-			Timestamp: timestamp,
+			Timestamp: timestampToString(pendingProposal.PendingProposal.Timestamp),
 			Terms: &ProposalTerms{
-				ClosingTimestamp:      vegatime.Format(vegatime.Unix(pendingProposal.PendingProposal.Terms.ClosingTimestamp, 0)),
-				EnactmentTimestamp:    vegatime.Format(vegatime.Unix(pendingProposal.PendingProposal.Terms.EnactmentTimestamp, 0)),
+				ClosingTimestamp:      timestampToString(pendingProposal.PendingProposal.Terms.ClosingTimestamp),
+				EnactmentTimestamp:    timestampToString(pendingProposal.PendingProposal.Terms.EnactmentTimestamp),
 				MinParticipationStake: int(pendingProposal.PendingProposal.Terms.MinParticipationStake),
 				Change:                nil,
 			},

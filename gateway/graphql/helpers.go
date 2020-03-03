@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -125,4 +126,16 @@ func customErrorFromStatus(err error) error {
 		}
 	}
 	return err
+}
+
+func timestampToString(timestampInSeconds int64) string {
+	return vegatime.Format(vegatime.Unix(timestampInSeconds, 0))
+}
+
+func parseTimestamp(timestamp string) (int64, error) {
+	converted, err := vegatime.Parse(timestamp)
+	if err != nil {
+		return 0, err
+	}
+	return converted.UTC().Unix(), nil
 }
