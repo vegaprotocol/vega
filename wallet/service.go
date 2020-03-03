@@ -32,6 +32,7 @@ type WalletHandler interface {
 	SignTx(token, tx, pubkey string) (SignedBundle, error)
 	TaintKey(token, pubkey, passphrase string) error
 	UpdateMeta(token, pubkey, passphrase string, meta []Meta) error
+	WalletPath(token string) (string, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
@@ -58,6 +59,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	s.HandleFunc("/api/v1/sign", ExtractToken(s.SignTx))
 	s.HandleFunc("/api/v1/taint-key", ExtractToken(s.TaintKey))
 	s.HandleFunc("/api/v1/update-key-meta", ExtractToken(s.UpdateMeta))
+	s.HandleFunc("/api/v1/wallet", ExtractToken(s.DownloadWallet))
 
 	return s, nil
 
@@ -127,6 +129,19 @@ func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeSuccess(w, token, http.StatusOK)
+}
+
+func (s *Service) DownloadWallet(token string, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	path, err := s.handler.WalletPath(token)
+	if err != nil {
+		writeError(w, err, http.StatusMethodNotAllowed)
+		return
+	}
+	http.ServeFile(w, r, path)
 }
 
 func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
