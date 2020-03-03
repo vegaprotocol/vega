@@ -1349,29 +1349,21 @@ func (r *myMutationResolver) PrepareProposal(
 	if reference != nil {
 		ref = *reference
 	}
-
-	closing, err := parseTimestamp(proposalTerms.ClosingTimestamp)
+	terms, err := convertProposalTermsInput(proposalTerms)
 	if err != nil {
-		return nil, errors.Wrap(err, "closingTimestamp is invalid")
+		return nil, err
 	}
-	enactment, err := parseTimestamp(proposalTerms.EnactmentTimestamp)
-	if err != nil {
-		return nil, errors.Wrap(err, "enactmentTimestamp is invalid")
-	}
-
-	request := protoapi.PrepareProposalRequest{
+	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
 		PartyID:   partyID,
 		Reference: ref,
-		Proposal: &types.ProposalTerms{
-			ClosingTimestamp:      closing,
-			EnactmentTimestamp:    enactment,
-			MinParticipationStake: uint64(proposalTerms.MinParticipationStake),
-			Change:                nil,
-		},
-	}
-	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &request)
+		Proposal:  terms,
+	})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+	verifiedTerms, err := convertProposalTerms(pendingProposal.PendingProposal.Terms)
+	if err != nil {
+		return nil, err
 	}
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
@@ -1381,12 +1373,7 @@ func (r *myMutationResolver) PrepareProposal(
 			PartyID:   pendingProposal.PendingProposal.PartyID,
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
 			Timestamp: timestampToString(pendingProposal.PendingProposal.Timestamp),
-			Terms: &ProposalTerms{
-				ClosingTimestamp:      timestampToString(pendingProposal.PendingProposal.Terms.ClosingTimestamp),
-				EnactmentTimestamp:    timestampToString(pendingProposal.PendingProposal.Terms.EnactmentTimestamp),
-				MinParticipationStake: int(pendingProposal.PendingProposal.Terms.MinParticipationStake),
-				Change:                nil,
-			},
+			Terms:     verifiedTerms,
 		},
 	}, nil
 }
