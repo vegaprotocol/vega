@@ -2,8 +2,11 @@ package wallet_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -42,6 +45,7 @@ func TestService(t *testing.T) {
 	t.Run("create wallet ok", testServiceCreateWalletOK)
 	t.Run("create wallet fail invalid request", testServiceCreateWalletFailInvalidRequest)
 	t.Run("login wallet ok", testServiceLoginWalletOK)
+	t.Run("download wallet ok", testServiceDownloadWalletOK)
 	t.Run("login wallet fail invalid request", testServiceLoginWalletFailInvalidRequest)
 	t.Run("revoke token ok", testServiceRevokeTokenOK)
 	t.Run("revoke token fail invalid request", testServiceRevokeTokenFailInvalidRequest)
@@ -118,6 +122,45 @@ func testServiceLoginWalletOK(t *testing.T) {
 	s.Login(w, r)
 
 	resp := w.Result()
+	assert.Equal(t, resp.StatusCode, http.StatusOK)
+}
+
+func testServiceDownloadWalletOK(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	s.handler.EXPECT().LoginWallet(gomock.Any(), gomock.Any()).Times(1).Return("this is a token", nil)
+
+	payload := `{"wallet": "jeremy", "passphrase": "oh yea?"}`
+	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	w := httptest.NewRecorder()
+
+	s.Login(w, r)
+
+	resp := w.Result()
+	var token struct {
+		Data string
+	}
+	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	raw, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	_ = json.Unmarshal(raw, &token)
+
+	tmpFile, _ := ioutil.TempFile(".", "test-wallet")
+	defer func() {
+		name := tmpFile.Name()
+		tmpFile.Close()
+		os.Remove(name)
+	}()
+	s.handler.EXPECT().WalletPath(token.Data).Times(1).Return(tmpFile.Name(), nil)
+
+	// now get the file:
+	r = httptest.NewRequest(http.MethodGet, "http://example.com/wallet", bytes.NewBufferString(""))
+	w = httptest.NewRecorder()
+
+	s.DownloadWallet(token.Data, w, r)
+	resp = w.Result()
+
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
 }
 
