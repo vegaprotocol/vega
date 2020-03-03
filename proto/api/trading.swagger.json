@@ -971,6 +971,33 @@
         ]
       }
     },
+    "/proposal": {
+      "post": {
+        "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
+        "operationId": "PrepareProposal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareProposalResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareProposalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
         "summary": "Get Statistics",
@@ -1066,10 +1093,11 @@
         "OPEN",
         "PASSED",
         "REJECTED",
+        "DECLINED",
         "ENACTED"
       ],
       "default": "FAILED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Rejected.\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal became invalid and cannot be processed.\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal could not gain enough support to be executed.\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal could not be enacted after being accepted by the network\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals)\n - DECLINED: Proposal didn't get enough votes\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -1322,6 +1350,20 @@
         },
         "pendingOrder": {
           "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareProposalRequest": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposalTerms"
         }
       }
     },
@@ -2185,7 +2227,7 @@
     "vegaProposal": {
       "type": "object",
       "properties": {
-        "id": {
+        "ID": {
           "type": "string"
         },
         "reference": {

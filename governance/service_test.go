@@ -103,7 +103,6 @@ func testPrepareProposalEmpty(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, proposal)
-	assert.Contains(t, err.Error(), "proposal validation failed")
 }
 
 func TestPrepareProposal(t *testing.T) {

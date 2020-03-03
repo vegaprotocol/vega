@@ -3541,7 +3541,7 @@
             <tbody>
 
                 <tr>
-                  <td>id</td>
+                  <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -3894,7 +3894,7 @@
 
 
         <h3 id="vega.Proposal.State">Proposal.State</h3>
-        <p>Proposal state transition:</p><p>Open -></p><p>- Passed -> Enacted.</p><p>- Rejected.</p><p>Proposal can enter Failed state from any other state.</p>
+        <p>Proposal state transition:</p><p>Open -></p><p>- Passed -> Enacted.</p><p>- Passed -> Failed.</p><p>- Declined</p><p>Rejected</p><p>Proposal can enter Failed state from any other state.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -3904,7 +3904,7 @@
               <tr>
                 <td>FAILED</td>
                 <td>0</td>
-                <td><p>Proposal became invalid and cannot be processed.</p></td>
+                <td><p>Proposal could not be enacted after being accepted by the network</p></td>
               </tr>
 
               <tr>
@@ -3922,12 +3922,18 @@
               <tr>
                 <td>REJECTED</td>
                 <td>3</td>
-                <td><p>Proposal could not gain enough support to be executed.</p></td>
+                <td><p>Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals)</p></td>
+              </tr>
+
+              <tr>
+                <td>DECLINED</td>
+                <td>4</td>
+                <td><p>Proposal didn&#39;t get enough votes</p></td>
               </tr>
 
               <tr>
                 <td>ENACTED</td>
-                <td>4</td>
+                <td>5</td>
                 <td><p>Proposal has been executed and the changes under this proposal have now been applied.</p></td>
               </tr>
 

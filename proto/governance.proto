@@ -40,10 +40,12 @@ message Proposal {
   // Proposal state transition:
   // Open ->
   //   - Passed -> Enacted.
-  //   - Rejected.
+  //   - Passed -> Failed.
+  //   - Declined
+  // Rejected
   // Proposal can enter Failed state from any other state.
   enum State {
-    // Proposal became invalid and cannot be processed.
+    // Proposal could not be enacted after being accepted by the network
     FAILED    = 0;
 
     // Proposal is open for voting.
@@ -52,14 +54,17 @@ message Proposal {
     // Proposal has gained enough support to be executed.
     PASSED    = 2;
 
-    // Proposal could not gain enough support to be executed.
+    // Proposal wasn't accepted (validation failed, author not allowed to submit proposals)
     REJECTED  = 3;
 
+    // Proposal didn't get enough votes
+    DECLINED  = 4;
+
     // Proposal has been executed and the changes under this proposal have now been applied.
-    ENACTED   = 4;
+    ENACTED   = 5;
   }
 
-  string        id        = 1;
+  string        ID        = 1;
   string        reference = 2;
   string        partyID   = 3 [(validator.field) = {string_not_empty : true}];
   State         state     = 4 [(validator.field) = {is_in_enum: true}];
