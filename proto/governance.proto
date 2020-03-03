@@ -6,11 +6,11 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 message NetworkConfiguration {
-  uint64 minCloseInSeconds = 1;
-  uint64 maxCloseInSeconds = 2;
+  int64 minCloseInSeconds = 1;
+  int64 maxCloseInSeconds = 2;
 
-  uint64 minEnactInSeconds  = 3;
-  uint64 maxEnactInSeconds  = 4;
+  int64 minEnactInSeconds  = 3;
+  int64 maxEnactInSeconds  = 4;
 
   uint64 minParticipationStake = 5;
 }

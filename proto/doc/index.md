@@ -1272,10 +1272,10 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [uint64](#uint64) |  |  |
-| maxCloseInSeconds | [uint64](#uint64) |  |  |
-| minEnactInSeconds | [uint64](#uint64) |  |  |
-| maxEnactInSeconds | [uint64](#uint64) |  |  |
+| minCloseInSeconds | [int64](#int64) |  |  |
+| maxCloseInSeconds | [int64](#int64) |  |  |
+| minEnactInSeconds | [int64](#int64) |  |  |
+| maxEnactInSeconds | [int64](#int64) |  |  |
 | minParticipationStake | [uint64](#uint64) |  |  |
 
 

@@ -1896,19 +1896,19 @@
       "properties": {
         "minCloseInSeconds": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "maxCloseInSeconds": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "minEnactInSeconds": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "maxEnactInSeconds": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "minParticipationStake": {
           "type": "string",
