@@ -63,8 +63,8 @@ func testPrepareProposalNormal(t *testing.T) {
 		},
 	}
 	terms := types.ProposalTerms{
-		CloseInSeconds:        30 * 24 * 60 * 60,
-		EnactInSeconds:        31 * 24 * 60 * 60,
+		ClosingTimestamp:      time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp:    time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
 		MinParticipationStake: 50,
 		Change: &types.ProposalTerms_UpdateNetwork{
 			UpdateNetwork: &updateNetwork,
