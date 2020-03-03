@@ -1693,6 +1693,7 @@
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
+| updatedAt | [int64](#int64) |  |  |
 
 
 

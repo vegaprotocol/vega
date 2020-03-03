@@ -475,6 +475,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
+			// set the `updatedAt` value as these orders have changed
+			order.UpdatedAt = m.currentTime.UnixNano()
 			m.orderBuf.Add(*order)
 		}
 	}
@@ -586,6 +588,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// push rm orders into buf
 	// and remove the orders from the positions engine
 	for _, o := range rmorders {
+		o.UpdatedAt = m.currentTime.UnixNano()
 		m.orderBuf.Add(*o)
 		if _, err := m.position.UnregisterOrder(o); err != nil {
 			m.log.Error("unable to unregister order for a distressed party",
@@ -702,6 +705,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
+			order.UpdatedAt = m.currentTime.UnixNano()
 			m.orderBuf.Add(*order)
 		}
 	}
@@ -1056,6 +1060,7 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
+	cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
 	m.orderBuf.Add(*cancellation.Order)
 	_, err = m.position.UnregisterOrder(cancellation.Order)
 	if err != nil {
@@ -1117,7 +1122,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	currentTime := m.currentTime
 	m.mu.Unlock()
 
-	newOrder := &types.Order{
+	amendOrder := &types.Order{
 		Id:          existingOrder.Id,
 		MarketID:    existingOrder.MarketID,
 		PartyID:     existingOrder.PartyID,
@@ -1136,13 +1141,13 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	)
 
 	if orderAmendment.Price != 0 && existingOrder.Price != orderAmendment.Price {
-		newOrder.Price = orderAmendment.Price
+		amendOrder.Price = orderAmendment.Price
 		priceShift = true
 	}
 
 	if orderAmendment.Size != 0 {
-		newOrder.Size = orderAmendment.Size
-		newOrder.Remaining = orderAmendment.Size
+		amendOrder.Size = orderAmendment.Size
+		amendOrder.Remaining = orderAmendment.Size
 		if orderAmendment.Size > existingOrder.Size {
 			sizeIncrease = true
 		}
@@ -1151,22 +1156,22 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		}
 	}
 
-	if newOrder.TimeInForce == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
-		newOrder.ExpiresAt = orderAmendment.ExpiresAt
+	if amendOrder.TimeInForce == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
+		amendOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}
 
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		ret, err := m.orderCancelReplace(existingOrder, newOrder)
+		ret, err := m.orderCancelReplace(existingOrder, amendOrder)
 		return ret, err
 	}
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease {
-		return m.orderAmendInPlace(newOrder)
+		return m.orderAmendInPlace(amendOrder)
 	}
 
 	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
@@ -1202,23 +1207,24 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 	return
 }
 
-func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
-	_, err := m.position.RegisterOrder(newOrder)
+	_, err := m.position.RegisterOrder(amendOrder)
 	if err != nil {
 		return &types.OrderConfirmation{}, err
 	}
 
-	err = m.matching.AmendOrder(newOrder)
+	err = m.matching.AmendOrder(amendOrder)
 	if err != nil {
 		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
-			logging.OrderWithTag(*newOrder, "new-order"),
+			logging.OrderWithTag(*amendOrder, "new-order"),
 			logging.Error(err))
 		return &types.OrderConfirmation{}, err
 	}
-	m.orderBuf.Add(*newOrder)
+	amendOrder.UpdatedAt = m.currentTime.UnixNano()
+	m.orderBuf.Add(*amendOrder)
 	return &types.OrderConfirmation{}, nil
 }
 
