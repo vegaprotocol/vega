@@ -126,7 +126,7 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 	}
 	var err error
 	if err = e.validateProposal(p); err != nil {
-		p.State = types.Proposal_DECLINED
+		p.State = types.Proposal_REJECTED
 	}
 	if p.State != types.Proposal_OPEN {
 		delete(e.proposals, p.ID)
