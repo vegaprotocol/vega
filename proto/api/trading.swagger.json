@@ -2395,16 +2395,6 @@
           "type": "string",
           "format": "uint64"
         },
-        "totalParties": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "parties": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "totalAmendOrder": {
           "type": "string",
           "format": "uint64"

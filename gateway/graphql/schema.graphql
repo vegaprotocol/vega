@@ -414,12 +414,6 @@ type Statistics {
   "Total number of markets"
   totalMarkets: Int!
 
-  "Total number of parties"
-  totalParties: Int!
-
-  "Traders on the vega network"
-  parties: [String]!
-
   "Total number of amended orders"
   totalAmendOrder: Int!
 
@@ -1061,7 +1055,7 @@ type UpdateMarket {
   marketId: String!
 }
 input UpdateMarketInput {
-  marketId: String! 
+  marketId: String!
 }
 
 """
@@ -1162,8 +1156,8 @@ input ProposalTermsInput {
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
-  
-  updateMarket: UpdateMarketInput 
+
+  updateMarket: UpdateMarketInput
   newMarket: NewMarketInput
   updateNetwork: UpdateNetworkInput
 }
