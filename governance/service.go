@@ -17,14 +17,6 @@ var (
 	ErrInvalidProposalTerms = errors.New("invalid proposal terms")
 )
 
-const (
-	defaultMinCloseInSeconds     = 2 * 24 * 60 * 60
-	defaultMaxCloseInSeconds     = 365 * 24 * 60 * 60
-	defaultMinEnactInSeconds     = 3 * 24 * 60 * 60
-	defaultMaxEnactInSeconds     = 365 * 24 * 60 * 60
-	defaultMinParticipationStake = 1
-)
-
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
@@ -59,11 +51,11 @@ func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 		log:         log,
 		timeService: time,
 		parameters: networkParameters{
-			minCloseInSeconds:     defaultMinCloseInSeconds,
-			maxCloseInSeconds:     defaultMaxCloseInSeconds,
-			minEnactInSeconds:     defaultMinEnactInSeconds,
-			maxEnactInSeconds:     defaultMaxEnactInSeconds,
-			minParticipationStake: defaultMinParticipationStake,
+			minCloseInSeconds:     cfg.DefaultMinClose,
+			maxCloseInSeconds:     cfg.DefaultMaxClose,
+			minEnactInSeconds:     cfg.DefaultMinEnact,
+			maxEnactInSeconds:     cfg.DefaultMaxEnact,
+			minParticipationStake: cfg.DefaultMinParticipation,
 		},
 	}
 }

@@ -36,8 +36,13 @@ type Accounts interface {
 // Buffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
 type Buffer interface {
-	Add(Proposal)
+	Add(types.Proposal)
 	Flush()
+}
+
+type network struct {
+	minClose, maxClose, minEnact, maxEnact int64
+	participation                          uint64
 }
 
 type Engine struct {
@@ -47,35 +52,33 @@ type Engine struct {
 	log          *logging.Logger
 	mu           sync.Mutex
 	currentTime  int64
-	proposals    map[string]*Proposal
-	proposalRefs map[string]*Proposal
+	proposals    map[string]*proposalVote
+	proposalRefs map[string]*proposalVote
+	net          Network
 }
 
-type Vote struct {
-	id, party string
-	yes       bool
-}
-
-// Proposal placeholder type
-type Proposal struct {
-	id, reference string
-	percentage    float64
-	yes, no       []Vote // when no votes reaches 100 - percentage + 1 or yes reaches %+1, we know what to do
-	ttl           int64
-	validUntil    int64
-	status        ProposalStatus
-	approved      bool // this will be a special type
-	err           error
+type proposalVote struct {
+	*types.Proposal
+	yes []*types.Vote
+	no  []*types.Vote
 }
 
 func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now time.Time) *Engine {
 	return &Engine{
-		Config:      cfg,
-		accs:        accs,
-		buf:         buf,
-		log:         log,
-		currentTime: now.UnixNano(),
-		proposals:   map[string]*Proposal{},
+		Config:       cfg,
+		accs:         accs,
+		buf:          buf,
+		log:          log,
+		currentTime:  now.UnixNano(),
+		proposals:    map[string]*proposalVote{},
+		proposalRefs: map[string]*proposalVote{},
+		net: Network{
+			minClose:      cfg.DefaultMinClose,
+			maxClose:      cfg.DefaultMaxClose,
+			minEnact:      cfg.DefaultMinEnact,
+			maxEnact:      cfg.DefaultMaxEnact,
+			participation: cfg.DefaultMinParticipation,
+		},
 	}
 }
 
@@ -96,87 +99,81 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // OnChainUpdate - update curtime, expire proposals
-func (e *Engine) OnChainTimeUpdate(t time.Time) []*Proposal {
-	e.currentTime = t.UnixNano()
-	expired := []*Proposal{}
+func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
+	e.currentTime = t.Unix()
+	expired := []*types.Proposal{}
 	for k, p := range e.proposals {
 		// only if we're passed the valid unitl, letting in the last of the votes
-		if p.validUntil < e.currentTime {
-			expired = append(expired, p)
+		if p.Terms.ClosingTimestamp < e.currentTime {
+			expired = append(expired, p.Proposal)
 			delete(e.proposals, k)
-			delete(e.proposalRefs, p.reference) // remove from ref map, too
+			delete(e.proposalRefs, p.Reference) // remove from ref map, Foo
 		}
 	}
 	return e.checkProposals(expired)
 }
 
-func (e *Engine) AddProposal(p Proposal) error {
+func (e *Engine) AddProposal(p types.Proposal) error {
+	ts := types.ProposalTerms{}
 	// @TODO -> we probably should keep proposals in memory here
-	if cp, ok := e.proposals[p.id]; ok && cp.status == p.status {
+	if cp, ok := e.proposals[p.ID]; ok && cp.State == p.State {
 		return ErrProposalIsDuplicate
 	}
-	if len(p.yes) == 0 {
-		// ensure slice exists
-		p.yes = []Vote{}
-	}
-	if len(p.no) == 0 {
-		p.no = []Vote{}
-	}
-	// if the proposal is no longer open, remove from active pool
-	if p.status != StatusOpen {
-		delete(e.proposals, p.id)
-		delete(e.proposalRefs, p.reference)
+	if p.State != types.Proposal_OPEN {
+		delete(e.proposals, p.ID)
+		delete(e.proposalRefs, p.Reference)
 	} else {
-		e.proposals[p.id] = &p
-		e.proposalRefs[p.reference] = &p
+		pv := proposalVote{
+			Proposal: p,
+			yes:      []*types.Vote{},
+			no:       []*types.Vote{},
+		}
+		e.proposals[p.ID] = &pv
+		e.proposalRefs[p.Reference] = &pv
 	}
 	e.buf.Add(p)
 	return nil
 }
 
-func (e *Engine) AddVote(v Vote) error {
-	p, ok := e.proposals[v.id]
+func (e *Engine) AddVote(v types.Vote) error {
+	p, ok := e.proposals[v.ProposalID]
 	if !ok {
 		return ErrProposalNotFound
 	}
-	if v.yes {
+	if v.Value == types.Vote_YES {
 		p.yes = append(p.yes, v)
 	} else {
 		p.no = append(p.no, v)
 	}
-	e.buf.Add(*p)
 	return nil
 }
 
-func (e *Engine) checkProposals(proposals []*Proposal) []*Proposal {
-	accepted := make([]*Proposal, 0, len(proposals))
+func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
+	accepted := make([]*types.Proposal, 0, len(proposals))
 	buf := map[string]*types.Account{}
-	for _, p := range proposals {
+	var err error
+	for _, pw := range proposals {
+		p := pw.Proposal
 		totalYES := int64(0)
-		for _, v := range p.yes {
-			tok, ok := buf[v.party]
+		for _, v := range pw.yes {
+			tok, ok := buf[v.Voter]
 			if !ok {
-				tok, p.err = e.accs.GetPartyTokenAccount(v.party)
-				if p.err != nil {
+				tok, err = e.accs.GetPartyTokenAccount(v.Voter)
+				if err != nil {
 					e.log.Error(
 						"Failed to get account for party",
-						logging.String("party-id", v.party),
-						logging.Error(p.err),
+						logging.String("party-id", v.Voter),
+						logging.Error(err),
 					)
 					break
 				}
 			}
 			totalYES += tok.Balance
 		}
-		if p.err == nil {
-			req := float64(e.accs.GetTotalTokens()) * p.percentage
-			// percentage should be N/100 so we can multiply the total by this value and get the answer
-			p.approved = (req <= float64(totalYES)) // N% of total votes should be reached
-		}
-		p.status = StatusRejected
-		if p.approved {
+		p.State = types.Proposal_DECLINED
+		if p.Terms.MinParticipationStake >= totalYES {
+			p.State = types.Proposal_PASSED
 			accepted = append(accepted, p)
-			p.status = StatusPassed
 		}
 		e.buf.Add(*p)
 	}
