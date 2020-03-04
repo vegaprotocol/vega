@@ -78,7 +78,7 @@ message Vote {
       YES = 1;
   }
 
-  string voter      = 1 [(validator.field) = {string_not_empty : true}];
+  string partyID    = 1 [(validator.field) = {string_not_empty : true}];
   Value  value      = 2 [(validator.field) = {is_in_enum : true}];
   string proposalID = 3 [(validator.field) = {string_not_empty : true}];
 }

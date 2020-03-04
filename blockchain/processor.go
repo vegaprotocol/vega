@@ -12,9 +12,11 @@ import (
 )
 
 var (
-	ErrOrderSubmissionPartyAndPubKeyDoesNotMatch   = errors.New("order submission party and pubkey does not match")
-	ErrOrderCancellationPartyAndPubKeyDoesNotMatch = errors.New("order cancellation party and pubkey does not match")
-	ErrOrderAmendmentPartyAndPubKeyDoesNotMatch    = errors.New("order amendment party and pubkey does not match")
+	ErrOrderSubmissionPartyAndPubKeyDoesNotMatch    = errors.New("order submission party and pubkey does not match")
+	ErrOrderCancellationPartyAndPubKeyDoesNotMatch  = errors.New("order cancellation party and pubkey does not match")
+	ErrOrderAmendmentPartyAndPubKeyDoesNotMatch     = errors.New("order amendment party and pubkey does not match")
+	ErrProposalSubmissionPartyAndPubKeyDoesNotMatch = errors.New("proposal submission party and pubkey does not match")
+	ErrVoteSubmissionPartyAndPubKeyDoesNotMatch     = errors.New("vote submission party and pubkey does not match")
 )
 
 // ProcessorService ...
@@ -27,11 +29,17 @@ type ProcessorService interface {
 	Withdraw(*types.Withdraw) error
 }
 
+type GovernanceService interface {
+	SubmitProposal(proposal *types.Proposal) error
+	VoteOnProposal(vote *types.Vote) error
+}
+
 // Processor handle processing of all transaction sent through the node
 type Processor struct {
 	log *logging.Logger
 	Config
 	blockchainService ProcessorService
+	governanceService GovernanceService
 	seenPayloads      map[string]byte
 }
 
@@ -134,6 +142,24 @@ func (p *Processor) getWithdraw(payload []byte) (*types.Withdraw, error) {
 	return w, nil
 }
 
+func (p *Processor) getProposalSubmission(payload []byte) (*types.Proposal, error) {
+	proposalSubmission := &types.Proposal{}
+	err := proto.Unmarshal(payload, proposalSubmission)
+	if err != nil {
+		return nil, err
+	}
+	return proposalSubmission, nil
+}
+
+func (p *Processor) getVoteSubmission(payload []byte) (*types.Vote, error) {
+	voteSubmission := &types.Vote{}
+	err := proto.Unmarshal(payload, voteSubmission)
+	if err != nil {
+		return nil, err
+	}
+	return voteSubmission, nil
+}
+
 // Validate performs all validation on an incoming transaction payload.
 func (p *Processor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
@@ -166,7 +192,9 @@ func (p *Processor) validateUnsigned(payload []byte) error {
 		CancelOrderCommand,
 		AmendOrderCommand,
 		NotifyTraderAccountCommand,
-		WithdrawCommand:
+		WithdrawCommand,
+		ProposeCommand,
+		VoteCommand:
 		// Add future valid VEGA commands here
 		return nil
 	default:
@@ -225,6 +253,26 @@ func (p *Processor) validateSigned(payload []byte) error {
 		// partyID is hex encoded pubkey
 		if order.PartyID != hex.EncodeToString(bundle.GetPubKey()) {
 			return ErrOrderSubmissionPartyAndPubKeyDoesNotMatch
+		}
+		return nil
+	case ProposeCommand:
+		proposal, err := p.getProposalSubmission(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		if proposal.PartyID != hex.EncodeToString(bundle.GetPubKey()) {
+			return ErrProposalSubmissionPartyAndPubKeyDoesNotMatch
+		}
+		return nil
+	case VoteCommand:
+		vote, err := p.getVoteSubmission(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		if vote.PartyID != hex.EncodeToString(bundle.GetPubKey()) {
+			return ErrVoteSubmissionPartyAndPubKeyDoesNotMatch
 		}
 		return nil
 	default:
@@ -295,6 +343,25 @@ func (p *Processor) processSigned(payload []byte) error {
 			return err
 		}
 		err = p.blockchainService.AmendOrder(order)
+	case WithdrawCommand:
+		withdraw, err := p.getWithdraw(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.Withdraw(withdraw)
+	case ProposeCommand:
+		proposal, err := p.getProposalSubmission(data)
+		if err != nil {
+			return err
+		}
+		err = p.governanceService.SubmitProposal(proposal)
+	case VoteCommand:
+		vote, err := p.getVoteSubmission(data)
+		if err != nil {
+			return err
+		}
+		err = p.governanceService.VoteOnProposal(vote)
+
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		err = fmt.Errorf("unknown command received: %s", cmd)
