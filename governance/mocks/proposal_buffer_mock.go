@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	governance "code.vegaprotocol.io/vega/governance"
+	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,7 +34,7 @@ func (m *MockBuffer) EXPECT() *MockBufferMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockBuffer) Add(arg0 governance.Proposal) {
+func (m *MockBuffer) Add(arg0 proto.Proposal) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Add", arg0)
 }

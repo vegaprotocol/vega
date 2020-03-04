@@ -21,8 +21,8 @@ func NewDefaultConfig() Config {
 		Level:                   encoding.LogLevel{Level: logging.InfoLevel},
 		DefaultMinClose:         48 * 3600, // 2 days,
 		DefaultMaxClose:         365 * 24 * 3600,
-		DefaultMinEnact:         72 * 3600,       // 3 days? Makes no sense, default min enact should be: vote passed
-		DefaultMaxEnact:         365 * 24 * 3600, // 1 year
+		DefaultMinEnact:         0,               // that's enacting from closing TS + 0 seconds
+		DefaultMaxEnact:         365 * 24 * 3600, // 1 year from a proposal passing the vote
 		DefaultMinParticipation: 1,
 	}
 }

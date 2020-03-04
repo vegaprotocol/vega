@@ -114,10 +114,8 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return ErrInvalidProposalTerms
 	}
 
-	minEnact := now.Add(time.Duration(s.parameters.minEnactInSeconds) * time.Second)
-	// again: we can only check if the enactment TS is in the past, future checks aren't guaranteed
-	// to produce the same results post chain
-	if terms.EnactmentTimestamp < minEnact.UTC().Unix() {
+	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
 		return ErrInvalidProposalTerms
 	}
 

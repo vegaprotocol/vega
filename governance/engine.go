@@ -13,6 +13,11 @@ import (
 var (
 	ErrProposalNotFound    = errors.New("proposal not found")
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
+	// Validation errors
+
+	ErrProposalCloseTimeInvalid   = errors.New("proposal closes too soon or too late")
+	ErrProposalEnactTimeInvalid   = errors.New("proposal enactment times too soon or late")
+	ErrProposalInsufficientTokens = errors.New("proposal requires more tokens than party has")
 )
 
 const (
@@ -51,10 +56,10 @@ type Engine struct {
 	buf          Buffer
 	log          *logging.Logger
 	mu           sync.Mutex
-	currentTime  int64
+	currentTime  time.Time
 	proposals    map[string]*proposalVote
 	proposalRefs map[string]*proposalVote
-	net          Network
+	net          network
 }
 
 type proposalVote struct {
@@ -69,10 +74,10 @@ func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now t
 		accs:         accs,
 		buf:          buf,
 		log:          log,
-		currentTime:  now.UnixNano(),
+		currentTime:  now,
 		proposals:    map[string]*proposalVote{},
 		proposalRefs: map[string]*proposalVote{},
-		net: Network{
+		net: network{
 			minClose:      cfg.DefaultMinClose,
 			maxClose:      cfg.DefaultMaxClose,
 			minEnact:      cfg.DefaultMinEnact,
@@ -100,12 +105,13 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // OnChainUpdate - update curtime, expire proposals
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
-	e.currentTime = t.Unix()
-	expired := []*types.Proposal{}
+	e.currentTime = t
+	now := t.Unix()
+	expired := []*proposalVote{}
 	for k, p := range e.proposals {
 		// only if we're passed the valid unitl, letting in the last of the votes
-		if p.Terms.ClosingTimestamp < e.currentTime {
-			expired = append(expired, p.Proposal)
+		if p.Terms.ClosingTimestamp < now {
+			expired = append(expired, p)
 			delete(e.proposals, k)
 			delete(e.proposalRefs, p.Reference) // remove from ref map, Foo
 		}
@@ -114,17 +120,20 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 }
 
 func (e *Engine) AddProposal(p types.Proposal) error {
-	ts := types.ProposalTerms{}
 	// @TODO -> we probably should keep proposals in memory here
 	if cp, ok := e.proposals[p.ID]; ok && cp.State == p.State {
 		return ErrProposalIsDuplicate
+	}
+	var err error
+	if err = e.validateProposal(p); err != nil {
+		p.State = types.Proposal_DECLINED
 	}
 	if p.State != types.Proposal_OPEN {
 		delete(e.proposals, p.ID)
 		delete(e.proposalRefs, p.Reference)
 	} else {
 		pv := proposalVote{
-			Proposal: p,
+			Proposal: &p,
 			yes:      []*types.Vote{},
 			no:       []*types.Vote{},
 		}
@@ -132,6 +141,29 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 		e.proposalRefs[p.Reference] = &pv
 	}
 	e.buf.Add(p)
+	return err
+}
+
+func (e *Engine) validateProposal(p types.Proposal) error {
+	tok, err := e.accs.GetPartyTokenAccount(p.PartyID)
+	if err != nil {
+		return err
+	}
+	if tok.Balance < 1 {
+		return ErrProposalInsufficientTokens
+	}
+
+	minClose, maxClose := e.currentTime.Add(time.Duration(e.net.minClose)*time.Second),
+		e.currentTime.Add(time.Duration(e.net.maxClose)*time.Second)
+	if p.Terms.ClosingTimestamp < minClose.Unix() || p.Terms.ClosingTimestamp > maxClose.Unix() {
+		return ErrProposalCloseTimeInvalid
+	}
+
+	minEnact, maxEnact := p.Terms.ClosingTimestamp, p.Terms.ClosingTimestamp+e.net.maxEnact
+	if p.Terms.EnactmentTimestamp < minEnact || p.Terms.EnactmentTimestamp > maxEnact {
+		return ErrProposalEnactTimeInvalid
+	}
+
 	return nil
 }
 
@@ -141,9 +173,9 @@ func (e *Engine) AddVote(v types.Vote) error {
 		return ErrProposalNotFound
 	}
 	if v.Value == types.Vote_YES {
-		p.yes = append(p.yes, v)
+		p.yes = append(p.yes, &v)
 	} else {
-		p.no = append(p.no, v)
+		p.no = append(p.no, &v)
 	}
 	return nil
 }
@@ -154,7 +186,7 @@ func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
 	var err error
 	for _, pw := range proposals {
 		p := pw.Proposal
-		totalYES := int64(0)
+		var totalYES uint64
 		for _, v := range pw.yes {
 			tok, ok := buf[v.Voter]
 			if !ok {
