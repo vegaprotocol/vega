@@ -130,10 +130,10 @@ func testServiceDownloadWalletOK(t *testing.T) {
 	s.handler.EXPECT().LoginWallet(gomock.Any(), gomock.Any()).Times(1).Return("this is a token", nil)
 
 	payload := `{"wallet": "jeremy", "passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w := httptest.NewRecorder()
 
-	s.Login(w, r)
+	s.Login(w, r, nil)
 
 	resp := w.Result()
 	var token struct {
@@ -153,10 +153,10 @@ func testServiceDownloadWalletOK(t *testing.T) {
 	s.handler.EXPECT().WalletPath(token.Data).Times(1).Return(tmpFile.Name(), nil)
 
 	// now get the file:
-	r = httptest.NewRequest(http.MethodGet, "http://example.com/wallet", bytes.NewBufferString(""))
+	r = httptest.NewRequest(http.MethodGet, "scheme://host/path", bytes.NewBufferString(""))
 	w = httptest.NewRecorder()
 
-	s.DownloadWallet(token.Data, w, r)
+	s.DownloadWallet(token.Data, w, r, nil)
 	resp = w.Result()
 
 	assert.Equal(t, resp.StatusCode, http.StatusOK)

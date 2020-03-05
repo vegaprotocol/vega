@@ -312,8 +312,10 @@ func testGetPubSuccess(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("walletname", "securepassphrase")
-	assert.NoError(t, err)
+	tok, err := h.CreateWallet("walletname", "s1cur@Epassphrase")
+	if err != nil {
+		t.Fatal("Failed to create wallet")
+	}
 	assert.NotEmpty(t, tok)
 
 	// then start the test
@@ -332,7 +334,9 @@ func testGetPubSuccess(t *testing.T) {
 
 	// now make sure we have the new key saved
 	key, err := h.GetPublicKey(tok, pubKey)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal("Failed to get public key")
+	}
 	assert.Equal(t, pubKey, key.Pub)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -360,7 +364,7 @@ func testGetPubKeyNotFound(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("walletname", "securepassphrase")
+	tok, err := h.CreateWallet("walletname", "s1cur@Epassphrase")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
