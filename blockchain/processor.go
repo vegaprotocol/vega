@@ -27,9 +27,6 @@ type ProcessorService interface {
 	AmendOrder(order *types.OrderAmendment) error
 	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
-}
-
-type GovernanceService interface {
 	SubmitProposal(proposal *types.Proposal) error
 	VoteOnProposal(vote *types.Vote) error
 }
@@ -39,7 +36,6 @@ type Processor struct {
 	log *logging.Logger
 	Config
 	blockchainService ProcessorService
-	governanceService GovernanceService
 	seenPayloads      map[string]byte
 }
 
@@ -354,14 +350,13 @@ func (p *Processor) processSigned(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = p.governanceService.SubmitProposal(proposal)
+		err = p.blockchainService.SubmitProposal(proposal)
 	case VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		err = p.governanceService.VoteOnProposal(vote)
-
+		err = p.blockchainService.VoteOnProposal(vote)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		err = fmt.Errorf("unknown command received: %s", cmd)

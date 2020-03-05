@@ -225,6 +225,14 @@ func (s *abciService) AmendOrder(order *types.OrderAmendment) error {
 	return nil
 }
 
+func (s *abciService) SubmitProposal(proposal *types.Proposal) error {
+	return errors.New("not implemented")
+}
+
+func (s *abciService) VoteOnProposal(vote *types.Vote) error {
+	return errors.New("not implemented")
+}
+
 func (s *abciService) setBatchStats() {
 	s.totalBatches++
 	s.stats.totalOrdersLastBatch = s.currentOrdersInBatch
