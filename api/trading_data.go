@@ -426,21 +426,6 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		return nil, apiError(codes.Unavailable, ErrMarketServiceGetMarkets, err)
 	}
 
-	// Load current parties details
-	p, err := h.PartyService.GetAll(ctx)
-	if err != nil {
-		return nil, apiError(codes.Unavailable, ErrPartyServiceGetAll, err)
-	}
-
-	// Extract names for ease of reading in stats
-	partyNames := make([]string, 0, len(p))
-	for _, v := range p {
-		if v != nil {
-			pp := *v
-			partyNames = append(partyNames, pp.Id)
-		}
-	}
-
 	return &types.Statistics{
 		BlockHeight:              h.Stats.Blockchain.Height(),
 		BacklogLength:            uint64(backlogLength),
@@ -456,8 +441,6 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		OrdersPerSecond:          h.Stats.Blockchain.OrdersPerSecond(),
 		Status:                   h.statusChecker.ChainStatus(),
 		TotalMarkets:             uint64(len(m)),
-		TotalParties:             uint64(len(p)),
-		Parties:                  partyNames,
 		AppVersionHash:           h.Stats.GetVersionHash(),
 		AppVersion:               h.Stats.GetVersion(),
 		ChainVersion:             h.Stats.GetChainVersion(),
