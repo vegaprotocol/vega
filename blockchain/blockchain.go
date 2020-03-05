@@ -21,6 +21,8 @@ type ExecutionEngine interface {
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(w *types.Withdraw) error
+	SubmitProposal(proposal *types.Proposal) error
+	VoteOnProposal(vote *types.Vote) error
 	Generate() error
 }
 
