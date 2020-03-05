@@ -53,6 +53,10 @@ func TestHandler(t *testing.T) {
 	t.Run("generate keypair failure - wallet not found", testVerifyTokenWalletNotFound)
 	t.Run("list public key failure - invalid token", testListPubInvalidToken)
 	t.Run("list public key failure - wallet not found", testListPubWalletNotFound)
+	t.Run("get public key failure - success", testGetPubSuccess)
+	t.Run("get public key failure - wallet not found", testGetPubWalletNotFound)
+	t.Run("get public key failure - invalid token", testGetPubInvalidToken)
+	t.Run("get public key failure - key not found", testGetPubKeyNotFound)
 	t.Run("sign tx - success", testSignTxSuccess)
 	t.Run("sign tx - failure key tainted", testSignTxFailure)
 	t.Run("taint key - success", testTaintKeySuccess)
@@ -285,6 +289,102 @@ func testListPubWalletNotFound(t *testing.T) {
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }
 
+func testGetPubWalletNotFound(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// then start the test
+	h.auth.EXPECT().VerifyToken(gomock.Any()).Times(1).
+		Return("jeremy", nil)
+
+	key, err := h.GetPublicKey("yolo token", "1122aabb")
+	assert.Empty(t, key)
+	assert.Equal(t, err, wallet.ErrWalletDoesNotExists)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testGetPubSuccess(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// first create the wallet
+	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
+		Return("some fake token", nil)
+
+	tok, err := h.CreateWallet("walletname", "s1cur@Epassphrase")
+	if err != nil {
+		t.Fatal("Failed to create wallet")
+	}
+	assert.NotEmpty(t, tok)
+
+	// then start the test
+	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
+		Return("walletname", nil)
+
+	// Create a keypair to be ignored, *not* returned later
+	pubKey, err := h.GenerateKeypair(tok, "")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, pubKey)
+
+	// Create a keypair to be retrieved
+	pubKey, err = h.GenerateKeypair(tok, "")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, pubKey)
+
+	// now make sure we have the new key saved
+	key, err := h.GetPublicKey(tok, pubKey)
+	if err != nil {
+		t.Fatal("Failed to get public key")
+	}
+	assert.Equal(t, pubKey, key.Pub)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testGetPubInvalidToken(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	h.auth.EXPECT().VerifyToken(gomock.Any()).Times(1).
+		Return("", errors.New("bad token"))
+
+	key, err := h.GetPublicKey("yolo token", "1122aabb")
+	assert.EqualError(t, err, "bad token")
+	assert.Empty(t, key)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testGetPubKeyNotFound(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// first create the wallet
+	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
+		Return("some fake token", nil)
+
+	tok, err := h.CreateWallet("walletname", "s1cur@Epassphrase")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tok)
+
+	// then start the test
+	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
+		Return("walletname", nil)
+
+	// Create a keypair to be ignored, *not* returned later
+	pubKey, err := h.GenerateKeypair(tok, "")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, pubKey)
+
+	// now make sure this key is not returned
+	key, err := h.GetPublicKey(tok, "nonexistantpubkey")
+	assert.Nil(t, key)
+	assert.Equal(t, err, wallet.ErrPubKeyDoesNotExist)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
 func testSignTxSuccess(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
@@ -417,7 +517,7 @@ func testTaintKeyPubKeyDoesNotExists(t *testing.T) {
 
 	// taint the key
 	err = h.TaintKey(tok, "some key", "Th1isisasecurep@ssphraseinnit")
-	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExists.Error())
+	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExist.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }
@@ -538,7 +638,7 @@ func testUpdateMetaPubKeyDoesNotExists(t *testing.T) {
 
 	// update meta
 	err = h.UpdateMeta(tok, "some key", "Th1isisasecurep@ssphraseinnit", []wallet.Meta{})
-	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExists.Error())
+	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExist.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }

@@ -60,12 +60,12 @@ func (k *Keypair) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	k.privBytes, err = hex.DecodeString(k.Priv)
-	return nil
+	return err
 }
 
 type Meta struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func New(owner string) Wallet {
