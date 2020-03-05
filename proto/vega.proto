@@ -277,10 +277,10 @@ message PendingOrder {
   Order.Type type = 10;
 }
 
-// message NotifyTraderAccount {
-//   string traderID = 1;
-//   uint64 amount = 2;
-// }
+message NotifyTraderAccount {
+  string traderID = 1;
+  uint64 amount = 2;
+}
 
 message Withdraw {
   string partyID = 1;
