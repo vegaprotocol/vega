@@ -164,9 +164,11 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	assert.NotNil(t, vParties)
 	assert.Len(t, vParties, 1)
 
+	root.tradingDataClient.EXPECT().Parties(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.PartiesResponse{Parties: []*types.Party{}}, nil)
 	vParties, err = root.Query().Parties(ctx, nil)
-	assert.Error(t, err)
-	assert.Nil(t, vParties)
+	assert.NoError(t, err)
+	assert.NotNil(t, vParties)
+	assert.Equal(t, len(vParties), 0)
 }
 
 func TestNewResolverRoot_MarketResolver(t *testing.T) {
