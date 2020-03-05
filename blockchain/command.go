@@ -25,6 +25,8 @@ const (
 	WithdrawCommand Command = 0x44
 	// ProposeCommand ...
 	ProposeCommand Command = 0x45
+	// VoteCommand
+	VoteCommand Command = 0x46
 )
 
 var commandName = map[Command]string{
@@ -33,6 +35,8 @@ var commandName = map[Command]string{
 	AmendOrderCommand:          "Amend Order",
 	NotifyTraderAccountCommand: "Notify Trader Account",
 	WithdrawCommand:            "Withdraw",
+	ProposeCommand:             "Proposal",
+	VoteCommand:                "Vote on Proposal",
 }
 
 var commandKindName = map[CommandKind]string{
