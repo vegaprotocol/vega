@@ -1366,7 +1366,7 @@ TODO
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| voter | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
 | value | [Vote.Value](#vega.Vote.Value) |  |  |
 | proposalID | [string](#string) |  |  |
 

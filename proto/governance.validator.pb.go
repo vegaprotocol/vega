@@ -88,8 +88,8 @@ func (this *Proposal) Validate() error {
 	return nil
 }
 func (this *Vote) Validate() error {
-	if this.Voter == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Voter", fmt.Errorf(`value '%v' must not be an empty string`, this.Voter))
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
 	if _, ok := Vote_Value_name[int32(this.Value)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Vote_Value field`, this.Value))

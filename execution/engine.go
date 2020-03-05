@@ -532,3 +532,11 @@ func (e *Engine) Generate() error {
 
 	return nil
 }
+
+func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
+	return errors.New("not implemented")
+}
+
+func (e *Engine) VoteOnProposal(vote *types.Vote) error {
+	return errors.New("not implemented")
+}

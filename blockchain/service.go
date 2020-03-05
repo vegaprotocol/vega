@@ -29,6 +29,8 @@ type ServiceExecutionEngine interface {
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
 	Generate() error
+	SubmitProposal(proposal *types.Proposal) error
+	VoteOnProposal(vote *types.Vote) error
 }
 
 type abciService struct {
@@ -278,4 +280,14 @@ func (s *abciService) setBatchStats() {
 
 	s.currentOrdersInBatch = 0
 	s.currentTradesInBatch = 0
+}
+
+func (s *abciService) SubmitProposal(proposal *types.Proposal) error {
+	err := s.execution.SubmitProposal(proposal)
+	return err
+}
+
+func (s *abciService) VoteOnProposal(vote *types.Vote) error {
+	err := s.execution.VoteOnProposal(vote)
+	return err
 }

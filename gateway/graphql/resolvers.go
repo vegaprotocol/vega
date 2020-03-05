@@ -244,7 +244,15 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 
 func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.Party, error) {
 	if name == nil {
-		return nil, errors.New("all parties not implemented")
+		var empty empty.Empty
+		resp, err := r.tradingDataClient.Parties(ctx, &empty)
+		if err != nil {
+			return nil, err
+		}
+		if resp.Parties == nil {
+			return []*types.Party{}, nil
+		}
+		return resp.Parties, nil
 	}
 	party, err := r.Party(ctx, *name)
 	if err != nil {
