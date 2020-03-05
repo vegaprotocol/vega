@@ -181,6 +181,10 @@ func (e *Engine) AddVote(v types.Vote) error {
 }
 
 func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
+	// we're calculating based off of percentages
+	allTokens := e.accs.GetTotalTokens()
+	// 1 % of tokens represented here
+	tokPercent := float64(allTokens) / 100.0
 	accepted := make([]*types.Proposal, 0, len(proposals))
 	buf := map[string]*types.Account{}
 	var err error
@@ -188,13 +192,13 @@ func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
 		p := pw.Proposal
 		var totalYES uint64
 		for _, v := range pw.yes {
-			tok, ok := buf[v.Voter]
+			tok, ok := buf[v.PartyID]
 			if !ok {
-				tok, err = e.accs.GetPartyTokenAccount(v.Voter)
+				tok, err = e.accs.GetPartyTokenAccount(v.PartyID)
 				if err != nil {
 					e.log.Error(
 						"Failed to get account for party",
-						logging.String("party-id", v.Voter),
+						logging.String("party-id", v.PartyID),
 						logging.Error(err),
 					)
 					break
@@ -203,7 +207,9 @@ func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
 			totalYES += tok.Balance
 		}
 		p.State = types.Proposal_DECLINED
-		if p.Terms.MinParticipationStake >= totalYES {
+		// participation stake used as a percentage required to approve the proposal
+		reqTokens := tokPercent * float64(p.Terms.MinParticipationStake)
+		if reqTokens >= float64(totalYES) {
 			p.State = types.Proposal_PASSED
 			accepted = append(accepted, p)
 		}
