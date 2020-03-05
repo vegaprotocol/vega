@@ -42,6 +42,9 @@ func getTestHandler(t *testing.T) *testHandler {
 func TestHandler(t *testing.T) {
 	t.Run("create a wallet success then login", testHandlerCreateWalletThenLogin)
 	t.Run("create a wallet failure - already exists", testHandlerCreateWalletFailureAlreadyExists)
+	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphrase)
+	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphraseLower)
+	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphraseShort)
 	t.Run("login failure on non wallet", testHandlerLoginFailureOnNonCreatedWallet)
 	t.Run("revoke token success", testHandlerRevokeTokenSuccess)
 	t.Run("revoke token failure", testHandlerRevokeTokenFailure)
@@ -74,11 +77,11 @@ func testHandlerCreateWalletThenLogin(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(2).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
-	tok, err = h.LoginWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err = h.LoginWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -93,14 +96,53 @@ func testHandlerCreateWalletFailureAlreadyExists(t *testing.T) {
 		Return("some fake token", nil)
 
 	// create the wallet once.
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
 	// try to create it again
-	tok, err = h.CreateWallet("jeremy", "we can use a different passphrase yo!")
+	tok, err = h.CreateWallet("jeremy", "We can use a d1fferent passphrase yo!")
 	assert.EqualError(t, err, wallet.ErrWalletAlreadyExists.Error())
 	assert.Empty(t, tok)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testHandlerCreateWalletFailurePassphraseShort(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// create the wallet once.
+	tok, err := h.CreateWallet("jeremy", "P@ss1")
+	assert.Error(t, err)
+	assert.Empty(t, tok)
+	assert.Equal(t, wallet.ErrPasspharseInvalid, err)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testHandlerCreateWalletFailurePassphraseLower(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// create the wallet once.
+	tok, err := h.CreateWallet("jeremy", "P@SSW0RDNOLOWER")
+	assert.Error(t, err)
+	assert.Empty(t, tok)
+	assert.Equal(t, wallet.ErrPasspharseInvalid, err)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testHandlerCreateWalletFailurePassphrase(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// create the wallet once.
+	tok, err := h.CreateWallet("jeremy", "weak pass")
+	assert.Error(t, err)
+	assert.Empty(t, tok)
+	assert.Equal(t, wallet.ErrPasspharseInvalid, err)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }
@@ -109,7 +151,7 @@ func testHandlerLoginFailureOnNonCreatedWallet(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
 
-	tok, err := h.LoginWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.LoginWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 	assert.Empty(t, tok)
 
@@ -123,7 +165,7 @@ func testHandlerRevokeTokenSuccess(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -142,7 +184,7 @@ func testHandlerRevokeTokenFailure(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -162,7 +204,7 @@ func testVerifyTokenSuccess(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -170,7 +212,7 @@ func testVerifyTokenSuccess(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).Times(2).
 		Return("jeremy", nil)
 
-	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
@@ -351,11 +393,11 @@ func testSignTxSuccess(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
-	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
@@ -385,16 +427,16 @@ func testSignTxFailure(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
-	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
 	// taint the key
-	err = h.TaintKey(tok, key, "thisisasecurepassphraseinnit")
+	err = h.TaintKey(tok, key, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 
 	message := "hello world."
@@ -412,7 +454,7 @@ func testTaintKeySuccess(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -420,12 +462,12 @@ func testTaintKeySuccess(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
 		Return("jeremy", nil)
 
-	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
 	// taint the key
-	err = h.TaintKey(tok, key, "thisisasecurepassphraseinnit")
+	err = h.TaintKey(tok, key, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 
 	// now make sure we have the new key saved
@@ -447,7 +489,7 @@ func testTaintKeyInvalidToken(t *testing.T) {
 		Return("", errors.New("invalid token"))
 
 	// taint the key
-	err := h.TaintKey("some token", "some key", "thisisasecurepassphraseinnit")
+	err := h.TaintKey("some token", "some key", "Th1isisasecurep@ssphraseinnit")
 	assert.EqualError(t, err, "invalid token")
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -461,7 +503,7 @@ func testTaintKeyPubKeyDoesNotExists(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -470,7 +512,7 @@ func testTaintKeyPubKeyDoesNotExists(t *testing.T) {
 		Return("jeremy", nil)
 
 	// taint the key
-	err = h.TaintKey(tok, "some key", "thisisasecurepassphraseinnit")
+	err = h.TaintKey(tok, "some key", "Th1isisasecurep@ssphraseinnit")
 	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExist.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -485,7 +527,7 @@ func testTaintKeyWalletNotFound(t *testing.T) {
 		Return("jeremy", nil)
 
 	// taint the key
-	err := h.TaintKey("some token", "some key", "thisisasecurepassphraseinnit")
+	err := h.TaintKey("some token", "some key", "Th1isisasecurep@ssphraseinnit")
 	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -499,7 +541,7 @@ func testTaintKeyAlreadyFailAlreadyTainted(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -507,16 +549,16 @@ func testTaintKeyAlreadyFailAlreadyTainted(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
 		Return("jeremy", nil)
 
-	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
 	// taint the key
-	err = h.TaintKey(tok, key, "thisisasecurepassphraseinnit")
+	err = h.TaintKey(tok, key, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 
 	// taint the key again which produce an error
-	err = h.TaintKey(tok, key, "thisisasecurepassphraseinnit")
+	err = h.TaintKey(tok, key, "Th1isisasecurep@ssphraseinnit")
 	assert.Error(t, err, wallet.ErrPubKeyAlreadyTainted)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -530,7 +572,7 @@ func testUpdateMetaSuccess(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -538,12 +580,12 @@ func testUpdateMetaSuccess(t *testing.T) {
 	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
 		Return("jeremy", nil)
 
-	key, err := h.GenerateKeypair(tok, "thisisasecurepassphraseinnit")
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
 	// add meta
-	err = h.UpdateMeta(tok, key, "thisisasecurepassphraseinnit", []wallet.Meta{wallet.Meta{Key: "primary", Value: "yes"}})
+	err = h.UpdateMeta(tok, key, "Th1isisasecurep@ssphraseinnit", []wallet.Meta{wallet.Meta{Key: "primary", Value: "yes"}})
 	assert.NoError(t, err)
 
 	// now make sure we have the new key saved
@@ -567,7 +609,7 @@ func testUpdateMetaInvalidToken(t *testing.T) {
 		Return("", errors.New("invalid token"))
 
 	// taint the key
-	err := h.UpdateMeta("some token", "some key", "thisisasecurepassphraseinnit", []wallet.Meta{})
+	err := h.UpdateMeta("some token", "some key", "Th1isisasecurep@ssphraseinnit", []wallet.Meta{})
 	assert.EqualError(t, err, "invalid token")
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -582,7 +624,7 @@ func testUpdateMetaPubKeyDoesNotExists(t *testing.T) {
 	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
 		Return("some fake token", nil)
 
-	tok, err := h.CreateWallet("jeremy", "thisisasecurepassphraseinnit")
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tok)
 
@@ -591,7 +633,7 @@ func testUpdateMetaPubKeyDoesNotExists(t *testing.T) {
 		Return("jeremy", nil)
 
 	// update meta
-	err = h.UpdateMeta(tok, "some key", "thisisasecurepassphraseinnit", []wallet.Meta{})
+	err = h.UpdateMeta(tok, "some key", "Th1isisasecurep@ssphraseinnit", []wallet.Meta{})
 	assert.EqualError(t, err, wallet.ErrPubKeyDoesNotExist.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
@@ -606,7 +648,7 @@ func testUpdateMetaWalletNotFound(t *testing.T) {
 		Return("jeremy", nil)
 
 	// taint the key
-	err := h.UpdateMeta("some token", "some key", "thisisasecurepassphraseinnit", []wallet.Meta{})
+	err := h.UpdateMeta("some token", "some key", "Th1isisasecurep@ssphraseinnit", []wallet.Meta{})
 	assert.EqualError(t, err, wallet.ErrWalletDoesNotExists.Error())
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))

@@ -50,6 +50,8 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareProposalRequest](#api.PrepareProposalRequest)
+    - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
@@ -72,6 +74,21 @@
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
+
+
+- [proto/governance.proto](#proto/governance.proto)
+    - [NetworkConfiguration](#vega.NetworkConfiguration)
+    - [NewMarket](#vega.NewMarket)
+    - [Proposal](#vega.Proposal)
+    - [ProposalTerms](#vega.ProposalTerms)
+    - [UpdateMarket](#vega.UpdateMarket)
+    - [UpdateNetwork](#vega.UpdateNetwork)
+    - [Vote](#vega.Vote)
+
+    - [Proposal.State](#vega.Proposal.State)
+    - [Vote.Value](#vega.Vote.Value)
+
+
 
 
 - [proto/markets.proto](#proto/markets.proto)
@@ -876,6 +893,39 @@
 
 
 
+<a name="api.PrepareProposalRequest"></a>
+
+### PrepareProposalRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
+| proposal | [vega.ProposalTerms](#vega.ProposalTerms) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareProposalResponse"></a>
+
+### PrepareProposalResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingProposal | [vega.Proposal](#vega.Proposal) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareSubmitOrderResponse"></a>
 
 ### PrepareSubmitOrderResponse
@@ -1161,6 +1211,7 @@
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
+| PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 
 
 <a name="api.trading_data"></a>
@@ -1201,6 +1252,167 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+
+
+
+
+
+<a name="proto/governance.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/governance.proto
+
+
+
+<a name="vega.NetworkConfiguration"></a>
+
+### NetworkConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| minCloseInSeconds | [int64](#int64) |  |  |
+| maxCloseInSeconds | [int64](#int64) |  |  |
+| minEnactInSeconds | [int64](#int64) |  |  |
+| maxEnactInSeconds | [int64](#int64) |  |  |
+| minParticipationStake | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.NewMarket"></a>
+
+### NewMarket
+TODO
+
+
+
+
+
+
+<a name="vega.Proposal"></a>
+
+### Proposal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| state | [Proposal.State](#vega.Proposal.State) |  |  |
+| timestamp | [int64](#int64) |  |  |
+| terms | [ProposalTerms](#vega.ProposalTerms) |  |  |
+
+
+
+
+
+
+<a name="vega.ProposalTerms"></a>
+
+### ProposalTerms
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| closingTimestamp | [int64](#int64) |  |  |
+| enactmentTimestamp | [int64](#int64) |  |  |
+| minParticipationStake | [uint64](#uint64) |  |  |
+| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
+| newMarket | [NewMarket](#vega.NewMarket) |  |  |
+| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
+
+
+
+
+
+
+<a name="vega.UpdateMarket"></a>
+
+### UpdateMarket
+TODO
+
+
+
+
+
+
+<a name="vega.UpdateNetwork"></a>
+
+### UpdateNetwork
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  |  |
+
+
+
+
+
+
+<a name="vega.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| value | [Vote.Value](#vega.Vote.Value) |  |  |
+| proposalID | [string](#string) |  |  |
+
+
+
+
+
+
+
+
+<a name="vega.Proposal.State"></a>
+
+### Proposal.State
+Proposal state transition:
+Open -&gt;
+  - Passed -&gt; Enacted.
+  - Passed -&gt; Failed.
+  - Declined
+Rejected
+Proposal can enter Failed state from any other state.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
+| OPEN | 1 | Proposal is open for voting. |
+| PASSED | 2 | Proposal has gained enough support to be executed. |
+| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
+| DECLINED | 4 | Proposal didn&#39;t get enough votes |
+| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
+
+
+
+<a name="vega.Vote.Value"></a>
+
+### Vote.Value
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NO | 0 |  |
+| YES | 1 |  |
+
+
+
+
+
 
 
 
@@ -1992,8 +2204,6 @@
 | tradesPerSecond | [uint64](#uint64) |  |  |
 | ordersPerSecond | [uint64](#uint64) |  |  |
 | totalMarkets | [uint64](#uint64) |  |  |
-| totalParties | [uint64](#uint64) |  |  |
-| parties | [string](#string) | repeated |  |
 | totalAmendOrder | [uint64](#uint64) |  |  |
 | totalCancelOrder | [uint64](#uint64) |  |  |
 | totalCreateOrder | [uint64](#uint64) |  |  |

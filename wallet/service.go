@@ -35,6 +35,7 @@ type WalletHandler interface {
 	SignTx(token, tx, pubkey string) (SignedBundle, error)
 	TaintKey(token, pubkey, passphrase string) error
 	UpdateMeta(token, pubkey, passphrase string, meta []Meta) error
+	WalletPath(token string) (string, error)
 }
 
 // NodeForward ...
@@ -53,6 +54,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	}
 
 	// all the endpoints are public for testing purpose
+
 	s.POST("/api/v1/auth/token", s.Login)
 	s.GET("/api/v1/status", s.health)
 	s.POST("/api/v1/wallets", s.CreateWallet)
@@ -64,6 +66,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	s.PUT("/api/v1/keys/:keyid/taint", ExtractToken(s.TaintKey))
 	s.PUT("/api/v1/keys/:keyid/metadata", ExtractToken(s.UpdateMeta))
 	s.POST("/api/v1/messages", ExtractToken(s.SignTx))
+	s.GET("/api/v1/wallets", ExtractToken(s.DownloadWallet))
 
 	return s, nil
 }
@@ -128,6 +131,15 @@ func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 	writeSuccess(w, token, http.StatusOK)
+}
+
+func (s *Service) DownloadWallet(token string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	path, err := s.handler.WalletPath(token)
+	if err != nil {
+		writeError(w, err, http.StatusMethodNotAllowed)
+		return
+	}
+	http.ServeFile(w, r, path)
 }
 
 func (s *Service) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

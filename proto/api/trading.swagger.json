@@ -71,6 +71,33 @@
         ]
       }
     },
+    "/governance/proposals": {
+      "post": {
+        "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
+        "operationId": "PrepareProposal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareProposalResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareProposalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
@@ -1059,6 +1086,19 @@
       "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
       "title": "Order Time in Force"
     },
+    "ProposalState": {
+      "type": "string",
+      "enum": [
+        "FAILED",
+        "OPEN",
+        "PASSED",
+        "REJECTED",
+        "DECLINED",
+        "ENACTED"
+      ],
+      "default": "FAILED",
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal could not be enacted after being accepted by the network\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals)\n - DECLINED: Proposal didn't get enough votes\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -1310,6 +1350,32 @@
         },
         "pendingOrder": {
           "$ref": "#/definitions/vegaPendingOrder"
+        }
+      }
+    },
+    "apiPrepareProposalRequest": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposalTerms"
+        }
+      }
+    },
+    "apiPrepareProposalResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingProposal": {
+          "$ref": "#/definitions/vegaProposal"
         }
       }
     },
@@ -1867,6 +1933,34 @@
         }
       }
     },
+    "vegaNetworkConfiguration": {
+      "type": "object",
+      "properties": {
+        "minCloseInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "maxCloseInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minEnactInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "maxEnactInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minParticipationStake": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaNewMarket": {
+      "type": "object"
+    },
     "vegaOrder": {
       "type": "object",
       "properties": {
@@ -2130,6 +2224,56 @@
         }
       }
     },
+    "vegaProposal": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/ProposalState"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "terms": {
+          "$ref": "#/definitions/vegaProposalTerms"
+        }
+      }
+    },
+    "vegaProposalTerms": {
+      "type": "object",
+      "properties": {
+        "closingTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "enactmentTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minParticipationStake": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "updateMarket": {
+          "$ref": "#/definitions/vegaUpdateMarket"
+        },
+        "newMarket": {
+          "$ref": "#/definitions/vegaNewMarket"
+        },
+        "updateNetwork": {
+          "$ref": "#/definitions/vegaUpdateNetwork"
+        }
+      }
+    },
     "vegaScalingFactors": {
       "type": "object",
       "properties": {
@@ -2250,16 +2394,6 @@
         "totalMarkets": {
           "type": "string",
           "format": "uint64"
-        },
-        "totalParties": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "parties": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "totalAmendOrder": {
           "type": "string",
@@ -2426,6 +2560,17 @@
           "items": {
             "$ref": "#/definitions/vegaTransferBalance"
           }
+        }
+      }
+    },
+    "vegaUpdateMarket": {
+      "type": "object"
+    },
+    "vegaUpdateNetwork": {
+      "type": "object",
+      "properties": {
+        "changes": {
+          "$ref": "#/definitions/vegaNetworkConfiguration"
         }
       }
     },
