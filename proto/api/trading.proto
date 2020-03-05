@@ -35,7 +35,7 @@ service trading {
   rpc SignIn(SignInRequest) returns (SignInResponse);
 
   // Request balance increase
-  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+  // rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
 
   // Request withdrawal
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
@@ -69,13 +69,13 @@ message WithdrawResponse {
   bool success = 1;
 }
 
-message NotifyTraderAccountRequest {
-  vega.NotifyTraderAccount notif = 1;
-}
+// message NotifyTraderAccountRequest {
+//   vega.NotifyTraderAccount notif = 1;
+// }
 
-message NotifyTraderAccountResponse {
-  bool submitted = 1;
-}
+// message NotifyTraderAccountResponse {
+//   bool submitted = 1;
+// }
 
 message SignInRequest {
 
