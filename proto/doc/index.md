@@ -2204,8 +2204,6 @@ Proposal can enter Failed state from any other state.
 | tradesPerSecond | [uint64](#uint64) |  |  |
 | ordersPerSecond | [uint64](#uint64) |  |  |
 | totalMarkets | [uint64](#uint64) |  |  |
-| totalParties | [uint64](#uint64) |  |  |
-| parties | [string](#string) | repeated |  |
 | totalAmendOrder | [uint64](#uint64) |  |  |
 | totalCancelOrder | [uint64](#uint64) |  |  |
 | totalCreateOrder | [uint64](#uint64) |  |  |

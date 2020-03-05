@@ -235,8 +235,6 @@ message Statistics {
   uint64 tradesPerSecond = 11;
   uint64 ordersPerSecond = 12;
   uint64 totalMarkets = 13;
-  uint64 totalParties = 14;
-  repeated string parties = 15;
   uint64 totalAmendOrder = 16;
   uint64 totalCancelOrder = 17;
   uint64 totalCreateOrder = 18;

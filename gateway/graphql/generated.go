@@ -321,7 +321,6 @@ type ComplexityRoot struct {
 		MarketDepthSubscriptions func(childComplexity int) int
 		OrderSubscriptions       func(childComplexity int) int
 		OrdersPerSecond          func(childComplexity int) int
-		Parties                  func(childComplexity int) int
 		PositionsSubscriptions   func(childComplexity int) int
 		Status                   func(childComplexity int) int
 		TotalAmendOrder          func(childComplexity int) int
@@ -329,7 +328,6 @@ type ComplexityRoot struct {
 		TotalCreateOrder         func(childComplexity int) int
 		TotalMarkets             func(childComplexity int) int
 		TotalOrders              func(childComplexity int) int
-		TotalParties             func(childComplexity int) int
 		TotalPeers               func(childComplexity int) int
 		TotalTrades              func(childComplexity int) int
 		TradeSubscriptions       func(childComplexity int) int
@@ -514,8 +512,6 @@ type StatisticsResolver interface {
 	TradesPerSecond(ctx context.Context, obj *proto.Statistics) (int, error)
 	OrdersPerSecond(ctx context.Context, obj *proto.Statistics) (int, error)
 	TotalMarkets(ctx context.Context, obj *proto.Statistics) (int, error)
-	TotalParties(ctx context.Context, obj *proto.Statistics) (int, error)
-
 	TotalAmendOrder(ctx context.Context, obj *proto.Statistics) (int, error)
 	TotalCancelOrder(ctx context.Context, obj *proto.Statistics) (int, error)
 	TotalCreateOrder(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -1819,13 +1815,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Statistics.OrdersPerSecond(childComplexity), true
 
-	case "Statistics.parties":
-		if e.complexity.Statistics.Parties == nil {
-			break
-		}
-
-		return e.complexity.Statistics.Parties(childComplexity), true
-
 	case "Statistics.positionsSubscriptions":
 		if e.complexity.Statistics.PositionsSubscriptions == nil {
 			break
@@ -1874,13 +1863,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Statistics.TotalOrders(childComplexity), true
-
-	case "Statistics.totalParties":
-		if e.complexity.Statistics.TotalParties == nil {
-			break
-		}
-
-		return e.complexity.Statistics.TotalParties(childComplexity), true
 
 	case "Statistics.totalPeers":
 		if e.complexity.Statistics.TotalPeers == nil {
@@ -2674,12 +2656,6 @@ type Statistics {
   "Total number of markets"
   totalMarkets: Int!
 
-  "Total number of parties"
-  totalParties: Int!
-
-  "Traders on the vega network"
-  parties: [String]!
-
   "Total number of amended orders"
   totalAmendOrder: Int!
 
@@ -3321,7 +3297,7 @@ type UpdateMarket {
   marketId: String!
 }
 input UpdateMarketInput {
-  marketId: String! 
+  marketId: String!
 }
 
 """
@@ -3422,8 +3398,8 @@ input ProposalTermsInput {
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
-  
-  updateMarket: UpdateMarketInput 
+
+  updateMarket: UpdateMarketInput
   newMarket: NewMarketInput
   updateNetwork: UpdateNetworkInput
 }
@@ -3469,7 +3445,8 @@ type PreparedProposal {
   blob: String!
   "The pending proposal"
   pendingProposal: Proposal!
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -10538,80 +10515,6 @@ func (ec *executionContext) _Statistics_totalMarkets(ctx context.Context, field 
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Statistics_totalParties(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Statistics",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Statistics().TotalParties(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Statistics_parties(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Statistics",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Parties, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Statistics_totalAmendOrder(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -15891,25 +15794,6 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
-		case "totalParties":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Statistics_totalParties(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "parties":
-			out.Values[i] = ec._Statistics_parties(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "totalAmendOrder":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -17125,35 +17009,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2string(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2string(ctx, sel, v[i])
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {

@@ -65,6 +65,7 @@ done
 
 # Un-comment NotifyTraderAccount (#726)
 patch --reverse -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
+find proto -name '*.proto.orig' -exec rm '{}' ';'
 
 # Generate *.validator.pb.go, *.pb.gw.go
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile

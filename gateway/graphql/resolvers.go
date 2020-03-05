@@ -2028,10 +2028,6 @@ func (r *myStatisticsResolver) TotalMarkets(ctx context.Context, obj *types.Stat
 	return int(obj.TotalMarkets), nil
 }
 
-func (r *myStatisticsResolver) TotalParties(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalParties), nil
-}
-
 func (r *myStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TotalAmendOrder), nil
 }
