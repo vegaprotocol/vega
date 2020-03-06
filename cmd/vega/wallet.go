@@ -202,7 +202,7 @@ func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		if err != wallet.ErrWalletDoesNotExists {
 			// this an invalid key, returning error
-			return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+			return fmt.Errorf("unable to decrypt wallet: %v", err)
 		}
 		// wallet do not exit, let's try to create it
 		_, err = wallet.Create(w.rootPath, w.walletOwner, w.passphrase)
@@ -248,7 +248,7 @@ func (w *walletCommand) List(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	buf, err := json.MarshalIndent(wal, " ", " ")
@@ -283,7 +283,7 @@ func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	dataBuf, err := base64.StdEncoding.DecodeString(w.data)
@@ -334,7 +334,7 @@ func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	dataBuf, err := base64.StdEncoding.DecodeString(w.data)
@@ -376,7 +376,7 @@ func (w *walletCommand) Taint(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	var kp *wallet.Keypair
@@ -419,7 +419,7 @@ func (w *walletCommand) Metas(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	var kp *wallet.Keypair

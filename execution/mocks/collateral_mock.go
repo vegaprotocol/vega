@@ -47,6 +47,20 @@ func (mr *MockCollateralMockRecorder) CreatePartyGeneralAccount(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).CreatePartyGeneralAccount), arg0, arg1)
 }
 
+// DecrementBalance mocks base method
+func (m *MockCollateral) DecrementBalance(arg0 string, arg1 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecrementBalance", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecrementBalance indicates an expected call of DecrementBalance
+func (mr *MockCollateralMockRecorder) DecrementBalance(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecrementBalance", reflect.TypeOf((*MockCollateral)(nil).DecrementBalance), arg0, arg1)
+}
+
 // GetAccountByID mocks base method
 func (m *MockCollateral) GetAccountByID(arg0 string) (*proto.Account, error) {
 	m.ctrl.T.Helper()
@@ -63,7 +77,7 @@ func (mr *MockCollateralMockRecorder) GetAccountByID(arg0 interface{}) *gomock.C
 }
 
 // IncrementBalance mocks base method
-func (m *MockCollateral) IncrementBalance(arg0 string, arg1 int64) error {
+func (m *MockCollateral) IncrementBalance(arg0 string, arg1 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IncrementBalance", arg0, arg1)
 	ret0, _ := ret[0].(error)
