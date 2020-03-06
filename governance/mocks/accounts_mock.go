@@ -49,10 +49,10 @@ func (mr *MockAccountsMockRecorder) GetPartyTokenAccount(arg0 interface{}) *gomo
 }
 
 // GetTotalTokens mocks base method
-func (m *MockAccounts) GetTotalTokens() int64 {
+func (m *MockAccounts) GetTotalTokens() uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTotalTokens")
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(uint64)
 	return ret0
 }
 

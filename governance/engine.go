@@ -38,7 +38,7 @@ type ProposalStatus string
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
 	GetPartyTokenAccount(id string) (*types.Account, error)
-	GetTotalTokens() int64
+	GetTotalTokens() uint64
 }
 
 // Buffer ...
@@ -128,6 +128,9 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 func (e *Engine) AddProposal(p types.Proposal) error {
 	// @TODO -> we probably should keep proposals in memory here
 	if cp, ok := e.proposals[p.ID]; ok && cp.State == p.State {
+		return ErrProposalIsDuplicate
+	}
+	if _, ok := e.proposalRefs[p.Reference]; ok {
 		return ErrProposalIsDuplicate
 	}
 	var err error
@@ -233,7 +236,7 @@ func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
 		p.State = types.Proposal_DECLINED
 		// participation stake used as a percentage required to approve the proposal
 		reqTokens := tokPercent * float64(p.Terms.MinParticipationStake)
-		if reqTokens >= float64(totalYES) {
+		if reqTokens <= float64(totalYES) {
 			p.State = types.Proposal_PASSED
 			accepted = append(accepted, p)
 		}
