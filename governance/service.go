@@ -15,6 +15,8 @@ import (
 var (
 	// ErrInvalidProposalTerms is returned if basic validation has failed
 	ErrInvalidProposalTerms = errors.New("invalid proposal terms")
+
+	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 
 const (
@@ -100,6 +102,16 @@ func (s *Svc) PrepareProposal(
 		State:     types.Proposal_OPEN,
 		Terms:     terms,
 	}, nil
+}
+
+// PrepareVote - some additional validation on the vote message we're preparing
+func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
+	// to check if the enum value is correct:
+	_, ok := types.Vote_Value_value[vote.Value.String()]
+	if vote.ProposalID == "" || vote.PartyID == "" || !ok {
+		return nil, ErrMissingVoteData
+	}
+	return vote, nil
 }
 
 // validateTerms performs sanity checks:

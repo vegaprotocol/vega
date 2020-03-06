@@ -51,6 +51,9 @@ service trading {
   
   // Prepare proposal that can be sent out to the chain (via SubmitTransaction)
   rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
+
+  // Prepare a vote to be put on the chain (via SubmitTransaction)
+  rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
 }
 
 message SubmitTransactionRequest {
@@ -490,4 +493,13 @@ message PrepareProposalRequest {
 message PrepareProposalResponse {
   bytes blob = 1;
   vega.Proposal pendingProposal = 2;
+}
+
+message PrepareVoteRequest {
+  vega.Vote vote = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message PrepareVoteResponse {
+  bytes blob = 1;
+  vega.Vote vote = 2;
 }
