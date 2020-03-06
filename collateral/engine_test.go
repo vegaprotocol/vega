@@ -89,7 +89,7 @@ func testInitialTokens(t *testing.T) {
 	acc.Balance /= 2
 	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
 	// test subtracting something from the balance
-	assert.NoError(t, eng.IncrementBalance(acc.Id, -100))
+	assert.NoError(t, eng.DecrementBalance(acc.Id, 100))
 	acc.Balance -= 100
 	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
 }

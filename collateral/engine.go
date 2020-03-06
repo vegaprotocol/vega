@@ -1061,11 +1061,7 @@ func (e *Engine) IncrementBalance(id string, inc uint64) error {
 	}
 	acc.Balance += inc
 	if acc.Asset == TokenAsset {
-		if inc < 0 {
-			e.totalTokens -= uint64(inc * -1)
-		} else {
-			e.totalTokens += uint64(inc)
-		}
+		e.totalTokens += inc
 	}
 	e.buf.Add(*acc)
 	return nil
@@ -1079,6 +1075,9 @@ func (e *Engine) DecrementBalance(id string, dec uint64) error {
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance -= dec
+	if acc.Asset == TokenAsset {
+		e.totalTokens -= dec
+	}
 	e.buf.Add(*acc)
 	return nil
 }
