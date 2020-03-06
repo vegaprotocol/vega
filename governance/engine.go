@@ -23,17 +23,6 @@ var (
 	ErrVotePeriodExpired       = errors.New("proposal voting has been closed")
 )
 
-const (
-	StatusOpen     ProposalStatus = "open"
-	StatusPassed   ProposalStatus = "passed"
-	StatusRejected ProposalStatus = "rejected"
-	StatusEnacted  ProposalStatus = "enacted"
-	StatusFailed   ProposalStatus = "failed"
-)
-
-// ProposalStatus ...
-type ProposalStatus string
-
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
@@ -67,8 +56,8 @@ type Engine struct {
 
 type proposalVote struct {
 	*types.Proposal
-	yes []*types.Vote
-	no  []*types.Vote
+	yes map[string]*types.Vote
+	no  map[string]*types.Vote
 }
 
 func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now time.Time) *Engine {
@@ -143,8 +132,8 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 	} else {
 		pv := proposalVote{
 			Proposal: &p,
-			yes:      []*types.Vote{},
-			no:       []*types.Vote{},
+			yes:      map[string]*types.Vote{},
+			no:       map[string]*types.Vote{},
 		}
 		e.proposals[p.ID] = &pv
 		e.proposalRefs[p.Reference] = &pv
@@ -181,10 +170,14 @@ func (e *Engine) AddVote(v types.Vote) error {
 	if err != nil {
 		return err
 	}
+	// we only want to count the last vote, so add to yes/no map, delete from the other
+	// if the party hasn't cast a vote yet, the delete is just a noop
 	if v.Value == types.Vote_YES {
-		p.yes = append(p.yes, &v)
+		delete(p.yes, v.PartyID)
+		p.yes[v.PartyID] = &v
 	} else {
-		p.no = append(p.no, &v)
+		delete(p.yes, v.PartyID)
+		p.no[v.PartyID] = &v
 	}
 	return nil
 }
