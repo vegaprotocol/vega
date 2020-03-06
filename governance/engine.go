@@ -104,6 +104,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.mu.Lock()
+	cfg.params = e.Config.params
 	e.Config = cfg
 	e.mu.Unlock()
 }

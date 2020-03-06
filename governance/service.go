@@ -73,6 +73,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.mu.Lock()
+	cfg.params = s.Config.params
 	s.Config = cfg
 	s.mu.Unlock()
 }
