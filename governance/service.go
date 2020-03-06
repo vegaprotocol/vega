@@ -45,17 +45,18 @@ type Svc struct {
 func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+	cfg.initParams() // ensures params are set
 
 	return &Svc{
 		Config:      cfg,
 		log:         log,
 		timeService: time,
 		parameters: networkParameters{
-			minCloseInSeconds:     cfg.DefaultMinClose,
-			maxCloseInSeconds:     cfg.DefaultMaxClose,
-			minEnactInSeconds:     cfg.DefaultMinEnact,
-			maxEnactInSeconds:     cfg.DefaultMaxEnact,
-			minParticipationStake: cfg.DefaultMinParticipation,
+			minCloseInSeconds:     cfg.params.DefaultMinClose,
+			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
+			minEnactInSeconds:     cfg.params.DefaultMinEnact,
+			maxEnactInSeconds:     cfg.params.DefaultMaxEnact,
+			minParticipationStake: cfg.params.DefaultMinParticipation,
 		},
 	}
 }

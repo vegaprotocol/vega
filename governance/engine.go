@@ -18,6 +18,9 @@ var (
 	ErrProposalCloseTimeInvalid   = errors.New("proposal closes too soon or too late")
 	ErrProposalEnactTimeInvalid   = errors.New("proposal enactment times too soon or late")
 	ErrProposalInsufficientTokens = errors.New("proposal requires more tokens than party has")
+
+	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
+	ErrVotePeriodExpired       = errors.New("proposal voting has been closed")
 )
 
 const (
@@ -69,6 +72,8 @@ type proposalVote struct {
 }
 
 func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now time.Time) *Engine {
+	// ensure params are set
+	cfg.initParams()
 	return &Engine{
 		Config:       cfg,
 		accs:         accs,
@@ -78,11 +83,11 @@ func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now t
 		proposals:    map[string]*proposalVote{},
 		proposalRefs: map[string]*proposalVote{},
 		net: network{
-			minClose:      cfg.DefaultMinClose,
-			maxClose:      cfg.DefaultMaxClose,
-			minEnact:      cfg.DefaultMinEnact,
-			maxEnact:      cfg.DefaultMaxEnact,
-			participation: cfg.DefaultMinParticipation,
+			minClose:      cfg.params.DefaultMinClose,
+			maxClose:      cfg.params.DefaultMaxClose,
+			minEnact:      cfg.params.DefaultMinEnact,
+			maxEnact:      cfg.params.DefaultMaxEnact,
+			participation: cfg.params.DefaultMinParticipation,
 		},
 	}
 }
@@ -168,9 +173,9 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 }
 
 func (e *Engine) AddVote(v types.Vote) error {
-	p, ok := e.proposals[v.ProposalID]
-	if !ok {
-		return ErrProposalNotFound
+	p, err := e.validateVote(v)
+	if err != nil {
+		return err
 	}
 	if v.Value == types.Vote_YES {
 		p.yes = append(p.yes, &v)
@@ -178,6 +183,24 @@ func (e *Engine) AddVote(v types.Vote) error {
 		p.no = append(p.no, &v)
 	}
 	return nil
+}
+
+func (e *Engine) validateVote(v types.Vote) (*proposalVote, error) {
+	tacc, err := e.accs.GetPartyTokenAccount(v.PartyID)
+	if err != nil {
+		return nil, err
+	}
+	if tacc.Balance == 0 {
+		return nil, ErrVoterInsufficientTokens
+	}
+	p, ok := e.proposals[v.ProposalID]
+	if !ok {
+		return nil, ErrProposalNotFound
+	}
+	if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
+		return nil, ErrVotePeriodExpired
+	}
+	return p, nil
 }
 
 func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
