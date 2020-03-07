@@ -176,6 +176,26 @@ func (mr *MockTradingClientMockRecorder) PrepareSubmitOrder(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareSubmitOrder", reflect.TypeOf((*MockTradingClient)(nil).PrepareSubmitOrder), varargs...)
 }
 
+// PrepareVote mocks base method
+func (m *MockTradingClient) PrepareVote(arg0 context.Context, arg1 *api.PrepareVoteRequest, arg2 ...grpc.CallOption) (*api.PrepareVoteResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PrepareVote", varargs...)
+	ret0, _ := ret[0].(*api.PrepareVoteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareVote indicates an expected call of PrepareVote
+func (mr *MockTradingClientMockRecorder) PrepareVote(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareVote", reflect.TypeOf((*MockTradingClient)(nil).PrepareVote), varargs...)
+}
+
 // SignIn mocks base method
 func (m *MockTradingClient) SignIn(arg0 context.Context, arg1 *api.SignInRequest, arg2 ...grpc.CallOption) (*api.SignInResponse, error) {
 	m.ctrl.T.Helper()
