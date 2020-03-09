@@ -40,8 +40,56 @@ func newTestService(t *testing.T) *testSvc {
 	return result
 }
 
+func TestPrepareVote(t *testing.T) {
+	t.Run("prepare vote - success", testPrepareVoteSuccess)
+	t.Run("prepare vote - failure", testPrepareVoteFail)
+}
+
+func testPrepareVoteSuccess(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+	vote := types.Vote{
+		PartyID:    "party-1",
+		ProposalID: "prop-1",
+		Value:      types.Vote_YES,
+	}
+	v, err := svc.PrepareVote(&vote)
+	assert.NoError(t, err)
+	assert.Equal(t, vote.Value, v.Value)
+	assert.Equal(t, vote.PartyID, v.PartyID)
+	assert.Equal(t, vote.ProposalID, v.ProposalID)
+}
+
+func testPrepareVoteFail(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	data := map[string]types.Vote{
+		"Missing PartyID": {
+			ProposalID: "prop1",
+			Value:      types.Vote_NO,
+		},
+		"Missing ProposalID": {
+			PartyID: "Party1",
+			Value:   types.Vote_YES,
+		},
+		"Invalid vote value": {
+			ProposalID: "prop1",
+			PartyID:    "party1",
+			Value:      types.Vote_Value(213),
+		},
+	}
+	for k, vote := range data {
+		v, err := svc.PrepareVote(&vote)
+		assert.Error(t, err, k)
+		assert.Nil(t, v, k)
+		assert.Equal(t, governance.ErrMissingVoteData, err, k)
+	}
+}
+
 func TestGovernanceService(t *testing.T) {
 	svc := newTestService(t)
+	defer svc.ctrl.Finish()
 
 	cfg := svc.Config
 	cfg.Level.Level = logging.DebugLevel
@@ -55,6 +103,7 @@ func TestGovernanceService(t *testing.T) {
 
 func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
+	defer svc.ctrl.Finish()
 
 	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
@@ -87,6 +136,7 @@ func testPrepareProposalNormal(t *testing.T) {
 
 func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
+	defer svc.ctrl.Finish()
 
 	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{},

@@ -182,6 +182,7 @@ type ComplexityRoot struct {
 		PrepareOrderCancel func(childComplexity int, id string, partyID string, marketID string) int
 		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
+		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
 		Signin             func(childComplexity int, id string, password string) int
 		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
 	}
@@ -257,6 +258,11 @@ type ComplexityRoot struct {
 	PreparedSubmitOrder struct {
 		Blob         func(childComplexity int) int
 		PendingOrder func(childComplexity int) int
+	}
+
+	PreparedVote struct {
+		Blob func(childComplexity int) int
+		Vote func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -382,6 +388,12 @@ type ComplexityRoot struct {
 		MinEnactInSeconds     func(childComplexity int) int
 		MinParticipationStake func(childComplexity int) int
 	}
+
+	Vote struct {
+		PartyID    func(childComplexity int) int
+		ProposalID func(childComplexity int) int
+		Value      func(childComplexity int) int
+	}
 }
 
 type AccountResolver interface {
@@ -439,6 +451,7 @@ type MutationResolver interface {
 	PrepareOrderCancel(ctx context.Context, id string, partyID string, marketID string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, size string, expiration *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
+	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
 	SubmitTransaction(ctx context.Context, data string, sig string, address *string, pubkey *string) (*TransactionSubmitted, error)
 	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
@@ -1144,6 +1157,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PrepareProposal(childComplexity, args["partyId"].(string), args["reference"].(*string), args["proposalTerms"].(ProposalTermsInput)), true
 
+	case "Mutation.prepareVote":
+		if e.complexity.Mutation.PrepareVote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_prepareVote_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string)), true
+
 	case "Mutation.signin":
 		if e.complexity.Mutation.Signin == nil {
 			break
@@ -1509,6 +1534,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PreparedSubmitOrder.PendingOrder(childComplexity), true
+
+	case "PreparedVote.blob":
+		if e.complexity.PreparedVote.Blob == nil {
+			break
+		}
+
+		return e.complexity.PreparedVote.Blob(childComplexity), true
+
+	case "PreparedVote.vote":
+		if e.complexity.PreparedVote.Vote == nil {
+			break
+		}
+
+		return e.complexity.PreparedVote.Vote(childComplexity), true
 
 	case "PriceLevel.cumulativeVolume":
 		if e.complexity.PriceLevel.CumulativeVolume == nil {
@@ -2149,6 +2188,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateNetwork.MinParticipationStake(childComplexity), true
 
+	case "Vote.PartyID":
+		if e.complexity.Vote.PartyID == nil {
+			break
+		}
+
+		return e.complexity.Vote.PartyID(childComplexity), true
+
+	case "Vote.ProposalID":
+		if e.complexity.Vote.ProposalID == nil {
+			break
+		}
+
+		return e.complexity.Vote.ProposalID(childComplexity), true
+
+	case "Vote.Value":
+		if e.complexity.Vote.Value == nil {
+			break
+		}
+
+		return e.complexity.Vote.Value(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -2317,6 +2377,20 @@ type Mutation {
     "Terms of the proposal"
     proposalTerms: ProposalTermsInput!
   ): PreparedProposal!
+
+  """
+  Prepare a vote so it can be signed and submitted.
+  Returns a pending vote with a transaction blob for signing.
+  No validation other than the vote value being correct is done.
+  """
+  prepareVote(
+    "vote value"
+    value: VoteValue!
+    "the party casting the vote"
+    partyID: String!
+    "the proposal voted on"
+    propopsalID: String!
+  ): PreparedVote!
 
   """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
@@ -3446,6 +3520,31 @@ type PreparedProposal {
   "The pending proposal"
   pendingProposal: Proposal!
 }
+
+enum VoteValue {
+  "NO reject a proposal"
+  NO
+  "YES accept a proposal"
+  YES
+}
+
+type Vote {
+  "The vote value cast"
+  Value: VoteValue!
+
+  "The party casting the vote"
+  PartyID: String!
+
+  "Proposal ID -> proposal casting the vote on"
+  ProposalID: ID!
+}
+
+type PreparedVote {
+  "Raw, serialised vote to be signed"
+  blob: String!
+  "The vote serialised in the blob field"
+  vote: Vote!
+}
 `},
 )
 
@@ -3904,6 +4003,36 @@ func (ec *executionContext) field_Mutation_prepareProposal_args(ctx context.Cont
 		}
 	}
 	args["proposalTerms"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_prepareVote_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 VoteValue
+	if tmp, ok := rawArgs["value"]; ok {
+		arg0, err = ec.unmarshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["value"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["partyID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyID"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["propopsalID"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["propopsalID"] = arg2
 	return args, nil
 }
 
@@ -7050,6 +7179,50 @@ func (ec *executionContext) _Mutation_prepareProposal(ctx context.Context, field
 	return ec.marshalNPreparedProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedProposal(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_prepareVote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_prepareVote_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PreparedVote)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPreparedVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedVote(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8941,6 +9114,80 @@ func (ec *executionContext) _PreparedSubmitOrder_pendingOrder(ctx context.Contex
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedVote_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedVote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Blob, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreparedVote_vote(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreparedVote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Vote, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Vote)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) (ret graphql.Marshaler) {
@@ -12173,6 +12420,117 @@ func (ec *executionContext) _UpdateNetwork_minParticipationStake(ctx context.Con
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Vote_Value(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Vote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(VoteValue)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Vote_PartyID(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Vote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Vote_ProposalID(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Vote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProposalID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -14564,6 +14922,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "prepareVote":
+			out.Values[i] = ec._Mutation_prepareVote(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "submitTransaction":
 			out.Values[i] = ec._Mutation_submitTransaction(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -15245,6 +15608,38 @@ func (ec *executionContext) _PreparedSubmitOrder(ctx context.Context, sel ast.Se
 			}
 		case "pendingOrder":
 			out.Values[i] = ec._PreparedSubmitOrder_pendingOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var preparedVoteImplementors = []string{"PreparedVote"}
+
+func (ec *executionContext) _PreparedVote(ctx context.Context, sel ast.SelectionSet, obj *PreparedVote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, preparedVoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PreparedVote")
+		case "blob":
+			out.Values[i] = ec._PreparedVote_blob(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "vote":
+			out.Values[i] = ec._PreparedVote_vote(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16263,6 +16658,43 @@ func (ec *executionContext) _UpdateNetwork(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var voteImplementors = []string{"Vote"}
+
+func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj *Vote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, voteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Vote")
+		case "Value":
+			out.Values[i] = ec._Vote_Value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "PartyID":
+			out.Values[i] = ec._Vote_PartyID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ProposalID":
+			out.Values[i] = ec._Vote_ProposalID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -16871,6 +17303,20 @@ func (ec *executionContext) marshalNPreparedSubmitOrder2ᚖcodeᚗvegaprotocol�
 	return ec._PreparedSubmitOrder(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPreparedVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedVote(ctx context.Context, sel ast.SelectionSet, v PreparedVote) graphql.Marshaler {
+	return ec._PreparedVote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPreparedVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedVote(ctx context.Context, sel ast.SelectionSet, v *PreparedVote) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PreparedVote(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPriceLevel2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v proto.PriceLevel) graphql.Marshaler {
 	return ec._PriceLevel(ctx, sel, &v)
 }
@@ -17090,6 +17536,29 @@ func (ec *executionContext) marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._TransactionSubmitted(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx context.Context, sel ast.SelectionSet, v Vote) graphql.Marshaler {
+	return ec._Vote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx context.Context, sel ast.SelectionSet, v *Vote) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Vote(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx context.Context, v interface{}) (VoteValue, error) {
+	var res VoteValue
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx context.Context, sel ast.SelectionSet, v VoteValue) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
