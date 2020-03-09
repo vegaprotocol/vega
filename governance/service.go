@@ -19,14 +19,6 @@ var (
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 
-const (
-	defaultMinCloseInSeconds     = 2 * 24 * 60 * 60
-	defaultMaxCloseInSeconds     = 365 * 24 * 60 * 60
-	defaultMinEnactInSeconds     = 3 * 24 * 60 * 60
-	defaultMaxEnactInSeconds     = 365 * 24 * 60 * 60
-	defaultMinParticipationStake = 1
-)
-
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
@@ -55,17 +47,18 @@ type Svc struct {
 func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+	cfg.initParams() // ensures params are set
 
 	return &Svc{
 		Config:      cfg,
 		log:         log,
 		timeService: time,
 		parameters: networkParameters{
-			minCloseInSeconds:     defaultMinCloseInSeconds,
-			maxCloseInSeconds:     defaultMaxCloseInSeconds,
-			minEnactInSeconds:     defaultMinEnactInSeconds,
-			maxEnactInSeconds:     defaultMaxEnactInSeconds,
-			minParticipationStake: defaultMinParticipationStake,
+			minCloseInSeconds:     cfg.params.DefaultMinClose,
+			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
+			minEnactInSeconds:     cfg.params.DefaultMinEnact,
+			maxEnactInSeconds:     cfg.params.DefaultMaxEnact,
+			minParticipationStake: cfg.params.DefaultMinParticipation,
 		},
 	}
 }
@@ -82,6 +75,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.mu.Lock()
+	cfg.params = s.Config.params
 	s.Config = cfg
 	s.mu.Unlock()
 }
@@ -134,10 +128,8 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return ErrInvalidProposalTerms
 	}
 
-	minEnact := now.Add(time.Duration(s.parameters.minEnactInSeconds) * time.Second)
-	// again: we can only check if the enactment TS is in the past, future checks aren't guaranteed
-	// to produce the same results post chain
-	if terms.EnactmentTimestamp < minEnact.UTC().Unix() {
+	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
 		return ErrInvalidProposalTerms
 	}
 
