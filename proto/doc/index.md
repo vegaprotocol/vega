@@ -1939,6 +1939,7 @@ Proposal can enter Failed state from any other state.
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
+| updatedAt | [int64](#int64) |  |  |
 
 
 
