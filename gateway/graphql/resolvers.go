@@ -57,6 +57,7 @@ type TradingDataClient interface {
 	OrderByReference(ctx context.Context, in *protoapi.OrderByReferenceRequest, opts ...grpc.CallOption) (*protoapi.OrderByReferenceResponse, error)
 	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
 	OrderByMarketAndID(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
+	Order(ctx context.Context, in *protoapi.OrderByIDOrReferenceRequest, opts ...grpc.CallOption) (*types.Order, error)
 	// markets
 	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
@@ -296,6 +297,10 @@ func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token 
 		return nil, customErrorFromStatus(err)
 	}
 	return &CheckTokenResponse{Ok: response.Ok}, nil
+}
+
+func (r *myQueryResolver) Order(ctx context.Context, orderID string, referenceID string) (*types.Order, error) {
+	return nil, nil
 }
 
 // END: Root Resolver

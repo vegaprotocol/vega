@@ -29,6 +29,7 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [OrderByIDOrReferenceRequest](#api.OrderByIDOrReferenceRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
@@ -560,6 +561,22 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | markets | [vega.Market](#vega.Market) | repeated | a list of Markets |
+
+
+
+
+
+
+<a name="api.OrderByIDOrReferenceRequest"></a>
+
+### OrderByIDOrReferenceRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+| referenceID | [string](#string) |  |  |
 
 
 
@@ -1267,6 +1284,7 @@
 | OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
 | OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get a list of Orders by Market |
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
+| Order | [OrderByIDOrReferenceRequest](#api.OrderByIDOrReferenceRequest) | [.vega.Order](#vega.Order) | Get a specific order either by orderID or by referenceID (or both) |
 | MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by PartyID |
 | Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
 | PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get a Party by ID |

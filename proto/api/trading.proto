@@ -177,6 +177,9 @@ service trading_data {
   // Get a list of Orders by Party
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
+  // Get a specific order either by orderID or by referenceID (or both)
+  rpc Order(OrderByIDOrReferenceRequest) returns (vega.Order);
+
   // Parties
 
   // Get Margin Levels by PartyID
@@ -502,4 +505,9 @@ message PrepareVoteRequest {
 message PrepareVoteResponse {
   bytes blob = 1;
   vega.Vote vote = 2;
+}
+
+message OrderByIDOrReferenceRequest {
+  string orderID = 1;
+  string referenceID = 2;
 }

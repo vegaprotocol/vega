@@ -532,5 +532,8 @@ func (this *PrepareVoteResponse) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
 		}
 	}
+}
+
+func (this *OrderByIDOrReferenceRequest) Validate() error {
 	return nil
 }

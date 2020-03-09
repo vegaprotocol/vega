@@ -378,6 +378,14 @@ type Query {
     "Token"
     token: String!
   ): CheckTokenResponse!
+
+  "An order that exists in the VEGA network"
+  order(
+    "Optional ID for an order"
+    orderID: String!
+    "Optional Reference for an order"
+    referenceID: String!
+  ): Order!
 }
 
 type CheckTokenResponse {
