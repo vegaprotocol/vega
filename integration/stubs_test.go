@@ -164,6 +164,18 @@ func (o *orderStub) GetByPartyAndID(_ context.Context, party, id string) (*proto
 	return ret, err
 }
 
+func (o *orderStub) GetByReference(ref string) (*proto.Order, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	for _, v := range o.data {
+		if v.Reference == ref {
+			cpy := v
+			return &cpy, nil
+		}
+	}
+	return nil, fmt.Errorf("reference %s not found", ref)
+}
+
 func (o *orderStub) Get(id string) *proto.Order {
 	var ret *proto.Order
 	o.mu.Lock()

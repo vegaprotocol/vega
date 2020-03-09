@@ -246,6 +246,42 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 	return nil
 }
 
+func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+		tif, err := tifval(row, 7)
+		if err != nil {
+			return err
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        oty,
+			TimeInForce: tif,
+			CreatedAt:   time.Now().UnixNano(),
+			Reference:   val(row, 8),
+		}
+		if _, err := execsetup.engine.SubmitOrder(&order); err == nil {
+			return fmt.Errorf("expected trader %s to not exist", order.PartyID)
+		}
+	}
+	return nil
+}
+
 func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
 	for _, row := range orders.Rows {
 		if val(row, 0) == "trader" {
@@ -283,6 +319,31 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
 		}
 	}
+	return nil
+}
+
+func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
+	for _, row := range refs.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+
+		cancel := proto.OrderCancellation{
+			OrderID:  o.Id,
+			PartyID:  o.PartyID,
+			MarketID: o.MarketID,
+		}
+
+		if _, err = execsetup.engine.CancelOrder(&cancel); err == nil {
+			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
+		}
+	}
+
 	return nil
 }
 
