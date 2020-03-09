@@ -395,6 +395,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		order.Price = m.matching.MarketOrderPrice(order.Side)
 	}
 
+	// set the remaining of order to the size explicitly here
+	order.Remaining = order.Size
+
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
@@ -458,10 +461,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// then we should be able to process the rest of the order properly.
 	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) &&
 		confirmation.Order.Remaining != 0 {
-		// create a temporary order with the size beeing the remaining
-		tmpOrder := *order
-		tmpOrder.Size = order.Remaining
-		_, err := m.position.UnregisterOrder(&tmpOrder)
+		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
@@ -1159,13 +1159,31 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		ret, err := m.orderCancelReplace(existingOrder, newOrder)
-		return ret, err
+		return m.orderCancelReplace(existingOrder, newOrder)
 	}
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease {
+		// if the size, decreases under the existingOrder.Remaining,
+		// it means that we need to reduce the potential position
+		if sizeDecrease && newOrder.Remaining < existingOrder.Remaining {
+			// reduce the position
+			diffRemaining := existingOrder.Remaining - newOrder.Remaining
+			o := types.Order{
+				PartyID:   existingOrder.PartyID,
+				Side:      existingOrder.Side,
+				Remaining: diffRemaining,
+			}
+			_, err = m.position.UnregisterOrder(&o)
+			if err != nil {
+				m.log.Error("Failure unregistering order in positions engine (cancel)",
+					logging.Order(o),
+					logging.Error(err))
+
+				return &types.OrderConfirmation{}, err
+			}
+		}
 		return m.orderAmendInPlace(newOrder)
 	}
 
