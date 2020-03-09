@@ -17,6 +17,7 @@ var (
 	ErrOrderAmendmentPartyAndPubKeyDoesNotMatch     = errors.New("order amendment party and pubkey does not match")
 	ErrProposalSubmissionPartyAndPubKeyDoesNotMatch = errors.New("proposal submission party and pubkey does not match")
 	ErrVoteSubmissionPartyAndPubKeyDoesNotMatch     = errors.New("vote submission party and pubkey does not match")
+	ErrCommandKindUnknown                           = errors.New("unknown command kind when validating payload")
 )
 
 // ProcessorService ...
@@ -169,9 +170,8 @@ func (p *Processor) Validate(payload []byte) error {
 		return p.validateSigned(payload[1:])
 	case CommandKindUnsigned:
 		return p.validateUnsigned(payload[1:])
-	default:
-		return errors.New("unknown command kind when validating payload")
 	}
+	return ErrCommandKindUnknown
 }
 
 func (p *Processor) validateUnsigned(payload []byte) error {
