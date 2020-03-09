@@ -1210,3 +1210,7 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 
 	return backlogLength, netInfo.NPeers, &genesisTime, nil
 }
+
+func (h *tradingDataService) Order(ctx context.Context, in *protoapi.OrderByIDOrReferenceRequest) (*types.Order, error) {
+	return nil, nil
+}

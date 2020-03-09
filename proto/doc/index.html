@@ -279,6 +279,10 @@
                 </li>
 
                 <li>
+                  <a href="#api.OrderByIDOrReferenceRequest"><span class="badge">M</span>OrderByIDOrReferenceRequest</a>
+                </li>
+
+                <li>
                   <a href="#api.OrderByMarketAndIdRequest"><span class="badge">M</span>OrderByMarketAndIdRequest</a>
                 </li>
 
@@ -1764,6 +1768,37 @@
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
                   <td><p>a list of Markets </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.OrderByIDOrReferenceRequest">OrderByIDOrReferenceRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>referenceID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -3324,6 +3359,13 @@
                 <td><a href="#api.OrdersByPartyRequest">OrdersByPartyRequest</a></td>
                 <td><a href="#api.OrdersByPartyResponse">OrdersByPartyResponse</a></td>
                 <td><p>Get a list of Orders by Party</p></td>
+              </tr>
+
+              <tr>
+                <td>Order</td>
+                <td><a href="#api.OrderByIDOrReferenceRequest">OrderByIDOrReferenceRequest</a></td>
+                <td><a href="#vega.Order">.vega.Order</a></td>
+                <td><p>Get a specific order either by orderID or by referenceID (or both)</p></td>
               </tr>
 
               <tr>

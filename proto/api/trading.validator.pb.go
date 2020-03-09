@@ -515,3 +515,6 @@ func (this *PrepareProposalResponse) Validate() error {
 	}
 	return nil
 }
+func (this *OrderByIDOrReferenceRequest) Validate() error {
+	return nil
+}
