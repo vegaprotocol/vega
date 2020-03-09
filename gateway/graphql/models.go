@@ -203,6 +203,13 @@ type PreparedSubmitOrder struct {
 	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
+type PreparedVote struct {
+	// Raw, serialised vote to be signed
+	Blob string `json:"blob"`
+	// The vote serialised in the blob field
+	Vote *Vote `json:"vote"`
+}
+
 type Proposal struct {
 	// Proposal id that is filled by VEGA once proposal reaches the network
 	ID *string `json:"id"`
@@ -335,6 +342,15 @@ type UpdateNetworkInput struct {
 	// Network parameter that restricts the minimum participation stake
 	// required for a proposal to pass.
 	MinParticipationStake *int `json:"minParticipationStake"`
+}
+
+type Vote struct {
+	// The vote value cast
+	Value VoteValue `json:"Value"`
+	// The party casting the vote
+	PartyID string `json:"PartyID"`
+	// Proposal ID -> proposal casting the vote on
+	ProposalID string `json:"ProposalID"`
 }
 
 // The various account types we have (used by collateral)
@@ -779,5 +795,48 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type VoteValue string
+
+const (
+	// NO reject a proposal
+	VoteValueNo VoteValue = "NO"
+	// YES accept a proposal
+	VoteValueYes VoteValue = "YES"
+)
+
+var AllVoteValue = []VoteValue{
+	VoteValueNo,
+	VoteValueYes,
+}
+
+func (e VoteValue) IsValid() bool {
+	switch e {
+	case VoteValueNo, VoteValueYes:
+		return true
+	}
+	return false
+}
+
+func (e VoteValue) String() string {
+	return string(e)
+}
+
+func (e *VoteValue) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = VoteValue(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid VoteValue", str)
+	}
+	return nil
+}
+
+func (e VoteValue) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

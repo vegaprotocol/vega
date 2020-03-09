@@ -48,3 +48,18 @@ func (mr *MockGovernanceServiceMockRecorder) PrepareProposal(arg0, arg1, arg2, a
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposal", reflect.TypeOf((*MockGovernanceService)(nil).PrepareProposal), arg0, arg1, arg2, arg3)
 }
+
+// PrepareVote mocks base method
+func (m *MockGovernanceService) PrepareVote(arg0 *proto.Vote) (*proto.Vote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PrepareVote", arg0)
+	ret0, _ := ret[0].(*proto.Vote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareVote indicates an expected call of PrepareVote
+func (mr *MockGovernanceServiceMockRecorder) PrepareVote(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareVote", reflect.TypeOf((*MockGovernanceService)(nil).PrepareVote), arg0)
+}
