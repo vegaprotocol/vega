@@ -5,8 +5,15 @@ import (
 	"sync"
 
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/pkg/errors"
 )
 
+var (
+	ErrProposalNotFound = errors.New("proposal not found")
+)
+
+// PropVote combines proposal and votes
 type PropVote struct {
 	types.Proposal
 	Votes map[types.Vote_Value][]types.Vote
@@ -33,17 +40,19 @@ type Proposals struct {
 	pref, vref int
 	pch        <-chan []types.Proposal
 	vch        <-chan []types.Vote
-	pData      map[string]types.Proposal
+	pData      map[string]*types.Proposal
+	pByRef     map[string]*types.Proposal
 	vData      map[string]map[types.Vote_Value][]types.Vote
 }
 
 // NewProposal - return a new proposal plugin
-func NewProposal(p PropBuffer, v VoteBuffer) *Proposals {
+func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 	return &Proposals{
-		props: p,
-		votes: v,
-		pData: map[string]types.Proposal{},
-		vData: map[string]map[types.Vote_Value][]types.Vote{},
+		props:  p,
+		votes:  v,
+		pData:  map[string]*types.Proposal{},
+		pByRef: map[string]*types.Proposal{},
+		vData:  map[string]map[types.Vote_Value][]types.Vote{},
 	}
 }
 
@@ -94,9 +103,14 @@ func (p *Proposals) consume(ctx context.Context) {
 				// channel is closed
 				return
 			}
+			// support empty slices for testing
+			if len(proposals) == 0 {
+				continue
+			}
 			p.mu.Lock()
 			for _, v := range proposals {
-				p.pData[v.ID] = v
+				p.pData[v.ID] = &v
+				p.pByRef[v.Reference] = &v
 				if _, ok := p.vData[v.ID]; !ok {
 					p.vData[v.ID] = map[types.Vote_Value][]types.Vote{}
 				}
@@ -105,6 +119,10 @@ func (p *Proposals) consume(ctx context.Context) {
 		case votes, ok := <-p.vch:
 			if !ok {
 				return
+			}
+			// empty slices are used for testing
+			if len(votes) == 0 {
+				continue
 			}
 			p.mu.Lock()
 			for _, v := range votes {
@@ -124,6 +142,34 @@ func (p *Proposals) consume(ctx context.Context) {
 	}
 }
 
+// GetProposalByReference returns proposal and votes by reference (or error if proposal not found)
+func (p *Proposals) GetProposalByReference(ref string) (*PropVote, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if v, ok := p.pByRef[ref]; ok {
+		ret := PropVote{
+			Proposal: *v,
+		}
+		ret.Votes = p.vData[v.ID]
+		return &ret, nil
+	}
+	return nil, ErrProposalNotFound
+}
+
+// GetProposalByID returns proposal and votes by ID
+func (p *Proposals) GetProposalByID(id string) (*PropVote, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if v, ok := p.pData[id]; ok {
+		ret := PropVote{
+			Proposal: *v,
+		}
+		ret.Votes = p.vData[id]
+		return &ret, nil
+	}
+	return nil, ErrProposalNotFound
+}
+
 // GetOpenProposals returns proposals + current votes
 func (p *Proposals) GetOpenProposals() []PropVote {
 	p.mu.RLock()
@@ -131,7 +177,7 @@ func (p *Proposals) GetOpenProposals() []PropVote {
 	for _, prop := range p.pData {
 		if prop.State == types.Proposal_OPEN {
 			pv := PropVote{
-				Proposal: prop,
+				Proposal: *prop,
 			}
 			pv.Votes = p.vData[prop.ID]
 			ret = append(ret, pv)
