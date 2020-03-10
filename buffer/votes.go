@@ -33,7 +33,13 @@ func (v *Vote) Add(vote types.Vote) {
 // Flush the buffer
 func (v *Vote) Flush() {
 	// create new slice, use cap of previous -> avoid allocations
-	v.buf = make([]types.Vote, 0, cap(v.buf))
+	cpy := v.buf
+	v.buf = make([]types.Vote, 0, cap(cpy))
+	v.mu.Lock()
+	for _, ch := range v.chans {
+		ch <- cpy
+	}
+	c.mu.Unlock()
 }
 
 // Subscribe to the buffer, on flush, subscriptions will receive the data
