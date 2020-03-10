@@ -42,7 +42,7 @@ type Proposals struct {
 	vch        <-chan []types.Vote
 	pData      map[string]*types.Proposal
 	pByRef     map[string]*types.Proposal
-	vData      map[string]map[types.Vote_Value][]types.Vote
+	vData      map[string]map[types.Vote_Value]map[string]types.Vote // nested map by proposal -> vote value -> party
 }
 
 // NewProposal - return a new proposal plugin
@@ -52,7 +52,7 @@ func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 		votes:  v,
 		pData:  map[string]*types.Proposal{},
 		pByRef: map[string]*types.Proposal{},
-		vData:  map[string]map[types.Vote_Value][]types.Vote{},
+		vData:  map[string]map[types.Vote_Value]map[string]types.Vote{},
 	}
 }
 
@@ -112,7 +112,10 @@ func (p *Proposals) consume(ctx context.Context) {
 				p.pData[v.ID] = &v
 				p.pByRef[v.Reference] = &v
 				if _, ok := p.vData[v.ID]; !ok {
-					p.vData[v.ID] = map[types.Vote_Value][]types.Vote{}
+					p.vData[v.ID] = map[types.Vote_Value]map[string]types.Vote{
+						types.Vote_YES: map[string]types.Vote{},
+						types.Vote_NO:  map[string]types.Vote{},
+					}
 				}
 			}
 			p.mu.Unlock()
@@ -128,13 +131,18 @@ func (p *Proposals) consume(ctx context.Context) {
 			for _, v := range votes {
 				pvotes, ok := p.vData[v.ProposalID]
 				if !ok {
-					pvotes = map[types.Vote_Value][]types.Vote{}
+					pvotes = map[types.Vote_Value]map[string]types.Vote{
+						types.Vote_YES: map[string]types.Vote{},
+						types.Vote_NO:  map[string]types.Vote{},
+					}
 				}
-				vSlice, ok := pvotes[v.Value]
-				if !ok {
-					vSlice = []types.Vote{}
+				// value maps always exist
+				pvotes[v.Value][v.PartyID] = v
+				oppositeValue := types.Vote_NO
+				if v.Value == oppositeValue {
+					oppositeValue = types.Vote_YES
 				}
-				pvotes[v.Value] = append(vSlice, v)
+				delete(pvotes[oppositeValue], v.PartyID)
 				p.vData[v.ProposalID] = pvotes
 			}
 			p.mu.Unlock()
@@ -147,10 +155,7 @@ func (p *Proposals) GetProposalByReference(ref string) (*PropVote, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if v, ok := p.pByRef[ref]; ok {
-		ret := PropVote{
-			Proposal: *v,
-		}
-		ret.Votes = p.vData[v.ID]
+		ret := p.getPropVote(*v)
 		return &ret, nil
 	}
 	return nil, ErrProposalNotFound
@@ -161,10 +166,7 @@ func (p *Proposals) GetProposalByID(id string) (*PropVote, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if v, ok := p.pData[id]; ok {
-		ret := PropVote{
-			Proposal: *v,
-		}
-		ret.Votes = p.vData[id]
+		ret := p.getPropVote(*v)
 		return &ret, nil
 	}
 	return nil, ErrProposalNotFound
@@ -176,13 +178,28 @@ func (p *Proposals) GetOpenProposals() []PropVote {
 	ret := []PropVote{}
 	for _, prop := range p.pData {
 		if prop.State == types.Proposal_OPEN {
-			pv := PropVote{
-				Proposal: *prop,
-			}
-			pv.Votes = p.vData[prop.ID]
-			ret = append(ret, pv)
+			ret = append(ret, p.getPropVote(*prop))
 		}
 	}
 	p.mu.RUnlock()
 	return ret
+}
+
+func (p *Proposals) getPropVote(v types.Proposal) PropVote {
+	vData := p.vData[v.ID]
+	yes := make([]types.Vote, 0, len(vData[types.Vote_YES]))
+	no := make([]types.Vote, 0, len(vData[types.Vote_NO]))
+	for _, vote := range vData[types.Vote_YES] {
+		yes = append(yes, vote)
+	}
+	for _, vote := range vData[types.Vote_NO] {
+		no = append(no, vote)
+	}
+	return PropVote{
+		Proposal: v,
+		Votes: map[types.Vote_Value][]types.Vote{
+			types.Vote_YES: yes,
+			types.Vote_NO:  no,
+		},
+	}
 }
