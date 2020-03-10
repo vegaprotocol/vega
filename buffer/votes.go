@@ -15,8 +15,8 @@ type Vote struct {
 	free  []int
 }
 
-// NewVotes creates a new vote buffer
-func NewVotes() *Vote {
+// NewVote creates a new vote buffer
+func NewVote() *Vote {
 	return &Vote{
 		chBuf: 1,
 		buf:   []types.Vote{},

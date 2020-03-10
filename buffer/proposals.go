@@ -31,7 +31,7 @@ func (p *Proposal) Add(prop types.Proposal) {
 }
 
 // Flush the buffer, this pushes the data to subscriptions
-func (p *Proposal) Flush() error {
+func (p *Proposal) Flush() {
 	data := make([]types.Proposal, 0, len(p.buf))
 	for _, v := range p.buf {
 		data = append(data, v)
@@ -42,7 +42,6 @@ func (p *Proposal) Flush() error {
 		ch <- data
 	}
 	p.mu.Unlock()
-	return nil
 }
 
 // Subscribe to proposal buffer

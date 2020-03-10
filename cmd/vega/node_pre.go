@@ -173,8 +173,8 @@ func (l *NodeCommand) setupBuffers() {
 	l.marginLevelsBuf.Register(l.riskStore)
 	l.settleBuf = buffer.NewSettlement()
 	l.lossSocBuf = buffer.NewLossSocialization()
-
 	l.proposalBuf = buffer.NewProposal()
+	l.voteBuf = buffer.NewVote()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -259,6 +259,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.settleBuf,
 		l.lossSocBuf,
 		l.proposalBuf,
+		l.voteBuf,
 		l.mktscfg,
 	)
 
@@ -267,6 +268,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
 	l.settlePlugin.Start(l.ctx) // open channel from the start
+	l.proposalPlugin = plugins.NewProposals(l.proposalBuf, l.voteBuf)
+	l.proposalPlugin.Start(l.ctx)
+
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.executionEngine, l.timeService, l.stats.Blockchain, l.cancel)
 	if err != nil {
