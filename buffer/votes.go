@@ -3,7 +3,7 @@ package buffer
 import (
 	"sync"
 
-	"github.com/tendermint/tendermint/types"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Vote buffer
