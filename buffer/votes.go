@@ -39,7 +39,7 @@ func (v *Vote) Flush() {
 	for _, ch := range v.chans {
 		ch <- cpy
 	}
-	c.mu.Unlock()
+	v.mu.Unlock()
 }
 
 // Subscribe to the buffer, on flush, subscriptions will receive the data
