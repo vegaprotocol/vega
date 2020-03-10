@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -215,8 +216,10 @@ func getTestGRPCServer(
 	}
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
+	// stub...
+	governancePlugin := plugins.NewProposals(nil, nil)
 
-	governanceService := governance.NewService(logger, conf.Governance)
+	governanceService := governance.NewService(logger, conf.Governance, governancePlugin, timeService)
 
 	g = api.NewGRPCServer(
 		logger,

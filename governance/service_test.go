@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -18,19 +19,26 @@ type testSvc struct {
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
+
+	plugin *mocks.MockPlugin
+	time   *mocks.MockTimeService
 }
 
 func newTestService(t *testing.T) *testSvc {
 	ctrl := gomock.NewController(t)
+	time := mocks.NewMockTimeService(ctrl)
+	plugin := mocks.NewMockPlugin(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	result := &testSvc{
-		ctrl:  ctrl,
-		ctx:   ctx,
-		cfunc: cfunc,
+		ctrl:   ctrl,
+		ctx:    ctx,
+		cfunc:  cfunc,
+		plugin: plugin,
+		time:   time,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig())
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), plugin, time)
 	assert.NotNil(t, result.Svc)
 	return result
 }
