@@ -6,14 +6,6 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-const (
-	// Ed25519PrivKeyLen specifies the length of a valid Ed25519 private key.
-	Ed25519PrivKeyLen = 64
-
-	// Ed25519PubKeyLen specifies the length of a valid Ed25519 public key.
-	Ed25519PubKeyLen = 32
-)
-
 type ed25519Sig struct{}
 
 func newEd25519() *ed25519Sig {
@@ -32,7 +24,7 @@ func (e *ed25519Sig) GenKey() (crypto.PublicKey, crypto.PrivateKey, error) {
 func (e *ed25519Sig) Sign(priv crypto.PrivateKey, buf []byte) []byte {
 	privBytes := priv.([]byte)
 	// Avoid panic by checking key length
-	if len(privBytes) != Ed25519PrivKeyLen {
+	if len(privBytes) != ed25519.PrivateKeySize {
 		return nil
 	}
 	return ed25519.Sign(privBytes, buf)
@@ -41,7 +33,7 @@ func (e *ed25519Sig) Sign(priv crypto.PrivateKey, buf []byte) []byte {
 func (e *ed25519Sig) Verify(pub crypto.PublicKey, message, sig []byte) bool {
 	pubBytes := pub.([]byte)
 	// Avoid panic by checking key length
-	if len(pubBytes) != Ed25519PubKeyLen {
+	if len(pubBytes) != ed25519.PublicKeySize {
 		return false
 	}
 	return ed25519.Verify(pubBytes, message, sig)
