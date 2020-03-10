@@ -34,7 +34,12 @@ type Accounts interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
 type Buffer interface {
 	Add(types.Proposal)
-	Flush()
+}
+
+// VoteBuf...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance VoteBuf
+type VoteBuf interface {
+	Add(types.Vote)
 }
 
 type network struct {
@@ -46,6 +51,7 @@ type Engine struct {
 	Config
 	accs         Accounts
 	buf          Buffer
+	vbuf         VoteBuf
 	log          *logging.Logger
 	mu           sync.Mutex
 	currentTime  time.Time
@@ -60,13 +66,14 @@ type proposalVote struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, now time.Time) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
 	// ensure params are set
 	cfg.initParams()
 	return &Engine{
 		Config:       cfg,
 		accs:         accs,
 		buf:          buf,
+		vbuf:         vbuf,
 		log:          log,
 		currentTime:  now,
 		proposals:    map[string]*proposalVote{},
@@ -173,12 +180,13 @@ func (e *Engine) AddVote(v types.Vote) error {
 	// we only want to count the last vote, so add to yes/no map, delete from the other
 	// if the party hasn't cast a vote yet, the delete is just a noop
 	if v.Value == types.Vote_YES {
-		delete(p.yes, v.PartyID)
+		delete(p.no, v.PartyID)
 		p.yes[v.PartyID] = &v
 	} else {
 		delete(p.yes, v.PartyID)
 		p.no[v.PartyID] = &v
 	}
+	e.vbuf.Add(v)
 	return nil
 }
 
