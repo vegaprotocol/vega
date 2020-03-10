@@ -15,7 +15,7 @@ type PropBuffer interface {
 }
 
 // VoteBuffer...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buffer_mock.go -package mocks code.vegaprotogol.io/vega/plugins VoteBuffer
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins VoteBuffer
 type VoteBuffer interface {
 	Subscribe() (<-chan []types.Vote, int)
 	Unsubscribe(int)
@@ -27,7 +27,7 @@ type Proposals struct {
 	votes      VoteBuffer
 	pref, vref int
 	pch        <-chan []types.Proposal
-	vch        <-chan []types.Votes
+	vch        <-chan []types.Vote
 	pData      map[string]types.Proposal
 	vData      map[string]map[types.Vote_Value][]types.Vote
 }
@@ -67,7 +67,7 @@ func (p *Proposals) Stop() {
 		p.props.Unsubscribe(p.pref)
 		p.pref = 0
 	}
-	if p.vref != nil {
+	if p.vref != 0 {
 		p.votes.Unsubscribe(p.vref)
 		p.vref = 0
 	}
