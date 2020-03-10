@@ -3,7 +3,6 @@ package governance
 import (
 	"context"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -19,12 +18,6 @@ var (
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 
-// TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
-type TimeService interface {
-	GetTimeNow() (time.Time, error)
-}
-
 type networkParameters struct {
 	minCloseInSeconds     int64
 	maxCloseInSeconds     int64
@@ -36,23 +29,21 @@ type networkParameters struct {
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log         *logging.Logger
-	mu          sync.Mutex
-	timeService TimeService
+	log *logging.Logger
+	mu  sync.Mutex
 
 	parameters networkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
+func NewService(log *logging.Logger, cfg Config) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	cfg.initParams() // ensures params are set
 
 	return &Svc{
-		Config:      cfg,
-		log:         log,
-		timeService: time,
+		Config: cfg,
+		log:    log,
 		parameters: networkParameters{
 			minCloseInSeconds:     cfg.params.DefaultMinClose,
 			maxCloseInSeconds:     cfg.params.DefaultMaxClose,

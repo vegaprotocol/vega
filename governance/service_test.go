@@ -7,7 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/orders/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -19,13 +18,10 @@ type testSvc struct {
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
-
-	time *mocks.MockTimeService
 }
 
 func newTestService(t *testing.T) *testSvc {
 	ctrl := gomock.NewController(t)
-	time := mocks.NewMockTimeService(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
@@ -33,9 +29,8 @@ func newTestService(t *testing.T) *testSvc {
 		ctrl:  ctrl,
 		ctx:   ctx,
 		cfunc: cfunc,
-		time:  time,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), time)
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig())
 	assert.NotNil(t, result.Svc)
 	return result
 }
@@ -120,9 +115,6 @@ func testPrepareProposalNormal(t *testing.T) {
 		},
 	}
 
-	rightNow := time.Now()
-	svc.time.EXPECT().GetTimeNow().Times(1).Return(rightNow, nil)
-
 	testAuthor := "test-author"
 	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
@@ -146,8 +138,6 @@ func testPrepareProposalEmpty(t *testing.T) {
 			UpdateNetwork: &updateNetwork,
 		},
 	}
-
-	svc.time.EXPECT().GetTimeNow().MaxTimes(0)
 
 	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
 

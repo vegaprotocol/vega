@@ -216,7 +216,7 @@ func getTestGRPCServer(
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
 
-	governanceService := governance.NewService(logger, conf.Governance, timeService)
+	governanceService := governance.NewService(logger, conf.Governance)
 
 	g = api.NewGRPCServer(
 		logger,
