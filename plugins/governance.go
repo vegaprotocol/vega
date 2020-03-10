@@ -7,6 +7,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+type PropVote struct {
+	types.Proposal
+	Votes map[types.Vote_Value][]types.Vote
+}
+
 // PropBuffer...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/prop_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PropBuffer
 type PropBuffer interface {
@@ -117,4 +122,21 @@ func (p *Proposals) consume(ctx context.Context) {
 			p.mu.Unlock()
 		}
 	}
+}
+
+// GetOpenProposals returns proposals + current votes
+func (p *Proposals) GetOpenProposals() []PropVote {
+	p.mu.RLock()
+	ret := []PropVote{}
+	for _, prop := range p.pData {
+		if prop.State == types.Proposal_OPEN {
+			pv := PropVote{
+				Proposal: prop,
+			}
+			pv.Votes = p.vData[prop.ID]
+			ret = append(ret, pv)
+		}
+	}
+	p.mu.RUnlock()
+	return ret
 }
