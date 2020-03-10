@@ -56,6 +56,58 @@ func TestStartStopGovernance(t *testing.T) {
 func TestProposalWithVotes(t *testing.T) {
 	t.Run("new proposal, then a single vote - success", testNewProposalThenVoteSuccess)
 	t.Run("new proposal, first a single vote - success", testNewProposalFirstVoteSuccess)
+	t.Run("new proposal, changing votes - success", testNewProposalChangingVoteSuccess)
+}
+
+func testNewProposalChangingVoteSuccess(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	proposal := types.Proposal{
+		ID:        "prop-ID",
+		Reference: "prop-ref",
+		PartyID:   "prop-party-ID",
+		State:     types.Proposal_OPEN,
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}
+	vote := types.Vote{
+		ProposalID: proposal.ID,
+		PartyID:    "vote-party-ID",
+		Value:      types.Vote_YES,
+	}
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+	// first the vote event is sent
+	plugin.vCh <- []types.Vote{vote}
+	plugin.vCh <- []types.Vote{}
+	// then the proposal event
+	plugin.pCh <- []types.Proposal{proposal}
+	plugin.pCh <- []types.Proposal{}
+	// By ID -> we get the proposal
+	p, err := plugin.GetProposalByID(proposal.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+	assert.Equal(t, proposal, p.Proposal)
+	assert.NotEmpty(t, p.Votes[vote.Value])
+	assert.Equal(t, 1, len(p.Votes[vote.Value]))
+	assert.Empty(t, p.Votes[types.Vote_NO]) // no votes against were cast yet
+
+	// same party now votes no
+	vote.Value = types.Vote_NO
+	plugin.vCh <- []types.Vote{vote}
+	plugin.vCh <- []types.Vote{}
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	// stop the plugin here already, we've gotten all the data needed for the test
+	plugin.Stop()
+	p, err = plugin.GetProposalByID(proposal.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+	assert.Equal(t, proposal, p.Proposal)
+	// updated value is counted
+	assert.NotEmpty(t, p.Votes[vote.Value])
+	assert.Equal(t, 1, len(p.Votes[vote.Value]))
+	assert.Empty(t, p.Votes[types.Vote_YES]) // old vote is gone
 }
 
 func testNewProposalFirstVoteSuccess(t *testing.T) {
