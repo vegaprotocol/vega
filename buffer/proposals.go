@@ -19,7 +19,7 @@ type Proposal struct {
 func NewProposal() *Proposal {
 	return &Proposal{
 		chBuf: 1,
-		buf:   []types.Proposal{},
+		buf:   map[string]types.Proposal{},
 		chans: map[int]chan []types.Proposal{},
 		free:  []int{},
 	}
@@ -36,12 +36,13 @@ func (p *Proposal) Flush() error {
 	for _, v := range p.buf {
 		data = append(data, v)
 	}
-	p.buf = make([]types.Proposal, 0, len(p.buf))
+	p.buf = make(map[string]types.Proposal, len(p.buf))
 	p.mu.Lock()
 	for _, ch := range p.chans {
 		ch <- data
 	}
 	p.mu.Unlock()
+	return nil
 }
 
 // Subscribe to proposal buffer
