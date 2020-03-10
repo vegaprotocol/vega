@@ -116,18 +116,6 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return ErrInvalidProposalTerms
 	}
 
-	now, err := s.timeService.GetTimeNow()
-	if err != nil {
-		return err
-	}
-
-	minClose := now.Add(time.Duration(s.parameters.minCloseInSeconds) * time.Second)
-	// we can only check if the closing ts was in the past "too far in the future" might not apply
-	// after the same proposal reaches the core (post consensus)
-	if terms.ClosingTimestamp < minClose.UTC().Unix() {
-		return ErrInvalidProposalTerms
-	}
-
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
 	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
 		return ErrInvalidProposalTerms
