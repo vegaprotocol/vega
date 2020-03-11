@@ -300,7 +300,12 @@ func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token 
 }
 
 func (r *myQueryResolver) Order(ctx context.Context, orderID string, referenceID string) (*types.Order, error) {
-	return nil, nil
+	orderReq := &protoapi.OrderByIDOrReferenceRequest{
+		OrderID:     orderID,
+		ReferenceID: referenceID,
+	}
+	order, err := r.tradingDataClient.Order(ctx, orderReq)
+	return order, err
 }
 
 // END: Root Resolver
