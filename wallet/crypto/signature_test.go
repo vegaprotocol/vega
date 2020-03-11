@@ -44,10 +44,12 @@ func testVerifyOK(t *testing.T) {
 
 	message := []byte("hello world")
 
-	sig := s.Sign(priv, message)
+	sig, err := s.Sign(priv, message)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, sig)
 
-	ok := s.Verify(pub, message, sig)
+	ok, err := s.Verify(pub, message, sig)
+	assert.NoError(t, err)
 	assert.True(t, ok)
 }
 
@@ -63,8 +65,8 @@ func testSignBadKeyLength(t *testing.T) {
 	// Chop one byte off the key
 	priv2 := priv.([]byte)
 	priv3 := priv2[0 : len(priv2)-1]
-	sig := s.Sign(crypto.PrivateKey(priv3), message)
-	// No error, just nil
+	sig, err := s.Sign(crypto.PrivateKey(priv3), message)
+	assert.Error(t, err)
 	assert.Nil(t, sig)
 }
 
@@ -77,14 +79,15 @@ func testVerifyBadKeyLength(t *testing.T) {
 
 	message := []byte("hello world")
 
-	sig := s.Sign(priv, message)
+	sig, err := s.Sign(priv, message)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, sig)
 
 	// Chop one byte off the key
 	pub2 := pub.([]byte)
 	pub3 := pub2[0 : len(pub2)-1]
-	ok := s.Verify(crypto.PublicKey(pub3), message, sig)
-	// No error, just false
+	ok, err := s.Verify(crypto.PublicKey(pub3), message, sig)
+	assert.Error(t, err)
 	assert.False(t, ok)
 }
 
@@ -97,10 +100,12 @@ func testVerifyFailWrongMessage(t *testing.T) {
 	message := []byte("hello world")
 	wrongmessage := []byte("yolo")
 
-	sig := s.Sign(priv, message)
+	sig, err := s.Sign(priv, message)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, sig)
 
-	ok := s.Verify(pub, wrongmessage, sig)
+	ok, err := s.Verify(pub, wrongmessage, sig)
+	assert.NoError(t, err)
 	assert.False(t, ok)
 }
 
@@ -115,9 +120,11 @@ func testVerifyFailWrongPubKey(t *testing.T) {
 
 	message := []byte("hello world")
 
-	sig := s.Sign(priv, message)
+	sig, err := s.Sign(priv, message)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, sig)
 
-	ok := s.Verify(pub, message, sig)
+	ok, err := s.Verify(pub, message, sig)
+	assert.NoError(t, err)
 	assert.False(t, ok)
 }

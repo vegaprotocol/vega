@@ -227,7 +227,10 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 	}
 
 	// then lets sign the stuff and return it
-	sig := kp.Algorithm.Sign(kp.privBytes, rawtx)
+	sig, err := kp.Algorithm.Sign(kp.privBytes, rawtx)
+	if err != nil {
+		return SignedBundle{}, err
+	}
 
 	return SignedBundle{
 		Data:   rawtx,
