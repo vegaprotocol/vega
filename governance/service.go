@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -29,11 +28,11 @@ type TimeService interface {
 // Plugin ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/governance Plugin
 type Plugin interface {
-	GetOpenProposals() []plugins.PropVote
-	GetProposalByID(id string) (*plugins.PropVote, error)
-	GetProposalByReference(ref string) (*plugins.PropVote, error)
-	GetProposals() []plugins.PropVote
-	Subscribe() (chan []plugins.PropVote, int64)
+	GetOpenProposals() []types.ProposalVote
+	GetProposalByID(id string) (*types.ProposalVote, error)
+	GetProposalByReference(ref string) (*types.ProposalVote, error)
+	GetProposals() []types.ProposalVote
+	Subscribe() (<-chan []types.ProposalVote, int64)
 	Unsubscribe(int64)
 }
 
@@ -92,6 +91,71 @@ func (s *Svc) ReloadConf(cfg Config) {
 	cfg.params = s.Config.params
 	s.Config = cfg
 	s.mu.Unlock()
+}
+
+// ObserveProposals - stream proposal vote updates to gRPC subscription stream
+func (s *Svc) ObserveProposals(ctx context.Context, retries int) <-chan []types.ProposalVote {
+	var cfunc func()
+	ctx, cfunc = context.WithCancel(ctx)
+	// we're returning an extra channel because of the retry mechanic we want to add
+	rCh := make(chan []types.ProposalVote)
+	ch, chID := s.plugin.Subscribe()
+	go func() {
+		defer func() {
+			// cancel context
+			cfunc()
+			// unsubscribe from plugin
+			s.plugin.Unsubscribe(chID)
+			// close channel to handler
+			close(rCh)
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug("proposal subscriber closed the connection")
+				return
+			case updates := <-ch:
+				// received new proposal data
+				retryCount := retries
+				success := false
+				for !success && retryCount >= 0 {
+					select {
+					case rCh <- updates:
+						success = true
+					default:
+						s.log.Debug("failed to push proposal update onto subscriber channel")
+						retryCount--
+						time.Sleep(time.Millisecond * 10)
+					}
+				}
+				if !success {
+					s.log.Warn("Failed to push update to stream, reached end of retries")
+					return
+				}
+			}
+		}
+	}()
+	return rCh
+}
+
+// GetProposalByReferece - as you'd expect, returns a proposel by reference _if it exists_
+func (s *Svc) GetProposalByReference(_ context.Context, ref string) (*types.ProposalVote, error) {
+	return s.plugin.GetProposalByReference(ref)
+}
+
+// GetProposalByID - same as by reference, only by ID
+func (s *Svc) GetProposalByID(_ context.Context, id string) (*types.ProposalVote, error) {
+	return s.plugin.GetProposalByID(id)
+}
+
+// GetOpenProposals - returns all porposals currently being voted on
+func (s *Svc) GetOpenProposals() []types.ProposalVote {
+	return s.plugin.GetOpenProposals()
+}
+
+// GetProposals - returns a list of all proposals
+func (s *Svc) GetProposals() []types.ProposalVote {
+	return s.plugin.GetProposals()
 }
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal

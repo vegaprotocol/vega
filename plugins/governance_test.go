@@ -87,10 +87,10 @@ func testNewProposalChangingVoteSuccess(t *testing.T) {
 	p, err := plugin.GetProposalByID(proposal.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
-	assert.Equal(t, proposal, p.Proposal)
-	assert.NotEmpty(t, p.Votes[vote.Value])
-	assert.Equal(t, 1, len(p.Votes[vote.Value]))
-	assert.Empty(t, p.Votes[types.Vote_NO]) // no votes against were cast yet
+	assert.Equal(t, proposal, *p.Proposal)
+	assert.NotEmpty(t, p.Yes)
+	assert.Equal(t, 1, len(p.Yes))
+	assert.Empty(t, p.No) // no votes against were cast yet
 
 	// same party now votes no
 	vote.Value = types.Vote_NO
@@ -103,11 +103,11 @@ func testNewProposalChangingVoteSuccess(t *testing.T) {
 	p, err = plugin.GetProposalByID(proposal.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
-	assert.Equal(t, proposal, p.Proposal)
+	assert.Equal(t, proposal, *p.Proposal)
 	// updated value is counted
-	assert.NotEmpty(t, p.Votes[vote.Value])
-	assert.Equal(t, 1, len(p.Votes[vote.Value]))
-	assert.Empty(t, p.Votes[types.Vote_YES]) // old vote is gone
+	assert.NotEmpty(t, p.No)
+	assert.Equal(t, 1, len(p.No))
+	assert.Empty(t, p.Yes) // old vote is gone
 }
 
 func testNewProposalFirstVoteSuccess(t *testing.T) {
@@ -151,8 +151,8 @@ func testNewProposalFirstVoteSuccess(t *testing.T) {
 	p, err := plugin.GetProposalByID(proposal.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
-	assert.Equal(t, proposal, p.Proposal)
-	assert.NotEmpty(t, p.Votes[vote.Value])
+	assert.Equal(t, proposal, *p.Proposal)
+	assert.NotEmpty(t, p.Yes)
 }
 
 func testNewProposalThenVoteSuccess(t *testing.T) {
@@ -185,19 +185,23 @@ func testNewProposalThenVoteSuccess(t *testing.T) {
 	p, err := plugin.GetProposalByID(proposal.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
-	assert.Equal(t, proposal, p.Proposal)
-	assert.NotEmpty(t, p.Votes[vote.Value])
+	assert.Equal(t, proposal, *p.Proposal)
+	assert.NotEmpty(t, p.Yes)
 
 	// by reference -> same result
 	pRef, err := plugin.GetProposalByReference(proposal.Reference)
 	assert.NoError(t, err)
-	assert.Equal(t, proposal, pRef.Proposal)
+	assert.Equal(t, proposal, *pRef.Proposal)
 
 	// proposal is open, should get it from the open proposals
 	open := plugin.GetOpenProposals()
 	assert.NotEmpty(t, open)
 	assert.Equal(t, 1, len(open))
-	assert.Equal(t, proposal, open[0].Proposal)
+	assert.Equal(t, proposal, *open[0].Proposal)
+
+	all := plugin.GetProposals()
+	assert.NotEmpty(t, all)
+	assert.Equal(t, proposal, *all[0].Proposal)
 }
 
 func testStartStopManual(t *testing.T) {

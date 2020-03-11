@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	plugins "code.vegaprotocol.io/vega/plugins"
+	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockPlugin) EXPECT() *MockPluginMockRecorder {
 }
 
 // GetOpenProposals mocks base method
-func (m *MockPlugin) GetOpenProposals() []plugins.PropVote {
+func (m *MockPlugin) GetOpenProposals() []proto.ProposalVote {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOpenProposals")
-	ret0, _ := ret[0].([]plugins.PropVote)
+	ret0, _ := ret[0].([]proto.ProposalVote)
 	return ret0
 }
 
@@ -48,10 +48,10 @@ func (mr *MockPluginMockRecorder) GetOpenProposals() *gomock.Call {
 }
 
 // GetProposalByID mocks base method
-func (m *MockPlugin) GetProposalByID(arg0 string) (*plugins.PropVote, error) {
+func (m *MockPlugin) GetProposalByID(arg0 string) (*proto.ProposalVote, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProposalByID", arg0)
-	ret0, _ := ret[0].(*plugins.PropVote)
+	ret0, _ := ret[0].(*proto.ProposalVote)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -63,10 +63,10 @@ func (mr *MockPluginMockRecorder) GetProposalByID(arg0 interface{}) *gomock.Call
 }
 
 // GetProposalByReference mocks base method
-func (m *MockPlugin) GetProposalByReference(arg0 string) (*plugins.PropVote, error) {
+func (m *MockPlugin) GetProposalByReference(arg0 string) (*proto.ProposalVote, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProposalByReference", arg0)
-	ret0, _ := ret[0].(*plugins.PropVote)
+	ret0, _ := ret[0].(*proto.ProposalVote)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -78,10 +78,10 @@ func (mr *MockPluginMockRecorder) GetProposalByReference(arg0 interface{}) *gomo
 }
 
 // GetProposals mocks base method
-func (m *MockPlugin) GetProposals() []plugins.PropVote {
+func (m *MockPlugin) GetProposals() []proto.ProposalVote {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProposals")
-	ret0, _ := ret[0].([]plugins.PropVote)
+	ret0, _ := ret[0].([]proto.ProposalVote)
 	return ret0
 }
 
@@ -92,10 +92,10 @@ func (mr *MockPluginMockRecorder) GetProposals() *gomock.Call {
 }
 
 // Subscribe mocks base method
-func (m *MockPlugin) Subscribe() (chan []plugins.PropVote, int64) {
+func (m *MockPlugin) Subscribe() (<-chan []proto.ProposalVote, int64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe")
-	ret0, _ := ret[0].(chan []plugins.PropVote)
+	ret0, _ := ret[0].(<-chan []proto.ProposalVote)
 	ret1, _ := ret[1].(int64)
 	return ret0, ret1
 }

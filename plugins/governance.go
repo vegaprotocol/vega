@@ -14,12 +14,6 @@ var (
 	ErrProposalNotFound = errors.New("proposal not found")
 )
 
-// PropVote combines proposal and votes
-type PropVote struct {
-	types.Proposal
-	Votes map[types.Vote_Value][]types.Vote
-}
-
 // PropBuffer...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/prop_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PropBuffer
 type PropBuffer interface {
@@ -46,7 +40,7 @@ type Proposals struct {
 	vData      map[string]map[types.Vote_Value]map[string]types.Vote // nested map by proposal -> vote value -> party
 
 	// stream subscriptions
-	subs     map[int64]chan []PropVote
+	subs     map[int64]chan []types.ProposalVote
 	subCount int64
 }
 
@@ -58,7 +52,7 @@ func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 		pData:  map[string]*types.Proposal{},
 		pByRef: map[string]*types.Proposal{},
 		vData:  map[string]map[types.Vote_Value]map[string]types.Vote{},
-		subs:   map[int64]chan []PropVote{},
+		subs:   map[int64]chan []types.ProposalVote{},
 	}
 }
 
@@ -166,7 +160,7 @@ func (p *Proposals) consume(ctx context.Context) {
 func (p *Proposals) notify(ids []string) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	data := make([]PropVote, 0, len(ids))
+	data := make([]types.ProposalVote, 0, len(ids))
 	for _, id := range ids {
 		if prop, ok := p.pData[id]; ok {
 			data = append(data, p.getPropVote(*prop))
@@ -185,10 +179,10 @@ func (p *Proposals) notify(ids []string) {
 }
 
 // Subscribe- get all changes to proposals/votes
-func (p *Proposals) Subscribe() (<-chan []PropVote, int64) {
+func (p *Proposals) Subscribe() (<-chan []types.ProposalVote, int64) {
 	p.mu.Lock()
 	k := atomic.AddInt64(&p.subCount, 1)
-	ch := make(chan []PropVote, 1)
+	ch := make(chan []types.ProposalVote, 1)
 	p.subs[k] = ch
 	p.mu.Unlock()
 	return ch, k
@@ -205,7 +199,7 @@ func (p *Proposals) Unsubscribe(k int64) {
 }
 
 // GetProposalByReference returns proposal and votes by reference (or error if proposal not found)
-func (p *Proposals) GetProposalByReference(ref string) (*PropVote, error) {
+func (p *Proposals) GetProposalByReference(ref string) (*types.ProposalVote, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if v, ok := p.pByRef[ref]; ok {
@@ -216,7 +210,7 @@ func (p *Proposals) GetProposalByReference(ref string) (*PropVote, error) {
 }
 
 // GetProposalByID returns proposal and votes by ID
-func (p *Proposals) GetProposalByID(id string) (*PropVote, error) {
+func (p *Proposals) GetProposalByID(id string) (*types.ProposalVote, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if v, ok := p.pData[id]; ok {
@@ -227,9 +221,9 @@ func (p *Proposals) GetProposalByID(id string) (*PropVote, error) {
 }
 
 // GetProposals get all proposals
-func (p *Proposals) GetProposals() []PropVote {
+func (p *Proposals) GetProposals() []types.ProposalVote {
 	p.mu.RLock()
-	ret := make([]PropVote, 0, len(p.pData))
+	ret := make([]types.ProposalVote, 0, len(p.pData))
 	for _, prop := range p.pData {
 		ret = append(ret, p.getPropVote(*prop))
 	}
@@ -238,9 +232,9 @@ func (p *Proposals) GetProposals() []PropVote {
 }
 
 // GetOpenProposals returns proposals + current votes
-func (p *Proposals) GetOpenProposals() []PropVote {
+func (p *Proposals) GetOpenProposals() []types.ProposalVote {
 	p.mu.RLock()
-	ret := []PropVote{}
+	ret := []types.ProposalVote{}
 	for _, prop := range p.pData {
 		if prop.State == types.Proposal_OPEN {
 			ret = append(ret, p.getPropVote(*prop))
@@ -250,21 +244,21 @@ func (p *Proposals) GetOpenProposals() []PropVote {
 	return ret
 }
 
-func (p *Proposals) getPropVote(v types.Proposal) PropVote {
+func (p *Proposals) getPropVote(v types.Proposal) types.ProposalVote {
 	vData := p.vData[v.ID]
-	yes := make([]types.Vote, 0, len(vData[types.Vote_YES]))
-	no := make([]types.Vote, 0, len(vData[types.Vote_NO]))
+	yes := make([]*types.Vote, 0, len(vData[types.Vote_YES]))
+	no := make([]*types.Vote, 0, len(vData[types.Vote_NO]))
 	for _, vote := range vData[types.Vote_YES] {
-		yes = append(yes, vote)
+		cpy := vote
+		yes = append(yes, &cpy)
 	}
 	for _, vote := range vData[types.Vote_NO] {
-		no = append(no, vote)
+		cpy := vote
+		no = append(no, &cpy)
 	}
-	return PropVote{
-		Proposal: v,
-		Votes: map[types.Vote_Value][]types.Vote{
-			types.Vote_YES: yes,
-			types.Vote_NO:  no,
-		},
+	return types.ProposalVote{
+		Proposal: &v,
+		Yes:      yes,
+		No:       no,
 	}
 }

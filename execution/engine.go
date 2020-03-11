@@ -460,6 +460,14 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// update collateral
 	e.collateral.OnChainTimeUpdate(t)
 
+	proposals := e.governance.OnChainTimeUpdate(t)
+	if len(proposals) > 0 {
+		e.log.Info(
+			"governance engine has returned proposals to be enacted",
+			logging.Int("proposal-count", len(proposals)),
+		)
+	}
+
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
 	// when call with the new time (see the next for loop)

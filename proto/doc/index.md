@@ -85,6 +85,7 @@
     - [NewMarket](#vega.NewMarket)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
+    - [ProposalVote](#vega.ProposalVote)
     - [UpdateMarket](#vega.UpdateMarket)
     - [UpdateNetwork](#vega.UpdateNetwork)
     - [Vote](#vega.Vote)
@@ -1400,6 +1401,23 @@
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
+
+
+
+
+
+
+<a name="vega.ProposalVote"></a>
+
+### ProposalVote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| yes | [Vote](#vega.Vote) | repeated |  |
+| no | [Vote](#vega.Vote) | repeated |  |
 
 
 
