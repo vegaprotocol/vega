@@ -21,7 +21,14 @@ func verifyBundle(log *logging.Logger, bundle *types.SignedBundle) error {
 		}
 		return err
 	}
-	if ok := validator.Verify(bundle.GetPubKey(), bundle.Data, bundle.Sig); !ok {
+	ok, err := validator.Verify(bundle.GetPubKey(), bundle.Data, bundle.Sig)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to verify bundle", logging.Error(err))
+		}
+		return err
+	}
+	if !ok {
 		hexPubKey := hex.EncodeToString(bundle.GetPubKey())
 		if log != nil {
 			log.Error("invalid tx signature", logging.String("pubkey", hexPubKey))
