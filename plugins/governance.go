@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -43,6 +44,10 @@ type Proposals struct {
 	pData      map[string]*types.Proposal
 	pByRef     map[string]*types.Proposal
 	vData      map[string]map[types.Vote_Value]map[string]types.Vote // nested map by proposal -> vote value -> party
+
+	// stream subscriptions
+	subs     map[int64]chan []PropVote
+	subCount int64
 }
 
 // NewProposal - return a new proposal plugin
@@ -53,6 +58,7 @@ func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 		pData:  map[string]*types.Proposal{},
 		pByRef: map[string]*types.Proposal{},
 		vData:  map[string]map[types.Vote_Value]map[string]types.Vote{},
+		subs:   map[int64]chan []PropVote{},
 	}
 }
 
@@ -107,6 +113,7 @@ func (p *Proposals) consume(ctx context.Context) {
 			if len(proposals) == 0 {
 				continue
 			}
+			updates := make([]string, 0, len(proposals))
 			p.mu.Lock()
 			for _, v := range proposals {
 				p.pData[v.ID] = &v
@@ -117,7 +124,9 @@ func (p *Proposals) consume(ctx context.Context) {
 						types.Vote_NO:  map[string]types.Vote{},
 					}
 				}
+				updates = append(updates, v.ID)
 			}
+			go p.notify(updates)
 			p.mu.Unlock()
 		case votes, ok := <-p.vch:
 			if !ok {
@@ -127,6 +136,8 @@ func (p *Proposals) consume(ctx context.Context) {
 			if len(votes) == 0 {
 				continue
 			}
+			// alloc assuming worst case scenario
+			updates := make([]string, 0, len(votes))
 			p.mu.Lock()
 			for _, v := range votes {
 				pvotes, ok := p.vData[v.ProposalID]
@@ -144,10 +155,53 @@ func (p *Proposals) consume(ctx context.Context) {
 				}
 				delete(pvotes[oppositeValue], v.PartyID)
 				p.vData[v.ProposalID] = pvotes
+				updates = append(updates, v.ProposalID)
 			}
+			go p.notify(updates)
 			p.mu.Unlock()
 		}
 	}
+}
+
+func (p *Proposals) notify(ids []string) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	data := make([]PropVote, 0, len(ids))
+	for _, id := range ids {
+		if prop, ok := p.pData[id]; ok {
+			data = append(data, p.getPropVote(*prop))
+		}
+	}
+	for _, ch := range p.subs {
+		// push onto channel, but don't wait for consumer to read the data
+		// the channel is buffered to 1, so we can write if the channel is empty
+		select {
+		case ch <- data:
+			continue
+		default:
+			continue
+		}
+	}
+}
+
+// Subscribe- get all changes to proposals/votes
+func (p *Proposals) Subscribe() (<-chan []PropVote, int64) {
+	p.mu.Lock()
+	k := atomic.AddInt64(&p.subCount, 1)
+	ch := make(chan []PropVote, 1)
+	p.subs[k] = ch
+	p.mu.Unlock()
+	return ch, k
+}
+
+// Unsubscribe - remove stream of proposal updates
+func (p *Proposals) Unsubscribe(k int64) {
+	p.mu.Lock()
+	if ch, ok := p.subs[k]; ok {
+		close(ch)
+		delete(p.subs, k)
+	}
+	p.mu.Unlock()
 }
 
 // GetProposalByReference returns proposal and votes by reference (or error if proposal not found)
@@ -170,6 +224,17 @@ func (p *Proposals) GetProposalByID(id string) (*PropVote, error) {
 		return &ret, nil
 	}
 	return nil, ErrProposalNotFound
+}
+
+// GetProposals get all proposals
+func (p *Proposals) GetProposals() []PropVote {
+	p.mu.RLock()
+	ret := make([]PropVote, 0, len(p.pData))
+	for _, prop := range p.pData {
+		ret = append(ret, p.getPropVote(*prop))
+	}
+	p.mu.RUnlock()
+	return ret
 }
 
 // GetOpenProposals returns proposals + current votes

@@ -76,3 +76,44 @@ func (mr *MockPluginMockRecorder) GetProposalByReference(arg0 interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalByReference", reflect.TypeOf((*MockPlugin)(nil).GetProposalByReference), arg0)
 }
+
+// GetProposals mocks base method
+func (m *MockPlugin) GetProposals() []plugins.PropVote {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProposals")
+	ret0, _ := ret[0].([]plugins.PropVote)
+	return ret0
+}
+
+// GetProposals indicates an expected call of GetProposals
+func (mr *MockPluginMockRecorder) GetProposals() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposals", reflect.TypeOf((*MockPlugin)(nil).GetProposals))
+}
+
+// Subscribe mocks base method
+func (m *MockPlugin) Subscribe() (chan []plugins.PropVote, int64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe")
+	ret0, _ := ret[0].(chan []plugins.PropVote)
+	ret1, _ := ret[1].(int64)
+	return ret0, ret1
+}
+
+// Subscribe indicates an expected call of Subscribe
+func (mr *MockPluginMockRecorder) Subscribe() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockPlugin)(nil).Subscribe))
+}
+
+// Unsubscribe mocks base method
+func (m *MockPlugin) Unsubscribe(arg0 int64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Unsubscribe", arg0)
+}
+
+// Unsubscribe indicates an expected call of Unsubscribe
+func (mr *MockPluginMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockPlugin)(nil).Unsubscribe), arg0)
+}

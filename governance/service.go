@@ -32,6 +32,9 @@ type Plugin interface {
 	GetOpenProposals() []plugins.PropVote
 	GetProposalByID(id string) (*plugins.PropVote, error)
 	GetProposalByReference(ref string) (*plugins.PropVote, error)
+	GetProposals() []plugins.PropVote
+	Subscribe() (chan []plugins.PropVote, int64)
+	Unsubscribe(int64)
 }
 
 type networkParameters struct {
