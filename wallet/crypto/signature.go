@@ -20,8 +20,8 @@ type SignatureAlgorithm struct {
 
 type signatureAlgorithmImpl interface {
 	GenKey() (crypto.PublicKey, crypto.PrivateKey, error)
-	Sign(priv crypto.PrivateKey, buf []byte) []byte
-	Verify(pub crypto.PublicKey, message, sig []byte) bool
+	Sign(priv crypto.PrivateKey, buf []byte) ([]byte, error)
+	Verify(pub crypto.PublicKey, message, sig []byte) (bool, error)
 	Name() string
 }
 
@@ -45,11 +45,11 @@ func (s *SignatureAlgorithm) GenKey() (crypto.PublicKey, crypto.PrivateKey, erro
 	return s.impl.GenKey()
 }
 
-func (s *SignatureAlgorithm) Sign(priv crypto.PrivateKey, buf []byte) []byte {
+func (s *SignatureAlgorithm) Sign(priv crypto.PrivateKey, buf []byte) ([]byte, error) {
 	return s.impl.Sign(priv, buf)
 }
 
-func (s *SignatureAlgorithm) Verify(pub crypto.PublicKey, message, sig []byte) bool {
+func (s *SignatureAlgorithm) Verify(pub crypto.PublicKey, message, sig []byte) (bool, error) {
 	return s.impl.Verify(pub, message, sig)
 }
 
