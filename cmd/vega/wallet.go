@@ -304,9 +304,15 @@ func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("key is tainted: %v", w.pubkey)
 	}
 
-	alg, _ := crypto.NewSignatureAlgorithm(crypto.Ed25519)
-	sig := base64.StdEncoding.EncodeToString(wallet.Sign(alg, kp, dataBuf))
-	fmt.Printf("%v\n", sig)
+	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+	}
+	sig, err := wallet.Sign(alg, kp, dataBuf)
+	if err != nil {
+		return fmt.Errorf("unable to sign: %v", err)
+	}
+	fmt.Printf("%v\n", base64.StdEncoding.EncodeToString(sig))
 
 	return nil
 }
@@ -356,8 +362,15 @@ func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unknown public key: %v", w.pubkey)
 	}
 
-	alg, _ := crypto.NewSignatureAlgorithm(crypto.Ed25519)
-	fmt.Printf("%v\n", wallet.Verify(alg, kp, dataBuf, sigBuf))
+	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+	}
+	verified, err := wallet.Verify(alg, kp, dataBuf, sigBuf)
+	if err != nil {
+		return fmt.Errorf("unable to verify: %v", err)
+	}
+	fmt.Printf("%v\n", verified)
 
 	return nil
 }
