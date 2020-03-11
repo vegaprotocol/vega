@@ -3,7 +3,6 @@ package governance
 import (
 	"context"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -19,12 +18,6 @@ var (
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 
-// TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
-type TimeService interface {
-	GetTimeNow() (time.Time, error)
-}
-
 type networkParameters struct {
 	minCloseInSeconds     int64
 	maxCloseInSeconds     int64
@@ -36,23 +29,21 @@ type networkParameters struct {
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log         *logging.Logger
-	mu          sync.Mutex
-	timeService TimeService
+	log *logging.Logger
+	mu  sync.Mutex
 
 	parameters networkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
+func NewService(log *logging.Logger, cfg Config) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	cfg.initParams() // ensures params are set
 
 	return &Svc{
-		Config:      cfg,
-		log:         log,
-		timeService: time,
+		Config: cfg,
+		log:    log,
 		parameters: networkParameters{
 			minCloseInSeconds:     cfg.params.DefaultMinClose,
 			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
@@ -113,18 +104,6 @@ func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
 // - network minimum participation requirement parameter.
 func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	if err := terms.Validate(); err != nil {
-		return ErrInvalidProposalTerms
-	}
-
-	now, err := s.timeService.GetTimeNow()
-	if err != nil {
-		return err
-	}
-
-	minClose := now.Add(time.Duration(s.parameters.minCloseInSeconds) * time.Second)
-	// we can only check if the closing ts was in the past "too far in the future" might not apply
-	// after the same proposal reaches the core (post consensus)
-	if terms.ClosingTimestamp < minClose.UTC().Unix() {
 		return ErrInvalidProposalTerms
 	}
 
