@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -1212,5 +1213,48 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 }
 
 func (h *tradingDataService) Order(ctx context.Context, in *protoapi.OrderByIDOrReferenceRequest) (*types.Order, error) {
-	return nil, nil
+	// Check we have at least one ID to match
+	if len(in.OrderID) == 0 && len(in.ReferenceID) == 0 {
+		// Invalid parameters
+		return nil, ErrMissingOrderParameters
+	}
+
+	if len(in.ReferenceID) > 0 {
+		order, err := h.OrderService.GetByReference(ctx, in.GetReferenceID())
+		if err != nil {
+			return nil, err
+		}
+
+		// If we have an order ID validate it's correct
+		if len(in.OrderID) > 0 && order.Id != in.OrderID {
+			// Didn't match both OrderID and ReferenceID
+			return nil, ErrOrderAndReferenceMismatch
+		}
+		// If we get here we have matched against referenceID and all is good
+		return order, nil
+	} else {
+		// Only have an order ID so we need a list of all markets so we can scan them
+		emptyReq := empty.Empty{}
+		markets, err := h.Markets(ctx, &emptyReq)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, market := range markets.Markets {
+			msg := fmt.Sprintf("Market: %s\n", market.GetName())
+			h.log.Logger.Error(msg)
+
+			order, err := h.OrderService.GetByMarketAndID(ctx, market.Id, in.OrderID)
+
+			if err == nil {
+				// Found a match
+				return order, nil
+			}
+		}
+	}
+
+	// If we get here then no match was found
+	emptyOrder := &types.Order{}
+	return emptyOrder, ErrOrderNotFound
 }
