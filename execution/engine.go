@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -110,6 +111,7 @@ type Engine struct {
 	markets    map[string]*Market
 	party      *Party
 	collateral *collateral.Engine
+	governance *governance.Engine
 	idgen      *IDgenerator
 
 	orderBuf        OrderBuf
@@ -144,6 +146,7 @@ func NewEngine(
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
+	governanceBuf governance.Buffer,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -173,6 +176,7 @@ func NewEngine(
 		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
+		governance:      governance.NewEngine(log, executionConfig.Governance, cengine, governanceBuf, now),
 		party:           NewParty(log, cengine, pmkts, partyBuf),
 		accountBuf:      accountBuf,
 		transferBuf:     transferBuf,
