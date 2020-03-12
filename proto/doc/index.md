@@ -53,6 +53,8 @@
     - [PrepareProposalRequest](#api.PrepareProposalRequest)
     - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
+    - [PrepareVoteRequest](#api.PrepareVoteRequest)
+    - [PrepareVoteResponse](#api.PrepareVoteResponse)
     - [SignInRequest](#api.SignInRequest)
     - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
@@ -942,6 +944,37 @@
 
 
 
+<a name="api.PrepareVoteRequest"></a>
+
+### PrepareVoteRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vote | [vega.Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareVoteResponse"></a>
+
+### PrepareVoteResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| vote | [vega.Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
 <a name="api.SignInRequest"></a>
 
 ### SignInRequest
@@ -1212,6 +1245,7 @@
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
+| PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
 
 
 <a name="api.trading_data"></a>
@@ -1905,6 +1939,7 @@ Proposal can enter Failed state from any other state.
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
+| updatedAt | [int64](#int64) |  |  |
 
 
 

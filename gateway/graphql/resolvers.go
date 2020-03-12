@@ -36,6 +36,8 @@ type TradingClient interface {
 	PrepareAmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareAmendOrderResponse, error)
 	PrepareCancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareCancelOrderResponse, error)
 	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
+
+	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
 	// old requests
@@ -1384,6 +1386,35 @@ func (r *myMutationResolver) PrepareProposal(
 			Terms:     verifiedTerms,
 		},
 	}, nil
+}
+
+func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, partyID, proposalID string) (*PreparedVote, error) {
+	req := &protoapi.PrepareVoteRequest{
+		Vote: &types.Vote{
+			Value:      types.Vote_NO,
+			PartyID:    partyID,
+			ProposalID: proposalID,
+		},
+	}
+	if value == VoteValueYes {
+		req.Vote.Value = types.Vote_YES
+	}
+	resp, err := r.tradingClient.PrepareVote(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	gqResp := &PreparedVote{
+		Blob: string(resp.Blob),
+		Vote: &Vote{
+			PartyID:    resp.Vote.PartyID,
+			ProposalID: resp.Vote.ProposalID,
+			Value:      VoteValueNo,
+		},
+	}
+	if resp.Vote.Value == types.Vote_YES {
+		gqResp.Vote.Value = VoteValueYes
+	}
+	return gqResp, nil
 }
 
 func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {

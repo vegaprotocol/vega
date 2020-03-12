@@ -3,6 +3,7 @@ package wallet_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -11,9 +12,11 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/mocks"
 
 	"github.com/golang/mock/gomock"
+	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,6 +56,10 @@ func TestService(t *testing.T) {
 	t.Run("gen keypair fail invalid request", testServiceGenKeypairFailInvalidRequest)
 	t.Run("list keypair ok", testServiceListPublicKeysOK)
 	t.Run("list keypair fail invalid request", testServiceListPublicKeysFailInvalidRequest)
+	t.Run("get keypair ok", testServiceGetPublicKeyOK)
+	t.Run("get keypair fail invalid request", testServiceGetPublicKeyFailInvalidRequest)
+	t.Run("get keypair fail key not found", testServiceGetPublicKeyFailKeyNotFound)
+	t.Run("get keypair fail misc error", testServiceGetPublicKeyFailMiscError)
 	t.Run("sign ok", testServiceSignOK)
 	t.Run("sign fail invalid request", testServiceSignFailInvalidRequest)
 	t.Run("taint ok", testServiceTaintOK)
@@ -68,13 +75,13 @@ func testServiceCreateWalletOK(t *testing.T) {
 	s.handler.EXPECT().CreateWallet(gomock.Any(), gomock.Any()).Times(1).Return("this is a token", nil)
 
 	payload := `{"wallet": "jeremy", "passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w := httptest.NewRecorder()
 
-	s.CreateWallet(w, r)
+	s.CreateWallet(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceCreateWalletFailInvalidRequest(t *testing.T) {
@@ -82,31 +89,22 @@ func testServiceCreateWalletFailInvalidRequest(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	payload := `{"wall": "jeremy", "passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w := httptest.NewRecorder()
 
-	s.CreateWallet(w, r)
+	s.CreateWallet(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	payload = `{"wallet": "jeremy", "passrase": "oh yea?"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
 
-	s.CreateWallet(w, r)
+	s.CreateWallet(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
-
-	payload = `{"wallet": "jeremy", "passphrase": "oh yea?"}`
-	r = httptest.NewRequest("GET", "http://example.com/create", bytes.NewBufferString(payload))
-	w = httptest.NewRecorder()
-
-	s.CreateWallet(w, r)
-
-	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusMethodNotAllowed)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 func testServiceLoginWalletOK(t *testing.T) {
@@ -116,13 +114,13 @@ func testServiceLoginWalletOK(t *testing.T) {
 	s.handler.EXPECT().LoginWallet(gomock.Any(), gomock.Any()).Times(1).Return("this is a token", nil)
 
 	payload := `{"wallet": "jeremy", "passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w := httptest.NewRecorder()
 
-	s.Login(w, r)
+	s.Login(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceDownloadWalletOK(t *testing.T) {
@@ -132,10 +130,10 @@ func testServiceDownloadWalletOK(t *testing.T) {
 	s.handler.EXPECT().LoginWallet(gomock.Any(), gomock.Any()).Times(1).Return("this is a token", nil)
 
 	payload := `{"wallet": "jeremy", "passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w := httptest.NewRecorder()
 
-	s.Login(w, r)
+	s.Login(w, r, nil)
 
 	resp := w.Result()
 	var token struct {
@@ -155,10 +153,10 @@ func testServiceDownloadWalletOK(t *testing.T) {
 	s.handler.EXPECT().WalletPath(token.Data).Times(1).Return(tmpFile.Name(), nil)
 
 	// now get the file:
-	r = httptest.NewRequest(http.MethodGet, "http://example.com/wallet", bytes.NewBufferString(""))
+	r = httptest.NewRequest(http.MethodGet, "scheme://host/path", bytes.NewBufferString(""))
 	w = httptest.NewRecorder()
 
-	s.DownloadWallet(token.Data, w, r)
+	s.DownloadWallet(token.Data, w, r, nil)
 	resp = w.Result()
 
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
@@ -169,31 +167,22 @@ func testServiceLoginWalletFailInvalidRequest(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	payload := `{"wall": "jeremy", "passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w := httptest.NewRecorder()
 
-	s.Login(w, r)
+	s.Login(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	payload = `{"wallet": "jeremy", "passrase": "oh yea?"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
 
-	s.Login(w, r)
+	s.Login(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
-
-	payload = `{"wallet": "jeremy", "passphrase": "oh yea?"}`
-	r = httptest.NewRequest("GET", "http://example.com/create", bytes.NewBufferString(payload))
-	w = httptest.NewRecorder()
-
-	s.Login(w, r)
-
-	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusMethodNotAllowed)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 func testServiceRevokeTokenOK(t *testing.T) {
@@ -202,15 +191,15 @@ func testServiceRevokeTokenOK(t *testing.T) {
 
 	s.handler.EXPECT().RevokeToken(gomock.Any()).Times(1).Return(nil)
 
-	r := httptest.NewRequest("POST", "http://example.com/create", nil)
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.Revoke)(w, r)
+	wallet.ExtractToken(s.Revoke)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceRevokeTokenFailInvalidRequest(t *testing.T) {
@@ -218,24 +207,24 @@ func testServiceRevokeTokenFailInvalidRequest(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	// invalid token
-	r := httptest.NewRequest("POST", "http://example.com/create", nil)
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
 	r.Header.Add("Authorization", "Bearer")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.Revoke)(w, r)
+	wallet.ExtractToken(s.Revoke)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// no token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.Revoke)(w, r)
+	wallet.ExtractToken(s.Revoke)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 func testServiceGenKeypairOK(t *testing.T) {
@@ -245,15 +234,15 @@ func testServiceGenKeypairOK(t *testing.T) {
 	s.handler.EXPECT().GenerateKeypair(gomock.Any(), gomock.Any()).Times(1).Return("", nil)
 
 	payload := `{"passphrase": "oh yea?"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.GenerateKeypair)(w, r)
+	wallet.ExtractToken(s.GenerateKeypair)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceGenKeypairFailInvalidRequest(t *testing.T) {
@@ -261,34 +250,34 @@ func testServiceGenKeypairFailInvalidRequest(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	// invalid token
-	r := httptest.NewRequest("POST", "http://example.com/create", nil)
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
 	r.Header.Add("Authorization", "Bearer")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.GenerateKeypair)(w, r)
+	wallet.ExtractToken(s.GenerateKeypair)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// no token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.GenerateKeypair)(w, r)
+	wallet.ExtractToken(s.GenerateKeypair)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// token but no payload
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.GenerateKeypair)(w, r)
+	wallet.ExtractToken(s.GenerateKeypair)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 }
 
@@ -299,15 +288,15 @@ func testServiceListPublicKeysOK(t *testing.T) {
 	s.handler.EXPECT().ListPublicKeys(gomock.Any()).Times(1).
 		Return([]wallet.Keypair{}, nil)
 
-	r := httptest.NewRequest("GET", "http://example.com/create", nil)
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r := httptest.NewRequest("GET", "scheme://host/path", nil)
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.ListPublicKeys)(w, r)
+	wallet.ExtractToken(s.ListPublicKeys)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceListPublicKeysFailInvalidRequest(t *testing.T) {
@@ -315,24 +304,110 @@ func testServiceListPublicKeysFailInvalidRequest(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	// invalid token
-	r := httptest.NewRequest("POST", "http://example.com/create", nil)
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
 	r.Header.Add("Authorization", "Bearer")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.ListPublicKeys)(w, r)
+	wallet.ExtractToken(s.ListPublicKeys)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// no token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.ListPublicKeys)(w, r)
+	wallet.ExtractToken(s.ListPublicKeys)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+func testServiceGetPublicKeyOK(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	kp := wallet.Keypair{
+		Pub:       "pub",
+		Priv:      "",
+		Algorithm: crypto.NewEd25519(),
+		Tainted:   false,
+		Meta:      []wallet.Meta{{Key: "a", Value: "b"}},
+	}
+	s.handler.EXPECT().GetPublicKey(gomock.Any(), gomock.Any()).Times(1).
+		Return(&kp, nil)
+
+	r := httptest.NewRequest("GET", "scheme://host/path", nil)
+	r.Header.Add("Authorization", "Bearer eyXXzA")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.GetPublicKey)(w, r, httprouter.Params{{Key: "keyid", Value: "apubkey"}})
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func testServiceGetPublicKeyFailInvalidRequest(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	// invalid token
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
+	r.Header.Add("Authorization", "Bearer")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.GetPublicKey)(w, r, nil)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	// no token
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
+	w = httptest.NewRecorder()
+
+	wallet.ExtractToken(s.GetPublicKey)(w, r, nil)
+
+	resp = w.Result()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+func testServiceGetPublicKeyFailKeyNotFound(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	s.handler.EXPECT().GetPublicKey(gomock.Any(), gomock.Any()).Times(1).
+		Return(nil, wallet.ErrPubKeyDoesNotExist)
+
+	r := httptest.NewRequest("GET", "scheme://host/path", nil)
+	r.Header.Add("Authorization", "Bearer eyXXzA")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.GetPublicKey)(w, r, httprouter.Params{{Key: "keyid", Value: "apubkey"}})
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func testServiceGetPublicKeyFailMiscError(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	s.handler.EXPECT().GetPublicKey(gomock.Any(), gomock.Any()).Times(1).
+		Return(nil, errors.New("an error"))
+
+	r := httptest.NewRequest("GET", "scheme://host/path", nil)
+	r.Header.Add("Authorization", "Bearer eyXXzA")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.GetPublicKey)(w, r, httprouter.Params{{Key: "keyid", Value: "apubkey"}})
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
 
 func testServiceSignOK(t *testing.T) {
@@ -342,15 +417,15 @@ func testServiceSignOK(t *testing.T) {
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).Return(wallet.SignedBundle{}, nil)
 	payload := `{"tx": "some data", "pubKey": "asdasasdasd"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.SignTx)(w, r)
+	wallet.ExtractToken(s.SignTx)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceSignFailInvalidRequest(t *testing.T) {
@@ -358,54 +433,54 @@ func testServiceSignFailInvalidRequest(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	// InvalidMethod
-	r := httptest.NewRequest("GET", "http://example.com/create", nil)
+	r := httptest.NewRequest("GET", "scheme://host/path", nil)
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.SignTx)(w, r)
+	wallet.ExtractToken(s.SignTx)(w, r, nil)
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// invalid token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	r.Header.Add("Authorization", "Bearer")
 
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.SignTx)(w, r)
+	wallet.ExtractToken(s.SignTx)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// no token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.SignTx)(w, r)
+	wallet.ExtractToken(s.SignTx)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// token but invalid payload
 	payload := `{"t": "some data", "pubKey": "asdasasdasd"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.SignTx)(w, r)
+	wallet.ExtractToken(s.SignTx)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	payload = `{"tx": "some data", "puey": "asdasasdasd"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.SignTx)(w, r)
+	wallet.ExtractToken(s.SignTx)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 }
 
@@ -415,71 +490,62 @@ func testServiceTaintOK(t *testing.T) {
 
 	s.handler.EXPECT().TaintKey(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).Return(nil)
-	payload := `{"passphrase": "some data", "pubKey": "asdasasdasd"}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	payload := `{"passphrase": "some data"}`
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.TaintKey)(w, r)
+	wallet.ExtractToken(s.TaintKey)(w, r, httprouter.Params{{Key: "keyid", Value: "asdasasdasd"}})
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceTaintFailInvalidRequest(t *testing.T) {
 	s := getTestService(t)
 	defer s.ctrl.Finish()
 
-	// InvalidMethod
-	r := httptest.NewRequest("GET", "http://example.com/create", nil)
-	w := httptest.NewRecorder()
-
-	wallet.ExtractToken(s.TaintKey)(w, r)
-
-	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
-
 	// invalid token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
 	r.Header.Add("Authorization", "Bearer")
 
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.TaintKey)(w, r)
+	wallet.ExtractToken(s.TaintKey)(w, r, nil)
 
-	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	resp := w.Result()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// no token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.TaintKey)(w, r)
+	wallet.ExtractToken(s.TaintKey)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// token but invalid payload
 	payload := `{"passhp": "some data", "pubKey": "asdasasdasd"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.TaintKey)(w, r)
+	wallet.ExtractToken(s.TaintKey)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	payload = `{"passphrase": "some data", "puey": "asdasasdasd"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.TaintKey)(w, r)
+	wallet.ExtractToken(s.TaintKey)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 }
 
@@ -489,70 +555,61 @@ func testServiceUpdateMetaOK(t *testing.T) {
 
 	s.handler.EXPECT().UpdateMeta(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).Return(nil)
-	payload := `{"passphrase": "some data", "pubKey": "asdasasdasd", "meta": [{"key":"ok", "value":"primary"}]}`
-	r := httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	payload := `{"passphrase": "some data", "meta": [{"key":"ok", "value":"primary"}]}`
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
 	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.UpdateMeta)(w, r)
+	wallet.ExtractToken(s.UpdateMeta)(w, r, httprouter.Params{{Key: "keyid", Value: "asdasasdasd"}})
 
 	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testServiceUpdateMetaFailInvalidRequest(t *testing.T) {
 	s := getTestService(t)
 	defer s.ctrl.Finish()
 
-	// InvalidMethod
-	r := httptest.NewRequest("GET", "http://example.com/create", nil)
-	w := httptest.NewRecorder()
-
-	wallet.ExtractToken(s.UpdateMeta)(w, r)
-
-	resp := w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
-
 	// invalid token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r := httptest.NewRequest("POST", "scheme://host/path", nil)
 	r.Header.Add("Authorization", "Bearer")
 
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 
-	wallet.ExtractToken(s.UpdateMeta)(w, r)
+	wallet.ExtractToken(s.UpdateMeta)(w, r, nil)
 
-	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	resp := w.Result()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// no token
-	r = httptest.NewRequest("POST", "http://example.com/create", nil)
+	r = httptest.NewRequest("POST", "scheme://host/path", nil)
 	w = httptest.NewRecorder()
 
-	wallet.ExtractToken(s.UpdateMeta)(w, r)
+	wallet.ExtractToken(s.UpdateMeta)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// token but invalid payload
 	payload := `{"passhp": "some data", "pubKey": "asdasasdasd"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.UpdateMeta)(w, r)
+	wallet.ExtractToken(s.UpdateMeta)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	payload = `{"passphrase": "some data", "puey": "asdasasdasd"}`
-	r = httptest.NewRequest("POST", "http://example.com/create", bytes.NewBufferString(payload))
+	r = httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	w = httptest.NewRecorder()
-	r.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODIyMDYwMDMsImlzcyI6InZlZ2Egd2FsbGV0IiwiU2Vzc2lvbiI6ImI1NjFkMDMxMGFhNjA5YWQxZDhkZGJjMTJiZmU5OWI2ZGNhZGNkM2E4NDMzNjRkM2I0N2YzNmQ2MmQ2ZDkyYWYiLCJXYWxsZXQiOiJlZHdhcmQifQ.C5m4_-CEhjUxouruvW_S2rr4rbOKFxvyz1uYf4Aa-1pK3yG0e97a3_fG1MXXH5-9uxdbvc0khsrxaSbGKQTQH1ySSuAGgmJ3-1_Uvj64dbc0bOteeOd1b65jJcRm7chrWmw_cb0uPp6T75_W3nKRVpJ8jmElcXOf9yKfRIojVgy8belY01V5yQQAdWSBRMG9uC-KjQOkVfjagvVSL3uWNbgApNR-RnORp8JMYs5ETXztan5KXjkh6ncaA9dC1Gc4u2X4FAMciWl5ddBjnEy9CSxnzoJkHSWeq23Kb0LRglb35Tikrq1QXohy3PDtsRl3NNDTLq95tMwzpzW_uvq8zA")
+	r.Header.Add("Authorization", "Bearer eyXXzA")
 
-	wallet.ExtractToken(s.UpdateMeta)(w, r)
+	wallet.ExtractToken(s.UpdateMeta)(w, r, nil)
 
 	resp = w.Result()
-	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 }

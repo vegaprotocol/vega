@@ -515,3 +515,22 @@ func (this *PrepareProposalResponse) Validate() error {
 	}
 	return nil
 }
+func (this *PrepareVoteRequest) Validate() error {
+	if nil == this.Vote {
+		return github_com_mwitkow_go_proto_validators.FieldError("Vote", fmt.Errorf("message must exist"))
+	}
+	if this.Vote != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Vote); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareVoteResponse) Validate() error {
+	if this.Vote != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Vote); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+		}
+	}
+	return nil
+}

@@ -375,6 +375,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.PrepareVoteRequest"><span class="badge">M</span>PrepareVoteRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareVoteResponse"><span class="badge">M</span>PrepareVoteResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.SignInRequest"><span class="badge">M</span>SignInRequest</a>
                 </li>
 
@@ -2686,6 +2694,88 @@
 
 
 
+        <h3 id="api.PrepareVoteRequest">PrepareVoteRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vote</td>
+                  <td><a href="#vega.Vote">vega.Vote</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>vote</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.PrepareVoteResponse">PrepareVoteResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>vote</td>
+                  <td><a href="#vega.Vote">vega.Vote</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.SignInRequest">SignInRequest</h3>
         <p></p>
 
@@ -3228,6 +3318,13 @@
                 <td><a href="#api.PrepareProposalRequest">PrepareProposalRequest</a></td>
                 <td><a href="#api.PrepareProposalResponse">PrepareProposalResponse</a></td>
                 <td><p>Prepare proposal that can be sent out to the chain (via SubmitTransaction)</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareVote</td>
+                <td><a href="#api.PrepareVoteRequest">PrepareVoteRequest</a></td>
+                <td><a href="#api.PrepareVoteResponse">PrepareVoteResponse</a></td>
+                <td><p>Prepare a vote to be put on the chain (via SubmitTransaction)</p></td>
               </tr>
 
           </tbody>
@@ -5162,6 +5259,13 @@
                 <tr>
                   <td>reason</td>
                   <td><a href="#vega.OrderError">OrderError</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>updatedAt</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>

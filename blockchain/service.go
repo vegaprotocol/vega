@@ -190,16 +190,14 @@ func (s *abciService) CancelOrder(order *types.OrderCancellation) error {
 
 	// Submit the cancel new order request to the Vega trading core
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
-	if cancellationMessage != nil {
-		if s.LogOrderCancelDebug {
-			s.log.Debug("Order cancelled", logging.Order(*cancellationMessage.Order))
-		}
-	}
 	if errorMessage != nil {
 		s.log.Error("error message on cancelling order",
 			logging.String("order-id", order.OrderID),
 			logging.Error(errorMessage))
 		return errorMessage
+	}
+	if s.LogOrderCancelDebug {
+		s.log.Debug("Order cancelled", logging.Order(*cancellationMessage.Order))
 	}
 
 	return nil

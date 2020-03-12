@@ -60,12 +60,12 @@ func (k *Keypair) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	k.privBytes, err = hex.DecodeString(k.Priv)
-	return nil
+	return err
 }
 
 type Meta struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func New(owner string) Wallet {
@@ -199,10 +199,10 @@ func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 	return w, nil
 }
 
-func Sign(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte) []byte {
+func Sign(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte) ([]byte, error) {
 	return alg.Sign(kp.privBytes, message)
 }
 
-func Verify(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte, sig []byte) bool {
+func Verify(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte, sig []byte) (bool, error) {
 	return alg.Verify(kp.pubBytes, message, sig)
 }

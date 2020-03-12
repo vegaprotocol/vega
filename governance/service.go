@@ -3,7 +3,6 @@ package governance
 import (
 	"context"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -15,21 +14,9 @@ import (
 var (
 	// ErrInvalidProposalTerms is returned if basic validation has failed
 	ErrInvalidProposalTerms = errors.New("invalid proposal terms")
-)
 
-const (
-	defaultMinCloseInSeconds     = 2 * 24 * 60 * 60
-	defaultMaxCloseInSeconds     = 365 * 24 * 60 * 60
-	defaultMinEnactInSeconds     = 3 * 24 * 60 * 60
-	defaultMaxEnactInSeconds     = 365 * 24 * 60 * 60
-	defaultMinParticipationStake = 1
+	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
-
-// TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
-type TimeService interface {
-	GetTimeNow() (time.Time, error)
-}
 
 type networkParameters struct {
 	minCloseInSeconds     int64
@@ -42,28 +29,27 @@ type networkParameters struct {
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log         *logging.Logger
-	mu          sync.Mutex
-	timeService TimeService
+	log *logging.Logger
+	mu  sync.Mutex
 
 	parameters networkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, time TimeService) *Svc {
+func NewService(log *logging.Logger, cfg Config) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+	cfg.initParams() // ensures params are set
 
 	return &Svc{
-		Config:      cfg,
-		log:         log,
-		timeService: time,
+		Config: cfg,
+		log:    log,
 		parameters: networkParameters{
-			minCloseInSeconds:     defaultMinCloseInSeconds,
-			maxCloseInSeconds:     defaultMaxCloseInSeconds,
-			minEnactInSeconds:     defaultMinEnactInSeconds,
-			maxEnactInSeconds:     defaultMaxEnactInSeconds,
-			minParticipationStake: defaultMinParticipationStake,
+			minCloseInSeconds:     cfg.params.DefaultMinClose,
+			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
+			minEnactInSeconds:     cfg.params.DefaultMinEnact,
+			maxEnactInSeconds:     cfg.params.DefaultMaxEnact,
+			minParticipationStake: cfg.params.DefaultMinParticipation,
 		},
 	}
 }
@@ -80,6 +66,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.mu.Lock()
+	cfg.params = s.Config.params
 	s.Config = cfg
 	s.mu.Unlock()
 }
@@ -102,6 +89,16 @@ func (s *Svc) PrepareProposal(
 	}, nil
 }
 
+// PrepareVote - some additional validation on the vote message we're preparing
+func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
+	// to check if the enum value is correct:
+	_, ok := types.Vote_Value_value[vote.Value.String()]
+	if vote.ProposalID == "" || vote.PartyID == "" || !ok {
+		return nil, ErrMissingVoteData
+	}
+	return vote, nil
+}
+
 // validateTerms performs sanity checks:
 // - network time restrictions parameters (voting duration, enactment date time);
 // - network minimum participation requirement parameter.
@@ -110,22 +107,8 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return ErrInvalidProposalTerms
 	}
 
-	now, err := s.timeService.GetTimeNow()
-	if err != nil {
-		return err
-	}
-
-	minClose := now.Add(time.Duration(s.parameters.minCloseInSeconds) * time.Second)
-	// we can only check if the closing ts was in the past "too far in the future" might not apply
-	// after the same proposal reaches the core (post consensus)
-	if terms.ClosingTimestamp < minClose.UTC().Unix() {
-		return ErrInvalidProposalTerms
-	}
-
-	minEnact := now.Add(time.Duration(s.parameters.minEnactInSeconds) * time.Second)
-	// again: we can only check if the enactment TS is in the past, future checks aren't guaranteed
-	// to produce the same results post chain
-	if terms.EnactmentTimestamp < minEnact.UTC().Unix() {
+	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
 		return ErrInvalidProposalTerms
 	}
 

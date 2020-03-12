@@ -202,7 +202,7 @@ func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		if err != wallet.ErrWalletDoesNotExists {
 			// this an invalid key, returning error
-			return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+			return fmt.Errorf("unable to decrypt wallet: %v", err)
 		}
 		// wallet do not exit, let's try to create it
 		_, err = wallet.Create(w.rootPath, w.walletOwner, w.passphrase)
@@ -248,7 +248,7 @@ func (w *walletCommand) List(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	buf, err := json.MarshalIndent(wal, " ", " ")
@@ -283,7 +283,7 @@ func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	dataBuf, err := base64.StdEncoding.DecodeString(w.data)
@@ -304,9 +304,15 @@ func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("key is tainted: %v", w.pubkey)
 	}
 
-	alg, _ := crypto.NewSignatureAlgorithm(crypto.Ed25519)
-	sig := base64.StdEncoding.EncodeToString(wallet.Sign(alg, kp, dataBuf))
-	fmt.Printf("%v\n", sig)
+	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+	}
+	sig, err := wallet.Sign(alg, kp, dataBuf)
+	if err != nil {
+		return fmt.Errorf("unable to sign: %v", err)
+	}
+	fmt.Printf("%v\n", base64.StdEncoding.EncodeToString(sig))
 
 	return nil
 }
@@ -334,7 +340,7 @@ func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	dataBuf, err := base64.StdEncoding.DecodeString(w.data)
@@ -356,8 +362,15 @@ func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unknown public key: %v", w.pubkey)
 	}
 
-	alg, _ := crypto.NewSignatureAlgorithm(crypto.Ed25519)
-	fmt.Printf("%v\n", wallet.Verify(alg, kp, dataBuf, sigBuf))
+	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+	}
+	verified, err := wallet.Verify(alg, kp, dataBuf, sigBuf)
+	if err != nil {
+		return fmt.Errorf("unable to verify: %v", err)
+	}
+	fmt.Printf("%v\n", verified)
 
 	return nil
 }
@@ -376,7 +389,7 @@ func (w *walletCommand) Taint(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	var kp *wallet.Keypair
@@ -419,7 +432,7 @@ func (w *walletCommand) Metas(cmd *cobra.Command, args []string) error {
 
 	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v\n", err)
+		return fmt.Errorf("unable to decrypt wallet: %v", err)
 	}
 
 	var kp *wallet.Keypair

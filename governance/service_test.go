@@ -7,7 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/orders/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -19,13 +18,10 @@ type testSvc struct {
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
-
-	time *mocks.MockTimeService
 }
 
 func newTestService(t *testing.T) *testSvc {
 	ctrl := gomock.NewController(t)
-	time := mocks.NewMockTimeService(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
@@ -33,15 +29,62 @@ func newTestService(t *testing.T) *testSvc {
 		ctrl:  ctrl,
 		ctx:   ctx,
 		cfunc: cfunc,
-		time:  time,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), time)
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig())
 	assert.NotNil(t, result.Svc)
 	return result
 }
 
+func TestPrepareVote(t *testing.T) {
+	t.Run("prepare vote - success", testPrepareVoteSuccess)
+	t.Run("prepare vote - failure", testPrepareVoteFail)
+}
+
+func testPrepareVoteSuccess(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+	vote := types.Vote{
+		PartyID:    "party-1",
+		ProposalID: "prop-1",
+		Value:      types.Vote_YES,
+	}
+	v, err := svc.PrepareVote(&vote)
+	assert.NoError(t, err)
+	assert.Equal(t, vote.Value, v.Value)
+	assert.Equal(t, vote.PartyID, v.PartyID)
+	assert.Equal(t, vote.ProposalID, v.ProposalID)
+}
+
+func testPrepareVoteFail(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	data := map[string]types.Vote{
+		"Missing PartyID": {
+			ProposalID: "prop1",
+			Value:      types.Vote_NO,
+		},
+		"Missing ProposalID": {
+			PartyID: "Party1",
+			Value:   types.Vote_YES,
+		},
+		"Invalid vote value": {
+			ProposalID: "prop1",
+			PartyID:    "party1",
+			Value:      types.Vote_Value(213),
+		},
+	}
+	for k, vote := range data {
+		v, err := svc.PrepareVote(&vote)
+		assert.Error(t, err, k)
+		assert.Nil(t, v, k)
+		assert.Equal(t, governance.ErrMissingVoteData, err, k)
+	}
+}
+
 func TestGovernanceService(t *testing.T) {
 	svc := newTestService(t)
+	defer svc.ctrl.Finish()
 
 	cfg := svc.Config
 	cfg.Level.Level = logging.DebugLevel
@@ -55,6 +98,7 @@ func TestGovernanceService(t *testing.T) {
 
 func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
+	defer svc.ctrl.Finish()
 
 	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
@@ -71,9 +115,6 @@ func testPrepareProposalNormal(t *testing.T) {
 		},
 	}
 
-	rightNow := time.Now()
-	svc.time.EXPECT().GetTimeNow().Times(1).Return(rightNow, nil)
-
 	testAuthor := "test-author"
 	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
@@ -87,6 +128,7 @@ func testPrepareProposalNormal(t *testing.T) {
 
 func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
+	defer svc.ctrl.Finish()
 
 	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{},
@@ -96,8 +138,6 @@ func testPrepareProposalEmpty(t *testing.T) {
 			UpdateNetwork: &updateNetwork,
 		},
 	}
-
-	svc.time.EXPECT().GetTimeNow().MaxTimes(0)
 
 	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
 

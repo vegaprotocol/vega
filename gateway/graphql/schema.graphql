@@ -77,6 +77,20 @@ type Mutation {
   ): PreparedProposal!
 
   """
+  Prepare a vote so it can be signed and submitted.
+  Returns a pending vote with a transaction blob for signing.
+  No validation other than the vote value being correct is done.
+  """
+  prepareVote(
+    "vote value"
+    value: VoteValue!
+    "the party casting the vote"
+    partyID: String!
+    "the proposal voted on"
+    propopsalID: String!
+  ): PreparedVote!
+
+  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -1203,4 +1217,29 @@ type PreparedProposal {
   blob: String!
   "The pending proposal"
   pendingProposal: Proposal!
+}
+
+enum VoteValue {
+  "NO reject a proposal"
+  NO
+  "YES accept a proposal"
+  YES
+}
+
+type Vote {
+  "The vote value cast"
+  Value: VoteValue!
+
+  "The party casting the vote"
+  PartyID: String!
+
+  "Proposal ID -> proposal casting the vote on"
+  ProposalID: ID!
+}
+
+type PreparedVote {
+  "Raw, serialised vote to be signed"
+  blob: String!
+  "The vote serialised in the blob field"
+  vote: Vote!
 }

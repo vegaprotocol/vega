@@ -9,11 +9,12 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 )
 
 type Service struct {
-	*http.ServeMux
+	*httprouter.Router
 
 	cfg         *Config
 	log         *logging.Logger
@@ -22,12 +23,14 @@ type Service struct {
 	nodeForward NodeForward
 }
 
+// WalletHandler ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet WalletHandler
 type WalletHandler interface {
 	CreateWallet(wallet, passphrase string) (string, error)
 	LoginWallet(wallet, passphrase string) (string, error)
 	RevokeToken(token string) error
 	GenerateKeypair(token, passphrase string) (string, error)
+	GetPublicKey(token, pubKey string) (*Keypair, error)
 	ListPublicKeys(token string) ([]Keypair, error)
 	SignTx(token, tx, pubkey string) (SignedBundle, error)
 	TaintKey(token, pubkey, passphrase string) error
@@ -35,6 +38,7 @@ type WalletHandler interface {
 	WalletPath(token string) (string, error)
 }
 
+// NodeForward ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
 type NodeForward interface {
 	Send(context.Context, *SignedBundle) error
@@ -42,7 +46,7 @@ type NodeForward interface {
 
 func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler, n NodeForward) (*Service, error) {
 	s := &Service{
-		ServeMux:    http.NewServeMux(),
+		Router:      httprouter.New(),
 		log:         log,
 		cfg:         cfg,
 		handler:     h,
@@ -50,19 +54,21 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 	}
 
 	// all the endpoints are public for testing purpose
-	s.HandleFunc("/api/v1/status", s.health)
-	s.HandleFunc("/api/v1/create", s.CreateWallet)
-	s.HandleFunc("/api/v1/login", s.Login)
-	s.HandleFunc("/api/v1/revoke", ExtractToken(s.Revoke))
-	s.HandleFunc("/api/v1/gen-keys", ExtractToken(s.GenerateKeypair))
-	s.HandleFunc("/api/v1/list-keys", ExtractToken(s.ListPublicKeys))
-	s.HandleFunc("/api/v1/sign", ExtractToken(s.SignTx))
-	s.HandleFunc("/api/v1/taint-key", ExtractToken(s.TaintKey))
-	s.HandleFunc("/api/v1/update-key-meta", ExtractToken(s.UpdateMeta))
-	s.HandleFunc("/api/v1/wallet", ExtractToken(s.DownloadWallet))
+
+	s.POST("/api/v1/auth/token", s.Login)
+	s.GET("/api/v1/status", s.health)
+	s.POST("/api/v1/wallets", s.CreateWallet)
+
+	s.DELETE("/api/v1/auth/token", ExtractToken(s.Revoke))
+	s.GET("/api/v1/keys", ExtractToken(s.ListPublicKeys))
+	s.POST("/api/v1/keys", ExtractToken(s.GenerateKeypair))
+	s.GET("/api/v1/keys/:keyid", ExtractToken(s.GetPublicKey))
+	s.PUT("/api/v1/keys/:keyid/taint", ExtractToken(s.TaintKey))
+	s.PUT("/api/v1/keys/:keyid/metadata", ExtractToken(s.UpdateMeta))
+	s.POST("/api/v1/messages", ExtractToken(s.SignTx))
+	s.GET("/api/v1/wallets", ExtractToken(s.DownloadWallet))
 
 	return s, nil
-
 }
 
 func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, error) {
@@ -98,11 +104,7 @@ func (s *Service) Stop() error {
 	return s.s.Shutdown(context.Background())
 }
 
-func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
+func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// unmarshal request
 	req := struct {
 		Wallet     string `json:"wallet"`
@@ -131,11 +133,7 @@ func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, token, http.StatusOK)
 }
 
-func (s *Service) DownloadWallet(token string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
+func (s *Service) DownloadWallet(token string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	path, err := s.handler.WalletPath(token)
 	if err != nil {
 		writeError(w, err, http.StatusMethodNotAllowed)
@@ -144,11 +142,7 @@ func (s *Service) DownloadWallet(token string, w http.ResponseWriter, r *http.Re
 	http.ServeFile(w, r, path)
 }
 
-func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
+func (s *Service) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	req := struct {
 		Wallet     string `json:"wallet"`
 		Passphrase string `json:"passphrase"`
@@ -176,12 +170,7 @@ func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, token, http.StatusOK)
 }
 
-func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
-
+func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	err := s.handler.RevokeToken(t)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
@@ -191,12 +180,7 @@ func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, true, http.StatusOK)
 }
 
-func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
-
+func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	req := struct {
 		Passphrase string `json:"passphrase"`
 		Meta       []Meta `json:"meta"`
@@ -228,12 +212,23 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 	writeSuccess(w, pubKey, http.StatusOK)
 }
 
-func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
+func (s *Service) GetPublicKey(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	key, err := s.handler.GetPublicKey(t, ps.ByName("keyid"))
+	if err != nil {
+		var statusCode int
+		if err == ErrPubKeyDoesNotExist {
+			statusCode = http.StatusNotFound
+		} else {
+			statusCode = http.StatusForbidden
+		}
+		writeError(w, newError(err.Error()), statusCode)
 		return
 	}
 
+	writeSuccess(w, key, http.StatusOK)
+}
+
+func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	keys, err := s.handler.ListPublicKeys(t)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
@@ -243,12 +238,7 @@ func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Reques
 	writeSuccess(w, keys, http.StatusOK)
 }
 
-func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
-
+func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	req := struct {
 		Tx        string `json:"tx"`
 		PubKey    string `json:"pubKey"`
@@ -284,22 +274,17 @@ func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, sb, http.StatusOK)
 }
 
-func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
-
+func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	req := struct {
-		PubKey     string `json:"pubKey"`
 		Passphrase string `json:"passphrase"`
 	}{}
 	if err := unmarshalBody(r, &req); err != nil {
 		writeError(w, err, http.StatusBadRequest)
 		return
 	}
-	if len(req.PubKey) <= 0 {
-		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
+	keyID := ps.ByName("keyid")
+	if len(keyID) <= 0 {
+		writeError(w, newError("missing keyID"), http.StatusBadRequest)
 		return
 	}
 	if len(req.Passphrase) <= 0 {
@@ -307,7 +292,7 @@ func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.handler.TaintKey(t, req.PubKey, req.Passphrase)
+	err := s.handler.TaintKey(t, keyID, req.Passphrase)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
@@ -316,14 +301,8 @@ func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, true, http.StatusOK)
 }
 
-func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
-
+func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	req := struct {
-		PubKey     string `json:"pubKey"`
 		Passphrase string `json:"passphrase"`
 		Meta       []Meta `json:"meta"`
 	}{}
@@ -331,8 +310,9 @@ func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request) {
 		writeError(w, err, http.StatusBadRequest)
 		return
 	}
-	if len(req.PubKey) <= 0 {
-		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
+	keyID := ps.ByName("keyid")
+	if len(keyID) <= 0 {
+		writeError(w, newError("missing keyID"), http.StatusBadRequest)
 		return
 	}
 	if len(req.Passphrase) <= 0 {
@@ -340,7 +320,7 @@ func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.handler.UpdateMeta(t, req.PubKey, req.Passphrase, req.Meta)
+	err := s.handler.UpdateMeta(t, keyID, req.Passphrase, req.Meta)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
@@ -349,7 +329,7 @@ func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, true, http.StatusOK)
 }
 
-func (h *Service) health(w http.ResponseWriter, r *http.Request) {
+func (s *Service) health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if r.Method != http.MethodGet {
 		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
 		return
@@ -391,16 +371,16 @@ var (
 	ErrInvalidOrMissingToken = newError("invalid or missing token")
 )
 
-type HttpError struct {
+type HTTPError struct {
 	ErrorStr string `json:"error"`
 }
 
-func (e HttpError) Error() string {
+func (e HTTPError) Error() string {
 	return e.ErrorStr
 }
 
-func newError(e string) HttpError {
-	return HttpError{
+func newError(e string) HTTPError {
+	return HTTPError{
 		ErrorStr: e,
 	}
 }
