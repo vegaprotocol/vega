@@ -226,6 +226,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
+	e.governance.ReloadConf(e.Config.Governance)
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
@@ -439,6 +440,16 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
+	//TODO: move this functionality inside governance engine
+	acceptedProposals := e.governance.OnChainTimeUpdate(t)
+	for _, proposal := range acceptedProposals {
+		if err := enactProposal(proposal); err != nil {
+			e.log.Error("unable to enact proposal",
+				logging.String("proposal-id", proposal.ID),
+				logging.Error(err))
+		}
+	}
+
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
 		mkt := mkt
@@ -450,6 +461,22 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 		}
 	}
 	timer.EngineTimeCounterAdd()
+}
+
+func (e *Engine) enactProposal(proposal *types.Proposal) error {
+	if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
+		}
+		mkt := types.Market{}
+		if err := e.SubmitMarket(&mkt); err != nil {
+			return err
+		}
+		if err := e.marketBuf.Flush(); err != nil {
+			return err
+		}
+		proposal.State = types.Proposal_ENACTED
+	}
 }
 
 // Process any data updates (including state changes)
