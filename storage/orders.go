@@ -341,7 +341,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 		}
 		err = proto.Unmarshal(orderBuf, &order)
 		if err != nil {
-			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
+			os.log.Error("Failed to unmarshal order value from badger in order store (GetByReference)",
 				logging.Error(err),
 				logging.String("badger-key", string(refKey)),
 				logging.String("raw-bytes", string(orderBuf)))
