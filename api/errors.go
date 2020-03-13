@@ -73,7 +73,8 @@ var (
 	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
 	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
 	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
-	ErrMissingOrderParameters       = errors.New("missing orderID and referenceID")
+	ErrMissingOrderIDParameter      = errors.New("missing orderID parameter")
+	ErrMissingReferenceIDParameter  = errors.New("missing referenceID parameter")
 	ErrOrderAndReferenceMismatch    = errors.New("referenceID and orderID do not match up")
 	ErrOrderNotFound                = errors.New("order not found")
 	// TradeService...

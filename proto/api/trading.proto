@@ -177,8 +177,11 @@ service trading_data {
   // Get a list of Orders by Party
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
-  // Get a specific order either by orderID or by referenceID (or both)
-  rpc Order(OrderByIDOrReferenceRequest) returns (vega.Order);
+  // Get a specific order by orderID
+  rpc OrderByID(OrderByIDRequest) returns (vega.Order);
+
+  // Get a specific order by referenceID
+  rpc OrderByReferenceID(OrderByReferenceIDRequest) returns (vega.Order);
 
   // Parties
 
@@ -507,7 +510,10 @@ message PrepareVoteResponse {
   vega.Vote vote = 2;
 }
 
-message OrderByIDOrReferenceRequest {
-  string orderID = 1;
-  string referenceID = 2;
+message OrderByIDRequest {
+  string orderID = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message OrderByReferenceIDRequest {
+  string referenceID = 1 [(validator.field) = {msg_exists: true}];
 }

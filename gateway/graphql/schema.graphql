@@ -379,11 +379,15 @@ type Query {
     token: String!
   ): CheckTokenResponse!
 
-  "An order that exists in the VEGA network"
-  order(
-    "Optional ID for an order"
+  "An order in the VEGA network found by orderID"
+  orderByID(
+    "ID for an order"
     orderID: String!
-    "Optional Reference for an order"
+  ): Order!
+
+  "An order in the VEGA network found by referenceID"
+  orderByReferenceID(
+    "ReferenceID for an order"
     referenceID: String!
   ): Order!
 }

@@ -57,7 +57,8 @@ type TradingDataClient interface {
 	OrderByReference(ctx context.Context, in *protoapi.OrderByReferenceRequest, opts ...grpc.CallOption) (*protoapi.OrderByReferenceResponse, error)
 	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
 	OrderByMarketAndID(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
-	Order(ctx context.Context, in *protoapi.OrderByIDOrReferenceRequest, opts ...grpc.CallOption) (*types.Order, error)
+	OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest, opts ...grpc.CallOption) (*types.Order, error)
+	OrderByReferenceID(ctx context.Context, in *protoapi.OrderByReferenceIDRequest, opts ...grpc.CallOption) (*types.Order, error)
 	// markets
 	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
@@ -299,12 +300,19 @@ func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token 
 	return &CheckTokenResponse{Ok: response.Ok}, nil
 }
 
-func (r *myQueryResolver) Order(ctx context.Context, orderID string, referenceID string) (*types.Order, error) {
-	orderReq := &protoapi.OrderByIDOrReferenceRequest{
-		OrderID:     orderID,
+func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string) (*types.Order, error) {
+	orderReq := &protoapi.OrderByIDRequest{
+		OrderID: orderID,
+	}
+	order, err := r.tradingDataClient.OrderByID(ctx, orderReq)
+	return order, err
+}
+
+func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID string) (*types.Order, error) {
+	orderReq := &protoapi.OrderByReferenceIDRequest{
 		ReferenceID: referenceID,
 	}
-	order, err := r.tradingDataClient.Order(ctx, orderReq)
+	order, err := r.tradingDataClient.OrderByReferenceID(ctx, orderReq)
 	return order, err
 }
 
