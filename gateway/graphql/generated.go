@@ -188,7 +188,7 @@ type ComplexityRoot struct {
 	}
 
 	NewMarket struct {
-		MarketID func(childComplexity int) int
+		Changes func(childComplexity int) int
 	}
 
 	Order struct {
@@ -1193,12 +1193,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string)), true
 
-	case "NewMarket.marketId":
-		if e.complexity.NewMarket.MarketID == nil {
+	case "NewMarket.changes":
+		if e.complexity.NewMarket.Changes == nil {
 			break
 		}
 
-		return e.complexity.NewMarket.MarketID(childComplexity), true
+		return e.complexity.NewMarket.Changes(childComplexity), true
 
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -3362,6 +3362,131 @@ enum AccountType {
   General
 }
 
+input InstrumentMetadatInput {
+  "An arbitrary list of tags to associated to associate to the Instrument (string list)"
+  tags: [String]!
+}
+
+input EthereumEventInput {
+  "The ID of the ethereum contract to use (string)"
+  contractId: String!
+
+  "Name of the Ethereum event to listen to. (string)"
+  event: String!
+}
+
+input FutureInput {
+  "The maturity date of the product (string)"
+  maturity: String!
+
+  "The name of the asset (string)"
+  asset: String!
+
+  "The oracle used for this product (Oracle union)"
+  ethereumOracle: EthereumEventInput!
+}
+
+input InstrumentInput {
+  "Uniquely identify an instrument accrods all instruments available on Vega (string)"
+  id: String!
+
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
+  code: String!
+
+  "Full and fairly descriptive name for the instrument"
+  name: String!
+
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
+  "Metadata for this instrument"
+  metadata: InstrumentMetadatInput!
+
+  "A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)"
+  futureProduct: FutureInput!
+}
+
+input LogNormalModelParamsInput {
+  "mu parameter"
+  mu: Float!
+  "r parameter"
+  r: Float!
+  "sigma parameter"
+  sigma: Float!
+}
+
+input SimpleRiskModelParamsInput {
+  "Risk factor for long"
+  factorLong: Float!
+  "Risk factor for short"
+  factorShort: Float!
+}
+
+input LogNormalRiskModelInput {
+  "Lambda parameter of the risk model"
+  riskAversionParameter: Float!
+  "Tau parameter of the risk model"
+  tau: Float!
+  "Params for the log normal risk model"
+  params: LogNormalModelParamsInput!
+}
+
+input SimpleRiskModelInput {
+  "Params for the simple risk model"
+  params: SimpleRiskModelParamsInput!
+}
+
+input ScalingFactorsInput {
+  "the scaling factor that determines the margin level at which we have to search for more money"
+  searchLevel: Float!
+
+  "the scaling factor that determines the optimal margin level"
+  initialMargin: Float!
+
+  "The scaling factor that determines the overflow margin level"
+  collateralRelease: Float!
+}
+
+
+input MarginCalculatorInput {
+  "The scaling factors that will be used for margin calculation"
+  scalingFactors: ScalingFactorsInput!
+}
+
+"Input variation of tradable instrument details"
+input TradableInstrumentInput {
+  instrument: InstrumentInput!
+  
+  simpleRiskModel: SimpleRiskModelInput
+  logNormalRiskModel: LogNormalRiskModelInput
+
+  marginCalculator: MarginCalculatorInput
+}
+
+
+input ContinuousTradingInput {
+  "Size of an increment in price in terms of the quote currency (uint64)"
+  tickSize: Int
+}
+
+input DiscreteTradingInput {
+  "Duration of the trading (uint64)"
+  duration: Int
+}
+
+
+"Input variation of market details same to those defined in Market type"
+input MarketInput {
+  id: String!
+  name: String!
+  tradableInstrument: TradableInstrumentInput!
+  continuousTradingMode: ContinuousTradingInput
+  discreteTradingMode: DiscreteTradingInput
+  decimalPlaces: Int!
+}
 
 """
 Incomplete change definition for governance proposal terms
@@ -3375,14 +3500,13 @@ input UpdateMarketInput {
 }
 
 """
-Incomplete change definition for governance proposal terms
-TODO: complete the type
+Allows creating new markets on the network
 """
 type NewMarket {
-  marketId: String!
+  changes: Market!
 }
 input NewMarketInput {
-  marketId: String!
+  changes: MarketInput!
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -7443,7 +7567,7 @@ func (ec *executionContext) _Mutation_signin(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewMarket_marketId(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewMarket_changes(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7462,7 +7586,7 @@ func (ec *executionContext) _NewMarket_marketId(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MarketID, nil
+		return obj.Changes, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7474,10 +7598,10 @@ func (ec *executionContext) _NewMarket_marketId(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -13682,15 +13806,303 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Context, obj interface{}) (ContinuousTradingInput, error) {
+	var it ContinuousTradingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "tickSize":
+			var err error
+			it.TickSize, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Context, obj interface{}) (DiscreteTradingInput, error) {
+	var it DiscreteTradingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "duration":
+			var err error
+			it.Duration, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputEthereumEventInput(ctx context.Context, obj interface{}) (EthereumEventInput, error) {
+	var it EthereumEventInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "contractId":
+			var err error
+			it.ContractID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "event":
+			var err error
+			it.Event, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFutureInput(ctx context.Context, obj interface{}) (FutureInput, error) {
+	var it FutureInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "maturity":
+			var err error
+			it.Maturity, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "asset":
+			var err error
+			it.Asset, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ethereumOracle":
+			var err error
+			it.EthereumOracle, err = ec.unmarshalNEthereumEventInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐEthereumEventInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInstrumentInput(ctx context.Context, obj interface{}) (InstrumentInput, error) {
+	var it InstrumentInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "code":
+			var err error
+			it.Code, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "baseName":
+			var err error
+			it.BaseName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "quoteName":
+			var err error
+			it.QuoteName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "metadata":
+			var err error
+			it.Metadata, err = ec.unmarshalNInstrumentMetadatInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadatInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "futureProduct":
+			var err error
+			it.FutureProduct, err = ec.unmarshalNFutureInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInstrumentMetadatInput(ctx context.Context, obj interface{}) (InstrumentMetadatInput, error) {
+	var it InstrumentMetadatInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "tags":
+			var err error
+			it.Tags, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLogNormalModelParamsInput(ctx context.Context, obj interface{}) (LogNormalModelParamsInput, error) {
+	var it LogNormalModelParamsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "mu":
+			var err error
+			it.Mu, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "r":
+			var err error
+			it.R, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sigma":
+			var err error
+			it.Sigma, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLogNormalRiskModelInput(ctx context.Context, obj interface{}) (LogNormalRiskModelInput, error) {
+	var it LogNormalRiskModelInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "riskAversionParameter":
+			var err error
+			it.RiskAversionParameter, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tau":
+			var err error
+			it.Tau, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "params":
+			var err error
+			it.Params, err = ec.unmarshalNLogNormalModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMarginCalculatorInput(ctx context.Context, obj interface{}) (MarginCalculatorInput, error) {
+	var it MarginCalculatorInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "scalingFactors":
+			var err error
+			it.ScalingFactors, err = ec.unmarshalNScalingFactorsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactorsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMarketInput(ctx context.Context, obj interface{}) (MarketInput, error) {
+	var it MarketInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tradableInstrument":
+			var err error
+			it.TradableInstrument, err = ec.unmarshalNTradableInstrumentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrumentInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "continuousTradingMode":
+			var err error
+			it.ContinuousTradingMode, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "discreteTradingMode":
+			var err error
+			it.DiscreteTradingMode, err = ec.unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decimalPlaces":
+			var err error
+			it.DecimalPlaces, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, obj interface{}) (NewMarketInput, error) {
 	var it NewMarketInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "marketId":
+		case "changes":
 			var err error
-			it.MarketID, err = ec.unmarshalNString2string(ctx, v)
+			it.Changes, err = ec.unmarshalNMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13739,6 +14151,114 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 		case "updateNetwork":
 			var err error
 			it.UpdateNetwork, err = ec.unmarshalOUpdateNetworkInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputScalingFactorsInput(ctx context.Context, obj interface{}) (ScalingFactorsInput, error) {
+	var it ScalingFactorsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "searchLevel":
+			var err error
+			it.SearchLevel, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "initialMargin":
+			var err error
+			it.InitialMargin, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "collateralRelease":
+			var err error
+			it.CollateralRelease, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSimpleRiskModelInput(ctx context.Context, obj interface{}) (SimpleRiskModelInput, error) {
+	var it SimpleRiskModelInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "params":
+			var err error
+			it.Params, err = ec.unmarshalNSimpleRiskModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSimpleRiskModelParamsInput(ctx context.Context, obj interface{}) (SimpleRiskModelParamsInput, error) {
+	var it SimpleRiskModelParamsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "factorLong":
+			var err error
+			it.FactorLong, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "factorShort":
+			var err error
+			it.FactorShort, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTradableInstrumentInput(ctx context.Context, obj interface{}) (TradableInstrumentInput, error) {
+	var it TradableInstrumentInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "instrument":
+			var err error
+			it.Instrument, err = ec.unmarshalNInstrumentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "simpleRiskModel":
+			var err error
+			it.SimpleRiskModel, err = ec.unmarshalOSimpleRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "logNormalRiskModel":
+			var err error
+			it.LogNormalRiskModel, err = ec.unmarshalOLogNormalRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "marginCalculator":
+			var err error
+			it.MarginCalculator, err = ec.unmarshalOMarginCalculatorInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculatorInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14974,8 +15494,8 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("NewMarket")
-		case "marketId":
-			out.Values[i] = ec._NewMarket_marketId(ctx, field, obj)
+		case "changes":
+			out.Values[i] = ec._NewMarket_changes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -17005,6 +17525,18 @@ func (ec *executionContext) marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗ
 	return ec._CheckTokenResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNEthereumEventInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐEthereumEventInput(ctx context.Context, v interface{}) (EthereumEventInput, error) {
+	return ec.unmarshalInputEthereumEventInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNEthereumEventInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐEthereumEventInput(ctx context.Context, v interface{}) (*EthereumEventInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNEthereumEventInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐEthereumEventInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	return graphql.UnmarshalFloat(v)
 }
@@ -17017,6 +17549,18 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNFutureInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureInput(ctx context.Context, v interface{}) (FutureInput, error) {
+	return ec.unmarshalInputFutureInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNFutureInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureInput(ctx context.Context, v interface{}) (*FutureInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNFutureInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
@@ -17045,6 +17589,30 @@ func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋveg
 		return graphql.Null
 	}
 	return ec._Instrument(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInstrumentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentInput(ctx context.Context, v interface{}) (InstrumentInput, error) {
+	return ec.unmarshalInputInstrumentInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNInstrumentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentInput(ctx context.Context, v interface{}) (*InstrumentInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNInstrumentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNInstrumentMetadatInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadatInput(ctx context.Context, v interface{}) (InstrumentMetadatInput, error) {
+	return ec.unmarshalInputInstrumentMetadatInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNInstrumentMetadatInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadatInput(ctx context.Context, v interface{}) (*InstrumentMetadatInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNInstrumentMetadatInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadatInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v InstrumentMetadata) graphql.Marshaler {
@@ -17096,6 +17664,18 @@ func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._LogNormalModelParams(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNLogNormalModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx context.Context, v interface{}) (LogNormalModelParamsInput, error) {
+	return ec.unmarshalInputLogNormalModelParamsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNLogNormalModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx context.Context, v interface{}) (*LogNormalModelParamsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNLogNormalModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNMarginLevels2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v proto.MarginLevels) graphql.Marshaler {
@@ -17152,6 +17732,18 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._MarketDepth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketInput(ctx context.Context, v interface{}) (MarketInput, error) {
+	return ec.unmarshalInputMarketInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketInput(ctx context.Context, v interface{}) (*MarketInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracle(ctx context.Context, sel ast.SelectionSet, v Oracle) graphql.Marshaler {
@@ -17406,6 +17998,18 @@ func (ec *executionContext) marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._ScalingFactors(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNScalingFactorsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactorsInput(ctx context.Context, v interface{}) (ScalingFactorsInput, error) {
+	return ec.unmarshalInputScalingFactorsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNScalingFactorsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactorsInput(ctx context.Context, v interface{}) (*ScalingFactorsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNScalingFactorsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐScalingFactorsInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
 	var res Side
 	return res, res.UnmarshalGQL(v)
@@ -17427,6 +18031,18 @@ func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocol
 		return graphql.Null
 	}
 	return ec._SimpleRiskModelParams(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSimpleRiskModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx context.Context, v interface{}) (SimpleRiskModelParamsInput, error) {
+	return ec.unmarshalInputSimpleRiskModelParamsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNSimpleRiskModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx context.Context, v interface{}) (*SimpleRiskModelParamsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNSimpleRiskModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNStatistics2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx context.Context, sel ast.SelectionSet, v proto.Statistics) graphql.Marshaler {
@@ -17498,6 +18114,18 @@ func (ec *executionContext) marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗ
 		return graphql.Null
 	}
 	return ec._TradableInstrument(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTradableInstrumentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrumentInput(ctx context.Context, v interface{}) (TradableInstrumentInput, error) {
+	return ec.unmarshalInputTradableInstrumentInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNTradableInstrumentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrumentInput(ctx context.Context, v interface{}) (*TradableInstrumentInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTradableInstrumentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrumentInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNTrade2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx context.Context, sel ast.SelectionSet, v proto.Trade) graphql.Marshaler {
@@ -17925,6 +18553,30 @@ func (ec *executionContext) marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Candle(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOContinuousTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx context.Context, v interface{}) (ContinuousTradingInput, error) {
+	return ec.unmarshalInputContinuousTradingInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx context.Context, v interface{}) (*ContinuousTradingInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOContinuousTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx context.Context, v interface{}) (DiscreteTradingInput, error) {
+	return ec.unmarshalInputDiscreteTradingInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx context.Context, v interface{}) (*DiscreteTradingInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
@@ -17971,6 +18623,18 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOLogNormalRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx context.Context, v interface{}) (LogNormalRiskModelInput, error) {
+	return ec.unmarshalInputLogNormalRiskModelInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOLogNormalRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx context.Context, v interface{}) (*LogNormalRiskModelInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOLogNormalRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalOMarginCalculator2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v MarginCalculator) graphql.Marshaler {
 	return ec._MarginCalculator(ctx, sel, &v)
 }
@@ -17980,6 +18644,18 @@ func (ec *executionContext) marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._MarginCalculator(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMarginCalculatorInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculatorInput(ctx context.Context, v interface{}) (MarginCalculatorInput, error) {
+	return ec.unmarshalInputMarginCalculatorInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOMarginCalculatorInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculatorInput(ctx context.Context, v interface{}) (*MarginCalculatorInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOMarginCalculatorInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarginCalculatorInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevelsᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.MarginLevels) graphql.Marshaler {
@@ -18381,6 +19057,18 @@ func (ec *executionContext) marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋga
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOSimpleRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelInput(ctx context.Context, v interface{}) (SimpleRiskModelInput, error) {
+	return ec.unmarshalInputSimpleRiskModelInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSimpleRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelInput(ctx context.Context, v interface{}) (*SimpleRiskModelInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSimpleRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

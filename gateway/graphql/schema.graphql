@@ -1060,6 +1060,131 @@ enum AccountType {
   General
 }
 
+input InstrumentMetadatInput {
+  "An arbitrary list of tags to associated to associate to the Instrument (string list)"
+  tags: [String]!
+}
+
+input EthereumEventInput {
+  "The ID of the ethereum contract to use (string)"
+  contractId: String!
+
+  "Name of the Ethereum event to listen to. (string)"
+  event: String!
+}
+
+input FutureInput {
+  "The maturity date of the product (string)"
+  maturity: String!
+
+  "The name of the asset (string)"
+  asset: String!
+
+  "The oracle used for this product (Oracle union)"
+  ethereumOracle: EthereumEventInput!
+}
+
+input InstrumentInput {
+  "Uniquely identify an instrument accrods all instruments available on Vega (string)"
+  id: String!
+
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
+  code: String!
+
+  "Full and fairly descriptive name for the instrument"
+  name: String!
+
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
+  "Metadata for this instrument"
+  metadata: InstrumentMetadatInput!
+
+  "A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)"
+  futureProduct: FutureInput!
+}
+
+input LogNormalModelParamsInput {
+  "mu parameter"
+  mu: Float!
+  "r parameter"
+  r: Float!
+  "sigma parameter"
+  sigma: Float!
+}
+
+input SimpleRiskModelParamsInput {
+  "Risk factor for long"
+  factorLong: Float!
+  "Risk factor for short"
+  factorShort: Float!
+}
+
+input LogNormalRiskModelInput {
+  "Lambda parameter of the risk model"
+  riskAversionParameter: Float!
+  "Tau parameter of the risk model"
+  tau: Float!
+  "Params for the log normal risk model"
+  params: LogNormalModelParamsInput!
+}
+
+input SimpleRiskModelInput {
+  "Params for the simple risk model"
+  params: SimpleRiskModelParamsInput!
+}
+
+input ScalingFactorsInput {
+  "the scaling factor that determines the margin level at which we have to search for more money"
+  searchLevel: Float!
+
+  "the scaling factor that determines the optimal margin level"
+  initialMargin: Float!
+
+  "The scaling factor that determines the overflow margin level"
+  collateralRelease: Float!
+}
+
+
+input MarginCalculatorInput {
+  "The scaling factors that will be used for margin calculation"
+  scalingFactors: ScalingFactorsInput!
+}
+
+"Input variation of tradable instrument details"
+input TradableInstrumentInput {
+  instrument: InstrumentInput!
+  
+  simpleRiskModel: SimpleRiskModelInput
+  logNormalRiskModel: LogNormalRiskModelInput
+
+  marginCalculator: MarginCalculatorInput
+}
+
+
+input ContinuousTradingInput {
+  "Size of an increment in price in terms of the quote currency (uint64)"
+  tickSize: Int
+}
+
+input DiscreteTradingInput {
+  "Duration of the trading (uint64)"
+  duration: Int
+}
+
+
+"Input variation of market details same to those defined in Market type"
+input MarketInput {
+  id: String!
+  name: String!
+  tradableInstrument: TradableInstrumentInput!
+  continuousTradingMode: ContinuousTradingInput
+  discreteTradingMode: DiscreteTradingInput
+  decimalPlaces: Int!
+}
 
 """
 Incomplete change definition for governance proposal terms
@@ -1073,14 +1198,13 @@ input UpdateMarketInput {
 }
 
 """
-Incomplete change definition for governance proposal terms
-TODO: complete the type
+Allows creating new markets on the network
 """
 type NewMarket {
-  marketId: String!
+  changes: Market!
 }
 input NewMarketInput {
-  marketId: String!
+  changes: MarketInput!
 }
 
 "Allows submitting a proposal for changing governance network parameters"
