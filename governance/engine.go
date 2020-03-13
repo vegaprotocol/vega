@@ -111,7 +111,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 			delete(e.proposalRefs, p.Reference) // remove from ref map, Foo
 		}
 	}
-	return e.checkProposals(expired)
+	return e.processProposals(expired)
 }
 
 func (e *Engine) AddProposal(p types.Proposal) error {
@@ -200,7 +200,7 @@ func (e *Engine) validateVote(v types.Vote) (*proposalVote, error) {
 	return p, nil
 }
 
-func (e *Engine) checkProposals(proposals []*proposalVote) []*types.Proposal {
+func (e *Engine) processProposals(proposals []*proposalVote) []*types.Proposal {
 	// we're calculating based off of percentages
 	allTokens := e.accs.GetTotalTokens()
 	// 1 % of tokens represented here
