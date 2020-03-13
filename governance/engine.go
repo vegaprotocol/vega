@@ -34,7 +34,7 @@ type Accounts interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
 type Buffer interface {
 	Add(types.Proposal)
-	Flush()
+	Flush() error
 }
 
 type network struct {
