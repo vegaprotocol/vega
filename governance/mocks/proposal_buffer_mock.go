@@ -46,9 +46,11 @@ func (mr *MockBufferMockRecorder) Add(arg0 interface{}) *gomock.Call {
 }
 
 // Flush mocks base method
-func (m *MockBuffer) Flush() {
+func (m *MockBuffer) Flush() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Flush")
+	ret := m.ctrl.Call(m, "Flush")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Flush indicates an expected call of Flush
