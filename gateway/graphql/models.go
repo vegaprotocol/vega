@@ -44,7 +44,7 @@ func (ContinuousTrading) IsTradingMode() {}
 
 type ContinuousTradingInput struct {
 	// Size of an increment in price in terms of the quote currency (uint64)
-	TickSize *int `json:"tickSize"`
+	TickSize int `json:"tickSize"`
 }
 
 // Some non continuous trading mode
@@ -57,7 +57,7 @@ func (DiscreteTrading) IsTradingMode() {}
 
 type DiscreteTradingInput struct {
 	// Duration of the trading (uint64)
-	Duration *int `json:"duration"`
+	Duration int `json:"duration"`
 }
 
 // An Ethereum oracle
@@ -126,7 +126,8 @@ type InstrumentInput struct {
 	// String representing the base (e.g. BTCUSD -> BTC is base)
 	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
+	QuoteName        string `json:"quoteName"`
+	InitialMarkPrice string `json:"initialMarkPrice"`
 	// Metadata for this instrument
 	Metadata *InstrumentMetadatInput `json:"metadata"`
 	// A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
