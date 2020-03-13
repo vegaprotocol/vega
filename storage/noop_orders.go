@@ -131,6 +131,11 @@ func (os *NoopOrder) GetByReference(ctx context.Context, ref string) (*types.Ord
 	return &order, nil
 }
 
+func (os *NoopOrder) GetByOrderID(ctx context.Context, orderID string) (*types.Order, error) {
+	var order types.Order
+	return &order, nil
+}
+
 func (os *NoopOrder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
 
 	depth, ok := os.depth[market]

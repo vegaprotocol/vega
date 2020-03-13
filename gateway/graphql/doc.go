@@ -12,15 +12,31 @@
 //       someInt: Int!
 //     ): SomeNewEndpointResponse!
 //
-//     typeSomeNewEndpointResponse {
+//     type SomeNewEndpointResponse {
 //       someAnswer: String!
 //       someStringList: [String!]
 //     }
 //
 // Then run `make gqlgen`.
 //
+// Your new endpoint above will require a `SomeNewEndpointRequest` and `SomeNewEndpointResponse` message to be defined in the trading.proto file.
+// Once this is defined you can run `make proto` to generate the structures required to add the resolvers below.
+// e.g.
+//	message SomeNewEndpointRequest {
+//	  string orderID = 1;
+//	  string referenceID = 2;
+//  }
+//
+//  message SomeNewEndpointResponse {
+//	vega.Order order = 1;
+//  }
+//
+// Also a function definition needs to be defined in the trading.proto to show the parameters and return strutures for the new function
+// e.g. rpc SomeNewEndpoint (SomeNewEndpointRequest) returns (SomeNewEndpointResponse)
+//
 // Next, in `gateway/graphql/resolvers.go`, add the endpoint to the
-// `TradingClient` interface, and add a function implementation, using the
+// `TradingClient` interface if the new endpoint is a mutation, else add it to TradingDataClient if is it just a query,
+// and add a function implementation, using the
 // function definition from `generated.go`. Example:
 //
 //     type TradingClient interface {
@@ -42,6 +58,8 @@
 //
 //         return &SomeNewEndpointResponse{/* ... */}, nil
 //     }
+//
+// Now add the new function to the `trading.go` or `trading_data.go` package to actually perform the work
 //
 // Lastly, make sure mocks are up to date, then run tests: `make mocks test`
 package gql

@@ -29,8 +29,10 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
+    - [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
     - [OrderByReferenceResponse](#api.OrderByReferenceResponse)
     - [OrdersByMarketRequest](#api.OrdersByMarketRequest)
@@ -566,6 +568,21 @@
 
 
 
+<a name="api.OrderByIDRequest"></a>
+
+### OrderByIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="api.OrderByMarketAndIdRequest"></a>
 
 ### OrderByMarketAndIdRequest
@@ -591,6 +608,21 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | order | [vega.Order](#vega.Order) |  |  |
+
+
+
+
+
+
+<a name="api.OrderByReferenceIDRequest"></a>
+
+### OrderByReferenceIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| referenceID | [string](#string) |  |  |
 
 
 
@@ -1267,6 +1299,8 @@
 | OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
 | OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get a list of Orders by Market |
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
+| OrderByID | [OrderByIDRequest](#api.OrderByIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by orderID |
+| OrderByReferenceID | [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by referenceID |
 | MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by PartyID |
 | Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
 | PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get a Party by ID |
