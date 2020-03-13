@@ -64,6 +64,21 @@ func (mr *MockOrderStoreMockRecorder) GetByMarketAndID(arg0, arg1, arg2 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarketAndID", reflect.TypeOf((*MockOrderStore)(nil).GetByMarketAndID), arg0, arg1, arg2)
 }
 
+// GetByOrderID mocks base method
+func (m *MockOrderStore) GetByOrderID(arg0 context.Context, arg1 string) (*proto.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByOrderID", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByOrderID indicates an expected call of GetByOrderID
+func (mr *MockOrderStoreMockRecorder) GetByOrderID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByOrderID", reflect.TypeOf((*MockOrderStore)(nil).GetByOrderID), arg0, arg1)
+}
+
 // GetByParty mocks base method
 func (m *MockOrderStore) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool, arg5 *bool) ([]*proto.Order, error) {
 	m.ctrl.T.Helper()

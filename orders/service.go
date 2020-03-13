@@ -44,6 +44,7 @@ type OrderStore interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
+	GetByOrderID(ctx context.Context, id string) (*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 }
@@ -367,6 +368,15 @@ func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, 
 // GetByMarketAndID find a order using a marketID and an order id
 func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByMarketAndID(ctx, market, id)
+	if err != nil {
+		return &types.Order{}, err
+	}
+	return o, err
+}
+
+// GetByOrderID find a order using an orderID
+func (s *Svc) GetByOrderID(ctx context.Context, id string) (order *types.Order, err error) {
+	o, err := s.orderStore.GetByOrderID(ctx, id)
 	if err != nil {
 		return &types.Order{}, err
 	}

@@ -35,6 +35,7 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
+	GetByOrderID(ctx context.Context, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
@@ -1209,4 +1210,34 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 	}
 
 	return backlogLength, netInfo.NPeers, &genesisTime, nil
+}
+
+func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*types.Order, error) {
+	if len(in.OrderID) == 0 {
+		// Invalid parameter
+		return nil, ErrMissingOrderIDParameter
+	}
+
+	order, err := h.OrderService.GetByOrderID(ctx, in.OrderID)
+	if err == nil {
+		return order, nil
+	}
+
+	// If we get here then no match was found
+	return nil, ErrOrderNotFound
+}
+
+func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoapi.OrderByReferenceIDRequest) (*types.Order, error) {
+	if len(in.ReferenceID) == 0 {
+		// Invalid parameter
+		return nil, ErrMissingReferenceIDParameter
+	}
+
+	order, err := h.OrderService.GetByReference(ctx, in.GetReferenceID())
+	if err != nil {
+		return nil, err
+	}
+
+	// If we get here we have matched against referenceID and all is good
+	return order, nil
 }

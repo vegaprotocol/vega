@@ -534,3 +534,9 @@ func (this *PrepareVoteResponse) Validate() error {
 	}
 	return nil
 }
+func (this *OrderByIDRequest) Validate() error {
+	return nil
+}
+func (this *OrderByReferenceIDRequest) Validate() error {
+	return nil
+}
