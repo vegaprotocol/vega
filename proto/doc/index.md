@@ -1320,7 +1320,12 @@
 <a name="vega.NewMarket"></a>
 
 ### NewMarket
-TODO
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| changes | [Market](#vega.Market) |  |  |
 
 
 
