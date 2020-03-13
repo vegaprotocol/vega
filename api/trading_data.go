@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -36,6 +35,7 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
+	GetByOrderID(ctx context.Context, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
@@ -1218,24 +1218,9 @@ func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 		return nil, ErrMissingOrderIDParameter
 	}
 
-	// Only have an order ID so we need a list of all markets so we can scan them
-	emptyReq := empty.Empty{}
-	markets, err := h.Markets(ctx, &emptyReq)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, market := range markets.Markets {
-		msg := fmt.Sprintf("Market: %s\n", market.GetName())
-		h.log.Logger.Error(msg)
-
-		order, err := h.OrderService.GetByMarketAndID(ctx, market.Id, in.OrderID)
-
-		if err == nil {
-			// Found a match
-			return order, nil
-		}
+	order, err := h.OrderService.GetByOrderID(ctx, in.OrderID)
+	if err == nil {
+		return order, nil
 	}
 
 	// If we get here then no match was found
