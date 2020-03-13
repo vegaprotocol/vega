@@ -247,13 +247,13 @@ type MarketInput struct {
 
 // Allows creating new markets on the network
 type NewMarket struct {
-	Changes *Market `json:"changes"`
+	Market *Market `json:"market"`
 }
 
 func (NewMarket) IsProposalChange() {}
 
 type NewMarketInput struct {
-	Changes *MarketInput `json:"changes"`
+	Market *MarketInput `json:"market"`
 }
 
 type PreparedAmendOrder struct {

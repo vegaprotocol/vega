@@ -266,7 +266,7 @@ func convertProposalTermsInput(terms ProposalTermsInput) (*types.ProposalTerms, 
 	if terms.UpdateMarket != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}
 	} else if terms.NewMarket != nil {
-		market, err := convertProposalNewMarketTerms(terms.NewMarket.Changes)
+		market, err := convertProposalNewMarketTerms(terms.NewMarket.Market)
 		if err != nil {
 			return nil, err
 		}

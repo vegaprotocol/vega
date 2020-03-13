@@ -188,7 +188,7 @@ type ComplexityRoot struct {
 	}
 
 	NewMarket struct {
-		Changes func(childComplexity int) int
+		Market func(childComplexity int) int
 	}
 
 	Order struct {
@@ -1197,12 +1197,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string)), true
 
-	case "NewMarket.changes":
-		if e.complexity.NewMarket.Changes == nil {
+	case "NewMarket.market":
+		if e.complexity.NewMarket.Market == nil {
 			break
 		}
 
-		return e.complexity.NewMarket.Changes(childComplexity), true
+		return e.complexity.NewMarket.Market(childComplexity), true
 
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -3545,10 +3545,10 @@ input UpdateMarketInput {
 Allows creating new markets on the network
 """
 type NewMarket {
-  changes: Market!
+  market: Market!
 }
 input NewMarketInput {
-  changes: MarketInput!
+  market: MarketInput!
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -7637,7 +7637,7 @@ func (ec *executionContext) _Mutation_signin(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewMarket_changes(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewMarket_market(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -7656,7 +7656,7 @@ func (ec *executionContext) _NewMarket_changes(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Changes, nil
+		return obj.Market, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14264,9 +14264,9 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 
 	for k, v := range asMap {
 		switch k {
-		case "changes":
+		case "market":
 			var err error
-			it.Changes, err = ec.unmarshalNMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketInput(ctx, v)
+			it.Market, err = ec.unmarshalNMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15658,8 +15658,8 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("NewMarket")
-		case "changes":
-			out.Values[i] = ec._NewMarket_changes(ctx, field, obj)
+		case "market":
+			out.Values[i] = ec._NewMarket_market(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

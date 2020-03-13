@@ -1215,10 +1215,10 @@ input UpdateMarketInput {
 Allows creating new markets on the network
 """
 type NewMarket {
-  changes: Market!
+  market: Market!
 }
 input NewMarketInput {
-  changes: MarketInput!
+  market: MarketInput!
 }
 
 "Allows submitting a proposal for changing governance network parameters"
