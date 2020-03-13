@@ -256,6 +256,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.marginLevelsBuf,
 		l.settleBuf,
 		l.lossSocBuf,
+
+		// temporary plug
+		nil,
+		//
+
 		l.mktscfg,
 	)
 
