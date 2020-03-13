@@ -3402,6 +3402,8 @@ input InstrumentInput {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
+  initialMarkPrice: String!
+
   "Metadata for this instrument"
   metadata: InstrumentMetadatInput!
 
@@ -3469,12 +3471,12 @@ input TradableInstrumentInput {
 
 input ContinuousTradingInput {
   "Size of an increment in price in terms of the quote currency (uint64)"
-  tickSize: Int
+  tickSize: Int!
 }
 
 input DiscreteTradingInput {
   "Duration of the trading (uint64)"
-  duration: Int
+  duration: Int!
 }
 
 
@@ -13814,7 +13816,7 @@ func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Con
 		switch k {
 		case "tickSize":
 			var err error
-			it.TickSize, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13832,7 +13834,7 @@ func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Conte
 		switch k {
 		case "duration":
 			var err error
-			it.Duration, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.Duration, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13929,6 +13931,12 @@ func (ec *executionContext) unmarshalInputInstrumentInput(ctx context.Context, o
 		case "quoteName":
 			var err error
 			it.QuoteName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "initialMarkPrice":
+			var err error
+			it.InitialMarkPrice, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
