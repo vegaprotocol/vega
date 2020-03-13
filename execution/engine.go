@@ -16,6 +16,10 @@ import (
 var (
 	// ErrMarketAlreadyExist signals that a market already exist
 	ErrMarketAlreadyExist = errors.New("market already exist")
+
+	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
+	// because proposed changes cannot be processed by the system
+	ErrUnknownProposalChange = errors.New("unknown proposal change")
 )
 
 // OrderBuf ...
@@ -475,8 +479,14 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 			return err
 		}
 		proposal.State = types.Proposal_ENACTED
+	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
+
+		return errors.New("update market enactment is not implemented")
+	} else if updateNetwork := proposal.Terms.GetUpdateNetwork(); updateNetwork != nil {
+
+		return errors.New("update network enactment is not implemented")
 	}
-	return nil
+	return ErrUnknownProposalChange
 }
 
 // Process any data updates (including state changes)
