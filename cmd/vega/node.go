@@ -93,6 +93,7 @@ type NodeCommand struct {
 	marginLevelsBuf *buffer.MarginLevels
 	settleBuf       *buffer.Settlement
 	lossSocBuf      *buffer.LossSocialization
+	proposalBuf     *buffer.Proposal
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
