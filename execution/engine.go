@@ -443,7 +443,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	//TODO: move this functionality inside governance engine
 	acceptedProposals := e.governance.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
-		if err := enactProposal(proposal); err != nil {
+		if err := e.enactProposal(proposal); err != nil {
 			e.log.Error("unable to enact proposal",
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
@@ -468,8 +468,7 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
 		}
-		mkt := types.Market{}
-		if err := e.SubmitMarket(&mkt); err != nil {
+		if err := e.SubmitMarket(newMarket.Changes); err != nil {
 			return err
 		}
 		if err := e.marketBuf.Flush(); err != nil {
@@ -477,6 +476,7 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		}
 		proposal.State = types.Proposal_ENACTED
 	}
+	return nil
 }
 
 // Process any data updates (including state changes)
