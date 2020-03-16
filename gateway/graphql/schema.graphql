@@ -1180,12 +1180,12 @@ input TradableInstrumentInput {
 
 
 input ContinuousTradingInput {
-  "Size of an increment in price in terms of the quote currency (uint64)"
+  "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
 input DiscreteTradingInput {
-  "Duration of the trading (uint64)"
+  "Duration of the trading"
   duration: Int!
 }
 
