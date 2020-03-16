@@ -20,6 +20,7 @@ type tstEngine struct {
 	ctrl *gomock.Controller
 	accs *mocks.MockAccounts
 	buf  *mocks.MockBuffer
+	vbuf *mocks.MockVoteBuf
 }
 
 func TestProposals(t *testing.T) {
@@ -171,6 +172,7 @@ func testSubmitValidVoteSuccess(t *testing.T) {
 		Value:      types.Vote_YES,
 		ProposalID: prop.ID,
 	}
+	eng.vbuf.EXPECT().Add(gomock.Any()).Times(2)
 	assert.NoError(t, eng.AddVote(vote))
 	vote.PartyID = partyID2
 	vote.Value = types.Vote_NO
@@ -229,6 +231,7 @@ func testProposalAccepted(t *testing.T) {
 		Value:      types.Vote_YES,
 		ProposalID: prop.ID,
 	}
+	eng.vbuf.EXPECT().Add(gomock.Any()).Times(2)
 	assert.NoError(t, eng.AddVote(vote))
 	vote.PartyID = partyID2
 	vote.Value = types.Vote_NO
@@ -243,11 +246,13 @@ func getTestEngine(t *testing.T) *tstEngine {
 	cfg := governance.NewDefaultConfig()
 	accs := mocks.NewMockAccounts(ctrl)
 	buf := mocks.NewMockBuffer(ctrl)
-	eng := governance.NewEngine(logging.NewTestLogger(), cfg, accs, buf, time.Now())
+	vbuf := mocks.NewMockVoteBuf(ctrl)
+	eng := governance.NewEngine(logging.NewTestLogger(), cfg, accs, buf, vbuf, time.Now())
 	return &tstEngine{
 		Engine: eng,
 		ctrl:   ctrl,
 		accs:   accs,
 		buf:    buf,
+		vbuf:   vbuf,
 	}
 }

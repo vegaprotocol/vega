@@ -289,3 +289,35 @@ func (p *SettleStub) Add(e []events.SettlePosition) {
 }
 
 func (p *SettleStub) Flush() {}
+
+type ProposalStub struct {
+	data []proto.Proposal
+}
+
+func NewProposalStub() *ProposalStub {
+	return &ProposalStub{
+		data: []proto.Proposal{},
+	}
+}
+
+func (p *ProposalStub) Add(v proto.Proposal) {
+	p.data = append(p.data, v)
+}
+
+func (p *ProposalStub) Flush() {}
+
+type VoteStub struct {
+	data []proto.Vote
+}
+
+func NewVoteStub() *VoteStub {
+	return &VoteStub{
+		data: []proto.Vote{},
+	}
+}
+
+func (v *VoteStub) Add(vote proto.Vote) {
+	v.data = append(v.data, vote)
+}
+
+func (v *VoteStub) Flush() {}

@@ -78,6 +78,28 @@ func (this *ProposalTerms) Validate() error {
 	}
 	return nil
 }
+func (this *ProposalVote) Validate() error {
+	if this.Proposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+		}
+	}
+	for _, item := range this.Yes {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Yes", err)
+			}
+		}
+	}
+	for _, item := range this.No {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("No", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *Proposal) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))

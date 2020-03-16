@@ -213,6 +213,24 @@ service trading_data {
   // Get a list of Trades by Party
   rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
 
+
+  // Governance
+
+  // Get all proposals
+  rpc GetProposals(google.protobuf.Empty) returns (GetProposalsResponse);
+
+  // Get all OPEN proposals
+  rpc GetOpenProposals(google.protobuf.Empty) returns (GetProposalsResponse);
+
+  // Get a proposal by ID
+  rpc GetProposalByID(GetProposalByIDRequest) returns (vega.ProposalVote);
+
+  // Get a proposal by reference
+  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (vega.ProposalVote);
+
+  // Subscribe to a stream of updates to proposal data
+  rpc ObserveProposals(google.protobuf.Empty) returns (stream vega.ProposalVote);
+
   // Misc
 
   // Get Statistics
@@ -247,6 +265,18 @@ service trading_data {
 
   // Subscribe to a stream of Transfer Responses
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+}
+
+message GetProposalByIDRequest {
+  string ID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message GetProposalByReferenceRequest {
+  string Reference = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message GetProposalsResponse {
+  repeated vega.ProposalVote proposals = 1;
 }
 
 message MarginLevelsSubscribeRequest {
