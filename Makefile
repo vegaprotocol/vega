@@ -182,6 +182,12 @@ rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
 
 # Misc Targets
 
+codeowners_check:
+	@if grep -v '^#' CODEOWNERS | grep "," ; then \
+		echo "CODEOWNERS cannot have entries with commas" ; \
+		exit 1 ; \
+	fi
+
 .PHONY: print_check
 print_check: ## Check for fmt.Print functions in Go code
 	@f="$$(mktemp)" && \
