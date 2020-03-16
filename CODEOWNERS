@@ -3,7 +3,7 @@
 # Wildcard starting point
 * @ashleyvega @j.letang @elias10
 
-# GraphQL schema changes should be reviewd by Team Vega Console 
+# GraphQL schema changes should be reviewd by Team Vega Console
 gateway/graphql/schema.graphql @edd @mattrussell36 @michael.campbell
 
 # Docs changes should be reviewed by the wider team
