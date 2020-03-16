@@ -568,16 +568,16 @@ func (e *Engine) Generate() error {
 
 	// margins levels
 	e.marginLevelsBuf.Flush()
-
-	// Trades
-	err = e.tradeBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "Failed to flush trades buffer")
-	}
 	// Orders
 	err = e.orderBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, "Failed to flush orders buffer")
+	}
+
+	// Trades - flush after orders so the traders reference an existing order
+	err = e.tradeBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, "Failed to flush trades buffer")
 	}
 	// Transfers
 	err = e.transferBuf.Flush()
