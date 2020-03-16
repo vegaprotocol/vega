@@ -1318,7 +1318,6 @@ func (h *tradingDataService) ObserveProposals(_ *empty.Empty, stream protoapi.Tr
 			return apiError(codes.Internal, ErrServerShutdown)
 		}
 	}
-	return nil
 }
 
 // func (h *tradingDataService) TransferResponsesSubscribe(
