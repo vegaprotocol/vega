@@ -460,20 +460,11 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// update collateral
 	e.collateral.OnChainTimeUpdate(t)
 
-	proposals := e.governance.OnChainTimeUpdate(t)
-	if len(proposals) > 0 {
-		e.log.Info(
-			"governance engine has returned proposals to be enacted",
-			logging.Int("proposal-count", len(proposals)),
-		)
-	}
-
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
-	//TODO: move this functionality inside governance engine
 	acceptedProposals := e.governance.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
 		if err := e.enactProposal(proposal); err != nil {
@@ -481,6 +472,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
 		}
+		e.proposalBuf.Add(*proposal)
 	}
 
 	// notify markets of the time expiration
@@ -502,12 +494,11 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
 		}
 		if err := e.SubmitMarket(newMarket.Changes); err != nil {
-			return err
-		}
-		if err := e.marketBuf.Flush(); err != nil {
+			proposal.State = types.Proposal_FAILED
 			return err
 		}
 		proposal.State = types.Proposal_ENACTED
+		return nil
 	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
 
 		return errors.New("update market enactment is not implemented")
@@ -515,6 +506,8 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 
 		return errors.New("update network enactment is not implemented")
 	}
+	// This error shouldn't be possible here,if we reach this point the governance engine
+	// has failed to perform the correct validation on the proposal itself
 	return ErrUnknownProposalChange
 }
 
