@@ -142,6 +142,112 @@ func parseTimestamp(timestamp string) (int64, error) {
 	return converted.UTC().Unix(), nil
 }
 
+func removePointers(input []*string) []string {
+	result := make([]string, 0, len(input))
+	for _, sPtr := range input {
+		if sPtr != nil {
+			result = append(result, *sPtr)
+		}
+	}
+	return result
+}
+
+func convertProposalNewMarketTerms(changes *MarketInput) (*types.Market, error) {
+	initMarkPrice, err := safeStringUint64(changes.TradableInstrument.Instrument.InitialMarkPrice)
+	if err != nil {
+		return nil, errors.Wrap(err, "initialMarkPrice is invalid")
+	}
+
+	if changes.DecimalPlaces < 0 {
+		return nil, errors.Wrap(err, "decimalPlaces is invalid")
+	}
+
+	result := &types.Market{
+		Id:   changes.ID,
+		Name: changes.Name,
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Id:        changes.TradableInstrument.Instrument.ID,
+				Code:      changes.TradableInstrument.Instrument.Code,
+				Name:      changes.TradableInstrument.Instrument.Name,
+				BaseName:  changes.TradableInstrument.Instrument.BaseName,
+				QuoteName: changes.TradableInstrument.Instrument.QuoteName,
+				Metadata: &types.InstrumentMetadata{
+					Tags: removePointers(changes.TradableInstrument.Instrument.Metadata.Tags),
+				},
+				InitialMarkPrice: initMarkPrice,
+				Product:          nil,
+			},
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
+					SearchLevel:       changes.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel,
+					InitialMargin:     changes.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
+					CollateralRelease: changes.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease,
+				},
+			},
+			RiskModel: nil,
+		},
+		DecimalPlaces: uint64(changes.DecimalPlaces),
+		TradingMode:   nil,
+	}
+	if future := changes.TradableInstrument.Instrument.FutureProduct; future != nil {
+		result.TradableInstrument.Instrument.Product = &types.Instrument_Future{
+			Future: &types.Future{
+				Maturity: future.Maturity,
+				Asset:    future.Asset,
+				Oracle: &types.Future_EthereumEvent{
+					EthereumEvent: &types.EthereumEvent{
+						ContractID: future.EthereumOracle.ContractID,
+						Event:      future.EthereumOracle.Event,
+					},
+				},
+			},
+		}
+	}
+
+	if continuous := changes.ContinuousTradingMode; continuous != nil {
+		if continuous.TickSize < 0 {
+			return nil, errors.Wrap(err, "tickSize is invalid")
+		}
+		result.TradingMode = &types.Market_Continuous{
+			Continuous: &types.ContinuousTrading{
+				TickSize: uint64(continuous.TickSize),
+			},
+		}
+	} else if discrete := changes.DiscreteTradingMode; discrete != nil {
+		result.TradingMode = &types.Market_Discrete{
+			Discrete: &types.DiscreteTrading{
+				Duration: int64(discrete.Duration),
+			},
+		}
+	}
+
+	if simple := changes.TradableInstrument.SimpleRiskModel; simple != nil {
+		result.TradableInstrument.RiskModel = &types.TradableInstrument_SimpleRiskModel{
+			SimpleRiskModel: &types.SimpleRiskModel{
+				Params: &types.SimpleModelParams{
+					FactorLong:  simple.Params.FactorLong,
+					FactorShort: simple.Params.FactorShort,
+				},
+			},
+		}
+	} else if logNormal := changes.TradableInstrument.LogNormalRiskModel; logNormal != nil {
+		result.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+			LogNormalRiskModel: &types.LogNormalRiskModel{
+				RiskAversionParameter: logNormal.RiskAversionParameter,
+				Tau:                   logNormal.Tau,
+				Params: &types.LogNormalModelParams{
+					Mu:    logNormal.Params.Mu,
+					R:     logNormal.Params.R,
+					Sigma: logNormal.Params.Sigma,
+				},
+			},
+		}
+	}
+
+	return result, nil
+}
+
 func convertProposalTermsInput(terms ProposalTermsInput) (*types.ProposalTerms, error) {
 	closing, err := parseTimestamp(terms.ClosingTimestamp)
 	if err != nil {
@@ -160,7 +266,15 @@ func convertProposalTermsInput(terms ProposalTermsInput) (*types.ProposalTerms, 
 	if terms.UpdateMarket != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}
 	} else if terms.NewMarket != nil {
-		result.Change = &types.ProposalTerms_NewMarket{}
+		market, err := convertProposalNewMarketTerms(terms.NewMarket.Market)
+		if err != nil {
+			return nil, err
+		}
+		result.Change = &types.ProposalTerms_NewMarket{
+			NewMarket: &types.NewMarket{
+				Changes: market,
+			},
+		}
 	} else if terms.UpdateNetwork != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}
 	} else {

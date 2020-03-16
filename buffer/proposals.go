@@ -1,6 +1,6 @@
 package buffer
 
-import "github.com/tendermint/tendermint/types"
+import types "code.vegaprotocol.io/vega/proto"
 
 type Proposal struct {
 	buf []types.Proposal
