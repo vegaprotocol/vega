@@ -211,6 +211,18 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetProposalByReferenceRequest"><span class="badge">M</span>GetProposalByReferenceRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetProposalsResponse"><span class="badge">M</span>GetProposalsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.LastTradeRequest"><span class="badge">M</span>LastTradeRequest</a>
                 </li>
 
@@ -1137,6 +1149,132 @@
                   <td>ok</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetProposalByIDRequest">GetProposalByIDRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>Reference</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>Reference</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.GetProposalsResponse">GetProposalsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>proposals</td>
+                  <td><a href="#vega.ProposalVote">vega.ProposalVote</a></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -3605,6 +3743,41 @@
                 <td><a href="#api.TradesByPartyRequest">TradesByPartyRequest</a></td>
                 <td><a href="#api.TradesByPartyResponse">TradesByPartyResponse</a></td>
                 <td><p>Get a list of Trades by Party</p></td>
+              </tr>
+
+              <tr>
+                <td>GetProposals</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.GetProposalsResponse">GetProposalsResponse</a></td>
+                <td><p>Get all proposals</p></td>
+              </tr>
+
+              <tr>
+                <td>GetOpenProposals</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.GetProposalsResponse">GetProposalsResponse</a></td>
+                <td><p>Get all OPEN proposals</p></td>
+              </tr>
+
+              <tr>
+                <td>GetProposalByID</td>
+                <td><a href="#api.GetProposalByIDRequest">GetProposalByIDRequest</a></td>
+                <td><a href="#vega.ProposalVote">.vega.ProposalVote</a></td>
+                <td><p>Get a proposal by ID</p></td>
+              </tr>
+
+              <tr>
+                <td>GetProposalByReference</td>
+                <td><a href="#api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</a></td>
+                <td><a href="#vega.ProposalVote">.vega.ProposalVote</a></td>
+                <td><p>Get a proposal by reference</p></td>
+              </tr>
+
+              <tr>
+                <td>ObserveProposals</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#vega.ProposalVote">.vega.ProposalVote</a> stream</td>
+                <td><p>Subscribe to a stream of updates to proposal data</p></td>
               </tr>
 
               <tr>

@@ -12,6 +12,9 @@
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
     - [CheckTokenRequest](#api.CheckTokenRequest)
     - [CheckTokenResponse](#api.CheckTokenResponse)
+    - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
+    - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
+    - [GetProposalsResponse](#api.GetProposalsResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
@@ -301,6 +304,51 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | ok | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalByIDRequest"></a>
+
+### GetProposalByIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalByReferenceRequest"></a>
+
+### GetProposalByReferenceRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| Reference | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalsResponse"></a>
+
+### GetProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposals | [vega.ProposalVote](#vega.ProposalVote) | repeated |  |
 
 
 
@@ -1310,6 +1358,11 @@
 | TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
+| GetProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all proposals |
+| GetOpenProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all OPEN proposals |
+| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by ID |
+| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by reference |
+| ObserveProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.ProposalVote](#vega.ProposalVote) stream | Subscribe to a stream of updates to proposal data |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |

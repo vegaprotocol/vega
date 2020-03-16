@@ -1138,6 +1138,17 @@
         }
       }
     },
+    "apiGetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "proposals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaProposalVote"
+          }
+        }
+      }
+    },
     "apiLastTradeResponse": {
       "type": "object",
       "properties": {
@@ -2303,6 +2314,26 @@
         }
       }
     },
+    "vegaProposalVote": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "yes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        },
+        "no": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        }
+      }
+    },
     "vegaScalingFactors": {
       "type": "object",
       "properties": {
@@ -2729,6 +2760,18 @@
         }
       },
       "title": "Stream result of vegaPosition"
+    },
+    "vegaProposalVote": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaProposalVote"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaProposalVote"
     },
     "vegaTransferResponse": {
       "type": "object",
