@@ -13,6 +13,9 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 )
 
+// ErrCannotFitIntoInt is returned if a field cannot be represented as int (GraphQL does not have uint)
+const ErrCannotFitIntoInt string = "%s does not fit into integer"
+
 func safeStringUint64(input string) (uint64, error) {
 	if i, err := strconv.ParseUint(input, 10, 64); err == nil {
 		return i, nil
@@ -152,6 +155,14 @@ func removePointers(input []*string) []string {
 	return result
 }
 
+func addPointers(input []string) []*string {
+	result := make([]*string, 0, len(input))
+	for _, txt := range input {
+		result = append(result, &txt)
+	}
+	return result
+}
+
 func convertProposalNewMarketTerms(changes *MarketInput) (*types.Market, error) {
 	initMarkPrice, err := safeStringUint64(changes.TradableInstrument.Instrument.InitialMarkPrice)
 	if err != nil {
@@ -284,6 +295,129 @@ func convertProposalTermsInput(terms ProposalTermsInput) (*types.ProposalTerms, 
 	return result, nil
 }
 
+func convertOracle(future *types.Future) (Oracle, error) {
+	if ethereum := future.GetEthereumEvent(); ethereum != nil {
+		return EthereumEvent{
+			ContractID: ethereum.ContractID,
+			Event:      ethereum.Event,
+		}, nil
+	}
+	return nil, errors.New("unsupported oracle")
+}
+
+func convertProduct(instrument *types.Instrument) (Product, error) {
+	if future := instrument.GetFuture(); future != nil {
+		oracle, err := convertOracle(future)
+		if err != nil {
+			return nil, err
+		}
+		return &Future{
+			Maturity: future.Maturity,
+			Asset:    future.Asset,
+			Oracle:   oracle,
+		}, nil
+	}
+	return nil, errors.New("unsupported market product")
+}
+
+func converRiskModel(instrument *types.TradableInstrument) (RiskModel, error) {
+	if logNormal := instrument.GetLogNormalRiskModel(); logNormal != nil {
+		return LogNormalRiskModel{
+			RiskAversionParameter: logNormal.RiskAversionParameter,
+			Tau:                   logNormal.Tau,
+			Params: &LogNormalModelParams{
+				Mu:    logNormal.Params.Mu,
+				R:     logNormal.Params.R,
+				Sigma: logNormal.Params.Sigma,
+			},
+		}, nil
+	} else if simple := instrument.GetSimpleRiskModel(); simple != nil {
+		return SimpleRiskModel{
+			Params: &SimpleRiskModelParams{
+				FactorLong:  simple.Params.FactorLong,
+				FactorShort: simple.Params.FactorShort,
+			},
+		}, nil
+	}
+	return nil, errors.New("unsupported risk model")
+}
+
+func convertTradableInstrument(instrument *types.TradableInstrument) (*TradableInstrument, error) {
+	model, err := converRiskModel(instrument)
+	if err != nil {
+		return nil, err
+	}
+	product, err := convertProduct(instrument.Instrument)
+	if err != nil {
+		return nil, err
+	}
+	return &TradableInstrument{
+		Instrument: &Instrument{
+			ID:        instrument.Instrument.Id,
+			Code:      instrument.Instrument.Code,
+			Name:      instrument.Instrument.Name,
+			BaseName:  instrument.Instrument.BaseName,
+			QuoteName: instrument.Instrument.QuoteName,
+			Metadata: &InstrumentMetadata{
+				Tags: addPointers(instrument.Instrument.Metadata.Tags),
+			},
+			Product: product,
+		},
+		RiskModel: model,
+		MarginCalculator: &MarginCalculator{
+			ScalingFactors: &ScalingFactors{
+				SearchLevel:       instrument.MarginCalculator.ScalingFactors.SearchLevel,
+				InitialMargin:     instrument.MarginCalculator.ScalingFactors.InitialMargin,
+				CollateralRelease: instrument.MarginCalculator.ScalingFactors.CollateralRelease,
+			},
+		},
+	}, nil
+}
+
+func convertTradingMode(newMarket *types.Market) (TradingMode, error) {
+	if continuous := newMarket.GetContinuous(); continuous != nil {
+		if continuous.TickSize > math.MaxInt32 {
+			return nil, errors.Errorf(ErrCannotFitIntoInt, "tickSize")
+		}
+		tickSize := int(continuous.TickSize)
+		return &ContinuousTrading{
+			TickSize: &tickSize,
+		}, nil
+	} else if discrete := newMarket.GetDiscrete(); discrete != nil {
+		if discrete.Duration > math.MaxInt32 {
+			return nil, errors.Errorf(ErrCannotFitIntoInt, "duration")
+		}
+		duration := int(discrete.Duration)
+		return &DiscreteTrading{
+			Duration: &duration,
+		}, nil
+	}
+	return nil, errors.New("undefined trading mode")
+}
+
+func convertNewMarketTerms(newMarket *types.Market) (ProposalChange, error) {
+	if newMarket.DecimalPlaces > math.MaxInt32 {
+		return nil, errors.Errorf(ErrCannotFitIntoInt, "decimalPlaces")
+	}
+	instrument, err := convertTradableInstrument(newMarket.TradableInstrument)
+	if err != nil {
+		return nil, err
+	}
+	mode, err := convertTradingMode(newMarket)
+	if err != nil {
+		return nil, err
+	}
+	return &NewMarket{
+		Market: &Market{
+			ID:                 newMarket.Id,
+			Name:               newMarket.Name,
+			TradableInstrument: instrument,
+			TradingMode:        mode,
+			DecimalPlaces:      int(newMarket.DecimalPlaces),
+		},
+	}, nil
+}
+
 func convertProposalTerms(terms *types.ProposalTerms) (*ProposalTerms, error) {
 	if terms.MinParticipationStake > math.MaxInt32 {
 		return nil, errors.New("minParticipationStake contains too large value")
@@ -295,8 +429,12 @@ func convertProposalTerms(terms *types.ProposalTerms) (*ProposalTerms, error) {
 	}
 	if terms.GetUpdateMarket() != nil {
 		result.Change = nil
-	} else if terms.GetNewMarket() != nil {
-		result.Change = nil
+	} else if newMarket := terms.GetNewMarket(); newMarket != nil {
+		change, err := convertNewMarketTerms(newMarket.Changes)
+		if err != nil {
+			return nil, err
+		}
+		result.Change = change
 	} else if terms.GetUpdateNetwork() != nil {
 		result.Change = nil
 	}
