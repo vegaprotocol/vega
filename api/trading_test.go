@@ -219,7 +219,7 @@ func getTestGRPCServer(
 	// stub...
 	governancePlugin := plugins.NewProposals(nil, nil)
 
-	governanceService := governance.NewService(logger, conf.Governance, governancePlugin, timeService)
+	governanceService := governance.NewService(logger, conf.Governance, governancePlugin)
 
 	g = api.NewGRPCServer(
 		logger,

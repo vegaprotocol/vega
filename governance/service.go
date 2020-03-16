@@ -19,12 +19,6 @@ var (
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 
-// TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
-type TimeService interface {
-	GetTimeNow() (time.Time, error)
-}
-
 // Plugin ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/governance Plugin
 type Plugin interface {
@@ -47,25 +41,23 @@ type networkParameters struct {
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log         *logging.Logger
-	mu          sync.Mutex
-	plugin      Plugin
-	timeService TimeService
+	log    *logging.Logger
+	mu     sync.Mutex
+	plugin Plugin
 
 	parameters networkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, plugin Plugin, time TimeService) *Svc {
+func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	cfg.initParams() // ensures params are set
 
 	return &Svc{
-		Config:      cfg,
-		log:         log,
-		plugin:      plugin,
-		timeService: time,
+		Config: cfg,
+		log:    log,
+		plugin: plugin,
 		parameters: networkParameters{
 			minCloseInSeconds:     cfg.params.DefaultMinClose,
 			maxCloseInSeconds:     cfg.params.DefaultMaxClose,

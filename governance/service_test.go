@@ -21,12 +21,10 @@ type testSvc struct {
 	cfunc context.CancelFunc
 
 	plugin *mocks.MockPlugin
-	time   *mocks.MockTimeService
 }
 
 func newTestService(t *testing.T) *testSvc {
 	ctrl := gomock.NewController(t)
-	time := mocks.NewMockTimeService(ctrl)
 	plugin := mocks.NewMockPlugin(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -36,9 +34,8 @@ func newTestService(t *testing.T) *testSvc {
 		ctx:    ctx,
 		cfunc:  cfunc,
 		plugin: plugin,
-		time:   time,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), plugin, time)
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), plugin)
 	assert.NotNil(t, result.Svc)
 	return result
 }
