@@ -94,6 +94,7 @@ type NodeCommand struct {
 	settleBuf       *buffer.Settlement
 	lossSocBuf      *buffer.LossSocialization
 	proposalBuf     *buffer.Proposal
+	voteBuf         *buffer.Vote
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -124,7 +125,8 @@ type NodeCommand struct {
 	mktscfg         []proto.Market
 
 	// plugins
-	settlePlugin *plugins.Positions
+	settlePlugin   *plugins.Positions
+	proposalPlugin *plugins.Proposals
 }
 
 // Init initialises the node command.

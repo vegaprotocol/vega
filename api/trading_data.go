@@ -114,6 +114,16 @@ type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
 }
 
+// GovernanceDataService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceDataService
+type GovernanceDataService interface {
+	GetProposals() []types.ProposalVote
+	GetOpenProposals() []types.ProposalVote
+	GetProposalByID(ctx context.Context, id string) (*types.ProposalVote, error)
+	GetProposalByReference(ctx context.Context, ref string) (*types.ProposalVote, error)
+	ObserveProposals(ctx context.Context, retries int) <-chan []types.ProposalVote
+}
+
 // RiskService ...
 type RiskService interface {
 	ObserveMarginLevels(
@@ -137,6 +147,7 @@ type tradingDataService struct {
 	AccountsService         AccountsService
 	RiskService             RiskService
 	TransferResponseService TransferResponseService
+	governanceService       GovernanceDataService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
 }
@@ -1241,3 +1252,73 @@ func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoap
 	// If we get here we have matched against referenceID and all is good
 	return order, nil
 }
+
+func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
+	all := h.governanceService.GetProposals()
+	resp := protoapi.GetProposalsResponse{
+		Proposals: make([]*types.ProposalVote, len(all)),
+	}
+	for i := range all {
+		resp.Proposals[i] = &all[i]
+	}
+	return &resp, nil
+}
+
+func (h *tradingDataService) GetOpenProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
+	open := h.governanceService.GetOpenProposals()
+	resp := protoapi.GetProposalsResponse{
+		Proposals: make([]*types.ProposalVote, len(open)),
+	}
+	for i := range open {
+		resp.Proposals[i] = &open[i]
+	}
+	return &resp, nil
+}
+
+func (h *tradingDataService) GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest) (*types.ProposalVote, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
+	return h.governanceService.GetProposalByID(ctx, in.ID)
+}
+
+func (h *tradingDataService) GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest) (*types.ProposalVote, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
+	return h.governanceService.GetProposalByReference(ctx, in.Reference)
+}
+
+func (h *tradingDataService) ObserveProposals(_ *empty.Empty, stream protoapi.TradingData_ObserveProposalsServer) error {
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming proposal updates")
+	}
+	ch := h.governanceService.ObserveProposals(ctx, h.Config.StreamRetries)
+	for {
+		select {
+		case props, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range props {
+				if err := stream.Send(&p); err != nil {
+					h.log.Error("failed to send proposal to stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+
+// func (h *tradingDataService) TransferResponsesSubscribe(
+// req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {

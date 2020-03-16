@@ -106,6 +106,28 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
+func (this *GetProposalByIDRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
+	return nil
+}
+func (this *GetProposalByReferenceRequest) Validate() error {
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
+	}
+	return nil
+}
+func (this *GetProposalsResponse) Validate() error {
+	for _, item := range this.Proposals {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Proposals", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *MarginLevelsSubscribeRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))

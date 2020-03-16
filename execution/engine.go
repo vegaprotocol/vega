@@ -107,6 +107,20 @@ type LossSocializationBuf interface {
 	Flush()
 }
 
+// ProposalBuf...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution ProposalBuf
+type ProposalBuf interface {
+	Add(types.Proposal)
+	Flush()
+}
+
+// VoteBuf...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution VoteBuf
+type VoteBuf interface {
+	Add(types.Vote)
+	Flush()
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -129,6 +143,8 @@ type Engine struct {
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
 	lossSocBuf      LossSocializationBuf
+	proposalBuf     ProposalBuf
+	voteBuf         VoteBuf
 
 	time TimeService
 }
@@ -150,7 +166,8 @@ func NewEngine(
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
-	governanceBuf governance.Buffer,
+	proposalBuf ProposalBuf,
+	voteBuf VoteBuf,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -169,6 +186,8 @@ func NewEngine(
 		return nil
 	}
 
+	gengine := governance.NewEngine(log, executionConfig.Governance, cengine, proposalBuf, voteBuf, now)
+
 	e := &Engine{
 		log:             log,
 		Config:          executionConfig,
@@ -180,7 +199,7 @@ func NewEngine(
 		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
-		governance:      governance.NewEngine(log, executionConfig.Governance, cengine, governanceBuf, now),
+		governance:      gengine,
 		party:           NewParty(log, cengine, pmkts, partyBuf),
 		accountBuf:      accountBuf,
 		transferBuf:     transferBuf,
@@ -188,6 +207,8 @@ func NewEngine(
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
 		lossSocBuf:      lossSocBuf,
+		proposalBuf:     proposalBuf,
+		voteBuf:         voteBuf,
 		idgen:           NewIDGen(),
 	}
 
@@ -444,14 +465,15 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
-	//TODO: move this functionality inside governance engine
 	acceptedProposals := e.governance.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
 		if err := e.enactProposal(proposal); err != nil {
+			proposal.State = types.Proposal_FAILED
 			e.log.Error("unable to enact proposal",
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
 		}
+		e.proposalBuf.Add(*proposal)
 	}
 
 	// notify markets of the time expiration
@@ -475,10 +497,8 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if err := e.SubmitMarket(newMarket.Changes); err != nil {
 			return err
 		}
-		if err := e.marketBuf.Flush(); err != nil {
-			return err
-		}
 		proposal.State = types.Proposal_ENACTED
+		return nil
 	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
 
 		return errors.New("update market enactment is not implemented")
@@ -486,6 +506,8 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 
 		return errors.New("update network enactment is not implemented")
 	}
+	// This error shouldn't be possible here,if we reach this point the governance engine
+	// has failed to perform the correct validation on the proposal itself
 	return ErrUnknownProposalChange
 }
 
@@ -534,6 +556,10 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 
 // Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
+	// governance
+	e.proposalBuf.Flush()
+	e.voteBuf.Flush()
+
 	// Accounts
 	err := e.accountBuf.Flush()
 	if err != nil {

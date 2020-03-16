@@ -38,6 +38,12 @@ message ProposalTerms {
   };
 }
 
+message ProposalVote {
+  Proposal proposal = 1;
+  repeated Vote yes = 2;
+  repeated Vote no = 3;
+}
+
 message Proposal {
   // Proposal state transition:
   // Open ->

@@ -3,6 +3,7 @@ package governance
 import (
 	"context"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -18,6 +19,17 @@ var (
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 
+// Plugin ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/governance Plugin
+type Plugin interface {
+	GetOpenProposals() []types.ProposalVote
+	GetProposalByID(id string) (*types.ProposalVote, error)
+	GetProposalByReference(ref string) (*types.ProposalVote, error)
+	GetProposals() []types.ProposalVote
+	Subscribe() (<-chan []types.ProposalVote, int64)
+	Unsubscribe(int64)
+}
+
 type networkParameters struct {
 	minCloseInSeconds     int64
 	maxCloseInSeconds     int64
@@ -29,14 +41,15 @@ type networkParameters struct {
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
-	log *logging.Logger
-	mu  sync.Mutex
+	log    *logging.Logger
+	mu     sync.Mutex
+	plugin Plugin
 
 	parameters networkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config) *Svc {
+func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	cfg.initParams() // ensures params are set
@@ -44,6 +57,7 @@ func NewService(log *logging.Logger, cfg Config) *Svc {
 	return &Svc{
 		Config: cfg,
 		log:    log,
+		plugin: plugin,
 		parameters: networkParameters{
 			minCloseInSeconds:     cfg.params.DefaultMinClose,
 			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
@@ -69,6 +83,71 @@ func (s *Svc) ReloadConf(cfg Config) {
 	cfg.params = s.Config.params
 	s.Config = cfg
 	s.mu.Unlock()
+}
+
+// ObserveProposals - stream proposal vote updates to gRPC subscription stream
+func (s *Svc) ObserveProposals(ctx context.Context, retries int) <-chan []types.ProposalVote {
+	var cfunc func()
+	ctx, cfunc = context.WithCancel(ctx)
+	// we're returning an extra channel because of the retry mechanic we want to add
+	rCh := make(chan []types.ProposalVote)
+	ch, chID := s.plugin.Subscribe()
+	go func() {
+		defer func() {
+			// cancel context
+			cfunc()
+			// unsubscribe from plugin
+			s.plugin.Unsubscribe(chID)
+			// close channel to handler
+			close(rCh)
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug("proposal subscriber closed the connection")
+				return
+			case updates := <-ch:
+				// received new proposal data
+				retryCount := retries
+				success := false
+				for !success && retryCount >= 0 {
+					select {
+					case rCh <- updates:
+						success = true
+					default:
+						s.log.Debug("failed to push proposal update onto subscriber channel")
+						retryCount--
+						time.Sleep(time.Millisecond * 10)
+					}
+				}
+				if !success {
+					s.log.Warn("Failed to push update to stream, reached end of retries")
+					return
+				}
+			}
+		}
+	}()
+	return rCh
+}
+
+// GetProposalByReferece - as you'd expect, returns a proposel by reference _if it exists_
+func (s *Svc) GetProposalByReference(_ context.Context, ref string) (*types.ProposalVote, error) {
+	return s.plugin.GetProposalByReference(ref)
+}
+
+// GetProposalByID - same as by reference, only by ID
+func (s *Svc) GetProposalByID(_ context.Context, id string) (*types.ProposalVote, error) {
+	return s.plugin.GetProposalByID(id)
+}
+
+// GetOpenProposals - returns all porposals currently being voted on
+func (s *Svc) GetOpenProposals() []types.ProposalVote {
+	return s.plugin.GetOpenProposals()
+}
+
+// GetProposals - returns a list of all proposals
+func (s *Svc) GetProposals() []types.ProposalVote {
+	return s.plugin.GetProposals()
 }
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
