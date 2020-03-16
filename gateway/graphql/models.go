@@ -43,7 +43,7 @@ type ContinuousTrading struct {
 func (ContinuousTrading) IsTradingMode() {}
 
 type ContinuousTradingInput struct {
-	// Size of an increment in price in terms of the quote currency (uint64)
+	// Size of an increment in price in terms of the quote currency
 	TickSize int `json:"tickSize"`
 }
 
@@ -56,7 +56,7 @@ type DiscreteTrading struct {
 func (DiscreteTrading) IsTradingMode() {}
 
 type DiscreteTradingInput struct {
-	// Duration of the trading (uint64)
+	// Duration of the trading
 	Duration int `json:"duration"`
 }
 
@@ -71,9 +71,9 @@ type EthereumEvent struct {
 func (EthereumEvent) IsOracle() {}
 
 type EthereumEventInput struct {
-	// The ID of the ethereum contract to use (string)
+	// The ID of the ethereum contract to use
 	ContractID string `json:"contractId"`
-	// Name of the Ethereum event to listen to. (string)
+	// Name of the Ethereum event to listen to
 	Event string `json:"event"`
 }
 
@@ -90,11 +90,11 @@ type Future struct {
 func (Future) IsProduct() {}
 
 type FutureInput struct {
-	// The maturity date of the product (string)
+	// The maturity date of the product
 	Maturity string `json:"maturity"`
-	// The name of the asset (string)
+	// The name of the asset
 	Asset string `json:"asset"`
-	// The oracle used for this product (Oracle union)
+	// The oracle used for this product
 	EthereumOracle *EthereumEventInput `json:"ethereumOracle"`
 }
 
@@ -117,9 +117,9 @@ type Instrument struct {
 }
 
 type InstrumentInput struct {
-	// Uniquely identify an instrument accrods all instruments available on Vega (string)
+	// Uniquely identify an instrument accrods all instruments available on Vega
 	ID string `json:"id"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
+	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
 	Code string `json:"code"`
 	// Full and fairly descriptive name for the instrument
 	Name string `json:"name"`
@@ -130,12 +130,12 @@ type InstrumentInput struct {
 	InitialMarkPrice string `json:"initialMarkPrice"`
 	// Metadata for this instrument
 	Metadata *InstrumentMetadatInput `json:"metadata"`
-	// A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
+	// A reference to or instance of a fully specified product, including all required product parameters for that product
 	FutureProduct *FutureInput `json:"futureProduct"`
 }
 
 type InstrumentMetadatInput struct {
-	// An arbitrary list of tags to associated to associate to the Instrument (string list)
+	// An arbitrary list of tags to associated to associate to the Instrument
 	Tags []*string `json:"tags"`
 }
 
