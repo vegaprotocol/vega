@@ -42,6 +42,11 @@ type ContinuousTrading struct {
 
 func (ContinuousTrading) IsTradingMode() {}
 
+type ContinuousTradingInput struct {
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
+}
+
 // Some non continuous trading mode
 type DiscreteTrading struct {
 	// Duration of the trading (uint64)
@@ -49,6 +54,11 @@ type DiscreteTrading struct {
 }
 
 func (DiscreteTrading) IsTradingMode() {}
+
+type DiscreteTradingInput struct {
+	// Duration of the trading
+	Duration int `json:"duration"`
+}
 
 // An Ethereum oracle
 type EthereumEvent struct {
@@ -59,6 +69,13 @@ type EthereumEvent struct {
 }
 
 func (EthereumEvent) IsOracle() {}
+
+type EthereumEventInput struct {
+	// The ID of the ethereum contract to use
+	ContractID string `json:"contractId"`
+	// Name of the Ethereum event to listen to
+	Event string `json:"event"`
+}
 
 // A Future product
 type Future struct {
@@ -71,6 +88,15 @@ type Future struct {
 }
 
 func (Future) IsProduct() {}
+
+type FutureInput struct {
+	// The maturity date of the product
+	Maturity string `json:"maturity"`
+	// The name of the asset
+	Asset string `json:"asset"`
+	// The oracle used for this product
+	EthereumOracle *EthereumEventInput `json:"ethereumOracle"`
+}
 
 // Describe something that can be traded on Vega
 type Instrument struct {
@@ -90,6 +116,29 @@ type Instrument struct {
 	Product Product `json:"product"`
 }
 
+type InstrumentInput struct {
+	// Uniquely identify an instrument accrods all instruments available on Vega
+	ID string `json:"id"`
+	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
+	Code string `json:"code"`
+	// Full and fairly descriptive name for the instrument
+	Name string `json:"name"`
+	// String representing the base (e.g. BTCUSD -> BTC is base)
+	BaseName string `json:"baseName"`
+	// String representing the quote (e.g. BTCUSD -> USD is quote)
+	QuoteName        string `json:"quoteName"`
+	InitialMarkPrice string `json:"initialMarkPrice"`
+	// Metadata for this instrument
+	Metadata *InstrumentMetadatInput `json:"metadata"`
+	// A reference to or instance of a fully specified product, including all required product parameters for that product
+	FutureProduct *FutureInput `json:"futureProduct"`
+}
+
+type InstrumentMetadatInput struct {
+	// An arbitrary list of tags to associated to associate to the Instrument
+	Tags []*string `json:"tags"`
+}
+
 // A set of metadata to associate to an instruments
 type InstrumentMetadata struct {
 	// An arbitrary list of tags to associated to associate to the Instrument (string list)
@@ -98,6 +147,15 @@ type InstrumentMetadata struct {
 
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
+	// mu parameter
+	Mu float64 `json:"mu"`
+	// r parameter
+	R float64 `json:"r"`
+	// sigma parameter
+	Sigma float64 `json:"sigma"`
+}
+
+type LogNormalModelParamsInput struct {
 	// mu parameter
 	Mu float64 `json:"mu"`
 	// r parameter
@@ -118,9 +176,23 @@ type LogNormalRiskModel struct {
 
 func (LogNormalRiskModel) IsRiskModel() {}
 
+type LogNormalRiskModelInput struct {
+	// Lambda parameter of the risk model
+	RiskAversionParameter float64 `json:"riskAversionParameter"`
+	// Tau parameter of the risk model
+	Tau float64 `json:"tau"`
+	// Params for the log normal risk model
+	Params *LogNormalModelParamsInput `json:"params"`
+}
+
 type MarginCalculator struct {
 	// The scaling factors that will be used for margin calculation
 	ScalingFactors *ScalingFactors `json:"scalingFactors"`
+}
+
+type MarginCalculatorInput struct {
+	// The scaling factors that will be used for margin calculation
+	ScalingFactors *ScalingFactorsInput `json:"scalingFactors"`
 }
 
 // Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
@@ -163,16 +235,25 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
-// Incomplete change definition for governance proposal terms
-// TODO: complete the type
+// Input variation of market details same to those defined in Market type
+type MarketInput struct {
+	ID                    string                   `json:"id"`
+	Name                  string                   `json:"name"`
+	TradableInstrument    *TradableInstrumentInput `json:"tradableInstrument"`
+	ContinuousTradingMode *ContinuousTradingInput  `json:"continuousTradingMode"`
+	DiscreteTradingMode   *DiscreteTradingInput    `json:"discreteTradingMode"`
+	DecimalPlaces         int                      `json:"decimalPlaces"`
+}
+
+// Allows creating new markets on the network
 type NewMarket struct {
-	MarketID string `json:"marketId"`
+	Market *Market `json:"market"`
 }
 
 func (NewMarket) IsProposalChange() {}
 
 type NewMarketInput struct {
-	MarketID string `json:"marketId"`
+	Market *MarketInput `json:"market"`
 }
 
 type PreparedAmendOrder struct {
@@ -258,6 +339,15 @@ type ScalingFactors struct {
 	CollateralRelease float64 `json:"collateralRelease"`
 }
 
+type ScalingFactorsInput struct {
+	// the scaling factor that determines the margin level at which we have to search for more money
+	SearchLevel float64 `json:"searchLevel"`
+	// the scaling factor that determines the optimal margin level
+	InitialMargin float64 `json:"initialMargin"`
+	// The scaling factor that determines the overflow margin level
+	CollateralRelease float64 `json:"collateralRelease"`
+}
+
 // A type of simple/dummy risk model where we can specify the risk factor long and short in params
 type SimpleRiskModel struct {
 	// Params for the simple risk model
@@ -266,8 +356,20 @@ type SimpleRiskModel struct {
 
 func (SimpleRiskModel) IsRiskModel() {}
 
+type SimpleRiskModelInput struct {
+	// Params for the simple risk model
+	Params *SimpleRiskModelParamsInput `json:"params"`
+}
+
 // Parameters for the simple risk model
 type SimpleRiskModelParams struct {
+	// Risk factor for long
+	FactorLong float64 `json:"factorLong"`
+	// Risk factor for short
+	FactorShort float64 `json:"factorShort"`
+}
+
+type SimpleRiskModelParamsInput struct {
 	// Risk factor for long
 	FactorLong float64 `json:"factorLong"`
 	// Risk factor for short
@@ -282,6 +384,14 @@ type TradableInstrument struct {
 	RiskModel RiskModel `json:"riskModel"`
 	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
+}
+
+// Input variation of tradable instrument details
+type TradableInstrumentInput struct {
+	Instrument         *InstrumentInput         `json:"instrument"`
+	SimpleRiskModel    *SimpleRiskModelInput    `json:"simpleRiskModel"`
+	LogNormalRiskModel *LogNormalRiskModelInput `json:"logNormalRiskModel"`
+	MarginCalculator   *MarginCalculatorInput   `json:"marginCalculator"`
 }
 
 type TransactionSubmitted struct {

@@ -1979,7 +1979,12 @@
       }
     },
     "vegaNewMarket": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "changes": {
+          "$ref": "#/definitions/vegaMarket"
+        }
+      }
     },
     "vegaOrder": {
       "type": "object",

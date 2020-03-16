@@ -24,6 +24,14 @@ func (this *UpdateMarket) Validate() error {
 	return nil
 }
 func (this *NewMarket) Validate() error {
+	if nil == this.Changes {
+		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
+	}
+	if this.Changes != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Changes); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
+		}
+	}
 	return nil
 }
 func (this *UpdateNetwork) Validate() error {
