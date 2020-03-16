@@ -173,6 +173,8 @@ func (l *NodeCommand) setupBuffers() {
 	l.marginLevelsBuf.Register(l.riskStore)
 	l.settleBuf = buffer.NewSettlement()
 	l.lossSocBuf = buffer.NewLossSocialization()
+
+	l.proposalBuf = buffer.NewProposal()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -256,6 +258,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.marginLevelsBuf,
 		l.settleBuf,
 		l.lossSocBuf,
+		l.proposalBuf,
 		l.mktscfg,
 	)
 

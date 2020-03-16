@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -15,6 +16,10 @@ import (
 var (
 	// ErrMarketAlreadyExist signals that a market already exist
 	ErrMarketAlreadyExist = errors.New("market already exist")
+
+	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
+	// because proposed changes cannot be processed by the system
+	ErrUnknownProposalChange = errors.New("unknown proposal change")
 )
 
 // OrderBuf ...
@@ -110,6 +115,7 @@ type Engine struct {
 	markets    map[string]*Market
 	party      *Party
 	collateral *collateral.Engine
+	governance *governance.Engine
 	idgen      *IDgenerator
 
 	orderBuf        OrderBuf
@@ -144,6 +150,7 @@ func NewEngine(
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
+	governanceBuf governance.Buffer,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -173,6 +180,7 @@ func NewEngine(
 		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
+		governance:      governance.NewEngine(log, executionConfig.Governance, cengine, governanceBuf, now),
 		party:           NewParty(log, cengine, pmkts, partyBuf),
 		accountBuf:      accountBuf,
 		transferBuf:     transferBuf,
@@ -222,6 +230,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
+	e.governance.ReloadConf(e.Config.Governance)
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
@@ -435,6 +444,16 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
+	//TODO: move this functionality inside governance engine
+	acceptedProposals := e.governance.OnChainTimeUpdate(t)
+	for _, proposal := range acceptedProposals {
+		if err := e.enactProposal(proposal); err != nil {
+			e.log.Error("unable to enact proposal",
+				logging.String("proposal-id", proposal.ID),
+				logging.Error(err))
+		}
+	}
+
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
 		mkt := mkt
@@ -446,6 +465,28 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 		}
 	}
 	timer.EngineTimeCounterAdd()
+}
+
+func (e *Engine) enactProposal(proposal *types.Proposal) error {
+	if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
+		}
+		if err := e.SubmitMarket(newMarket.Changes); err != nil {
+			return err
+		}
+		if err := e.marketBuf.Flush(); err != nil {
+			return err
+		}
+		proposal.State = types.Proposal_ENACTED
+	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
+
+		return errors.New("update market enactment is not implemented")
+	} else if updateNetwork := proposal.Terms.GetUpdateNetwork(); updateNetwork != nil {
+
+		return errors.New("update network enactment is not implemented")
+	}
+	return ErrUnknownProposalChange
 }
 
 // Process any data updates (including state changes)

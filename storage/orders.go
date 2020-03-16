@@ -341,7 +341,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 		}
 		err = proto.Unmarshal(orderBuf, &order)
 		if err != nil {
-			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
+			os.log.Error("Failed to unmarshal order value from badger in order store (GetByReference)",
 				logging.Error(err),
 				logging.String("badger-key", string(refKey)),
 				logging.String("raw-bytes", string(orderBuf)))
@@ -354,6 +354,52 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 		return nil, err
 	}
 
+	return &order, nil
+}
+
+// GetByID retrieves an order for a given orderID, any errors will be returned immediately.
+func (os *Order) GetByOrderID(ctx context.Context, id string) (*types.Order, error) {
+	var order types.Order
+	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
+		defer func() {
+			if err == badger.ErrKeyNotFound {
+				err = ErrOrderDoesNotExistForReference
+			}
+		}()
+		idKey := os.badger.orderIDKey(id)
+		var (
+			marketKeyItem, orderItem *badger.Item
+			marketKey, orderBuf      []byte
+		)
+		marketKeyItem, err = txn.Get(idKey)
+		if err != nil {
+			return
+		}
+		marketKey, err = marketKeyItem.ValueCopy(nil)
+		if err != nil {
+			return
+		}
+		orderItem, err = txn.Get(marketKey)
+		if err != nil {
+			return
+		}
+		orderBuf, err = orderItem.ValueCopy(nil)
+		if err != nil {
+			return
+		}
+		err = proto.Unmarshal(orderBuf, &order)
+		if err != nil {
+			os.log.Error("Failed to unmarshal order value from badger in order store (GetByOrderId)",
+				logging.Error(err),
+				logging.String("badger-id-key", string(idKey)),
+				logging.String("raw-bytes", string(orderBuf)))
+			return err
+		}
+		return
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &order, nil
 }
 

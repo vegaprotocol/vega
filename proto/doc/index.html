@@ -279,11 +279,19 @@
                 </li>
 
                 <li>
+                  <a href="#api.OrderByIDRequest"><span class="badge">M</span>OrderByIDRequest</a>
+                </li>
+
+                <li>
                   <a href="#api.OrderByMarketAndIdRequest"><span class="badge">M</span>OrderByMarketAndIdRequest</a>
                 </li>
 
                 <li>
                   <a href="#api.OrderByMarketAndIdResponse"><span class="badge">M</span>OrderByMarketAndIdResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.OrderByReferenceIDRequest"><span class="badge">M</span>OrderByReferenceIDRequest</a>
                 </li>
 
                 <li>
@@ -1781,6 +1789,57 @@
 
 
 
+        <h3 id="api.OrderByIDRequest">OrderByIDRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
         <h3 id="api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</h3>
         <p></p>
 
@@ -1869,6 +1928,57 @@
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="api.OrderByReferenceIDRequest">OrderByReferenceIDRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>referenceID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>referenceID</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -3424,6 +3534,20 @@
               </tr>
 
               <tr>
+                <td>OrderByID</td>
+                <td><a href="#api.OrderByIDRequest">OrderByIDRequest</a></td>
+                <td><a href="#vega.Order">.vega.Order</a></td>
+                <td><p>Get a specific order by orderID</p></td>
+              </tr>
+
+              <tr>
+                <td>OrderByReferenceID</td>
+                <td><a href="#api.OrderByReferenceIDRequest">OrderByReferenceIDRequest</a></td>
+                <td><a href="#vega.Order">.vega.Order</a></td>
+                <td><p>Get a specific order by referenceID</p></td>
+              </tr>
+
+              <tr>
                 <td>MarginLevels</td>
                 <td><a href="#api.MarginLevelsRequest">MarginLevelsRequest</a></td>
                 <td><a href="#api.MarginLevelsResponse">MarginLevelsResponse</a></td>
@@ -3621,7 +3745,51 @@
 
 
         <h3 id="vega.NewMarket">NewMarket</h3>
-        <p>TODO</p>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>changes</td>
+                  <td><a href="#vega.Market">Market</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>changes</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
