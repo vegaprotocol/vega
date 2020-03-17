@@ -621,7 +621,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	confirm, err := book.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_PartiallyFilled, confirm.Order.Status)
+	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
 }
 
 func testGTTStoppedPartiallyFilled(t *testing.T) {
