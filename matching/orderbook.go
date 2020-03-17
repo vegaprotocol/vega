@@ -200,14 +200,10 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	if order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT {
-		if order.Remaining != order.Size {
-			order.Status = types.Order_PartiallyFilled
-		} else {
-			order.Status = types.Order_Cancelled
-		}
-	} else {
-		order.Status = types.Order_Cancelled
+	order.Status = types.Order_Cancelled
+	// for a GTC order, if it was partially filled, the final status can be PartiallyFilled
+	if order.TimeInForce == types.Order_GTC && order.Remaining != order.Size {
+		order.Status = types.Order_PartiallyFilled
 	}
 
 	result := &types.OrderCancellationConfirmation{
