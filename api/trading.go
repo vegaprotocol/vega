@@ -148,7 +148,7 @@ func (s *tradingService) SignIn(
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
 	pending, err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	raw, err := proto.Marshal(req.Submission)
 	if err != nil {
