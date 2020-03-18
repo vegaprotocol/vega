@@ -206,8 +206,12 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 						totalVolume -= level.volume
 					}
 					totalPrice += level.price * factor
-				} else if level.price >= agg.Price {
+				} else if level.price >= agg.Price || agg.Type == types.Order_MARKET {
 					totalVolumeToFill += level.volume
+				}
+				// No need to keep looking once we pass the required amount
+				if totalVolumeToFill >= agg.Remaining {
+					break
 				}
 			}
 		}
@@ -223,8 +227,12 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 						totalVolume -= level.volume
 					}
 					totalPrice += level.price * factor
-				} else if level.price <= agg.Price {
+				} else if level.price <= agg.Price || agg.Type == types.Order_MARKET {
 					totalVolumeToFill += level.volume
+				}
+				// No need to keep looking once we pass the required amount
+				if totalVolumeToFill >= agg.Remaining {
+					break
 				}
 			}
 		}
@@ -256,7 +264,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price >= agg.Price {
+			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_MARKET {
 				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
@@ -266,7 +274,6 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			} else {
 				break
 			}
-
 		}
 
 		// now we nil the price levels that have been completely emptied out
@@ -282,7 +289,6 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 			s.levels = s.levels[:idx]
 		}
-
 	}
 
 	if agg.Side == types.Side_Buy {
@@ -290,7 +296,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price <= agg.Price {
+			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_MARKET {
 				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
@@ -300,7 +306,6 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			} else {
 				break
 			}
-
 		}
 
 		// now we nil the price levels that have been completely emptied out
