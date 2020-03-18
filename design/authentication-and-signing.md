@@ -1,31 +1,15 @@
 Authentication & Signing
 ========================
 
-Note: this documentation does not cover the authentication provided by the soon-to-be-deprecated [auth package](../auth/). It also will allude to the [Wallet service](../wallet/README.md), which *can* be used to provide basic key management for users of your node, but is not required for signing.
+Note: this documentation does not cover the authentication provided by the soon-to-be-deprecated [auth package](../auth/). 
 
 ## Workflow
 - Vega will soon require that all transactions are signed by a keypair
-- To help developers iterate quickly, the core Vega node exposes a number of endpoints that can be used to generate an unsigned protocol buffer representing a transaction
+- As a convenience to client developers each Vega node exposes a number of endpoints that can be used to generate an unsigned protocol buffer representing a transaction
 - This protocol buffer must be signed with a keypair, and then submitted to the node using the `submitTransaction` endpoint
+- `vega wallet` is a service that can be run to manage your keys
 
-### Wallet service
-The [Wallet service](../wallet/README.md) can be run either locally or on a shared node to reduce the number of roundtrips in this transaction. See the following diagrams to understand the flow of signing an API call using the wallet service
-
-#### Best case
-In the best case, a client can generate and sign protobuffs locally:
-
-```mermaid
-sequenceDiagram
-    participant Vega Node
-    participant Client
-
-	Client->>Client: Generate unsigned protobuff 
-	Client->>Client: Sign protobuff 
-	Client->>Vega Node: submitTransaction 
-```					
-
-#### Worst case
-In the worst case, a client that is *not* running an auth service locally, and cannot generate its own protobuff representation for an order will need to make multiple calls between the Wallet Service and the Vega Node: 
+The basic interaction between services is shown below:
 
 ```mermaid
 sequenceDiagram
@@ -39,15 +23,34 @@ sequenceDiagram
 	Client->>Vega Node: Use appropriate prepareX endpoint
 	Vega Node->>Vega Node: Generate unsigned protobuff 
 	Vega Node->>Client: Return unsigned order protobuff 
-	Client->>Wallet Service: Sign order protobuff
+	Client->>Wallet Service: Sign protobuff
 	Wallet Service->>Wallet Service: Sign protobuff 
 	Wallet Service->>Client: Signed protobuff 
-	Client->>Vega Node: submitTransaction 
+	Client->>Vega Node: Submit signed transaction 
 ```					
 
-As you can see, this leaves a lot of room for variation. A node may be able to sign, but for some reason (perhaps the language has no protobuff library) may not be able to produce its own protobuffers. In this case it can leverage the prepare endpoints in the node, but sign the call.
+This is a lot of communication between services, so we have provided various shortcuts. The interactions below will all result in a valid, signed order being submitted on the user's behalf.
 
-There is one more optimisation in this chain: the wallet service can be instructed to sign & forward to the node in the same call, skipping another round trip:
+### Clients can generate their own protobuffs
+The `prepareX` endpoints (e.g.) `prepareOrder` endpoints are provided **for clients that do not have a protobuff library**. This may be true for developers hacking on bots or tools using the REST or GraphQL API who may not want to add the weight of a protobuff library to their code. If you are using a GRPC client already, or are happy to bring in a library for your platform, you can skip this step and go straight to requesting the wallet service sign your transactions:
+
+```mermaid
+sequenceDiagram
+    participant Vega Node
+    participant Client
+    participant Wallet Service
+
+	Client->>Wallet Service: Log in
+	Wallet Service->>Client: Auth token 
+	Client->>Client: Generate unsigned order
+	Client->>Wallet Service: Sign order
+	Wallet Service->>Wallet Service: Sign order 
+	Wallet Service->>Client: Signed protobuff 
+	Client->>Vega Node: Submit signed transaction 
+```					
+
+### `vega wallet` can sign *and submit* in the same request
+By providing an extra parameter to the wallet service, it can automatically submit the signed transaction to an API node on your behalf. This saves the client from having to submit it manually.
 
 ```mermaid
 sequenceDiagram
@@ -56,7 +59,23 @@ sequenceDiagram
     participant Wallet Service
 
 	Client->>Client: Generate unsigned protobuff
-	Client->>Wallet Service: Sign ond forward protobuff
+	Client->>Wallet Service: Sign and forward protobuff
 	Wallet Service->>Wallet Service: Sign protobuff 
-	Wallet Service->>Vega Node: Signed protobuff 
+	Wallet Service->>Vega Node: Submit signed transaction
 ```					
+
+### Clients can sign their own transactions
+The functionality provided by the wallet service
+
+```mermaid
+sequenceDiagram
+    participant Vega Node
+    participant Client
+
+	Client->>Client: Generate signed protobuff
+	Client->>Vega Node: Signed protobuff 
+```					
+
+## Hosting wallet service for multiple users
+The [Wallet service](../wallet/README.md) should be run locally, allowing you to access your keypairs for signing transactions. `vega wallet` can also be hosted centrally to manage the keys of multiple users, but this brings with it security considerations that are outside the scope of this document.
+
