@@ -7,7 +7,7 @@ Note: this documentation does not cover the authentication provided by the soon-
 - Vega will soon require that all transactions are signed by a keypair
 - As a convenience to client developers each Vega node exposes a number of endpoints that can be used to generate an unsigned protocol buffer representing a transaction
 - This protocol buffer must be signed with a keypair, and then submitted to the node using the `submitTransaction` endpoint
-- `vega wallet` is a service that can be run to manage your keys
+- [vega wallet](../wallet/README.md) is a service that can be run to manage your keys
 
 The basic interaction between services is shown below:
 
@@ -65,7 +65,8 @@ sequenceDiagram
 ```					
 
 ### Clients can sign their own transactions
-The functionality provided by the wallet service
+The functionality provided by the wallet service can be integrated in to your client. `vega` uses Ed25519 - visit the [wallet](../wallet/README.md) folder to find out more.
+`
 
 ```mermaid
 sequenceDiagram
