@@ -217,11 +217,11 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		expectCollected int64
 	)
 
-	// iterate over transfer unti we get the first win, so we need we accumulated all loss
+	// iterate over transfer until we get the first win, so we need we accumulated all loss
 	for i, evt := range transfers {
 		transfer := evt.Transfer()
 
-		// get the state of the accoutns before processing transfers
+		// get the state of the accounts before processing transfers
 		// so they can be used in the marginEvt, and to calculate the missing funds
 		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
 		if err != nil {
@@ -528,7 +528,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		//   InitialMargin
 		// In both case either the order will not be accepted, or the trader will be closed
 		if transfer.Type == types.TransferType_MARGIN_LOW &&
-			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
+			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		}
 		response = append(response, res)
@@ -570,7 +570,7 @@ func (e *Engine) MarginUpdateOnOrder(
 
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
-	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.GetAmount().MinAmount) {
+	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
 	}
 
@@ -636,7 +636,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			ToAccount: []*types.Account{
 				settle,
 			},
-			Amount:    uint64(-p.Amount.Amount) * p.Size,
+			Amount:    uint64(-p.Amount.Amount),
 			MinAmount: 0,     // default value, but keep it here explicitly
 			Asset:     asset, // TBC
 			Reference: p.Type.String(),
@@ -654,7 +654,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			ToAccount: []*types.Account{
 				mEvt.margin,
 			},
-			Amount:    uint64(p.Amount.Amount) * p.Size,
+			Amount:    uint64(p.Amount.Amount),
 			MinAmount: 0,     // default value, but keep it here explicitly
 			Asset:     asset, // TBC
 			Reference: p.Type.String(),
@@ -662,9 +662,6 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	}
 
 	// just in case...
-	if p.Size == 0 {
-		p.Size = 1
-	}
 	if p.Type == types.TransferType_MARGIN_LOW {
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
@@ -673,8 +670,8 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			ToAccount: []*types.Account{
 				mEvt.margin,
 			},
-			Amount:    uint64(p.Amount.Amount) * p.Size,
-			MinAmount: uint64(p.Amount.MinAmount),
+			Amount:    uint64(p.Amount.Amount),
+			MinAmount: uint64(p.MinAmount),
 			Asset:     asset,
 			Reference: p.Type.String(),
 		}, nil
@@ -686,8 +683,8 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		ToAccount: []*types.Account{
 			mEvt.general,
 		},
-		Amount:    uint64(p.Amount.Amount) * p.Size,
-		MinAmount: uint64(p.Amount.MinAmount),
+		Amount:    uint64(p.Amount.Amount),
+		MinAmount: uint64(p.MinAmount),
 		Asset:     asset,
 		Reference: p.Type.String(),
 	}, nil

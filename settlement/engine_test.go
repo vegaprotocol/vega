@@ -76,7 +76,6 @@ func testSettleExpiredSuccess(t *testing.T) {
 	expect := []*types.Transfer{
 		{
 			Owner: data[1].trader,
-			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
@@ -84,7 +83,6 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 		{
 			Owner: data[2].trader,
-			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
@@ -92,7 +90,6 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 		{
 			Owner: data[0].trader,
-			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: 1000,
 			},
@@ -119,7 +116,6 @@ func testSettleExpiredSuccess(t *testing.T) {
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
 		e := expect[i]
-		assert.Equal(t, e.Size, p.Size)
 		assert.Equal(t, e.Type, p.Type)
 		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
 	}
@@ -149,7 +145,6 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 	expect := []*types.Transfer{
 		{
 			Owner: data[1].trader,
-			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
@@ -157,7 +152,6 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 		},
 		{
 			Owner: data[2].trader,
-			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
@@ -165,7 +159,6 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 		},
 		{
 			Owner: data[0].trader,
-			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: 1000,
 			},
@@ -188,7 +181,6 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
 		e := expect[i]
-		assert.Equal(t, e.Size, p.Size)
 		assert.Equal(t, e.Type, p.Type)
 		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
 	}

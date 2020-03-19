@@ -338,7 +338,6 @@ message Account {
 message FinancialAmount {
   int64 amount = 1;
   string asset = 2;
-  int64 minAmount = 3;
 }
 
 enum TransferType {
@@ -354,9 +353,9 @@ enum TransferType {
 
 message Transfer {
   string owner = 1;
-  uint64 size = 2;
-  FinancialAmount amount = 3;
-  TransferType type = 4;
+  FinancialAmount amount = 2;
+  TransferType type = 3;
+  int64 minAmount = 4;
 }
 
 message TransferRequest {
