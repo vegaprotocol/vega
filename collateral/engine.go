@@ -528,7 +528,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		//   InitialMargin
 		// In both case either the order will not be accepted, or the trader will be closed
 		if transfer.Type == types.TransferType_MARGIN_LOW &&
-			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
+			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		}
 		response = append(response, res)
@@ -570,7 +570,7 @@ func (e *Engine) MarginUpdateOnOrder(
 
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
-	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.GetAmount().MinAmount) {
+	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
 	}
 
@@ -671,7 +671,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 				mEvt.margin,
 			},
 			Amount:    uint64(p.Amount.Amount),
-			MinAmount: uint64(p.Amount.MinAmount),
+			MinAmount: uint64(p.MinAmount),
 			Asset:     asset,
 			Reference: p.Type.String(),
 		}, nil
@@ -684,7 +684,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			mEvt.general,
 		},
 		Amount:    uint64(p.Amount.Amount),
-		MinAmount: uint64(p.Amount.MinAmount),
+		MinAmount: uint64(p.MinAmount),
 		Asset:     asset,
 		Reference: p.Type.String(),
 	}, nil

@@ -171,10 +171,10 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 		Owner: evt.Party(),
 		Type:  types.TransferType_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
-			Asset:     evt.Asset(),
-			Amount:    int64(margins.InitialMargin - curBalance),
-			MinAmount: int64(margins.InitialMargin - curBalance),
+			Asset:  evt.Asset(),
+			Amount: int64(margins.InitialMargin - curBalance),
 		},
+		MinAmount: int64(margins.InitialMargin - curBalance),
 	}
 
 	return &marginChange{
@@ -247,10 +247,10 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Owner: evt.Party(),
 				Type:  types.TransferType_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
-					Asset:     evt.Asset(),
-					Amount:    int64(margins.InitialMargin - curMargin),
-					MinAmount: minAmount,
+					Asset:  evt.Asset(),
+					Amount: int64(margins.InitialMargin - curMargin),
 				},
+				MinAmount: minAmount,
 			}
 
 		} else { // case 3 -> release some collateral
@@ -258,10 +258,10 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Owner: evt.Party(),
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
-					Asset:     evt.Asset(),
-					Amount:    int64(curMargin - margins.InitialMargin),
-					MinAmount: 0,
+					Asset:  evt.Asset(),
+					Amount: int64(curMargin - margins.InitialMargin),
 				},
+				MinAmount: 0,
 			}
 		}
 

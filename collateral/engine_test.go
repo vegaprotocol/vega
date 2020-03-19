@@ -1085,11 +1085,11 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 		transfer: &types.Transfer{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				MinAmount: 100,
-				Amount:    100,
-				Asset:     testMarketAsset,
+				Amount: 100,
+				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MARGIN_LOW,
+			MinAmount: 100,
+			Type:      types.TransferType_MARGIN_LOW,
 		},
 	}
 
@@ -1121,11 +1121,11 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 		transfer: &types.Transfer{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				MinAmount: 100000,
-				Amount:    100000,
-				Asset:     testMarketAsset,
+				Amount: 100000,
+				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MARGIN_LOW,
+			MinAmount: 100000,
+			Type:      types.TransferType_MARGIN_LOW,
 		},
 	}
 
@@ -1156,11 +1156,11 @@ func TestMarginUpdates(t *testing.T) {
 		transfer: &types.Transfer{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				MinAmount: 100,
-				Amount:    100,
-				Asset:     testMarketAsset,
+				Amount: 100,
+				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MARGIN_LOW,
+			MinAmount: 100,
+			Type:      types.TransferType_MARGIN_LOW,
 		},
 	}
 
