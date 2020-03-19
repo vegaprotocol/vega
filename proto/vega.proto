@@ -354,9 +354,8 @@ enum TransferType {
 
 message Transfer {
   string owner = 1;
-  uint64 size = 2;
-  FinancialAmount amount = 3;
-  TransferType type = 4;
+  FinancialAmount amount = 2;
+  TransferType type = 3;
 }
 
 message TransferRequest {

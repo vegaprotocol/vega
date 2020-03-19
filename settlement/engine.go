@@ -211,7 +211,6 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		}
 		settle := &types.Transfer{
 			Owner: party,
-			Size:  1, // this is an absolute delta based on volume, so size is always 1
 			Amount: &types.FinancialAmount{
 				Amount: mtmShare, // current delta -> mark price minus current position average
 				Asset:  e.product.GetAsset(),
@@ -314,7 +313,6 @@ func (e *Engine) settleAll(lastMarkPrice uint64) ([]*types.Transfer, error) {
 		}
 		settlePos := &types.Transfer{
 			Owner:  party,
-			Size:   1,
 			Amount: amt,
 		}
 		e.log.Debug(

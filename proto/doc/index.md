@@ -2421,7 +2421,6 @@ Proposal can enter Failed state from any other state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | owner | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
 | amount | [FinancialAmount](#vega.FinancialAmount) |  |  |
 | type | [TransferType](#vega.TransferType) |  |  |
 
