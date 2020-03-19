@@ -1,4 +1,4 @@
-# Even bus
+# Event bus
 
 Node event stream - a general event sink, able to track all data and state changes.
 
