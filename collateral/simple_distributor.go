@@ -27,7 +27,7 @@ func (s *simpleDistributor) LossSocializationEnabled() bool {
 
 func (s *simpleDistributor) Add(req *types.Transfer) {
 	s.requests = append(s.requests, request{
-		amount:  float64(req.Amount.Amount*int64(req.Size)) * (float64(s.collected) / float64(s.expectCollected)),
+		amount:  float64(req.Amount.Amount) * (float64(s.collected) / float64(s.expectCollected)),
 		request: req,
 	})
 }

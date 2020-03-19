@@ -1939,7 +1939,6 @@ Proposal can enter Failed state from any other state.
 | ----- | ---- | ----- | ----------- |
 | amount | [int64](#int64) |  |  |
 | asset | [string](#string) |  |  |
-| minAmount | [int64](#int64) |  |  |
 
 
 
@@ -2421,9 +2420,9 @@ Proposal can enter Failed state from any other state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | owner | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
 | amount | [FinancialAmount](#vega.FinancialAmount) |  |  |
 | type | [TransferType](#vega.TransferType) |  |  |
+| minAmount | [int64](#int64) |  |  |
 
 
 

@@ -169,13 +169,12 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
 		Owner: evt.Party(),
-		Size:  1,
 		Type:  types.TransferType_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
-			Asset:     evt.Asset(),
-			Amount:    int64(margins.InitialMargin - curBalance),
-			MinAmount: int64(margins.InitialMargin - curBalance),
+			Asset:  evt.Asset(),
+			Amount: int64(margins.InitialMargin - curBalance),
 		},
+		MinAmount: int64(margins.InitialMargin - curBalance),
 	}
 
 	return &marginChange{
@@ -246,25 +245,23 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// we try to reach the InitialMargin level
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
-				Size:  1,
 				Type:  types.TransferType_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
-					Asset:     evt.Asset(),
-					Amount:    int64(margins.InitialMargin - curMargin),
-					MinAmount: minAmount,
+					Asset:  evt.Asset(),
+					Amount: int64(margins.InitialMargin - curMargin),
 				},
+				MinAmount: minAmount,
 			}
 
 		} else { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
-				Size:  1,
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
-					Asset:     evt.Asset(),
-					Amount:    int64(curMargin - margins.InitialMargin),
-					MinAmount: 0,
+					Asset:  evt.Asset(),
+					Amount: int64(curMargin - margins.InitialMargin),
 				},
+				MinAmount: 0,
 			}
 		}
 
