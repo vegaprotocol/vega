@@ -181,7 +181,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
-func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
+func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64, error) {
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
@@ -248,7 +248,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if totalVolumeToFill < agg.Remaining {
 			timer.EngineTimeCounterAdd()
-			return trades, impactedOrders, 0
+			return trades, impactedOrders, 0, nil
 		}
 	}
 
@@ -257,6 +257,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		filled  bool
 		ntrades []*types.Trade
 		nimpact []*types.Order
+		err     error
 	)
 
 	if agg.Side == types.Side_Sell {
@@ -265,9 +266,13 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
 			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_MARKET {
-				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
+				// break if a wash trade is detected
+				if err != nil && err == ErrWashTrade {
+					break
+				}
 				if len(s.levels[idx].orders) <= 0 {
 					idx--
 				}
@@ -297,9 +302,12 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
 			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_MARKET {
-				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
+				if err != nil && err == ErrWashTrade {
+					break
+				}
 				if len(s.levels[idx].orders) <= 0 {
 					idx--
 				}
@@ -328,7 +336,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		lastTradedPrice = trades[len(trades)-1].Price
 	}
 	timer.EngineTimeCounterAdd()
-	return trades, impactedOrders, lastTradedPrice
+	return trades, impactedOrders, lastTradedPrice, err
 }
 
 func (s *OrderBookSide) getLevels() []*PriceLevel {

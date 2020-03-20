@@ -237,7 +237,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+	trades, impactedOrders, lastTradedPrice, err := b.getOppositeSide(order.Side).uncross(order)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
@@ -248,7 +248,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// if order is persistent type add to order book to the correct side
-	if isPersistent(order) && order.Remaining > 0 {
+	// and we did not hit a error / wash trade error
+	if isPersistent(order) && order.Remaining > 0 && err == nil {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.TimeInForce == types.Order_GTT {
@@ -302,6 +303,11 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 			// delete from lookup table
 			delete(b.ordersByID, impactedOrders[idx].Id)
 		}
+	}
+
+	// if we did hit a wash trade, set the status to stopped
+	if err != nil && err == ErrWashTrade {
+		order.Status = types.Order_Stopped
 	}
 
 	if order.Status == types.Order_Active {
