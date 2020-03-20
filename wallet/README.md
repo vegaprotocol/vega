@@ -1,10 +1,12 @@
 Wallet
 ======
 
-This package provides the basic cryptography to sign vega transactions, and a basic key management system: `wallet service`.
+This package provides the basic cryptography to sign vega transactions, and a basic key management system: `wallet service`. It can be run alongside the core, but is not required for the operation of a Vega node, and API clients are free to implement their own transaction signing.
 
 A wallet takes the form of a file saved on the file system and is encrypted using the passphrase chosen by the user.
 A wallet is composed of a list of key pairs (Ed25519) used to sign transactions for the user of a wallet.
+
+To read more about authentication & signing in Vega, see [Authentication & Signing](../design/authentication-and-signing.md)
 
 ## Generate configuration
 
