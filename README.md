@@ -7,14 +7,14 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 **Vega** provides the following core features:
 
 - Join a Vega network as a validator or non-consensus node.
-- [Governance](./governance/README.md) - propsing and voting for new markets
+- [Governance](./governance/README.md) - proposing and voting for new markets
 - A [matching engine](./matching/README.md)
 - [Configure a node](#configuration) (and its [APIs](#apis))
 - Manage authentication with a network
 - [Run scenario tests](./integration/README.md)
 - Support settlement in cryptocurrency (coming soon)
 
-Addtional services that are in this repo, but run separately:
+Additional services that are in this repo, but run separately:
 - [Wallet](./wallet/README.md) can be used provide key management for users.
 
 ## Links
