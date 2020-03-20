@@ -390,11 +390,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		return nil, ErrMissingGeneralAccountForParty
 	}
 
-	// if this is a market order, let's set the price to it now.
-	if order.Type == types.Order_MARKET {
-		order.Price = m.matching.MarketOrderPrice(order.Side)
-	}
-
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
