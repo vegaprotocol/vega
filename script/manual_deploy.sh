@@ -37,4 +37,4 @@ docker run --rm -ti \
 	-e VEGANET_USERS="$(cat "$HOME/.devnet-deploy-veganet-users")" \
  	--entrypoint /bin/bash \
  	registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13 \
- 	-c 'make deps && make install && ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755" && for u in $VEGANET_USERS ; do vegaccount -addr geo.d.vega.xyz:3002 -traderid "$u" ; curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $VEGA_AUTH_MASTERTOKEN" -d "{\"id\": \"$u\", \"password\": \"123\"}" https://auth.d.vega.xyz 1>/dev/null ; done'
+ 	-c 'make deps && make install && ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755" && ./script/issue-free-money.sh'

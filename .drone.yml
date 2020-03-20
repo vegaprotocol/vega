@@ -165,13 +165,8 @@ steps:
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires SLACK_HOOK_URL and 3 DEVNET_* vars.
       - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
-      # Nasty auth hack. Single quotes to avoid yaml k:v pair.
-      - 'for u in $$VEGANET_USERS ; do
-          cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
-          curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $$VEGA_AUTH_MASTERTOKEN"
-            -d "{\"id\": \"$$u\", \"password\": \"123\"}" https://auth.d.vega.xyz 1>/dev/null ;
-          echo ;
-        done'
+      # Set up wallets, keypairs and free money.
+      - ./script/issue-free-money.sh
     depends_on:
       - test
       - test_heavy
