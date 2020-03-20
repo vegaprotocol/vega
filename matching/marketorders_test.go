@@ -111,7 +111,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 
 	order2 := types.Order{
 		MarketID:    market,
-		PartyID:     "A",
+		PartyID:     "B",
 		Side:        types.Side_Buy,
 		Size:        10,
 		Remaining:   10,
