@@ -457,7 +457,7 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 
 	order2 := types.Order{
 		MarketID:    market,
-		PartyID:     "A",
+		PartyID:     "B",
 		Side:        types.Side_Sell,
 		Price:       100,
 		Size:        10,
@@ -477,6 +477,140 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
 	assert.Equal(t, book.getTotalSellVolume(), uint64(0))
 	assert.Equal(t, len(book.ordersByID), 0)
+}
+
+func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	order2 := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        10,
+		Remaining:   10,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err = book.SubmitOrder(&order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, order2.Status, types.Order_Stopped)
+}
+
+func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     "B",
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	order1 := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err = book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	order2 := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        2,
+		Remaining:   2,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+
+	confirm, err = book.SubmitOrder(&order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, int(len(confirm.Trades)))
+	assert.Equal(t, order2.Status, types.Order_Stopped)
+	assert.Equal(t, int(order2.Remaining), 1)
+}
+
+func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrices(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	order := types.Order{
+		MarketID:    market,
+		PartyID:     "B",
+		Side:        types.Side_Sell,
+		Price:       1,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	order1 := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Sell,
+		Price:       2,
+		Size:        1,
+		Remaining:   1,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+	confirm, err = book.SubmitOrder(&order1)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	order2 := types.Order{
+		MarketID:    market,
+		PartyID:     "A",
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        2,
+		Remaining:   2,
+		TimeInForce: types.Order_GTC,
+		Type:        types.Order_LIMIT,
+	}
+
+	confirm, err = book.SubmitOrder(&order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, int(len(confirm.Trades)))
+	assert.Equal(t, order2.Status, types.Order_Stopped)
+	assert.Equal(t, int(order2.Remaining), 1)
 }
 
 type MarketPos struct {

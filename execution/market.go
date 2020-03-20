@@ -449,14 +449,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
+	// or if the order was stopped because of a wash trade
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) &&
+	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC || order.Status == types.Order_Stopped) &&
 		confirmation.Order.Remaining != 0 {
-		// create a temporary order with the size beeing the remaining
-		tmpOrder := *order
-		tmpOrder.Size = order.Remaining
-		_, err := m.position.UnregisterOrder(&tmpOrder)
+		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),

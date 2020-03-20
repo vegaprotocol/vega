@@ -1,10 +1,16 @@
 package matching
 
 import (
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+)
+
+var (
+	// ErrWashTrade signals an attempt to a wash trade from a party
+	ErrWashTrade = errors.New("party attempted to submit wash trade")
 )
 
 // PriceLevel represents all the Orders placed at a given price.
@@ -50,7 +56,7 @@ func (l *PriceLevel) removeOrder(index int) {
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
-func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order) {
+func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order, err error) {
 	// for some reason sometimes it seems the pricelevels are not deleted when getting empty
 	// no big deal, just return early
 	if len(l.orders) <= 0 {
@@ -64,6 +70,11 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
 	for i, order := range l.orders {
+		// prevent wash trade
+		if order.PartyID == agg.PartyID {
+			err = ErrWashTrade
+			break
+		}
 
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, order)
@@ -105,7 +116,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		l.orders = l.orders[:len(l.orders)-removed]
 	}
 
-	return agg.Remaining == 0, trades, impactedOrders
+	return agg.Remaining == 0, trades, impactedOrders, err
 }
 func (l *PriceLevel) getVolumeAllocation(agg, pass *types.Order) uint64 {
 	return min(agg.Remaining, pass.Remaining)
