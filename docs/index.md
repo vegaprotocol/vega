@@ -16,5 +16,7 @@ Some subdirectories contain Golang packages which represent a discrete domain or
 
 In order to document the design, each package should have a single markdown file in the /design directory
 
-1. [Matching package](matching.md)
-2. [Position package](positions.md)
+1. [Matching package](../matching/README.md)
+2. [Position package](../positions/README.md)
+
+#
