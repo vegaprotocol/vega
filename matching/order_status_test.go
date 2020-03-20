@@ -363,7 +363,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	confirm, err := book.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_PartiallyFilled, confirm.Order.Status)
+	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
 }
 
 func testGTCStoppedPartiallyFilled(t *testing.T) {
@@ -785,7 +785,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 	// then remove expired, set 1 sec after order exp time.
 	orders := book.RemoveExpiredOrders(11)
 	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_PartiallyFilled, orders[0].Status)
+	assert.Equal(t, types.Order_Expired, orders[0].Status)
 }
 
 type marketPositionFake struct {

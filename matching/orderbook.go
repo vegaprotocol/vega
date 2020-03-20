@@ -201,10 +201,6 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 
 	// Important to mark the order as cancelled (and no longer active)
 	order.Status = types.Order_Cancelled
-	// for a GTC order, if it was partially filled, the final status can be PartiallyFilled
-	if order.TimeInForce == types.Order_GTC && order.Remaining != order.Size {
-		order.Status = types.Order_PartiallyFilled
-	}
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -370,11 +366,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	// delete the orders now
 	for at := range expiredOrders {
 		order, _ := b.DeleteOrder(&expiredOrders[at])
-		if order.Remaining == order.Size {
-			order.Status = types.Order_Expired
-		} else {
-			order.Status = types.Order_PartiallyFilled
-		}
+		order.Status = types.Order_Expired
 		out = append(out, *order)
 	}
 
