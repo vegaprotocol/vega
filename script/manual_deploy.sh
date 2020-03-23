@@ -27,6 +27,10 @@ docker run --rm -ti \
 	-e DEVNET_DEPLOY_HOSTS="$(cat "$HOME/.devnet-deploy-hosts")" \
 	-e DEVNET_DEPLOY_SSH_KNOWN_HOSTS="$(cat "$HOME/.devnet-deploy-ssh-known-hosts")" \
 	-e DEVNET_DEPLOY_SSH_PRIVATE_KEY="$(cat "$HOME/.devnet-deploy-ssh-private-key")" \
+	-e DEVNET_TOPUP_AMOUNT="$(cat "$HOME/.devnet-topup-amount")" \
+	-e DEVNET_TOPUP_NODE="$(cat "$HOME/.devnet-topup-node")" \
+	-e DEVNET_WALLET_PASSPHRASE="$(cat "$HOME/.devnet-wallet-passphrase")" \
+	-e DEVNET_WALLET_SERVER="$(cat "$HOME/.devnet-wallet-server")" \
 	-e DRONE=true \
 	-e DRONE_COMMIT_MESSAGE="$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)" \
 	-e CI_COMMIT_SHA="$(git log -n1 --pretty=oneline |cut -b1-8)" \
@@ -37,4 +41,4 @@ docker run --rm -ti \
 	-e VEGANET_USERS="$(cat "$HOME/.devnet-deploy-veganet-users")" \
  	--entrypoint /bin/bash \
  	registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13 \
- 	-c 'make deps && make install && ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755" && for u in $VEGANET_USERS ; do vegaccount -addr geo.d.vega.xyz:3002 -traderid "$u" ; curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $VEGA_AUTH_MASTERTOKEN" -d "{\"id\": \"$u\", \"password\": \"123\"}" https://auth.d.vega.xyz 1>/dev/null ; done'
+	-c 'make deps && make install && ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755" && ./script/issue-free-money.sh "$DEVNET_WALLET_SERVER" "$DEVNET_WALLET_PASSPHRASE" "$DEVNET_TOPUP_NODE" "$DEVNET_TOPUP_AMOUNT"'
