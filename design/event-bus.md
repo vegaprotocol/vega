@@ -1,13 +1,16 @@
 # Even bus
 
-Node event stream - a general event sink, able to track all data and state changes.
+Node event stream - a general event sink, capable of tracking all data and state changes.
 
 ## Definitions
 
-### Signal / trigger
+### Event
 
-Action or a side-effect that triggered an event on the node.
-Examples:
+Action or a side-effect that triggered by trading-core in response to state change on the node.
+
+Events is represented as data / notification that is sent on to the bus. Any state changes to the core data (trader positions, mark price, collateral, ...) will produce an event. Some state changes will produce multiple events.
+
+#### Examples
 
 - The mark price changes (for whatever reason)
 - Traders with open positions get market to market
@@ -17,36 +20,25 @@ Examples:
 - The network trades with non-distressed traders
 - Any balance on the insurance account for the market might get updated (balance of distressed traders moves to insurance pool, loss socialization taps into insurance pool)
 
-#### Signal structure
-
-- signal type (TODO: __would enum suffice or do we need more details here?__);
-- singal sequence number;
-- block time (TODO: alternatively just block number).
-
-### Event
-
-Event is what happens in in response to a signal.
-
-Events is represented as data / notification that is sent on to the bus. Any state changes to the core data (trader positions, mark price, collateral, ...) will produce an event. Some state changes will produce multiple events.
-
 #### Every structure
 
 - topic (channel) - category of the event (e.g. positions; orders; etc)
-- a signal - reason why event was emitted;
+- trigger - reason why event was emitted;
+- trigger type;
 - emitter of the signal, or its source;
-- data payload - abstract data associated with that event (TODO: __needs clarification__)
-- expiration time - how long is the event going to be considered valid;
-- processed flag - some indication whether event has been consumed already or not (TODO: __do we want to know what consumer precessed this event? Or generally if it was processed?__)
+- data payload - abstract data associated with that event (full copy of the data generated in response to the event; events are expected to be encapsulated)
+- sequence number;
+- emitted block time.
 
 ### Consumer
 
-Event consumer connecting to the event bus and processing its data. Consumers are expected to precess events by topic.
+Event consumer (aka plugin) connecting to the event bus and processing its data. Consumers are expected to precess events by topic.
 
 ## Assumptions
 
 ### Events and the buffers/plugins
 
-From the examples above, we can identify various events that essentially duplicate, and therefore can replace the way we're currently interacting with the buffers and plugins:
+We can identify various events that essentially duplicate, and therefore will replace the way we're currently interacting with the buffers and plugins:
 
 - Trader balances get updated -> Accounts buffer
 - Positions get updated -> position plugin
@@ -67,8 +59,9 @@ Buffers are flushed by the execution engine at the end of each block, or transac
 The core currently uses the types defined in the protofile directly. This restricts us in terms of what data an event can represent. A trade event should, naturally, contain the trade object itself, but over time, we might want to have the realised/unrealised P&L values as part of the trade event available. This requires us to update the core to use domain models that are not directly bound to the current types we're using. There will be type embedding, so events can be type-cast to various event interfaces and multiplexed, of course.
 Something worth considering is to develop a way to generate some of the boilerplate code that this approach will inevitably bring with it, although this is not a priority by any means.
 
-## TODO
+## Out of scope
 
-- [ ] Full data on every signal or summary in general stream and details in specialised streams?
-- [ ] Error handling. What should happen to the node if event bus cannot process a new signal?
-- [ ] Logging for event bus. Shall we have a dedicated logger like we do for engines and services?
+- __[Logging events]__ Logging for event bus is to be implemented similarly to other core services and engines. Event bus logs are not expected to dump all processed events (a separate consumer might be built for that outside of this feature).
+- __[Error handling in isolation]__ Event bus is expected to be tightly coupled with the emitters in core. Client errors are considered logic errors and are all expected to be detected during testing. Invalid event types are to be ignored. Consumer errors (e.g. inability to consume events) are not part of event bus error handling path.
+- __[Buffering]__ Event bus is not expected to buffer events and limit their lifetime.
+- __[API]__ There will be no API to interact with event bus directly.
