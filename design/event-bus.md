@@ -1,6 +1,8 @@
-# Even bus
+# Event bus
+
 
 Node event stream - a general event sink, capable of tracking all data and state changes.
+
 
 ## Definitions
 
@@ -12,6 +14,7 @@ Events is represented as data / notification that is sent on to the bus. Any sta
 
 #### Examples
 
+
 - The mark price changes (for whatever reason)
 - Traders with open positions get market to market
 - Some traders may end up in a distressed state as a result
@@ -22,6 +25,7 @@ Events is represented as data / notification that is sent on to the bus. Any sta
 
 #### Every structure
 
+
 - topic (channel) - category of the event (e.g. positions; orders; etc)
 - trigger - reason why event was emitted;
 - trigger type;
@@ -30,15 +34,19 @@ Events is represented as data / notification that is sent on to the bus. Any sta
 - sequence number;
 - emitted block time.
 
+
 ### Consumer
 
 Event consumer (aka plugin) connecting to the event bus and processing its data. Consumers are expected to precess events by topic.
 
+
 ## Assumptions
+
 
 ### Events and the buffers/plugins
 
 We can identify various events that essentially duplicate, and therefore will replace the way we're currently interacting with the buffers and plugins:
+
 
 - Trader balances get updated -> Accounts buffer
 - Positions get updated -> position plugin
@@ -46,15 +54,21 @@ We can identify various events that essentially duplicate, and therefore will re
 - Orders are events -> orders buffer
 - Ledger movements as events -> buffer
 
+
 For this reason, it makes little to no sense to have both the buffers and the event bus in place. Instead the core just pushes the events onto the bus, and buffers subscribe to the events that contain the data they're aggregating. The same applies to the plugins.
+
 
 Currently, we only have one plugin (positions). To feed data into the positions plugin, we have a positions buffer. The positions plugin subscribes to this buffer, and receives a channel which gets populated with the data once the buffer is flushed. The plugin takes this data, calculates the P&L etc... This is, for the most part, going to remain unchanged with the introduction of the event bus. Instead of receiving the data from a buffer, however, the plugins will subscribe to the event bus directly.
 
+
 #### The issue of flushing
+
 
 Buffers are flushed by the execution engine at the end of each block, or transaction. The event bus won't have this same `Flush` mechanic. Instead, we will be pushing an event indicating the start/end of a new block, and the end of a transaction. These events can be used as key points by stores to commit a transaction, or by plugins to process the state they've been aggregating.
 
+
 ### Domain models
+
 
 The core currently uses the types defined in the protofile directly. This restricts us in terms of what data an event can represent. A trade event should, naturally, contain the trade object itself, but over time, we might want to have the realised/unrealised P&L values as part of the trade event available. This requires us to update the core to use domain models that are not directly bound to the current types we're using. There will be type embedding, so events can be type-cast to various event interfaces and multiplexed, of course.
 Something worth considering is to develop a way to generate some of the boilerplate code that this approach will inevitably bring with it, although this is not a priority by any means.
