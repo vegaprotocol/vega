@@ -34,7 +34,7 @@ Workflow errors (e.g. rejected invalid order) are considered valid events.
 
 ### Consumer
 
-Event consumer (aka plugin) connecting to the event bus and processing its data. Consumers are expected to precess events by topic.
+Event consumer (aka plug-in) connecting to the event bus and processing its data. Consumers are expected to precess events by topic.
 
 Stores are to be populated by the consumers moving/copying payloads from the event bus.
 
@@ -42,23 +42,23 @@ Event bus will the way to send data from the core engines to underlying stores. 
 
 ## Assumptions
 
-### Events and the buffers/plugins
+### Events and the buffers/plug-ins
 
-We can identify various events that essentially duplicate, and therefore will replace the way we're currently interacting with the buffers and plugins:
+We can identify various events that essentially duplicate, and therefore will replace the way we're currently interacting with the buffers and plug-ins:
 
 - Trader balances get updated -> Accounts buffer
-- Positions get updated -> position plugin
+- Positions get updated -> position plug-in
 - Each trade is an event -> trades buffer
 - Orders are events -> orders buffer
 - Ledger movements as events -> buffer
 
-For this reason, it makes little to no sense to have both the buffers and the event bus in place. Instead the core just pushes the events onto the bus, and buffers subscribe to the events that contain the data they're aggregating. The same applies to the plugins.
+For this reason, it makes little to no sense to have both the buffers and the event bus in place. Instead the core just pushes the events onto the bus, and buffers subscribe to the events that contain the data they're aggregating. The same applies to the plug-ins.
 
-Currently, we only have one plugin (positions). To feed data into the positions plugin, we have a positions buffer. The positions plugin subscribes to this buffer, and receives a channel which gets populated with the data once the buffer is flushed. The plugin takes this data, calculates the P&L etc... This is, for the most part, going to remain unchanged with the introduction of the event bus. Instead of receiving the data from a buffer, however, the plugins will subscribe to the event bus directly.
+Currently, we only have one plug-in (positions). To feed data into the positions plug-in, we have a positions buffer. The positions plug-in subscribes to this buffer, and receives a channel which gets populated with the data once the buffer is flushed. The plug-in takes this data, calculates the P&L etc... This is, for the most part, going to remain unchanged with the introduction of the event bus. Instead of receiving the data from a buffer, however, the plug-ins will subscribe to the event bus directly.
 
 #### The issue of flushing
 
-Buffers are flushed by the execution engine at the end of each block, or transaction. The event bus won't have this same `Flush` mechanic. Instead, we will be pushing an event indicating the start/end of a new block, and the end of a transaction. These events can be used as key points by stores to commit a transaction, or by plugins to process the state they've been aggregating.
+Buffers are flushed by the execution engine at the end of each block, or transaction. The event bus won't have this same `Flush` mechanic. Instead, we will be pushing an event indicating the start/end of a new block, and the end of a transaction. These events can be used as key points by stores to commit a transaction, or by plug-ins to process the state they've been aggregating.
 
 ### Domain models
 
