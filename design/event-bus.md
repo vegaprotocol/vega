@@ -10,6 +10,8 @@ Action or a side-effect that triggered by trading-core in response to state chan
 
 Events is represented as data / notification that is sent on to the bus. Any state changes to the core data (trader positions, mark price, collateral, ...) will produce an event. Some state changes will produce multiple events.
 
+Workflow errors (e.g. rejected invalid order) are considered valid events.
+
 #### Examples
 
 - The mark price changes (for whatever reason)
