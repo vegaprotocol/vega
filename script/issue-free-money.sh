@@ -1,12 +1,18 @@
 #!/bin/bash
 
-# wallet server
-ws="${WALLET_SERVER:-https://wallet.d.vega.xyz/api/v1}"
-passphrase="${WALLET_PASSPHRASE:-DCBAabcd1357#*%^}"
+syntax="Syntax: $0 https://walletserver/api/v1 'passphrase' https://veganode 123400000"
 
+# wallet server
+ws="${1:-}"
+passphrase="${2:-}"
 # vega node
-node="${VEGANODE:-https://geo.d.vega.xyz}"
-amount="${TOPUP_AMOUNT:-10000000}"
+node="${3:-}"
+amount="${4:-}"
+
+if test -z "$ws" -o -z "$passphrase" -o -z "$node" -o -z "$amount"; then
+	echo "$syntax"
+	exit 1
+fi
 
 for u in $VEGANET_USERS
 do
@@ -25,7 +31,7 @@ do
 	keys="$(curl -s -XGET -H "$hdr" "$ws/keys" | jq -r '.Data|.[]|.pub')"
 	if test -z "$keys" ; then
 		echo "$u: Creating keypair."
-		keys="$(curl -s -XPOST -H "$hdr" -d '{"passphrase":"123","meta":[]}' "$ws/keys" | jq -r .Data)"
+		keys="$(curl -s -XPOST -H "$hdr" -d '{"passphrase":"'"$passphrase"'","meta":[]}' "$ws/keys" | jq -r .Data)"
 	fi
 	echo "$u: User has $(echo "$keys" | wc -l) keypairs."
 	for key in $keys ; do

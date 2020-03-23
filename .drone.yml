@@ -149,6 +149,14 @@ steps:
         from_secret: DEVNET_DEPLOY_HOSTS
       DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
+      DEVNET_TOPUP_AMOUNT:
+        from_secret: DEVNET_TOPUP_AMOUNT
+      DEVNET_TOPUP_NODE:
+        from_secret: DEVNET_TOPUP_NODE
+      DEVNET_WALLET_PASSPHRASE:
+        from_secret: DEVNET_WALLET_PASSPHRASE
+      DEVNET_WALLET_SERVER:
+        from_secret: DEVNET_WALLET_SERVER
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
@@ -166,7 +174,7 @@ steps:
       # The deploy script requires SLACK_HOOK_URL and 3 DEVNET_* vars.
       - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Set up wallets, keypairs and free money.
-      - ./script/issue-free-money.sh
+      - ./script/issue-free-money.sh "$$DEVNET_WALLET_SERVER" "$$DEVNET_WALLET_PASSPHRASE" "$$DEVNET_TOPUP_NODE" "$$DEVNET_TOPUP_AMOUNT"
     depends_on:
       - test
       - test_heavy
