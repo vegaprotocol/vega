@@ -25,6 +25,7 @@ type testService struct {
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	store := mocks.NewMockPartyStore(ctrl)
+	store.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
 	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := parties.NewService(
