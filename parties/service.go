@@ -34,6 +34,16 @@ func NewService(log *logging.Logger, config Config, store PartyStore) (*Svc, err
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
+	// create the network party, as it's a builtin party
+	// and required from the apis + the network can create orders which are stored
+	// in the orders db
+	err := store.Post(&types.Party{
+		Id: "network",
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &Svc{
 		log:    log,
 		Config: config,
