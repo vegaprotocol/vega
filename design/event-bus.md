@@ -24,10 +24,6 @@ Workflow errors (e.g. rejected invalid order) are considered valid events.
 
 #### Every structure
 
-- topic (channel) - category of the event (e.g. positions; orders; etc)
-- trigger - reason why event was emitted;
-- trigger type;
-- emitter of the signal, or its source;
 - data payload - abstract data associated with that event (full copy of the data generated in response to the event; events are expected to be encapsulated)
 - sequence number;
 - emitted block time.
