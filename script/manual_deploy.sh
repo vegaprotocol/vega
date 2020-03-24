@@ -41,4 +41,4 @@ docker run --rm -ti \
 	-e VEGANET_USERS="$(cat "$HOME/.devnet-deploy-veganet-users")" \
  	--entrypoint /bin/bash \
  	registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13 \
-	-c 'make deps && make install && ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755" && ./script/issue-free-money.sh "$DEVNET_WALLET_SERVER" "$DEVNET_WALLET_PASSPHRASE" "$DEVNET_TOPUP_NODE" "$DEVNET_TOPUP_AMOUNT"'
+	-c 'make deps && make install && ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755" && python3 script/issue-free-money.py --wallets "$(echo "$VEGANET_USERS" | tr " " ",")" --walletserver "$DEVNET_WALLET_SERVER" --passphrase "$DEVNET_WALLET_PASSPHRASE" --veganode "$DEVNET_TOPUP_NODE" --amount "$DEVNET_TOPUP_AMOUNT"'

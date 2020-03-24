@@ -106,7 +106,7 @@ traders_action() {
 	start|stop)
 		response_headers_file="$(mktemp)"
 		output_file="$(mktemp)"
-		curl -D "$response_headers_file" --silent -XPUT "https://bots.vegaprotocol.io/$net/traders?action=$action" 1>"$output_file" 2>&1
+		curl -D "$response_headers_file" --silent -XPUT -d '{}' "https://bots.vegaprotocol.io/$net/traders?action=$action" 1>"$output_file" 2>&1
 		response_line="$(head -n1 <"$response_headers_file")"
 		if ! echo -n "$response_line" | grep -q '^HTTP/[0-9][.0-9]* 200' ; then
 			echo "Warning: Bad response from go-trade-bot: $response_line"
