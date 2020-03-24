@@ -30,7 +30,7 @@ before_script:
   - find -maxdepth 1 -not -name . -and -not -name go -exec mv '{}' "${SRC_DIR}/" ';'
   - cd "${SRC_DIR}" || exit 1
   # The following git+ssh config enables accessing the quant repo.
-  - git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
+  - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
   - eval "$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
   - if ! echo "${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
       echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
