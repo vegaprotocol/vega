@@ -40,7 +40,6 @@ require (
 )
 
 replace (
-	code.vegaprotocol.io/quant => code.vegaprotocol.io/quant v0.1.0
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
 	github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.32.109
 )
