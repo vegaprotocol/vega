@@ -139,3 +139,7 @@ message GetSomethingsByMarketIDResponse {
     repeated vega.Something something = 1;
 }
 ```
+
+### By popular demand:
+
+Named return values are perfectly fine. They can be useful in certain scenario's (changing return values in defer functions, for example).
