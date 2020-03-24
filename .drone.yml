@@ -30,21 +30,21 @@ steps:
       GOARCH: amd64
       GOCACHE: /go/cache
       GOOS: linux
-      GITLAB_DEPLOY_SSH_KNOWN_HOSTS:
-        from_secret: GITLAB_DEPLOY_SSH_KNOWN_HOSTS
-      GITLAB_DEPLOY_SSH_PRIVATE_KEY:
-        from_secret: GITLAB_DEPLOY_SSH_PRIVATE_KEY
+      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
+        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
-      # The following git+ssh config enables accessing private Gitlab repos.
-      - git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
       - eval "$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
-      - if ! echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN RSA PRIVATE KEY" ; then
-          echo "Need env var GITLAB_DEPLOY_SSH_PRIVATE_KEY to have an RSA private key" ; exit 1 ; fi
-      - if ! echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^gitlab.com ssh-rsa" ; then
-          echo "Need env var GITLAB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
-      - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
-      - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-      - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
       - make build
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
