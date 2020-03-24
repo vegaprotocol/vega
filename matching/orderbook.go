@@ -348,9 +348,15 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 
 	// delete the orders now
 	for at := range expiredOrders {
-		order, _ := b.DeleteOrder(&expiredOrders[at])
-		order.Status = types.Order_Expired
-		out = append(out, *order)
+		order, err := b.DeleteOrder(&expiredOrders[at])
+		if err == nil {
+			// this may be not nil because the expiring order was cancelled before.
+			// so it was already deleted, we do not remove them from the expiringOrders
+			// when they get cancelled as this would required unnecessary computation that
+			// can be delayed for later.
+			order.Status = types.Order_Expired
+			out = append(out, *order)
+		}
 	}
 
 	if b.LogRemovedOrdersDebug {
