@@ -61,20 +61,9 @@ Buffers are flushed by the execution engine at the end of each block, or transac
 The core currently uses the types defined in the `proto` file directly. This restricts us in terms of what data an event can represent. A trade event should, naturally, contain the trade object itself, but over time, we might want to have the realised/unrealised P&L values as part of the trade event available. This requires us to update the core to use domain models that are not directly bound to the current types we're using. There will be type embedding, so events can be type-cast to various event interfaces and multiplexed, of course.
 Something worth considering is to develop a way to generate some of the boilerplate code that this approach will inevitably bring with it, although this is not a priority by any means.
 
-<<<<<<< HEAD
-
-## TODO
-
-
-- [ ] Full data on every signal or summary in general stream and details in specialised streams?
-- [ ] Error handling. What should happen to the node if event bus cannot process a new signal?
-- [ ] Logging for event bus. Shall we have a dedicated logger like we do for engines and services?
-
-=======
 ## Out of scope
 
 - __[Logging events]__ Logging for event bus is to be implemented similarly to other core services and engines. Event bus logs are not expected to dump all processed events (a separate consumer might be built for that outside of this feature).
 - __[Error handling in isolation]__ Event bus is expected to be tightly coupled with the emitters in core. Client errors are considered logic errors and are all expected to be detected during testing. Invalid event types are to be ignored. Consumer errors (e.g. inability to consume events) are not part of event bus error handling path.
 - __[Buffering]__ Event bus is not expected to buffer events and limit their lifetime.
 - __[API]__ There will be no API to interact with event bus directly.
->>>>>>> [skip ci] Correct proposal
