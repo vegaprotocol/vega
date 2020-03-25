@@ -124,7 +124,7 @@ const (
 )
 ```
 
-To add an RPC call to get this _"something"_ from the system, add a call to the trading_data service in proto/api/trading.proto:
+To add an RPC call to get this _"something"_ from the system, add a call to the `trading_data` service in `proto/api/trading.proto`:
 
 ```proto
 service trading_data {
