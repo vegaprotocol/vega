@@ -248,7 +248,7 @@ spellcheck: ## Run markdown spellcheck container
 			--no-suggestions \
 			--report \
 			'*.md' \
-			'design/**/*.md'
+			'docs/**/*.md'
 
 # The integration directory is special, and contains a package called core_test.
 .PHONY: staticcheck
