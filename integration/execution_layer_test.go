@@ -832,6 +832,10 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 
 func executedTrades(trades *gherkin.DataTable) error {
 	var err error
+	if expectedCount, actualCount := len(trades.Rows), len(execsetup.trades.data); expectedCount != actualCount {
+		return fmt.Errorf("Test case does not check all trades. There are %d, checking %d trades", actualCount, expectedCount)
+	}
+
 	for i, row := range trades.Rows {
 		if i > 0 {
 			trader := val(row, 0)
