@@ -5,8 +5,8 @@
 # where filename is relative to this configuration file
 barnabee
 blockchain
-Craid
 Ed25519
+github
 GitLab
 GoLang
 GraphQL
