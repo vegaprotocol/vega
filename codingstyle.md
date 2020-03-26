@@ -4,7 +4,7 @@ This document serves to outline the coding style standard we aim to follow throu
 
 ## Starting point
 
-As a starting point, we should follow the official golang `CodeReviewComments` document [found on github](https://github.com/golang/go/wiki/CodeReviewComments). The basics are:
+As a starting point, we should follow [the official golang `CodeReviewComments` document](https://github.com/golang/go/wiki/CodeReviewComments). The basics are:
 
 * names are `camelCased` or `CamelCased`, for functions, types, and constants alike.
 * Avoid stutter (`markets.NewMarket` should be `markets.New()` etc...)
@@ -119,7 +119,7 @@ type Meta struct {
 type Something_Status int32
 
 const (
-    Something_Disbaled Something_Status = 0
+    Something_Disabled Something_Status = 0
     Something_Enabled  Something_Status = 1
 )
 ```
@@ -142,4 +142,4 @@ message GetSomethingsByMarketIDResponse {
 
 ### By popular demand:
 
-Named return values are perfectly fine. They can be useful in certain scenario's (changing return values in defer functions, for example).
+Named return values are perfectly fine. They can be useful in certain scenarios (changing return values in defer functions, for example).
