@@ -1,4 +1,5 @@
-Feature: Test trader accounts
+Feature: Test trader margin accounts case 1
+# https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
