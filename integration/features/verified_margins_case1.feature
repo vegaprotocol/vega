@@ -1,4 +1,4 @@
-Feature: Test trader margin accounts case 1
+Feature: Test trader margin accounts case
 # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
