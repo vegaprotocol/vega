@@ -829,3 +829,29 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	return mkt
 
 }
+
+func executedTrades(trades *gherkin.DataTable) error {
+	var err error
+	for i, row := range trades.Rows {
+		if i > 0 {
+			trader := val(row, 0)
+			price := u64val(row, 1)
+			size := u64val(row, 2)
+			counterparty := val(row, 3)
+			var found bool = false
+			for _, v := range execsetup.trades.data {
+				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				err = fmt.Errorf("expected trade is missing: %v, %v, %v, %v", trader, price, size, counterparty)
+				break
+			}
+		}
+	}
+
+	return err
+}

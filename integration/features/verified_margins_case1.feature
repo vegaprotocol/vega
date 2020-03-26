@@ -38,10 +38,10 @@ Feature: Test trader accounts
       | trader     | market id | type | volume | price | resulting trades | type  | tif |
       | trader1    | ETH/DEC19 |  buy |     13 |   150 |                2 | LIMIT | GTC |
     And "trader1" general account for asset "ETH" balance is "6832"
-    #And executed trades:
-    #  |  buyer  | price | size |       seller |
-    #  | trader1 |   112 |    2 |   sellSideMM |
-    #  | trader1 |   140 |   11 |   sellSideMM |
+    And executed trades:
+      |  buyer  | price | size |       seller |
+      | trader1 |   112 |    2 |   sellSideMM |
+      | trader1 |   140 |   11 |   sellSideMM |
 
     # checking margins
     Then I expect the trader to have a margin:
