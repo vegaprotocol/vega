@@ -179,8 +179,12 @@ steps:
           slack_notify create_mr
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
-      # The deploy script requires SLACK_HOOK_URL and 3 DEVNET_* vars.
-      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      # The deploy script requires vars:
+      # - DEVNET_DEPLOY_HOSTS
+      # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
+      # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
+      # - SLACK_HOOK_URL
+      - /usr/local/bin/deploy-trading-core.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Set up wallets, keypairs and free money.
       - /usr/local/bin/init-wallets-tokenbalances.py
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
