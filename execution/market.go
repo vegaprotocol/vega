@@ -1232,7 +1232,7 @@ func (m *Market) validateOrderAmendment(
 		// only new size not permitted to be <= 0
 		newSize := int64(order.Size) + amendment.SizeDelta
 		if newSize <= 0 {
-			return types.ErrEditNotAllowed
+			return errors.New("amend order size can't be <= 0")
 		}
 
 	}
@@ -1242,15 +1242,15 @@ func (m *Market) validateOrderAmendment(
 		// if expiresAt is before or equal to created at
 		// we return an error
 		if amendment.ExpiresAt <= order.CreatedAt {
-			return types.ErrEditNotAllowed
+			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
 		}
 	} else if amendment.TimeInForce == types.Order_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != 0 {
-			return types.ErrEditNotAllowed
+			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
 		} else {
 			// IOC and FOK are not acceptable for amend order
-			return types.ErrEditNotAllowed
+			return errors.New("amend order, TIF FOK and IOC are not allowed")
 		}
 	}
 
