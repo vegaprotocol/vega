@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -77,6 +78,8 @@ func (s *tradingService) validateToken(partyID string, tkn string) error {
 func (s *tradingService) CheckToken(
 	ctx context.Context, req *protoapi.CheckTokenRequest,
 ) (*protoapi.CheckTokenResponse, error) {
+	metrics.APIRequestAndTimeGRPC("CheckToken", 0)
+
 	if req == nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
@@ -104,6 +107,7 @@ func (s *tradingService) CheckToken(
 func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
+	metrics.APIRequestAndTimeGRPC("SignIn", 0)
 	if req == nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
@@ -146,6 +150,7 @@ func (s *tradingService) SignIn(
 }
 
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
+	metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", 0)
 	pending, err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
@@ -164,6 +169,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 }
 
 func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
+	metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", 0)
 	pending, err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder)
@@ -182,6 +188,7 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 }
 
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
+	metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", 0)
 	pending, err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder)
@@ -200,6 +207,7 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+	metrics.APIRequestAndTimeGRPC("SubmitTransaction", 0)
 	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
 		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
@@ -213,6 +221,8 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 func (s *tradingService) SubmitOrder(
 	ctx context.Context, req *protoapi.SubmitOrderRequest,
 ) (*types.PendingOrder, error) {
+	metrics.APIRequestAndTimeGRPC("SubmitOrder", 0)
+
 	if req == nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
@@ -253,6 +263,7 @@ func (s *tradingService) SubmitOrder(
 func (s *tradingService) CancelOrder(
 	ctx context.Context, req *protoapi.CancelOrderRequest,
 ) (*types.PendingOrder, error) {
+	metrics.APIRequestAndTimeGRPC("CancelOrder", 0)
 	if req == nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
@@ -284,6 +295,7 @@ func (s *tradingService) CancelOrder(
 func (s *tradingService) AmendOrder(
 	ctx context.Context, req *protoapi.AmendOrderRequest,
 ) (*types.PendingOrder, error) {
+	metrics.APIRequestAndTimeGRPC("AmendOrder", 0)
 	if req == nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}
@@ -311,6 +323,7 @@ func (s *tradingService) AmendOrder(
 func (s *tradingService) NotifyTraderAccount(
 	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
 ) (*protoapi.NotifyTraderAccountResponse, error) {
+	metrics.APIRequestAndTimeGRPC("NotifyTraderAccount", 0)
 	if req == nil || req.Notif == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
@@ -331,6 +344,7 @@ func (s *tradingService) NotifyTraderAccount(
 func (s *tradingService) Withdraw(
 	ctx context.Context, req *protoapi.WithdrawRequest,
 ) (*protoapi.WithdrawResponse, error) {
+	metrics.APIRequestAndTimeGRPC("Withdraw", 0)
 	if len(req.Withdraw.PartyID) <= 0 {
 		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
 	}
@@ -354,6 +368,7 @@ func (s *tradingService) Withdraw(
 func (s *tradingService) PrepareProposal(
 	ctx context.Context, req *protoapi.PrepareProposalRequest,
 ) (*protoapi.PrepareProposalResponse, error) {
+	metrics.APIRequestAndTimeGRPC("PrepareProposal", 0)
 	proposal, err := s.governanceService.PrepareProposal(ctx,
 		req.PartyID, req.Reference, req.Proposal)
 	if err != nil {
@@ -373,6 +388,7 @@ func (s *tradingService) PrepareProposal(
 }
 
 func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareVoteRequest) (*protoapi.PrepareVoteResponse, error) {
+	metrics.APIRequestAndTimeGRPC("PrepareVote", 0)
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}

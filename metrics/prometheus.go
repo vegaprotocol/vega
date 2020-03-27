@@ -34,6 +34,10 @@ var (
 	engineTime         *prometheus.CounterVec
 	orderCounter       *prometheus.CounterVec
 	orderGauge         *prometheus.GaugeVec
+	// Call counters for each request type per API
+	apiRequestCallCounter *prometheus.CounterVec
+	// Total time counters for each request type per API
+	apiRequestTimeCounter *prometheus.CounterVec
 )
 
 // abstract prometheus types
@@ -381,6 +385,44 @@ func setupMetrics() error {
 	}
 	unconfirmedTxGauge = utxg
 
+	//
+	// API usage metrics start here
+	//
+
+	// Number of calls to each request type
+	h, err = AddInstrument(
+		Counter,
+		"request_count_totals",
+		Namespace("vega"),
+		Vectors("apiType", "requestType"),
+		Help("Count of API requests"),
+	)
+	if err != nil {
+		return err
+	}
+	rc, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	apiRequestCallCounter = rc
+
+	// Total time for calls to each request type for each api type
+	h, err = AddInstrument(
+		Counter,
+		"request_time_totals",
+		Namespace("vega"),
+		Vectors("apiType", "requestType"),
+		Help("Total time spent in each API request"),
+	)
+	if err != nil {
+		return err
+	}
+	rpac, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	apiRequestTimeCounter = rpac
+
 	return nil
 }
 
@@ -406,4 +448,34 @@ func UnconfirmedTxGaugeSet(n int) {
 		return
 	}
 	unconfirmedTxGauge.Set(float64(n))
+}
+
+// APIRequestAndTimeREST updates the metrics for REST API calls
+func APIRequestAndTimeREST(request string, time float64) {
+	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
+		return
+	}
+	apiRequestCallCounter.WithLabelValues("REST", request).Inc()
+	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
+	fmt.Println("Called REST")
+}
+
+// APIRequestAndTimeGRPC updates the metrics for GRPC API calls
+func APIRequestAndTimeGRPC(request string, time float64) {
+	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
+		return
+	}
+	apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
+	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(time)
+	fmt.Println("Called GRPC")
+}
+
+// APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls
+func APIRequestAndTimeGraphQL(request string, time float64) {
+	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
+		return
+	}
+	apiRequestCallCounter.WithLabelValues("GraphQL", request).Inc()
+	apiRequestTimeCounter.WithLabelValues("GraphQL", request).Add(time)
+	fmt.Println("Called GraphQL")
 }
