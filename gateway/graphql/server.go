@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
 	"google.golang.org/grpc"
@@ -112,6 +113,7 @@ func (g *GraphServer) Start() {
 
 	loggingMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 		reqctx := graphql.GetRequestContext(ctx)
+		resctx := graphql.GetResolverContext(ctx)
 		logfields := make([]zap.Field, 0)
 		logfields = append(logfields, logging.String("raw", reqctx.RawQuery))
 		rlogger := g.log.With(logfields...)
@@ -124,7 +126,7 @@ func (g *GraphServer) Start() {
 		}
 		timetaken := end.Sub(start)
 		logfields = append(logfields, logging.Int64("duration_nano", timetaken.Nanoseconds()))
-
+		metrics.APIRequestAndTimeGraphQL(resctx.Field.Name, timetaken.Seconds())
 		rlogger = g.log.With(logfields...)
 		rlogger.Debug("GQL Finish")
 		return res, err
