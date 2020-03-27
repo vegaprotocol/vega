@@ -57,7 +57,7 @@ type Mutation {
     "New price for this order"
     price: String!
     "New size for this order"
-    size: String!
+    sizeDelta: String!
     "New expiration time"
     expiration: String
   ): PreparedAmendOrder!

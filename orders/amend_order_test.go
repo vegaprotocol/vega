@@ -15,11 +15,11 @@ import (
 
 var (
 	amend = proto.OrderAmendment{
-		OrderID:  "order_id",
-		PartyID:  "party",
-		Price:    10000,
-		Size:     1,
-		MarketID: "market",
+		OrderID:   "order_id",
+		PartyID:   "party",
+		Price:     10000,
+		SizeDelta: 1,
+		MarketID:  "market",
 	}
 )
 
@@ -105,7 +105,7 @@ func testPrepareAmendOrderNotActive(t *testing.T) {
 
 func testPrepareAmendOrderInvalidPayload(t *testing.T) {
 	arg := amend
-	arg.Size = 0
+	arg.SizeDelta = -2
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -119,6 +119,7 @@ func testPrepareAmendOrderTimeSvcErr(t *testing.T) {
 	expires := now.Add(-2 * time.Hour)
 	expErr := errors.New("time service error")
 	arg := amend
+	arg.SizeDelta = 0
 	arg.ExpiresAt = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -161,6 +162,6 @@ func (m amendMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.Size == v.Size &&
+	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.SizeDelta == v.SizeDelta &&
 		m.e.ExpiresAt == v.ExpiresAt)
 }

@@ -473,7 +473,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		OrderID:   orderBuy.Id,
 		PartyID:   party1,
 		Price:     200,
-		Size:      200,
+		SizeDelta: -100,
 		ExpiresAt: orderBuy.ExpiresAt,
 	}
 

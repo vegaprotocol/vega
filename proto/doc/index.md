@@ -1990,13 +1990,13 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
+| orderID | [string](#string) |  | required to find the order, not being updated |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
+| price | [uint64](#uint64) |  | these can be amended |
+| sizeDelta | [int64](#int64) |  |  |
 | expiresAt | [int64](#int64) |  |  |
-| side | [Side](#vega.Side) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 
 
 

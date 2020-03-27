@@ -435,6 +435,7 @@
         "parameters": [
           {
             "name": "amendment.orderID",
+            "description": "required to find the order, not being updated",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1860,7 +1861,8 @@
       "type": "object",
       "properties": {
         "orderID": {
-          "type": "string"
+          "type": "string",
+          "title": "required to find the order, not being updated"
         },
         "partyID": {
           "type": "string"
@@ -1870,18 +1872,19 @@
         },
         "price": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "these can be amended"
         },
-        "size": {
+        "sizeDelta": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "expiresAt": {
           "type": "string",
           "format": "int64"
         },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
+        "timeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         }
       }
     },

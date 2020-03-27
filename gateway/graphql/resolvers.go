@@ -1357,7 +1357,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
 
-	order.Size, err = strconv.ParseUint(size, 10, 64)
+	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
 		r.log.Error("unable to convert size from string in order amend",
 			logging.Error(err))
