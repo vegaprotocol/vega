@@ -148,7 +148,7 @@ Named return values are perfectly fine. They can be useful in certain scenarios 
 
 We want to be consistent WRT log levels used. We use the standard levels (`DEBUG`, `INFO`, `WARN`, `ERROR`, and `FATAL`). Following the code review document used as a base, we shouldn't use the `PANIC` level.
 
-* `DEBUG`: As the name suggests, debug logs should be used to output information that is useful for debugging. These logs provide information useful for developping features, or fixing bugs. Because logging things like orders has a performance impact, we wrap log statements in an `if`, making sure we only call `log.Debug` if the log level is active.
+* `DEBUG`: As the name suggests, debug logs should be used to output information that is useful for debugging. These logs provide information useful for developing features, or fixing bugs. Because logging things like orders has a performance impact, we wrap log statements in an `if`, making sure we only call `log.Debug` if the log level is active.
 
 ```go
 if log.Level() == logging.Debug {
