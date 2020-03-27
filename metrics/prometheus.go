@@ -457,7 +457,6 @@ func APIRequestAndTimeREST(request string, time float64) {
 	}
 	apiRequestCallCounter.WithLabelValues("REST", request).Inc()
 	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
-	fmt.Println("Called REST")
 }
 
 // APIRequestAndTimeGRPC updates the metrics for GRPC API calls
@@ -467,7 +466,6 @@ func APIRequestAndTimeGRPC(request string, time float64) {
 	}
 	apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
 	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(time)
-	fmt.Println("Called GRPC")
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls
@@ -477,5 +475,4 @@ func APIRequestAndTimeGraphQL(request string, time float64) {
 	}
 	apiRequestCallCounter.WithLabelValues("GraphQL", request).Inc()
 	apiRequestTimeCounter.WithLabelValues("GraphQL", request).Add(time)
-	fmt.Println("Called GraphQL")
 }
