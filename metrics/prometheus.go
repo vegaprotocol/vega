@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -460,12 +461,13 @@ func APIRequestAndTimeREST(request string, time float64) {
 }
 
 // APIRequestAndTimeGRPC updates the metrics for GRPC API calls
-func APIRequestAndTimeGRPC(request string, time float64) {
+func APIRequestAndTimeGRPC(request string, startTime time.Time) {
 	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
 		return
 	}
 	apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
-	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(time)
+	duration := vegatime.Now().Sub(startTime).Seconds()
+	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls
