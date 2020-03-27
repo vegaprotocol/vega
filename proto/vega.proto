@@ -301,7 +301,7 @@ message OrderAmendment {
 
   // these can be amended
   uint64 price = 4 [(validator.field) = {int_gt: 0}];
-  int64 sizeDelta = 5 [(validator.field) = {int_gt: 0}];
+  int64 sizeDelta = 5;
   int64 expiresAt = 6;
   Order.TimeInForce timeInForce = 7;
 }

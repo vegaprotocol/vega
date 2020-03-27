@@ -213,10 +213,10 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != 0 {
 			return nil, ErrNonGTTOrderWithExpiry
-		} else {
-			// IOC and FOK are not acceptable for amend order
-			return nil, ErrInvalidAmendOrderTIF
 		}
+	} else {
+		// IOC and FOK are not acceptable for amend order
+		return nil, ErrInvalidAmendOrderTIF
 	}
 
 	// if size changes, make sure it does not get negative

@@ -128,9 +128,6 @@ func (this *OrderAmendment) Validate() error {
 	if !(this.Price > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Price", fmt.Errorf(`value '%v' must be greater than '0'`, this.Price))
 	}
-	if !(this.SizeDelta > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("SizeDelta", fmt.Errorf(`value '%v' must be greater than '0'`, this.SizeDelta))
-	}
 	return nil
 }
 func (this *OrderSubmission) Validate() error {
