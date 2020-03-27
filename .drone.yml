@@ -96,8 +96,11 @@ steps:
     commands:
       # More small checks. Run all, instead of exitng after first failure.
       - failed=""
-      - for target in codeowners_check print_check proto_check rest_check vet ; do
+      - for target in codeowners_check print_check proto_check vet ; do
           echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - /usr/local/bin/check-rest-endpoints.py
+          --bindings gateway/rest/grpc-rest-bindings.yml
+          --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
       - /usr/local/bin/diff_bot.py
           --github-token "$$GITHUB_API_TOKEN"
           --gitlab-token "$$GITLAB_API_TOKEN"
@@ -179,7 +182,7 @@ steps:
       # The deploy script requires SLACK_HOOK_URL and 3 DEVNET_* vars.
       - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Set up wallets, keypairs and free money.
-      - python3 script/issue-free-money.py
+      - /usr/local/bin/init-wallets-tokenbalances.py
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
             --walletserver "$$DEVNET_WALLET_SERVER"
             --passphrase "$$DEVNET_WALLET_PASSPHRASE"

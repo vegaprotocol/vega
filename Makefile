@@ -174,12 +174,6 @@ proto_clean:
 	@find proto/doc -name index.html -o -name index.md \
 		| xargs -r rm
 
-.PHONY: rest_check
-rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
-	@python3 script/check_rest_endpoints.py \
-		--bindings gateway/rest/grpc-rest-bindings.yml \
-		--swagger proto/api/trading.swagger.json
-
 # Misc Targets
 
 codeowners_check:
