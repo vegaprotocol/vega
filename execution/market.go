@@ -1197,6 +1197,24 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease {
+		if sizeDecrease && amendedOrder.Remaining < existingOrder.Remaining {
+			// reduce the position with the difference
+			diffRemaining := existingOrder.Remaining - amendedOrder.Remaining
+			o := types.Order{
+				PartyID:   existingOrder.PartyID,
+				Side:      existingOrder.Side,
+				Remaining: diffRemaining,
+			}
+			_, err = m.position.UnregisterOrder(&o)
+			if err != nil {
+				m.log.Error("Failure unregistering order in positions engine (cancel)",
+					logging.Order(o),
+					logging.Error(err))
+
+				return &types.OrderConfirmation{}, err
+			}
+		}
+
 		return m.orderAmendInPlace(amendedOrder)
 	}
 
@@ -1332,7 +1350,6 @@ func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirm
 			logging.Error(err))
 		return &types.OrderConfirmation{}, err
 	}
-	amendOrder.UpdatedAt = m.currentTime.UnixNano()
 	m.orderBuf.Add(*amendOrder)
 	return &types.OrderConfirmation{}, nil
 }
