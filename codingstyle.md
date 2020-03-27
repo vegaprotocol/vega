@@ -143,3 +143,24 @@ message GetSomethingsByMarketIDResponse {
 ### By popular demand:
 
 Named return values are perfectly fine. They can be useful in certain scenarios (changing return values in defer functions, for example).
+
+## Log levels
+
+We want to be consistent WRT log levels used. We use the standard levels (`DEBUG`, `INFO`, `WARN`, `ERROR`, and `FATAL`). Following the code review document used as a base, we shouldn't use the `PANIC` level.
+
+* `DEBUG`: As the name suggests, debug logs should be used to output information that is useful for debugging. These logs provide information useful for developping features, or fixing bugs. Because logging things like orders has a performance impact, we wrap log statements in an `if`, making sure we only call `log.Debug` if the log level is active.
+
+```go
+if log.Level() == logging.Debug {
+    log.Debug("log entry here", logging.Order(order))
+}
+```
+
+* `INFO`: These logs should be informative in the sense that they indicate that the application is working as intended, and something significant has happened. Examples of this are: the core is closing out distressed traders, a market is entering/exiting auction mode, a new market was added, etc...
+* `WARN`: These logs indicate that something unusual has happened, but it's expected behaviour all the same. For example: a market doesn't have sufficient information to generate an accurate close-out price (used in position resolution), settlements are having to draw on the insurance pool to pay out traders, or even: the market has had to enter to loss socialisation flow (insufficient funds in the insurance pool).
+* `ERROR`: Error logs indicate that the core was unable to perform the expected logic: the core tried to close out traders, but there weren't enough entries in the order book to match the network position (the net position taken over by the network from distressed traders). Depending on what exactly happened, a market might have to fall back on an _"emergency procedure"_ like entering auction mode, or suspending a market. Error logs indicate something went wrong, and we've had to handle the situation in a specific way. What we do is still defined behaviour, but really: these situations shouldn't have happened in the first place. The core can still continue to do its job, but a particular command resulted in an error. For example: a trader submitted an order, but the order couldn't be accepted because the trader didn't have the required margin, or doesn't have a general account for the right asset.
+* `FATAL`: These logs indicate that the node was unable to carry on. Something went terribly wrong, and this is likely due to a bug. Immediate investigation and fixing is required.
+* `PANIC`: Simple: don't panic. This should either be a `FATAL` log, or an `ERROR`, depending on the case.
+
+Notable exception: A context with timeout/cancel always returns an error if the context is cancelled (whether it be due to the time limit being reached, or the context being cancelled manually). These errors specify why a context was cancelled. This information is returned by the `ctx.Err()` function, but this should *not* be logged as an error. We either log this at the `INFO` or `DEBUG` level. When the context for a (gRPC) stream is cancelled, for example, we should either ignore the error, or log it at the `DEBUG` level.
+The reason we might want to log this could be: to ensure that streams are closed correctly if the client disconnects, or the stream hasn't been read in a while. This information is useful when debugging the application, but should not be spamming the logs with `ERROR` entries: this is expected behaviour after all.
