@@ -51,6 +51,8 @@ var (
 	ErrInvalidTickSize = errors.New("invalid tick size")
 	// ErrInvalidDecimalPlaces ...
 	ErrInvalidDecimalPlaces = errors.New("invalid decimal places value")
+	// ErrInvalidChange ...
+	ErrInvalidChange = errors.New("nil update market, new market and update network")
 )
 
 // IntoProto ...
@@ -555,14 +557,17 @@ func (i *InstrumentInput) IntoProto() (*types.Instrument, error) {
 }
 
 // IntoProto ...
-func (m *MarginCalculatorInput) IntoProto() *types.MarginCalculator {
+func (m *MarginCalculatorInput) IntoProto() (*types.MarginCalculator, error) {
+	if m == nil {
+		return nil, ErrNilMarginCalculator
+	}
 	return &types.MarginCalculator{
 		ScalingFactors: &types.ScalingFactors{
 			SearchLevel:       m.ScalingFactors.SearchLevel,
 			InitialMargin:     m.ScalingFactors.InitialMargin,
 			CollateralRelease: m.ScalingFactors.CollateralRelease,
 		},
-	}
+	}, nil
 }
 
 func (f *FutureInput) oracleIntoProto(pf *types.Future) (err error) {
@@ -627,9 +632,13 @@ func (t *TradableInstrumentInput) IntoProto() (*types.TradableInstrument, error)
 	if err != nil {
 		return nil, err
 	}
+	calc, err := t.MarginCalculator.IntoProto()
+	if err != nil {
+		return nil, err
+	}
 	result := &types.TradableInstrument{
 		Instrument:       instrument,
-		MarginCalculator: t.MarginCalculator.IntoProto(),
+		MarginCalculator: calc,
 		RiskModel:        nil,
 	}
 	if err := t.Instrument.productInputIntoProto(result.Instrument); err != nil {
@@ -717,7 +726,7 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	} else if p.UpdateNetwork != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}
 	} else {
-		return nil, errors.New("updateMarket, newMarket or updateNetwork must be set")
+		return nil, ErrInvalidChange
 	}
 
 	return result, nil
