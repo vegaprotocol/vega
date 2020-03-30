@@ -123,13 +123,12 @@ func (g *GraphServer) Start() {
 		clockstart := time.Now()
 		res, err = next(ctx)
 		end := vegatime.Now()
-		clockend := time.Now()
 		if err != nil {
 			logfields = append(logfields, logging.String("error", err.Error()))
 		}
 		timetaken := end.Sub(start)
 		logfields = append(logfields, logging.Int64("duration_nano", timetaken.Nanoseconds()))
-		metrics.APIRequestAndTimeGraphQL(resctx.Field.Name, clockend.Sub(clockstart).Seconds())
+		metrics.APIRequestAndTimeGraphQL(resctx.Field.Name, time.Since(clockstart).Seconds())
 		rlogger = g.log.With(logfields...)
 		rlogger.Debug("GQL Finish")
 		return res, err
