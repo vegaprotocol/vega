@@ -578,10 +578,9 @@ func (f *FutureInput) oracleIntoProto(pf *types.Future) error {
 				Event:      f.EthereumOracle.Event,
 			},
 		}
-	} else {
-		return ErrNilOracle
+		return nil
 	}
-	return nil
+	return ErrNilOracle
 }
 
 func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) error {
@@ -592,10 +591,9 @@ func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) error {
 		}
 		future.oracleIntoProto(f)
 		pinst.Product = &types.Instrument_Future{Future: f}
-	} else {
-		return ErrNilProduct
+		return nil
 	}
-	return nil
+	return ErrNilProduct
 }
 
 func (t *TradableInstrumentInput) riskModelInputIntoProto(trIn *types.TradableInstrument) error {
