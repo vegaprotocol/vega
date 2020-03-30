@@ -104,3 +104,28 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 |    -13 |           197 |           0 |
+
+  # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
+  Then traders place following orders:
+    | trader     | market id | type | volume | price | trades | type   | tif |
+    | sellSideMM | ETH/DEC19 | sell |     10 |   500 |      0 | LIMIT  | GTC |
+    | buySideMM  | ETH/DEC19 |  buy |     50 |    75 |      0 | LIMIT  | GTC |
+    | buySideMM  | ETH/DEC19 |  buy |     45 |    70 |      0 | LIMIT  | GTC |
+    | trader1    | ETH/DEC19 | sell |     13 |     0 |      1 | MARKET | IOC |
+  And the margins levels for the traders are:
+    | trader  | market id | maintenance | search | initial | release |
+    | trader1 | ETH/DEC19 |        1482 |   4742 |    5928 |    7410 |
+  And position API produce the following:
+    | trader  | volume | unrealisedPNL | realisedPNL |
+    | trader1 |    -26 |           223 |           0 |
+
+  # FORCED CLOSEOUT
+  Then traders place following orders:
+    | trader     | market id | type | volume | price | trades | type  | tif |
+    | sellSideMM | ETH/DEC19 | sell |     21 |   800 |      0 | LIMIT  | GTC |
+  And the margins levels for the traders are:
+    | trader  | market id | maintenance | search | initial | release |
+    | trader1 | ETH/DEC19 |        1482 |   4742 |    5928 |    7410 |
+  And position API produce the following:
+    | trader  | volume | unrealisedPNL | realisedPNL |
+    | trader1 |    -26 |           223 |           0 |
