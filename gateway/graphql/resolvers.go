@@ -1377,7 +1377,7 @@ func (r *myMutationResolver) PrepareProposal(
 	if reference != nil {
 		ref = *reference
 	}
-	terms, err := convertProposalTermsInput(proposalTerms)
+	terms, err := proposalTerms.IntoProto()
 	if err != nil {
 		return nil, err
 	}
@@ -1389,7 +1389,7 @@ func (r *myMutationResolver) PrepareProposal(
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	verifiedTerms, err := convertProposalTerms(pendingProposal.PendingProposal.Terms)
+	verifiedTerms, err := ProposalTermsFromProto(pendingProposal.PendingProposal.Terms)
 	if err != nil {
 		return nil, err
 	}
