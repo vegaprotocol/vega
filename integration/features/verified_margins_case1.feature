@@ -103,3 +103,11 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 |     13 |           836 |           0 |
+    
+    # FULL CLOSEOUT BY TRADER
+    Then traders place following orders:
+      | trader  | market id | type | volume | price | trades | type  | tif |
+      | trader1 | ETH/DEC19 | sell |     13 |   165 |      3 | LIMIT | GTC |
+    And position API produce the following:
+      | trader  | volume | unrealisedPNL | realisedPNL |
+      | trader1 |      0 |             0 |         496 |
