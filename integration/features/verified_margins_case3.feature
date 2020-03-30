@@ -77,3 +77,17 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 |     13 |           316 |           0 |
+
+    # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
+    Then traders place following orders:
+      | trader  | market id | type | volume | price | trades | type  | tif |
+      | trader1 | ETH/DEC19 | sell |     13 |    80 |      0 | LIMIT | GTC |
+    And I expect the trader to have a margin:
+      | trader  | asset | market id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |    852 |    9464 |
+    And the margins levels for the traders are:
+      | trader  | market id | maintenance | search | initial | release |
+      | trader1 | ETH/DEC19 |         208 |    665 |     832 |    1040 |
+    And position API produce the following:
+      | trader  | volume | unrealisedPNL | realisedPNL |
+      | trader1 |     13 |           316 |           0 |

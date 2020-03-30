@@ -97,3 +97,17 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 |     13 |          -464 |           0 |
+    
+    # PARTIAL CLOSEOUT BY TRADER
+    Then traders place following orders:
+      | trader  | market id | type | volume | price | trades | type  | tif |
+      | trader1 | ETH/DEC19 | sell |     10 |    80 |      1 | LIMIT | GTC |
+    And I expect the trader to have a margin:
+      | trader  | asset | market id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |     96 |    9180 |
+    And the margins levels for the traders are:
+      | trader  | market id | maintenance | search | initial | release |
+      | trader1 | ETH/DEC19 |          24 |     76 |      96 |     120 |
+    And position API produce the following:
+      | trader  | volume | unrealisedPNL | realisedPNL |
+      | trader1 |      3 |          -167 |        -557 |
