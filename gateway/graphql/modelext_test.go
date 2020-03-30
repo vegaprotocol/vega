@@ -1,6 +1,7 @@
 package gql_test
 
 import (
+	"math"
 	"testing"
 
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
@@ -584,6 +585,72 @@ func TestModelConverters(t *testing.T) {
 		}
 		proposalProto, err := proposal.IntoProto()
 		assert.NotNil(t, proposalProto)
+		assert.NoError(t, err)
+	})
+
+	t.Run("ProposalTermsFromProto invalid stake", func(t *testing.T) {
+		terms := &proto.ProposalTerms{
+			ClosingTimestamp:      1234567,
+			EnactmentTimestamp:    1234568,
+			MinParticipationStake: math.MaxInt32 * 2,
+		}
+		protoTerms, err := gql.ProposalTermsFromProto(terms)
+		assert.Nil(t, protoTerms)
+		assert.Error(t, err)
+		assert.Equal(t, gql.ErrParticipationStake, err)
+	})
+
+	t.Run("ProposalTermsFromProto invalid stake", func(t *testing.T) {
+		pm := &proto.Market{
+			TradableInstrument: &proto.TradableInstrument{
+				Instrument: &proto.Instrument{
+					Metadata: &proto.InstrumentMetadata{},
+					Product: &proto.Instrument_Future{
+						Future: &proto.Future{
+							Oracle: &proto.Future_EthereumEvent{
+								EthereumEvent: &proto.EthereumEvent{},
+							},
+						},
+					},
+				},
+				MarginCalculator: &proto.MarginCalculator{
+					ScalingFactors: &proto.ScalingFactors{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
+					},
+				},
+				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &proto.LogNormalRiskModel{
+						RiskAversionParameter: 0.01,
+						Tau:                   1.0 / 365.25 / 24,
+						Params: &proto.LogNormalModelParams{
+							Mu:    0,
+							R:     0.016,
+							Sigma: 0.09,
+						},
+					},
+				},
+			},
+			TradingMode: &proto.Market_Continuous{
+				Continuous: &proto.ContinuousTrading{
+					TickSize: 42,
+				},
+			},
+		}
+
+		terms := &proto.ProposalTerms{
+			ClosingTimestamp:      1234567,
+			EnactmentTimestamp:    1234568,
+			MinParticipationStake: 10,
+			Change: &proto.ProposalTerms_NewMarket{
+				NewMarket: &proto.NewMarket{
+					Changes: pm,
+				},
+			},
+		}
+		protoTerms, err := gql.ProposalTermsFromProto(terms)
+		assert.NotNil(t, protoTerms)
 		assert.NoError(t, err)
 	})
 }
