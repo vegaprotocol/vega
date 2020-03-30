@@ -79,7 +79,7 @@ func (a *auth) NewSession(walletname string) (string, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
 	ss, err := token.SignedString(a.privKey)
 	if err != nil {
 		a.log.Error("unable to sign token", logging.Error(err))
