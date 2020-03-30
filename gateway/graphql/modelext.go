@@ -570,7 +570,7 @@ func (m *MarginCalculatorInput) IntoProto() (*types.MarginCalculator, error) {
 	}, nil
 }
 
-func (f *FutureInput) oracleIntoProto(pf *types.Future) (err error) {
+func (f *FutureInput) oracleIntoProto(pf *types.Future) error {
 	if f.EthereumOracle != nil {
 		pf.Oracle = &types.Future_EthereumEvent{
 			EthereumEvent: &types.EthereumEvent{
@@ -584,7 +584,7 @@ func (f *FutureInput) oracleIntoProto(pf *types.Future) (err error) {
 	return nil
 }
 
-func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) (err error) {
+func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) error {
 	if future := i.FutureProduct; future != nil {
 		f := &types.Future{
 			Maturity: future.Maturity,
@@ -598,7 +598,7 @@ func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) (err er
 	return nil
 }
 
-func (t *TradableInstrumentInput) riskModelInputIntoProto(trIn *types.TradableInstrument) (err error) {
+func (t *TradableInstrumentInput) riskModelInputIntoProto(trIn *types.TradableInstrument) error {
 	if t.SimpleRiskModel != nil {
 		trIn.RiskModel = &types.TradableInstrument_SimpleRiskModel{
 			SimpleRiskModel: &types.SimpleRiskModel{
