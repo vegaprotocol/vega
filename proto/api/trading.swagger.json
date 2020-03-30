@@ -2051,6 +2051,11 @@
         "updatedAt": {
           "type": "string",
           "format": "int64"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Versioning support for amends, orders start at version 0 and increment\nafter each successful amend"
         }
       }
     },

@@ -111,6 +111,10 @@ message Order {
   string reference = 13;
   OrderError reason = 14;
   int64 updatedAt = 15;
+  
+  // Versioning support for amends, orders start at version 0 and increment
+  // after each successful amend
+  uint64 version = 16;
 }
 
 message OrderCancellationConfirmation {
