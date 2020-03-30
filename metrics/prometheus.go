@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -393,7 +392,7 @@ func setupMetrics() error {
 	// Number of calls to each request type
 	h, err = AddInstrument(
 		Counter,
-		"request_count_totals",
+		"request_count_total",
 		Namespace("vega"),
 		Vectors("apiType", "requestType"),
 		Help("Count of API requests"),
@@ -410,7 +409,7 @@ func setupMetrics() error {
 	// Total time for calls to each request type for each api type
 	h, err = AddInstrument(
 		Counter,
-		"request_time_totals",
+		"request_time_total",
 		Namespace("vega"),
 		Vectors("apiType", "requestType"),
 		Help("Total time spent in each API request"),
@@ -466,7 +465,7 @@ func APIRequestAndTimeGRPC(request string, startTime time.Time) {
 		return
 	}
 	apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
-	duration := vegatime.Now().Sub(startTime).Seconds()
+	duration := time.Now().Sub(startTime).Seconds()
 	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 }
 

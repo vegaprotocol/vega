@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -119,14 +120,16 @@ func (g *GraphServer) Start() {
 		rlogger := g.log.With(logfields...)
 		rlogger.Debug("GQL Start")
 		start := vegatime.Now()
+		clockstart := time.Now()
 		res, err = next(ctx)
 		end := vegatime.Now()
+		clockend := time.Now()
 		if err != nil {
 			logfields = append(logfields, logging.String("error", err.Error()))
 		}
 		timetaken := end.Sub(start)
 		logfields = append(logfields, logging.Int64("duration_nano", timetaken.Nanoseconds()))
-		metrics.APIRequestAndTimeGraphQL(resctx.Field.Name, timetaken.Seconds())
+		metrics.APIRequestAndTimeGraphQL(resctx.Field.Name, clockend.Sub(clockstart).Seconds())
 		rlogger = g.log.With(logfields...)
 		rlogger.Debug("GQL Finish")
 		return res, err

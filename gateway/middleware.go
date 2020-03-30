@@ -5,11 +5,11 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 const bearerPrefix = "Bearer "
@@ -94,9 +94,9 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		start := vegatime.Now()
+		start := time.Now()
 		next.ServeHTTP(w, r)
-		end := vegatime.Now()
+		end := time.Now()
 
 		uri := r.RequestURI
 
