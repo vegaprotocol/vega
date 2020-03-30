@@ -1108,7 +1108,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			logging.String("market-id", m.mkt.Id),
 			logging.Order(*existingOrder))
 
-		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
+		return nil, types.ErrInvalidMarketID
 	}
 
 	if err := m.validateOrderAmendment(existingOrder, orderAmendment); err != nil {
@@ -1169,7 +1169,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// from here these are the normal amendment
 
 	var (
-		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
+		priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange = false, false, false, false, false
 	)
 
 	if amendedOrder.Price != existingOrder.Price {
@@ -1187,6 +1187,10 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		expiryChange = true
 	}
 
+	if amendedOrder.TimeInForce != existingOrder.TimeInForce {
+		timeInForceChange = true
+	}
+
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
@@ -1196,7 +1200,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
-	if expiryChange || sizeDecrease {
+	if expiryChange || sizeDecrease || timeInForceChange {
 		if sizeDecrease && amendedOrder.Remaining < existingOrder.Remaining {
 			// reduce the position with the difference
 			diffRemaining := existingOrder.Remaining - amendedOrder.Remaining
@@ -1211,7 +1215,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 					logging.Order(o),
 					logging.Error(err))
 
-				return &types.OrderConfirmation{}, err
+				return nil, err
 			}
 		}
 
@@ -1219,7 +1223,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	}
 
 	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
-	return &types.OrderConfirmation{}, types.ErrEditNotAllowed
+	return nil, types.ErrEditNotAllowed
 
 }
 
@@ -1248,10 +1252,10 @@ func (m *Market) validateOrderAmendment(
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != 0 {
 			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
-		} else {
-			// IOC and FOK are not acceptable for amend order
-			return errors.New("amend order, TIF FOK and IOC are not allowed")
 		}
+	} else {
+		// IOC and FOK are not acceptable for amend order
+		return errors.New("amend order, TIF FOK and IOC are not allowed")
 	}
 
 	// nothing to check for the prices
@@ -1340,7 +1344,7 @@ func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirm
 
 	_, err := m.position.RegisterOrder(amendOrder)
 	if err != nil {
-		return &types.OrderConfirmation{}, err
+		return nil, err
 	}
 
 	err = m.matching.AmendOrder(amendOrder)
@@ -1348,10 +1352,12 @@ func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirm
 		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*amendOrder, "new-order"),
 			logging.Error(err))
-		return &types.OrderConfirmation{}, err
+		return nil, err
 	}
 	m.orderBuf.Add(*amendOrder)
-	return &types.OrderConfirmation{}, nil
+	return &types.OrderConfirmation{
+		Order: amendOrder,
+	}, nil
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
