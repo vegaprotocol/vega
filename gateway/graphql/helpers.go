@@ -11,9 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 )
 
-// ErrCannotFitIntoInt is returned if a field cannot be represented as int (GraphQL does not have uint)
-const ErrCannotFitIntoInt string = "%s does not fit into integer"
-
 func safeStringUint64(input string) (uint64, error) {
 	if i, err := strconv.ParseUint(input, 10, 64); err == nil {
 		return i, nil
