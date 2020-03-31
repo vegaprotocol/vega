@@ -398,6 +398,38 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	return nil
 }
 
+func tradersAmendsTheFollowingOrdersReference(orders *gherkin.DataTable) error {
+	for i, row := range orders.Rows {
+		if i == 0 {
+			continue
+		}
+		original, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+		amend := proto.OrderAmendment{
+			OrderID:   original.Id,
+			PartyID:   original.PartyID,
+			MarketID:  original.MarketID,
+			Price:     u64val(row, 2),
+			Size:      u64val(row, 3),
+			ExpiresAt: original.ExpiresAt,
+			Side:      original.Side,
+		}
+
+		result, err := execsetup.engine.AmendOrder(&amend)
+
+		if err != nil {
+			return fmt.Errorf("unable to amend order for trader %s, reference %s", original.PartyID, original.Reference)
+		}
+
+		if int64(len(result.Trades)) != i64val(row, 4) {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
+		}
+	}
+	return nil
+}
+
 func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "trader" {
@@ -854,4 +886,11 @@ func executedTrades(trades *gherkin.DataTable) error {
 	}
 
 	return err
+}
+
+func dumpOrders() error {
+	for n, o := range execsetup.orders.data {
+		fmt.Printf("order %s: %v\n", n, o)
+	}
+	return nil
 }
