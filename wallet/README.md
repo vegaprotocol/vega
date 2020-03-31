@@ -47,7 +47,7 @@ A session and accompanying JWT is created, and the JWT is returned to the user.
 
   ```json
   {
-    "Data": "verylongJWT"
+    "token": "verylongJWT"
   }
   ```
 
@@ -74,7 +74,7 @@ On success, the wallet is loaded, a session is created and a JWT is returned to 
 
   ```json
   {
-    "Data": "verylongJWT"
+    "token": "verylongJWT"
   }
   ```
 
@@ -92,7 +92,7 @@ Using the JWT returned when logging in, the session is recovered and removed fro
 
   ```json
   {
-    "Data": true
+    "success": true
   }
   ```
 
@@ -110,15 +110,15 @@ Users can list all their public keys (with taint status, and metadata), if they 
 
   ```json
   {
-    "Data": [
+    "keys": [
       {
         "pub": "1122aabb...",
         "algo": "ed25519",
         "tainted": false,
         "meta": [
           {
-            "Key": "somekey",
-            "Value": "somevalue"
+            "key": "somekey",
+            "value": "somevalue"
           }
         ]
       }
@@ -153,10 +153,50 @@ If all went well, a new key pair is generated, saved in the wallet, and the publ
 
   ```json
   {
-    "Data": "1122aabb..."
+    "key": {
+      "pub": "1122aabb...",
+      "algo": "ed25519",
+      "tainted": false,
+      "meta": [
+        {
+          "key": "somekey",
+          "value": "somevalue"
+        }
+      ]
+    }
   }
   ```
 
+## Sign a transaction
+
+Sign a transaction using the specified keypair.
+
+* Request:
+
+  ```json
+  {
+    "tx": "dGVzdGRhdGEK",
+    "pubKey": "1122aabb...",
+    "propagate": false
+  }
+  ```
+* Command:
+
+  ```shell
+  curl -s -XPOST -H "Authorization: Bearer verylongJWT" -d 'requestjson' http://127.0.0.1:1789/api/v1/messages
+
+  ```
+* Response:
+
+  ```json
+  {
+    "signedTx": {
+      "data": "dGVzdGRhdGEK",
+      "sig": "...",
+      "pubKey": "1122aabb..."
+    }
+  }
+  ```
 ## Taint a key
 
 * Request:
@@ -176,7 +216,7 @@ If all went well, a new key pair is generated, saved in the wallet, and the publ
 
   ```json
   {
-    "Data": true
+    "success": true
   }
   ```
 
@@ -190,24 +230,23 @@ Overwrite all existing metadata with the new metadata.
   {
     "passphrase": "supersecret",
     "meta": [
-        {
-          "Key": "newkey",
-          "Value": "newvalue"
-        }
-      ]
-
+      {
+        "key": "newkey",
+        "value": "newvalue"
+      }
+    ]
   }
   ```
 * Command:
 
   ```shell
-  curl -s -XPUT -H "Authorization: Bearer verylongJWT" -d 'requestjson' http://127.0.0.1:1789/api/v1/keys/1122aabb/taint
+  curl -s -XPUT -H "Authorization: Bearer verylongJWT" -d 'requestjson' http://127.0.0.1:1789/api/v1/keys/1122aabb/metadata
 
   ```
 * Response:
 
   ```json
   {
-    "Data": true
+    "success": true
   }
   ```

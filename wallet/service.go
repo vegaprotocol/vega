@@ -23,6 +23,55 @@ type Service struct {
 	nodeForward NodeForward
 }
 
+// CreateLoginWalletRequest describes the request for CreateWallet, LoginWallet.
+type CreateLoginWalletRequest struct {
+	Wallet     string `json:"wallet"`
+	Passphrase string `json:"passphrase"`
+}
+
+// PassphraseRequest describes the request for TaintKey.
+type PassphraseRequest struct {
+	Passphrase string `json:"passphrase"`
+}
+
+// PassphraseMetaRequest describes the request for GenerateKeypair, UpdateMeta.
+type PassphraseMetaRequest struct {
+	Passphrase string `json:"passphrase"`
+	Meta       []Meta `json:"meta"`
+}
+
+// SignTxRequest describes the request for SignTx.
+type SignTxRequest struct {
+	Tx        string `json:"tx"`
+	PubKey    string `json:"pubKey"`
+	Propagate bool   `json:"propagate"`
+}
+
+// KeyResponse describes the response to a request that returns a single key.
+type KeyResponse struct {
+	Key Keypair `json:"key"`
+}
+
+// KeysResponse describes the response to a request that returns a list of keys.
+type KeysResponse struct {
+	Keys []Keypair `json:"keys"`
+}
+
+// SignTxResponse describes the response for SignTx.
+type SignTxResponse struct {
+	SignedTx SignedBundle `json:"signedTx"`
+}
+
+// SuccessResponse describes the response to a request that returns a simple true/false answer.
+type SuccessResponse struct {
+	Success bool `json:"success"`
+}
+
+// TokenResponse describes the response to a request that returns a token.
+type TokenResponse struct {
+	Token string `json:"token"`
+}
+
 // WalletHandler ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet WalletHandler
 type WalletHandler interface {
@@ -106,12 +155,9 @@ func (s *Service) Stop() error {
 
 func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// unmarshal request
-	req := struct {
-		Wallet     string `json:"wallet"`
-		Passphrase string `json:"passphrase"`
-	}{}
+	req := CreateLoginWalletRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
-		writeError(w, err, http.StatusBadRequest)
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -130,23 +176,20 @@ func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request, _ httprou
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
-	writeSuccess(w, token, http.StatusOK)
+	writeSuccess(w, TokenResponse{token}, http.StatusOK)
 }
 
 func (s *Service) DownloadWallet(token string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	path, err := s.handler.WalletPath(token)
 	if err != nil {
-		writeError(w, err, http.StatusMethodNotAllowed)
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
 	http.ServeFile(w, r, path)
 }
 
 func (s *Service) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	req := struct {
-		Wallet     string `json:"wallet"`
-		Passphrase string `json:"passphrase"`
-	}{}
+	req := CreateLoginWalletRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
 		writeError(w, err, http.StatusBadRequest)
 		return
@@ -167,7 +210,7 @@ func (s *Service) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
-	writeSuccess(w, token, http.StatusOK)
+	writeSuccess(w, TokenResponse{token}, http.StatusOK)
 }
 
 func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -177,16 +220,13 @@ func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request, _ htt
 		return
 	}
 
-	writeSuccess(w, true, http.StatusOK)
+	writeSuccess(w, SuccessResponse{Success: true}, http.StatusOK)
 }
 
 func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	req := struct {
-		Passphrase string `json:"passphrase"`
-		Meta       []Meta `json:"meta"`
-	}{}
+	req := PassphraseMetaRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
-		writeError(w, err, http.StatusBadRequest)
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
 	if len(req.Passphrase) <= 0 {
@@ -209,7 +249,13 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	writeSuccess(w, pubKey, http.StatusOK)
+	key, err := s.handler.GetPublicKey(t, pubKey)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	writeSuccess(w, KeyResponse{Key: *key}, http.StatusOK)
 }
 
 func (s *Service) GetPublicKey(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -225,7 +271,7 @@ func (s *Service) GetPublicKey(t string, w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	writeSuccess(w, key, http.StatusOK)
+	writeSuccess(w, KeyResponse{Key: *key}, http.StatusOK)
 }
 
 func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -235,17 +281,13 @@ func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	writeSuccess(w, keys, http.StatusOK)
+	writeSuccess(w, KeysResponse{Keys: keys}, http.StatusOK)
 }
 
 func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	req := struct {
-		Tx        string `json:"tx"`
-		PubKey    string `json:"pubKey"`
-		Propagate bool   `json:"propagate"`
-	}{}
+	req := SignTxRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
-		writeError(w, err, http.StatusBadRequest)
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
 	if len(req.Tx) <= 0 {
@@ -271,15 +313,13 @@ func (s *Service) SignTx(t string, w http.ResponseWriter, r *http.Request, _ htt
 		}
 	}
 
-	writeSuccess(w, sb, http.StatusOK)
+	writeSuccess(w, SignTxResponse{SignedTx: sb}, http.StatusOK)
 }
 
 func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	req := struct {
-		Passphrase string `json:"passphrase"`
-	}{}
+	req := PassphraseRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
-		writeError(w, err, http.StatusBadRequest)
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
 	keyID := ps.ByName("keyid")
@@ -298,16 +338,13 @@ func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request, ps 
 		return
 	}
 
-	writeSuccess(w, true, http.StatusOK)
+	writeSuccess(w, SuccessResponse{Success: true}, http.StatusOK)
 }
 
 func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	req := struct {
-		Passphrase string `json:"passphrase"`
-		Meta       []Meta `json:"meta"`
-	}{}
+	req := PassphraseMetaRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
-		writeError(w, err, http.StatusBadRequest)
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
 	keyID := ps.ByName("keyid")
@@ -326,16 +363,11 @@ func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	writeSuccess(w, true, http.StatusOK)
+	writeSuccess(w, SuccessResponse{Success: true}, http.StatusOK)
 }
 
 func (s *Service) health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if r.Method != http.MethodGet {
-		writeError(w, ErrInvalidMethod, http.StatusMethodNotAllowed)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{}"))
+	writeSuccess(w, SuccessResponse{Success: true}, http.StatusOK)
 }
 
 func unmarshalBody(r *http.Request, into interface{}) error {
@@ -354,20 +386,15 @@ func writeError(w http.ResponseWriter, e error, status int) {
 	w.Write(buf)
 }
 
-type successResponse struct {
-	Data interface{}
-}
-
 func writeSuccess(w http.ResponseWriter, data interface{}, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	buf, _ := json.Marshal(successResponse{data})
+	buf, _ := json.Marshal(data)
 	w.Write(buf)
 }
 
 var (
 	ErrInvalidRequest        = newError("invalid request")
-	ErrInvalidMethod         = newError("invalid method")
 	ErrInvalidOrMissingToken = newError("invalid or missing token")
 )
 
