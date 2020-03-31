@@ -89,7 +89,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders cancels the following orders reference:$`, tradersCancelsTheFollowingOrdersReference)
 	s.Step(`^traders cancels the following filled orders reference:$`, tradersCancelsTheFollowingFilledOrdersReference)
 	s.Step(`^missing traders cancels the following orders reference:$`, missingTradersCancelsTheFollowingOrdersReference)
-	s.Step(`^traders amends following orders with references:$`, tradersAmendsTheFollowingOrdersReference)
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
 	s.Step(`^dump transfers$`, dumpTransfers)
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
