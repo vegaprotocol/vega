@@ -14,7 +14,7 @@ import (
 
 var (
 	ErrWalletAlreadyExists = errors.New("a wallet with the same name already exists")
-	ErrWalletDoesNotExists = errors.New("wallet does not exists")
+	ErrWalletDoesNotExists = errors.New("wallet does not exist")
 )
 
 const (
