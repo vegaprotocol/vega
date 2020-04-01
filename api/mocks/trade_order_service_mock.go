@@ -34,21 +34,6 @@ func (m *MockTradeOrderService) EXPECT() *MockTradeOrderServiceMockRecorder {
 	return m.recorder
 }
 
-// AmendOrder mocks base method
-func (m *MockTradeOrderService) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AmendOrder indicates an expected call of AmendOrder
-func (mr *MockTradeOrderServiceMockRecorder) AmendOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockTradeOrderService)(nil).AmendOrder), arg0, arg1)
-}
-
 // CancelOrder mocks base method
 func (m *MockTradeOrderService) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.PendingOrder, error) {
 	m.ctrl.T.Helper()

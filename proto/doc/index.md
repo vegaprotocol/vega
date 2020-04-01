@@ -208,7 +208,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  |  |
-| token | [string](#string) |  |  |
 
 
 
@@ -1320,7 +1319,6 @@
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
 | SubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Submit an Order |
 | CancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Cancel an Order |
-| AmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Amend an Order |
 | SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |

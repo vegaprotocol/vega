@@ -63,9 +63,6 @@ http:
       get: '/orders/{reference}'
     - selector: api.trading.CancelOrder
       delete: '/orders/{cancellation.orderID}'
-    - selector: api.trading.AmendOrder
-      put: '/orders/{amendment.orderID}'
-      body: "*"
     - selector: api.trading_data.TradesByOrder
       get: '/orders/{orderID}/trades'
 
