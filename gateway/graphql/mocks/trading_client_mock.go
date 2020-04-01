@@ -36,26 +36,6 @@ func (m *MockTradingClient) EXPECT() *MockTradingClientMockRecorder {
 	return m.recorder
 }
 
-// AmendOrder mocks base method
-func (m *MockTradingClient) AmendOrder(arg0 context.Context, arg1 *api.AmendOrderRequest, arg2 ...grpc.CallOption) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AmendOrder", varargs...)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AmendOrder indicates an expected call of AmendOrder
-func (mr *MockTradingClientMockRecorder) AmendOrder(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockTradingClient)(nil).AmendOrder), varargs...)
-}
-
 // CancelOrder mocks base method
 func (m *MockTradingClient) CancelOrder(arg0 context.Context, arg1 *api.CancelOrderRequest, arg2 ...grpc.CallOption) (*proto.PendingOrder, error) {
 	m.ctrl.T.Helper()
