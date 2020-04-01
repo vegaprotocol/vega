@@ -16,7 +16,7 @@ steps:
     commands:
       - git fetch --tags  # necessary for generation of VERSION var
 
-  - name: build
+  - name: build-PR
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     pull: always
     volumes:
@@ -47,38 +47,27 @@ steps:
       - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
       - make build
-      - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
+      # - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on:
       - fetch
+    when:
+      event:
+        - pull_request
 
-  - name: markdownspellcheck
+  - name: markdownspellcheck-PR
     image: registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest
     pull: always
     environment: {}
     commands:
-      - find . -name '*.md' |sort
       # Make sure the mdspell command matches the one in Makefile.
-      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'design/**/*.md'
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
     depends_on:
       - fetch
+    when:
+      event:
+        - pull_request
 
-  # Tests to be run on *all* branches.
-  - name: test
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
-    volumes:
-      - name: gocache
-        path: /go/cache
-      - name: gopkg
-        path: /go/pkg
-    environment:
-      GOCACHE: /go/cache
-    commands:
-      - make retest
-    depends_on:
-      - build
-
-  # Tests to be run on merge requests.
-  - name: mergerequest
+  - name: test-PR
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
       - name: gocache
@@ -94,51 +83,69 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      # More small checks. Run all, instead of exitng after first failure.
-      - failed=""
-      - for target in codeowners_check print_check proto_check vet ; do
-          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
-      - /usr/local/bin/check-rest-endpoints.py
-          --bindings gateway/rest/grpc-rest-bindings.yml
-          --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-      - /usr/local/bin/diff_bot.py
-          --github-token "$$GITHUB_API_TOKEN"
-          --gitlab-token "$$GITLAB_API_TOKEN"
-          --file1 "gitlab:notused:5726034:trading-core:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
-          --file2 "gitlab:notused:5726034:trading-core:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
-          --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
-          print_diff slack_notify || failed="$$failed diff_bot"
-      - /usr/local/bin/multilint || failed="$$failed multilint"
-      - make staticcheck || true  # Ignore failures until they're all fixed.
-      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
+      - echo OK
+      # - make retest
+      # # More small checks. Run all, instead of exitng after first failure.
+      # - failed=""
+      # - for target in codeowners_check print_check proto_check race vet ; do
+      #     echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      # - /usr/local/bin/check-rest-endpoints.py
+      #     --bindings gateway/rest/grpc-rest-bindings.yml
+      #     --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
+      # - /usr/local/bin/diff_bot.py
+      #     --github-token "$$GITHUB_API_TOKEN"
+      #     --gitlab-token "$$GITLAB_API_TOKEN"
+      #     --file1 "gitlab:notused:5726034:trading-core:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
+      #     --file2 "gitlab:notused:5726034:trading-core:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
+      #     --slack-hookurl "$${SLACK_HOOK_URL}"
+      #     --slack-recipient "#uidev"
+      #     print_diff slack_notify || failed="$$failed diff_bot"
+      # - /usr/local/bin/multilint || failed="$$failed multilint"
+      # - make staticcheck || true  # Ignore failures until they're all fixed.
+      # - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
-      - test
+      - build-PR
     when:
       event:
         - pull_request
 
-  # Tests to be run only on *main* branches.
-  - name: test_heavy
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
-    volumes:
-      - name: gocache
-        path: /go/cache
-      - name: gopkg
-        path: /go/pkg
+  - name: systemtests-PR
+    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:latest
+    volumes: []
     environment:
-      GOCACHE: /go/cache
+      TENDERMINT_DIR: /tmp/tendermint
+      TENDERMINT_PID: /tmp/tendermint.pid
+      VEGANODE_DIR: /tmp/veganode
+      VEGANODE_PID: /tmp/veganode.pid
+      VEGAWALLET_DIR: /tmp/vegawallet
+      VEGAWALLET_PID: /tmp/vegawallet.pid
     commands:
-      - make race
-      - make msan
+      - find /grpc/ -name '*Tests.py' | sort | while read -r filename ; do
+      - echo "=== $$filename ==="
+      # vega node
+      - rm -rf "$$VEGANODE_DIR" && mkdir -p -m 0700 "$$VEGANODE_DIR"
+      - ./vega init -r "$$VEGANODE_DIR"
+      - ./vega node -C "$$VEGANODE_DIR" 1>/tmp/veganode.log 2>&1 &
+      - echo "$$!" >"$$VEGANODE_PID"
+      # vega wallet
+      - rm -rf "$$WALLET_DIR" && mkdir -p -m 0700 "$$WALLET_DIR"
+      - ./vega wallet service init --genrsakey -f -r "$$WALLET_DIR"
+      - ./vega wallet service run -r "$$WALLET_DIR" 1>/tmp/vegawallet.log 2>&1 &
+      - echo "$$!" >"$$VEGAWALLET_PID"
+      # tendermint
+      - rm -rf "$$TENDERMINT_DIR" && mkdir -p -m 0700 "$$TENDERMINT_DIR"
+      - tendermint init --home "$$TENDERMINT_DIR"
+      - tendermint node --home "$$TENDERMINT_DIR" 1>/tmp/tendermint.log 2>&1 &
+      - echo "$$!" >"$$TENDERMINT_PID"
+      # tests
+      - pytest "$$filename" || exit 1
+      - kill "$$VEGANODE_PID" "$$VEGAWALLET_PID" "$$TENDERMINT_PID"
+      - done
     depends_on:
-      - test
+      - test-PR
     when:
-      ref:
-        - refs/heads/master
-        - refs/heads/develop
-        - refs/heads/release/*
-        - refs/tags/*
+      event:
+        - pull_request
 
   - name: push_to_devnet
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -193,8 +200,7 @@ steps:
             --veganode "$$DEVNET_TOPUP_NODE"
             --amount "$$DEVNET_TOPUP_AMOUNT"
     depends_on:
-      - test
-      - test_heavy
+      - fetch
     when:
       branch:
         - develop
@@ -223,10 +229,9 @@ steps:
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
-      - for app in $$apps ; do rm -f "./$app"; done
+      - for app in $$apps ; do rm -f "./$$app"; done
     depends_on:
-      - test
-      - test_heavy
+      - fetch
     when:
       ref:
         - refs/heads/master
