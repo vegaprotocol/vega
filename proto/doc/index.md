@@ -626,6 +626,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | orderID | [string](#string) |  |  |
+| version | [uint64](#uint64) |  | optional |
 
 
 
@@ -642,6 +643,7 @@
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | orderID | [string](#string) |  |  |
+| version | [uint64](#uint64) |  | optional |
 
 
 
@@ -672,6 +674,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | referenceID | [string](#string) |  |  |
+| version | [uint64](#uint64) |  | optional |
 
 
 
@@ -687,6 +690,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | reference | [string](#string) |  |  |
+| version | [uint64](#uint64) |  | optional |
 
 
 
@@ -2049,6 +2053,7 @@ Proposal can enter Failed state from any other state.
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
+| version | [uint64](#uint64) |  | version of the order (0 if order was never modified) |
 
 
 
