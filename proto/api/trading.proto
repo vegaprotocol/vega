@@ -373,12 +373,7 @@ message OrdersByPartyResponse {
 message OrderByMarketAndIdRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true }];
   string orderID = 2 [(validator.field) = {string_not_empty : true}];
-  
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
-  uint64 version = 3;
+  uint64 version = 3; // optional
 }
 
 message OrderByMarketAndIdResponse {
@@ -387,12 +382,7 @@ message OrderByMarketAndIdResponse {
 
 message OrderByReferenceRequest {
   string reference = 1 [(validator.field) = {string_not_empty : true }];
-  
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
-  uint64 version = 2;
+  uint64 version = 2; // optional
 }
 
 message OrderByReferenceResponse {
@@ -510,22 +500,10 @@ message PrepareVoteResponse {
 
 message OrderByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
-  
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
-  // ...
-  uint64 version = 2;
+  uint64 version = 2; // optional
 }
 
 message OrderByReferenceIDRequest {
   string referenceID = 1 [(validator.field) = {msg_exists: true}];
-  
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
-  // ...
-  uint64 version = 2;
+  uint64 version = 2; // optional
 }
