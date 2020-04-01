@@ -113,7 +113,7 @@ message Order {
   int64 updatedAt = 15;
 
   // version of the order (0 if order was never modified)
-  uint64 version = 6;
+  uint64 version = 16;
 }
 
 message OrderCancellationConfirmation {
