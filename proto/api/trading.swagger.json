@@ -315,6 +315,13 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -533,6 +540,13 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -1848,6 +1862,11 @@
         "updatedAt": {
           "type": "string",
           "format": "int64"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "version of the order (0 if order was never modified)"
         }
       }
     },
