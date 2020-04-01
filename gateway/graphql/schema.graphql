@@ -142,23 +142,6 @@ type Mutation {
     marketId: String!
   ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
 
-  """
-  Send a amend order request into VEGA network, this does not immediately amend an order.
-  It validates and sends the request out for consensus.
-  """
-  orderAmend(
-    "ID of the order to amend"
-    id: ID!
-    "ID of the party which created the order"
-    partyId: String!
-    "New price for this order"
-    price: String!
-    "New size for this order"
-    size: String!
-    "New expiration time"
-    expiration: String
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
 
   "sign a party in using an username and password, then return a token"
   signin(
