@@ -112,7 +112,11 @@ message Order {
   OrderError reason = 14;
   int64 updatedAt = 15;
 
-  // version of the order (0 if order was never modified)
+  // 0 - always latest version (amended or not)
+  // 1 - the original version if order was amended at some point
+  // 2 - the first amendment
+  // 3 - the second amendment
+  // ...
   uint64 version = 16;
 }
 
