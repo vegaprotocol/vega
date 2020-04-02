@@ -623,7 +623,11 @@ type Order struct {
 	Reference string       `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
 	Reason    OrderError   `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError" json:"reason,omitempty"`
 	UpdatedAt int64        `protobuf:"varint,15,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	// version of the order (0 if order was never modified)
+	// 0 - always latest version (amended or not)
+	// 1 - the original version if order was amended at some point
+	// 2 - the first amendment
+	// 3 - the second amendment
+	// ...
 	Version              uint64   `protobuf:"varint,16,opt,name=version,proto3" json:"version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -625,7 +625,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | orderID | [string](#string) |  |  |
-| version | [uint64](#uint64) |  | optional |
+| version | [uint64](#uint64) |  | 0 - always latest version (amended or not) 1 - the original version if order was amended at some point 2 - the first amendment 3 - the second amendment ... |
 
 
 
@@ -642,7 +642,7 @@
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | orderID | [string](#string) |  |  |
-| version | [uint64](#uint64) |  | optional |
+| version | [uint64](#uint64) |  | 0 - always latest version (amended or not) 1 - the original version if order was amended at some point 2 - the first amendment 3 - the second amendment |
 
 
 
@@ -673,7 +673,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | referenceID | [string](#string) |  |  |
-| version | [uint64](#uint64) |  | optional |
+| version | [uint64](#uint64) |  | 0 - always latest version (amended or not) 1 - the original version if order was amended at some point 2 - the first amendment 3 - the second amendment ... |
 
 
 
@@ -689,7 +689,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | reference | [string](#string) |  |  |
-| version | [uint64](#uint64) |  | optional |
+| version | [uint64](#uint64) |  | 0 - always latest version (amended or not) 1 - the original version if order was amended at some point 2 - the first amendment 3 - the second amendment |
 
 
 
@@ -2051,7 +2051,7 @@ Proposal can enter Failed state from any other state.
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
-| version | [uint64](#uint64) |  | version of the order (0 if order was never modified) |
+| version | [uint64](#uint64) |  | 0 - always latest version (amended or not) 1 - the original version if order was amended at some point 2 - the first amendment 3 - the second amendment ... |
 
 
 
