@@ -482,6 +482,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NewAsset"><span class="badge">M</span>NewAsset</a>
+                </li>
+
+                <li>
                   <a href="#vega.NewMarket"><span class="badge">M</span>NewMarket</a>
                 </li>
 
@@ -637,6 +641,14 @@
 
                 <li>
                   <a href="#vega.MarketDepth"><span class="badge">M</span>MarketDepth</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NodeRegistration"><span class="badge">M</span>NodeRegistration</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NodeVote"><span class="badge">M</span>NodeVote</a>
                 </li>
 
                 <li>
@@ -3805,6 +3817,30 @@
 
 
 
+        <h3 id="vega.NewAsset">NewAsset</h3>
+        <p>To be implemented</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.NewMarket">NewMarket</h3>
         <p></p>
 
@@ -3904,6 +3940,13 @@
                 <tr>
                   <td>terms</td>
                   <td><a href="#vega.ProposalTerms">ProposalTerms</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>newAsset</td>
+                  <td><a href="#vega.NewAsset">NewAsset</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5410,6 +5453,126 @@
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.NodeRegistration">NodeRegistration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.NodeVote">NodeVote</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
