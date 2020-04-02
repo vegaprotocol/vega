@@ -29,7 +29,6 @@ type TradeOrderService interface {
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
 }
 
 // AccountService ...
@@ -299,36 +298,6 @@ func (s *tradingService) CancelOrder(
 	po, err := s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
-	}
-	return po, nil
-}
-
-// AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
-func (s *tradingService) AmendOrder(
-	ctx context.Context, req *protoapi.AmendOrderRequest,
-) (*types.PendingOrder, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("AmendOrder", startTime)
-	if req == nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
-	}
-	if req.Amendment == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
-	}
-
-	// check auth if required
-	if s.authEnabled {
-		if len(req.Token) <= 0 {
-			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
-		}
-		if err := s.validateToken(req.Amendment.PartyID, req.Token); err != nil {
-			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
-		}
-	}
-
-	po, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
 	return po, nil
 }

@@ -28,9 +28,6 @@ service trading {
   // Cancel an Order
   rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
 
-  // Amend an Order
-  rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
-
   // Sign In
   rpc SignIn(SignInRequest) returns (SignInResponse);
 
@@ -126,7 +123,6 @@ message CancelOrderRequest {
 
 message AmendOrderRequest {
   vega.OrderAmendment amendment = 1;
-  string token = 101;
 }
 
 service trading_data {
