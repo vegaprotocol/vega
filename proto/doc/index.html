@@ -203,14 +203,6 @@
                 </li>
 
                 <li>
-                  <a href="#api.CheckTokenRequest"><span class="badge">M</span>CheckTokenRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.CheckTokenResponse"><span class="badge">M</span>CheckTokenResponse</a>
-                </li>
-
-                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -400,14 +392,6 @@
 
                 <li>
                   <a href="#api.PrepareVoteResponse"><span class="badge">M</span>PrepareVoteResponse</a>
-                </li>
-
-                <li>
-                  <a href="#api.SignInRequest"><span class="badge">M</span>SignInRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.SignInResponse"><span class="badge">M</span>SignInResponse</a>
                 </li>
 
                 <li>
@@ -887,13 +871,6 @@
                   <td><p> </p></td>
                 </tr>
 
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -1054,99 +1031,6 @@
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="api.CheckTokenRequest">CheckTokenRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="api.CheckTokenResponse">CheckTokenResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>ok</td>
-                  <td><a href="#bool">bool</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 
@@ -3021,61 +2905,6 @@
 
 
 
-        <h3 id="api.SignInRequest">SignInRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a party ID </p></td>
-                </tr>
-
-                <tr>
-                  <td>password</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a password </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.SignInResponse">SignInResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a token corresponding to the party given in the request, and valid for subsequent requests for that party </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="api.SubmitOrderRequest">SubmitOrderRequest</h3>
         <p></p>
 
@@ -3091,13 +2920,6 @@
                   <td><a href="#vega.OrderSubmission">vega.OrderSubmission</a></td>
                   <td></td>
                   <td><p>the bulk of the Order, including market, party, price, size, side, time in force, etc. </p></td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -3510,38 +3332,10 @@
               </tr>
 
               <tr>
-                <td>SubmitOrder</td>
-                <td><a href="#api.SubmitOrderRequest">SubmitOrderRequest</a></td>
-                <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
-                <td><p>Submit an Order</p></td>
-              </tr>
-
-              <tr>
-                <td>CancelOrder</td>
-                <td><a href="#api.CancelOrderRequest">CancelOrderRequest</a></td>
-                <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
-                <td><p>Cancel an Order</p></td>
-              </tr>
-
-              <tr>
-                <td>SignIn</td>
-                <td><a href="#api.SignInRequest">SignInRequest</a></td>
-                <td><a href="#api.SignInResponse">SignInResponse</a></td>
-                <td><p>Sign In</p></td>
-              </tr>
-
-              <tr>
                 <td>Withdraw</td>
                 <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
                 <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
                 <td><p>Request withdrawal</p></td>
-              </tr>
-
-              <tr>
-                <td>CheckToken</td>
-                <td><a href="#api.CheckTokenRequest">CheckTokenRequest</a></td>
-                <td><a href="#api.CheckTokenResponse">CheckTokenResponse</a></td>
-                <td><p>Check an API token</p></td>
               </tr>
 
               <tr>
