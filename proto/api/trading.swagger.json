@@ -579,39 +579,6 @@
         ]
       }
     },
-    "/orders/{amendment.orderID}": {
-      "put": {
-        "summary": "Amend an Order",
-        "operationId": "AmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "amendment.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/orders/{cancellation.orderID}": {
       "delete": {
         "summary": "Cancel an Order",
@@ -1112,9 +1079,6 @@
       "properties": {
         "amendment": {
           "$ref": "#/definitions/vegaOrderAmendment"
-        },
-        "token": {
-          "type": "string"
         }
       }
     },
