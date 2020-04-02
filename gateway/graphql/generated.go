@@ -77,10 +77,6 @@ type ComplexityRoot struct {
 		Volume    func(childComplexity int) int
 	}
 
-	CheckTokenResponse struct {
-		Ok func(childComplexity int) int
-	}
-
 	ContinuousTrading struct {
 		TickSize func(childComplexity int) int
 	}
@@ -175,14 +171,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		OrderCancel        func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		PrepareOrderAmend  func(childComplexity int, id string, partyID string, price string, size string, expiration *string) int
 		PrepareOrderCancel func(childComplexity int, id string, partyID string, marketID string) int
 		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
-		Signin             func(childComplexity int, id string, password string) int
 		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
 	}
 
@@ -288,7 +281,6 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		CheckToken         func(childComplexity int, partyID string, token string) int
 		Market             func(childComplexity int, id string) int
 		Markets            func(childComplexity int, id *string) int
 		OrderByID          func(childComplexity int, orderID string) int
@@ -454,9 +446,6 @@ type MutationResolver interface {
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
 	SubmitTransaction(ctx context.Context, data string, sig string, address *string, pubkey *string) (*TransactionSubmitted, error)
-	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
-	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
-	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
@@ -511,7 +500,6 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]*proto.Party, error)
 	Party(ctx context.Context, id string) (*proto.Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
-	CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error)
 	OrderByID(ctx context.Context, orderID string) (*proto.Order, error)
 	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
 }
@@ -659,13 +647,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Candle.Volume(childComplexity), true
-
-	case "CheckTokenResponse.ok":
-		if e.complexity.CheckTokenResponse.Ok == nil {
-			break
-		}
-
-		return e.complexity.CheckTokenResponse.Ok(childComplexity), true
 
 	case "ContinuousTrading.tickSize":
 		if e.complexity.ContinuousTrading.TickSize == nil {
@@ -1075,30 +1056,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepth.Sell(childComplexity), true
 
-	case "Mutation.orderCancel":
-		if e.complexity.Mutation.OrderCancel == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_orderCancel_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.OrderCancel(childComplexity, args["id"].(string), args["partyId"].(string), args["marketId"].(string)), true
-
-	case "Mutation.orderSubmit":
-		if e.complexity.Mutation.OrderSubmit == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_orderSubmit_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
-
 	case "Mutation.prepareOrderAmend":
 		if e.complexity.Mutation.PrepareOrderAmend == nil {
 			break
@@ -1158,18 +1115,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string)), true
-
-	case "Mutation.signin":
-		if e.complexity.Mutation.Signin == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_signin_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.Signin(childComplexity, args["id"].(string), args["password"].(string)), true
 
 	case "Mutation.submitTransaction":
 		if e.complexity.Mutation.SubmitTransaction == nil {
@@ -1636,18 +1581,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ProposalTerms.MinParticipationStake(childComplexity), true
-
-	case "Query.checkToken":
-		if e.complexity.Query.CheckToken == nil {
-			break
-		}
-
-		args, err := ec.field_Query_checkToken_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.CheckToken(childComplexity, args["partyId"].(string), args["token"].(string)), true
 
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
@@ -2421,50 +2354,6 @@ type Mutation {
     pubkey: String
   ): TransactionSubmitted!
 
-  """
-  Send a submit order request into VEGA network, this does not immediately create the order.
-  It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-  """
-  orderSubmit(
-    "ID of the market to place the order"
-    marketId: String!
-    "ID of the party placing the order"
-    partyId: String!
-    "Price of the asset"
-    price: String
-    "Size ofthe order"
-    size: String!
-    "Side of the order (Buy or Sell)"
-    side: Side!
-    "TimeInForce of the order"
-    timeInForce: OrderTimeInForce!
-    "exiration of the the order"
-    expiration: String
-    "type of the order"
-    type: OrderType!
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-
-  """
-  Send a cancel order request into VEGA network, this does not immediately cancel an order.
-  It validates and sends the request out for consensus.
-  """
-  orderCancel(
-    "ID of the order to cancel"
-    id: ID!
-    "ID of the party placing the order"
-    partyId: String!
-    "ID of the market where to find the order"
-    marketId: String!
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-
-  "sign a party in using an username and password, then return a token"
-  signin(
-    "ID of the party to get logged in"
-    id: String!
-    "Password of the party"
-    password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
 }
 
 
@@ -2670,14 +2559,6 @@ type Query {
   "a bunch of statistics about the node"
   statistics: Statistics!
 
-  "Check a partyID+Token combination"
-  checkToken(
-    "Party ID"
-    partyId: String!
-    "Token"
-    token: String!
-  ): CheckTokenResponse!
-
   "An order in the VEGA network found by orderID"
   orderByID(
     "ID for an order"
@@ -2689,10 +2570,6 @@ type Query {
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
-}
-
-type CheckTokenResponse {
-  ok: Boolean!
 }
 
 "Statistics about the node"
@@ -3470,7 +3347,7 @@ input MarginCalculatorInput {
 "Input variation of tradable instrument details"
 input TradableInstrumentInput {
   instrument: InstrumentInput!
-  
+
   simpleRiskModel: SimpleRiskModelInput
   logNormalRiskModel: LogNormalRiskModelInput
 
@@ -3819,106 +3696,6 @@ func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArg
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_orderCancel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["price"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["price"] = arg2
-	var arg3 string
-	if tmp, ok := rawArgs["size"]; ok {
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["size"] = arg3
-	var arg4 Side
-	if tmp, ok := rawArgs["side"]; ok {
-		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["side"] = arg4
-	var arg5 OrderTimeInForce
-	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["timeInForce"] = arg5
-	var arg6 *string
-	if tmp, ok := rawArgs["expiration"]; ok {
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["expiration"] = arg6
-	var arg7 OrderType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["type"] = arg7
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4125,28 +3902,6 @@ func (ec *executionContext) field_Mutation_prepareVote_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_signin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["password"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["password"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4316,28 +4071,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_checkToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["token"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["token"] = arg1
 	return args, nil
 }
 
@@ -5068,43 +4801,6 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CheckTokenResponse_ok(ctx context.Context, field graphql.CollectedField, obj *CheckTokenResponse) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "CheckTokenResponse",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Ok, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) (ret graphql.Marshaler) {
@@ -7382,138 +7078,6 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_orderSubmit_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.PendingOrder)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_orderCancel_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderCancel(rctx, args["id"].(string), args["partyId"].(string), args["marketId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.PendingOrder)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_signin(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_signin_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Signin(rctx, args["id"].(string), args["password"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_market(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
@@ -9974,50 +9538,6 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_checkToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_checkToken_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckToken(rctx, args["partyId"].(string), args["token"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*CheckTokenResponse)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14678,33 +14198,6 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
-var checkTokenResponseImplementors = []string{"CheckTokenResponse"}
-
-func (ec *executionContext) _CheckTokenResponse(ctx context.Context, sel ast.SelectionSet, obj *CheckTokenResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, checkTokenResponseImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CheckTokenResponse")
-		case "ok":
-			out.Values[i] = ec._CheckTokenResponse_ok(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var continuousTradingImplementors = []string{"ContinuousTrading", "TradingMode"}
 
 func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.SelectionSet, obj *ContinuousTrading) graphql.Marshaler {
@@ -15492,21 +14985,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "submitTransaction":
 			out.Values[i] = ec._Mutation_submitTransaction(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "orderSubmit":
-			out.Values[i] = ec._Mutation_orderSubmit(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "orderCancel":
-			out.Values[i] = ec._Mutation_orderCancel(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "signin":
-			out.Values[i] = ec._Mutation_signin(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16446,20 +15924,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_statistics(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "checkToken":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_checkToken(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -17575,20 +17039,6 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Candle(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNCheckTokenResponse2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v CheckTokenResponse) graphql.Marshaler {
-	return ec._CheckTokenResponse(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v *CheckTokenResponse) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CheckTokenResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNEthereumEventInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐEthereumEventInput(ctx context.Context, v interface{}) (EthereumEventInput, error) {

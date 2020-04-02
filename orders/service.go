@@ -52,9 +52,6 @@ type OrderStore interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
 type Blockchain interface {
-	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 }
 
@@ -127,35 +124,6 @@ func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSub
 	}, nil
 }
 
-// CreateOrder validate and create a new order
-func (s *Svc) CreateOrder(
-	ctx context.Context,
-	orderSubmission *types.OrderSubmission,
-) (*types.PendingOrder, error) {
-	if err := s.validateOrderSubmission(orderSubmission); err != nil {
-		return nil, err
-	}
-	order := types.Order{
-		Id:          orderSubmission.Id,
-		MarketID:    orderSubmission.MarketID,
-		PartyID:     orderSubmission.PartyID,
-		Price:       orderSubmission.Price,
-		Size:        orderSubmission.Size,
-		Side:        orderSubmission.Side,
-		TimeInForce: orderSubmission.TimeInForce,
-		Type:        orderSubmission.Type,
-		ExpiresAt:   orderSubmission.ExpiresAt,
-	}
-
-	// Set defaults, prevent unwanted external manipulation
-	order.Remaining = orderSubmission.Size
-	order.Status = types.Order_Active
-	order.CreatedAt = 0
-	order.Reference = ""
-	// Call out to the blockchain package/layer and use internal client to gain consensus
-	return s.blockchain.CreateOrder(ctx, &order)
-}
-
 func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	if err := sub.Validate(); err != nil {
 		return errors.Wrap(err, "order validation failed")
@@ -216,43 +184,6 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	}, nil
 }
 
-// CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
-func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
-	if err := order.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order cancellation validation failed")
-	}
-	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
-	if err != nil {
-		return nil, err
-	}
-	if o.Status == types.Order_Cancelled {
-		return nil, errors.New("order has already been cancelled")
-	}
-	if o.Remaining == 0 {
-		return nil, errors.New("order has been fully filled")
-	}
-	if o.PartyID != order.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
-	}
-	// Send cancellation request by consensus
-	if _, err := s.blockchain.CancelOrder(ctx, order); err != nil {
-		return nil, err
-	}
-
-	return &types.PendingOrder{
-		Reference:   o.Reference,
-		Price:       o.Price,
-		TimeInForce: o.TimeInForce,
-		Side:        o.Side,
-		MarketID:    o.MarketID,
-		Size:        o.Size,
-		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
-		Id:          o.Id,
-	}, nil
-}
-
 func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
 	if err := amendment.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order amendment validation failed")
@@ -274,52 +205,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return nil, err
 		}
-	}
-
-	return &types.PendingOrder{
-		Reference:   o.Reference,
-		Price:       amendment.Price,
-		TimeInForce: o.TimeInForce,
-		Side:        o.Side,
-		MarketID:    o.MarketID,
-		Size:        amendment.Size,
-		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
-		Id:          o.Id,
-	}, nil
-}
-
-// AmendOrder validate and amend an existing order
-func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
-	if err := amendment.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order amendment validation failed")
-	}
-	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
-	if err != nil {
-		return nil, err
-	}
-
-	if o.PartyID != amendment.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
-	}
-
-	if o.Status != types.Order_Active {
-		return nil, errors.New("order is not active")
-	}
-
-	// if order is GTT convert datetime to blockchain ts
-	if o.TimeInForce == types.Order_GTT {
-		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
-		if err != nil {
-			s.log.Error("unable to get expiration time", logging.Error(err))
-			return nil, err
-		}
-	}
-
-	// Send edit request by consensus
-	if _, err := s.blockchain.AmendOrder(ctx, amendment); err != nil {
-		return nil, err
 	}
 
 	return &types.PendingOrder{

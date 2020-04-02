@@ -29,9 +29,6 @@ func main() {
 		Log: log,
 	})
 
-	cli.AddCommand(base, &authCommand{
-		Log: log,
-	})
 	cli.AddCommand(base, &walletCommand{
 		Log: log,
 	})

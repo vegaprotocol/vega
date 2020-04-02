@@ -105,50 +105,6 @@ type Mutation {
     pubkey: String
   ): TransactionSubmitted!
 
-  """
-  Send a submit order request into VEGA network, this does not immediately create the order.
-  It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-  """
-  orderSubmit(
-    "ID of the market to place the order"
-    marketId: String!
-    "ID of the party placing the order"
-    partyId: String!
-    "Price of the asset"
-    price: String
-    "Size ofthe order"
-    size: String!
-    "Side of the order (Buy or Sell)"
-    side: Side!
-    "TimeInForce of the order"
-    timeInForce: OrderTimeInForce!
-    "exiration of the the order"
-    expiration: String
-    "type of the order"
-    type: OrderType!
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-
-  """
-  Send a cancel order request into VEGA network, this does not immediately cancel an order.
-  It validates and sends the request out for consensus.
-  """
-  orderCancel(
-    "ID of the order to cancel"
-    id: ID!
-    "ID of the party placing the order"
-    partyId: String!
-    "ID of the market where to find the order"
-    marketId: String!
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-
-  "sign a party in using an username and password, then return a token"
-  signin(
-    "ID of the party to get logged in"
-    id: String!
-    "Password of the party"
-    password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
 }
 
 
@@ -354,14 +310,6 @@ type Query {
   "a bunch of statistics about the node"
   statistics: Statistics!
 
-  "Check a partyID+Token combination"
-  checkToken(
-    "Party ID"
-    partyId: String!
-    "Token"
-    token: String!
-  ): CheckTokenResponse!
-
   "An order in the VEGA network found by orderID"
   orderByID(
     "ID for an order"
@@ -373,10 +321,6 @@ type Query {
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
-}
-
-type CheckTokenResponse {
-  ok: Boolean!
 }
 
 "Statistics about the node"
@@ -1154,7 +1098,7 @@ input MarginCalculatorInput {
 "Input variation of tradable instrument details"
 input TradableInstrumentInput {
   instrument: InstrumentInput!
-  
+
   simpleRiskModel: SimpleRiskModelInput
   logNormalRiskModel: LogNormalRiskModelInput
 

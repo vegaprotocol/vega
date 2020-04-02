@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"code.vegaprotocol.io/vega/accounts"
-	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/governance"
@@ -182,7 +181,6 @@ func (g *GRPCServer) Start() {
 
 	tradingSvc := &tradingService{
 		log:               g.log,
-		authEnabled:       g.Config.AuthEnabled,
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
@@ -226,10 +224,4 @@ func (g *GRPCServer) Stop() {
 		g.cfunc()
 		g.srv.GracefulStop()
 	}
-}
-
-// OnPartiesUpdated is used as a callback in order to notify the
-// GRPC server of new credentials for the list of parties
-func (g *GRPCServer) OnPartiesUpdated(ps []auth.PartyInfo) {
-	g.tradingService.UpdateParties(ps)
 }
