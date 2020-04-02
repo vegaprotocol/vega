@@ -318,7 +318,7 @@
           },
           {
             "name": "version",
-            "description": "0 - always latest version (amended or not)\n1 - the original version if order was amended at some point\n2 - the first amendment\n3 - the second amendment.",
+            "description": "version of the order (0 for most recent; 1 for original; 2 for first amendment, etc).",
             "in": "query",
             "required": false,
             "type": "string",
@@ -544,7 +544,7 @@
           },
           {
             "name": "version",
-            "description": "0 - always latest version (amended or not)\n1 - the original version if order was amended at some point\n2 - the first amendment\n3 - the second amendment.",
+            "description": "version of the order (0 for most recent; 1 for original; 2 for first amendment, etc).",
             "in": "query",
             "required": false,
             "type": "string",
@@ -1093,6 +1093,17 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
+    "apiOrderVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
         }
       }
     },
@@ -1864,11 +1875,6 @@
         "updatedAt": {
           "type": "string",
           "format": "int64"
-        },
-        "version": {
-          "type": "string",
-          "format": "uint64",
-          "description": "0 - always latest version (amended or not)\n1 - the original version if order was amended at some point\n2 - the first amendment\n3 - the second amendment\n..."
         }
       }
     },

@@ -307,6 +307,18 @@
                 </li>
 
                 <li>
+                  <a href="#api.OrderVersionsByIDRequest"><span class="badge">M</span>OrderVersionsByIDRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.OrderVersionsByReferenceIDRequest"><span class="badge">M</span>OrderVersionsByReferenceIDRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.OrderVersionsResponse"><span class="badge">M</span>OrderVersionsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.OrdersByMarketRequest"><span class="badge">M</span>OrdersByMarketRequest</a>
                 </li>
 
@@ -1829,11 +1841,7 @@
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>0 - always latest version (amended or not)
-1 - the original version if order was amended at some point
-2 - the first amendment
-3 - the second amendment
-... </p></td>
+                  <td><p>version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) </p></td>
                 </tr>
 
             </tbody>
@@ -1898,10 +1906,7 @@
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>0 - always latest version (amended or not)
-1 - the original version if order was amended at some point
-2 - the first amendment
-3 - the second amendment </p></td>
+                  <td><p>version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) </p></td>
                 </tr>
 
             </tbody>
@@ -1994,11 +1999,7 @@
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>0 - always latest version (amended or not)
-1 - the original version if order was amended at some point
-2 - the first amendment
-3 - the second amendment
-... </p></td>
+                  <td><p>version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) </p></td>
                 </tr>
 
             </tbody>
@@ -2056,10 +2057,7 @@
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>0 - always latest version (amended or not)
-1 - the original version if order was amended at some point
-2 - the first amendment
-3 - the second amendment </p></td>
+                  <td><p>version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) </p></td>
                 </tr>
 
             </tbody>
@@ -2110,6 +2108,132 @@
                   <td>order</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.OrderVersionsByIDRequest">OrderVersionsByIDRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.OrderVersionsByReferenceIDRequest">OrderVersionsByReferenceIDRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>referenceID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>referenceID</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.OrderVersionsResponse">OrderVersionsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>orders</td>
+                  <td><a href="#vega.Order">vega.Order</a></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -3509,6 +3633,20 @@
                 <td><a href="#api.OrderByReferenceIDRequest">OrderByReferenceIDRequest</a></td>
                 <td><a href="#vega.Order">.vega.Order</a></td>
                 <td><p>Get a specific order by referenceID</p></td>
+              </tr>
+
+              <tr>
+                <td>OrderVersionsByID</td>
+                <td><a href="#api.OrderVersionsByIDRequest">OrderVersionsByIDRequest</a></td>
+                <td><a href="#api.OrderVersionsResponse">OrderVersionsResponse</a></td>
+                <td><p>Get all versions of the order by its orderID</p></td>
+              </tr>
+
+              <tr>
+                <td>OrderVersionsByReferenceID</td>
+                <td><a href="#api.OrderVersionsByReferenceIDRequest">OrderVersionsByReferenceIDRequest</a></td>
+                <td><a href="#api.OrderVersionsResponse">OrderVersionsResponse</a></td>
+                <td><p>Get all versions of the order by its referenceID</p></td>
               </tr>
 
               <tr>
@@ -5466,17 +5604,6 @@
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>version</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p>0 - always latest version (amended or not)
-1 - the original version if order was amended at some point
-2 - the first amendment
-3 - the second amendment
-... </p></td>
                 </tr>
 
             </tbody>
