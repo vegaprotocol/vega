@@ -148,6 +148,12 @@ service trading_data {
   // Get a specific order by referenceID
   rpc OrderByReferenceID(OrderByReferenceIDRequest) returns (vega.Order);
 
+  // Get all versions of the order by its orderID
+  rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
+
+  // Get all versions of the order by its referenceID
+  rpc OrderVersionsByReferenceID(OrderVersionsByReferenceIDRequest) returns (OrderVersionsResponse);
+
   // Parties
 
   // Get Margin Levels by PartyID
@@ -374,10 +380,7 @@ message OrderByMarketAndIdRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true }];
   string orderID = 2 [(validator.field) = {string_not_empty : true}];
   
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
+  // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 3;
 }
 
@@ -388,10 +391,7 @@ message OrderByMarketAndIdResponse {
 message OrderByReferenceRequest {
   string reference = 1 [(validator.field) = {string_not_empty : true }];
   
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
+  // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 2;
 }
 
@@ -511,21 +511,25 @@ message PrepareVoteResponse {
 message OrderByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
   
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
-  // ...
+  // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 2;
 }
 
 message OrderByReferenceIDRequest {
   string referenceID = 1 [(validator.field) = {msg_exists: true}];
   
-  // 0 - always latest version (amended or not)
-  // 1 - the original version if order was amended at some point
-  // 2 - the first amendment
-  // 3 - the second amendment
-  // ...
+  // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 2;
+}
+
+message OrderVersionsByIDRequest {
+  string orderID = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message OrderVersionsByReferenceIDRequest {
+  string referenceID = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message OrderVersionsResponse {
+  repeated vega.Order orders = 1;
 }
