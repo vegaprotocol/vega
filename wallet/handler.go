@@ -106,6 +106,12 @@ func (h *Handler) GenerateKeypair(token, passphrase string) (string, error) {
 		return "", err
 	}
 
+	// validate passphrase
+	_, err = Read(h.rootPath, wname, passphrase)
+	if err != nil {
+		return "", err
+	}
+
 	w, ok := h.store[wname]
 	if !ok {
 		// this should never happen as we cannot have a valid session
@@ -248,6 +254,11 @@ func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
 		return err
 	}
 
+	_, err = Read(h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
 	w, ok := h.store[wname]
 	if !ok {
 		// this should never happen as we cannot have a valid session
@@ -288,6 +299,11 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 	defer h.mu.Unlock()
 
 	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return err
+	}
+
+	_, err = Read(h.rootPath, wname, passphrase)
 	if err != nil {
 		return err
 	}

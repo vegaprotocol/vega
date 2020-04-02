@@ -176,6 +176,7 @@ func Write(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 }
 
 func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
+
 	// build walletpath
 	walletpath := filepath.Join(root, walletBaseFolder, owner)
 

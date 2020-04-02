@@ -65,6 +65,7 @@ func TestHandler(t *testing.T) {
 	t.Run("taint key failure - already tainted", testTaintKeyAlreadyFailAlreadyTainted)
 	t.Run("update meta failure - pub key does not exists", testTaintKeyPubKeyDoesNotExists)
 	t.Run("update meta - success", testUpdateMetaSuccess)
+	t.Run("update meta - failure invalid passphrase", testUpdateMetaFailureInvalidPassphrase)
 	t.Run("update meta failure - invalid token", testUpdateMetaInvalidToken)
 	t.Run("update meta taint key failure - wallet not found", testUpdateMetaWalletNotFound)
 	t.Run("update meta failure - pub key does not exists", testUpdateMetaPubKeyDoesNotExists)
@@ -323,12 +324,12 @@ func testGetPubSuccess(t *testing.T) {
 		Return("walletname", nil)
 
 	// Create a keypair to be ignored, *not* returned later
-	pubKey, err := h.GenerateKeypair(tok, "")
+	pubKey, err := h.GenerateKeypair(tok, "s1cur@Epassphrase")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, pubKey)
 
 	// Create a keypair to be retrieved
-	pubKey, err = h.GenerateKeypair(tok, "")
+	pubKey, err = h.GenerateKeypair(tok, "s1cur@Epassphrase")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, pubKey)
 
@@ -373,7 +374,7 @@ func testGetPubKeyNotFound(t *testing.T) {
 		Return("walletname", nil)
 
 	// Create a keypair to be ignored, *not* returned later
-	pubKey, err := h.GenerateKeypair(tok, "")
+	pubKey, err := h.GenerateKeypair(tok, "s1cur@Epassphrase")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, pubKey)
 
@@ -604,6 +605,31 @@ func testUpdateMetaSuccess(t *testing.T) {
 	assert.Equal(t, keys[0].Meta[0].Value, "yes")
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testUpdateMetaFailureInvalidPassphrase(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// first create the wallet
+	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
+		Return("some fake token", nil)
+
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tok)
+
+	// then start the test
+	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
+		Return("jeremy", nil)
+
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, key)
+
+	// add meta
+	err = h.UpdateMeta(tok, key, "this is the wrong passphrase", []wallet.Meta{wallet.Meta{Key: "primary", Value: "yes"}})
+	assert.EqualError(t, err, "cipher: message authentication failed")
 }
 
 func testUpdateMetaInvalidToken(t *testing.T) {
