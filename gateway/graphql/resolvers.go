@@ -1336,7 +1336,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	return gqResp, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string) (*PreparedAmendOrder, error) {
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
@@ -1362,6 +1362,13 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		r.log.Error("unable to convert size from string in order amend",
 			logging.Error(err))
 		return nil, errors.New("invalid size, could not convert to unsigned int")
+	}
+
+	order.TimeInForce, err = parseOrderTimeInForce(tif)
+	if err != nil {
+		r.log.Error("unable to parse time in force in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid time in force, could not convert to vega time in force")
 	}
 
 	if expiration != nil {

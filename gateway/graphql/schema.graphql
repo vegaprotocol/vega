@@ -60,6 +60,8 @@ type Mutation {
     sizeDelta: String!
     "New expiration time"
     expiration: String
+    "Time in force"
+    timeInForce: OrderTimeInForce!
   ): PreparedAmendOrder!
 
   """
