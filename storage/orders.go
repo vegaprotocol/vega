@@ -122,7 +122,7 @@ func (os *Order) Close() error {
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByMarket(ctx context.Context, market string, skip,
-	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	limit uint64, descending bool, open bool) ([]*types.Order, error) {
 
 	var err error
 	result := make([]*types.Order, 0, int(limit))
@@ -139,7 +139,6 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip,
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	orderBuf := []byte{}
-	openOnly := open != nil && *open
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
@@ -160,15 +159,18 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip,
 
 				return nil, err
 			}
-			if !openOnly || (order.Remaining == 0 || order.Status != types.Order_Active) {
-				if skip != 0 {
-					skip--
-					continue
-				}
-				result = append(result, &order)
-				if limit != 0 && len(result) == cap(result) {
-					return result, nil
-				}
+			if (open && order.Status != types.Order_Active) ||
+				(!open && order.Status == types.Order_Active) {
+				continue
+			}
+
+			if skip != 0 {
+				skip--
+				continue
+			}
+			result = append(result, &order)
+			if limit != 0 && len(result) == cap(result) {
+				return result, nil
 			}
 		}
 	}
@@ -205,10 +207,9 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
-	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	limit uint64, descending bool, open bool) ([]*types.Order, error) {
 
 	var err error
-	openOnly := open != nil && *open
 	result := make([]*types.Order, 0, int(limit))
 
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
@@ -253,15 +254,17 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
 					logging.String("raw-bytes", string(orderBuf)))
 				return nil, err
 			}
-			if !openOnly || (order.Remaining == 0 || order.Status != types.Order_Active) {
-				if skip != 0 {
-					skip--
-					continue
-				}
-				result = append(result, &order)
-				if limit != 0 && len(result) == cap(result) {
-					return result, nil
-				}
+			if (open && order.Status != types.Order_Active) ||
+				(!open && order.Status == types.Order_Active) {
+				continue
+			}
+			if skip != 0 {
+				skip--
+				continue
+			}
+			result = append(result, &order)
+			if limit != 0 && len(result) == cap(result) {
+				return result, nil
 			}
 		}
 	}

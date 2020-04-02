@@ -41,8 +41,8 @@ type TimeService interface {
 type OrderStore interface {
 	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
 	GetByOrderID(ctx context.Context, id string) (*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
@@ -356,12 +356,12 @@ func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, err
 }
 
 // GetByMarket returns a list of order for a given market
-func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending, open)
 }
 
 // GetByParty returns a list of order for a given party
-func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByParty(ctx, party, skip, limit, descending, open)
 }
 
