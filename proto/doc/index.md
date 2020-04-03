@@ -2029,6 +2029,7 @@ Proposal can enter Failed state from any other state.
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
+| version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
 
 
 
