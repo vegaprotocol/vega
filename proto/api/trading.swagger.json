@@ -15,62 +15,6 @@
     "application/json"
   ],
   "paths": {
-    "/auth/token": {
-      "get": {
-        "summary": "Check an API token",
-        "operationId": "CheckToken",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiCheckTokenResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      },
-      "post": {
-        "summary": "Sign In",
-        "operationId": "SignIn",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiSignInResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiSignInRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/governance/proposals": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
@@ -449,33 +393,6 @@
         ]
       }
     },
-    "/orders": {
-      "post": {
-        "summary": "Submit an Order",
-        "operationId": "SubmitOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiSubmitOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/orders/prepare": {
       "post": {
         "summary": "Prepare a submit order request",
@@ -563,88 +480,6 @@
           },
           {
             "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/{amendment.orderID}": {
-      "put": {
-        "summary": "Amend an Order",
-        "operationId": "AmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "amendment.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/{cancellation.orderID}": {
-      "delete": {
-        "summary": "Cancel an Order",
-        "operationId": "CancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "cancellation.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "token",
             "in": "query",
             "required": false,
             "type": "string"
@@ -1112,9 +947,6 @@
       "properties": {
         "amendment": {
           "$ref": "#/definitions/vegaOrderAmendment"
-        },
-        "token": {
-          "type": "string"
         }
       }
     },
@@ -1126,15 +958,6 @@
           "items": {
             "$ref": "#/definitions/vegaCandle"
           }
-        }
-      }
-    },
-    "apiCheckTokenResponse": {
-      "type": "object",
-      "properties": {
-        "ok": {
-          "type": "boolean",
-          "format": "boolean"
         }
       }
     },
@@ -1422,38 +1245,12 @@
         }
       }
     },
-    "apiSignInRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "a party ID"
-        },
-        "password": {
-          "type": "string",
-          "title": "a password"
-        }
-      }
-    },
-    "apiSignInResponse": {
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string",
-          "title": "a token corresponding to the party given in the request, and valid for subsequent requests for that party"
-        }
-      }
-    },
     "apiSubmitOrderRequest": {
       "type": "object",
       "properties": {
         "submission": {
           "$ref": "#/definitions/vegaOrderSubmission",
           "description": "the bulk of the Order, including market, party, price, size, side, time in force, etc."
-        },
-        "token": {
-          "type": "string",
-          "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
         }
       }
     },

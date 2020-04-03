@@ -52,12 +52,6 @@ func (this *NotifyTraderAccountRequest) Validate() error {
 func (this *NotifyTraderAccountResponse) Validate() error {
 	return nil
 }
-func (this *SignInRequest) Validate() error {
-	return nil
-}
-func (this *SignInResponse) Validate() error {
-	return nil
-}
 func (this *PrepareSubmitOrderResponse) Validate() error {
 	if this.PendingOrder != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
@@ -501,18 +495,6 @@ func (this *MarketAccountsResponse) Validate() error {
 			}
 		}
 	}
-	return nil
-}
-func (this *CheckTokenRequest) Validate() error {
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
-	}
-	if this.Token == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Token", fmt.Errorf(`value '%v' must not be an empty string`, this.Token))
-	}
-	return nil
-}
-func (this *CheckTokenResponse) Validate() error {
 	return nil
 }
 func (this *PrepareProposalRequest) Validate() error {
