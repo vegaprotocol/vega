@@ -762,7 +762,6 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			return err
 		}
 
-		fmt.Printf("TIF: %v", tif.String())
 		amend := proto.OrderAmendment{
 			OrderID:     o.Id,
 			PartyID:     o.PartyID,

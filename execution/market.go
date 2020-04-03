@@ -1168,9 +1168,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// from here these are the normal amendment
 
-	var (
-		priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange = false, false, false, false, false
-	)
+	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
 
 	if amendedOrder.Price != existingOrder.Price {
 		priceShift = true
