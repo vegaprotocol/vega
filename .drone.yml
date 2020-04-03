@@ -125,13 +125,13 @@ steps:
       - echo "=== $$filename ==="
       # vega node
       - rm -rf "$$VEGANODE_DIR" && mkdir -p -m 0700 "$$VEGANODE_DIR"
-      - ./vega init -r "$$VEGANODE_DIR"
-      - ./vega node -C "$$VEGANODE_DIR" 1>/tmp/veganode.log 2>&1 &
+      - cmd/vega/vega init -r "$$VEGANODE_DIR"
+      - cmd/vega/vega node -C "$$VEGANODE_DIR" 1>/tmp/veganode.log 2>&1 &
       - echo "$$!" >"$$VEGANODE_PID"
       # vega wallet
       - rm -rf "$$WALLET_DIR" && mkdir -p -m 0700 "$$WALLET_DIR"
-      - ./vega wallet service init --genrsakey -f -r "$$WALLET_DIR"
-      - ./vega wallet service run -r "$$WALLET_DIR" 1>/tmp/vegawallet.log 2>&1 &
+      - cmd/vega/vega wallet service init --genrsakey -f -r "$$WALLET_DIR"
+      - cmd/vega/vega wallet service run -r "$$WALLET_DIR" 1>/tmp/vegawallet.log 2>&1 &
       - echo "$$!" >"$$VEGAWALLET_PID"
       # tendermint
       - rm -rf "$$TENDERMINT_DIR" && mkdir -p -m 0700 "$$TENDERMINT_DIR"
