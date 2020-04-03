@@ -10,16 +10,13 @@ platform:
 
 steps:
 
-  # ====== Pipeline for pull requests ======
-
   # https://docker-runner.docs.drone.io/configuration/cloning/
-  - name: fetch-PR
+  - name: fetch
     image: alpine/git
     commands:
       - git fetch --tags  # necessary for generation of VERSION var
-    when:
-      event:
-        - pull_request
+
+  # ====== Pipeline for pull requests ======
 
   - name: build-PR
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -54,7 +51,7 @@ steps:
       - make build
       # - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on:
-      - fetch-PR
+      - fetch
     when:
       event:
         - pull_request
@@ -155,19 +152,6 @@ steps:
 
   # ====== Pipeline for main branches (master, develop) and tags ======
 
-  # https://docker-runner.docs.drone.io/configuration/cloning/
-  - name: fetch-branch
-    image: alpine/git
-    commands:
-      - git fetch --tags  # necessary for generation of VERSION var
-    when:
-      event:
-        - push
-      ref:
-        - refs/heads/master
-        - refs/heads/develop
-        - refs/tags/*
-
   - name: build-branch
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     pull: always
@@ -200,7 +184,7 @@ steps:
       - make deps
       - make build
     depends_on:
-      - fetch-branch
+      - fetch
     when:
       event:
         - push
