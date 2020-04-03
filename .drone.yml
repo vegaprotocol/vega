@@ -139,7 +139,7 @@ steps:
       - tendermint node --home "$$TENDERMINT_DIR" 1>/tmp/tendermint.log 2>&1 &
       - echo "$$!" >"$$TENDERMINT_PID"
       # tests
-      - pytest "$$filename" || exit 1
+      - PYTHONPATH=/grpc/generated pytest "$$filename" || exit 1
       - kill "$$VEGANODE_PID" "$$VEGAWALLET_PID" "$$TENDERMINT_PID"
       - done
     depends_on:
