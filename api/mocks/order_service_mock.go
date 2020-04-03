@@ -35,7 +35,7 @@ func (m *MockOrderService) EXPECT() *MockOrderServiceMockRecorder {
 }
 
 // GetByMarket mocks base method
-func (m *MockOrderService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool, arg5 *bool) ([]*proto.Order, error) {
+func (m *MockOrderService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4, arg5 bool) ([]*proto.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarket", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].([]*proto.Order)
@@ -80,7 +80,7 @@ func (mr *MockOrderServiceMockRecorder) GetByOrderID(arg0, arg1 interface{}) *go
 }
 
 // GetByParty mocks base method
-func (m *MockOrderService) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool, arg5 *bool) ([]*proto.Order, error) {
+func (m *MockOrderService) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4, arg5 bool) ([]*proto.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByParty", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].([]*proto.Order)
