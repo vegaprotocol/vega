@@ -171,7 +171,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		PrepareOrderAmend  func(childComplexity int, id string, partyID string, price string, size string, expiration *string) int
+		PrepareOrderAmend  func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) int
 		PrepareOrderCancel func(childComplexity int, id string, partyID string, marketID string) int
 		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
@@ -442,7 +442,7 @@ type MarketDepthResolver interface {
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id string, partyID string, marketID string) (*PreparedCancelOrder, error)
-	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, size string, expiration *string) (*PreparedAmendOrder, error)
+	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
 	SubmitTransaction(ctx context.Context, data string, sig string, address *string, pubkey *string) (*TransactionSubmitted, error)
@@ -1066,7 +1066,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["expiration"].(*string)), true
+		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce)), true
 
 	case "Mutation.prepareOrderCancel":
 		if e.complexity.Mutation.PrepareOrderCancel == nil {
@@ -2306,9 +2306,11 @@ type Mutation {
     "New price for this order"
     price: String!
     "New size for this order"
-    size: String!
+    sizeDelta: String!
     "New expiration time"
     expiration: String
+    "Time in force"
+    timeInForce: OrderTimeInForce!
   ): PreparedAmendOrder!
 
   """
@@ -3724,13 +3726,13 @@ func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Co
 	}
 	args["price"] = arg2
 	var arg3 string
-	if tmp, ok := rawArgs["size"]; ok {
+	if tmp, ok := rawArgs["sizeDelta"]; ok {
 		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["size"] = arg3
+	args["sizeDelta"] = arg3
 	var arg4 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
 		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
@@ -3739,6 +3741,14 @@ func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Co
 		}
 	}
 	args["expiration"] = arg4
+	var arg5 OrderTimeInForce
+	if tmp, ok := rawArgs["timeInForce"]; ok {
+		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["timeInForce"] = arg5
 	return args, nil
 }
 
@@ -6930,7 +6940,7 @@ func (ec *executionContext) _Mutation_prepareOrderAmend(ctx context.Context, fie
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["expiration"].(*string))
+		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

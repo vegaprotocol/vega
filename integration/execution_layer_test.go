@@ -717,6 +717,97 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	return err
 }
 
+func theFollowingTradesHappened(trades *gherkin.DataTable) error {
+	var err error
+	for _, row := range trades.Rows {
+		if val(row, 0) == "buyer" {
+			continue
+		}
+		ok := false
+		buyer, seller, price, volume := val(row, 0), val(row, 1), u64val(row, 2), u64val(row, 3)
+		for _, v := range execsetup.trades.data {
+			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == volume {
+				ok = true
+				break
+			}
+		}
+
+		if !ok {
+			err = fmt.Errorf("expecting trade was missing: buyer(%v), seller(%v), price(%v), volume(%v)", buyer, seller, price, volume)
+			break
+		}
+	}
+
+	return err
+}
+
+func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
+	for _, row := range refs.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+
+		tif, err := tifval(row, 5)
+		if err != nil {
+			return fmt.Errorf("invalid time in for ref(%v)", val(row, 5))
+		}
+
+		success, err := boolval(row, 6)
+		if err != nil {
+			return err
+		}
+
+		amend := proto.OrderAmendment{
+			OrderID:     o.Id,
+			PartyID:     o.PartyID,
+			MarketID:    o.MarketID,
+			Price:       u64val(row, 2),
+			SizeDelta:   i64val(row, 3),
+			TimeInForce: tif,
+		}
+
+		_, err = execsetup.engine.AmendOrder(&amend)
+		if err != nil && success {
+			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyID, o.Reference, err)
+		}
+
+		if err == nil && !success {
+			return fmt.Errorf("expected to failed amending but succeed for trader %s (reference %s)", o.PartyID, o.Reference)
+		}
+
+	}
+
+	return nil
+}
+
+func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
+	for _, row := range refs.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+
+		status, err := orderstatusval(row, 2)
+		if err != nil {
+			return err
+		}
+		if status != o.Status {
+			return fmt.Errorf("invalid order status for order ref %v, expected %v got %v", o.Reference, status.String(), o.Status.String())
+		}
+	}
+
+	return nil
+}
+
 func dumpTransfers() error {
 	for _, _v := range execsetup.transfers.data {
 		for _, v := range _v.GetTransfers() {

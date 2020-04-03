@@ -1112,14 +1112,170 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			logging.String("market-id", m.mkt.Id),
 			logging.Order(*existingOrder))
 
-		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
+		return nil, types.ErrInvalidMarketID
 	}
 
+	if err := m.validateOrderAmendment(existingOrder, orderAmendment); err != nil {
+		return nil, err
+	}
+
+	amendedOrder, err := m.applyOrderAmendment(existingOrder, orderAmendment)
+	if err != nil {
+		return nil, err
+	}
+
+	// if remaining is reduces <= 0, then order is cancelled
+	if amendedOrder.Remaining <= 0 {
+		orderCancel := types.OrderCancellation{
+			OrderID:  existingOrder.Id,
+			PartyID:  existingOrder.PartyID,
+			MarketID: existingOrder.MarketID,
+		}
+
+		confirm, err := m.CancelOrder(&orderCancel)
+		if err != nil {
+			return nil, err
+		}
+		return &types.OrderConfirmation{
+			Order: confirm.Order,
+		}, nil
+	}
+
+	// if expiration has changed and is not 0, and is before currentTime
+	// then we expire the order
+	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
+		cancellation, err := m.matching.CancelOrder(amendedOrder)
+		if cancellation == nil || err != nil {
+			m.log.Error("Failure after cancel order from matching engine",
+				logging.String("party-id", amendedOrder.PartyID),
+				logging.String("order-id", amendedOrder.Id),
+				logging.String("market", m.mkt.Id))
+			logging.Error(err)
+			return nil, err
+		}
+
+		// Update the order in our stores (will be marked as cancelled)
+		// set the proper status
+		cancellation.Order.Status = types.Order_Expired
+		m.orderBuf.Add(*cancellation.Order)
+		_, err = m.position.UnregisterOrder(cancellation.Order)
+		if err != nil {
+			m.log.Error("Failure unregistering order in positions engine (amendOrder)",
+				logging.Order(*amendedOrder),
+				logging.Error(err))
+		}
+
+		return &types.OrderConfirmation{
+			Order: cancellation.Order,
+		}, nil
+	}
+
+	// from here these are the normal amendment
+
+	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
+
+	if amendedOrder.Price != existingOrder.Price {
+		priceShift = true
+	}
+
+	if amendedOrder.Size > existingOrder.Size {
+		sizeIncrease = true
+	}
+	if amendedOrder.Size < existingOrder.Size {
+		sizeDecrease = true
+	}
+
+	if amendedOrder.ExpiresAt != existingOrder.ExpiresAt {
+		expiryChange = true
+	}
+
+	if amendedOrder.TimeInForce != existingOrder.TimeInForce {
+		timeInForceChange = true
+	}
+
+	// if increase in size or change in price
+	// ---> DO atomic cancel and submit
+	if priceShift || sizeIncrease {
+		ret, err := m.orderCancelReplace(existingOrder, amendedOrder)
+		return ret, err
+	}
+
+	// if decrease in size or change in expiration date
+	// ---> DO amend in place in matching engine
+	if expiryChange || sizeDecrease || timeInForceChange {
+		if sizeDecrease && amendedOrder.Remaining < existingOrder.Remaining {
+			// reduce the position with the difference
+			diffRemaining := existingOrder.Remaining - amendedOrder.Remaining
+			o := types.Order{
+				PartyID:   existingOrder.PartyID,
+				Side:      existingOrder.Side,
+				Remaining: diffRemaining,
+			}
+			_, err = m.position.UnregisterOrder(&o)
+			if err != nil {
+				m.log.Error("Failure unregistering order in positions engine (cancel)",
+					logging.Order(o),
+					logging.Error(err))
+
+				return nil, err
+			}
+		}
+
+		return m.orderAmendInPlace(amendedOrder)
+	}
+
+	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
+	return nil, types.ErrEditNotAllowed
+
+}
+
+func (m *Market) validateOrderAmendment(
+	order *types.Order,
+	amendment *types.OrderAmendment,
+) error {
+	// check size changes
+	if amendment.SizeDelta != 0 {
+		// only new size not permitted to be <= 0
+		newSize := int64(order.Size) + amendment.SizeDelta
+		if newSize <= 0 {
+			return errors.New("amend order size can't be <= 0")
+		}
+
+	}
+
+	// check TIF and expiracy
+	if amendment.TimeInForce == types.Order_GTT {
+		// if expiresAt is before or equal to created at
+		// we return an error
+		if amendment.ExpiresAt <= order.CreatedAt {
+			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
+		}
+	} else if amendment.TimeInForce == types.Order_GTC {
+		// this is cool, but we need to ensure and expiry is not set
+		if amendment.ExpiresAt != 0 {
+			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
+		}
+	} else {
+		// IOC and FOK are not acceptable for amend order
+		return errors.New("amend order, TIF FOK and IOC are not allowed")
+	}
+
+	// nothing to check for the prices
+
+	return nil
+}
+
+// this function assume the amendment have been validated before
+func (m *Market) applyOrderAmendment(
+	existingOrder *types.Order,
+	amendment *types.OrderAmendment,
+) (order *types.Order, err error) {
 	m.mu.Lock()
 	currentTime := m.currentTime
 	m.mu.Unlock()
 
-	amendOrder := &types.Order{
+	// initialize order with the existing order data
+	order = &types.Order{
 		Id:          existingOrder.Id,
 		MarketID:    existingOrder.MarketID,
 		PartyID:     existingOrder.PartyID,
@@ -1128,52 +1284,33 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		Size:        existingOrder.Size,
 		Remaining:   existingOrder.Remaining,
 		TimeInForce: existingOrder.TimeInForce,
-		CreatedAt:   currentTime.UnixNano(),
+		CreatedAt:   existingOrder.CreatedAt,
 		Status:      existingOrder.Status,
 		ExpiresAt:   existingOrder.ExpiresAt,
 		Reference:   existingOrder.Reference,
-	}
-	var (
-		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
-	)
-
-	if orderAmendment.Price != 0 && existingOrder.Price != orderAmendment.Price {
-		amendOrder.Price = orderAmendment.Price
-		priceShift = true
+		Version:     existingOrder.Version + 1,
+		UpdatedAt:   currentTime.UnixNano(),
 	}
 
-	if orderAmendment.Size != 0 {
-		amendOrder.Size = orderAmendment.Size
-		amendOrder.Remaining = orderAmendment.Size
-		if orderAmendment.Size > existingOrder.Size {
-			sizeIncrease = true
+	// apply price changes
+	if amendment.Price != 0 && existingOrder.Price != amendment.Price {
+		order.Price = amendment.Price
+	}
+
+	// apply size changes
+	if amendment.SizeDelta != 0 {
+		order.Size += uint64(amendment.SizeDelta)
+		newRemaining := int64(existingOrder.Remaining) + amendment.SizeDelta
+		if newRemaining <= 0 {
+			newRemaining = 0
 		}
-		if orderAmendment.Size < existingOrder.Size {
-			sizeDecrease = true
-		}
+		order.Remaining = uint64(newRemaining)
 	}
 
-	if amendOrder.TimeInForce == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
-		amendOrder.ExpiresAt = orderAmendment.ExpiresAt
-		expiryChange = true
-	}
-
-	// if increase in size or change in price
-	// ---> DO atomic cancel and submit
-	if priceShift || sizeIncrease {
-		ret, err := m.orderCancelReplace(existingOrder, amendOrder)
-		return ret, err
-	}
-
-	// if decrease in size or change in expiration date
-	// ---> DO amend in place in matching engine
-	if expiryChange || sizeDecrease {
-		return m.orderAmendInPlace(amendOrder)
-	}
-
-	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
-	return &types.OrderConfirmation{}, types.ErrEditNotAllowed
-
+	// apply tif
+	order.TimeInForce = amendment.TimeInForce
+	order.ExpiresAt = amendment.ExpiresAt
+	return
 }
 
 func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
@@ -1210,7 +1347,7 @@ func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirm
 
 	_, err := m.position.RegisterOrder(amendOrder)
 	if err != nil {
-		return &types.OrderConfirmation{}, err
+		return nil, err
 	}
 
 	err = m.matching.AmendOrder(amendOrder)
@@ -1218,11 +1355,12 @@ func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirm
 		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*amendOrder, "new-order"),
 			logging.Error(err))
-		return &types.OrderConfirmation{}, err
+		return nil, err
 	}
-	amendOrder.UpdatedAt = m.currentTime.UnixNano()
 	m.orderBuf.Add(*amendOrder)
-	return &types.OrderConfirmation{}, nil
+	return &types.OrderConfirmation{
+		Order: amendOrder,
+	}, nil
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
