@@ -289,7 +289,7 @@ func (bs *badgerStore) orderPartyKey(party string, ID string) []byte {
 }
 
 func (bs *badgerStore) orderVersionKey(version uint64, ID string) []byte {
-	return []byte(fmt.Sprintf("ID:%s_V:%012d", version, ID))
+	return []byte(fmt.Sprintf("ID:%s_V:%012d", ID, version))
 }
 
 // Trade store keys
