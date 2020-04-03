@@ -125,23 +125,23 @@ steps:
       VEGAWALLET_DIR: /tmp/vegawallet
       VEGAWALLET_PID: /tmp/vegawallet.pid
     commands:
-      - sleep 3600 || true
+      # - sleep 3600 || true
       - find /grpc/ -name '*Tests.py' | sort | while read -r filename ; do
       - echo "=== $$filename ==="
       # vega node
       - rm -rf "$$VEGANODE_DIR" # no need to re-create the dir
-      - cmd/vega/vega init -r "$$VEGANODE_DIR"
-      - cmd/vega/vega node -C "$$VEGANODE_DIR" 1>/tmp/veganode.log 2>&1 &
+      - cmd/vega/vega init -r "$$VEGANODE_DIR" 1>/tmp/veganode.log 2>&1
+      - cmd/vega/vega node -C "$$VEGANODE_DIR" 1>>/tmp/veganode.log 2>&1 &
       - echo "$$!" >"$$VEGANODE_PID"
       # vega wallet
       - rm -rf "$$VEGAWALLET_DIR" && mkdir -p -m 0700 "$$VEGAWALLET_DIR" # dir must exist
-      - cmd/vega/vega wallet service init --genrsakey -f -r "$$VEGAWALLET_DIR"
-      - cmd/vega/vega wallet service run -r "$$VEGAWALLET_DIR" 1>/tmp/vegawallet.log 2>&1 &
+      - cmd/vega/vega wallet service init --genrsakey -f -r "$$VEGAWALLET_DIR" 1>/tmp/vegawallet.log 2>&1
+      - cmd/vega/vega wallet service run -r "$$VEGAWALLET_DIR" 1>>/tmp/vegawallet.log 2>&1 &
       - echo "$$!" >"$$VEGAWALLET_PID"
       # tendermint
       - rm -rf "$$TENDERMINT_DIR" # no need to re-create the dir
-      - tendermint init --home "$$TENDERMINT_DIR"
-      - tendermint node --home "$$TENDERMINT_DIR" 1>/tmp/tendermint.log 2>&1 &
+      - tendermint init --home "$$TENDERMINT_DIR" 1>/tmp/tendermint.log 2>&1
+      - tendermint node --home "$$TENDERMINT_DIR" 1>>/tmp/tendermint.log 2>&1 &
       - echo "$$!" >"$$TENDERMINT_PID"
       # tests
       - PYTHONPATH=/grpc/generated pytest "$$filename" || exit 1
