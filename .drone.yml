@@ -10,11 +10,16 @@ platform:
 
 steps:
 
+  # ====== Pipeline for pull requests ======
+
   # https://docker-runner.docs.drone.io/configuration/cloning/
-  - name: fetch
+  - name: fetch-PR
     image: alpine/git
     commands:
       - git fetch --tags  # necessary for generation of VERSION var
+    when:
+      event:
+        - pull_request
 
   - name: build-PR
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -49,7 +54,7 @@ steps:
       - make build
       # - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on:
-      - fetch
+      - fetch-PR
     when:
       event:
         - pull_request
@@ -148,6 +153,62 @@ steps:
       event:
         - pull_request
 
+  # ====== Pipeline for main branches (master, develop) and tags ======
+
+  # https://docker-runner.docs.drone.io/configuration/cloning/
+  - name: fetch-branch
+    image: alpine/git
+    commands:
+      - git fetch --tags  # necessary for generation of VERSION var
+    when:
+      event:
+        - push
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/tags/*
+
+  - name: build-branch
+    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      CGO_ENABLED: "0"
+      GO111MODULE: "on"
+      GOARCH: amd64
+      GOCACHE: /go/cache
+      GOOS: linux
+      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
+        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - eval "$$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - make deps
+      - make build
+    depends_on:
+      - fetch
+    when:
+      event:
+        - push
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/tags/*
+
   - name: push_to_devnet
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
@@ -234,6 +295,8 @@ steps:
     depends_on:
       - fetch
     when:
+      event:
+        - push
       ref:
         - refs/heads/master
         - refs/heads/develop
