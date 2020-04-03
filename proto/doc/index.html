@@ -5455,7 +5455,7 @@ after each successful amend </p></td>
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>required to find the order, not being updated </p></td>
                 </tr>
 
                 <tr>
@@ -5476,12 +5476,12 @@ after each successful amend </p></td>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>these can be amended </p></td>
                 </tr>
 
                 <tr>
-                  <td>size</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td>sizeDelta</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5494,8 +5494,8 @@ after each successful amend </p></td>
                 </tr>
 
                 <tr>
-                  <td>side</td>
-                  <td><a href="#vega.Side">Side</a></td>
+                  <td>timeInForce</td>
+                  <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5540,17 +5540,6 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>price</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>size</td>
                   <td>
                     <ul>
 
