@@ -315,6 +315,14 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "version of the order (0 for most recent; 1 for original; 2 for first amendment, etc).",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -534,6 +542,14 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "version of the order (0 for most recent; 1 for original; 2 for first amendment, etc).",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -1078,6 +1094,17 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
+    "apiOrderVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
         }
       }
     },

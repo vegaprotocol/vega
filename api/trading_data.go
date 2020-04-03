@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
@@ -1318,6 +1319,22 @@ func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoap
 
 	// If we get here we have matched against referenceID and all is good
 	return order, nil
+}
+
+// OrderVersionsByID returns all versions of the order by its orderID
+func (h *tradingDataService) OrderVersionsByID(
+	ctx context.Context,
+	in *protoapi.OrderVersionsByIDRequest,
+) (*protoapi.OrderVersionsResponse, error) {
+	return nil, errors.New("not implemented yet")
+}
+
+// Get all versions of the order by its referenceID
+func (h *tradingDataService) OrderVersionsByReferenceID(
+	ctx context.Context,
+	in *protoapi.OrderVersionsByReferenceIDRequest,
+) (*protoapi.OrderVersionsResponse, error) {
+	return nil, errors.New("not implemented yet")
 }
 
 func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
