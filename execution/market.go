@@ -338,6 +338,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// set those at the begining as even rejected order get through the buffers
 	m.idgen.SetID(order)
 	order.CreatedAt = m.currentTime.UnixNano()
+	order.Version = 1
 
 	if m.closed {
 		// adding order to the buffer first
@@ -1284,6 +1285,7 @@ func (m *Market) applyOrderAmendment(
 		Status:      existingOrder.Status,
 		ExpiresAt:   existingOrder.ExpiresAt,
 		Reference:   existingOrder.Reference,
+		Version:     existingOrder.Version + 1,
 		UpdatedAt:   currentTime.UnixNano(),
 	}
 
