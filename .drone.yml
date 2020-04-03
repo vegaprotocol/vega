@@ -120,6 +120,7 @@ steps:
       VEGAWALLET_DIR: /tmp/vegawallet
       VEGAWALLET_PID: /tmp/vegawallet.pid
     commands:
+      - sleep 3600 || true
       - find /grpc/ -name '*Tests.py' | sort | while read -r filename ; do
       - echo "=== $$filename ==="
       # vega node
