@@ -200,7 +200,7 @@ steps:
       - make deps
       - make build
     depends_on:
-      - fetch
+      - fetch-branch
     when:
       event:
         - push
@@ -262,7 +262,7 @@ steps:
             --veganode "$$DEVNET_TOPUP_NODE"
             --amount "$$DEVNET_TOPUP_AMOUNT"
     depends_on:
-      - fetch
+      - build-branch
     when:
       branch:
         - develop
@@ -293,7 +293,7 @@ steps:
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
       - for app in $$apps ; do rm -f "./$$app"; done
     depends_on:
-      - fetch
+      - build-branch
     when:
       event:
         - push
