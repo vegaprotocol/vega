@@ -61,7 +61,7 @@ steps:
     pull: always
     environment: {}
     commands:
-      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'design/**/*.md'
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
     depends_on:
       - build-PR
     when:

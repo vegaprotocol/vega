@@ -235,7 +235,7 @@ spellcheck: ## Run markdown spellcheck container
 	@docker run --rm -ti \
 		--entrypoint mdspell \
 		-v "$(PWD):/src" \
-		registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest \
+		docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest \
 			--en-gb \
 			--ignore-acronyms \
 			--ignore-numbers \
