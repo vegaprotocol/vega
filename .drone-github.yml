@@ -170,8 +170,6 @@ steps:
         from_secret: DEVNET_WALLET_SERVER
       GITHUB_API_TOKEN:
         from_secret: GITHUB_API_TOKEN
-      GITLAB_API_TOKEN:
-        from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
       VEGANET_USERS:
@@ -179,9 +177,8 @@ steps:
     commands:
       - /usr/local/bin/diff_bot.py
           --github-token "$$GITHUB_API_TOKEN"
-          --gitlab-token "$$GITLAB_API_TOKEN"
           --file1 "github:vegaprotocol:0:console:develop:packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql"
-          --file2 "gitlab:notused:5726034:trading-core:develop:gateway/graphql/schema.graphql"
+          --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
           --slack-hookurl "$${SLACK_HOOK_URL}"
           --slack-recipient "#uidev"
           slack_notify create_mr
