@@ -21,7 +21,6 @@ type store struct {
 }
 
 func (s *store) AddWallet(w WalletConfig) {
-	fmt.Printf("OK ADDING")
 	for i, v := range s.Wallets {
 		if v.Chain == w.Chain {
 			s.Wallets[i] = w

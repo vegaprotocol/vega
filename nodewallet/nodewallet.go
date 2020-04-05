@@ -103,15 +103,14 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error
 	return saveStore(s.store, s.cfg.StorePath, passphrase)
 }
 
-func (s *Service) Dump() error {
+func (s *Service) Dump() (string, error) {
 	buf, err := json.MarshalIndent(s.store.Wallets, " ", " ")
 	if err != nil {
-		return fmt.Errorf("unable to indent message: %v", err)
+		return "", fmt.Errorf("unable to indent message: %v", err)
 	}
 
 	// print the new keys for user info
-	fmt.Printf("%v\n", string(buf))
-	return nil
+	return string(buf), nil
 }
 
 func Verify(cfg Config, passphrase string) error {

@@ -155,10 +155,12 @@ func (w *nodeWalletCommand) Show(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	err = nw.Dump()
+	s, err := nw.Dump()
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("%v\n", s)
 
 	return nil
 }
