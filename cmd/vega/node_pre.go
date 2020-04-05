@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -82,6 +83,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.StoresEnabled = false
 	}
 
+	if len(l.nodeWalletPassphrase) <= 0 {
+		return errors.New("missing required parameter passphrase")
+	}
+
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -126,6 +131,12 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		l.Log.Info("node setted up without badger store support")
 	} else {
 		l.Log.Info("node setted up with badger store support")
+	}
+
+	// nodewallet
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase)
+	if err != nil {
+		return err
 	}
 
 	return nil

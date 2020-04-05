@@ -1,6 +1,9 @@
 package config
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/blockchain"
@@ -14,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/positions"
@@ -25,6 +29,8 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
+
+	"github.com/zannen/toml"
 )
 
 // Config ties together all other application configuration types.
@@ -52,6 +58,7 @@ type Config struct {
 	Metrics    metrics.Config
 	Transfers  transfers.Config
 	Governance governance.Config
+	NodeWallet nodewallet.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -87,8 +94,23 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Metrics:        metrics.NewDefaultConfig(),
 		Transfers:      transfers.NewDefaultConfig(),
 		Governance:     governance.NewDefaultConfig(),
+		NodeWallet:     nodewallet.NewDefaultConfig(defaultStoreDirPath),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,
 	}
+}
+
+func Read(rootPath string) (*Config, error) {
+	path := filepath.Join(rootPath, configFileName)
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	cfg := NewDefaultConfig(rootPath)
+	if _, err := toml.Decode(string(buf), &cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+
 }

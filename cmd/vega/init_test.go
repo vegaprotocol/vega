@@ -18,6 +18,6 @@ func TestInit(t *testing.T) {
 	defer tidy()
 
 	logger := logging.NewTestLogger()
-	err = main.RunInit(tempDir, true, logger)
+	err = main.RunInit(tempDir, true, logger, "passphrase", false)
 	assert.NoError(t, err)
 }

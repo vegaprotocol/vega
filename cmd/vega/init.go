@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -13,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 
@@ -24,9 +26,11 @@ import (
 type initCommand struct {
 	command
 
-	rootPath string
-	force    bool
-	Log      *logging.Logger
+	rootPath             string
+	force                bool
+	nodeWalletPassphrase string
+	genDevNodeWallet     bool
+	Log                  *logging.Logger
 }
 
 func (ic *initCommand) Init(c *Cli) {
@@ -36,18 +40,23 @@ func (ic *initCommand) Init(c *Cli) {
 		Short: "Initialize a vega node",
 		Long:  "Generate the minimal configuration required for a vega node to start",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunInit(ic.rootPath, ic.force, ic.Log)
+			return RunInit(ic.rootPath, ic.force, ic.Log, ic.nodeWalletPassphrase, ic.genDevNodeWallet)
 		},
 	}
 
 	fs := ic.cmd.Flags()
 	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	fs.StringVarP(&ic.nodeWalletPassphrase, "nodewallet-passphrase", "n", "", "The passphrase used to encrypt the node wallet")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
-
+	fs.BoolVarP(&ic.genDevNodeWallet, "gen-dev-nodewallet", "g", false, "Generate dev wallet for all vega supported chains (not for production)")
 }
 
 // RunInit initialises vega config files - config.toml and markets/*.json.
-func RunInit(rootPath string, force bool, logger *logging.Logger) error {
+func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphrase string, genDevNodeWallet bool) error {
+	if len(nodeWalletPassphrase) <= 0 {
+		return errors.New("cannot initialize the node with a empty nodewallet passphrase")
+	}
+
 	rootPathExists, err := fsutil.PathExists(rootPath)
 	if err != nil {
 		if _, ok := err.(*fsutil.PathNotFound); !ok {
@@ -124,9 +133,32 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 		return err
 	}
 
+	// init the nodewallet
+	if err := nodeWalletInit(cfg, nodeWalletPassphrase, genDevNodeWallet); err != nil {
+		return err
+	}
+
 	logger.Info("configuration generated successfully", logging.String("path", rootPath))
 
 	return nil
+}
+
+func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
+	var err error
+	if genDevNodeWallet {
+		err = nodewallet.DevInit(
+			cfg.NodeWallet.StorePath,
+			cfg.NodeWallet.DevWalletsPath,
+			nodeWalletPassphrase,
+		)
+	} else {
+		err = nodewallet.Init(
+			cfg.NodeWallet.StorePath,
+			nodeWalletPassphrase,
+		)
+	}
+
+	return err
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
