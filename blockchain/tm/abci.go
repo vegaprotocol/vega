@@ -210,7 +210,7 @@ func (a *AbciApplication) DeliverTx(txn types.RequestDeliverTx) types.ResponseDe
 	err := a.processor.Process(txn.Tx)
 	if err != nil {
 		a.log.Error("Error during processing of DeliverTx", logging.Error(err))
-		//return types.ResponseDeliverTx{Code: AbciTxnValidationFailure} // todo: revisit this as part of #414 (gitlab.com/vega-protocol/trading-core/issues/414)
+		// return types.ResponseDeliverTx{Code: AbciTxnValidationFailure} // todo: revisit this as part of #414
 	}
 
 	return types.ResponseDeliverTx{Code: AbciTxnOK}
@@ -251,7 +251,7 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 		a.log.Error("Error on blockchain service Commit", logging.Error(err))
 	}
 
-	// todo: when an error happens on service commit should we return a different response to ABCI? (gitlab.com/vega-protocol/trading-core/issues/179)
+	// todo: when an error happens on service commit should we return a different response to ABCI? (#179)
 
 	a.setBatchStats()
 	a.processor.ResetSeenPayloads()

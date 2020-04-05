@@ -19,7 +19,7 @@ func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) 
 }
 
 // Implementation of the margin calculator per specs:
-// https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md
+// https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
 	var (
 		marginMaintenanceLng float64

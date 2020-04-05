@@ -20,11 +20,9 @@ Additional services that are in this repo, but run separately:
 ## Links
 
 - For **new developers**, see [Getting Started](GETTING_STARTED.md).
-- For **updates**, see the [Change log](CHANGELOG.md) for major updates, and
-  [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
-- For **architecture**, please read the [design documentation](design/index.md) to learn about the design for the system and its architecture.
-- For **agile process**, please read the [engineering documentation](AGILE.md) or ask on Slack channel `#engineering` if you need further clarification.
-- Please [open an issue](https://gitlab.com/vegaprotocol/trading-core/issues/new) if anything is missing or unclear in this documentation.
+- For **updates**, see the [Change log](CHANGELOG.md) for major updates.
+- For **architecture**, please read the [documentation](docs/index.md) to learn about the design for the system and its architecture.
+- Please [open an issue](https://github.com/vegaprotocol/vega/issues/new) if anything is missing or unclear in this documentation.
 
 <details>
   <summary><strong>Table of Contents</strong> (click to expand)</summary>
@@ -48,7 +46,7 @@ To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTE
 
 ## Configuration
 
-Vega is initialised with a set of default configuration with the command `vega init`. There are [plenty of options](/config.toml) to configure it. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory. Example:
+Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory. Example:
 
 ```toml
 [Matching]
@@ -72,7 +70,7 @@ The default port (configurable) for the gRPC API is 3002 and matches the [gRPC p
 
 ### GraphQL
 
-[GraphQL](https://graphql.org/) is an open-source data query and manipulation language for APIs, and a runtime for fulfilling queries with existing data, originally developed at Facebook. The [Client UI](https://gitlab.com/vega-protocol/client) uses the GraphQL API to retrieve data including streaming of events.
+[GraphQL](https://graphql.org/) is an open-source data query and manipulation language for APIs, and a runtime for fulfilling queries with existing data, originally developed at Facebook. The [Console](https://github.com/vegaprotocol/console) uses the GraphQL API to retrieve data including streaming of events.
 
 The GraphQL API is defined by a [schema](gateway/graphql/schema.graphql). External clients will use this schema to communicate with Vega.
 
@@ -103,4 +101,4 @@ The application has structured logging capability, the first port of call for a 
 
 Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 
-Debugging the application locally is also possible with [Delve](https://github.com/go-delve/delve).
+Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV.md).
