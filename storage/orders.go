@@ -484,7 +484,7 @@ func (os *Order) getOrdersByPrefix(
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	marketKey, orderBuf := []byte{}, []byte{}
+	versionKey, orderBuf := []byte{}, []byte{}
 	for it.Seek(keyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 
 		select {
@@ -494,13 +494,13 @@ func (os *Order) getOrdersByPrefix(
 			}
 			return nil, nil
 		default:
-			if marketKey, err = it.Item().ValueCopy(marketKey); err != nil {
+			if versionKey, err = it.Item().ValueCopy(versionKey); err != nil {
 				return nil, err
 			}
-			orderItem, err := txn.Get(marketKey)
+			orderItem, err := txn.Get(versionKey)
 			if err != nil {
 				os.log.Error("Order with key does not exist in order store (getOrdersByPrefix)",
-					logging.String("badger-key", string(marketKey)),
+					logging.String("badger-key", string(versionKey)),
 					logging.Error(err))
 
 				return nil, err
@@ -512,7 +512,7 @@ func (os *Order) getOrdersByPrefix(
 			if err := proto.Unmarshal(orderBuf, &order); err != nil {
 				os.log.Error("Failed to unmarshal order value from badger in order store (getOrdersByPrefix)",
 					logging.Error(err),
-					logging.String("badger-key", string(marketKey)),
+					logging.String("badger-key", string(versionKey)),
 					logging.String("raw-bytes", string(orderBuf)))
 				return nil, err
 			}
@@ -585,11 +585,12 @@ func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error)
 		refKey := os.badger.orderReferenceKey(order.Reference)
 		partyKey := os.badger.orderPartyKey(order.PartyID, order.Id)
 		idVersionKey := os.badger.orderIDVersionKey(order.Id, order.Version)
+
+		results[string(idVersionKey)] = orderBuf
 		results[string(marketKey)] = orderBuf
 		results[string(idKey)] = marketKey
-		results[string(partyKey)] = marketKey
+		results[string(partyKey)] = idVersionKey
 		results[string(refKey)] = marketKey
-		results[string(idVersionKey)] = marketKey
 	}
 	return results, nil
 }
