@@ -62,7 +62,7 @@ The nodewallet can be accessed using the nodewallet subcommand, this nodewallet 
 vega init --nodewallet-passphrase="somesecurepassphrase"
 ```
 
-The init command can also be invoked with a flag in order to genearate development purpose only wallets so you do not have to use real wallets when hacking on the code:
+The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
 ```
 vega init --nodewallet-passphrase="somesecurepassphrase" --gen-dev-nodewallet
 ```
@@ -71,7 +71,6 @@ For the documentation on how to use the nodewallet please run:
 ```
 vega nodewallet --help
 ```
-
 
 ## APIs
 
