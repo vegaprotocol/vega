@@ -372,13 +372,13 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *differentOrder2, *orderV3})
 	assert.NoError(t, err)
 
-	/*t.Run("test that versioning does not mess up normal flow", func(t *testing.T) {
-		allVersions, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false, false)
+	t.Run("test that versioning does not mess up normal flow", func(t *testing.T) {
+		distinctOrders, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false, false)
 		assert.NoError(t, err)
-		assert.NotNil(t, allVersions)
-		assert.Equal(t, 2, len(allVersions), "must be only two distinct orders")
-		assert.NotEqual(t, 2, allVersions[0].Id, allVersions[1].Id, "distinct orders must have different ids")
-	})*/
+		assert.NotNil(t, distinctOrders)
+		assert.Equal(t, 3, len(distinctOrders), "must be only 3 distinct orders")
+		assert.NotEqual(t, distinctOrders[0].Id, distinctOrders[1].Id, distinctOrders[2].Id)
+	})
 
 	t.Run("test if default order version is latest", func(t *testing.T) {
 		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 100, false)
@@ -386,8 +386,8 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.NotNil(t, allVersions)
 		assert.Equal(t, 3, len(allVersions))
 		assert.NotEqual(t, allVersions[0].Version, allVersions[2].Version)
-		//assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
-		//assert.EqualValues(t, version, allVersions[0].Version)
+		assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
+		assert.EqualValues(t, version, allVersions[0].Version)
 	})
 
 	t.Run("test if default order version is latest", func(t *testing.T) {
@@ -395,7 +395,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		//assert.EqualValues(t, version+2, fetchedOrder.Version)
+		assert.EqualValues(t, version+2, fetchedOrder.Version)
 	})
 
 	t.Run("test if searching for invalid order version fails", func(t *testing.T) {
@@ -406,13 +406,14 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.Nil(t, fetchedOrder)
 	})
 
-	/*t.Run("test if able to load specific order version", func(t *testing.T) {
-		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &version)
+	t.Run("test if able to load specific order version", func(t *testing.T) {
+		validVersion := version + 1
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &validVersion)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		assert.Equal(t, version, fetchedOrder.Version)
-	})*/
+		assert.Equal(t, version+1, fetchedOrder.Version)
+	})
 }
 
 // Ensures that we return a market depth struct with empty buy/sell for
