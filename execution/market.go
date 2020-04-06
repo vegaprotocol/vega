@@ -817,7 +817,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 
 		// set order fields (network order)
 		order.Size = tSize
-		order.Remaining = order.Size
+		order.Remaining = 0
 		order.Side = nSide
 		order.Status = types.Order_Active // ensure the status is always active
 		m.idgen.SetID(&order)
@@ -826,7 +826,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		partyOrder := types.Order{
 			MarketID:    marketID,
 			Size:        tSize,
-			Remaining:   tSize,
+			Remaining:   0,
 			Status:      types.Order_Filled,
 			PartyID:     trader.Party(),
 			Side:        tSide,             // assume sell, price is zero in that case anyway
