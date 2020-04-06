@@ -371,8 +371,8 @@ func (os *Order) GetAllVersionsByOrderID(
 	descending bool,
 ) ([]*types.Order, error) {
 
-	partyPrefix, validForPrefix := os.badger.orderIDVersionPrefix(id, descending)
-	return os.getOrdersByPrefix(ctx, partyPrefix, validForPrefix, skip, limit, descending, nil)
+	verionsPrefix, validForPrefix := os.badger.orderIDVersionPrefix(id, descending)
+	return os.getOrdersByPrefix(ctx, verionsPrefix, validForPrefix, skip, limit, descending, nil)
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
