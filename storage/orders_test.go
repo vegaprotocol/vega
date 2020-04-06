@@ -373,28 +373,16 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Status:      types.Order_Active,
 		Version:     version,
 	}
-	orderV2 := &types.Order{
-		Id:          orderV1.Id,
-		MarketID:    orderV1.MarketID,
-		PartyID:     orderV1.PartyID,
-		Side:        orderV1.Side,
-		Price:       orderV1.Price,
-		Size:        orderV1.Size + 1,
-		TimeInForce: orderV1.TimeInForce,
-		Status:      orderV1.Status,
-		Version:     orderV1.Version + 1,
-	}
-	orderV3 := &types.Order{
-		Id:          orderV2.Id,
-		MarketID:    orderV2.MarketID,
-		PartyID:     orderV2.PartyID,
-		Side:        orderV2.Side,
-		Price:       orderV2.Price + 1,
-		Size:        orderV2.Size + 1,
-		TimeInForce: orderV2.TimeInForce,
-		Status:      orderV2.Status,
-		Version:     orderV2.Version + 1,
-	}
+	orderV2 := &types.Order{}
+	*orderV2 = *orderV1
+	version++
+	orderV2.Version = version
+
+	orderV3 := &types.Order{}
+	*orderV3 = *orderV2
+	version++
+	orderV3.Version = version
+
 	differentOrder := &types.Order{
 		Id:          "d41d8cd98f00b204e9800998ecf8427c",
 		MarketID:    testMarket,
@@ -421,7 +409,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *anotherOrder, *orderV3})
 	assert.NoError(t, err)
 
-	t.Run("test that versioning does not mess up normal flow", func(t *testing.T) {
+	t.Run("test if can load distinc orders regardless of versioning", func(t *testing.T) {
 		distinctOrders, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false, false)
 		assert.NoError(t, err)
 		assert.NotNil(t, distinctOrders)
@@ -436,7 +424,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.Equal(t, 3, len(allVersions))
 		assert.NotEqual(t, allVersions[0].Version, allVersions[2].Version)
 		assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
-		assert.EqualValues(t, version, allVersions[0].Version)
+		assert.EqualValues(t, 1, allVersions[0].Version)
 	})
 
 	t.Run("test if default order version is latest", func(t *testing.T) {
@@ -444,7 +432,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		assert.EqualValues(t, version+2, fetchedOrder.Version)
+		assert.EqualValues(t, version, fetchedOrder.Version)
 	})
 
 	t.Run("test if searching for invalid order version fails", func(t *testing.T) {
@@ -456,20 +444,48 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	})
 
 	t.Run("test if able to load middle order version", func(t *testing.T) {
-		validVersion := version + 1
+		validVersion := version - 1
 		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &validVersion)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		assert.Equal(t, version+1, fetchedOrder.Version)
+		assert.EqualValues(t, version-1, fetchedOrder.Version)
 	})
 
 	t.Run("test if able to load first order version", func(t *testing.T) {
-		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &version)
+		var initialVersion uint64 = 1
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &initialVersion)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		assert.Equal(t, version, fetchedOrder.Version)
+		assert.EqualValues(t, 1, fetchedOrder.Version)
+	})
+
+	t.Run("test massive number of versions", func(t *testing.T) {
+
+		orders := make([]types.Order, 0, 10000)
+		for i := 0; i < 10000; i++ {
+			orderV := &types.Order{}
+			*orderV = *orderV1
+			version++
+			orderV.Version = version
+			orders = append(orders, *orderV)
+		}
+		err = newOrderStore.SaveBatch(orders)
+		assert.NoError(t, err)
+
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, version, fetchedOrder.Version)
+
+		var firstVersion uint64 = 1
+		fetchedOrder, err = newOrderStore.GetByOrderID(context.Background(), id, &firstVersion)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, 1, fetchedOrder.Version)
 	})
 }
 
