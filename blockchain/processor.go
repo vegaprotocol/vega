@@ -421,11 +421,7 @@ func (p *Processor) hasSeen(payload []byte) (bool, error) {
 	}
 	// Safety checks at business level to ensure duplicate transaction
 	// payloads do not pass through to application core
-	if exists, err := p.payloadExists(payloadHash); exists {
-		return true, err
-	}
-
-	return false, nil
+	return p.payloadExists(payloadHash)
 }
 
 // payloadHash attempts to extract the unique hash at the start of all vega transactions.
@@ -456,23 +452,4 @@ func (p *Processor) payloadExists(payloadHash *string) (bool, error) {
 // seen in the current batch, seenPayloads is a safety check for dupes per batch.
 func (p *Processor) ResetSeenPayloads() {
 	p.seenPayloads = map[string]byte{}
-}
-
-// txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
-// strategy, we have a simple and efficient encoding at present. A partner encode function
-// can be found in the blockchain client.
-func txDecode(input []byte) (proto []byte, cmd Command, err error) {
-	// Input is typically the bytes that arrive in raw format after consensus is reached.
-	// Split the transaction dropping the unification bytes (uuid&pipe)
-	var value []byte
-	var cmdByte byte
-	if len(input) > 37 {
-		// obtain command from byte slice (0 indexed)
-		cmdByte = input[36]
-		// remaining bytes are payload
-		value = input[37:]
-	} else {
-		return nil, 0, errors.New("payload size is incorrect, should be > 38 bytes")
-	}
-	return value, Command(cmdByte), nil
 }
