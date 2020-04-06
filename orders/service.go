@@ -47,10 +47,9 @@ type OrderStore interface {
 	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
-	GetByReference(ctx context.Context, ref string, version *uint64) (*types.Order, error)
+	GetByReference(ctx context.Context, ref string) (*types.Order, error)
 	GetByOrderID(ctx context.Context, id string, version *uint64) (*types.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool) ([]*types.Order, error)
-	GetAllVersionsByReference(ctx context.Context, ref string, skip, limit uint64, descending bool) ([]*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 }
@@ -264,11 +263,8 @@ func (s *Svc) GetByOrderID(ctx context.Context, id string, version uint64) (orde
 }
 
 // GetByReference find an order from the store using its reference
-func (s *Svc) GetByReference(ctx context.Context, ref string, version uint64) (*types.Order, error) {
-	if version == 0 {
-		return s.orderStore.GetByReference(ctx, ref, nil)
-	}
-	return s.orderStore.GetByReference(ctx, ref, &version)
+func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
+	return s.orderStore.GetByReference(ctx, ref)
 }
 
 // GetByMarket returns a list of order for a given market
@@ -302,11 +298,6 @@ func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (ord
 // GetAllVersionsByOrderID returns all available versions for the order specified by id
 func (s *Svc) GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetAllVersionsByOrderID(ctx, id, skip, limit, descending)
-}
-
-// GetAllVersionsByReference returns all available versions for the order specified by id
-func (s *Svc) GetAllVersionsByReference(ctx context.Context, ref string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
-	return s.orderStore.GetAllVersionsByReference(ctx, ref, skip, limit, descending)
 }
 
 // GetOrderSubscribersCount return the number of subscribers to the

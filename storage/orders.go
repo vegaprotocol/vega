@@ -261,7 +261,7 @@ func (os *Order) GetByPartyAndID(ctx context.Context, party string, id string) (
 }
 
 // GetByReference retrieves an order for a given reference, any errors will be returned immediately.
-func (os *Order) GetByReference(ctx context.Context, ref string, version *uint64) (*types.Order, error) {
+func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	var order types.Order
 
 	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
@@ -270,12 +270,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string, version *uint64
 				err = ErrOrderDoesNotExistForReference
 			}
 		}()
-		var refKey []byte
-		if version == nil {
-			refKey = os.badger.orderReferenceKey(ref)
-		} else {
-			refKey = os.badger.orderReferenceVersionKey(ref, *version)
-		}
+		refKey := os.badger.orderReferenceKey(ref)
 		var (
 			marketKeyItem, orderItem *badger.Item
 			marketKey, orderBuf      []byte
@@ -376,19 +371,6 @@ func (os *Order) GetAllVersionsByOrderID(
 ) ([]*types.Order, error) {
 
 	partyPrefix, validForPrefix := os.badger.orderIDVersionPrefix(id, descending)
-	return os.getOrdersByPrefix(ctx, partyPrefix, validForPrefix, skip, limit, descending, nil)
-}
-
-// GetAllVersionsByReference returns available versions of the specified order
-func (os *Order) GetAllVersionsByReference(
-	ctx context.Context,
-	ref string,
-	skip uint64,
-	limit uint64,
-	descending bool,
-) ([]*types.Order, error) {
-
-	partyPrefix, validForPrefix := os.badger.orderReferenceVersionPrefix(ref, descending)
 	return os.getOrdersByPrefix(ctx, partyPrefix, validForPrefix, skip, limit, descending, nil)
 }
 

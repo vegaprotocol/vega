@@ -151,9 +151,6 @@ service trading_data {
   // Get all versions of the order by its orderID
   rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
 
-  // Get all versions of the order by its reference
-  rpc OrderVersionsByReference(OrderVersionsByReferenceRequest) returns (OrderVersionsResponse);
-
   // Parties
 
   // Get Margin Levels by PartyID
@@ -517,9 +514,6 @@ message OrderByIDRequest {
 
 message OrderByReferenceIDRequest {
   string referenceID = 1 [(validator.field) = {msg_exists: true}];
-  
-  // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
-  uint64 version = 2;
 }
 
 message OrderVersionsByIDRequest {
@@ -527,10 +521,6 @@ message OrderVersionsByIDRequest {
   Pagination pagination = 2;
 }
 
-message OrderVersionsByReferenceRequest {
-  string reference = 1 [(validator.field) = {msg_exists: true}];
-  Pagination pagination = 2;
-}
 
 message OrderVersionsResponse {
   repeated vega.Order orders = 1;

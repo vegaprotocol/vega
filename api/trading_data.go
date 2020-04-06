@@ -37,9 +37,8 @@ type OrderService interface {
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByOrderID(ctx context.Context, id string, version uint64) (order *types.Order, err error)
-	GetByReference(ctx context.Context, ref string, version uint64) (order *types.Order, err error)
-	GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
-	GetAllVersionsByReference(ctx context.Context, ref string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
+	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
+	GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool) (orders []*types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
 }
@@ -261,7 +260,7 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 		return nil, err
 	}
 
-	order, err := h.OrderService.GetByReference(ctx, req.Reference, req.Version)
+	order, err := h.OrderService.GetByReference(ctx, req.Reference)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByReference, err)
 	}
@@ -1330,46 +1329,16 @@ func (h *tradingDataService) OrderVersionsByID(
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByID", startTime)
 
-	err := request.Validate()
+	err := in.Validate()
 	if err != nil {
 		return nil, err
 	}
 	p := defaultPagination
-	if request.Pagination != nil {
+	if in.Pagination != nil {
 		p = *in.Pagination
 	}
 	orders, err := h.OrderService.GetAllVersionsByOrderID(ctx,
 		in.OrderID,
-		p.Skip,
-		p.Limit,
-		p.Descending)
-	if err == nil {
-		return &protoapi.OrderVersionsResponse{
-			Orders: orders,
-		}, nil
-	}
-	return nil, err
-}
-
-// Get all versions of the order by its reference
-func (h *tradingDataService) OrderVersionsByReference(
-	ctx context.Context,
-	in *protoapi.OrderVersionsByReferenceRequest,
-) (*protoapi.OrderVersionsResponse, error) {
-	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByReference", startTime)
-
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
-	p := defaultPagination
-	if request.Pagination != nil {
-		p = *in.Pagination
-	}
-
-	orders, err := h.OrderService.GetAllVersionsByReference(ctx,
-		in.Reference,
 		p.Skip,
 		p.Limit,
 		p.Descending)

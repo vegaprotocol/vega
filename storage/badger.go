@@ -220,15 +220,6 @@ func (bs *badgerStore) orderIDVersionPrefix(orderID string, descending bool) (ke
 	return keyPrefix, validForPrefix
 }
 
-func (bs *badgerStore) orderReferenceVersionPrefix(reference string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
-	validForPrefix = []byte(fmt.Sprintf("R:%s_V:", reference))
-	keyPrefix = validForPrefix
-	if descending {
-		keyPrefix = append(keyPrefix, 0xFF)
-	}
-	return keyPrefix, validForPrefix
-}
-
 func (bs *badgerStore) candlePrefix(market string, interval types.Interval, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("M:%s_I:%s_T:", market, interval))
 	keyPrefix = validForPrefix
