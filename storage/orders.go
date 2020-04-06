@@ -582,13 +582,11 @@ func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error)
 		refKey := os.badger.orderReferenceKey(order.Reference)
 		partyKey := os.badger.orderPartyKey(order.PartyID, order.Id)
 		idVersionKey := os.badger.orderIDVersionKey(order.Id, order.Version)
-		refVersionKey := os.badger.orderReferenceVersionKey(order.Reference, order.Version)
 		results[string(marketKey)] = orderBuf
 		results[string(idKey)] = marketKey
 		results[string(partyKey)] = marketKey
 		results[string(refKey)] = marketKey
 		results[string(idVersionKey)] = marketKey
-		results[string(refVersionKey)] = marketKey
 	}
 	return results, nil
 }

@@ -301,10 +301,6 @@ func (bs *badgerStore) orderIDVersionKey(ID string, version uint64) []byte {
 	return []byte(fmt.Sprintf("ID:%s_V:%012d", ID, version))
 }
 
-func (bs *badgerStore) orderReferenceVersionKey(ref string, version uint64) []byte {
-	return []byte(fmt.Sprintf("R:%s_V:%012d", ref, version))
-}
-
 // Trade store keys
 
 func (bs *badgerStore) tradeMarketKey(market string, ID string) []byte {
