@@ -486,6 +486,7 @@ func (os *Order) getOrdersByPrefix(
 
 	marketKey, orderBuf := []byte{}, []byte{}
 	for it.Seek(keyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
+
 		select {
 		case <-ctx.Done():
 			if deadline.Before(time.Now()) {
@@ -498,7 +499,7 @@ func (os *Order) getOrdersByPrefix(
 			}
 			orderItem, err := txn.Get(marketKey)
 			if err != nil {
-				os.log.Error("Order with key does not exist in order store (GetAllVersionsByOrderID)",
+				os.log.Error("Order with key does not exist in order store (getOrdersByPrefix)",
 					logging.String("badger-key", string(marketKey)),
 					logging.Error(err))
 
@@ -509,12 +510,13 @@ func (os *Order) getOrdersByPrefix(
 			}
 			var order types.Order
 			if err := proto.Unmarshal(orderBuf, &order); err != nil {
-				os.log.Error("Failed to unmarshal order value from badger in order store (GetAllVersionsByOrderID)",
+				os.log.Error("Failed to unmarshal order value from badger in order store (getOrdersByPrefix)",
 					logging.Error(err),
 					logging.String("badger-key", string(marketKey)),
 					logging.String("raw-bytes", string(orderBuf)))
 				return nil, err
 			}
+
 			if filterOut != nil && (*filterOut)(&order) {
 				continue
 			}
