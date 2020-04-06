@@ -114,7 +114,7 @@ func (w *nodeWalletCommand) Import(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("import success\n")
+	fmt.Println("import success")
 	return nil
 }
 

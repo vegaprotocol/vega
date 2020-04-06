@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -21,6 +20,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"github.com/zannen/toml"
+	"github.com/pkg/errors"
 )
 
 type initCommand struct {
@@ -144,21 +144,18 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 }
 
 func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
-	var err error
 	if genDevNodeWallet {
-		err = nodewallet.DevInit(
+		return nodewallet.DevInit(
 			cfg.NodeWallet.StorePath,
 			cfg.NodeWallet.DevWalletsPath,
 			nodeWalletPassphrase,
 		)
-	} else {
-		err = nodewallet.Init(
-			cfg.NodeWallet.StorePath,
-			nodeWalletPassphrase,
-		)
 	}
+	return nodewallet.Init(
+		cfg.NodeWallet.StorePath,
+		nodeWalletPassphrase,
+	)
 
-	return err
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
