@@ -298,7 +298,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
 }
 
-func TestStorage_GetOrderByID(t *testing.T) {
+func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
@@ -314,25 +314,70 @@ func TestStorage_GetOrderByID(t *testing.T) {
 	id := "d41d8cd98f00b204e9800998ecf8427b"
 	var version uint64 = 1
 
-	order := &types.Order{
+	orderV1 := &types.Order{
 		Id:          id,
 		MarketID:    testMarket,
 		PartyID:     testPartyA,
 		Side:        types.Side_Buy,
 		Price:       1,
 		Size:        1,
-		Remaining:   0,
 		TimeInForce: types.Order_GTC,
-		CreatedAt:   0,
 		Status:      types.Order_Active,
 		Version:     version,
 	}
+	orderV2 := &types.Order{
+		Id:          orderV1.Id,
+		MarketID:    orderV1.MarketID,
+		PartyID:     orderV1.PartyID,
+		Side:        orderV1.Side,
+		Price:       orderV1.Price,
+		Size:        orderV1.Size + 1,
+		TimeInForce: orderV1.TimeInForce,
+		Status:      orderV1.Status,
+		Version:     orderV1.Version + 1,
+	}
+	orderV3 := &types.Order{
+		Id:          orderV2.Id,
+		MarketID:    orderV2.MarketID,
+		PartyID:     orderV2.PartyID,
+		Side:        orderV2.Side,
+		Price:       orderV2.Price + 1,
+		Size:        orderV2.Size + 1,
+		TimeInForce: orderV2.TimeInForce,
+		Status:      orderV2.Status,
+		Version:     orderV2.Version + 2,
+	}
 
-	err = newOrderStore.SaveBatch([]types.Order{*order})
+	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *orderV3})
 	assert.NoError(t, err)
 
-	t.Run("test if default order version is latest", func(t testing.T) {
+	t.Run("test if default order version is latest", func(t *testing.T) {
+		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 100, false)
+		assert.NoError(t, err)
+		assert.NotNil(t, allVersions)
+		assert.Equal(t, 3, len(allVersions))
+		assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
+		assert.EqualValues(t, version, allVersions[0].Version)
+	})
+
+	t.Run("test if default order version is latest", func(t *testing.T) {
 		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.Equal(t, version+1, fetchedOrder.Version)
+	})
+
+	t.Run("test if searching for invalid order version fails", func(t *testing.T) {
+		invalidVersion := version * 100
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &invalidVersion)
+		assert.Error(t, err)
+		assert.EqualError(t, err, storage.ErrOrderDoesNotExistForID.Error())
+		assert.Nil(t, fetchedOrder)
+	})
+
+	t.Run("test if able to load specific order version", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &version)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
