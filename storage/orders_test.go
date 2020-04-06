@@ -298,6 +298,55 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
 }
 
+func TestStorage_GetOrderByID(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	log := logging.NewTestLogger()
+
+	storage.FlushStores(log, config)
+	newOrderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer newOrderStore.Close()
+
+	id := "ALA-MA-KOTA"
+	order := &types.Order{
+		Id:          id,
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		TimeInForce: types.Order_GTC,
+		Status:      types.Order_Active,
+	}
+
+	err = newOrderStore.SaveBatch([]types.Order{*order})
+	assert.NoError(t, err)
+
+	t.Run("basic happy path test", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.EqualValues(t, id, fetchedOrder.Id)
+	})
+
+	t.Run("negative test - empty id", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), "", nil)
+		assert.Nil(t, fetchedOrder)
+		assert.Error(t, err)
+		assert.EqualError(t, err, storage.ErrOrderDoesNotExistForID.Error())
+	})
+	t.Run("negative test - non-existing id", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id+id, nil)
+		assert.Nil(t, fetchedOrder)
+		assert.Error(t, err)
+		assert.EqualError(t, err, storage.ErrOrderDoesNotExistForID.Error())
+	})
+}
+
 func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	config, err := storage.NewTestConfig()
 	if err != nil {
@@ -310,7 +359,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
-	id := "VERY-FIRST_ORDER-ID"
+	id := "KOTEK-KLOPOTEK"
 	var version uint64 = 1
 
 	orderV1 := &types.Order{
@@ -357,7 +406,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Status:      types.Order_Active,
 		Version:     version,
 	}
-	differentOrder2 := &types.Order{
+	anotherOrder := &types.Order{
 		Id:          "000000000000000000000000000000",
 		MarketID:    testMarket,
 		PartyID:     testPartyA,
@@ -369,7 +418,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Version:     version,
 	}
 
-	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *differentOrder2, *orderV3})
+	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *anotherOrder, *orderV3})
 	assert.NoError(t, err)
 
 	t.Run("test that versioning does not mess up normal flow", func(t *testing.T) {
@@ -380,7 +429,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.NotEqual(t, distinctOrders[0].Id, distinctOrders[1].Id, distinctOrders[2].Id)
 	})
 
-	t.Run("test if default order version is latest", func(t *testing.T) {
+	t.Run("test all order versions", func(t *testing.T) {
 		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 100, false)
 		assert.NoError(t, err)
 		assert.NotNil(t, allVersions)
@@ -406,13 +455,21 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.Nil(t, fetchedOrder)
 	})
 
-	t.Run("test if able to load specific order version", func(t *testing.T) {
+	t.Run("test if able to load middle order version", func(t *testing.T) {
 		validVersion := version + 1
 		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &validVersion)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
 		assert.Equal(t, version+1, fetchedOrder.Version)
+	})
+
+	t.Run("test if able to load first order version", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &version)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.Equal(t, version, fetchedOrder.Version)
 	})
 }
 
