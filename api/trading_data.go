@@ -1312,7 +1312,7 @@ func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoap
 		return nil, ErrMissingReferenceIDParameter
 	}
 
-	order, err := h.OrderService.GetByReference(ctx, in.ReferenceID, in.Version)
+	order, err := h.OrderService.GetByReference(ctx, in.ReferenceID)
 	if err != nil {
 		return nil, err
 	}
