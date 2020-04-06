@@ -298,6 +298,48 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
 }
 
+func TestStorage_GetOrderByID(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	log := logging.NewTestLogger()
+
+	storage.FlushStores(log, config)
+	newOrderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer newOrderStore.Close()
+
+	id := "d41d8cd98f00b204e9800998ecf8427b"
+	var version uint64 = 1
+
+	order := &types.Order{
+		Id:          id,
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       1,
+		Size:        1,
+		Remaining:   0,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Version:     version,
+	}
+
+	err = newOrderStore.SaveBatch([]types.Order{*order})
+	assert.NoError(t, err)
+
+	t.Run("test if default order version is latest", func(t testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.Equal(t, version, fetchedOrder.Version)
+	})
+}
+
 // Ensures that we return a market depth struct with empty buy/sell for
 // markets that have no orders (when they are newly created)
 func TestStorage_GetMarketDepthForNewMarket(t *testing.T) {
