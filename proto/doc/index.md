@@ -687,6 +687,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | orderID | [string](#string) |  |  |
+| pagination | [Pagination](#api.Pagination) |  |  |
 
 
 
@@ -702,6 +703,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | referenceID | [string](#string) |  |  |
+| pagination | [Pagination](#api.Pagination) |  |  |
 
 
 

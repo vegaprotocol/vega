@@ -6,7 +6,6 @@ package proto
 import (
 	fmt "fmt"
 	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
@@ -112,9 +111,6 @@ func (this *Statistics) Validate() error {
 func (this *PendingOrder) Validate() error {
 	return nil
 }
-func (this *NotifyTraderAccount) Validate() error {
-	return nil
-}
 func (this *Withdraw) Validate() error {
 	return nil
 }
@@ -137,8 +133,8 @@ func (this *OrderSubmission) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if !(this.Size > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
+	if !(this.Size_ > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size_))
 	}
 	if _, ok := Side_name[int32(this.Side)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Side", fmt.Errorf(`value '%v' must be a valid Side field`, this.Side))

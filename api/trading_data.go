@@ -14,7 +14,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
@@ -37,8 +36,10 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
-	GetByOrderID(ctx context.Context, id string) (order *types.Order, err error)
-	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
+	GetByOrderID(ctx context.Context, id string, version uint64) (order *types.Order, err error)
+	GetByReference(ctx context.Context, ref string, version uint64) (order *types.Order, err error)
+	GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
+	GetAllVersionsByReference(ctx context.Context, ref string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
 }
@@ -260,7 +261,7 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 		return nil, err
 	}
 
-	order, err := h.OrderService.GetByReference(ctx, req.Reference)
+	order, err := h.OrderService.GetByReference(ctx, req.Reference, req.Version)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByReference, err)
 	}
@@ -1295,7 +1296,7 @@ func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 		return nil, ErrMissingOrderIDParameter
 	}
 
-	order, err := h.OrderService.GetByOrderID(ctx, in.OrderID)
+	order, err := h.OrderService.GetByOrderID(ctx, in.OrderID, in.Version)
 	if err == nil {
 		return order, nil
 	}
@@ -1312,7 +1313,7 @@ func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoap
 		return nil, ErrMissingReferenceIDParameter
 	}
 
-	order, err := h.OrderService.GetByReference(ctx, in.GetReferenceID())
+	order, err := h.OrderService.GetByReference(ctx, in.ReferenceID, in.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -1326,15 +1327,58 @@ func (h *tradingDataService) OrderVersionsByID(
 	ctx context.Context,
 	in *protoapi.OrderVersionsByIDRequest,
 ) (*protoapi.OrderVersionsResponse, error) {
-	return nil, errors.New("not implemented yet")
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByID", startTime)
+
+	err := request.Validate()
+	if err != nil {
+		return nil, err
+	}
+	p := defaultPagination
+	if request.Pagination != nil {
+		p = *in.Pagination
+	}
+	orders, err := h.OrderService.GetAllVersionsByOrderID(ctx,
+		in.OrderID,
+		p.Skip,
+		p.Limit,
+		p.Descending)
+	if err == nil {
+		return &protoapi.OrderVersionsResponse{
+			Orders: orders,
+		}, nil
+	}
+	return nil, err
 }
 
-// Get all versions of the order by its referenceID
-func (h *tradingDataService) OrderVersionsByReferenceID(
+// Get all versions of the order by its reference
+func (h *tradingDataService) OrderVersionsByReference(
 	ctx context.Context,
 	in *protoapi.OrderVersionsByReferenceIDRequest,
 ) (*protoapi.OrderVersionsResponse, error) {
-	return nil, errors.New("not implemented yet")
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByReferenceID", startTime)
+
+	err := request.Validate()
+	if err != nil {
+		return nil, err
+	}
+	p := defaultPagination
+	if request.Pagination != nil {
+		p = *in.Pagination
+	}
+
+	orders, err := h.OrderService.GetAllVersionsByReference(ctx,
+		in.Reference,
+		p.Skip,
+		p.Limit,
+		p.Descending)
+	if err == nil {
+		return &protoapi.OrderVersionsResponse{
+			Orders: orders,
+		}, nil
+	}
+	return nil, err
 }
 
 func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {

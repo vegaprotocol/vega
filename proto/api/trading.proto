@@ -23,7 +23,7 @@ service trading {
   rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
 
   // Request balance increase
-  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+  // rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
 
   // Request withdrawal
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
@@ -57,13 +57,13 @@ message WithdrawResponse {
   bool success = 1;
 }
 
-message NotifyTraderAccountRequest {
-  vega.NotifyTraderAccount notif = 1;
-}
+// message NotifyTraderAccountRequest {
+//   vega.NotifyTraderAccount notif = 1;
+// }
 
-message NotifyTraderAccountResponse {
-  bool submitted = 1;
-}
+// message NotifyTraderAccountResponse {
+//   bool submitted = 1;
+// }
 
 message PrepareSubmitOrderResponse {
   bytes blob = 1;
@@ -151,8 +151,8 @@ service trading_data {
   // Get all versions of the order by its orderID
   rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
 
-  // Get all versions of the order by its referenceID
-  rpc OrderVersionsByReferenceID(OrderVersionsByReferenceIDRequest) returns (OrderVersionsResponse);
+  // Get all versions of the order by its reference
+  rpc OrderVersionsByReference(OrderVersionsByReferenceRequest) returns (OrderVersionsResponse);
 
   // Parties
 
@@ -524,10 +524,12 @@ message OrderByReferenceIDRequest {
 
 message OrderVersionsByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
+  Pagination pagination = 2;
 }
 
-message OrderVersionsByReferenceIDRequest {
-  string referenceID = 1 [(validator.field) = {msg_exists: true}];
+message OrderVersionsByReferenceRequest {
+  string reference = 1 [(validator.field) = {msg_exists: true}];
+  Pagination pagination = 2;
 }
 
 message OrderVersionsResponse {
