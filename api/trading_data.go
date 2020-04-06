@@ -1354,10 +1354,10 @@ func (h *tradingDataService) OrderVersionsByID(
 // Get all versions of the order by its reference
 func (h *tradingDataService) OrderVersionsByReference(
 	ctx context.Context,
-	in *protoapi.OrderVersionsByReferenceIDRequest,
+	in *protoapi.OrderVersionsByReferenceRequest,
 ) (*protoapi.OrderVersionsResponse, error) {
 	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByReferenceID", startTime)
+	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByReference", startTime)
 
 	err := request.Validate()
 	if err != nil {
