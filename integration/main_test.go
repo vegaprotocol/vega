@@ -93,4 +93,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^dump transfers$`, dumpTransfers)
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
 	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
+	s.Step(`^traders amends the following orders reference:$`, tradersAmendsTheFollowingOrdersReference)
+	s.Step(`^the following trades happened:$`, theFollowingTradesHappened)
+	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
 }

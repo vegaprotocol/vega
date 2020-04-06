@@ -76,7 +76,7 @@ sequenceDiagram
 	Client->>Vega Node: Signed protobuf
 ```
 
-This is what [traderbot](https://gitlab.com/vega-protocol/traderbot/) does (see [traderbot #17](https://gitlab.com/vega-protocol/traderbot/issues/17) for details). Create `auth` and `handler` objects with `NewAuth` and `NewHandler`. Create a RSA keypair (for use with JSON web tokens) with `GenRsaKeyFiles`. Then create wallets and keypairs, and sign transactions as usual.
+This is what [traderbot](https://github.com/vegaprotocol/traderbot/) does (see [traderbot #17](https://github.com/vegaprotocol/traderbot/issues/17) for details). Create `auth` and `handler` objects with `NewAuth` and `NewHandler`. Create a RSA keypair (for use with JSON web tokens) with `GenRsaKeyFiles`. Then create wallets and keypairs, and sign transactions as usual.
 
 ## Hosting wallet service for multiple users
 The [Wallet service](../wallet/README.md) should be run locally, allowing you to access your keypairs for signing transactions. `vega wallet` can also be hosted centrally to manage the keys of multiple users, but this brings with it security considerations that are outside the scope of this document.

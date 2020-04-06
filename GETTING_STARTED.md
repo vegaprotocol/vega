@@ -72,22 +72,22 @@ ssh-keygen -t rsa -b 4096
 ```
 
 Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to GitLab:
-https://gitlab.com/profile/keys
+https://github.com/settings/keys
 
-## Get trading-core
+## Get vega
 
-The `trading-core` repo uses Vega's `quant` repo. Ensure Go knows to use `ssh`
+The `vega` repo uses Vega's `quant` repo. Ensure Go knows to use `ssh`
 instead of `https` when accessing `vegaprotocol` repositories on Github:
 
 ```bash
 git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
 ```
 
-Next, clone `trading-core`:
+Next, clone `vega`:
 
 ```bash
 cd $GOPATH/src
-git clone git@gitlab.com:vega-protocol/trading-core.git vega
+git clone git@github.com:vegaprotocol/vega.git
 cd vega
 git status # On branch develop, Your branch is up to date with 'origin/develop'.
 
@@ -164,7 +164,7 @@ make proto_check
 
 ## Running Traderbot
 
-Clone Traderbot from https://gitlab.com/vega-protocol/traderbot/ into
+Clone Traderbot from https://github.com/vegaprotocol/traderbot/ into
 `$GOPATH/src`.
 
 Build: `make install`

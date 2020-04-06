@@ -28,6 +28,10 @@ var (
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
 	// ErrNonGTTOrderWithExpiracy signals that a non GTT order what set with an expiracy
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
+	// ErrInvalidAmendmentSizeDelta ...
+	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
+	// ErrInvalidAmendOrderTIF ...
+	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
 )
 
 // TimeService ...
@@ -41,8 +45,8 @@ type TimeService interface {
 type OrderStore interface {
 	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
 	GetByOrderID(ctx context.Context, id string) (*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
@@ -199,23 +203,37 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	}
 
 	// if order is GTT convert datetime to blockchain ts
-	if o.TimeInForce == types.Order_GTT {
+	if amendment.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return nil, err
 		}
+	} else if amendment.TimeInForce == types.Order_GTC {
+		// this is cool, but we need to ensure and expiry is not set
+		if amendment.ExpiresAt != 0 {
+			return nil, ErrNonGTTOrderWithExpiry
+		}
+	} else {
+		// IOC and FOK are not acceptable for amend order
+		return nil, ErrInvalidAmendOrderTIF
+	}
+
+	// if size changes, make sure it does not get negative
+	newSize := int64(o.Size) + amendment.SizeDelta
+	if newSize <= 0 {
+		return nil, ErrInvalidAmendmentSizeDelta
 	}
 
 	return &types.PendingOrder{
 		Reference:   o.Reference,
 		Price:       amendment.Price,
-		TimeInForce: o.TimeInForce,
+		TimeInForce: amendment.TimeInForce,
 		Side:        o.Side,
 		MarketID:    o.MarketID,
-		Size:        amendment.Size,
+		Size:        uint64(newSize),
 		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
+		Status:      types.Order_Active,
 		Id:          o.Id,
 	}, nil
 }
@@ -241,12 +259,12 @@ func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, err
 }
 
 // GetByMarket returns a list of order for a given market
-func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending, open)
 }
 
 // GetByParty returns a list of order for a given party
-func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByParty(ctx, party, skip, limit, descending, open)
 }
 

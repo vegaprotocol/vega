@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -15,11 +16,11 @@ import (
 
 var (
 	amend = proto.OrderAmendment{
-		OrderID:  "order_id",
-		PartyID:  "party",
-		Price:    10000,
-		Size:     1,
-		MarketID: "market",
+		OrderID:   "order_id",
+		PartyID:   "party",
+		Price:     10000,
+		SizeDelta: 1,
+		MarketID:  "market",
 	}
 )
 
@@ -37,10 +38,9 @@ func TestPrepareAmendOrder(t *testing.T) {
 }
 
 func testPrepareAmendOrderSuccess(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(2 * time.Hour)
+	// now := vegatime.Now()
 	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
+	arg.TimeInForce = proto.Order_GTC
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -52,7 +52,6 @@ func testPrepareAmendOrderSuccess(t *testing.T) {
 		TimeInForce: proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 
 	pendingOrder, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.NotNil(t, pendingOrder)
@@ -64,6 +63,7 @@ func testPrepareAmendOrderExpired(t *testing.T) {
 	expires := now.Add(-2 * time.Hour)
 	arg := amend
 	arg.ExpiresAt = expires.UnixNano()
+	arg.TimeInForce = types.Order_GTT
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -105,7 +105,7 @@ func testPrepareAmendOrderNotActive(t *testing.T) {
 
 func testPrepareAmendOrderInvalidPayload(t *testing.T) {
 	arg := amend
-	arg.Size = 0
+	arg.OrderID = ""
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -119,7 +119,9 @@ func testPrepareAmendOrderTimeSvcErr(t *testing.T) {
 	expires := now.Add(-2 * time.Hour)
 	expErr := errors.New("time service error")
 	arg := amend
+	arg.SizeDelta = 0
 	arg.ExpiresAt = expires.UnixNano()
+	arg.TimeInForce = types.Order_GTT
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -135,7 +137,8 @@ func testPrepareAmendOrderTimeSvcErr(t *testing.T) {
 
 	pendingOrder, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
+	assert.EqualError(t, err, expErr.Error())
+
 }
 
 func testPrepareAmendOrderNotFound(t *testing.T) {
@@ -144,7 +147,7 @@ func testPrepareAmendOrderNotFound(t *testing.T) {
 	defer svc.ctrl.Finish()
 	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(nil, errors.New("not found"))
 	_, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Error(t, err)
+	assert.Error(t, err, "not found")
 }
 
 func (m amendMatcher) String() string {
@@ -161,6 +164,6 @@ func (m amendMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.Size == v.Size &&
+	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.SizeDelta == v.SizeDelta &&
 		m.e.ExpiresAt == v.ExpiresAt)
 }

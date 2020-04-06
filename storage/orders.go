@@ -122,7 +122,7 @@ func (os *Order) Close() error {
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByMarket(ctx context.Context, market string, skip,
-	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	limit uint64, descending bool, open bool) ([]*types.Order, error) {
 
 	var err error
 	result := make([]*types.Order, 0, int(limit))
@@ -139,7 +139,6 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip,
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	orderBuf := []byte{}
-	openOnly := open != nil && *open
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
@@ -160,15 +159,18 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip,
 
 				return nil, err
 			}
-			if !openOnly || (order.Remaining == 0 || order.Status != types.Order_Active) {
-				if skip != 0 {
-					skip--
-					continue
-				}
-				result = append(result, &order)
-				if limit != 0 && len(result) == cap(result) {
-					return result, nil
-				}
+			if (open && order.Status != types.Order_Active) ||
+				(!open && order.Status == types.Order_Active) {
+				continue
+			}
+
+			if skip != 0 {
+				skip--
+				continue
+			}
+			result = append(result, &order)
+			if limit != 0 && len(result) == cap(result) {
+				return result, nil
 			}
 		}
 	}
@@ -205,10 +207,9 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
-	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	limit uint64, descending bool, open bool) ([]*types.Order, error) {
 
 	var err error
-	openOnly := open != nil && *open
 	result := make([]*types.Order, 0, int(limit))
 
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
@@ -253,15 +254,17 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
 					logging.String("raw-bytes", string(orderBuf)))
 				return nil, err
 			}
-			if !openOnly || (order.Remaining == 0 || order.Status != types.Order_Active) {
-				if skip != 0 {
-					skip--
-					continue
-				}
-				result = append(result, &order)
-				if limit != 0 && len(result) == cap(result) {
-					return result, nil
-				}
+			if (open && order.Status != types.Order_Active) ||
+				(!open && order.Status == types.Order_Active) {
+				continue
+			}
+			if skip != 0 {
+				skip--
+				continue
+			}
+			result = append(result, &order)
+			if limit != 0 && len(result) == cap(result) {
+				return result, nil
 			}
 		}
 	}
@@ -357,7 +360,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 	return &order, nil
 }
 
-// GetByID retrieves an order for a given orderID, any errors will be returned immediately.
+// GetByOrderID retrieves an order for a given orderID, any errors will be returned immediately.
 func (os *Order) GetByOrderID(ctx context.Context, id string) (*types.Order, error) {
 	var order types.Order
 	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
@@ -392,6 +395,52 @@ func (os *Order) GetByOrderID(ctx context.Context, id string) (*types.Order, err
 			os.log.Error("Failed to unmarshal order value from badger in order store (GetByOrderId)",
 				logging.Error(err),
 				logging.String("badger-id-key", string(idKey)),
+				logging.String("raw-bytes", string(orderBuf)))
+			return err
+		}
+		return
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &order, nil
+}
+
+// GetByVersionAndOrderID retrieves an order for a given orderID, any errors will be returned immediately.
+func (os *Order) GetByVersionAndOrderID(ctx context.Context, version uint64, id string) (*types.Order, error) {
+	var order types.Order
+	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
+		defer func() {
+			if err == badger.ErrKeyNotFound {
+				err = ErrOrderDoesNotExistForReference
+			}
+		}()
+		versionKey := os.badger.orderVersionKey(version, id)
+		var (
+			marketKeyItem, orderItem *badger.Item
+			marketKey, orderBuf      []byte
+		)
+		marketKeyItem, err = txn.Get(versionKey)
+		if err != nil {
+			return
+		}
+		marketKey, err = marketKeyItem.ValueCopy(nil)
+		if err != nil {
+			return
+		}
+		orderItem, err = txn.Get(marketKey)
+		if err != nil {
+			return
+		}
+		orderBuf, err = orderItem.ValueCopy(nil)
+		if err != nil {
+			return
+		}
+		err = proto.Unmarshal(orderBuf, &order)
+		if err != nil {
+			os.log.Error("Failed to unmarshal order value from badger in order store (GetByVersionAndOrderId)",
+				logging.Error(err),
+				logging.String("badger-id-key", string(versionKey)),
 				logging.String("raw-bytes", string(orderBuf)))
 			return err
 		}
@@ -541,10 +590,12 @@ func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error)
 		idKey := os.badger.orderIDKey(order.Id)
 		refKey := os.badger.orderReferenceKey(order.Reference)
 		partyKey := os.badger.orderPartyKey(order.PartyID, order.Id)
+		versionKey := os.badger.orderVersionKey(order.Version, order.Id)
 		results[string(marketKey)] = orderBuf
 		results[string(idKey)] = marketKey
 		results[string(partyKey)] = marketKey
 		results[string(refKey)] = marketKey
+		results[string(versionKey)] = marketKey
 	}
 	return results, nil
 }

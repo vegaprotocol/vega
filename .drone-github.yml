@@ -19,7 +19,7 @@ steps:
   # ====== Pipeline for pull requests ======
 
   - name: build-PR
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
     pull: always
     volumes:
       - name: gocache
@@ -39,7 +39,7 @@ steps:
     commands:
       # The following git+ssh config enables accessing private github repos.
       - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-      - eval "$$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
+      - eval "$$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
       - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
       - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
@@ -57,20 +57,20 @@ steps:
         - pull_request
 
   - name: markdownspellcheck-PR
-    image: registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest
     pull: always
     environment: {}
     commands:
       # Make sure the mdspell command matches the one in Makefile.
       - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
     depends_on:
-      - fetch
+      - build-PR
     when:
       event:
         - pull_request
 
   - name: test-PR
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
     volumes:
       - name: gocache
         path: /go/cache
@@ -80,8 +80,6 @@ steps:
       GOCACHE: /go/cache
       GITHUB_API_TOKEN:
         from_secret: GITHUB_API_TOKEN
-      GITLAB_API_TOKEN:
-        from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
@@ -96,9 +94,8 @@ steps:
       #     --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
       # - /usr/local/bin/diff_bot.py
       #     --github-token "$$GITHUB_API_TOKEN"
-      #     --gitlab-token "$$GITLAB_API_TOKEN"
-      #     --file1 "gitlab:notused:5726034:trading-core:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
-      #     --file2 "gitlab:notused:5726034:trading-core:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
+      #     --file1 "github:vegaprotocol:0:vega:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
+      #     --file2 "github:vegaprotocol:0:vega:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
       #     --slack-hookurl "$${SLACK_HOOK_URL}"
       #     --slack-recipient "#uidev"
       #     print_diff slack_notify || failed="$$failed diff_bot"
@@ -153,7 +150,7 @@ steps:
   # ====== Pipeline for main branches (master, develop) and tags ======
 
   - name: build-branch
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
     pull: always
     volumes:
       - name: gocache
@@ -173,7 +170,7 @@ steps:
     commands:
       # The following git+ssh config enables accessing private github repos.
       - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-      - eval "$$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
+      - eval "$$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
       - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
       - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
@@ -193,8 +190,8 @@ steps:
         - refs/heads/develop
         - refs/tags/*
 
-  - name: push_to_devnet
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+  - name: deploy_devnet
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
     volumes:
       - name: gopkg
         path: /go/pkg
@@ -215,8 +212,6 @@ steps:
         from_secret: DEVNET_WALLET_SERVER
       GITHUB_API_TOKEN:
         from_secret: GITHUB_API_TOKEN
-      GITLAB_API_TOKEN:
-        from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
       VEGANET_USERS:
@@ -224,9 +219,8 @@ steps:
     commands:
       - /usr/local/bin/diff_bot.py
           --github-token "$$GITHUB_API_TOKEN"
-          --gitlab-token "$$GITLAB_API_TOKEN"
           --file1 "github:vegaprotocol:0:console:develop:packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql"
-          --file2 "gitlab:notused:5726034:trading-core:develop:gateway/graphql/schema.graphql"
+          --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
           --slack-hookurl "$${SLACK_HOOK_URL}"
           --slack-recipient "#uidev"
           slack_notify create_mr
@@ -253,15 +247,15 @@ steps:
       event:
         - push
 
-  - name: publish_docker
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
+  - name: build_docker_image
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:stable
     volumes:
       - name: dockersock
         path: /run/docker.sock
     environment:
       DOCKER_HOST: unix:///run/docker.sock
       DOCKER_CONFIG_JSON:
-        from_secret: docker_config_json
+        from_secret: dockerconfig
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
@@ -272,9 +266,9 @@ steps:
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
-      - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag" -f Dockerfile.quick .
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
-      - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
+      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag"
       - for app in $$apps ; do rm -f "./$$app"; done
     depends_on:
       - build-branch
@@ -292,10 +286,10 @@ volumes:
       path: /run/docker.sock
   - name: gocache
     host:
-      path: /var/lib/drone/volumes/trading-core/gocache
+      path: /var/lib/drone/volumes/vega/gocache
   - name: gopkg
     host:
-      path: /var/lib/drone/volumes/trading-core/gopkg
+      path: /var/lib/drone/volumes/vega/gopkg
 
 image_pull_secrets:
   - dockerconfig
