@@ -1141,6 +1141,9 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		}, nil
 	}
 
+	// taking order snapshot before modifications
+	m.orderBuf.Add(*existingOrder)
+
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
