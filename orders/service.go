@@ -254,7 +254,7 @@ func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
 	return exp, nil
 }
 
-// GetByOrderID find a order using an orderID
+// GetByOrderID find an order using its orderID
 func (s *Svc) GetByOrderID(ctx context.Context, id string, version uint64) (order *types.Order, err error) {
 	if version == 0 {
 		return s.orderStore.GetByOrderID(ctx, id, nil)
