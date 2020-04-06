@@ -32,7 +32,6 @@ var (
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
 	// ErrInvalidAmendOrderTIF ...
 	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
-
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 	// ErrEmptySubmitTransactionRequest empty transaction
