@@ -19,6 +19,7 @@ import (
 var (
 	ErrOrderNotFoundForMarketAndID   = errors.New("order not found for market and id")
 	ErrOrderDoesNotExistForReference = errors.New("order does not exist for reference")
+	ErrOrderDoesNotExistForID        = errors.New("order does not exist for ID")
 )
 
 // Order is a package internal data struct that implements the OrderStore interface.
@@ -316,7 +317,7 @@ func (os *Order) GetByOrderID(ctx context.Context, id string, version *uint64) (
 	err := os.badger.db.View(func(txn *badger.Txn) (err error) {
 		defer func() {
 			if err == badger.ErrKeyNotFound {
-				err = ErrOrderDoesNotExistForReference
+				err = ErrOrderDoesNotExistForID
 			}
 		}()
 		var idKey []byte
