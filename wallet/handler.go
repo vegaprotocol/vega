@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"sync"
-	"sync/atomic"
-	"unicode"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet/crypto"
@@ -49,9 +47,6 @@ func NewHandler(log *logging.Logger, auth Auth, rootPath string) *Handler {
 
 // CreateWallet return the actual token
 func (h *Handler) CreateWallet(wallet, passphrase string) (string, error) {
-	if !checkPassphrase(passphrase) {
-		return "", ErrPasspharseInvalid
-	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -337,52 +332,4 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 
 	h.store[wname] = w
 	return nil
-}
-
-func checkPassphrase(pass string) bool {
-	if len(pass) < 8 {
-		return false
-	}
-	var ok int64
-	wg := sync.WaitGroup{}
-	wg.Add(4)
-	runes := []rune(pass)
-	go func() {
-		defer wg.Done()
-		for _, r := range runes {
-			if unicode.IsUpper(r) {
-				return
-			}
-		}
-		atomic.AddInt64(&ok, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		for _, r := range runes {
-			if unicode.IsPunct(r) || unicode.IsMark(r) || unicode.IsSymbol(r) {
-				return
-			}
-		}
-		atomic.AddInt64(&ok, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		for _, r := range runes {
-			if unicode.IsNumber(r) {
-				return
-			}
-		}
-		atomic.AddInt64(&ok, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		for _, r := range runes {
-			if unicode.IsLower(r) {
-				return
-			}
-		}
-		atomic.AddInt64(&ok, 1)
-	}()
-	wg.Wait()
-	return (ok == 0)
 }

@@ -42,9 +42,6 @@ func getTestHandler(t *testing.T) *testHandler {
 func TestHandler(t *testing.T) {
 	t.Run("create a wallet success then login", testHandlerCreateWalletThenLogin)
 	t.Run("create a wallet failure - already exists", testHandlerCreateWalletFailureAlreadyExists)
-	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphrase)
-	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphraseLower)
-	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphraseShort)
 	t.Run("login failure on non wallet", testHandlerLoginFailureOnNonCreatedWallet)
 	t.Run("revoke token success", testHandlerRevokeTokenSuccess)
 	t.Run("revoke token failure", testHandlerRevokeTokenFailure)
