@@ -18,9 +18,9 @@ import (
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/zannen/toml"
-	"github.com/pkg/errors"
 )
 
 type initCommand struct {
