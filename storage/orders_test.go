@@ -310,7 +310,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
-	id := "d41d8cd98f00b204e9800998ecf8427b"
+	id := "VERY-FIRST_ORDER-ID"
 	var version uint64 = 1
 
 	orderV1 := &types.Order{
@@ -344,7 +344,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Size:        orderV2.Size + 1,
 		TimeInForce: orderV2.TimeInForce,
 		Status:      orderV2.Status,
-		Version:     orderV2.Version + 2,
+		Version:     orderV2.Version + 1,
 	}
 	differentOrder := &types.Order{
 		Id:          "d41d8cd98f00b204e9800998ecf8427c",
@@ -357,15 +357,35 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Status:      types.Order_Active,
 		Version:     version,
 	}
+	differentOrder2 := &types.Order{
+		Id:          "000000000000000000000000000000",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Sell,
+		Price:       222,
+		Size:        222,
+		TimeInForce: types.Order_GTC,
+		Status:      types.Order_Active,
+		Version:     version,
+	}
 
-	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *orderV3})
+	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *differentOrder2, *orderV3})
 	assert.NoError(t, err)
+
+	/*t.Run("test that versioning does not mess up normal flow", func(t *testing.T) {
+		allVersions, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false, false)
+		assert.NoError(t, err)
+		assert.NotNil(t, allVersions)
+		assert.Equal(t, 2, len(allVersions), "must be only two distinct orders")
+		assert.NotEqual(t, 2, allVersions[0].Id, allVersions[1].Id, "distinct orders must have different ids")
+	})*/
 
 	t.Run("test if default order version is latest", func(t *testing.T) {
 		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 100, false)
 		assert.NoError(t, err)
 		assert.NotNil(t, allVersions)
 		assert.Equal(t, 3, len(allVersions))
+		assert.NotEqual(t, allVersions[0].Version, allVersions[2].Version)
 		//assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
 		//assert.EqualValues(t, version, allVersions[0].Version)
 	})
