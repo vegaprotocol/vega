@@ -296,7 +296,7 @@ func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (ord
 }
 
 // GetAllVersionsByOrderID returns all available versions for the order specified by id
-func (s *Svc) GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
+func (s *Svc) GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetAllVersionsByOrderID(ctx, id, skip, limit, descending)
 }
 
