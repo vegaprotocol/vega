@@ -486,6 +486,11 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
 		assert.EqualValues(t, 1, fetchedOrder.Version)
+
+		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 0, true)
+		assert.NoError(t, err)
+		assert.NotNil(t, allVersions)
+		assert.Equal(t, len(orders)+3, len(allVersions))
 	})
 }
 

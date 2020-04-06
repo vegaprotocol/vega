@@ -59,6 +59,11 @@ func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
 }
 
+func TestGetByOrderID(t *testing.T) {
+	t.Run("Get by order ID - fetch default version", testGetByOrderIDDefaultVersion)
+	t.Run("Get by order ID - fetch first version", testGetByOrderIDFirstVersion)
+}
+
 func testPrepareOrderSuccess(t *testing.T) {
 	// now
 	now := vegatime.Now()
@@ -264,6 +269,54 @@ func testPrepareCancelOrderFail(t *testing.T) {
 			assert.Equal(t, err, rerr)
 		}
 	}
+}
+
+func testGetByOrderIDDefaultVersion(t *testing.T) {
+	order := &types.Order{
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Side:        orderSubmission.Side,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		TimeInForce: orderSubmission.TimeInForce,
+		Status:      types.Order_Active,
+		Remaining:   orderSubmission.Size,
+		Version:     1,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.orderStore.EXPECT().GetByOrderID(gomock.Any(), order.Id, gomock.Nil()).Times(1).Return(order, nil)
+
+	ret, err := svc.svc.GetByOrderID(context.Background(), order.Id, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, order.Id, ret.Id)
+	assert.Equal(t, order.Version, ret.Version)
+}
+
+func testGetByOrderIDFirstVersion(t *testing.T) {
+	order := &types.Order{
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Side:        orderSubmission.Side,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		TimeInForce: orderSubmission.TimeInForce,
+		Status:      types.Order_Active,
+		Remaining:   orderSubmission.Size,
+		Version:     1,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.orderStore.EXPECT().GetByOrderID(gomock.Any(), order.Id, gomock.Not(nil)).Times(1).Return(order, nil)
+
+	ret, err := svc.svc.GetByOrderID(context.Background(), order.Id, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, order.Id, ret.Id)
+	assert.Equal(t, order.Version, ret.Version)
 }
 
 func getTestService(t *testing.T) *testService {
