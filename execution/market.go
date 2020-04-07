@@ -26,7 +26,7 @@ import (
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
-const InitialOrderVersion uint64 = 1
+const InitialOrderVersion = 1
 
 var (
 	// ErrMarketClosed signals that an action have been tried to be applied on a closed market
