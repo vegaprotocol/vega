@@ -1,5 +1,7 @@
-Feature: CASE-5: Trader submits short order that will trade - new formula & low exit price
+Feature: CASE-4: Trader submits short order that will trade - new formula & high exit price
 # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
+# There are descrepancies between the margin values in the spreadsheet and this test case, they need to be verified
+# Test end result is the same though
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
@@ -47,6 +49,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | buySideMM |   100 |    1 | trader1 |
       | buySideMM |    96 |    3 | trader1 |
       | buySideMM |    90 |    9 | trader1 |
+      
     Then the following transfers happened:
       | from   | to      | fromType   | toType | id        | amount | asset |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |     28 | ETH   |
@@ -65,13 +68,16 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     Then traders cancels the following orders reference:
       | trader     | reference |
       | buySideMM  |      buy4 |
+      | sellSideMM |     sell1 |
       | sellSideMM |     sell2 |
       | sellSideMM |     sell3 |
     And traders place following orders:
       | trader     | market id | type | volume | price | trades | type  | tif |
+      | buySideMM  | ETH/DEC19 |  buy |     45 |    70 |      0 | LIMIT | GTC |
       | buySideMM  | ETH/DEC19 |  buy |     50 |    75 |      0 | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell |     14 |   100 |      0 | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell |      2 |    80 |      0 | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell |     10 |   100 |      0 | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell |     14 |    88 |      0 | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell |      2 |    84 |      0 | LIMIT | GTC |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin | general |
@@ -84,48 +90,31 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | trader1 |    -13 |            28 |           0 |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
-    # updating mark price to 77
+    # updating mark price to 80
     Then traders place following orders:
       | trader     | market id | type | volume | price | trades | type  | tif |
-      | sellSideMM | ETH/DEC19 | sell |      1 |    77 |      0 | LIMIT | GTC |
-      | buySideMM  | ETH/DEC19 |  buy |      1 |    77 |      1 | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell |      1 |    80 |      0 | LIMIT | GTC |
+      | buySideMM  | ETH/DEC19 |  buy |      1 |    80 |      1 | LIMIT | GTC |
 
     # MTM
     And the following transfers happened:
       | from   | to      | fromType   | toType | id        | amount | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    169 | ETH   |
+      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    130 | ETH   |
     
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   1792 |    8405 |
+      | trader1 | ETH   | ETH/DEC19 |   1196 |    8962 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 |         448 |   1433 |    1792 |    2240 |
+      | trader1 | ETH/DEC19 |         299 |    956 |    1196 |    1495 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 |    -13 |           197 |           0 |
+      | trader1 |    -13 |           158 |           0 |
 
-  # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
+  # FULL CLOSEOUT BY TRADER
   Then traders place following orders:
-    | trader     | market id | type | volume | price | trades | type   | tif |
-    | sellSideMM | ETH/DEC19 | sell |     10 |   500 |      0 | LIMIT  | GTC |
-    | buySideMM  | ETH/DEC19 |  buy |     50 |    75 |      0 | LIMIT  | GTC |
-    | buySideMM  | ETH/DEC19 |  buy |     45 |    70 |      0 | LIMIT  | GTC |
-    | trader1    | ETH/DEC19 | sell |     13 |     0 |      1 | MARKET | IOC |
-  And the margins levels for the traders are:
-    | trader  | market id | maintenance | search | initial | release |
-    | trader1 | ETH/DEC19 |        1482 |   4742 |    5928 |    7410 |
+    | trader  | market id | type | volume | price | trades | type  | tif |
+    | trader1 | ETH/DEC19 | buy |      13 |    90 |      2 | LIMIT | GTC |
   And position API produce the following:
     | trader  | volume | unrealisedPNL | realisedPNL |
-    | trader1 |    -26 |           223 |           0 |
-
-  # FORCED CLOSEOUT
-  Then traders place following orders:
-    | trader     | market id | type | volume | price | trades | type  | tif |
-    | sellSideMM | ETH/DEC19 | sell |     21 |   800 |      0 | LIMIT  | GTC |
-  And the margins levels for the traders are:
-    | trader  | market id | maintenance | search | initial | release |
-    | trader1 | ETH/DEC19 |        1482 |   4742 |    5928 |    7410 |
-  And position API produce the following:
-    | trader  | volume | unrealisedPNL | realisedPNL |
-    | trader1 |    -26 |           223 |           0 |
+    | trader1 |      0 |             0 |          62 |
