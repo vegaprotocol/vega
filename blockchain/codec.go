@@ -15,7 +15,7 @@ var (
 	ErrCommandKindUnknown = errors.New("unknown command kind when validating payload")
 )
 
-type Proc interface {
+type Processor interface {
 	Process(payload []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error
 }
@@ -23,11 +23,11 @@ type Proc interface {
 type codec struct {
 	Config
 	log          *logging.Logger
-	p            Proc
+	p            Processor
 	seenPayloads map[string]struct{}
 }
 
-func NewCodec(log *logging.Logger, conf Config, p Proc) *codec {
+func NewCodec(log *logging.Logger, conf Config, p Processor) *codec {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 	return &codec{

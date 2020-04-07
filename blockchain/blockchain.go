@@ -15,11 +15,6 @@ var (
 	ErrInvalidChainProvider = errors.New("invalid chain provider")
 )
 
-type ProcessorD interface {
-	Proc
-	SetService(svc interface{}) error
-}
-
 type ExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
@@ -56,7 +51,7 @@ func New(
 	log *logging.Logger,
 	cfg Config,
 	execEngine ExecutionEngine,
-	processor ProcessorD,
+	processor Processor,
 	time TimeService,
 	stats *Stats,
 	cancel func(),
@@ -72,9 +67,6 @@ func New(
 	)
 
 	service := newService(log, cfg, stats, execEngine, time)
-	if err := processor.SetService(service); err != nil {
-		return nil, err
-	}
 	proc := NewCodec(log, cfg, processor)
 	// proc := NewProcessor(log, cfg, service)
 

@@ -3,6 +3,7 @@ package processor
 import (
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
@@ -47,20 +48,38 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
-	svc           ProcessorService
-	nodes         map[string]struct{} // all other nodes in the network
-	nodeProposals map[string]*nodeProposal
+	stats             *Stats
+	svc               ProcessorService
+	exec              ExecutionEngine
+	nodes             map[string]struct{} // all other nodes in the network
+	nodeProposals     map[string]*nodeProposal
+	currentTimestamp  time.Time
+	previousTimestamp time.Time
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
+type ExecutionEngine interface {
+	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
+	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
+	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
+	Withdraw(*types.Withdraw) error
+	Generate() error
+	SubmitProposal(proposal *types.Proposal) error
+	VoteOnProposal(vote *types.Vote) error
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &Processor{
 		log:           log,
+		stats:         &Stats{},
 		Config:        config,
+		exec:          exec,
 		nodes:         map[string]struct{}{},
 		nodeProposals: map[string]*nodeProposal{},
 	}
@@ -74,6 +93,11 @@ func (p *Processor) SetService(svc interface{}) error {
 	}
 	p.svc = psvc
 	return nil
+}
+
+func (p *Processor) SetTime(now time.Time) {
+	p.previousTimestamp = p.currentTimestamp
+	p.currentTimestamp = now
 }
 
 // ReloadConf update the internal configuration of the processor
@@ -256,25 +280,25 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
 		if err != nil {
 			return err
 		}
-		err = p.svc.SubmitOrder(order)
+		err = p.submitOrder(order)
 	case blockchain.CancelOrderCommand:
 		order, err := p.getOrderCancellation(data)
 		if err != nil {
 			return err
 		}
-		err = p.svc.CancelOrder(order)
+		err = p.cancelOrder(order)
 	case blockchain.AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
 			return err
 		}
-		err = p.svc.AmendOrder(order)
+		err = p.amendOrder(order)
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
 			return err
 		}
-		err = p.svc.Withdraw(withdraw)
+		err = p.exec.Withdraw(withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
@@ -289,13 +313,13 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
 			// @TODO validate proposal here + cast vote
 			return nil
 		}
-		err = p.svc.SubmitProposal(proposal)
+		err = p.exec.SubmitProposal(proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		err = p.svc.VoteOnProposal(vote)
+		err = p.exec.VoteOnProposal(vote)
 	case blockchain.RegisterNodeCommand:
 		node, err := p.getNodeRegistration(data)
 		if err != nil {
@@ -320,7 +344,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
 		if err != nil {
 			return err
 		}
-		return p.svc.NotifyTraderAccount(notify)
+		return p.exec.NotifyTraderAccount(notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		err = fmt.Errorf("unknown command received: %s", cmd)
@@ -343,4 +367,90 @@ func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration
 		return nil, err
 	}
 	return cmd, nil
+}
+
+func (p *Processor) submitOrder(o *types.Order) error {
+	p.stats.addTotalCreateOrder(1)
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Processor received a SUBMIT ORDER request", logging.Order(*o))
+	}
+
+	o.CreatedAt = p.currentTimestamp.UnixNano()
+
+	// Submit the create order request to the execution engine
+	conf, err := p.exec.SubmitOrder(o)
+	if conf != nil {
+
+		if p.log.GetLevel() == logging.DebugLevel {
+			p.log.Debug("Order confirmed",
+				logging.Order(*o),
+				logging.OrderWithTag(*conf.Order, "aggressive-order"),
+				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
+				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
+		}
+
+		// s.currentTradesInBatch += len(confirmationMessage.Trades)
+		// s.totalTrades += uint64(s.currentTradesInBatch)
+		p.stats.addTotalOrders(1)
+		p.stats.addTotalTrades(uint64(len(conf.Trades)))
+
+		// s.currentOrdersInBatch++
+	}
+
+	// increment total orders, even for failures so current ID strategy is valid.
+	// s.totalOrders++
+
+	if err != nil {
+		p.log.Error("error message on creating order",
+			logging.Order(*o),
+			logging.Error(err))
+	}
+
+	return err
+}
+
+func (p *Processor) cancelOrder(order *types.OrderCancellation) error {
+	p.stats.addTotalCancelOrder(1)
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderID))
+	}
+
+	// Submit the cancel new order request to the Vega trading core
+	msg, err := p.exec.CancelOrder(order)
+	if err != nil {
+		p.log.Error("error on cancelling order",
+			logging.String("order-id", order.OrderID),
+			logging.Error(err),
+		)
+		return err
+	}
+	// if p.LogOrderCancelDebug {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Order cancelled", logging.Order(*msg.Order))
+	}
+
+	return nil
+}
+
+func (p *Processor) amendOrder(order *types.OrderAmendment) error {
+	p.stats.addTotalAmendOrder(1)
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Blockchain service received a AMEND ORDER request",
+			logging.String("order", order.String()))
+	}
+
+	// Submit the Amendment new order request to the Vega trading core
+	_, err := p.exec.AmendOrder(order)
+	if err != nil {
+		p.log.Error("Error amending order",
+			logging.String("order", order.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+	// if p.LogOrderAmendDebug {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Order amended", logging.String("order", order.String()))
+	}
+	return nil
 }

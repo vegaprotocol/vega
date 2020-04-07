@@ -17,19 +17,18 @@ import (
 
 type procTest struct {
 	*processor.Processor
-	svc  *mocks.MockProcessorService
+	eng  *mocks.MockExecutionEngine
 	ctrl *gomock.Controller
 }
 
 func getTestProcessor(t *testing.T) *procTest {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	svc := mocks.NewMockProcessorService(ctrl)
-	proc := processor.New(log, processor.NewDefaultConfig())
-	assert.NoError(t, proc.SetService(svc))
+	eng := mocks.NewMockExecutionEngine(ctrl)
+	proc := processor.New(log, processor.NewDefaultConfig(), eng)
 	return &procTest{
 		Processor: proc,
-		svc:       svc,
+		eng:       eng,
 		ctrl:      ctrl,
 	}
 }
@@ -206,13 +205,13 @@ func testProcessCommandSuccess(t *testing.T) {
 		},
 	}
 	proc := getTestProcessor(t)
-	proc.svc.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
-	proc.svc.EXPECT().SubmitOrder(gomock.Any()).Times(1).Return(nil)
-	proc.svc.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(nil)
-	proc.svc.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(nil)
-	proc.svc.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
-	proc.svc.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
-	proc.svc.EXPECT().NotifyTraderAccount(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().SubmitOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
+	proc.eng.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
