@@ -10,12 +10,16 @@ Expected errors encountered during workflow (e.g. rejected invalid order) are co
 
 ### Data Structure
 The following struct is the generic container for all events:
+
 ```go
-type Event struct {
-	ID string 		// Sequenced a output of the chain
-	TraceID string 	// Hash of the transaction which initiated the chaining of events, will be the same in all event being trigger by the transaction
-	Ts time.Time 	// Current time on the node
-	e inteface{}		// The actual event
+struct Event {
+	ID string			// Sequenced a output of the chain
+	Ts time.Time			// Current time on the node
+	e interface{}		// The actual event
+	Trace {
+		hash string		// A hash of the initial transaction that triggered this event
+		seq int			// use to order the events triggered by the above hash
+	}
 }
 ```
 
@@ -23,7 +27,7 @@ type Event struct {
 A consumer is any engine, plug-in or other piece of code that publishes or subscribes on the event bus. Consumers are expected to receive all events or no events.
 
 ### Consuming events
-The consumer is expected to pick out the events that it is interested in:
+The consumer will receive all events published on the event bus. A consumer can filter based on the type of the `Event.e`:
 
 ```go
 func eventListener(rawEvent Event) {
@@ -41,7 +45,9 @@ func eventListener(rawEvent Event) {
 Topics were initially discussed, but have been left out of this initial implementation, but can be added at a later date if they turn out to be required.
 
 ## Acceptance Criteria
-- All events can be 
+- An event consumer can filter out of the stream the events it needs
+- Metadata in events provides enough information that an audit log component could be built that, given a hash of a transaction, could list all events caused by that transaction.
+- Metadata in events provides enough information that by using the trace fields, the initial action that caused it can be determined
 
 ## Out of scope
 - __[Logging events]__ Logging for the event bus is to be implemented similarly to other core services and engines. Event bus logs are not expected to dump all processed events, although a separate consumer could be built for that.
