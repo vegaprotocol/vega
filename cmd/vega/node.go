@@ -119,6 +119,7 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
+	processor       *processor.Processor
 	mktscfg         []proto.Market
 
 	// plugins

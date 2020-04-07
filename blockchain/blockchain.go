@@ -51,6 +51,7 @@ func New(
 	log *logging.Logger,
 	cfg Config,
 	execEngine ExecutionEngine,
+	processor Proc,
 	time TimeService,
 	stats *Stats,
 	cancel func(),
@@ -66,7 +67,8 @@ func New(
 	)
 
 	service := newService(log, cfg, stats, execEngine, time)
-	proc := NewProcessor(log, cfg, service)
+	proc := NewCodec(log, cfg, processor)
+	// proc := NewProcessor(log, cfg, service)
 
 	switch strings.ToLower(cfg.ChainProvider) {
 	case "tendermint":

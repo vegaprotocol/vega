@@ -34,6 +34,7 @@ type Config struct {
 	Candles    candles.Config
 	Collateral collateral.Config
 	Execution  execution.Config
+	Processor  processor.Config
 	Logging    logging.Config
 	Matching   matching.Config
 	Markets    markets.Config
@@ -64,6 +65,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Trades:         trades.NewDefaultConfig(),
 		Blockchain:     blockchain.NewDefaultConfig(),
 		Execution:      execution.NewDefaultConfig(defaultStoreDirPath),
+		Processor:      processor.NewDefaultConfig(),
 		API:            api.NewDefaultConfig(),
 		Accounts:       accounts.NewDefaultConfig(),
 		Orders:         orders.NewDefaultConfig(),
