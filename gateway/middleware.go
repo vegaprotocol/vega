@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"strings"
@@ -11,50 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 )
-
-const bearerPrefix = "Bearer "
-
-type tokenKeyTy int
-
-var tokenKey tokenKeyTy
-
-// TokenFromContext extract a token from the context
-func TokenFromContext(ctx context.Context) string {
-	u, _ := ctx.Value(tokenKey).(string)
-	return u
-}
-
-// AddTokenToContext adds a new token to the given context
-func AddTokenToContext(ctx context.Context, tkn string) context.Context {
-	return context.WithValue(ctx, tokenKey, tkn)
-}
-
-// TokenMiddleware is used to add middleware checking for token in the
-// processing of the http request
-func TokenMiddleware(log *logging.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		if authhdr := r.Header.Get("Authorization"); len(authhdr) > 0 {
-			if strings.HasPrefix(authhdr, bearerPrefix) {
-				tkn := strings.TrimPrefix(authhdr, bearerPrefix)
-				r = r.WithContext(context.WithValue(r.Context(), tokenKey, tkn))
-				log.Debug("request with auth token",
-					logging.String("token", tkn),
-					logging.String("remote-addr", r.RemoteAddr),
-				)
-			} else {
-				log.Debug("token specified but invalid fmt",
-					logging.String("remote-addr", r.RemoteAddr),
-				)
-			}
-		} else {
-			log.Debug("no auth token",
-				logging.String("remote-addr", r.RemoteAddr),
-			)
-		}
-		next.ServeHTTP(w, r)
-	})
-}
 
 // RemoteAddrMiddleware is a middleware adding to the current request context the
 // address of the caller

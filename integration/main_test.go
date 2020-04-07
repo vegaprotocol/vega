@@ -95,4 +95,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
 	s.Step(`^executed trades:$`, executedTrades)
 	s.Step(`^dump orders$`, dumpOrders)
+	s.Step(`^traders amends the following orders reference:$`, tradersAmendsTheFollowingOrdersReference)
+	s.Step(`^the following trades happened:$`, theFollowingTradesHappened)
+	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
 }

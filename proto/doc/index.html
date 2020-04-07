@@ -203,14 +203,6 @@
                 </li>
 
                 <li>
-                  <a href="#api.CheckTokenRequest"><span class="badge">M</span>CheckTokenRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.CheckTokenResponse"><span class="badge">M</span>CheckTokenResponse</a>
-                </li>
-
-                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -315,6 +307,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.OrderVersionsByIDRequest"><span class="badge">M</span>OrderVersionsByIDRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.OrderVersionsResponse"><span class="badge">M</span>OrderVersionsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.OrdersByMarketRequest"><span class="badge">M</span>OrdersByMarketRequest</a>
                 </li>
 
@@ -400,14 +400,6 @@
 
                 <li>
                   <a href="#api.PrepareVoteResponse"><span class="badge">M</span>PrepareVoteResponse</a>
-                </li>
-
-                <li>
-                  <a href="#api.SignInRequest"><span class="badge">M</span>SignInRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.SignInResponse"><span class="badge">M</span>SignInResponse</a>
                 </li>
 
                 <li>
@@ -863,13 +855,6 @@
                   <td><p> </p></td>
                 </tr>
 
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -890,13 +875,6 @@
                 <tr>
                   <td>cancellation</td>
                   <td><a href="#vega.OrderCancellation">vega.OrderCancellation</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -1061,99 +1039,6 @@
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="api.CheckTokenRequest">CheckTokenRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="api.CheckTokenResponse">CheckTokenResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>ok</td>
-                  <td><a href="#bool">bool</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 
@@ -1948,6 +1833,13 @@
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -2191,6 +2083,88 @@
                   <td>order</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.OrderVersionsByIDRequest">OrderVersionsByIDRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>pagination</td>
+                  <td><a href="#api.Pagination">Pagination</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>orderID</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.OrderVersionsResponse">OrderVersionsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>orders</td>
+                  <td><a href="#vega.Order">vega.Order</a></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -3028,61 +3002,6 @@
 
 
 
-        <h3 id="api.SignInRequest">SignInRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a party ID </p></td>
-                </tr>
-
-                <tr>
-                  <td>password</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a password </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.SignInResponse">SignInResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a token corresponding to the party given in the request, and valid for subsequent requests for that party </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="api.SubmitOrderRequest">SubmitOrderRequest</h3>
         <p></p>
 
@@ -3098,13 +3017,6 @@
                   <td><a href="#vega.OrderSubmission">vega.OrderSubmission</a></td>
                   <td></td>
                   <td><p>the bulk of the Order, including market, party, price, size, side, time in force, etc. </p></td>
-                </tr>
-
-                <tr>
-                  <td>token</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a token acquired from a SignIn request and corresponding to the party specified in the <tt>submission</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -3517,45 +3429,10 @@
               </tr>
 
               <tr>
-                <td>SubmitOrder</td>
-                <td><a href="#api.SubmitOrderRequest">SubmitOrderRequest</a></td>
-                <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
-                <td><p>Submit an Order</p></td>
-              </tr>
-
-              <tr>
-                <td>CancelOrder</td>
-                <td><a href="#api.CancelOrderRequest">CancelOrderRequest</a></td>
-                <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
-                <td><p>Cancel an Order</p></td>
-              </tr>
-
-              <tr>
-                <td>AmendOrder</td>
-                <td><a href="#api.AmendOrderRequest">AmendOrderRequest</a></td>
-                <td><a href="#vega.PendingOrder">.vega.PendingOrder</a></td>
-                <td><p>Amend an Order</p></td>
-              </tr>
-
-              <tr>
-                <td>SignIn</td>
-                <td><a href="#api.SignInRequest">SignInRequest</a></td>
-                <td><a href="#api.SignInResponse">SignInResponse</a></td>
-                <td><p>Sign In</p></td>
-              </tr>
-
-              <tr>
                 <td>Withdraw</td>
                 <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
                 <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
                 <td><p>Request withdrawal</p></td>
-              </tr>
-
-              <tr>
-                <td>CheckToken</td>
-                <td><a href="#api.CheckTokenRequest">CheckTokenRequest</a></td>
-                <td><a href="#api.CheckTokenResponse">CheckTokenResponse</a></td>
-                <td><p>Check an API token</p></td>
               </tr>
 
               <tr>
@@ -3687,6 +3564,13 @@
                 <td><a href="#api.OrderByReferenceIDRequest">OrderByReferenceIDRequest</a></td>
                 <td><a href="#vega.Order">.vega.Order</a></td>
                 <td><p>Get a specific order by referenceID</p></td>
+              </tr>
+
+              <tr>
+                <td>OrderVersionsByID</td>
+                <td><a href="#api.OrderVersionsByIDRequest">OrderVersionsByIDRequest</a></td>
+                <td><a href="#api.OrderVersionsResponse">OrderVersionsResponse</a></td>
+                <td><p>Get all versions of the order by its orderID</p></td>
               </tr>
 
               <tr>
@@ -5646,6 +5530,14 @@
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Versioning support for amends, orders start at version 1 and increment
+after each successful amend </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -5667,7 +5559,7 @@
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>required to find the order, not being updated </p></td>
                 </tr>
 
                 <tr>
@@ -5688,12 +5580,12 @@
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>these can be amended </p></td>
                 </tr>
 
                 <tr>
-                  <td>size</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td>sizeDelta</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5706,8 +5598,8 @@
                 </tr>
 
                 <tr>
-                  <td>side</td>
-                  <td><a href="#vega.Side">Side</a></td>
+                  <td>timeInForce</td>
+                  <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5752,17 +5644,6 @@
 
                 <tr>
                   <td>price</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>size</td>
                   <td>
                     <ul>
 

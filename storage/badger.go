@@ -211,6 +211,15 @@ func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool
 	return keyPrefix, validForPrefix
 }
 
+func (bs *badgerStore) orderIDVersionPrefix(orderID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("ID:%s_V:", orderID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
 func (bs *badgerStore) candlePrefix(market string, interval types.Interval, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("M:%s_I:%s_T:", market, interval))
 	keyPrefix = validForPrefix
@@ -286,6 +295,10 @@ func (bs *badgerStore) orderIDKey(ID string) []byte {
 
 func (bs *badgerStore) orderPartyKey(party string, ID string) []byte {
 	return []byte(fmt.Sprintf("P:%s_ID:%s", party, ID))
+}
+
+func (bs *badgerStore) orderIDVersionKey(ID string, version uint64) []byte {
+	return []byte(fmt.Sprintf("ID:%s_V:%012d", ID, version))
 }
 
 // Trade store keys

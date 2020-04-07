@@ -49,13 +49,12 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 		Submission: &types.OrderSubmission{
 			MarketID: "nonexistantmarket",
 		},
-		Token: "",
 	}
 
 	c := protoapi.NewTradingClient(conn)
 	sleepTime := 10 // milliseconds
 	for sleepTime < maxSleep {
-		_, err := c.SubmitOrder(ctx, req)
+		_, err := c.PrepareSubmitOrder(ctx, req)
 		if err == nil {
 			t.Fatalf("Expected some sort of error, but got none.")
 		}
@@ -262,30 +261,6 @@ func getTestGRPCServer(
 	}
 
 	return
-}
-
-func TestSubmitOrder(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
-	defer cancel()
-
-	g, tidy, conn, err := getTestGRPCServer(t, ctx, 64201, true)
-	if err != nil {
-		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
-	}
-	defer tidy()
-
-	req := &protoapi.SubmitOrderRequest{
-		Submission: &types.OrderSubmission{
-			MarketID: "nonexistantmarket",
-		},
-		Token: "",
-	}
-	c := protoapi.NewTradingClient(conn)
-	pendingOrder, err := c.SubmitOrder(ctx, req)
-	assert.Contains(t, err.Error(), "Internal error")
-	assert.Nil(t, pendingOrder)
-
-	g.Stop()
 }
 
 func TestPrepareProposal(t *testing.T) {

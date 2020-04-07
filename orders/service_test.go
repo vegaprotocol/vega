@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/orders/mocks"
@@ -56,8 +57,12 @@ func TestPrepareCancelOrder(t *testing.T) {
 func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - successful", testOrderSuccess)
 	t.Run("Create order - expired", testOrderExpired)
-	t.Run("Create order - blockchain error", testOrderBlockchainError)
 	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
+}
+
+func TestGetByOrderID(t *testing.T) {
+	t.Run("Get by order ID - fetch default version", testGetByOrderIDDefaultVersion)
+	t.Run("Get by order ID - fetch first version", testGetByOrderIDFirstVersion)
 }
 
 func testPrepareOrderSuccess(t *testing.T) {
@@ -77,7 +82,6 @@ func testPrepareOrderSuccess(t *testing.T) {
 
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	// ensure the blockchain client is not called
-	svc.block.EXPECT().CreateOrder(gomock.Any(), gomock.Any()).Times(0)
 	ret, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NotNil(t, ret)
 	assert.NoError(t, err)
@@ -97,7 +101,6 @@ func testPrepareOrderRefSuccess(t *testing.T) {
 
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	// ensure the blockchain client is not called
-	svc.block.EXPECT().CreateOrder(gomock.Any(), gomock.Any()).Times(0)
 	ret, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NotNil(t, ret)
 	assert.NoError(t, err)
@@ -109,35 +112,19 @@ func testOrderSuccess(t *testing.T) {
 	now := vegatime.Now()
 	// expires 2 hours from now
 	expires := now.Add(time.Hour * 2)
-	pre := &types.PendingOrder{
-		Reference: "order_reference",
-	}
 	order := orderSubmission
 	order.ExpiresAt = expires.UnixNano()
-	matcher := orderMatcher{
-		e: types.Order{
-			Id:          order.Id,
-			MarketID:    order.MarketID,
-			PartyID:     order.PartyID,
-			Price:       order.Price,
-			Size:        order.Size,
-			Side:        order.Side,
-			TimeInForce: order.TimeInForce,
-			ExpiresAt:   expires.UnixNano(),
-		},
-	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(pre, nil)
-	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
+	pendingOrder, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NotNil(t, pendingOrder)
 	if pendingOrder == nil {
 		t.FailNow()
 	}
 	assert.NoError(t, err)
-	assert.Equal(t, pre.Reference, pendingOrder.Reference)
+	assert.NotEmpty(t, pendingOrder.Reference)
 }
 
 func testPrepareOrderExpired(t *testing.T) {
@@ -161,7 +148,7 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	pendingOrder, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
-	pendingOrder, err = svc.svc.CreateOrder(context.Background(), &order)
+	pendingOrder, err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 
@@ -181,39 +168,9 @@ func testOrderExpired(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
+	pendingOrder, err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
-}
-
-func testOrderBlockchainError(t *testing.T) {
-	// now
-	now := vegatime.Now()
-	// expires 2 hours from now
-	expires := now.Add(time.Hour * 2)
-	bcErr := errors.New("blockchain error")
-	order := orderSubmission
-	order.ExpiresAt = expires.UnixNano()
-	matcher := orderMatcher{
-		e: types.Order{
-			Id:          order.Id,
-			MarketID:    order.MarketID,
-			PartyID:     order.PartyID,
-			Price:       order.Price,
-			Size:        order.Size,
-			Side:        order.Side,
-			TimeInForce: order.TimeInForce,
-			ExpiresAt:   expires.UnixNano(),
-		},
-	}
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(nil, bcErr)
-	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
-	assert.Equal(t, bcErr, err)
 }
 
 func testPrepareCancelOrderSuccess(t *testing.T) {
@@ -238,7 +195,6 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 
 	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), cancel.MarketID, cancel.OrderID).Times(1).Return(order, nil)
 	// ensure the blockchain client is not called
-	svc.block.EXPECT().CreateOrder(gomock.Any(), gomock.Any()).Times(0)
 	ret, err := svc.svc.PrepareCancelOrder(context.Background(), &cancel)
 	assert.NoError(t, err)
 	assert.Equal(t, cancel.OrderID, ret.Id) // check that the ID matches the original one
@@ -314,6 +270,54 @@ func testPrepareCancelOrderFail(t *testing.T) {
 			assert.Equal(t, err, rerr)
 		}
 	}
+}
+
+func testGetByOrderIDDefaultVersion(t *testing.T) {
+	order := &types.Order{
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Side:        orderSubmission.Side,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		TimeInForce: orderSubmission.TimeInForce,
+		Status:      types.Order_Active,
+		Remaining:   orderSubmission.Size,
+		Version:     execution.InitialOrderVersion,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.orderStore.EXPECT().GetByOrderID(gomock.Any(), order.Id, gomock.Nil()).Times(1).Return(order, nil)
+
+	ret, err := svc.svc.GetByOrderID(context.Background(), order.Id, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, order.Id, ret.Id)
+	assert.Equal(t, order.Version, ret.Version)
+}
+
+func testGetByOrderIDFirstVersion(t *testing.T) {
+	order := &types.Order{
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Side:        orderSubmission.Side,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		TimeInForce: orderSubmission.TimeInForce,
+		Status:      types.Order_Active,
+		Remaining:   orderSubmission.Size,
+		Version:     execution.InitialOrderVersion,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.orderStore.EXPECT().GetByOrderID(gomock.Any(), order.Id, gomock.Not(nil)).Times(1).Return(order, nil)
+
+	ret, err := svc.svc.GetByOrderID(context.Background(), order.Id, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, order.Id, ret.Id)
+	assert.Equal(t, order.Version, ret.Version)
 }
 
 func getTestService(t *testing.T) *testService {

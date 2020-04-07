@@ -40,13 +40,6 @@ type TradingClient interface {
 	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
-	// old requests
-	SubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	SignIn(ctx context.Context, in *protoapi.SignInRequest, opts ...grpc.CallOption) (*protoapi.SignInResponse, error)
-	// unary calls - reads
-	CheckToken(context.Context, *protoapi.CheckTokenRequest, ...grpc.CallOption) (*protoapi.CheckTokenResponse, error)
 }
 
 // TradingDataClient ...
@@ -285,19 +278,6 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 		return nil, customErrorFromStatus(err)
 	}
 	return res, nil
-}
-
-func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error) {
-	req := &protoapi.CheckTokenRequest{
-		PartyID: partyID,
-		Token:   token,
-	}
-	response, err := r.tradingClient.CheckToken(ctx, req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return &CheckTokenResponse{Ok: response.Ok}, nil
 }
 
 func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string) (*types.Order, error) {
@@ -1186,8 +1166,6 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 
 	order := &types.OrderSubmission{}
 
-	tkn := gateway.TokenFromContext(ctx)
-
 	var (
 		p   uint64
 		err error
@@ -1239,7 +1217,6 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 
 	req := protoapi.SubmitOrderRequest{
 		Submission: order,
-		Token:      tkn,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -1254,83 +1231,8 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}, nil
 }
 
-func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, party string,
-	price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
-	ty OrderType) (*types.PendingOrder, error) {
-
-	order := &types.OrderSubmission{}
-
-	tkn := gateway.TokenFromContext(ctx)
-
-	var (
-		p   uint64
-		err error
-	)
-
-	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	if price != nil {
-		p, err = safeStringUint64(*price)
-		if err != nil {
-			return nil, err
-		}
-	}
-	order.Price = p
-	s, err := safeStringUint64(size)
-	if err != nil {
-		return nil, err
-	}
-	order.Size = s
-	if len(market) <= 0 {
-		return nil, errors.New("market missing or empty")
-	}
-	order.MarketID = market
-	if len(party) <= 0 {
-		return nil, errors.New("party missing or empty")
-	}
-
-	order.PartyID = party
-	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
-		return nil, err
-	}
-	if order.Side, err = parseSide(&side); err != nil {
-		return nil, err
-	}
-	if order.Type, err = parseOrderType(ty); err != nil {
-		return nil, err
-	}
-
-	// GTT must have an expiration value
-	if order.TimeInForce == types.Order_GTT && expiration != nil {
-		var expiresAt time.Time
-		expiresAt, err = vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
-	}
-
-	req := protoapi.SubmitOrderRequest{
-		Submission: order,
-		Token:      tkn,
-	}
-
-	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, &req)
-	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-
-	return pendingOrder, nil
-
-}
-
 func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, party string, market string) (*PreparedCancelOrder, error) {
 	order := &types.OrderCancellation{}
-
-	tkn := gateway.TokenFromContext(ctx)
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	if len(market) <= 0 {
@@ -1351,7 +1253,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 
 	req := protoapi.CancelOrderRequest{
 		Cancellation: order,
-		Token:        tkn,
 	}
 	pendingOrder, err := r.tradingClient.PrepareCancelOrder(ctx, &req)
 	if err != nil {
@@ -1435,45 +1336,8 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	return gqResp, nil
 }
 
-func (r *myMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {
-	order := &types.OrderCancellation{}
-
-	tkn := gateway.TokenFromContext(ctx)
-
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(market) <= 0 {
-		return nil, errors.New("market missing or empty")
-	}
-	order.MarketID = market
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
-	}
-	order.OrderID = id
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-
-	order.PartyID = party
-
-	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-
-	req := protoapi.CancelOrderRequest{
-		Cancellation: order,
-		Token:        tkn,
-	}
-	pendingOrder, err := r.tradingClient.CancelOrder(ctx, &req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return pendingOrder, nil
-
-}
-
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string) (*PreparedAmendOrder, error) {
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
-
-	tkn := gateway.TokenFromContext(ctx)
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	if len(id) == 0 {
@@ -1493,11 +1357,18 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
 
-	order.Size, err = strconv.ParseUint(size, 10, 64)
+	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
 		r.log.Error("unable to convert size from string in order amend",
 			logging.Error(err))
 		return nil, errors.New("invalid size, could not convert to unsigned int")
+	}
+
+	order.TimeInForce, err = parseOrderTimeInForce(tif)
+	if err != nil {
+		r.log.Error("unable to parse time in force in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid time in force, could not convert to vega time in force")
 	}
 
 	if expiration != nil {
@@ -1511,7 +1382,6 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 
 	req := protoapi.AmendOrderRequest{
 		Amendment: order,
-		Token:     tkn,
 	}
 	pendingOrder, err := r.tradingClient.PrepareAmendOrder(ctx, &req)
 	if err != nil {
@@ -1521,70 +1391,6 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 		PendingOrder: pendingOrder.PendingOrder,
 	}, nil
-}
-func (r *myMutationResolver) OrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string) (*types.PendingOrder, error) {
-	order := &types.OrderAmendment{}
-
-	tkn := gateway.TokenFromContext(ctx)
-
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
-	}
-	order.OrderID = id
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyID = party
-
-	var err error
-	order.Price, err = strconv.ParseUint(price, 10, 64)
-	if err != nil {
-		r.log.Error("unable to convert price from string in order amend",
-			logging.Error(err))
-		return nil, errors.New("invalid price, could not convert to unsigned int")
-	}
-
-	order.Size, err = strconv.ParseUint(size, 10, 64)
-	if err != nil {
-		r.log.Error("unable to convert size from string in order amend",
-			logging.Error(err))
-		return nil, errors.New("invalid size, could not convert to unsigned int")
-	}
-
-	if expiration != nil {
-		expiresAt, err := vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
-	}
-
-	req := protoapi.AmendOrderRequest{
-		Amendment: order,
-		Token:     tkn,
-	}
-	pendingOrder, err := r.tradingClient.AmendOrder(ctx, &req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return pendingOrder, nil
-}
-
-func (r *myMutationResolver) Signin(ctx context.Context, id string, password string) (string, error) {
-	req := protoapi.SignInRequest{
-		Id:       id,
-		Password: password,
-	}
-
-	res, err := r.tradingClient.SignIn(ctx, &req)
-	if err != nil {
-		return "", err
-	}
-
-	return res.Token, nil
 }
 
 // END: Mutation Resolver

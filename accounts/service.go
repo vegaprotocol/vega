@@ -82,7 +82,7 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 	accounts, err := s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
 	// Prevent internal "!" special character from leaking out via marketID
 	// There is a ticket to improve and clean this up in the collateral-engine:
-	// https://gitlab.com/vega-protocol/trading-core/issues/416
+	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
 		if acc.GetType() == types.AccountType_GENERAL {
 			if acc.GetMarketID() == "!" {
@@ -97,7 +97,7 @@ func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error
 	accounts, err := s.storage.GetMarketAccounts(marketID, asset)
 	// Prevent internal "*" special character from leaking out via owner (similar to above).
 	// There is a ticket to improve and clean this up in the collateral-engine:
-	// https://gitlab.com/vega-protocol/trading-core/issues/416
+	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
 		if acc.Owner == "*" {
 			acc.Owner = ""

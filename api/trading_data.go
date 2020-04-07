@@ -33,11 +33,12 @@ type VegaTime interface {
 // OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/api OrderService
 type OrderService interface {
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
-	GetByOrderID(ctx context.Context, id string) (order *types.Order, err error)
+	GetByOrderID(ctx context.Context, id string, version uint64) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
+	GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool) (orders []*types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
 }
@@ -171,7 +172,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, &request.Open)
+	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, request.Open)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarket, err)
 	}
@@ -202,7 +203,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, &request.Open)
+	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, request.Open)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByParty, err)
 	}
@@ -1294,7 +1295,7 @@ func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 		return nil, ErrMissingOrderIDParameter
 	}
 
-	order, err := h.OrderService.GetByOrderID(ctx, in.OrderID)
+	order, err := h.OrderService.GetByOrderID(ctx, in.OrderID, in.Version)
 	if err == nil {
 		return order, nil
 	}
@@ -1311,13 +1312,42 @@ func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoap
 		return nil, ErrMissingReferenceIDParameter
 	}
 
-	order, err := h.OrderService.GetByReference(ctx, in.GetReferenceID())
+	order, err := h.OrderService.GetByReference(ctx, in.ReferenceID)
 	if err != nil {
 		return nil, err
 	}
 
 	// If we get here we have matched against referenceID and all is good
 	return order, nil
+}
+
+// OrderVersionsByID returns all versions of the order by its orderID
+func (h *tradingDataService) OrderVersionsByID(
+	ctx context.Context,
+	in *protoapi.OrderVersionsByIDRequest,
+) (*protoapi.OrderVersionsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderVersionsByID", startTime)
+
+	err := in.Validate()
+	if err != nil {
+		return nil, err
+	}
+	p := defaultPagination
+	if in.Pagination != nil {
+		p = *in.Pagination
+	}
+	orders, err := h.OrderService.GetAllVersionsByOrderID(ctx,
+		in.OrderID,
+		p.Skip,
+		p.Limit,
+		p.Descending)
+	if err == nil {
+		return &protoapi.OrderVersionsResponse{
+			Orders: orders,
+		}, nil
+	}
+	return nil, err
 }
 
 func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
