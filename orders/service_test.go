@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/orders/mocks"
@@ -282,7 +283,7 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 		TimeInForce: orderSubmission.TimeInForce,
 		Status:      types.Order_Active,
 		Remaining:   orderSubmission.Size,
-		Version:     1,
+		Version:     execution.InitialOrderVersion,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -306,7 +307,7 @@ func testGetByOrderIDFirstVersion(t *testing.T) {
 		TimeInForce: orderSubmission.TimeInForce,
 		Status:      types.Order_Active,
 		Remaining:   orderSubmission.Size,
-		Version:     1,
+		Version:     execution.InitialOrderVersion,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()

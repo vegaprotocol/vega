@@ -436,7 +436,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order",
-		Version:     1,
+		Version:     execution.InitialOrderVersion,
 	}
 
 	// submit orders
