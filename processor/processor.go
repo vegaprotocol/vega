@@ -53,7 +53,7 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, svc ProcessorService) *Processor {
+func New(log *logging.Logger, config Config) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -61,10 +61,19 @@ func New(log *logging.Logger, config Config, svc ProcessorService) *Processor {
 	return &Processor{
 		log:           log,
 		Config:        config,
-		svc:           svc,
 		nodes:         map[string]struct{}{},
 		nodeProposals: map[string]*nodeProposal{},
 	}
+}
+
+// SetService - required to avoid circular dependencies + config management
+func (p *Processor) SetService(svc interface{}) error {
+	psvc, ok := svc.(ProcessorService)
+	if !ok {
+		return errors.New("incompatible service interface")
+	}
+	p.svc = psvc
+	return nil
 }
 
 // ReloadConf update the internal configuration of the processor

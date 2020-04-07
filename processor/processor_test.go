@@ -25,8 +25,10 @@ func getTestProcessor(t *testing.T) *procTest {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	svc := mocks.NewMockProcessorService(ctrl)
+	proc := processor.New(log, processor.NewDefaultConfig())
+	assert.NoError(t, proc.SetService(svc))
 	return &procTest{
-		Processor: processor.New(log, processor.NewDefaultConfig(), svc),
+		Processor: proc,
 		svc:       svc,
 		ctrl:      ctrl,
 	}

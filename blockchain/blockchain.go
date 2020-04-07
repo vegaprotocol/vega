@@ -15,6 +15,11 @@ var (
 	ErrInvalidChainProvider = errors.New("invalid chain provider")
 )
 
+type ProcessorD interface {
+	Proc
+	SetService(svc interface{}) error
+}
+
 type ExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
@@ -42,7 +47,7 @@ type Blockchain struct {
 	chain      chainImpl
 	execEngine ExecutionEngine
 	time       TimeService
-	processor  *Processor
+	processor  *codec
 	service    *abciService
 	stats      *Stats
 }
@@ -51,7 +56,7 @@ func New(
 	log *logging.Logger,
 	cfg Config,
 	execEngine ExecutionEngine,
-	processor Proc,
+	processor ProcessorD,
 	time TimeService,
 	stats *Stats,
 	cancel func(),
@@ -67,6 +72,9 @@ func New(
 	)
 
 	service := newService(log, cfg, stats, execEngine, time)
+	if err := processor.SetService(service); err != nil {
+		return nil, err
+	}
 	proc := NewCodec(log, cfg, processor)
 	// proc := NewProcessor(log, cfg, service)
 

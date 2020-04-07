@@ -11,6 +11,10 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+var (
+	ErrCommandKindUnknown = errors.New("unknown command kind when validating payload")
+)
+
 type Proc interface {
 	Process(payload []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error

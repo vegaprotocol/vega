@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/storage"
