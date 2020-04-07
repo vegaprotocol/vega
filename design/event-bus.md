@@ -1,6 +1,6 @@
 # Event bus
 
-Node event stream - a general event sink, capable of tracking all data and state changes.
+Internal node event stream - a general event sink, capable of tracking all data and state changes within the Vega core.
 
 ## Definitions
 
@@ -8,31 +8,28 @@ Node event stream - a general event sink, capable of tracking all data and state
 
 Action or a side-effect that triggered by trading-core in response to state change on the node.
 
-Events is represented as data / notification that is sent on to the bus. Any state changes to the core data (trader positions, mark price, collateral, ...) will produce an event. Some state changes will produce multiple events.
+An event is represented as data / notification that is sent on to the bus. Any state changes to the core data (for example trader positions, mark price, collateral, ...) will produce an event. Some state changes will produce multiple events.
 
 Workflow errors (e.g. rejected invalid order) are considered valid events.
 
 #### Examples
 
-- The mark price changes (for whatever reason)
-- Traders with open positions get market to market
+**Scenario: The mark price changes (for whatever reason)**
+- Traders with open positions get [https://github.com/vegaprotocol/product/blob/master/specs/0003-mark-to-market-settlement.md ](marked to market)
 - Some traders may end up in a distressed state as a result
-- Their pending orders get closed
-- Traders who are still distressed get closed out (position resolution - distressed traders close each other out)
+	- Their pending orders get closed
+	- Traders who are still distressed get closed out (see [https://github.com/vegaprotocol/product/blob/master/specs/0012-position-resoluton.md ](position resolution)
 - The network trades with non-distressed traders
 - Any balance on the insurance account for the market might get updated (balance of distressed traders moves to insurance pool, loss socialization taps into insurance pool)
 
 #### Every structure
-
 - data payload - abstract data associated with that event (full copy of the data generated in response to the event; events are expected to be encapsulated)
 - sequence number;
 - emitted block time.
 
 ### Consumer
 
-Event consumer (aka plug-in) connecting to the event bus and processing its data. Consumers are expected to precess events by topic.
-
-Stores are to be populated by the consumers moving/copying payloads from the event bus.
+Event consumer (aka plug-in) connecting to the event bus and processing its data. Consumers are expected to process events by topic.
 
 Event bus will the way to send data from the core engines to underlying stores. Engines and services handling data in real-time will connect directly to the event bus (acting as consumers). Engines and services handling aggregated data will read data off the stores, not event bus (since event bus has no means of buffering the data).
 
@@ -58,12 +55,11 @@ Buffers are flushed by the execution engine at the end of each block, or transac
 
 ### Domain models
 
-The core currently uses the types defined in the `proto` file directly. This restricts us in terms of what data an event can represent. A trade event should, naturally, contain the trade object itself, but over time, we might want to have the realised/unrealised P&L values as part of the trade event available. This requires us to update the core to use domain models that are not directly bound to the current types we're using. There will be type embedding, so events can be type-cast to various event interfaces and multiplexed, of course.
-Something worth considering is to develop a way to generate some of the boilerplate code that this approach will inevitably bring with it, although this is not a priority by any means.
+The core currently uses the types defined in the `proto` file directly. This restricts us in terms of what data an event can represent. A trade event should contain the trade object itself, but over time, we might want to have the realised/unrealised P&L values as part of the trade event available. This requires us to update the core to use domain models that are not directly bound to the current types we're using. There will be type embedding, so events can be type-cast to various event interfaces and multiplexed.
 
 ## Out of scope
 
-- __[Logging events]__ Logging for event bus is to be implemented similarly to other core services and engines. Event bus logs are not expected to dump all processed events (a separate consumer might be built for that outside of this feature).
+- __[Logging events]__ Logging for event bus is to be implemented similarly to other core services and engines. Event bus logs are not expected to dump all processed events, although a separate consumer could be built for that.
 - __[Error handling in isolation]__ Event bus is expected to be tightly coupled with the emitters in core. Client errors are considered logic errors and are all expected to be detected during testing. Invalid event types are to be ignored. Consumer errors (e.g. inability to consume events) are not part of event bus error handling path.
-- __[Buffering]__ Event bus is not expected to buffer events and limit their lifetime.
-- __[API]__ There will be no API to interact with event bus directly.
+- __[Buffering]__ Event bus is not expected to buffer event, limit their lifetime or guarantee delivery.
+- __[API]__ There will be no externally facing API to interact with event bus directly. This can be implementing as a separate consumer.
