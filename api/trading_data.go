@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -32,8 +33,8 @@ type VegaTime interface {
 // OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/api OrderService
 type OrderService interface {
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByOrderID(ctx context.Context, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
@@ -157,6 +158,8 @@ type tradingDataService struct {
 // Returns a list of orders sorted by timestamp descending (most recent first).
 func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrdersByMarket", startTime)
 
 	err := request.Validate()
 	if err != nil {
@@ -168,7 +171,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, &request.Open)
+	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, request.Open)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarket, err)
 	}
@@ -186,6 +189,8 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 // Returns a list of orders sorted by timestamp descending (most recent first).
 func (h *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrdersByParty", startTime)
 
 	err := request.Validate()
 	if err != nil {
@@ -197,7 +202,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, &request.Open)
+	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, request.Open)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByParty, err)
 	}
@@ -212,6 +217,8 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
 func (h *tradingDataService) Markets(ctx context.Context, request *empty.Empty) (*protoapi.MarketsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("Markets", startTime)
 	markets, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMarketServiceGetMarkets, err)
@@ -224,6 +231,8 @@ func (h *tradingDataService) Markets(ctx context.Context, request *empty.Empty) 
 // OrdersByMarketAndID provides the given order, searching by Market and (Order)Id.
 func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderByMarketAndID", startTime)
 
 	err := request.Validate()
 	if err != nil {
@@ -242,6 +251,8 @@ func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 
 // OrderByReference provides the (possibly not yet accepted/rejected) order.
 func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderByReference", startTime)
 
 	err := req.Validate()
 	if err != nil {
@@ -262,6 +273,8 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 // SinceTimestamp must be in RFC3339 string format.
 func (h *tradingDataService) Candles(ctx context.Context,
 	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("Candles", startTime)
 
 	err := request.Validate()
 	if err != nil {
@@ -281,6 +294,8 @@ func (h *tradingDataService) Candles(ctx context.Context,
 // MarketDepth provides the order book for a given market, and also returns the most recent trade
 // for the given market.
 func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketDepth", startTime)
 
 	err := req.Validate()
 	if err != nil {
@@ -312,6 +327,8 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 // TradesByMarket provides a list of trades for a given market.
 // Pagination: Optional. If not provided, defaults are used.
 func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("TradesByMarket", startTime)
 
 	err := request.Validate()
 	if err != nil {
@@ -334,6 +351,8 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 
 // PositionsByParty provides a list of positions for a given party.
 func (h *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("PositionsByParty", startTime)
 
 	err := request.Validate()
 	if err != nil {
@@ -359,6 +378,8 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 
 // MarginLevels returns the current margin levels for a given party and market.
 func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarginLevels", startTime)
 
 	err := req.Validate()
 	if err != nil {
@@ -381,6 +402,8 @@ func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 
 // MarketDataByID provides market data for the given ID.
 func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketDataByID", startTime)
 
 	err := req.Validate()
 	if err != nil {
@@ -398,6 +421,8 @@ func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.Mar
 
 // MarketsData provides all market data for all markets on this network.
 func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*protoapi.MarketsDataResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketsData", startTime)
 	mds := h.MarketService.GetMarketsData()
 	mdptrs := make([]*types.MarketData, 0, len(mds))
 	for _, v := range mds {
@@ -413,6 +438,8 @@ func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*pr
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
 func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empty) (*types.Statistics, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("Statistics", startTime)
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
@@ -475,6 +502,8 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 // GetVegaTime returns the latest blockchain header timestamp, in UnixNano format.
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
 func (h *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.VegaTimeResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetVegaTime", startTime)
 	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
@@ -488,6 +517,8 @@ func (h *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Emp
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
 func (h *tradingDataService) TransferResponsesSubscribe(
 	req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("TransferResponseSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -548,6 +579,8 @@ func (h *tradingDataService) TransferResponsesSubscribe(
 // MarketsDataSubscribe opens a subscription to market data provided by the markets service.
 func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubscribeRequest,
 	srv protoapi.TradingData_MarketsDataSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketsDataSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -604,6 +637,8 @@ func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 
 // AccountsSubscribe opens a subscription to the Margin Levels provided by the risk service.
 func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingData_MarginLevelsSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarginLevelsSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -668,6 +703,8 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 // AccountsSubscribe opens a subscription to the Accounts service.
 func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest,
 	srv protoapi.TradingData_AccountsSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("AccountsSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -731,6 +768,8 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 // PartyID: Optional.
 func (h *tradingDataService) OrdersSubscribe(
 	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingData_OrdersSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrdersSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -804,6 +843,8 @@ func (h *tradingDataService) OrdersSubscribe(
 // TradesSubscribe opens a subscription to the Trades service.
 func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest,
 	srv protoapi.TradingData_TradesSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("TradesSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -874,6 +915,8 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 // CandlesSubscribe opens a subscription to the Candles service.
 func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest,
 	srv protoapi.TradingData_CandlesSubscribeServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("CandlesSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -940,6 +983,8 @@ func (h *tradingDataService) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
 	srv protoapi.TradingData_MarketDepthSubscribeServer,
 ) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketDepthSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -1004,6 +1049,8 @@ func (h *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
 	srv protoapi.TradingData_PositionsSubscribeServer,
 ) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("PositionsSubscribe", startTime)
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -1057,6 +1104,8 @@ func (h *tradingDataService) PositionsSubscribe(
 
 // MarketByID provides the given market.
 func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketByID", startTime)
 	mkt, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
 		return nil, err // validateMarket already returns an API error, no need to additionally wrap
@@ -1069,6 +1118,8 @@ func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.Marke
 
 // Parties provides a list of all parties.
 func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*protoapi.PartiesResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("Parties", startTime)
 	parties, err := h.PartyService.GetAll(ctx)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPartyServiceGetAll, err)
@@ -1080,6 +1131,8 @@ func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*pr
 
 // PartyByID provides the given party.
 func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("PartyByID", startTime)
 	pty, err := validateParty(ctx, req.PartyID, h.PartyService)
 	if err != nil {
 		return nil, err // validateParty already returns an API error, no need to additionally wrap
@@ -1093,6 +1146,8 @@ func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyB
 // Pagination: Optional. If not provided, defaults are used.
 func (h *tradingDataService) TradesByParty(ctx context.Context,
 	req *protoapi.TradesByPartyRequest) (*protoapi.TradesByPartyResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("TradesByParty", startTime)
 
 	p := defaultPagination
 	if req.Pagination != nil {
@@ -1109,6 +1164,8 @@ func (h *tradingDataService) TradesByParty(ctx context.Context,
 // TradesByOrder provides a list of the trades that correspond to a given order.
 func (h *tradingDataService) TradesByOrder(ctx context.Context,
 	req *protoapi.TradesByOrderRequest) (*protoapi.TradesByOrderResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("TradesByOrder", startTime)
 	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrTradeServiceGetByOrderID, err)
@@ -1121,6 +1178,8 @@ func (h *tradingDataService) TradesByOrder(ctx context.Context,
 // LastTrade provides the last trade for the given market.
 func (h *tradingDataService) LastTrade(ctx context.Context,
 	req *protoapi.LastTradeRequest) (*protoapi.LastTradeResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("LastTrade", startTime)
 	if len(req.MarketID) <= 0 {
 		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
 	}
@@ -1138,6 +1197,8 @@ func (h *tradingDataService) LastTrade(ctx context.Context,
 
 func (h *tradingDataService) MarketAccounts(_ context.Context,
 	req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("MarketAccounts", startTime)
 	accs, err := h.AccountsService.GetMarketAccounts(req.MarketID, req.Asset)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
@@ -1149,6 +1210,8 @@ func (h *tradingDataService) MarketAccounts(_ context.Context,
 
 func (h *tradingDataService) PartyAccounts(_ context.Context,
 	req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("PartyAccounts", startTime)
 	accs, err := h.AccountsService.GetPartyAccounts(req.PartyID, req.MarketID, req.Asset, req.Type)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetPartyAccounts, err)
@@ -1224,6 +1287,8 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 }
 
 func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*types.Order, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderByID", startTime)
 	if len(in.OrderID) == 0 {
 		// Invalid parameter
 		return nil, ErrMissingOrderIDParameter
@@ -1239,6 +1304,8 @@ func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 }
 
 func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoapi.OrderByReferenceIDRequest) (*types.Order, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("OrderByReferenceID", startTime)
 	if len(in.ReferenceID) == 0 {
 		// Invalid parameter
 		return nil, ErrMissingReferenceIDParameter
@@ -1254,6 +1321,8 @@ func (h *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoap
 }
 
 func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetProposals", startTime)
 	all := h.governanceService.GetProposals()
 	resp := protoapi.GetProposalsResponse{
 		Proposals: make([]*types.ProposalVote, len(all)),
@@ -1265,6 +1334,8 @@ func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) 
 }
 
 func (h *tradingDataService) GetOpenProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetOpenProposals", startTime)
 	open := h.governanceService.GetOpenProposals()
 	resp := protoapi.GetProposalsResponse{
 		Proposals: make([]*types.ProposalVote, len(open)),
@@ -1276,6 +1347,8 @@ func (h *tradingDataService) GetOpenProposals(ctx context.Context, in *empty.Emp
 }
 
 func (h *tradingDataService) GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest) (*types.ProposalVote, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetProposalByID", startTime)
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -1284,6 +1357,8 @@ func (h *tradingDataService) GetProposalByID(ctx context.Context, in *protoapi.G
 }
 
 func (h *tradingDataService) GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest) (*types.ProposalVote, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetProposalByReference", startTime)
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -1292,6 +1367,8 @@ func (h *tradingDataService) GetProposalByReference(ctx context.Context, in *pro
 }
 
 func (h *tradingDataService) ObserveProposals(_ *empty.Empty, stream protoapi.TradingData_ObserveProposalsServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObserveProposals", startTime)
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if h.log.GetLevel() == logging.DebugLevel {

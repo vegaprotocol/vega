@@ -14,7 +14,7 @@ import (
 
 var (
 	ErrWalletAlreadyExists = errors.New("a wallet with the same name already exists")
-	ErrWalletDoesNotExists = errors.New("wallet does not exists")
+	ErrWalletDoesNotExists = errors.New("wallet does not exist")
 )
 
 const (
@@ -176,6 +176,7 @@ func Write(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 }
 
 func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
+
 	// build walletpath
 	walletpath := filepath.Join(root, walletBaseFolder, owner)
 

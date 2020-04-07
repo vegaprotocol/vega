@@ -53,10 +53,28 @@ func tifval(rows *gherkin.TableRow, idx int) (proto.Order_TimeInForce, error) {
 	return proto.Order_TimeInForce(tif), nil
 }
 
+func orderstatusval(rows *gherkin.TableRow, idx int) (proto.Order_Status, error) {
+	st, ok := proto.Order_Status_value[rows.Cells[idx].Value]
+	if !ok {
+		return proto.Order_Status(st), fmt.Errorf("invalid time in force: %v", rows.Cells[idx].Value)
+	}
+	return proto.Order_Status(st), nil
+}
+
 func ordertypeval(rows *gherkin.TableRow, idx int) (proto.Order_Type, error) {
 	ty, ok := proto.Order_Type_value[rows.Cells[idx].Value]
 	if !ok {
 		return proto.Order_Type(ty), fmt.Errorf("invalid order type: %v", rows.Cells[idx].Value)
 	}
 	return proto.Order_Type(ty), nil
+}
+
+func boolval(rows *gherkin.TableRow, idx int) (bool, error) {
+	val := rows.Cells[idx].Value
+	if val == "true" {
+		return true, nil
+	} else if val == "false" {
+		return false, nil
+	}
+	return false, fmt.Errorf("invalid bool value: %v", val)
 }

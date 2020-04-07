@@ -2,19 +2,18 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"sync"
+	"time"
 
-	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/golang/protobuf/proto"
 	uuid "github.com/satori/go.uuid"
-	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 )
 
@@ -25,9 +24,6 @@ type TradeOrderService interface {
 	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
-	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
 }
 
 // AccountService ...
@@ -52,100 +48,12 @@ type tradingService struct {
 	governanceService GovernanceService
 	statusChecker     *monitoring.Status
 
-	authEnabled bool
-	parties     []auth.PartyInfo
-	mu          sync.Mutex
-}
-
-func (s *tradingService) UpdateParties(parties []auth.PartyInfo) {
-	s.mu.Lock()
-	s.parties = parties
-	s.mu.Unlock()
-}
-
-func (s *tradingService) validateToken(partyID string, tkn string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, v := range s.parties {
-		if v.ID == partyID && v.Token == tkn {
-			return nil
-		}
-	}
-	return ErrInvalidCredentials
-}
-
-func (s *tradingService) CheckToken(
-	ctx context.Context, req *protoapi.CheckTokenRequest,
-) (*protoapi.CheckTokenResponse, error) {
-	if req == nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
-	}
-	if !s.authEnabled {
-		return nil, apiError(codes.InvalidArgument, ErrAuthDisabled)
-	}
-	if len(req.PartyID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingPartyID)
-	}
-	if len(req.Token) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingToken)
-	}
-
-	err := s.validateToken(req.PartyID, req.Token)
-	if err != nil {
-		if err == ErrInvalidCredentials {
-			return &protoapi.CheckTokenResponse{Ok: false}, nil
-		}
-		return nil, apiError(codes.Internal, err)
-	}
-
-	return &protoapi.CheckTokenResponse{Ok: true}, nil
-}
-
-func (s *tradingService) SignIn(
-	ctx context.Context, req *protoapi.SignInRequest,
-) (*protoapi.SignInResponse, error) {
-	if req == nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
-	}
-	if len(req.Id) <= 0 {
-		return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
-	}
-	if len(req.Password) <= 0 {
-		return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
-	}
-
-	var tkn string
-	saltpass := fmt.Sprintf("vega%v", req.Password)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.authEnabled {
-		return nil, apiError(codes.PermissionDenied, ErrAuthDisabled)
-	}
-	for _, v := range s.parties {
-		if v.ID == req.Id {
-			if err := bcrypt.CompareHashAndPassword([]byte(v.Password), []byte(saltpass)); err != nil {
-				s.log.Debug("invalid password",
-					logging.String("user-id", v.ID),
-					logging.Error(err),
-				)
-				return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
-			}
-			tkn = v.Token
-		}
-	}
-
-	if len(tkn) <= 0 {
-		return nil, apiError(codes.PermissionDenied, ErrInvalidCredentials)
-	}
-
-	return &protoapi.SignInResponse{
-		Token: tkn,
-	}, nil
+	mu sync.Mutex
 }
 
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
 	pending, err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
@@ -164,6 +72,8 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 }
 
 func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", startTime)
 	pending, err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder)
@@ -182,6 +92,8 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 }
 
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
 	pending, err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder)
@@ -200,6 +112,11 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
+	if req == nil || req.Tx == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
 	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
 		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
@@ -209,108 +126,11 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}, nil
 }
 
-// CreateOrder is used to request sending an order into the VEGA platform, via consensus.
-func (s *tradingService) SubmitOrder(
-	ctx context.Context, req *protoapi.SubmitOrderRequest,
-) (*types.PendingOrder, error) {
-	if req == nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
-	}
-	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return nil, apiError(codes.Internal, ErrChainNotConnected)
-	}
-	if req.Submission == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
-	}
-
-	// check auth if required
-	if s.authEnabled {
-		if len(req.Token) <= 0 {
-			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
-		}
-		if err := s.validateToken(req.Submission.PartyID, req.Token); err != nil {
-			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
-		}
-	}
-
-	// Validate market early
-	_, err := s.marketService.GetByID(ctx, req.Submission.MarketID)
-	if err != nil {
-		s.log.Error("Invalid Market ID during SubmitOrder",
-			logging.String("marketID", req.Submission.MarketID),
-		)
-		return nil, apiError(codes.Internal, ErrInvalidMarketID)
-	}
-
-	po, err := s.tradeOrderService.CreateOrder(ctx, req.Submission)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
-	}
-	return po, nil
-}
-
-// CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
-func (s *tradingService) CancelOrder(
-	ctx context.Context, req *protoapi.CancelOrderRequest,
-) (*types.PendingOrder, error) {
-	if req == nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
-	}
-	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return nil, apiError(codes.Internal, ErrChainNotConnected)
-	}
-	if req.Cancellation == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
-	}
-
-	// check auth if required
-	if s.authEnabled {
-		if len(req.Token) <= 0 {
-			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
-		}
-		if err := s.validateToken(req.Cancellation.PartyID, req.Token); err != nil {
-			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
-		}
-	}
-
-	po, err := s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder, err)
-	}
-	return po, nil
-}
-
-// AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
-func (s *tradingService) AmendOrder(
-	ctx context.Context, req *protoapi.AmendOrderRequest,
-) (*types.PendingOrder, error) {
-	if req == nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
-	}
-	if req.Amendment == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMissingOrder)
-	}
-
-	// check auth if required
-	if s.authEnabled {
-		if len(req.Token) <= 0 {
-			return nil, apiError(codes.PermissionDenied, ErrMissingToken)
-		}
-		if err := s.validateToken(req.Amendment.PartyID, req.Token); err != nil {
-			return nil, apiError(codes.PermissionDenied, ErrInvalidToken, err)
-		}
-	}
-
-	po, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	return po, nil
-}
-
 func (s *tradingService) NotifyTraderAccount(
 	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
 ) (*protoapi.NotifyTraderAccountResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("NotifyTraderAccount", startTime)
 	if req == nil || req.Notif == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
@@ -331,6 +151,8 @@ func (s *tradingService) NotifyTraderAccount(
 func (s *tradingService) Withdraw(
 	ctx context.Context, req *protoapi.WithdrawRequest,
 ) (*protoapi.WithdrawResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("Withdraw", startTime)
 	if len(req.Withdraw.PartyID) <= 0 {
 		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
 	}
@@ -354,6 +176,8 @@ func (s *tradingService) Withdraw(
 func (s *tradingService) PrepareProposal(
 	ctx context.Context, req *protoapi.PrepareProposalRequest,
 ) (*protoapi.PrepareProposalResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareProposal", startTime)
 	proposal, err := s.governanceService.PrepareProposal(ctx,
 		req.PartyID, req.Reference, req.Proposal)
 	if err != nil {
@@ -373,6 +197,8 @@ func (s *tradingService) PrepareProposal(
 }
 
 func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareVoteRequest) (*protoapi.PrepareVoteResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareVote", startTime)
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest)
 	}

@@ -1,6 +1,7 @@
 package gql_test
 
 import (
+	"math"
 	"testing"
 
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
@@ -453,6 +454,204 @@ func TestModelConverters(t *testing.T) {
 		m, err := gql.MarketFromProto(pm)
 		assert.NotNil(t, m)
 		assert.Nil(t, err)
+	})
+
+	t.Run("MarketInput.IntoProto", func(t *testing.T) {
+
+		mkt := gql.MarketInput{
+			ID:   "abcdefg",
+			Name: "test-market",
+			TradableInstrument: &gql.TradableInstrumentInput{
+				Instrument: &gql.InstrumentInput{
+					ID:               "abcID",
+					Code:             "abccode",
+					Name:             "abcXyz",
+					BaseName:         "abc",
+					QuoteName:        "Xyz",
+					InitialMarkPrice: "123",
+					Metadata: &gql.InstrumentMetadatInput{
+						Tags: []*string{stringptr("tag:1"), stringptr("tag:2")},
+					},
+					FutureProduct: &gql.FutureInput{
+						Maturity: "asdasdas",
+						Asset:    "Ethereum/Ether",
+						EthereumOracle: &gql.EthereumEventInput{
+							ContractID: "asdas",
+							Event:      "aerasd",
+						},
+					},
+				},
+				SimpleRiskModel: &gql.SimpleRiskModelInput{
+					Params: &gql.SimpleRiskModelParamsInput{
+						FactorLong:  0.1,
+						FactorShort: 0.2,
+					},
+				},
+				MarginCalculator: &gql.MarginCalculatorInput{
+					ScalingFactors: &gql.ScalingFactorsInput{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
+					},
+				},
+			},
+
+			ContinuousTradingMode: &gql.ContinuousTradingInput{
+				TickSize: 10,
+			},
+			DiscreteTradingMode: &gql.DiscreteTradingInput{
+				Duration: 100,
+			},
+			DecimalPlaces: 5,
+		}
+		pmkt, err := mkt.IntoProto()
+		assert.NotNil(t, pmkt)
+		assert.NoError(t, err)
+	})
+
+	t.Run("ProposalTermsInput.IntoProto nil change", func(t *testing.T) {
+
+		proposal := &gql.ProposalTermsInput{
+			ClosingTimestamp:      "2020-09-30T07:28:06+00:00",
+			EnactmentTimestamp:    "2020-10-30T07:28:06+00:00",
+			MinParticipationStake: 10,
+		}
+		proposalProto, err := proposal.IntoProto()
+		assert.Nil(t, proposalProto)
+		assert.Error(t, err)
+		assert.Equal(t, gql.ErrInvalidChange, err)
+	})
+
+	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
+
+		mkt := gql.MarketInput{
+			ID:   "abcdefg",
+			Name: "test-market",
+			TradableInstrument: &gql.TradableInstrumentInput{
+				Instrument: &gql.InstrumentInput{
+					ID:               "abcID",
+					Code:             "abccode",
+					Name:             "abcXyz",
+					BaseName:         "abc",
+					QuoteName:        "Xyz",
+					InitialMarkPrice: "123",
+					// Metadata for this instrument
+					Metadata: &gql.InstrumentMetadatInput{
+						Tags: []*string{stringptr("tag:1"), stringptr("tag:2")},
+					},
+					FutureProduct: &gql.FutureInput{
+						Maturity: "asdasdas",
+						Asset:    "Ethereum/Ether",
+						EthereumOracle: &gql.EthereumEventInput{
+							ContractID: "asdas",
+							Event:      "aerasd",
+						},
+					},
+				},
+				SimpleRiskModel: &gql.SimpleRiskModelInput{
+					Params: &gql.SimpleRiskModelParamsInput{
+						FactorLong:  0.1,
+						FactorShort: 0.2,
+					},
+				},
+				MarginCalculator: &gql.MarginCalculatorInput{
+					ScalingFactors: &gql.ScalingFactorsInput{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
+					},
+				},
+			},
+
+			ContinuousTradingMode: &gql.ContinuousTradingInput{
+				TickSize: 10,
+			},
+			DiscreteTradingMode: &gql.DiscreteTradingInput{
+				Duration: 100,
+			},
+			DecimalPlaces: 5,
+		}
+		pmkt, err := mkt.IntoProto()
+		assert.NotNil(t, pmkt)
+		assert.Nil(t, err)
+
+		proposal := &gql.ProposalTermsInput{
+			ClosingTimestamp:      "2020-09-30T07:28:06+00:00",
+			EnactmentTimestamp:    "2020-10-30T07:28:06+00:00",
+			MinParticipationStake: 10,
+			NewMarket: &gql.NewMarketInput{
+				Market: &mkt,
+			},
+		}
+		proposalProto, err := proposal.IntoProto()
+		assert.NotNil(t, proposalProto)
+		assert.NoError(t, err)
+	})
+
+	t.Run("ProposalTermsFromProto invalid stake", func(t *testing.T) {
+		terms := &proto.ProposalTerms{
+			ClosingTimestamp:      1234567,
+			EnactmentTimestamp:    1234568,
+			MinParticipationStake: math.MaxInt32 * 2,
+		}
+		protoTerms, err := gql.ProposalTermsFromProto(terms)
+		assert.Nil(t, protoTerms)
+		assert.Error(t, err)
+		assert.Equal(t, gql.ErrParticipationStake, err)
+	})
+
+	t.Run("ProposalTermsFromProto invalid stake", func(t *testing.T) {
+		pm := &proto.Market{
+			TradableInstrument: &proto.TradableInstrument{
+				Instrument: &proto.Instrument{
+					Metadata: &proto.InstrumentMetadata{},
+					Product: &proto.Instrument_Future{
+						Future: &proto.Future{
+							Oracle: &proto.Future_EthereumEvent{
+								EthereumEvent: &proto.EthereumEvent{},
+							},
+						},
+					},
+				},
+				MarginCalculator: &proto.MarginCalculator{
+					ScalingFactors: &proto.ScalingFactors{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
+					},
+				},
+				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
+					LogNormalRiskModel: &proto.LogNormalRiskModel{
+						RiskAversionParameter: 0.01,
+						Tau:                   1.0 / 365.25 / 24,
+						Params: &proto.LogNormalModelParams{
+							Mu:    0,
+							R:     0.016,
+							Sigma: 0.09,
+						},
+					},
+				},
+			},
+			TradingMode: &proto.Market_Continuous{
+				Continuous: &proto.ContinuousTrading{
+					TickSize: 42,
+				},
+			},
+		}
+
+		terms := &proto.ProposalTerms{
+			ClosingTimestamp:      1234567,
+			EnactmentTimestamp:    1234568,
+			MinParticipationStake: 10,
+			Change: &proto.ProposalTerms_NewMarket{
+				NewMarket: &proto.NewMarket{
+					Changes: pm,
+				},
+			},
+		}
+		protoTerms, err := gql.ProposalTermsFromProto(terms)
+		assert.NotNil(t, protoTerms)
+		assert.NoError(t, err)
 	})
 }
 

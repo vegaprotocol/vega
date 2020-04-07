@@ -10,8 +10,6 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
-    - [CheckTokenRequest](#api.CheckTokenRequest)
-    - [CheckTokenResponse](#api.CheckTokenResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
     - [GetProposalsResponse](#api.GetProposalsResponse)
@@ -60,8 +58,6 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
-    - [SignInRequest](#api.SignInRequest)
-    - [SignInResponse](#api.SignInResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
@@ -208,7 +204,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  |  |
-| token | [string](#string) |  |  |
 
 
 
@@ -224,7 +219,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | cancellation | [vega.OrderCancellation](#vega.OrderCancellation) |  |  |
-| token | [string](#string) |  |  |
 
 
 
@@ -273,37 +267,6 @@
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | interval | [vega.Interval](#vega.Interval) |  |  |
-
-
-
-
-
-
-<a name="api.CheckTokenRequest"></a>
-
-### CheckTokenRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| token | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="api.CheckTokenResponse"></a>
-
-### CheckTokenResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| ok | [bool](#bool) |  |  |
 
 
 
@@ -1056,37 +1019,6 @@
 
 
 
-<a name="api.SignInRequest"></a>
-
-### SignInRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | a party ID |
-| password | [string](#string) |  | a password |
-
-
-
-
-
-
-<a name="api.SignInResponse"></a>
-
-### SignInResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token | [string](#string) |  | a token corresponding to the party given in the request, and valid for subsequent requests for that party |
-
-
-
-
-
-
 <a name="api.SubmitOrderRequest"></a>
 
 ### SubmitOrderRequest
@@ -1096,7 +1028,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
-| token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
 
 
 
@@ -1318,12 +1249,7 @@
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
-| SubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Submit an Order |
-| CancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Cancel an Order |
-| AmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Amend an Order |
-| SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
-| CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
@@ -2049,6 +1975,7 @@ Proposal can enter Failed state from any other state.
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
+| version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
 
 
 
@@ -2063,13 +1990,13 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
+| orderID | [string](#string) |  | required to find the order, not being updated |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
+| price | [uint64](#uint64) |  | these can be amended |
+| sizeDelta | [int64](#int64) |  |  |
 | expiresAt | [int64](#int64) |  |  |
-| side | [Side](#vega.Side) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 
 
 

@@ -28,6 +28,10 @@ var (
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
 	// ErrNonGTTOrderWithExpiracy signals that a non GTT order what set with an expiracy
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
+	// ErrInvalidAmendmentSizeDelta ...
+	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
+	// ErrInvalidAmendOrderTIF ...
+	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
 )
 
 // TimeService ...
@@ -41,8 +45,8 @@ type TimeService interface {
 type OrderStore interface {
 	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
 	GetByOrderID(ctx context.Context, id string) (*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
@@ -52,9 +56,6 @@ type OrderStore interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
 type Blockchain interface {
-	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 }
 
@@ -127,35 +128,6 @@ func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSub
 	}, nil
 }
 
-// CreateOrder validate and create a new order
-func (s *Svc) CreateOrder(
-	ctx context.Context,
-	orderSubmission *types.OrderSubmission,
-) (*types.PendingOrder, error) {
-	if err := s.validateOrderSubmission(orderSubmission); err != nil {
-		return nil, err
-	}
-	order := types.Order{
-		Id:          orderSubmission.Id,
-		MarketID:    orderSubmission.MarketID,
-		PartyID:     orderSubmission.PartyID,
-		Price:       orderSubmission.Price,
-		Size:        orderSubmission.Size,
-		Side:        orderSubmission.Side,
-		TimeInForce: orderSubmission.TimeInForce,
-		Type:        orderSubmission.Type,
-		ExpiresAt:   orderSubmission.ExpiresAt,
-	}
-
-	// Set defaults, prevent unwanted external manipulation
-	order.Remaining = orderSubmission.Size
-	order.Status = types.Order_Active
-	order.CreatedAt = 0
-	order.Reference = ""
-	// Call out to the blockchain package/layer and use internal client to gain consensus
-	return s.blockchain.CreateOrder(ctx, &order)
-}
-
 func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	if err := sub.Validate(); err != nil {
 		return errors.Wrap(err, "order validation failed")
@@ -216,43 +188,6 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	}, nil
 }
 
-// CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
-func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
-	if err := order.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order cancellation validation failed")
-	}
-	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
-	if err != nil {
-		return nil, err
-	}
-	if o.Status == types.Order_Cancelled {
-		return nil, errors.New("order has already been cancelled")
-	}
-	if o.Remaining == 0 {
-		return nil, errors.New("order has been fully filled")
-	}
-	if o.PartyID != order.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
-	}
-	// Send cancellation request by consensus
-	if _, err := s.blockchain.CancelOrder(ctx, order); err != nil {
-		return nil, err
-	}
-
-	return &types.PendingOrder{
-		Reference:   o.Reference,
-		Price:       o.Price,
-		TimeInForce: o.TimeInForce,
-		Side:        o.Side,
-		MarketID:    o.MarketID,
-		Size:        o.Size,
-		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
-		Id:          o.Id,
-	}, nil
-}
-
 func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
 	if err := amendment.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order amendment validation failed")
@@ -268,69 +203,37 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	}
 
 	// if order is GTT convert datetime to blockchain ts
-	if o.TimeInForce == types.Order_GTT {
+	if amendment.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return nil, err
 		}
-	}
-
-	return &types.PendingOrder{
-		Reference:   o.Reference,
-		Price:       amendment.Price,
-		TimeInForce: o.TimeInForce,
-		Side:        o.Side,
-		MarketID:    o.MarketID,
-		Size:        amendment.Size,
-		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
-		Id:          o.Id,
-	}, nil
-}
-
-// AmendOrder validate and amend an existing order
-func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
-	if err := amendment.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order amendment validation failed")
-	}
-	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
-	if err != nil {
-		return nil, err
-	}
-
-	if o.PartyID != amendment.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
-	}
-
-	if o.Status != types.Order_Active {
-		return nil, errors.New("order is not active")
-	}
-
-	// if order is GTT convert datetime to blockchain ts
-	if o.TimeInForce == types.Order_GTT {
-		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
-		if err != nil {
-			s.log.Error("unable to get expiration time", logging.Error(err))
-			return nil, err
+	} else if amendment.TimeInForce == types.Order_GTC {
+		// this is cool, but we need to ensure and expiry is not set
+		if amendment.ExpiresAt != 0 {
+			return nil, ErrNonGTTOrderWithExpiry
 		}
+	} else {
+		// IOC and FOK are not acceptable for amend order
+		return nil, ErrInvalidAmendOrderTIF
 	}
 
-	// Send edit request by consensus
-	if _, err := s.blockchain.AmendOrder(ctx, amendment); err != nil {
-		return nil, err
+	// if size changes, make sure it does not get negative
+	newSize := int64(o.Size) + amendment.SizeDelta
+	if newSize <= 0 {
+		return nil, ErrInvalidAmendmentSizeDelta
 	}
 
 	return &types.PendingOrder{
 		Reference:   o.Reference,
 		Price:       amendment.Price,
-		TimeInForce: o.TimeInForce,
+		TimeInForce: amendment.TimeInForce,
 		Side:        o.Side,
 		MarketID:    o.MarketID,
-		Size:        amendment.Size,
+		Size:        uint64(newSize),
 		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
+		Status:      types.Order_Active,
 		Id:          o.Id,
 	}, nil
 }
@@ -356,12 +259,12 @@ func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, err
 }
 
 // GetByMarket returns a list of order for a given market
-func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending, open)
 }
 
 // GetByParty returns a list of order for a given party
-func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByParty(ctx, party, skip, limit, descending, open)
 }
 

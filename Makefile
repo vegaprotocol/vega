@@ -6,18 +6,7 @@ ifeq ($(CI),)
 	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
 else
 	# In CI
-	ifneq ($(GITLAB_CI),)
-		# In Gitlab: https://docs.gitlab.com/ce/ci/variables/predefined_variables.html
-
-		ifneq ($(CI_COMMIT_TAG),)
-			VERSION := $(CI_COMMIT_TAG)
-		else
-			# No tag, so make one
-			VERSION := $(shell git describe --tags 2>/dev/null)
-		endif
-		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
-
-	else ifneq ($(DRONE),)
+	ifneq ($(DRONE),)
 		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
 
 		ifneq ($(DRONE_TAG),)
@@ -174,12 +163,6 @@ proto_clean:
 	@find proto/doc -name index.html -o -name index.md \
 		| xargs -r rm
 
-.PHONY: rest_check
-rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
-	@python3 script/check_rest_endpoints.py \
-		--bindings gateway/rest/grpc-rest-bindings.yml \
-		--swagger proto/api/trading.swagger.json
-
 # Misc Targets
 
 codeowners_check:
@@ -206,7 +189,7 @@ docker: ## Make docker container image from scratch
 	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
 	@docker build \
 		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
-		-t "registry.gitlab.com/vega-protocol/trading-core:$(VERSION)" \
+		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$(VERSION)" \
 		.
 
 .PHONY: docker_quick
@@ -220,7 +203,7 @@ docker_quick: build ## Make docker container image using pre-existing binaries
 		cp -a "$$f" . || exit 1 ; \
 	done
 	@docker build \
-		-t "registry.gitlab.com/vega-protocol/trading-core:$(VERSION)" \
+		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$(VERSION)" \
 		-f Dockerfile.quick \
 		.
 	@for app in $(APPS) ; do \
@@ -241,14 +224,14 @@ spellcheck: ## Run markdown spellcheck container
 	@docker run --rm -ti \
 		--entrypoint mdspell \
 		-v "$(PWD):/src" \
-		registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest \
+		docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest \
 			--en-gb \
 			--ignore-acronyms \
 			--ignore-numbers \
 			--no-suggestions \
 			--report \
 			'*.md' \
-			'design/**/*.md'
+			'docs/**/*.md'
 
 # The integration directory is special, and contains a package called core_test.
 .PHONY: staticcheck

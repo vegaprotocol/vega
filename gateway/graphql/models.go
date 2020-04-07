@@ -30,10 +30,6 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
-type CheckTokenResponse struct {
-	Ok bool `json:"ok"`
-}
-
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency (uint64)
