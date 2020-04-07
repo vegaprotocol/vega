@@ -1081,6 +1081,17 @@
         }
       }
     },
+    "apiOrderVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
     "apiOrdersByMarketResponse": {
       "type": "object",
       "properties": {
