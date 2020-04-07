@@ -25,6 +25,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// InitialOrderVersion is set on `Version` field for every new order submission read from the network
+const InitialOrderVersion = 1
+
 var (
 	// ErrMarketClosed signals that an action have been tried to be applied on a closed market
 	ErrMarketClosed = errors.New("market closed")
@@ -338,7 +341,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// set those at the begining as even rejected order get through the buffers
 	m.idgen.SetID(order)
 	order.CreatedAt = m.currentTime.UnixNano()
-	order.Version = 1
+	order.Version = InitialOrderVersion
 
 	if m.closed {
 		// adding order to the buffer first
@@ -1137,6 +1140,8 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			Order: confirm.Order,
 		}, nil
 	}
+
+	m.orderBuf.Add(*amendedOrder) // saving amended order
 
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order

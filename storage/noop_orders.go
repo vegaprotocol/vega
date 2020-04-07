@@ -126,12 +126,18 @@ func (os *NoopOrder) GetByPartyAndID(ctx context.Context, party string, id strin
 	return &order, nil
 }
 
+func (os *NoopOrder) GetAllVersionsByOrderID(ctx context.Context, id string,
+	skip, limit uint64, descending bool) (orders []*types.Order, err error) {
+
+	return []*types.Order{}, nil
+}
+
 func (os *NoopOrder) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	var order types.Order
 	return &order, nil
 }
 
-func (os *NoopOrder) GetByOrderID(ctx context.Context, orderID string) (*types.Order, error) {
+func (os *NoopOrder) GetByOrderID(ctx context.Context, orderID string, version *uint64) (*types.Order, error) {
 	var order types.Order
 	return &order, nil
 }

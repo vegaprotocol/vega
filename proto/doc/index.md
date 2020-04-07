@@ -36,6 +36,8 @@
     - [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
     - [OrderByReferenceResponse](#api.OrderByReferenceResponse)
+    - [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest)
+    - [OrderVersionsResponse](#api.OrderVersionsResponse)
     - [OrdersByMarketRequest](#api.OrdersByMarketRequest)
     - [OrdersByMarketResponse](#api.OrdersByMarketResponse)
     - [OrdersByPartyRequest](#api.OrdersByPartyRequest)
@@ -589,6 +591,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | orderID | [string](#string) |  |  |
+| version | [uint64](#uint64) |  | version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) |
 
 
 
@@ -665,6 +668,37 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | order | [vega.Order](#vega.Order) |  |  |
+
+
+
+
+
+
+<a name="api.OrderVersionsByIDRequest"></a>
+
+### OrderVersionsByIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+| pagination | [Pagination](#api.Pagination) |  |  |
+
+
+
+
+
+
+<a name="api.OrderVersionsResponse"></a>
+
+### OrderVersionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orders | [vega.Order](#vega.Order) | repeated |  |
 
 
 
@@ -1276,6 +1310,7 @@
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
 | OrderByID | [OrderByIDRequest](#api.OrderByIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by orderID |
 | OrderByReferenceID | [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by referenceID |
+| OrderVersionsByID | [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest) | [OrderVersionsResponse](#api.OrderVersionsResponse) | Get all versions of the order by its orderID |
 | MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by PartyID |
 | Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
 | PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get a Party by ID |
