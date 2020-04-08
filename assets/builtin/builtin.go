@@ -1,6 +1,8 @@
 package builtin
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/assets/common"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -54,4 +56,10 @@ func (b *Builtin) SignWithdrawal() ([]byte, error) {
 
 func (b *Builtin) ValidateDeposit() error {
 	return nil
+}
+
+func (b *Builtin) String() string {
+	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
+		b.asset.Id, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
+		b.asset.Decimals)
 }

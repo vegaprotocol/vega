@@ -6,7 +6,9 @@ import (
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/common"
+	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 	"golang.org/x/crypto/sha3"
 )
@@ -39,12 +41,15 @@ type Asset interface {
 	SignWithdrawal() ([]byte, error)
 	// ensure on the target chain that a deposit really did happen
 	ValidateDeposit() error
+
+	String() string
 }
 
 type NodeWallet interface {
+	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
 
-type Assets struct {
+type Service struct {
 	log *logging.Logger
 	cfg Config
 
@@ -60,10 +65,10 @@ type Assets struct {
 	nw NodeWallet
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet) (*Assets, error) {
+func New(log *logging.Logger, cfg Config, nw NodeWallet) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	return &Assets{
+	return &Service{
 		log:           log,
 		cfg:           cfg,
 		assets:        map[uint64]Asset{},
@@ -73,34 +78,44 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet) (*Assets, error) {
 }
 
 // Enable move the state of an from pending the list of valid and accepted assets
-func (a *Assets) Enable(assetID uint64) error {
+func (a *Service) Enable(assetID uint64) error {
 	asset, ok := a.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
 	}
 	if asset.IsValid() {
-		delete(a.pendingAssets, assetID)
 		a.assets[assetID] = asset
+		delete(a.pendingAssets, assetID)
+		return nil
 	}
 	return ErrAssetInvalid
 }
 
 // NewAsset add a new asset to the pending list of assets
-func (a *Assets) NewAsset(assetID uint64, assetSrc *types.AssetSource) error {
+func (s *Service) NewAsset(assetID uint64, assetSrc *types.AssetSource) error {
 	// ensure an idea for this asset does note exists already
-	_, ok := a.pendingAssets[assetID]
+	_, ok := s.pendingAssets[assetID]
 	if ok {
 		return ErrAssetExistForID
 	}
-	_, ok = a.assets[assetID]
+	_, ok = s.assets[assetID]
 	if ok {
 		return ErrAssetExistForID
 	}
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
-		a.pendingAssets[assetID] = builtin.New(assetID, assetSrcImpl.BuiltinAsset)
+		s.pendingAssets[assetID] = builtin.New(assetID, assetSrcImpl.BuiltinAsset)
 	case *types.AssetSource_Erc20:
+		wal, ok := s.nw.Get(nodewallet.Ethereum)
+		if !ok {
+			return errors.New("missing wallet for ETH")
+		}
+		asset, err := erc20.New(assetID, assetSrcImpl.Erc20, wal)
+		if err != nil {
+			return err
+		}
+		s.pendingAssets[assetID] = asset
 	default:
 		return ErrUnknowAssetSource
 	}
@@ -108,16 +123,16 @@ func (a *Assets) NewAsset(assetID uint64, assetSrc *types.AssetSource) error {
 }
 
 // RemovePending remove and asset from the list of pending assets
-func (a *Assets) RemovePending(assetID uint64) error {
-	_, ok := a.pendingAssets[assetID]
+func (s *Service) RemovePending(assetID uint64) error {
+	_, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
 	}
-	delete(a.pendingAssets, assetID)
+	delete(s.pendingAssets, assetID)
 	return nil
 }
 
-func (a *Assets) assetHash(asset Asset) []byte {
+func (s *Service) assetHash(asset Asset) []byte {
 	data := asset.Data()
 	buf := fmt.Sprintf("%v%v%v%v%v",
 		data.Id,
@@ -128,16 +143,29 @@ func (a *Assets) assetHash(asset Asset) []byte {
 	return hash([]byte(buf))
 }
 
+func (s *Service) Get(assetID uint64) (Asset, error) {
+	asset, ok := s.assets[assetID]
+	if ok {
+		return asset, nil
+	}
+	asset, ok = s.pendingAssets[assetID]
+	if ok {
+		return asset, nil
+	}
+	return nil, ErrAssetDoesNotExist
+
+}
+
 // GetAssetHash return an hash of the given asset to be used
 // signed to validate the asset on the vega chain
-func (a *Assets) AssetHash(assetID uint64) ([]byte, error) {
-	asset, ok := a.assets[assetID]
+func (s *Service) AssetHash(assetID uint64) ([]byte, error) {
+	asset, ok := s.assets[assetID]
 	if ok {
-		return a.assetHash(asset), nil
+		return s.assetHash(asset), nil
 	}
-	asset, ok = a.pendingAssets[assetID]
+	asset, ok = s.pendingAssets[assetID]
 	if ok {
-		return a.assetHash(asset), nil
+		return s.assetHash(asset), nil
 	}
 	return nil, ErrAssetDoesNotExist
 }

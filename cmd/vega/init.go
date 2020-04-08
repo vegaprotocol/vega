@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -146,6 +147,11 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 
 	// init the nodewallet
 	if err := nodeWalletInit(cfg, nodeWalletPassphrase, genDevNodeWallet); err != nil {
+		return err
+	}
+
+	// init the devAssets
+	if err := assets.GenDevAssetSourcesPath(rootPath); err != nil {
 		return err
 	}
 

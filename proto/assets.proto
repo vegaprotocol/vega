@@ -7,7 +7,8 @@ message Asset {
   uint64 id = 1;
   string name = 2;
   string symbol = 3;
-  uint64 totalSupply = 4;
+  // this may very much likely be a big.Int
+  string totalSupply = 4;
   uint64 decimals = 5;
   oneof source {
     BuiltinAsset builtinAsset = 101;
@@ -25,10 +26,14 @@ message AssetSource {
 message BuiltinAsset {
   string name = 2;
   string symbol = 3;
-  uint64 totalSupply = 4;
+  string totalSupply = 4;
   uint64 decimals = 5;
 }
 
 message ERC20 {
   string contractAddress = 1;
+}
+
+message DevAssets {
+  repeated AssetSource sources = 1;
 }

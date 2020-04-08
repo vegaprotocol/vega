@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
@@ -34,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -146,6 +148,55 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase)
 	if err != nil {
 		return err
+	}
+
+	// initialize the assets service now
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet)
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove that once we have infrastructure to use token through governance
+	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	if err != nil {
+		return err
+	}
+
+	var aid uint64
+	for _, v := range assetSrcs {
+		v := v
+		err = l.assets.NewAsset(aid, v)
+		if err != nil {
+			fmt.Printf("error instanciating asset %v\n", err)
+			return err
+		}
+
+		asset, err := l.assets.Get(aid)
+		if err != nil {
+			fmt.Printf("unable to get asset %v\n", err)
+			return err
+		}
+
+		// just a simple backoff here
+		err = backoff.Retry(
+			func() error {
+				err := asset.Validate()
+				if !asset.IsValid() {
+					return err
+				}
+				return nil
+			},
+			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to instanciate new asset %v", err)
+		}
+		if err := l.assets.Enable(aid); err != nil {
+			return fmt.Errorf("unable to enable asset: %v", err)
+		}
+		l.Log.Info("new asset added successfully",
+			logging.String("asset", asset.String()))
+		aid += 1
 	}
 
 	return nil

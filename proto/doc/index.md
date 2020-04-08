@@ -85,6 +85,7 @@
     - [Asset](#vega.Asset)
     - [AssetSource](#vega.AssetSource)
     - [BuiltinAsset](#vega.BuiltinAsset)
+    - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
 
 
@@ -1371,7 +1372,7 @@
 | id | [uint64](#uint64) |  |  |
 | name | [string](#string) |  |  |
 | symbol | [string](#string) |  |  |
-| totalSupply | [uint64](#uint64) |  |  |
+| totalSupply | [string](#string) |  | this may very much likely be a big.Int |
 | decimals | [uint64](#uint64) |  |  |
 | builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
 | erc20 | [ERC20](#vega.ERC20) |  |  |
@@ -1407,8 +1408,23 @@
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
 | symbol | [string](#string) |  |  |
-| totalSupply | [uint64](#uint64) |  |  |
+| totalSupply | [string](#string) |  |  |
 | decimals | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.DevAssets"></a>
+
+### DevAssets
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sources | [AssetSource](#vega.AssetSource) | repeated |  |
 
 
 

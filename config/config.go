@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -59,6 +60,7 @@ type Config struct {
 	Transfers  transfers.Config
 	Governance governance.Config
 	NodeWallet nodewallet.Config
+	Assets     assets.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -95,6 +97,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Transfers:      transfers.NewDefaultConfig(),
 		Governance:     governance.NewDefaultConfig(),
 		NodeWallet:     nodewallet.NewDefaultConfig(defaultStoreDirPath),
+		Assets:         assets.NewDefaultConfig(defaultStoreDirPath),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,
