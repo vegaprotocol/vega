@@ -139,7 +139,7 @@ steps:
       - echo "$$!" >"$$TENDERMINT_PID"
       # tests
       - PYTHONPATH=/grpc/generated pytest "$$filename" || exit 1
-      - kill "$$VEGANODE_PID" "$$VEGAWALLET_PID" "$$TENDERMINT_PID"
+      - kill "$$(cat $$VEGANODE_PID)" "$$(cat $$VEGAWALLET_PID)" "$$(cat $$TENDERMINT_PID)"
       - done
     depends_on:
       - test-PR
