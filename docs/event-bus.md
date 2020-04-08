@@ -2,7 +2,7 @@
 The event bus is an internal system that can be used to expose data that is created in the core - i.e. anything that is not sourced from the chain). It is being introduced to provide more insight in to the working of the core than we have currently, and will enable us to build richer non-core software such as external storage, auditing and analysis tools that cannot be built without access to the data computed by the core.
 
 ## Event
-An event is an action or a side-effect that triggered by trading-core in response to state change on the node. All events will have a root cause - for example an incoming order that triggers a trade - which will be encoded in the event in the form of a traceID, which will contain a hash of the transaction that triggered the actions leading to an event being emitted.
+An event is an action or a side-effect that triggered by trading-core in response to state change on the node. All events will have a root cause - for example an incoming order that triggers a trade - which will be encoded in the event in the form of a trace field, which will contain a hash of the transaction that triggered the actions leading to an event being emitted.
 
 An event is represented as data / notification that is sent on to the bus. Any state changes to the core data (for example trader positions, mark price, collateral, ...) will produce an event. Some state changes will produce multiple events.
 
