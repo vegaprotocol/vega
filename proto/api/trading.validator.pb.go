@@ -544,3 +544,21 @@ func (this *OrderByIDRequest) Validate() error {
 func (this *OrderByReferenceIDRequest) Validate() error {
 	return nil
 }
+func (this *OrderVersionsByIDRequest) Validate() error {
+	if this.Pagination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
+		}
+	}
+	return nil
+}
+func (this *OrderVersionsResponse) Validate() error {
+	for _, item := range this.Orders {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Orders", err)
+			}
+		}
+	}
+	return nil
+}
