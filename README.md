@@ -67,7 +67,18 @@ The init command can also be invoked with a flag in order to generate developmen
 vega init --nodewallet-passphrase="somesecurepassphrase" --gen-dev-nodewallet
 ```
 
-For the documentation on how to use the nodewallet please run:
+## Vega NodeWallet
+
+A vega node needs to connect to other blockchain for variouys operation:
+- validate transaction happened on foregin chains
+- verify presence of assets
+- sign transaction to be verified on foreign blockchain
+- and more...
+
+In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide an command line tool:
+`vega nodewallet` allowing users to import foreign blockchain wallets credentials so they can be used at runtime.
+
+For more details on how to use the vega nodewallet run:
 ```
 vega nodewallet --help
 ```

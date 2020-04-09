@@ -156,7 +156,7 @@ func (l *NodeCommand) Init(c *Cli) {
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
-	flagSet.StringVarP(&l.nodeWalletPassphrase, "passphrase", "p", "", "the passphrase used to unlock the nodewallet")
+	flagSet.StringVarP(&l.nodeWalletPassphrase, "nodewallet-passphrase", "p", "", "The passphrase used to unlock the vega nodewallet")
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")

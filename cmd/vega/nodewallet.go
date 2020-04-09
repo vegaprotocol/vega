@@ -30,7 +30,7 @@ func (w *nodeWalletCommand) Init(c *Cli) {
 	w.cmd = &cobra.Command{
 		Use:   "nodewallet",
 		Short: "The nodewallet subcommand",
-		Long:  "Import wallet from other chains into the vega nodewallet, currently supported chains are: eth, vega",
+		Long:  "The nodewallet is a wallet owned by the vega node, it will contains all the informations to login to other wallets from external blockchain that vega will need to run properly (e.g and ethereum wallet, which allow vega to sign transaction  to be verified on the ethereum blockchain) available wallet: eth, vega",
 	}
 
 	imprt := &cobra.Command{
@@ -40,9 +40,9 @@ func (w *nodeWalletCommand) Init(c *Cli) {
 		RunE:  w.Import,
 	}
 	imprt.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	imprt.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the nodewallet")
-	imprt.Flags().StringVarP(&w.walletPassphrase, "wallet-passphrase", "w", "", "Passphrase to access the chain wallet")
-	imprt.Flags().StringVarP(&w.chain, "chain", "c", "", "Name of the chain we want to import the wallet for")
+	imprt.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "The passphrase use to unlock the vega nodewallet")
+	imprt.Flags().StringVarP(&w.walletPassphrase, "wallet-passphrase", "w", "", "The passphrase used to unlock the target blockchain wallet to be added to the vega nodewallet (e.g: ethereum blockchain wallet)")
+	imprt.Flags().StringVarP(&w.chain, "chain", "c", "", "Name of the blockchain we want to import the wallet for (eth or vega")
 	imprt.Flags().StringVarP(&w.walletPath, "wallet-path", "", "", "Path of the wallet to import (needs to be an absolute path)")
 	imprt.Flags().BoolVarP(&w.force, "force", "", false, "Force to overwrite an existing wallet import")
 	w.cmd.AddCommand(imprt)
@@ -54,7 +54,7 @@ func (w *nodeWalletCommand) Init(c *Cli) {
 		RunE:  w.Show,
 	}
 	show.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	show.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the nodewallet")
+	show.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "The passphrase used to unlock the vega nodewallet")
 	w.cmd.AddCommand(show)
 
 	verify := &cobra.Command{
@@ -64,7 +64,7 @@ func (w *nodeWalletCommand) Init(c *Cli) {
 		RunE:  w.Verify,
 	}
 	verify.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	verify.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the nodewallet")
+	verify.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "The passphrase used to unlock the vega nodewallet")
 	w.cmd.AddCommand(verify)
 
 }
