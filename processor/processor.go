@@ -145,8 +145,7 @@ func (p *Processor) ReloadConf(cfg Config) {
 
 func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
 	order := &types.Order{}
-	err := proto.Unmarshal(payload, order)
-	if err != nil {
+	if err := proto.Unmarshal(payload, order); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -301,7 +300,7 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 
 // Process performs validation and then sends the command and data to
 // the underlying blockchain service handlers e.g. submit order, etc.
-func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
+func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 	// first is that a signed or unsigned command?
 	switch cmd {
 	case blockchain.SubmitOrderCommand:
@@ -315,19 +314,19 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
 		if err != nil {
 			return err
 		}
-		err = p.cancelOrder(order)
+		return p.cancelOrder(order)
 	case blockchain.AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
 			return err
 		}
-		err = p.amendOrder(order)
+		return p.amendOrder(order)
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
 			return err
 		}
-		err = p.exec.Withdraw(withdraw)
+		return p.exec.Withdraw(withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
@@ -342,13 +341,13 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
 			// @TODO validate proposal here + cast vote
 			return nil
 		}
-		err = p.exec.SubmitProposal(proposal)
+		return p.exec.SubmitProposal(proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		err = p.exec.VoteOnProposal(vote)
+		return p.exec.VoteOnProposal(vote)
 	case blockchain.RegisterNodeCommand:
 		node, err := p.getNodeRegistration(data)
 		if err != nil {
@@ -376,9 +375,9 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) (err error) {
 		return p.exec.NotifyTraderAccount(notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
-		err = fmt.Errorf("unknown command received: %s", cmd)
+		return fmt.Errorf("unknown command received: %s", cmd)
 	}
-	return err
+	return nil
 }
 
 func (p *Processor) getNodeVote(payload []byte) (*types.NodeVote, error) {

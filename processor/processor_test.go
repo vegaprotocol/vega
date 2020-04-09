@@ -30,8 +30,8 @@ func getTestProcessor(t *testing.T) *procTest {
 	eng := mocks.NewMockExecutionEngine(ctrl)
 	ts := mocks.NewMockTimeService(ctrl)
 	var cb func(time.Time)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(time.Time)) {
-		cb = cb
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
+		cb = c
 	})
 	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts)
 	return &procTest{
