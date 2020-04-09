@@ -283,7 +283,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Market             func(childComplexity int, id string) int
 		Markets            func(childComplexity int, id *string) int
-		OrderByID          func(childComplexity int, orderID string) int
+		OrderByID          func(childComplexity int, orderID string, version *int) int
 		OrderByReferenceID func(childComplexity int, referenceID string) int
 		Parties            func(childComplexity int, id *string) int
 		Party              func(childComplexity int, id string) int
@@ -500,7 +500,7 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]*proto.Party, error)
 	Party(ctx context.Context, id string) (*proto.Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
-	OrderByID(ctx context.Context, orderID string) (*proto.Order, error)
+	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
 	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
 }
 type StatisticsResolver interface {
@@ -1616,7 +1616,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByID(childComplexity, args["orderID"].(string)), true
+		return e.complexity.Query.OrderByID(childComplexity, args["orderID"].(string), args["version"].(*int)), true
 
 	case "Query.orderByReferenceID":
 		if e.complexity.Query.OrderByReferenceID == nil {
@@ -2565,6 +2565,9 @@ type Query {
   orderByID(
     "ID for an order"
     orderID: String!
+
+    "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    version: Int
   ): Order!
 
   "An order in the VEGA network found by referenceID"
@@ -4123,6 +4126,14 @@ func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawA
 		}
 	}
 	args["orderID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["version"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["version"] = arg1
 	return args, nil
 }
 
@@ -9576,7 +9587,7 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByID(rctx, args["orderID"].(string))
+		return ec.resolvers.Query().OrderByID(rctx, args["orderID"].(string), args["version"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

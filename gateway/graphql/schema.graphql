@@ -316,6 +316,9 @@ type Query {
   orderByID(
     "ID for an order"
     orderID: String!
+
+    "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    version: Int
   ): Order!
 
   "An order in the VEGA network found by referenceID"
