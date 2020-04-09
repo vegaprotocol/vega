@@ -69,8 +69,8 @@ vega init --nodewallet-passphrase="somesecurepassphrase" --gen-dev-nodewallet
 
 ## Vega NodeWallet
 
-A vega node needs to connect to other blockchain for variouys operation:
-- validate transaction happened on foregin chains
+A vega node needs to connect to other blockchain for various operation:
+- validate transaction happened on foreign chains
 - verify presence of assets
 - sign transaction to be verified on foreign blockchain
 - and more...
