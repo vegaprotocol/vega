@@ -280,9 +280,15 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 	return res, nil
 }
 
-func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string) (*types.Order, error) {
+func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version *int) (*types.Order, error) {
+	v, err := convertVersion(version)
+	if err != nil {
+		r.log.Error("tradingCore client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
 	orderReq := &protoapi.OrderByIDRequest{
 		OrderID: orderID,
+		Version: v,
 	}
 	order, err := r.tradingDataClient.OrderByID(ctx, orderReq)
 	return order, err
