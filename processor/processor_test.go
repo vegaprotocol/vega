@@ -3,6 +3,7 @@ package processor_test
 import (
 	"encoding/hex"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
@@ -17,18 +18,27 @@ import (
 
 type procTest struct {
 	*processor.Processor
-	eng  *mocks.MockExecutionEngine
-	ctrl *gomock.Controller
+	eng    *mocks.MockExecutionEngine
+	ts     *mocks.MockTimeService
+	tickCB func(time.Time)
+	ctrl   *gomock.Controller
 }
 
 func getTestProcessor(t *testing.T) *procTest {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	eng := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.New(log, processor.NewDefaultConfig(), eng)
+	ts := mocks.NewMockTimeService(ctrl)
+	var cb func(time.Time)
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(time.Time)) {
+		cb = cb
+	})
+	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts)
 	return &procTest{
 		Processor: proc,
 		eng:       eng,
+		ts:        ts,
+		tickCB:    cb,
 		ctrl:      ctrl,
 	}
 }

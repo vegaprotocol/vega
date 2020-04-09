@@ -11,13 +11,17 @@ const namedLogger = "processor"
 
 // Config represent the configuration of the blockchain package
 type Config struct {
-	Level encoding.LogLevel
+	Level               encoding.LogLevel
+	LogOrderSubmitDebug bool
+	LogOrderAmendDebug  bool
+	LogOrderCancelDebug bool
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	return Config{
-		Level: encoding.LogLevel{Level: logging.InfoLevel},
+		Level:               encoding.LogLevel{Level: logging.InfoLevel},
+		LogOrderSubmitDebug: true,
 	}
 }

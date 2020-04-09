@@ -32,11 +32,13 @@ var (
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
+	NotifyOnTick(f func(time.Time))
 }
 
 type nodeProposal struct {
 	*types.Proposal
-	votes map[string]struct{}
+	votes     map[string]struct{}
+	validTime time.Time
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -65,19 +67,22 @@ type ExecutionEngine interface {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &Processor{
+	p := &Processor{
 		log:           log,
 		stats:         &Stats{},
 		Config:        config,
 		exec:          exec,
+		time:          ts,
 		nodes:         map[string]struct{}{},
 		nodeProposals: map[string]*nodeProposal{},
 	}
+	ts.NotifyOnTick(p.onTick)
+	return p
 }
 
 // Begin update timestamps
@@ -448,8 +453,7 @@ func (p *Processor) cancelOrder(order *types.OrderCancellation) error {
 		)
 		return err
 	}
-	// if p.LogOrderCancelDebug {
-	if p.log.GetLevel() == logging.DebugLevel {
+	if p.LogOrderCancelDebug {
 		p.log.Debug("Order cancelled", logging.Order(*msg.Order))
 	}
 
@@ -472,9 +476,32 @@ func (p *Processor) amendOrder(order *types.OrderAmendment) error {
 		)
 		return err
 	}
-	// if p.LogOrderAmendDebug {
-	if p.log.GetLevel() == logging.DebugLevel {
+	if p.LogOrderAmendDebug {
 		p.log.Debug("Order amended", logging.String("order", order.String()))
 	}
 	return nil
+}
+
+// check the asset proposals on tick
+func (p *Processor) onTick(t time.Time) {
+	for k, prop := range p.nodeProposals {
+		// this proposal has passed the node-voting period
+		if prop.validTime.Before(t) {
+			// if not all nodes have approved, just remove
+			if len(prop.votes) < len(p.nodes) {
+				p.log.Warn("proposal was not accepted by all nodes",
+					logging.String("proposal", prop.Proposal.String()),
+					logging.Int("vote-count", len(prop.votes)),
+					logging.Int("node-count", len(p.nodes)),
+				)
+			} else if err := p.exec.SubmitProposal(prop.Proposal); err != nil {
+				p.log.Error("Failed to submit node-approved proposal",
+					logging.String("proposal", prop.Proposal.String()),
+				)
+				continue // try again next block
+			}
+			// either proposal wasn't accepted, or it's been passed on to governance
+			delete(p.nodeProposals, k)
+		}
+	}
 }
