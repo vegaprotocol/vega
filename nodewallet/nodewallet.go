@@ -11,14 +11,14 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet/vega"
 )
 
-type ChainWallet string
+type Blockchain string
 
 const (
-	Vega     ChainWallet = "vega"
-	Ethereum ChainWallet = "ethereum"
+	Vega     Blockchain = "vega"
+	Ethereum Blockchain = "ethereum"
 )
 
-var requiredWallets = []ChainWallet{Vega, Ethereum}
+var requiredWallets = []Blockchain{Vega, Ethereum}
 
 type Wallet interface {
 	Chain() string
@@ -30,7 +30,7 @@ type Service struct {
 	log     *logging.Logger
 	cfg     Config
 	store   *store
-	wallets map[ChainWallet]Wallet
+	wallets map[Blockchain]Wallet
 }
 
 func New(log *logging.Logger, cfg Config, passphrase string) (*Service, error) {
@@ -59,7 +59,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) Get(chain ChainWallet) (Wallet, bool) {
+func (s *Service) Get(chain Blockchain) (Wallet, bool) {
 	w, ok := s.wallets[chain]
 	return w, ok
 }
@@ -77,7 +77,7 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error
 		err error
 		w   Wallet
 	)
-	switch ChainWallet(chain) {
+	switch Blockchain(chain) {
 	case Vega:
 		w, err = vega.New(path, walletPassphrase)
 		if err != nil {
@@ -99,7 +99,7 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error
 		Passphrase: walletPassphrase,
 		Path:       path,
 	})
-	s.wallets[ChainWallet(chain)] = w
+	s.wallets[Blockchain(chain)] = w
 	return saveStore(s.store, s.cfg.StorePath, passphrase)
 }
 
@@ -129,7 +129,7 @@ func Verify(cfg Config, passphrase string) error {
 
 func IsSupported(chain string) error {
 	for _, ch := range requiredWallets {
-		if ChainWallet(chain) == ch {
+		if Blockchain(chain) == ch {
 			return nil
 		}
 	}
@@ -171,7 +171,7 @@ func DevInit(path, devKeyPath, passphrase string) error {
 	return saveStore(&store{Wallets: cfgs}, path, passphrase)
 }
 
-func ensureRequiredWallets(wallets map[ChainWallet]Wallet) error {
+func ensureRequiredWallets(wallets map[Blockchain]Wallet) error {
 	for _, v := range requiredWallets {
 		_, ok := wallets[v]
 		if !ok {
@@ -183,15 +183,15 @@ func ensureRequiredWallets(wallets map[ChainWallet]Wallet) error {
 
 // takes the wallets configs from the store and try to instanciate them
 // to proper blockchains wallets
-func loadWallets(stor *store) (map[ChainWallet]Wallet, error) {
-	wallets := map[ChainWallet]Wallet{}
+func loadWallets(stor *store) (map[Blockchain]Wallet, error) {
+	wallets := map[Blockchain]Wallet{}
 
 	for _, w := range stor.Wallets {
 		w := w
-		if _, ok := wallets[ChainWallet(w.Chain)]; ok {
+		if _, ok := wallets[Blockchain(w.Chain)]; ok {
 			return nil, fmt.Errorf("duplicate wallet configuration for chain %v", w)
 		}
-		switch ChainWallet(w.Chain) {
+		switch Blockchain(w.Chain) {
 		case Vega:
 			w, err := vega.New(w.Path, w.Passphrase)
 			if err != nil {

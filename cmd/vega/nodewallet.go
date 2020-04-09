@@ -102,7 +102,7 @@ func (w *nodeWalletCommand) Import(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	_, ok := nw.Get(nodewallet.ChainWallet(w.chain))
+	_, ok := nw.Get(nodewallet.Blockchain(w.chain))
 	if ok && w.force {
 		w.Log.Warn("a wallet is already imported for the current chain, this action will rewrite the import", logging.String("chain", w.chain))
 	} else if ok {
