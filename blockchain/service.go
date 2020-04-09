@@ -121,6 +121,9 @@ func (s *abciService) ValidateOrder(order *types.Order) error {
 
 func (s *abciService) Commit() error {
 	s.log.Debug("ABCI service COMMIT starting")
+	// this service is no longer used, commenting this out because
+	// @TODO we need to revisit the stats should we want to re-introduce them
+	// this file is kept for now as a reference of what stats we are tracking, and how
 	// s.setBatchStats()
 
 	// Call out to run any data generation in the stores etc
