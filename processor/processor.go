@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -27,16 +28,10 @@ var (
 	ErrUnknownProposal                              = errors.New("proposal unknown")
 )
 
-// ProcessorService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_service_mock.go -package mocks code.vegaprotocol.io/vega/processor ProcessorService
-type ProcessorService interface {
-	SubmitOrder(order *types.Order) error
-	CancelOrder(order *types.OrderCancellation) error
-	AmendOrder(order *types.OrderAmendment) error
-	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
-	Withdraw(*types.Withdraw) error
-	SubmitProposal(proposal *types.Proposal) error
-	VoteOnProposal(vote *types.Vote) error
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
+type TimeService interface {
+	GetTimeNow() (time.Time, error)
+	GetTimeLastBatch() (time.Time, error)
 }
 
 type nodeProposal struct {
@@ -49,8 +44,8 @@ type Processor struct {
 	log *logging.Logger
 	Config
 	stats             *Stats
-	svc               ProcessorService
 	exec              ExecutionEngine
+	time              TimeService
 	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
 	currentTimestamp  time.Time
@@ -85,13 +80,42 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine) *Processor {
 	}
 }
 
-// SetService - required to avoid circular dependencies + config management
-func (p *Processor) SetService(svc interface{}) error {
-	psvc, ok := svc.(ProcessorService)
-	if !ok {
-		return errors.New("incompatible service interface")
+// Begin update timestamps
+func (p *Processor) Begin() error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Processor service BEGIN starting")
 	}
-	p.svc = psvc
+	var err error
+	// Load the latest consensus block time
+	if p.currentTimestamp, err = p.time.GetTimeNow(); err != nil {
+		return err
+	}
+
+	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
+		return err
+	}
+
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("ABCI service BEGIN completed",
+			logging.Int64("current-timestamp", p.currentTimestamp.UnixNano()),
+			logging.Int64("previous-timestamp", p.previousTimestamp.UnixNano()),
+			logging.String("current-datetime", vegatime.Format(p.currentTimestamp)),
+			logging.String("previous-datetime", vegatime.Format(p.previousTimestamp)),
+		)
+	}
+	return nil
+}
+
+func (p *Processor) Commit() error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Processor COMMIT starting")
+	}
+	if err := p.exec.Generate(); err != nil {
+		return errors.Wrap(err, "failure generating data in execution engine (commit)")
+	}
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Processor COMMIT completed")
+	}
 	return nil
 }
 

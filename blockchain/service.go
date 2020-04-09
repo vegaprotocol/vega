@@ -121,7 +121,7 @@ func (s *abciService) ValidateOrder(order *types.Order) error {
 
 func (s *abciService) Commit() error {
 	s.log.Debug("ABCI service COMMIT starting")
-	s.setBatchStats()
+	// s.setBatchStats()
 
 	// Call out to run any data generation in the stores etc
 	err := s.execution.Generate()
