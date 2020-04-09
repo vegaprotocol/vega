@@ -321,6 +321,18 @@ type Query {
     version: Int
   ): Order!
 
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersions(
+    "ID for an order"
+    orderID: String!
+
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Order!]
+
   "An order in the VEGA network found by referenceID"
   orderByReferenceID(
     "ReferenceID for an order"

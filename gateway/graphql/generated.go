@@ -285,6 +285,7 @@ type ComplexityRoot struct {
 		Markets            func(childComplexity int, id *string) int
 		OrderByID          func(childComplexity int, orderID string, version *int) int
 		OrderByReferenceID func(childComplexity int, referenceID string) int
+		OrderVersions      func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		Parties            func(childComplexity int, id *string) int
 		Party              func(childComplexity int, id string) int
 		Statistics         func(childComplexity int) int
@@ -501,6 +502,7 @@ type QueryResolver interface {
 	Party(ctx context.Context, id string) (*proto.Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
+	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*proto.Order, error)
 	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
 }
 type StatisticsResolver interface {
@@ -1630,6 +1632,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.OrderByReferenceID(childComplexity, args["referenceID"].(string)), true
 
+	case "Query.orderVersions":
+		if e.complexity.Query.OrderVersions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_orderVersions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.OrderVersions(childComplexity, args["orderID"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
 	case "Query.parties":
 		if e.complexity.Query.Parties == nil {
 			break
@@ -2569,6 +2583,18 @@ type Query {
     "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
   ): Order!
+
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersions(
+    "ID for an order"
+    orderID: String!
+
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
   orderByReferenceID(
@@ -4148,6 +4174,44 @@ func (ec *executionContext) field_Query_orderByReferenceID_args(ctx context.Cont
 		}
 	}
 	args["referenceID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_orderVersions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["orderID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
 	return args, nil
 }
 
@@ -9603,6 +9667,47 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_orderVersions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_orderVersions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OrderVersions(rctx, args["orderID"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.Order)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15962,6 +16067,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "orderVersions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_orderVersions(ctx, field)
 				return res
 			})
 		case "orderByReferenceID":
