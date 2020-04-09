@@ -43,7 +43,7 @@ func New(path, passphrase string) (*Wallet, error) {
 }
 
 func (w *Wallet) Chain() string {
-	return "eth"
+	return "ethereum"
 }
 
 func (w *Wallet) Sign(data []byte) ([]byte, error) {

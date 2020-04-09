@@ -83,10 +83,10 @@ func testDevInitSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// try to get the vega and eth wallet
-	w, ok := nw.Get(nodewallet.Eth)
+	w, ok := nw.Get(nodewallet.Ethereum)
 	assert.NotNil(t, w)
 	assert.True(t, ok)
-	assert.Equal(t, string(nodewallet.Eth), w.Chain())
+	assert.Equal(t, string(nodewallet.Ethereum), w.Chain())
 	w1, ok := nw.Get(nodewallet.Vega)
 	assert.NotNil(t, w1)
 	assert.True(t, ok)
@@ -190,7 +190,7 @@ func testImportNewWallet(t *testing.T) {
 	assert.NotEmpty(t, path)
 
 	// import this new wallet
-	err = nw.Import(string(nodewallet.Eth), "somepassphrase", "ethpassphrase", path)
+	err = nw.Import(string(nodewallet.Ethereum), "somepassphrase", "ethpassphrase", path)
 	assert.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(rootDir))

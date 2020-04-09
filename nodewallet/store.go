@@ -13,7 +13,7 @@ import (
 type WalletConfig struct {
 	Chain      string `json:"chain"`
 	Path       string `json:"wallet_path"`
-	Passphrase string `json:"passhprase"`
+	Passphrase string `json:"passphrase"`
 }
 
 type store struct {

@@ -14,11 +14,11 @@ import (
 type ChainWallet string
 
 const (
-	Vega ChainWallet = "vega"
-	Eth  ChainWallet = "eth"
+	Vega     ChainWallet = "vega"
+	Ethereum ChainWallet = "ethereum"
 )
 
-var requiredWallets = []ChainWallet{Vega, Eth}
+var requiredWallets = []ChainWallet{Vega, Ethereum}
 
 type Wallet interface {
 	Chain() string
@@ -64,7 +64,7 @@ func (s *Service) Get(chain ChainWallet) (Wallet, bool) {
 	return w, ok
 }
 
-// this will replace any existing import for a chain
+// Import replaces any existing import for a chain
 func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error {
 	// check if the filepath is absolute
 	if !filepath.IsAbs(path) {
@@ -83,7 +83,7 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error
 		if err != nil {
 			return err
 		}
-	case Eth:
+	case Ethereum:
 		w, err = eth.New(path, walletPassphrase)
 		if err != nil {
 			return err
@@ -153,7 +153,7 @@ func DevInit(path, devKeyPath, passphrase string) error {
 		return err
 	}
 	cfgs = append(cfgs, WalletConfig{
-		Chain:      string(Eth),
+		Chain:      string(Ethereum),
 		Path:       ethWalletPath,
 		Passphrase: passphrase,
 	})
@@ -198,12 +198,12 @@ func loadWallets(stor *store) (map[ChainWallet]Wallet, error) {
 				return nil, err
 			}
 			wallets[Vega] = w
-		case Eth:
+		case Ethereum:
 			w, err := eth.New(w.Path, w.Passphrase)
 			if err != nil {
 				return nil, err
 			}
-			wallets[Eth] = w
+			wallets[Ethereum] = w
 		default:
 			return nil, fmt.Errorf("unsupported chain wallet: %v", w.Chain)
 		}
