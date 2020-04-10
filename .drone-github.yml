@@ -49,7 +49,6 @@ steps:
       - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
       - make build
-      # - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on:
       - fetch
     when:
@@ -83,25 +82,24 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - echo OK
-      # - make retest
-      # # More small checks. Run all, instead of exitng after first failure.
-      # - failed=""
-      # - for target in codeowners_check print_check proto_check race vet ; do
-      #     echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
-      # - /usr/local/bin/check-rest-endpoints.py
-      #     --bindings gateway/rest/grpc-rest-bindings.yml
-      #     --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-      # - /usr/local/bin/diff_bot.py
-      #     --github-token "$$GITHUB_API_TOKEN"
-      #     --file1 "github:vegaprotocol:0:vega:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
-      #     --file2 "github:vegaprotocol:0:vega:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
-      #     --slack-hookurl "$${SLACK_HOOK_URL}"
-      #     --slack-recipient "#uidev"
-      #     print_diff slack_notify || failed="$$failed diff_bot"
-      # - /usr/local/bin/multilint || failed="$$failed multilint"
-      # - make staticcheck || true  # Ignore failures until they're all fixed.
-      # - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
+      - make retest
+      # More small checks. Run all, instead of exitng after first failure.
+      - failed=""
+      - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - /usr/local/bin/check-rest-endpoints.py
+          --bindings gateway/rest/grpc-rest-bindings.yml
+          --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
+      - /usr/local/bin/diff_bot.py
+          --github-token "$$GITHUB_API_TOKEN"
+          --file1 "github:vegaprotocol:0:vega:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
+          --file2 "github:vegaprotocol:0:vega:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
+          --slack-hookurl "$${SLACK_HOOK_URL}"
+          --slack-recipient "#uidev"
+          print_diff slack_notify || failed="$$failed diff_bot"
+      - /usr/local/bin/multilint || failed="$$failed multilint"
+      - make staticcheck || true  # Ignore failures until they're all fixed.
+      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
       - build-PR
     when:
