@@ -13,7 +13,6 @@ var (
 	ErrPubKeyDoesNotExist   = errors.New("public key does not exist")
 	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
 	ErrPubKeyIsTainted      = errors.New("public key is tainted")
-	ErrPasspharseInvalid    = errors.New("passphrase does not meet requirements")
 )
 
 // Auth ...
