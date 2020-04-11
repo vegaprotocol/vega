@@ -251,6 +251,20 @@ steps:
         - refs/heads/develop
         - refs/tags/*
 
+  # http://plugins.drone.io/drone-plugins/drone-github-release/
+  - name: publish_artefacts
+    image: plugins/github-release
+    pull: always
+    settings:
+      api_token:
+        from_secret: GITHUB_API_TOKEN
+      files:
+        - cmd/vega/vega
+    when:
+      event: tag
+    depends_on:
+      - build-branch
+
 volumes:
   - name: dockersock
     host:
