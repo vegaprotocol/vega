@@ -65,7 +65,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | trader1 |    -13 |            28 |           0 |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
-    Then traders cancels the following orders reference:
+    And traders cancels the following orders reference:
       | trader     | reference |
       | buySideMM  |      buy4 |
       | sellSideMM |     sell1 |
@@ -114,7 +114,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
   # FULL CLOSEOUT BY TRADER
   Then traders place following orders:
     | trader  | market id | type | volume | price | trades | type  | tif |
-    | trader1 | ETH/DEC19 | buy |      13 |    90 |      2 | LIMIT | GTC |
+    | trader1 | ETH/DEC19 |  buy |     13 |    90 |      2 | LIMIT | GTC |
   And position API produce the following:
     | trader  | volume | unrealisedPNL | realisedPNL |
     | trader1 |      0 |             0 |          62 |
