@@ -281,11 +281,18 @@ func (s *abciService) setBatchStats() {
 }
 
 func (s *abciService) SubmitProposal(proposal *types.Proposal) error {
+	if s.log.GetLevel() == logging.DebugLevel {
+		s.log.Debug("Blockchain service received a SUBMIT PROPOSAL request", logging.Proposal(*proposal))
+	}
+	proposal.Timestamp = s.currentTimestamp.UnixNano()
 	err := s.execution.SubmitProposal(proposal)
 	return err
 }
 
 func (s *abciService) VoteOnProposal(vote *types.Vote) error {
+	if s.log.GetLevel() == logging.DebugLevel {
+		s.log.Debug("Blockchain service received a VOTE ON PROPOSAL request", logging.Vote(*vote))
+	}
 	err := s.execution.VoteOnProposal(vote)
 	return err
 }
