@@ -215,8 +215,6 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 			return err
 		}
 	}
-	b.ordersByID[order.GetId()] = order
-
 	return nil
 }
 
