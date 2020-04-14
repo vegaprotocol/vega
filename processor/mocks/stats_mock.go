@@ -33,7 +33,7 @@ func (m *MockStats) EXPECT() *MockStatsMockRecorder {
 }
 
 // AddCurrentTradesInBatch mocks base method
-func (m *MockStats) AddCurrentTradesInBatch(arg0 int) {
+func (m *MockStats) AddCurrentTradesInBatch(arg0 uint64) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddCurrentTradesInBatch", arg0)
 }
@@ -171,7 +171,7 @@ func (mr *MockStatsMockRecorder) NewBatch() *gomock.Call {
 }
 
 // SetAverageOrdersPerBatch mocks base method
-func (m *MockStats) SetAverageOrdersPerBatch(arg0 int) {
+func (m *MockStats) SetAverageOrdersPerBatch(arg0 uint64) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetAverageOrdersPerBatch", arg0)
 }

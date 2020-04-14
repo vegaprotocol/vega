@@ -3,13 +3,13 @@ package stats
 // Blockchain hold stats over all the vega node
 type Blockchain struct {
 	height                uint64
-	averageTxSizeBytes    int
-	averageTxPerBatch     int
-	totalTxCurrentBatch   int
-	totalTxLastBatch      int
-	totalOrdersLastBatch  int
-	totalTradesLastBatch  int
-	averageOrdersPerBatch int
+	averageTxSizeBytes    uint64
+	averageTxPerBatch     uint64
+	totalTxCurrentBatch   uint64
+	totalTxLastBatch      uint64
+	totalOrdersLastBatch  uint64
+	totalTradesLastBatch  uint64
+	averageOrdersPerBatch uint64
 	currentOrdersInBatch  uint64
 	currentTradesInBatch  uint64
 	totalBatches          uint64
@@ -39,8 +39,8 @@ func (b Blockchain) TotalBatches() uint64 {
 }
 
 func (b *Blockchain) NewBatch() {
-	b.totalOrdersLastBatch = int(b.currentOrdersInBatch)
-	b.totalTradesLastBatch = int(b.currentTradesInBatch)
+	b.totalOrdersLastBatch = b.currentOrdersInBatch
+	b.totalTradesLastBatch = b.currentTradesInBatch
 	b.currentOrdersInBatch = 0
 	b.currentTradesInBatch = 0
 }
@@ -54,7 +54,7 @@ func (b *Blockchain) IncCurrentOrdersInBatch() {
 	b.currentOrdersInBatch++
 }
 
-func (b *Blockchain) AddCurrentTradesInBatch(i int) {
+func (b *Blockchain) AddCurrentTradesInBatch(i uint64) {
 	b.currentTradesInBatch += uint64(i)
 }
 
@@ -78,39 +78,39 @@ func (b *Blockchain) IncHeight() {
 
 // AverageTxSizeBytes return the average size in bytes of the
 // transaction sent to vega
-func (b *Blockchain) AverageTxSizeBytes() int {
+func (b *Blockchain) AverageTxSizeBytes() uint64 {
 	return b.averageTxSizeBytes
 }
 
-func (b *Blockchain) SetAverageTxSizeBytes(i int) {
+func (b *Blockchain) SetAverageTxSizeBytes(i uint64) {
 	b.averageTxSizeBytes = i
 }
 
 // AverageTxPerBatch return the average number of
 // transaction per block
-func (b *Blockchain) AverageTxPerBatch() int {
+func (b *Blockchain) AverageTxPerBatch() uint64 {
 	return b.averageTxPerBatch
 }
 
-func (b *Blockchain) SetAverageTxPerBatch(i int) {
+func (b *Blockchain) SetAverageTxPerBatch(i uint64) {
 	b.averageTxPerBatch = i
 }
 
 // TotalTxLastBatch return the number of transaction
 // processed in the last accepted block in the chain
-func (b *Blockchain) TotalTxLastBatch() int {
+func (b *Blockchain) TotalTxLastBatch() uint64 {
 	return b.totalTxLastBatch
 }
 
-func (b *Blockchain) SetTotalTxLastBatch(i int) {
+func (b *Blockchain) SetTotalTxLastBatch(i uint64) {
 	b.totalTxLastBatch = i
 }
 
-func (b *Blockchain) SetTotalTxCurrentBatch(i int) {
+func (b *Blockchain) SetTotalTxCurrentBatch(i uint64) {
 	b.totalTxCurrentBatch = i
 }
 
-func (b *Blockchain) TotalTxCurrentBatch() int {
+func (b *Blockchain) TotalTxCurrentBatch() uint64 {
 	return b.totalTxCurrentBatch
 }
 
@@ -119,35 +119,35 @@ func (b *Blockchain) IncTotalTxCurrentBatch() {
 }
 
 // SetTotalOrdersLastBatch assing total orders
-func (b *Blockchain) SetTotalOrdersLastBatch(i int) {
+func (b *Blockchain) SetTotalOrdersLastBatch(i uint64) {
 	b.totalOrdersLastBatch = i
 }
 
 // TotalOrdersLastBatch returns the number of orders
 // accepted in the last block in the chain
-func (b Blockchain) TotalOrdersLastBatch() int {
+func (b Blockchain) TotalOrdersLastBatch() uint64 {
 	return b.totalOrdersLastBatch
 }
 
 // SetTotalTradesLastBatch set total trades
-func (b *Blockchain) SetTotalTradesLastBatch(i int) {
+func (b *Blockchain) SetTotalTradesLastBatch(i uint64) {
 	b.totalTradesLastBatch = i
 }
 
 // TotalTradesLastBatch returns the number of trades
 // created during the last block in the chain
-func (b Blockchain) TotalTradesLastBatch() int {
+func (b Blockchain) TotalTradesLastBatch() uint64 {
 	return b.totalTradesLastBatch
 }
 
 // SetAverageOrdersPerBatch sets new average orders per batch
-func (b *Blockchain) SetAverageOrdersPerBatch(i int) {
+func (b *Blockchain) SetAverageOrdersPerBatch(i uint64) {
 	b.averageOrdersPerBatch = i
 }
 
 // AverageOrdersPerBatch returns the average number
 // of orders accepted per blocks
-func (b Blockchain) AverageOrdersPerBatch() int {
+func (b Blockchain) AverageOrdersPerBatch() uint64 {
 	return b.averageOrdersPerBatch
 }
 

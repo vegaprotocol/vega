@@ -50,7 +50,7 @@ type ExecutionEngine interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
 type Stats interface {
 	IncTotalCreateOrder()
-	AddCurrentTradesInBatch(i int)
+	AddCurrentTradesInBatch(i uint64)
 	AddTotalTrades(i uint64) uint64
 	IncTotalOrders()
 	IncCurrentOrdersInBatch()
@@ -61,7 +61,7 @@ type Stats interface {
 	NewBatch()
 	TotalOrders() uint64
 	TotalBatches() uint64
-	SetAverageOrdersPerBatch(i int)
+	SetAverageOrdersPerBatch(i uint64)
 	SetBlockDuration(uint64)
 	CurrentOrdersInBatch() uint64
 	CurrentTradesInBatch() uint64
@@ -149,7 +149,7 @@ func (p *Processor) Commit() error {
 
 func (p *Processor) stats() {
 	p.stat.IncTotalBatches()
-	avg := int(p.stat.TotalOrders() / p.stat.TotalBatches())
+	avg := p.stat.TotalOrders() / p.stat.TotalBatches()
 	p.stat.SetAverageOrdersPerBatch(avg)
 	duration := time.Duration(p.currentTimestamp.UnixNano() - p.previousTimestamp.UnixNano()).Seconds()
 	var (
@@ -170,7 +170,7 @@ func (p *Processor) stats() {
 		logging.Uint64("currentOrdersInBatch", p.stat.CurrentOrdersInBatch()),
 		logging.Uint64("currentTradesInBatch", p.stat.CurrentTradesInBatch()),
 		logging.Uint64("total-batches", p.stat.TotalBatches()),
-		logging.Int("avg-orders-batch", avg),
+		logging.Uint64("avg-orders-batch", avg),
 		logging.Uint64("orders-per-sec", currentOrders),
 		logging.Uint64("trades-per-sec", currentTrades),
 	)
@@ -469,7 +469,7 @@ func (p *Processor) submitOrder(o *types.Order) error {
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
 		}
-		p.stat.AddCurrentTradesInBatch(len(conf.Trades))
+		p.stat.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 		p.stat.AddTotalTrades(uint64(len(conf.Trades)))
 		p.stat.IncCurrentOrdersInBatch()
 

@@ -84,7 +84,7 @@ func testBeginCommitSuccess(t *testing.T) {
 	proc.stat.EXPECT().TotalBatches().Times(2).DoAndReturn(func() uint64 {
 		return totBatches
 	})
-	proc.stat.EXPECT().SetAverageOrdersPerBatch(0).Times(1)
+	proc.stat.EXPECT().SetAverageOrdersPerBatch(zero).Times(1)
 	proc.stat.EXPECT().CurrentOrdersInBatch().Times(2).Return(zero)
 	proc.stat.EXPECT().CurrentTradesInBatch().Times(2).Return(zero)
 	proc.stat.EXPECT().SetOrdersPerSecond(zero).Times(1)
@@ -251,14 +251,15 @@ func testProcessCommandSuccess(t *testing.T) {
 			TraderID: party,
 		},
 	}
+	zero := uint64(0)
 	proc := getTestProcessor(t)
 	proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
 	proc.stat.EXPECT().IncTotalOrders().Times(1)
-	proc.stat.EXPECT().AddCurrentTradesInBatch(0).Times(1)
-	proc.stat.EXPECT().AddTotalTrades(uint64(0)).Times(1)
+	proc.stat.EXPECT().AddCurrentTradesInBatch(zero).Times(1)
+	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
 	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
