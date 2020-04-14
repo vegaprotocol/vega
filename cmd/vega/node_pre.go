@@ -263,7 +263,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.voteBuf,
 		l.mktscfg,
 	)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Chain)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 

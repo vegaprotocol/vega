@@ -3,15 +3,13 @@ package stats
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 // Stats ties together all other package level application stats types.
 type Stats struct {
 	log          *logging.Logger
-	Blockchain   *blockchain.Stats
-	Chain        *Blockchain
+	Blockchain   *Blockchain
 	version      string
 	versionHash  string
 	chainVersion string
@@ -22,8 +20,7 @@ type Stats struct {
 func New(logger *logging.Logger, version string, versionHash string) *Stats {
 	return &Stats{
 		log:         logger,
-		Blockchain:  blockchain.NewStats(),
-		Chain:       &Blockchain{},
+		Blockchain:  &Blockchain{},
 		version:     version,
 		versionHash: versionHash,
 		uptime:      time.Now(),

@@ -47,8 +47,8 @@ type ExecutionEngine interface {
 	VoteOnProposal(vote *types.Vote) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor StatS
-type StatS interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
+type Stats interface {
 	IncTotalCreateOrder()
 	AddCurrentTradesInBatch(i int)
 	AddTotalTrades(i uint64) uint64
@@ -79,8 +79,7 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
-	stats             *Stats
-	stat              StatS
+	stat              Stats
 	exec              ExecutionEngine
 	time              TimeService
 	nodes             map[string]struct{} // all other nodes in the network
@@ -90,14 +89,13 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat StatS) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	p := &Processor{
 		log:           log,
-		stats:         &Stats{},
 		stat:          stat,
 		Config:        config,
 		exec:          exec,
@@ -139,7 +137,7 @@ func (p *Processor) Commit() error {
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Processor COMMIT starting")
 	}
-	p.statsF()
+	p.stats()
 	if err := p.exec.Generate(); err != nil {
 		return errors.Wrap(err, "failure generating data in execution engine (commit)")
 	}
@@ -149,7 +147,7 @@ func (p *Processor) Commit() error {
 	return nil
 }
 
-func (p *Processor) statsF() {
+func (p *Processor) stats() {
 	p.stat.IncTotalBatches()
 	avg := int(p.stat.TotalOrders() / p.stat.TotalBatches())
 	p.stat.SetAverageOrdersPerBatch(avg)

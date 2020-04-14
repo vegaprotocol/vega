@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/noop"
 	"code.vegaprotocol.io/vega/blockchain/tm"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/stats"
 )
 
 var (
@@ -37,7 +38,7 @@ type Blockchain struct {
 	abciEngine ABCIEngine
 	time       TimeService
 	processor  *codec
-	stats      *Stats
+	stats      *stats.Blockchain
 }
 
 func New(
@@ -45,7 +46,7 @@ func New(
 	cfg Config,
 	abciEngine ABCIEngine,
 	time TimeService,
-	stats *Stats,
+	stats *stats.Blockchain,
 	cancel func(),
 ) (*Blockchain, error) {
 	// setup logger

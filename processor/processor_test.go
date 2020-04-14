@@ -20,7 +20,7 @@ type procTest struct {
 	*processor.Processor
 	eng    *mocks.MockExecutionEngine
 	ts     *mocks.MockTimeService
-	stat   *mocks.MockStatS
+	stat   *mocks.MockStats
 	tickCB func(time.Time)
 	ctrl   *gomock.Controller
 }
@@ -30,7 +30,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	log := logging.NewTestLogger()
 	eng := mocks.NewMockExecutionEngine(ctrl)
 	ts := mocks.NewMockTimeService(ctrl)
-	stat := mocks.NewMockStatS(ctrl)
+	stat := mocks.NewMockStats(ctrl)
 	var cb func(time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
 		cb = c
