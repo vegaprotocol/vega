@@ -1,7 +1,5 @@
 Feature: CASE-4: Trader submits short order that will trade - new formula & high exit price
 # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
-# There are discrepancies between the margin values in the spreadsheet and this test case, they need to be verified
-# Test end result is the same though
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
