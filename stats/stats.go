@@ -11,6 +11,7 @@ import (
 type Stats struct {
 	log          *logging.Logger
 	Blockchain   *blockchain.Stats
+	Chain        *Blockchain
 	version      string
 	versionHash  string
 	chainVersion string
@@ -22,6 +23,7 @@ func New(logger *logging.Logger, version string, versionHash string) *Stats {
 	return &Stats{
 		log:         logger,
 		Blockchain:  blockchain.NewStats(),
+		Chain:       &Blockchain{},
 		version:     version,
 		versionHash: versionHash,
 		uptime:      time.Now(),

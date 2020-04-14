@@ -20,6 +20,7 @@ type procTest struct {
 	*processor.Processor
 	eng    *mocks.MockExecutionEngine
 	ts     *mocks.MockTimeService
+	stat   *mocks.MockStatS
 	tickCB func(time.Time)
 	ctrl   *gomock.Controller
 }
@@ -29,15 +30,17 @@ func getTestProcessor(t *testing.T) *procTest {
 	log := logging.NewTestLogger()
 	eng := mocks.NewMockExecutionEngine(ctrl)
 	ts := mocks.NewMockTimeService(ctrl)
+	stat := mocks.NewMockStatS(ctrl)
 	var cb func(time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
 		cb = c
 	})
-	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts)
+	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat)
 	return &procTest{
 		Processor: proc,
 		eng:       eng,
 		ts:        ts,
+		stat:      stat,
 		tickCB:    cb,
 		ctrl:      ctrl,
 	}
@@ -54,6 +57,40 @@ func TestValidateSigned(t *testing.T) {
 
 func TestProcess(t *testing.T) {
 	t.Run("Test all basic process commands - Success", testProcessCommandSuccess)
+}
+
+func TestBeginCommit(t *testing.T) {
+	t.Run("Call Begin and Commit - success", testBeginCommitSuccess)
+}
+
+func testBeginCommitSuccess(t *testing.T) {
+	proc := getTestProcessor(t)
+	defer proc.ctrl.Finish()
+	var zero uint64 = 0
+	totBatches := uint64(1)
+	now := time.Now()
+	prev := now.Add(-time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	// call Begin, expect no error
+	assert.NoError(t, proc.Begin())
+	proc.eng.EXPECT().Generate().Times(1).Return(nil)
+	duration := time.Duration(now.UnixNano() - prev.UnixNano()).Seconds()
+	proc.stat.EXPECT().SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds()))).Times(1)
+	proc.stat.EXPECT().IncTotalBatches().Times(1).Do(func() {
+		totBatches++
+	})
+	proc.stat.EXPECT().TotalOrders().Times(1).Return(zero)
+	proc.stat.EXPECT().TotalBatches().Times(2).DoAndReturn(func() uint64 {
+		return totBatches
+	})
+	proc.stat.EXPECT().SetAverageOrdersPerBatch(0).Times(1)
+	proc.stat.EXPECT().CurrentOrdersInBatch().Times(2).Return(zero)
+	proc.stat.EXPECT().CurrentTradesInBatch().Times(2).Return(zero)
+	proc.stat.EXPECT().SetOrdersPerSecond(zero).Times(1)
+	proc.stat.EXPECT().SetTradesPerSecond(zero).Times(1)
+	proc.stat.EXPECT().NewBatch().Times(1)
+	assert.NoError(t, proc.Commit())
 }
 
 func testValidateSignedInvalidPayload(t *testing.T) {
@@ -215,6 +252,15 @@ func testProcessCommandSuccess(t *testing.T) {
 		},
 	}
 	proc := getTestProcessor(t)
+	proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
+	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
+	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
+	// creating an order, should be no trades
+	proc.stat.EXPECT().IncTotalOrders().Times(1)
+	proc.stat.EXPECT().AddCurrentTradesInBatch(0).Times(1)
+	proc.stat.EXPECT().AddTotalTrades(uint64(0)).Times(1)
+	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
+
 	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().SubmitOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
