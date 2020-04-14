@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -83,8 +84,13 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.StoresEnabled = false
 	}
 
+	// if theses is not specified, we then trigger a prompt
+	// for the user to type his password
+	var nodeWalletPassphrase string
 	if len(l.nodeWalletPassphrase) <= 0 {
-		return errors.New("missing required parameter passphrase")
+		nodeWalletPassphrase, err = getTerminalPassphrase()
+	} else {
+		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
 	}
 
 	// reload logger with the setup from configuration
@@ -134,7 +140,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase)
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase)
 	if err != nil {
 		return err
 	}
@@ -339,4 +345,23 @@ func (l *NodeCommand) SetUlimits() error {
 		Max: l.conf.UlimitNOFile,
 		Cur: l.conf.UlimitNOFile,
 	})
+}
+
+func getTerminalPassphrase() (string, error) {
+	fmt.Printf("please enter nodewallet passphrase:")
+	password, err := terminal.ReadPassword(0)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("")
+	return string(password), nil
+}
+
+func getFilePassphrase(path string) (string, error) {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
 }

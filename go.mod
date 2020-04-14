@@ -35,7 +35,7 @@ require (
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
+	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	google.golang.org/grpc v1.25.1
 )
 
