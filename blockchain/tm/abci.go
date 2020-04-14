@@ -34,7 +34,7 @@ type AbciApplication struct {
 	appHash   []byte
 	size      uint64
 	txSizes   []int
-	txTotals  []int
+	txTotals  []uint64
 
 	time            ApplicationTime
 	onCriticalError func()
@@ -263,18 +263,18 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 func (a *AbciApplication) setBatchStats() {
 	// Calculate the average total txn per batch, over n blocks
 	if a.txTotals == nil {
-		a.txTotals = make([]int, 0)
+		a.txTotals = make([]uint64, 0)
 	}
 	a.txTotals = append(a.txTotals, a.stats.TotalTxLastBatch())
-	totalTx := 0
+	totalTx := uint64(0)
 	for _, itx := range a.txTotals {
 		totalTx += itx
 	}
-	averageTxTotal := totalTx / len(a.txTotals)
+	averageTxTotal := totalTx / uint64(len(a.txTotals))
 
 	a.log.Debug("Batch stats for height",
 		logging.Uint64("height", a.stats.Height()),
-		logging.Int("average-tx-total", averageTxTotal))
+		logging.Uint64("average-tx-total", averageTxTotal))
 
 	a.stats.SetAverageTxPerBatch(averageTxTotal)
 	a.stats.SetTotalTxLastBatch(a.stats.TotalTxCurrentBatch())
@@ -304,7 +304,7 @@ func (a *AbciApplication) setTxStats(txLength int) {
 		logging.Uint64("height", a.stats.Height()),
 		logging.Int("average-tx-bytes", averageTxBytes))
 
-	a.stats.SetAverageTxSizeBytes(averageTxBytes)
+	a.stats.SetAverageTxSizeBytes(uint64(averageTxBytes))
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(a.txSizes) == statsSampleSize {

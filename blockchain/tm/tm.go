@@ -10,14 +10,14 @@ import (
 
 type Stats interface {
 	IncHeight()
-	TotalTxLastBatch() int
+	TotalTxLastBatch() uint64
 	Height() uint64
-	SetAverageTxPerBatch(int)
-	SetTotalTxLastBatch(int)
-	TotalTxCurrentBatch() int
-	SetTotalTxCurrentBatch(int)
+	SetAverageTxPerBatch(uint64)
+	SetTotalTxLastBatch(uint64)
+	TotalTxCurrentBatch() uint64
+	SetTotalTxCurrentBatch(uint64)
 	IncTotalTxCurrentBatch()
-	SetAverageTxSizeBytes(int)
+	SetAverageTxSizeBytes(uint64)
 }
 
 type Processor interface {
