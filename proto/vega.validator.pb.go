@@ -163,6 +163,21 @@ func (this *OrderCancellation) Validate() error {
 	}
 	return nil
 }
+func (this *NodeRegistration) Validate() error {
+	if this.PubKey == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PubKey", fmt.Errorf(`value '%v' must not be an empty string`, this.PubKey))
+	}
+	return nil
+}
+func (this *NodeVote) Validate() error {
+	if this.PubKey == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PubKey", fmt.Errorf(`value '%v' must not be an empty string`, this.PubKey))
+	}
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
+	}
+	return nil
+}
 func (this *Account) Validate() error {
 	return nil
 }

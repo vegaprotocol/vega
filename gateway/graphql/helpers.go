@@ -149,3 +149,15 @@ func removePointers(input []*string) []string {
 	}
 	return result
 }
+
+func convertVersion(version *int) (uint64, error) {
+	const defaultValue = 0
+
+	if version != nil {
+		if *version >= 0 {
+			return uint64(*version), nil
+		}
+		return defaultValue, fmt.Errorf("invalid version value %d", *version)
+	}
+	return defaultValue, nil
+}

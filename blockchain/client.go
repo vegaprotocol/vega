@@ -219,10 +219,3 @@ func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (su
 func (c *Client) sendTx(ctx context.Context, bytes []byte, cmdKind CommandKind) (bool, error) {
 	return c.clt.SendTransaction(ctx, append([]byte{byte(cmdKind)}, bytes...))
 }
-
-func txEncode(input []byte, cmd Command) (proto []byte, err error) {
-	prefix := uuid.NewV4().String()
-	prefixBytes := []byte(prefix)
-	commandInput := append([]byte{byte(cmd)}, input...)
-	return append(prefixBytes, commandInput...), nil
-}
