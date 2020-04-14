@@ -602,12 +602,17 @@ func (e *Engine) Generate() error {
 
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
 func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
-
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Submitting proposal", logging.Proposal(*proposal))
+	}
 	e.idgen.SetProposalID(proposal)
 	return e.governance.AddProposal(*proposal)
 }
 
 // VoteOnProposal sends proposal vote to governance engine
 func (e *Engine) VoteOnProposal(vote *types.Vote) error {
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Voting on proposal", logging.Vote(*vote))
+	}
 	return e.governance.AddVote(*vote)
 }
