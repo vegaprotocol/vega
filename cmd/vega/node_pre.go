@@ -92,6 +92,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	} else {
 		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
 	}
+	if err != nil {
+		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
+	}
 
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)

@@ -18,7 +18,6 @@ import (
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/zannen/toml"
 )
@@ -52,9 +51,21 @@ func (ic *initCommand) Init(c *Cli) {
 }
 
 // RunInit initialises vega config files - config.toml and markets/*.json.
-func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphrase string, genDevNodeWallet bool) error {
-	if len(nodeWalletPassphrase) <= 0 {
-		return errors.New("cannot initialize the node with a empty nodewallet passphrase")
+func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphraseInput string, genDevNodeWallet bool) error {
+
+	// if theses is not specified, we then trigger a prompt
+	// for the user to type his password
+	var (
+		nodeWalletPassphrase string
+		err                  error
+	)
+	if len(nodeWalletPassphraseInput) <= 0 {
+		nodeWalletPassphrase, err = getTerminalPassphrase()
+	} else {
+		nodeWalletPassphrase, err = getFilePassphrase(nodeWalletPassphraseInput)
+	}
+	if err != nil {
+		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
 	}
 
 	rootPathExists, err := fsutil.PathExists(rootPath)
