@@ -516,6 +516,52 @@
         ]
       }
     },
+    "/orders/{orderID}/versions": {
+      "get": {
+        "summary": "Get all versions of the order by its orderID",
+        "operationId": "OrderVersionsByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrderVersionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.skip",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders/{reference}": {
       "get": {
         "summary": "Get an Order by Pending Order reference (UUID)",
