@@ -600,10 +600,14 @@ func (e *Engine) Generate() error {
 	return nil
 }
 
+// SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
 func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
-	return errors.New("not implemented")
+
+	e.idgen.SetProposalID(proposal)
+	return e.governance.AddProposal(*proposal)
 }
 
+// VoteOnProposal sends proposal vote to governance engine
 func (e *Engine) VoteOnProposal(vote *types.Vote) error {
-	return errors.New("not implemented")
+	return e.governance.AddVote(*vote)
 }
