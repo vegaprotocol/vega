@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/execution"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -296,6 +297,202 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
+}
+
+func TestStorage_GetOrderByID(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	log := logging.NewTestLogger()
+
+	storage.FlushStores(log, config)
+	newOrderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer newOrderStore.Close()
+
+	id := "ALA-MA-KOTA"
+	order := &types.Order{
+		Id:          id,
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		TimeInForce: types.Order_GTC,
+		Status:      types.Order_Active,
+	}
+
+	err = newOrderStore.SaveBatch([]types.Order{*order})
+	assert.NoError(t, err)
+
+	t.Run("basic happy path test", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.EqualValues(t, id, fetchedOrder.Id)
+	})
+
+	t.Run("negative test - empty id", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), "", nil)
+		assert.Nil(t, fetchedOrder)
+		assert.Error(t, err)
+		assert.EqualError(t, err, storage.ErrOrderDoesNotExistForID.Error())
+	})
+	t.Run("negative test - non-existing id", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id+id, nil)
+		assert.Nil(t, fetchedOrder)
+		assert.Error(t, err)
+		assert.EqualError(t, err, storage.ErrOrderDoesNotExistForID.Error())
+	})
+}
+
+func TestStorage_GetOrderByIDVersioning(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	log := logging.NewTestLogger()
+	storage.FlushStores(log, config)
+	newOrderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer newOrderStore.Close()
+
+	id := "KOTEK-KLOPOTEK"
+	var version uint64 = execution.InitialOrderVersion
+
+	orderV1 := &types.Order{
+		Id:          id,
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       1,
+		Size:        1,
+		TimeInForce: types.Order_GTC,
+		Status:      types.Order_Active,
+		Version:     version,
+	}
+	orderV2 := &types.Order{}
+	*orderV2 = *orderV1
+	version++
+	orderV2.Version = version
+
+	orderV3 := &types.Order{}
+	*orderV3 = *orderV2
+	version++
+	orderV3.Version = version
+
+	differentOrder := &types.Order{
+		Id:          "d41d8cd98f00b204e9800998ecf8427c",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Sell,
+		Price:       222,
+		Size:        222,
+		TimeInForce: types.Order_GTC,
+		Status:      types.Order_Active,
+		Version:     execution.InitialOrderVersion,
+	}
+	anotherOrder := &types.Order{
+		Id:          "000000000000000000000000000000",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Sell,
+		Price:       222,
+		Size:        222,
+		TimeInForce: types.Order_GTC,
+		Status:      types.Order_Active,
+		Version:     execution.InitialOrderVersion,
+	}
+
+	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *anotherOrder, *orderV3})
+	assert.NoError(t, err)
+
+	t.Run("test if can load distinc orders regardless of versioning", func(t *testing.T) {
+		distinctOrders, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false, false)
+		assert.NoError(t, err)
+		assert.NotNil(t, distinctOrders)
+		assert.Equal(t, 3, len(distinctOrders), "must be only 3 distinct orders")
+		assert.NotEqual(t, distinctOrders[0].Id, distinctOrders[1].Id, distinctOrders[2].Id)
+	})
+
+	t.Run("test all order versions", func(t *testing.T) {
+		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 100, false)
+		assert.NoError(t, err)
+		assert.NotNil(t, allVersions)
+		assert.Equal(t, 3, len(allVersions))
+		assert.NotEqual(t, allVersions[0].Version, allVersions[2].Version)
+		assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
+		assert.EqualValues(t, execution.InitialOrderVersion, allVersions[0].Version)
+	})
+
+	t.Run("test if default order version is latest", func(t *testing.T) {
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, version, fetchedOrder.Version)
+	})
+
+	t.Run("test if searching for invalid order version fails", func(t *testing.T) {
+		invalidVersion := version * 100
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &invalidVersion)
+		assert.Error(t, err)
+		assert.EqualError(t, err, storage.ErrOrderDoesNotExistForID.Error())
+		assert.Nil(t, fetchedOrder)
+	})
+
+	t.Run("test if able to load middle order version", func(t *testing.T) {
+		validVersion := version - 1
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &validVersion)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, version-1, fetchedOrder.Version)
+	})
+
+	t.Run("test if able to load first order version", func(t *testing.T) {
+		var initialVersion uint64 = execution.InitialOrderVersion
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &initialVersion)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, execution.InitialOrderVersion, fetchedOrder.Version)
+	})
+
+	t.Run("test massive number of versions", func(t *testing.T) {
+
+		orders := make([]types.Order, 0, 10000)
+		for i := 0; i < 10000; i++ {
+			orderV := &types.Order{}
+			*orderV = *orderV1
+			version++
+			orderV.Version = version
+			orders = append(orders, *orderV)
+		}
+		err = newOrderStore.SaveBatch(orders)
+		assert.NoError(t, err)
+
+		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, version, fetchedOrder.Version)
+
+		var firstVersion uint64 = execution.InitialOrderVersion
+		fetchedOrder, err = newOrderStore.GetByOrderID(context.Background(), id, &firstVersion)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetchedOrder)
+		assert.Equal(t, id, fetchedOrder.Id)
+		assert.EqualValues(t, execution.InitialOrderVersion, fetchedOrder.Version)
+
+		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 0, true)
+		assert.NoError(t, err)
+		assert.NotNil(t, allVersions)
+		assert.Equal(t, len(orders)+3, len(allVersions))
+	})
 }
 
 // Ensures that we return a market depth struct with empty buy/sell for

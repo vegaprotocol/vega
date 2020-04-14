@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
@@ -119,6 +120,7 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
+	processor       *processor.Processor
 	mktscfg         []proto.Market
 
 	// plugins

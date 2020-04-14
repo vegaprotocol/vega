@@ -42,9 +42,6 @@ func getTestHandler(t *testing.T) *testHandler {
 func TestHandler(t *testing.T) {
 	t.Run("create a wallet success then login", testHandlerCreateWalletThenLogin)
 	t.Run("create a wallet failure - already exists", testHandlerCreateWalletFailureAlreadyExists)
-	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphrase)
-	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphraseLower)
-	t.Run("create a wallet failure - invalid passphrase", testHandlerCreateWalletFailurePassphraseShort)
 	t.Run("login failure on non wallet", testHandlerLoginFailureOnNonCreatedWallet)
 	t.Run("revoke token success", testHandlerRevokeTokenSuccess)
 	t.Run("revoke token failure", testHandlerRevokeTokenFailure)
@@ -105,45 +102,6 @@ func testHandlerCreateWalletFailureAlreadyExists(t *testing.T) {
 	tok, err = h.CreateWallet("jeremy", "We can use a d1fferent passphrase yo!")
 	assert.EqualError(t, err, wallet.ErrWalletAlreadyExists.Error())
 	assert.Empty(t, tok)
-
-	assert.NoError(t, os.RemoveAll(h.rootDir))
-}
-
-func testHandlerCreateWalletFailurePassphraseShort(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// create the wallet once.
-	tok, err := h.CreateWallet("jeremy", "P@ss1")
-	assert.Error(t, err)
-	assert.Empty(t, tok)
-	assert.Equal(t, wallet.ErrPasspharseInvalid, err)
-
-	assert.NoError(t, os.RemoveAll(h.rootDir))
-}
-
-func testHandlerCreateWalletFailurePassphraseLower(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// create the wallet once.
-	tok, err := h.CreateWallet("jeremy", "P@SSW0RDNOLOWER")
-	assert.Error(t, err)
-	assert.Empty(t, tok)
-	assert.Equal(t, wallet.ErrPasspharseInvalid, err)
-
-	assert.NoError(t, os.RemoveAll(h.rootDir))
-}
-
-func testHandlerCreateWalletFailurePassphrase(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// create the wallet once.
-	tok, err := h.CreateWallet("jeremy", "weak pass")
-	assert.Error(t, err)
-	assert.Empty(t, tok)
-	assert.Equal(t, wallet.ErrPasspharseInvalid, err)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }

@@ -215,7 +215,6 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 			return err
 		}
 	}
-
 	return nil
 }
 

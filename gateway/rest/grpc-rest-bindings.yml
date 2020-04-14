@@ -51,6 +51,8 @@ http:
       body: "*"
     - selector: api.trading_data.OrderByReference
       get: '/orders/{reference}'
+    - selector: api.trading_data.OrderVersionsByID
+      get: '/orders/{orderID}/versions'
     - selector: api.trading_data.TradesByOrder
       get: '/orders/{orderID}/trades'
 
