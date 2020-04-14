@@ -1844,6 +1844,15 @@
         }
       }
     },
+    "vegaNewAsset": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        }
+      },
+      "title": "To be implemented"
+    },
     "vegaNewMarket": {
       "type": "object",
       "properties": {
@@ -2173,6 +2182,9 @@
         },
         "updateNetwork": {
           "$ref": "#/definitions/vegaUpdateNetwork"
+        },
+        "newAsset": {
+          "$ref": "#/definitions/vegaNewAsset"
         }
       }
     },
