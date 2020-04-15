@@ -102,7 +102,7 @@ build: ## install the binaries in cmd/{progname}/
 	ldflags="-X main.Version=$$v -X main.VersionHash=$$vh" ; \
 	echo "Version: $$v ($$vh)" ; \
 	for app in $(APPS) ; do \
-		env CGO_ENABLED=0 go build -v \
+		env CGO_ENABLED=1 go build -v \
 			-ldflags "$$ldflags" \
 			-gcflags "$$gcflags" \
 			-o "./cmd/$$app/$$app$$suffix" "./cmd/$$app" \
@@ -118,7 +118,7 @@ install: ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
 	@for app in $(APPS) ; do \
-		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
+		env CGO_ENABLED=1 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
 	done
 
 .PHONY: gqlgen

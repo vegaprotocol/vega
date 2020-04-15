@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -31,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -82,6 +84,18 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.StoresEnabled = false
 	}
 
+	// if theses is not specified, we then trigger a prompt
+	// for the user to type his password
+	var nodeWalletPassphrase string
+	if len(l.nodeWalletPassphrase) <= 0 {
+		nodeWalletPassphrase, err = getTerminalPassphrase()
+	} else {
+		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
+	}
+	if err != nil {
+		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
+	}
+
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -126,6 +140,12 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		l.Log.Info("node setted up without badger store support")
 	} else {
 		l.Log.Info("node setted up with badger store support")
+	}
+
+	// nodewallet
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -328,4 +348,23 @@ func (l *NodeCommand) SetUlimits() error {
 		Max: l.conf.UlimitNOFile,
 		Cur: l.conf.UlimitNOFile,
 	})
+}
+
+func getTerminalPassphrase() (string, error) {
+	fmt.Printf("please enter nodewallet passphrase:")
+	password, err := terminal.ReadPassword(0)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("")
+	return string(password), nil
+}
+
+func getFilePassphrase(path string) (string, error) {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
 }

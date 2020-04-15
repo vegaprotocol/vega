@@ -109,20 +109,22 @@ func EnsureBaseFolder(root string) error {
 	return fsutil.EnsureDir(filepath.Join(root, walletBaseFolder))
 }
 
-func Create(root, owner, passphrase string) (*Wallet, error) {
+func CreateWalletFile(walletpath, owner, passphrase string) (*Wallet, error) {
 	w := Wallet{
 		Owner: owner,
 	}
-
-	// build walletpath
-	walletpath := filepath.Join(root, walletBaseFolder, owner)
-
 	// make sure this do not exists already
 	if ok, _ := fsutil.PathExists(walletpath); ok {
 		return nil, ErrWalletAlreadyExists
 	}
 
-	return writeWallet(&w, root, owner, passphrase)
+	return WriteWalletFile(&w, walletpath, passphrase)
+}
+
+func Create(root, owner, passphrase string) (*Wallet, error) {
+	// build walletpath
+	walletpath := filepath.Join(root, walletBaseFolder, owner)
+	return CreateWalletFile(walletpath, owner, passphrase)
 }
 
 // WalletPath get the path to the wallet file, check if actually is a file
@@ -145,10 +147,7 @@ func AddKeypair(kp *Keypair, root, owner, passphrase string) (*Wallet, error) {
 	return writeWallet(w, root, owner, passphrase)
 }
 
-func Read(root, owner, passphrase string) (*Wallet, error) {
-	// build walletpath
-	walletpath := filepath.Join(root, walletBaseFolder, owner)
-
+func ReadWalletFile(walletpath, passphrase string) (*Wallet, error) {
 	// make sure this do not exists already
 	if ok, _ := fsutil.PathExists(walletpath); !ok {
 		return nil, ErrWalletDoesNotExists
@@ -171,15 +170,18 @@ func Read(root, owner, passphrase string) (*Wallet, error) {
 	return w, json.Unmarshal(decBuf, w)
 }
 
+func Read(root, owner, passphrase string) (*Wallet, error) {
+	// build walletpath
+	walletpath := filepath.Join(root, walletBaseFolder, owner)
+
+	return ReadWalletFile(walletpath, passphrase)
+}
+
 func Write(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 	return writeWallet(w, root, owner, passphrase)
 }
 
-func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
-
-	// build walletpath
-	walletpath := filepath.Join(root, walletBaseFolder, owner)
-
+func WriteWalletFile(w *Wallet, walletpath, passphrase string) (*Wallet, error) {
 	// marshal our wallet
 	buf, err := json.Marshal(w)
 	if err != nil {
@@ -193,11 +195,20 @@ func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 	}
 
 	// create and write file
-	f, _ := os.Create(walletpath)
+	f, err := os.Create(walletpath)
+	if err != nil {
+		return nil, err
+	}
 	f.Write(encBuf)
 	f.Close()
 
 	return w, nil
+}
+
+func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
+	// build walletpath
+	walletpath := filepath.Join(root, walletBaseFolder, owner)
+	return WriteWalletFile(w, walletpath, passphrase)
 }
 
 func Sign(alg crypto.SignatureAlgorithm, kp *Keypair, message []byte) ([]byte, error) {
