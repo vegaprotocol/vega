@@ -272,7 +272,9 @@ func testSignTxSuccess(t *testing.T) {
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	assert.NoError(t, err)
 
-	assert.True(t, alg.Verify(signedBundle.PubKey, []byte(message), signedBundle.Sig))
+	v, err := alg.Verify(signedBundle.PubKey, []byte(message), signedBundle.Sig)
+	assert.NoError(t, err)
+	assert.True(t, v)
 
 	assert.NoError(t, os.RemoveAll(h.rootDir))
 }
