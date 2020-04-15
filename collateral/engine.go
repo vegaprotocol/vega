@@ -33,6 +33,7 @@ var (
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
 	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
+	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
 )
 
 // AccountBuffer ...
@@ -337,6 +338,9 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 	// if winidx is 0, this means we had now wind and loss, but may have some event which
 	// needs to be propagated forward so we return now.
 	if winidx == 0 {
+		if settle.Balance > 0 {
+			return nil, nil, ErrSettlementBalanceNotZero
+		}
 		return marginEvts, responses, nil
 	}
 
@@ -461,6 +465,9 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 	}
 
 	e.lossSocBuf.Flush()
+	if settle.Balance > 0 {
+		return nil, nil, ErrSettlementBalanceNotZero
+	}
 	return marginEvts, responses, nil
 }
 

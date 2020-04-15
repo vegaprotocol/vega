@@ -43,6 +43,7 @@ func TestCollateralTransfer(t *testing.T) {
 func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
 	t.Run("Mark to Market successful", testMTMSuccess)
+	t.Run("Mark to Market wins and losses do not match up, settlement not drained", testSettleBalanceNotZero)
 }
 
 func TestAddTraderToMarket(t *testing.T) {
@@ -427,6 +428,58 @@ func testProcessBoth(t *testing.T) {
 	// resp = responses[1]
 	// there should be 3 ledger moves -> settle to trader 1, settle to trader 2, insurance to trader 2
 	assert.Equal(t, 1, len(responses[1].Transfers))
+}
+
+func testSettleBalanceNotZero(t *testing.T) {
+	trader := "test-trader"
+	moneyTrader := "money-trader"
+	price := uint64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	// create trader accounts
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
+	gID := eng.Engine.CreatePartyGeneralAccount(trader, testMarketAsset)
+	mID, err := eng.Engine.CreatePartyMarginAccount(trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	assert.NotEmpty(t, mID)
+	assert.NotEmpty(t, gID)
+
+	// create + add balance
+	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
+	_ = eng.Engine.CreatePartyGeneralAccount(moneyTrader, testMarketAsset)
+	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(moneyTrader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.Engine.UpdateBalance(marginMoneyTrader, 6*price)
+	assert.Nil(t, err)
+	pos := []*types.Transfer{
+		{
+			Owner: moneyTrader,
+			Amount: &types.FinancialAmount{
+				Amount: int64(-price) * 2, // lost 2xprice, trader only won half
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+		{
+			Owner: trader,
+			Amount: &types.FinancialAmount{
+				Amount: int64(price),
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_MTM_WIN,
+		},
+	}
+
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	transfers := eng.getTestMTMTransfer(pos)
+	_, _, err = eng.MarkToMarket(testMarketID, transfers, "BTC")
+	// this should return an error
+	assert.Error(t, err)
+	assert.Equal(t, collateral.ErrSettlementBalanceNotZero, err)
 }
 
 func testProcessBothProRated(t *testing.T) {
