@@ -9,14 +9,14 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-func hash(key string) string {
+func hash(key []byte) []byte {
 	hasher := sha3.New256()
 	hasher.Write([]byte(key))
-	return string(hasher.Sum(nil))
+	return hasher.Sum(nil)
 }
 
 func Encrypt(data []byte, passphrase string) ([]byte, error) {
-	block, _ := aes.NewCipher([]byte(hash(passphrase)))
+	block, _ := aes.NewCipher(hash([]byte(passphrase)))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func Encrypt(data []byte, passphrase string) ([]byte, error) {
 }
 
 func Decrypt(data []byte, passphrase string) ([]byte, error) {
-	key := []byte(hash(passphrase))
+	key := hash([]byte(passphrase))
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
