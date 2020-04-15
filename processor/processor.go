@@ -26,6 +26,7 @@ var (
 	ErrCommandKindUnknown                           = errors.New("unknown command kind when validating payload")
 	ErrUnknownNodeKey                               = errors.New("node pubkey unknown")
 	ErrUnknownProposal                              = errors.New("proposal unknown")
+	ErrNotAnAssetProposal                           = errors.New("proposal is not a new asset proposal")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -84,6 +85,8 @@ type Processor struct {
 	time              TimeService
 	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
+	pendingValidation []*types.Proposal
+	blockCommands     [][]byte
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
 }
@@ -95,16 +98,33 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 	log.SetLevel(config.Level.Get())
 
 	p := &Processor{
-		log:           log,
-		stat:          stat,
-		Config:        config,
-		exec:          exec,
-		time:          ts,
-		nodes:         map[string]struct{}{},
-		nodeProposals: map[string]*nodeProposal{},
+		log:               log,
+		stat:              stat,
+		Config:            config,
+		exec:              exec,
+		time:              ts,
+		nodes:             map[string]struct{}{},
+		nodeProposals:     map[string]*nodeProposal{},
+		pendingValidation: []*types.Proposal{},
+		blockCommands:     [][]byte{},
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
+}
+
+func (p *Processor) Begin2() ([]byte, error) {
+	if err := p.Begin(); err != nil {
+		return nil, err
+	}
+	// command byte + payload
+	reg := &types.NodeRegistration{
+		PubKey: "this value comes from config?", // @TODO
+	}
+	raw, err := proto.Marshal(reg)
+	if err != nil {
+		return nil, err
+	}
+	return append([]byte{byte(blockchain.RegisterNodeCommand)}, raw...), nil
 }
 
 // Begin update timestamps
@@ -391,7 +411,10 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 				Proposal: proposal,
 				votes:    map[string]struct{}{},
 			}
-			// @TODO validate proposal here + cast vote
+			if _, err := p.validateAsset(proposal); err != nil {
+				return err
+			}
+			//@TODO validate proposal here + cast vote
 			return nil
 		}
 		return p.exec.SubmitProposal(proposal)
@@ -472,16 +495,10 @@ func (p *Processor) submitOrder(o *types.Order) error {
 		p.stat.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 		p.stat.AddTotalTrades(uint64(len(conf.Trades)))
 		p.stat.IncCurrentOrdersInBatch()
-
-		// s.currentTradesInBatch += len(confirmationMessage.Trades)
-		// s.totalTrades += uint64(s.currentTradesInBatch)
-
-		// s.currentOrdersInBatch++
 	}
 
 	// increment total orders, even for failures so current ID strategy is valid.
 	p.stat.IncTotalOrders()
-	// s.totalOrders++
 
 	if err != nil {
 		p.log.Error("error message on creating order",
@@ -534,6 +551,19 @@ func (p *Processor) amendOrder(order *types.OrderAmendment) error {
 		p.log.Debug("Order amended", logging.String("order", order.String()))
 	}
 	return nil
+}
+
+func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
+	asset := prop.Terms.GetNewAsset()
+	if asset == nil {
+		return false, ErrNotAnAssetProposal
+	}
+	p.log.Debug("Validating asset",
+		logging.String("asset-id", asset.ID),
+	)
+	// need dep to validate this proposal
+	// if validation failed, add to pendingPropopsals to retry every so often
+	return true, nil
 }
 
 // check the asset proposals on tick
