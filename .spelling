@@ -32,3 +32,5 @@ unexported
 Enums
 proto
 api
+nodewallet
+init
