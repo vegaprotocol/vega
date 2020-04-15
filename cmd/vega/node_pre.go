@@ -167,14 +167,12 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		v := v
 		err = l.assets.NewAsset(aid, v)
 		if err != nil {
-			fmt.Printf("error instanciating asset %v\n", err)
-			return err
+			return fmt.Errorf("error instanciating asset %v\n", err)
 		}
 
 		asset, err := l.assets.Get(aid)
 		if err != nil {
-			fmt.Printf("unable to get asset %v\n", err)
-			return err
+			return fmt.Errorf("unable to get asset %v\n", err)
 		}
 
 		// just a simple backoff here

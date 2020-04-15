@@ -4,7 +4,7 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 message Asset {
-  uint64 id = 1;
+  uint64 ID = 1;
   string name = 2;
   string symbol = 3;
   // this may very much likely be a big.Int

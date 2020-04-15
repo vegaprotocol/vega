@@ -135,7 +135,7 @@ func (s *Service) RemovePending(assetID uint64) error {
 func (s *Service) assetHash(asset Asset) []byte {
 	data := asset.Data()
 	buf := fmt.Sprintf("%v%v%v%v%v",
-		data.Id,
+		data.ID,
 		data.Name,
 		data.Symbol,
 		data.TotalSupply,

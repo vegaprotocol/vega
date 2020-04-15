@@ -81,19 +81,16 @@ func testDevInitSuccess(t *testing.T) {
 	}
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase")
 	assert.NoError(t, err)
+	assert.NotNil(t, nw)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// try to get the vega and eth wallet
-<<<<<<< HEAD
 	w, ok := nw.Get(nodewallet.Ethereum)
 	assert.NotNil(t, w)
 	assert.True(t, ok)
 	assert.Equal(t, string(nodewallet.Ethereum), w.Chain())
-=======
-	w, ok := nw.Get(nodewallet.Eth)
-	assert.NotNil(t, w)
-	assert.True(t, ok)
-	assert.Equal(t, string(nodewallet.Eth), w.Chain())
->>>>>>> 8b71152a... Add the vega nodewallet (eht/vega supported for now)
 	w1, ok := nw.Get(nodewallet.Vega)
 	assert.NotNil(t, w1)
 	assert.True(t, ok)
@@ -197,11 +194,7 @@ func testImportNewWallet(t *testing.T) {
 	assert.NotEmpty(t, path)
 
 	// import this new wallet
-<<<<<<< HEAD
 	err = nw.Import(string(nodewallet.Ethereum), "somepassphrase", "ethpassphrase", path)
-=======
-	err = nw.Import(string(nodewallet.Eth), "somepassphrase", "ethpassphrase", path)
->>>>>>> 8b71152a... Add the vega nodewallet (eht/vega supported for now)
 	assert.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(rootDir))

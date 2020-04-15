@@ -31,7 +31,7 @@ func New(id uint64, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 
 	return &ERC20{
 		asset: &types.Asset{
-			Id: id,
+			ID: id,
 			Source: &types.Asset_Erc20{
 				Erc20: asset,
 			},
@@ -110,6 +110,6 @@ func (b *ERC20) ValidateDeposit() error {
 
 func (b *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.Id, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
+		b.asset.ID, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
 		b.asset.Decimals)
 }

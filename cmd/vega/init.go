@@ -161,21 +161,17 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 }
 
 func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
-	var err error
 	if genDevNodeWallet {
-		err = nodewallet.DevInit(
+		return nodewallet.DevInit(
 			cfg.NodeWallet.StorePath,
 			cfg.NodeWallet.DevWalletsPath,
 			nodeWalletPassphrase,
 		)
-	} else {
-		err = nodewallet.Init(
-			cfg.NodeWallet.StorePath,
-			nodeWalletPassphrase,
-		)
 	}
-
-	return err
+	return nodewallet.Init(
+		cfg.NodeWallet.StorePath,
+		nodeWalletPassphrase,
+	)
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
