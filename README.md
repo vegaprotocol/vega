@@ -56,6 +56,33 @@ Vega is initialised with a set of default configuration with the command `vega i
   LogRemovedOrdersDebug = false
 ```
 
+Vega require a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
+The nodewallet can be accessed using the nodewallet subcommand, this nodewallet is initialized / accessed using a passphrase that needs to be specified when initializing vega:
+```shell
+vega init --nodewallet-passphrase="somesecurepassphrase"
+```
+
+The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
+```
+vega init --nodewallet-passphrase="somesecurepassphrase" --gen-dev-nodewallet
+```
+
+## Vega NodeWallet
+
+A vega node needs to connect to other blockchain for various operation:
+- validate transaction happened on foreign chains
+- verify presence of assets
+- sign transaction to be verified on foreign blockchain
+- and more...
+
+In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide an command line tool:
+`vega nodewallet` allowing users to import foreign blockchain wallets credentials so they can be used at runtime.
+
+For more details on how to use the vega nodewallet run:
+```
+vega nodewallet --help
+```
+
 ## APIs
 
 In order for clients to communicate with Vega nodes, we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.

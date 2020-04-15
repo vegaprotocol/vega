@@ -27,7 +27,7 @@ steps:
       - name: gopkg
         path: /go/pkg
     environment:
-      CGO_ENABLED: "0"
+      CGO_ENABLED: "1"
       GO111MODULE: "on"
       GOARCH: amd64
       GOCACHE: /go/cache
@@ -129,7 +129,7 @@ steps:
       - name: gopkg
         path: /go/pkg
     environment:
-      CGO_ENABLED: "0"
+      CGO_ENABLED: "1"
       GO111MODULE: "on"
       GOARCH: amd64
       GOCACHE: /go/cache

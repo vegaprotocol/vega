@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -123,6 +124,9 @@ type NodeCommand struct {
 	processor       *processor.Processor
 	mktscfg         []proto.Market
 
+	nodeWallet           *nodewallet.Service
+	nodeWalletPassphrase string
+
 	// plugins
 	settlePlugin   *plugins.Positions
 	proposalPlugin *plugins.Proposals
@@ -152,6 +156,7 @@ func (l *NodeCommand) Init(c *Cli) {
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
+	flagSet.StringVarP(&l.nodeWalletPassphrase, "nodewallet-passphrase", "p", "", "The pass to a file containg the passphrase used to unlock the vega nodewallet, if not provided, prompt a password input")
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")

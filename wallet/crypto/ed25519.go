@@ -36,7 +36,7 @@ func (e *ed25519Sig) Sign(priv crypto.PrivateKey, buf []byte) ([]byte, error) {
 	if len(privBytes) != ed25519.PrivateKeySize {
 		return nil, ErrBadED25519PrivateKeyLength
 	}
-	return ed25519.Sign(privBytes, buf), nil
+	return ed25519.Sign(privBytes, hash(buf)), nil
 }
 
 func (e *ed25519Sig) Verify(pub crypto.PublicKey, message, sig []byte) (bool, error) {
@@ -45,7 +45,7 @@ func (e *ed25519Sig) Verify(pub crypto.PublicKey, message, sig []byte) (bool, er
 	if len(pubBytes) != ed25519.PublicKeySize {
 		return false, ErrBadED25519PublicKeyLength
 	}
-	return ed25519.Verify(pubBytes, message, sig), nil
+	return ed25519.Verify(pubBytes, hash(message), sig), nil
 }
 
 func (e *ed25519Sig) Name() string {
