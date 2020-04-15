@@ -27,6 +27,10 @@ const (
 	ProposeCommand Command = 0x45
 	// VoteCommand
 	VoteCommand Command = 0x46
+	// RegisterNodecommand ...
+	RegisterNodeCommand Command = 0x47
+	// NodeVoteCommand...
+	NodeVoteCommand Command = 0x48
 )
 
 var commandName = map[Command]string{
@@ -37,6 +41,8 @@ var commandName = map[Command]string{
 	WithdrawCommand:            "Withdraw",
 	ProposeCommand:             "Proposal",
 	VoteCommand:                "Vote on Proposal",
+	RegisterNodeCommand:        "Register new Node",
+	NodeVoteCommand:            "Node Vote",
 }
 
 var commandKindName = map[CommandKind]string{

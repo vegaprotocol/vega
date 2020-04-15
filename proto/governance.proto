@@ -27,6 +27,11 @@ message UpdateNetwork {
   NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
+// To be implemented
+message NewAsset {
+  string ID = 1;
+}
+
 message ProposalTerms {
   int64 closingTimestamp       = 1 [(validator.field) = {int_gt: 0}];
   int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
@@ -35,6 +40,7 @@ message ProposalTerms {
     UpdateMarket  updateMarket  = 101;
     NewMarket     newMarket     = 102;
     UpdateNetwork updateNetwork = 103;
+    NewAsset      newAsset      = 104;
   };
 }
 

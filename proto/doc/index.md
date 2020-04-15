@@ -83,6 +83,7 @@
 
 - [proto/governance.proto](#proto/governance.proto)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
+    - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
@@ -129,6 +130,8 @@
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
+    - [NodeRegistration](#vega.NodeRegistration)
+    - [NodeVote](#vega.NodeVote)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
     - [OrderCancellation](#vega.OrderCancellation)
@@ -1366,6 +1369,21 @@
 
 
 
+<a name="vega.NewAsset"></a>
+
+### NewAsset
+To be implemented
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="vega.NewMarket"></a>
 
 ### NewMarket
@@ -1415,6 +1433,7 @@
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
+| newAsset | [NewAsset](#vega.NewAsset) |  |  |
 
 
 
@@ -1981,6 +2000,37 @@ Proposal can enter Failed state from any other state.
 | marketID | [string](#string) |  |  |
 | buy | [PriceLevel](#vega.PriceLevel) | repeated |  |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated |  |
+
+
+
+
+
+
+<a name="vega.NodeRegistration"></a>
+
+### NodeRegistration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pubKey | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.NodeVote"></a>
+
+### NodeVote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pubKey | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
 
 
 

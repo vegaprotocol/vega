@@ -325,6 +325,15 @@ message OrderCancellation {
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
 }
 
+message NodeRegistration {
+  string pubKey = 1 [(validator.field) = {string_not_empty: true}];
+}
+
+message NodeVote {
+  string pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  string reference = 2 [(validator.field) = {string_not_empty: true}];
+}
+
 enum AccountType {
   ALL = 0;
   INSURANCE = 1;

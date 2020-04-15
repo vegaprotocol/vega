@@ -52,6 +52,7 @@ type TradingDataClient interface {
 	OrderByMarketAndID(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
 	OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest, opts ...grpc.CallOption) (*types.Order, error)
 	OrderByReferenceID(ctx context.Context, in *protoapi.OrderByReferenceIDRequest, opts ...grpc.CallOption) (*types.Order, error)
+	OrderVersionsByID(ctx context.Context, in *protoapi.OrderVersionsByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderVersionsResponse, error)
 	// markets
 	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
@@ -280,12 +281,34 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 	return res, nil
 }
 
-func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string) (*types.Order, error) {
+func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version *int) (*types.Order, error) {
+	v, err := convertVersion(version)
+	if err != nil {
+		r.log.Error("tradingCore client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
 	orderReq := &protoapi.OrderByIDRequest{
 		OrderID: orderID,
+		Version: v,
 	}
 	order, err := r.tradingDataClient.OrderByID(ctx, orderReq)
 	return order, err
+}
+
+func (r *myQueryResolver) OrderVersions(
+	ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*types.Order, error) {
+
+	p := makePagination(skip, first, last)
+	reqest := &protoapi.OrderVersionsByIDRequest{
+		OrderID:    orderID,
+		Pagination: p,
+	}
+	res, err := r.tradingDataClient.OrderVersionsByID(ctx, reqest)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Orders, nil
 }
 
 func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID string) (*types.Order, error) {

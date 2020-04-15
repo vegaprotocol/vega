@@ -97,7 +97,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	}
 
 	reduceBy := oldOrder.Remaining - orderAmend.Size
-	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
+	*s.levels[priceLevelIndex].orders[orderIndex] = *orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
 	return nil
 }
