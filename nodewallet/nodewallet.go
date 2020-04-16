@@ -36,6 +36,8 @@ type Service struct {
 	cfg     Config
 	store   *store
 	wallets map[Blockchain]Wallet
+
+	ethclt eth.ETHClient
 }
 
 func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClient) (*Service, error) {
@@ -47,13 +49,13 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 		return nil, fmt.Errorf("unable to load nodewalletsore: %v", err)
 	}
 
-	wallets, err := loadWallets(cfg, stor)
+	wallets, err := loadWallets(cfg, stor, ethclt)
 	if err != nil {
 		log.Error("unable to load a chain wallet", logging.Error(err))
 		return nil, fmt.Errorf("error with the wallets stored in the nodewalletstore, %v", err)
 	}
 
-	err = ensureRequiredWallets(wallets, ethclt)
+	err = ensureRequiredWallets(wallets)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +65,7 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 		cfg:     cfg,
 		store:   stor,
 		wallets: wallets,
+		ethclt:  ethclt,
 	}, nil
 }
 
@@ -91,7 +94,7 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error
 			return err
 		}
 	case Ethereum:
-		w, err = eth.New(s.cfg.ETH, path, walletPassphrase)
+		w, err = eth.New(s.cfg.ETH, path, walletPassphrase, s.ethclt)
 		if err != nil {
 			return err
 		}
@@ -126,7 +129,7 @@ func Verify(cfg Config, passphrase string, ethclt eth.ETHClient) error {
 		return fmt.Errorf("unable to load nodewalletsore: %v", err)
 	}
 
-	wallets, err := loadWallets(cfg, store)
+	wallets, err := loadWallets(cfg, store, ethclt)
 	if err != nil {
 		return fmt.Errorf("error with the wallets stored in the nodewalletstore, %v", err)
 	}
