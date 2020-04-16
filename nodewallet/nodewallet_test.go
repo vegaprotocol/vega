@@ -187,6 +187,9 @@ func testImportNewWallet(t *testing.T) {
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase")
 	assert.NoError(t, err)
 	assert.NotNil(t, nw)
+	if nw == nil {
+		t.Fatal(err)
+	}
 
 	// now generate an eth wallet
 	path, err := eth.DevInit(ethDir, "ethpassphrase")

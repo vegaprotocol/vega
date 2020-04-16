@@ -8,17 +8,19 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// ETHClient ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet/eth ETHClient
 type ETHClient interface {
 	bind.ContractBackend
+	ChainID(context.Context) (string, error)
 }
 
 type Wallet struct {
 	acc accounts.Account
 	ks  *keystore.KeyStore
-	clt *ethclient.Client
+	clt ETHClient
 }
 
 func DevInit(path, passphrase string) (string, error) {
@@ -30,7 +32,7 @@ func DevInit(path, passphrase string) (string, error) {
 	return acc.URL.Path, nil
 }
 
-func New(cfg Config, path, passphrase string) (*Wallet, error) {
+func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error) {
 	// NewKeyStore always create a new wallet key store file
 	// we create this in tmp as we do not want to impact the original one.
 	ks := keystore.NewKeyStore(
@@ -40,14 +42,8 @@ func New(cfg Config, path, passphrase string) (*Wallet, error) {
 		return nil, err
 	}
 
-	// now instanciate the client
-	clt, err := ethclient.Dial(cfg.Address)
-	if err != nil {
-		return nil, err
-	}
-
 	// just trying to call to make sure there's not issue
-	_, err = clt.ChainID(context.Background())
+	_, err = ethclt.ChainID(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +55,9 @@ func New(cfg Config, path, passphrase string) (*Wallet, error) {
 	return &Wallet{
 		acc: acc,
 		ks:  ks,
-		clt: clt,
+		clt: ethclt,
 	}, nil
+
 }
 
 func (w *Wallet) Chain() string {

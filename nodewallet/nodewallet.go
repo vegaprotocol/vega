@@ -38,7 +38,7 @@ type Service struct {
 	wallets map[Blockchain]Wallet
 }
 
-func New(log *logging.Logger, cfg Config, passphrase string) (*Service, error) {
+func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClient) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	stor, err := loadStore(cfg.StorePath, passphrase)
@@ -53,7 +53,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Service, error) {
 		return nil, fmt.Errorf("error with the wallets stored in the nodewalletstore, %v", err)
 	}
 
-	err = ensureRequiredWallets(wallets)
+	err = ensureRequiredWallets(wallets, ethclt)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *Service) Dump() (string, error) {
 	return string(buf), nil
 }
 
-func Verify(cfg Config, passphrase string) error {
+func Verify(cfg Config, passphrase string, ethclt eth.ETHClient) error {
 	store, err := loadStore(cfg.StorePath, passphrase)
 	if err != nil {
 		return fmt.Errorf("unable to load nodewalletsore: %v", err)
@@ -190,7 +190,7 @@ func ensureRequiredWallets(wallets map[Blockchain]Wallet) error {
 
 // takes the wallets configs from the store and try to instanciate them
 // to proper blockchains wallets
-func loadWallets(cfg Config, stor *store) (map[Blockchain]Wallet, error) {
+func loadWallets(cfg Config, stor *store, ethclt eth.ETHClient) (map[Blockchain]Wallet, error) {
 	wallets := map[Blockchain]Wallet{}
 
 	for _, w := range stor.Wallets {
@@ -198,6 +198,7 @@ func loadWallets(cfg Config, stor *store) (map[Blockchain]Wallet, error) {
 		if _, ok := wallets[Blockchain(w.Chain)]; ok {
 			return nil, fmt.Errorf("duplicate wallet configuration for chain %v", w)
 		}
+
 		switch Blockchain(w.Chain) {
 		case Vega:
 			w, err := vega.New(w.Path, w.Passphrase)
@@ -206,7 +207,7 @@ func loadWallets(cfg Config, stor *store) (map[Blockchain]Wallet, error) {
 			}
 			wallets[Vega] = w
 		case Ethereum:
-			w, err := eth.New(cfg.ETH, w.Path, w.Passphrase)
+			w, err := eth.New(cfg.ETH, w.Path, w.Passphrase, ethclt)
 			if err != nil {
 				return nil, err
 			}
