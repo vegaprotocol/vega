@@ -1284,8 +1284,8 @@ type Proposal {
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
-  "An id of the party that prepared the proposal"
-  partyId: String!
+  "Party that prepared the proposal"
+  party: Party!
   "State of the proposal"
   state: ProposalState!
   "time at which the proposal has reached the network"
@@ -1313,7 +1313,7 @@ type Vote {
   Value: VoteValue!
 
   "The party casting the vote"
-  PartyID: String!
+  Party: Party!
 
   "Proposal ID -> proposal casting the vote on"
   ProposalID: ID!
