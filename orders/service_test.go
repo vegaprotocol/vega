@@ -236,7 +236,6 @@ func testPrepareCancelOrderFail(t *testing.T) {
 			Status:      types.Order_Active,
 			Remaining:   orderSubmission.Size,
 		},
-		"oder not found": nil,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -264,8 +263,8 @@ func testPrepareCancelOrderFail(t *testing.T) {
 		}
 		svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), cancel.MarketID, cancel.OrderID).Times(1).Return(order, err)
 		ret, rerr := svc.svc.PrepareCancelOrder(context.Background(), &cancel)
-		assert.Nil(t, ret)
-		assert.Error(t, rerr)
+		assert.NotNil(t, ret)
+		assert.NoError(t, rerr)
 		if err != nil {
 			assert.Equal(t, err, rerr)
 		}

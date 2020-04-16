@@ -167,15 +167,6 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	if err != nil {
 		return nil, err
 	}
-	if o.Status == types.Order_Cancelled {
-		return nil, errors.New("order has already been cancelled")
-	}
-	if o.Remaining == 0 {
-		return nil, errors.New("order has been fully filled")
-	}
-	if o.PartyID != order.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
-	}
 	return &types.PendingOrder{
 		Reference:   o.Reference,
 		Price:       o.Price,
@@ -197,10 +188,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
 		return nil, err
-	}
-
-	if o.Status != types.Order_Active {
-		return nil, errors.New("order is not active")
 	}
 
 	// if order is GTT convert datetime to blockchain ts
