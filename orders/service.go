@@ -33,8 +33,10 @@ var (
 	// ErrInvalidAmendOrderTIF ...
 	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
 
-	// ErrEmptyPrepareRequest ...
+	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
+	// ErrEmptyPrepareRequest empty transaction
+	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
 )
 
 // TimeService ...
@@ -109,7 +111,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 
 func (s *Svc) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
 	if bundle == nil {
-		return false, ErrEmptyPrepareRequest
+		return false, ErrEmptySubmitTransactionRequest
 	}
 	return s.blockchain.SubmitTransaction(ctx, bundle)
 }
