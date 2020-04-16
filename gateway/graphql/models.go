@@ -292,8 +292,8 @@ type Proposal struct {
 	ID *string `json:"id"`
 	// A UUID reference to aid tracking proposals on VEGA
 	Reference string `json:"reference"`
-	// An id of the party that prepared the proposal
-	PartyID string `json:"partyId"`
+	// Party that prepared the proposal
+	Party *proto.Party `json:"party"`
 	// State of the proposal
 	State ProposalState `json:"state"`
 	// time at which the proposal has reached the network
@@ -454,7 +454,7 @@ type Vote struct {
 	// The vote value cast
 	Value VoteValue `json:"Value"`
 	// The party casting the vote
-	PartyID string `json:"PartyID"`
+	Party *proto.Party `json:"Party"`
 	// Proposal ID -> proposal casting the vote on
 	ProposalID string `json:"ProposalID"`
 }

@@ -266,7 +266,7 @@ type ComplexityRoot struct {
 
 	Proposal struct {
 		ID        func(childComplexity int) int
-		PartyID   func(childComplexity int) int
+		Party     func(childComplexity int) int
 		Reference func(childComplexity int) int
 		State     func(childComplexity int) int
 		Terms     func(childComplexity int) int
@@ -384,7 +384,7 @@ type ComplexityRoot struct {
 	}
 
 	Vote struct {
-		PartyID    func(childComplexity int) int
+		Party      func(childComplexity int) int
 		ProposalID func(childComplexity int) int
 		Value      func(childComplexity int) int
 	}
@@ -1521,12 +1521,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.ID(childComplexity), true
 
-	case "Proposal.partyId":
-		if e.complexity.Proposal.PartyID == nil {
+	case "Proposal.party":
+		if e.complexity.Proposal.Party == nil {
 			break
 		}
 
-		return e.complexity.Proposal.PartyID(childComplexity), true
+		return e.complexity.Proposal.Party(childComplexity), true
 
 	case "Proposal.reference":
 		if e.complexity.Proposal.Reference == nil {
@@ -2149,12 +2149,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateNetwork.MinParticipationStake(childComplexity), true
 
-	case "Vote.PartyID":
-		if e.complexity.Vote.PartyID == nil {
+	case "Vote.Party":
+		if e.complexity.Vote.Party == nil {
 			break
 		}
 
-		return e.complexity.Vote.PartyID(childComplexity), true
+		return e.complexity.Vote.Party(childComplexity), true
 
 	case "Vote.ProposalID":
 		if e.complexity.Vote.ProposalID == nil {
@@ -3547,8 +3547,8 @@ type Proposal {
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
-  "An id of the party that prepared the proposal"
-  partyId: String!
+  "Party that prepared the proposal"
+  party: Party!
   "State of the proposal"
   state: ProposalState!
   "time at which the proposal has reached the network"
@@ -3576,7 +3576,7 @@ type Vote {
   Value: VoteValue!
 
   "The party casting the vote"
-  PartyID: String!
+  Party: Party!
 
   "Proposal ID -> proposal casting the vote on"
   ProposalID: ID!
@@ -9131,7 +9131,7 @@ func (ec *executionContext) _Proposal_reference(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_partyId(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_party(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9150,7 +9150,7 @@ func (ec *executionContext) _Proposal_partyId(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PartyID, nil
+		return obj.Party, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9162,10 +9162,10 @@ func (ec *executionContext) _Proposal_partyId(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
@@ -12264,7 +12264,7 @@ func (ec *executionContext) _Vote_Value(ctx context.Context, field graphql.Colle
 	return ec.marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Vote_PartyID(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+func (ec *executionContext) _Vote_Party(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -12283,7 +12283,7 @@ func (ec *executionContext) _Vote_PartyID(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PartyID, nil
+		return obj.Party, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12295,10 +12295,10 @@ func (ec *executionContext) _Vote_PartyID(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*proto.Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Vote_ProposalID(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
@@ -15912,8 +15912,8 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "partyId":
-			out.Values[i] = ec._Proposal_partyId(ctx, field, obj)
+		case "party":
+			out.Values[i] = ec._Proposal_party(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -16861,8 +16861,8 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "PartyID":
-			out.Values[i] = ec._Vote_PartyID(ctx, field, obj)
+		case "Party":
+			out.Values[i] = ec._Vote_Party(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
