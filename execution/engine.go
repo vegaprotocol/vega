@@ -603,7 +603,11 @@ func (e *Engine) Generate() error {
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
 func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Submitting proposal", logging.Proposal(*proposal))
+		e.log.Debug("Submitting proposal",
+			logging.String("proposal-id", proposal.ID),
+			logging.String("proposal-reference", proposal.Reference),
+			logging.String("proposal-party", proposal.PartyID),
+			logging.String("proposal-terms", proposal.Terms.String()))
 	}
 	e.idgen.SetProposalID(proposal)
 	return e.governance.AddProposal(*proposal)
@@ -612,7 +616,10 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 // VoteOnProposal sends proposal vote to governance engine
 func (e *Engine) VoteOnProposal(vote *types.Vote) error {
 	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Voting on proposal", logging.Vote(*vote))
+		e.log.Debug("Voting on proposal",
+			logging.String("proposal-id", vote.ProposalID),
+			logging.String("vote-party", vote.PartyID),
+			logging.String("vote-value", vote.Value.String()))
 	}
 	return e.governance.AddVote(*vote)
 }

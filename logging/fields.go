@@ -145,16 +145,6 @@ func Trade(t types.Trade) zap.Field {
 	return zap.String("trade", t.String())
 }
 
-// Proposal constructs a field with the given VEGA proposal proto value.
-func Proposal(p types.Proposal) zap.Field {
-	return zap.String("proposal", p.String())
-}
-
-// Vote constructs a field with the given VEGA proposal proto value.
-func Vote(v types.Vote) zap.Field {
-	return zap.String("vote", v.String())
-}
-
 // Market constructs a field with the given VEGA market proto value.
 func Market(m types.Market) zap.Field {
 	return zap.String("market", m.String())
