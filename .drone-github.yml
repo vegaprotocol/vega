@@ -95,7 +95,7 @@ steps:
           --file1 "github:vegaprotocol:0:vega:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
           --file2 "github:vegaprotocol:0:vega:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
           --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
+          --slack-recipient "#uidev-notify"
           print_diff slack_notify || failed="$$failed diff_bot"
       - /usr/local/bin/multilint || failed="$$failed multilint"
       - make staticcheck || true  # Ignore failures until they're all fixed.
@@ -175,13 +175,6 @@ steps:
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
-      - /usr/local/bin/diff_bot.py
-          --github-token "$$GITHUB_API_TOKEN"
-          --file1 "github:vegaprotocol:0:console:develop:packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql"
-          --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
-          --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
-          slack_notify create_mr
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires vars:
