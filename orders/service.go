@@ -35,7 +35,7 @@ var (
 
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
-	// ErrEmptyPrepareRequest empty transaction
+	// ErrEmptySubmitTransactionRequest empty transaction
 	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
 )
 
