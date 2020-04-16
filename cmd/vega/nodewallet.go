@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 )
 
@@ -97,7 +98,13 @@ func (w *nodeWalletCommand) Import(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.New(w.Log, conf.NodeWallet, w.passphrase)
+	// instanciate the ETHClient
+	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+	if err != nil {
+		return err
+	}
+
+	nw, err := nodewallet.New(w.Log, conf.NodeWallet, w.passphrase, ethclt)
 	if err != nil {
 		return err
 	}
@@ -130,7 +137,14 @@ func (w *nodeWalletCommand) Verify(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	err = nodewallet.Verify(conf.NodeWallet, w.passphrase)
+
+	// instanciate the ETHClient
+	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+	if err != nil {
+		return err
+	}
+
+	err = nodewallet.Verify(conf.NodeWallet, w.passphrase, ethclt)
 	if err != nil {
 		return err
 	}
@@ -151,7 +165,14 @@ func (w *nodeWalletCommand) Show(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	nw, err := nodewallet.New(w.Log, conf.NodeWallet, w.passphrase)
+
+	// instanciate the ETHClient
+	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+	if err != nil {
+		return err
+	}
+
+	nw, err := nodewallet.New(w.Log, conf.NodeWallet, w.passphrase, ethclt)
 	if err != nil {
 		return err
 	}

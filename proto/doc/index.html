@@ -474,6 +474,37 @@
 
 
           <li>
+            <a href="#proto%2fassets.proto">proto/assets.proto</a>
+            <ul>
+
+                <li>
+                  <a href="#vega.Asset"><span class="badge">M</span>Asset</a>
+                </li>
+
+                <li>
+                  <a href="#vega.AssetSource"><span class="badge">M</span>AssetSource</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BuiltinAsset"><span class="badge">M</span>BuiltinAsset</a>
+                </li>
+
+                <li>
+                  <a href="#vega.DevAssets"><span class="badge">M</span>DevAssets</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ERC20"><span class="badge">M</span>ERC20</a>
+                </li>
+
+
+
+
+            </ul>
+          </li>
+
+
+          <li>
             <a href="#proto%2fgovernance.proto">proto/governance.proto</a>
             <ul>
 
@@ -3755,6 +3786,210 @@
 
           </tbody>
         </table>
+
+
+
+
+      <div class="file-heading">
+        <h2 id="proto/assets.proto">proto/assets.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+
+        <h3 id="vega.Asset">Asset</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>symbol</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>totalSupply</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>this may very much likely be a big.Int </p></td>
+                </tr>
+
+                <tr>
+                  <td>decimals</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>builtinAsset</td>
+                  <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.ERC20">ERC20</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.AssetSource">AssetSource</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>builtinAsset</td>
+                  <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.ERC20">ERC20</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BuiltinAsset">BuiltinAsset</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>symbol</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>totalSupply</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>decimals</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.DevAssets">DevAssets</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>sources</td>
+                  <td><a href="#vega.AssetSource">AssetSource</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ERC20">ERC20</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>contractAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+
+
+
 
 
 
