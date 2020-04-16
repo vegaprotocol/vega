@@ -87,7 +87,6 @@ func (b *ERC20) Validate() error {
 	b.asset.Decimals = uint64(decimals)
 	b.asset.TotalSupply = totalSupply.String()
 
-	fmt.Printf("OK\n")
 	b.ok = true
 	return nil
 }
