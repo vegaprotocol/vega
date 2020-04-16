@@ -1322,7 +1322,7 @@ func (r *myMutationResolver) PrepareProposal(
 		PendingProposal: &Proposal{
 			ID:        &pendingProposal.PendingProposal.ID,
 			Reference: pendingProposal.PendingProposal.Reference,
-			PartyID:   pendingProposal.PendingProposal.PartyID,
+			Party:     &types.Party{Id: pendingProposal.PendingProposal.PartyID},
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
 			Timestamp: timestampToString(pendingProposal.PendingProposal.Timestamp),
 			Terms:     verifiedTerms,
@@ -1348,7 +1348,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	gqResp := &PreparedVote{
 		Blob: string(resp.Blob),
 		Vote: &Vote{
-			PartyID:    resp.Vote.PartyID,
+			Party:      &types.Party{Id: resp.Vote.PartyID},
 			ProposalID: resp.Vote.ProposalID,
 			Value:      VoteValueNo,
 		},
