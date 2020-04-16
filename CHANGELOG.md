@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.2
+
+*2020-04-16*
+
+### Improvements
+
+- [#1545](https://github.com/vegaprotocol/vega/pull/1545) Improve error handling in `Prepare*Order` requests
+
 ## 0.16.1
 
 *2020-04-15*
