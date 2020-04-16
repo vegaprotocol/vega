@@ -81,6 +81,17 @@
     - [trading_data](#api.trading_data)
 
 
+- [proto/assets.proto](#proto/assets.proto)
+    - [Asset](#vega.Asset)
+    - [AssetSource](#vega.AssetSource)
+    - [BuiltinAsset](#vega.BuiltinAsset)
+    - [DevAssets](#vega.DevAssets)
+    - [ERC20](#vega.ERC20)
+
+
+
+
+
 - [proto/governance.proto](#proto/governance.proto)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
@@ -1338,6 +1349,107 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+
+
+
+
+
+<a name="proto/assets.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/assets.proto
+
+
+
+<a name="vega.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [uint64](#uint64) |  |  |
+| name | [string](#string) |  |  |
+| symbol | [string](#string) |  |  |
+| totalSupply | [string](#string) |  | this may very much likely be a big.Int |
+| decimals | [uint64](#uint64) |  |  |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
+| erc20 | [ERC20](#vega.ERC20) |  |  |
+
+
+
+
+
+
+<a name="vega.AssetSource"></a>
+
+### AssetSource
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
+| erc20 | [ERC20](#vega.ERC20) |  |  |
+
+
+
+
+
+
+<a name="vega.BuiltinAsset"></a>
+
+### BuiltinAsset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| symbol | [string](#string) |  |  |
+| totalSupply | [string](#string) |  |  |
+| decimals | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.DevAssets"></a>
+
+### DevAssets
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sources | [AssetSource](#vega.AssetSource) | repeated |  |
+
+
+
+
+
+
+<a name="vega.ERC20"></a>
+
+### ERC20
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| contractAddress | [string](#string) |  |  |
+
+
+
+
+
+
+
+
+
+
 
 
 

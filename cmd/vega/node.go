@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
@@ -126,6 +127,8 @@ type NodeCommand struct {
 
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
+
+	assets *assets.Service
 
 	// plugins
 	settlePlugin   *plugins.Positions
