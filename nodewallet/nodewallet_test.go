@@ -86,8 +86,9 @@ func testDevInitSuccess(t *testing.T) {
 	ethclt := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
 
-	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return("asdasd", nil)
+	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
+
 	assert.NoError(t, err)
 	assert.NotNil(t, nw)
 	if err != nil {
@@ -125,7 +126,7 @@ func testVerifySuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethclt := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
-	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return("asdasd", nil)
+	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 
 	err = nodewallet.Verify(cfg, "somepassphrase", ethclt)
 	assert.NoError(t, err)
@@ -212,7 +213,7 @@ func testImportNewWallet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethclt := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
-	ethclt.EXPECT().ChainID(gomock.Any()).Times(2).Return("asdasd", nil)
+	ethclt.EXPECT().ChainID(gomock.Any()).Times(2).Return(big.NewInt(42), nil)
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
 	assert.NoError(t, err)

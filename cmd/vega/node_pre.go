@@ -36,6 +36,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -144,8 +145,14 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		l.Log.Info("node setted up with badger store support")
 	}
 
+	// instanciate the ETHClient
+	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	if err != nil {
+		return err
+	}
+
 	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase)
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase, ethclt)
 	if err != nil {
 		return err
 	}

@@ -53,10 +53,10 @@ func (mr *MockETHClientMockRecorder) CallContract(arg0, arg1, arg2 interface{}) 
 }
 
 // ChainID mocks base method
-func (m *MockETHClient) ChainID(arg0 context.Context) (string, error) {
+func (m *MockETHClient) ChainID(arg0 context.Context) (*big.Int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChainID", arg0)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*big.Int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

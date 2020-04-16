@@ -3,6 +3,7 @@ package eth
 import (
 	"context"
 	"io/ioutil"
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -14,7 +15,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet/eth ETHClient
 type ETHClient interface {
 	bind.ContractBackend
-	ChainID(context.Context) (string, error)
+	ChainID(context.Context) (*big.Int, error)
 }
 
 type Wallet struct {
