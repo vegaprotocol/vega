@@ -122,30 +122,3 @@ func (b *Blockchain) Stop() error {
 func (b *Blockchain) Client() *Client {
 	return b.clt
 }
-func GetChain(
-	log *logging.Logger,
-	cfg Config,
-	abciEngine ABCIEngine,
-	time TimeService,
-	stats *stats.Blockchain,
-	cancel func(),
-) (proc *codec, chain chainImpl, clt chainClientImpl, err error) {
-	// setup logger
-	log = log.Named(namedLogger)
-	log.SetLevel(cfg.Level.Get())
-	proc = NewCodec(log, cfg, abciEngine)
-	switch strings.ToLower(cfg.ChainProvider) {
-	case "tendermint":
-		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel)
-		if err == nil {
-			clt, err = tm.NewClient(cfg.Tendermint)
-		}
-	case "noop":
-		noopchain := noop.New(log, cfg.Noop, stats, time, proc, abciEngine)
-		chain = noopchain
-		clt = noopchain
-	default:
-		err = ErrInvalidChainProvider
-	}
-	return
-}
