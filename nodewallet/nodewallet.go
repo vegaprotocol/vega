@@ -55,11 +55,6 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 		return nil, fmt.Errorf("error with the wallets stored in the nodewalletstore, %v", err)
 	}
 
-	err = ensureRequiredWallets(wallets)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Service{
 		log:     log,
 		cfg:     cfg,
@@ -67,6 +62,10 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 		wallets: wallets,
 		ethclt:  ethclt,
 	}, nil
+}
+
+func (s *Service) EnsureRequireWallets() error {
+	return ensureRequiredWallets(s.wallets)
 }
 
 func (s *Service) Get(chain Blockchain) (Wallet, bool) {

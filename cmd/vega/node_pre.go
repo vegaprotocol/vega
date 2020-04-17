@@ -157,6 +157,12 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 
+	// ensure all require wallet are available
+	err = l.nodeWallet.EnsureRequireWallets()
+	if err != nil {
+		return err
+	}
+
 	// initialize the assets service now
 	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet)
 	if err != nil {
