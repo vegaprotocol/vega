@@ -90,13 +90,6 @@ steps:
       - /usr/local/bin/check-rest-endpoints.py
           --bindings gateway/rest/grpc-rest-bindings.yml
           --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-      - /usr/local/bin/diff_bot.py
-          --github-token "$$GITHUB_API_TOKEN"
-          --file1 "github:vegaprotocol:0:vega:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
-          --file2 "github:vegaprotocol:0:vega:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
-          --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
-          print_diff slack_notify || failed="$$failed diff_bot"
       - /usr/local/bin/multilint || failed="$$failed multilint"
       - make staticcheck || true  # Ignore failures until they're all fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
@@ -180,8 +173,8 @@ steps:
           --file1 "github:vegaprotocol:0:console:develop:packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql"
           --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
           --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
-          slack_notify create_mr
+          --slack-recipient "#uidev-notify"
+          slack_notify
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires vars:
