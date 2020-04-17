@@ -260,16 +260,7 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.P
 }
 
 func (r *myQueryResolver) Party(ctx context.Context, name string) (*types.Party, error) {
-	if len(name) == 0 {
-		return nil, errors.New("invalid party")
-	}
-	req := protoapi.PartyByIDRequest{PartyID: name}
-	res, err := r.tradingDataClient.PartyByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Party, nil
+	return getParty(ctx, r.log, r.tradingDataClient, name)
 }
 
 func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
@@ -1290,8 +1281,10 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 
 func (r *myMutationResolver) PrepareProposal(
 	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
-	if len(partyID) <= 0 {
-		return nil, errors.New("partyId missing or empty")
+
+	party, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
+	if err != nil {
+		return nil, err
 	}
 	if proposalTerms.MinParticipationStake < 0 {
 		return nil, errors.New("minParticipationStake is invalid, must be positive")
@@ -1322,7 +1315,7 @@ func (r *myMutationResolver) PrepareProposal(
 		PendingProposal: &Proposal{
 			ID:        &pendingProposal.PendingProposal.ID,
 			Reference: pendingProposal.PendingProposal.Reference,
-			PartyID:   pendingProposal.PendingProposal.PartyID,
+			Party:     party,
 			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
 			Timestamp: timestampToString(pendingProposal.PendingProposal.Timestamp),
 			Terms:     verifiedTerms,
@@ -1331,6 +1324,11 @@ func (r *myMutationResolver) PrepareProposal(
 }
 
 func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, partyID, proposalID string) (*PreparedVote, error) {
+	party, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
+	if err != nil {
+		return nil, err
+	}
+
 	req := &protoapi.PrepareVoteRequest{
 		Vote: &types.Vote{
 			Value:      types.Vote_NO,
@@ -1348,7 +1346,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	gqResp := &PreparedVote{
 		Blob: string(resp.Blob),
 		Vote: &Vote{
-			PartyID:    resp.Vote.PartyID,
+			Party:      party,
 			ProposalID: resp.Vote.ProposalID,
 			Value:      VoteValueNo,
 		},
@@ -1948,4 +1946,16 @@ func (r *myStatisticsResolver) PositionsSubscriptions(ctx context.Context, obj *
 
 func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.TradeSubscriptions), nil
+}
+
+func getParty(ctx context.Context, log *logging.Logger, client TradingDataClient, id string) (*types.Party, error) {
+	if len(id) == 0 {
+		return nil, errors.New("invalid party id")
+	}
+	res, err := client.PartyByID(ctx, &protoapi.PartyByIDRequest{PartyID: id})
+	if err != nil {
+		log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Party, nil
 }

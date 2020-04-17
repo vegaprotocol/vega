@@ -65,6 +65,10 @@ func testCancelOrderNotFound(t *testing.T) {
 	assert.Equal(t, osErr, err)
 }
 
+/*
+ * If we try to prepare a cancel for an order that is already cancelled, the prepare statement
+ * will succeed as it does not have access to the order book.
+ */
 func testCancelOrderDuplicate(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -80,10 +84,14 @@ func testCancelOrderDuplicate(t *testing.T) {
 
 	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
+	assert.NotNil(t, pendingOrder)
+	assert.NoError(t, err)
 }
 
+/*
+ * If we try to prepare a cancel for an order that is already filled, the prepare statement
+ * will succeed as it does not have access to the order book.
+ */
 func testCancelOrderFilled(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -99,10 +107,14 @@ func testCancelOrderFilled(t *testing.T) {
 
 	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
+	assert.NotNil(t, pendingOrder)
+	assert.NoError(t, err)
 }
 
+/*
+ * If we try to prepare a cancel for an order with an incorrect partyID, the prepare statement
+ * will succeed as it does not have access to the order book to validate it.
+ */
 func testCancelOrderPartyMismatch(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -118,8 +130,8 @@ func testCancelOrderPartyMismatch(t *testing.T) {
 
 	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
+	assert.NotNil(t, pendingOrder)
+	assert.NoError(t, err)
 }
 
 func (m cancelMatcher) String() string {

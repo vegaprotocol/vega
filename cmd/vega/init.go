@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -149,6 +150,11 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 		return err
 	}
 
+	// init the devAssets
+	if err := assets.GenDevAssetSourcesPath(rootPath); err != nil {
+		return err
+	}
+
 	logger.Info("configuration generated successfully", logging.String("path", rootPath))
 
 	return nil
@@ -166,7 +172,6 @@ func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWa
 		cfg.NodeWallet.StorePath,
 		nodeWalletPassphrase,
 	)
-
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {

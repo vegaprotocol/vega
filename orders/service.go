@@ -32,6 +32,11 @@ var (
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
 	// ErrInvalidAmendOrderTIF ...
 	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
+
+	// ErrEmptyPrepareRequest empty prepare request
+	ErrEmptyPrepareRequest = errors.New("empty prepare request")
+	// ErrEmptySubmitTransactionRequest empty transaction
+	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
 )
 
 // TimeService ...
@@ -105,10 +110,16 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 func (s *Svc) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
+	if bundle == nil {
+		return false, ErrEmptySubmitTransactionRequest
+	}
 	return s.blockchain.SubmitTransaction(ctx, bundle)
 }
 
 func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error) {
+	if submission == nil {
+		return nil, ErrEmptyPrepareRequest
+	}
 	if err := s.validateOrderSubmission(submission); err != nil {
 		return nil, err
 	}
@@ -160,21 +171,15 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 }
 
 func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
+	if order == nil {
+		return nil, ErrEmptyPrepareRequest
+	}
 	if err := order.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order cancellation invalid")
 	}
 	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
 	if err != nil {
 		return nil, err
-	}
-	if o.Status == types.Order_Cancelled {
-		return nil, errors.New("order has already been cancelled")
-	}
-	if o.Remaining == 0 {
-		return nil, errors.New("order has been fully filled")
-	}
-	if o.PartyID != order.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
 	}
 	return &types.PendingOrder{
 		Reference:   o.Reference,
@@ -190,6 +195,9 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 }
 
 func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
+	if amendment == nil {
+		return nil, ErrEmptyPrepareRequest
+	}
 	if err := amendment.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order amendment validation failed")
 	}
@@ -197,10 +205,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
 		return nil, err
-	}
-
-	if o.Status != types.Order_Active {
-		return nil, errors.New("order is not active")
 	}
 
 	// if order is GTT convert datetime to blockchain ts

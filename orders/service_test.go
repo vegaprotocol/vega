@@ -47,6 +47,9 @@ func TestPrepareOrder(t *testing.T) {
 	t.Run("Create order with reference - successful", testPrepareOrderSuccess)
 	t.Run("Create order without reference - successful", testPrepareOrderRefSuccess)
 	t.Run("Create order - expired", testPrepareOrderExpired)
+	t.Run("Prepare submit order with nil point", testPrepareSubmitOrderWithNilPointer)
+	t.Run("Prepare cancel order with nil point", testPrepareCancelOrderWithNilPointer)
+	t.Run("Prepare amend order with nil point", testPrepareAmendOrderWithNilPointer)
 }
 
 func TestPrepareCancelOrder(t *testing.T) {
@@ -63,6 +66,33 @@ func TestCreateOrder(t *testing.T) {
 func TestGetByOrderID(t *testing.T) {
 	t.Run("Get by order ID - fetch default version", testGetByOrderIDDefaultVersion)
 	t.Run("Get by order ID - fetch first version", testGetByOrderIDFirstVersion)
+}
+
+func testPrepareSubmitOrderWithNilPointer(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	ret, err := svc.svc.PrepareSubmitOrder(context.Background(), nil)
+	assert.Nil(t, ret)
+	assert.EqualError(t, err, orders.ErrEmptyPrepareRequest.Error())
+}
+
+func testPrepareAmendOrderWithNilPointer(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	ret, err := svc.svc.PrepareCancelOrder(context.Background(), nil)
+	assert.Nil(t, ret)
+	assert.EqualError(t, err, orders.ErrEmptyPrepareRequest.Error())
+}
+
+func testPrepareCancelOrderWithNilPointer(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	ret, err := svc.svc.PrepareAmendOrder(context.Background(), nil)
+	assert.Nil(t, ret)
+	assert.EqualError(t, err, orders.ErrEmptyPrepareRequest.Error())
 }
 
 func testPrepareOrderSuccess(t *testing.T) {
@@ -236,7 +266,6 @@ func testPrepareCancelOrderFail(t *testing.T) {
 			Status:      types.Order_Active,
 			Remaining:   orderSubmission.Size,
 		},
-		"oder not found": nil,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -264,8 +293,8 @@ func testPrepareCancelOrderFail(t *testing.T) {
 		}
 		svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), cancel.MarketID, cancel.OrderID).Times(1).Return(order, err)
 		ret, rerr := svc.svc.PrepareCancelOrder(context.Background(), &cancel)
-		assert.Nil(t, ret)
-		assert.Error(t, rerr)
+		assert.NotNil(t, ret)
+		assert.NoError(t, rerr)
 		if err != nil {
 			assert.Equal(t, err, rerr)
 		}
