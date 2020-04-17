@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
@@ -34,6 +35,8 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -142,10 +145,63 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		l.Log.Info("node setted up with badger store support")
 	}
 
-	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase)
+	// instanciate the ETHClient
+	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return err
+	}
+
+	// nodewallet
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase, ethclt)
+	if err != nil {
+		return err
+	}
+
+	// initialize the assets service now
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet)
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove that once we have infrastructure to use token through governance
+	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	if err != nil {
+		return err
+	}
+
+	var aid uint64
+	for _, v := range assetSrcs {
+		v := v
+		err = l.assets.NewAsset(aid, v)
+		if err != nil {
+			return fmt.Errorf("error instanciating asset %v\n", err)
+		}
+
+		asset, err := l.assets.Get(aid)
+		if err != nil {
+			return fmt.Errorf("unable to get asset %v\n", err)
+		}
+
+		// just a simple backoff here
+		err = backoff.Retry(
+			func() error {
+				err := asset.Validate()
+				if !asset.IsValid() {
+					return err
+				}
+				return nil
+			},
+			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to instanciate new asset %v", err)
+		}
+		if err := l.assets.Enable(aid); err != nil {
+			return fmt.Errorf("unable to enable asset: %v", err)
+		}
+		l.Log.Info("new asset added successfully",
+			logging.String("asset", asset.String()))
+		aid += 1
 	}
 
 	return nil

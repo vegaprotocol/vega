@@ -32,6 +32,11 @@ var (
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
 	// ErrInvalidAmendOrderTIF ...
 	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
+
+	// ErrEmptyPrepareRequest empty prepare request
+	ErrEmptyPrepareRequest = errors.New("empty prepare request")
+	// ErrEmptySubmitTransactionRequest empty transaction
+	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
 )
 
 // TimeService ...
@@ -105,10 +110,16 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 func (s *Svc) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
+	if bundle == nil {
+		return false, ErrEmptySubmitTransactionRequest
+	}
 	return s.blockchain.SubmitTransaction(ctx, bundle)
 }
 
 func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error) {
+	if submission == nil {
+		return nil, ErrEmptyPrepareRequest
+	}
 	if err := s.validateOrderSubmission(submission); err != nil {
 		return nil, err
 	}
@@ -160,6 +171,9 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 }
 
 func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
+	if order == nil {
+		return nil, ErrEmptyPrepareRequest
+	}
 	if err := order.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order cancellation invalid")
 	}
@@ -181,6 +195,9 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 }
 
 func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
+	if amendment == nil {
+		return nil, ErrEmptyPrepareRequest
+	}
 	if err := amendment.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order amendment validation failed")
 	}
