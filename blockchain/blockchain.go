@@ -27,6 +27,10 @@ type ABCIEngine interface {
 	Begin() error
 }
 
+type Commander interface {
+	SetChain(*Client)
+}
+
 type chainImpl interface {
 	Stop() error
 }
@@ -47,6 +51,7 @@ func New(
 	abciEngine ABCIEngine,
 	time TimeService,
 	stats *stats.Blockchain,
+	commander Commander,
 	cancel func(),
 ) (*Blockchain, error) {
 	// setup logger
@@ -78,12 +83,14 @@ func New(
 	if err != nil {
 		return nil, err
 	}
+	client := newClient(clt)
+	commander.SetChain(client)
 
 	log.Info("vega blockchain initialised", logging.String("chain-provider", cfg.ChainProvider))
 
 	return &Blockchain{
 		log:        log,
-		clt:        newClient(clt),
+		clt:        client,
 		chain:      chain,
 		abciEngine: abciEngine,
 		time:       time,
@@ -114,4 +121,31 @@ func (b *Blockchain) Stop() error {
 
 func (b *Blockchain) Client() *Client {
 	return b.clt
+}
+func GetChain(
+	log *logging.Logger,
+	cfg Config,
+	abciEngine ABCIEngine,
+	time TimeService,
+	stats *stats.Blockchain,
+	cancel func(),
+) (proc *codec, chain chainImpl, clt chainClientImpl, err error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+	proc = NewCodec(log, cfg, abciEngine)
+	switch strings.ToLower(cfg.ChainProvider) {
+	case "tendermint":
+		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel)
+		if err == nil {
+			clt, err = tm.NewClient(cfg.Tendermint)
+		}
+	case "noop":
+		noopchain := noop.New(log, cfg.Noop, stats, time, proc, abciEngine)
+		chain = noopchain
+		clt = noopchain
+	default:
+		err = ErrInvalidChainProvider
+	}
+	return
 }

@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/vega/wallet"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -70,6 +71,16 @@ type Stats interface {
 	SetTradesPerSecond(i uint64)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+type Commander interface {
+	Command(key *wallet.Keypair, cmd blockchain.Command, payload proto.Message) error
+}
+
+type NodeCommand struct {
+	Cmd blockchain.Command
+	msg proto.Message
+}
+
 type nodeProposal struct {
 	*types.Proposal
 	votes     map[string]struct{}
@@ -80,19 +91,20 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
+	key               *wallet.Keypair // the key for this node
 	stat              Stats
 	exec              ExecutionEngine
 	time              TimeService
 	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
 	pendingValidation []*types.Proposal
-	blockCommands     [][]byte
+	cmd               Commander
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -106,25 +118,10 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		nodes:             map[string]struct{}{},
 		nodeProposals:     map[string]*nodeProposal{},
 		pendingValidation: []*types.Proposal{},
-		blockCommands:     [][]byte{},
+		cmd:               cmd,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
-}
-
-func (p *Processor) Begin2() ([]byte, error) {
-	if err := p.Begin(); err != nil {
-		return nil, err
-	}
-	// command byte + payload
-	reg := &types.NodeRegistration{
-		PubKey: "this value comes from config?", // @TODO
-	}
-	raw, err := proto.Marshal(reg)
-	if err != nil {
-		return nil, err
-	}
-	return append([]byte{byte(blockchain.RegisterNodeCommand)}, raw...), nil
 }
 
 // Begin update timestamps
@@ -139,6 +136,10 @@ func (p *Processor) Begin() error {
 	}
 
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
+		return err
+	}
+	payload := &types.NodeRegistration{}
+	if err := p.cmd.Command(p.key, blockchain.RegisterNodeCommand, payload); err != nil {
 		return err
 	}
 
@@ -408,13 +409,13 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		// proposal is a new asset proposal?
 		if na := proposal.Terms.GetNewAsset(); na != nil {
 			p.nodeProposals[proposal.Reference] = &nodeProposal{
-				Proposal: proposal,
-				votes:    map[string]struct{}{},
+				Proposal:  proposal,
+				votes:     map[string]struct{}{},
+				validTime: p.currentTimestamp.Add(time.Duration(maxValidationPeriod) * time.Second),
 			}
 			if _, err := p.validateAsset(proposal); err != nil {
 				return err
 			}
-			//@TODO validate proposal here + cast vote
 			return nil
 		}
 		return p.exec.SubmitProposal(proposal)
@@ -558,11 +559,19 @@ func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
 	if asset == nil {
 		return false, ErrNotAnAssetProposal
 	}
+	// @TODO validate times, return specific err
 	p.log.Debug("Validating asset",
 		logging.String("asset-id", asset.ID),
 	)
-	// need dep to validate this proposal
-	// if validation failed, add to pendingPropopsals to retry every so often
+	nv := &types.NodeVote{
+		PubKey:    "the node key",
+		Reference: prop.Reference,
+	}
+	if err := p.cmd.Command(p.key, blockchain.NodeVoteCommand, nv); err != nil {
+		// @TODO keep in memory, retry later?
+		return false, err
+	}
+	// validation went fine
 	return true, nil
 }
 

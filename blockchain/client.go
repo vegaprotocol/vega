@@ -66,6 +66,19 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	return c.sendTx(ctx, bundleBytes, CommandKindSigned)
 }
 
+// SubmitNodeRegistration - Add command-specific public func for unsigned command
+func (c *Client) SubmitNodeRegistration(ctx context.Context, reg *types.NodeRegistration) (bool, error) {
+	bytes, err := proto.Marshal(reg)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("node registration was empty")
+	}
+
+	return c.sendCommand(ctx, bytes, RegisterNodeCommand)
+}
+
 // CancelOrder will send a cancel order transaction to the blockchain
 func (c *Client) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
 	return c.sendCancellationCommand(ctx, order, CancelOrderCommand)
