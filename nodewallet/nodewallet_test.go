@@ -188,8 +188,9 @@ func testNewFailureMissingRequiredWallets(t *testing.T) {
 	defer ctrl.Finish()
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
+	err = nw.EnsureRequireWallets()
+
 	assert.EqualError(t, err, "missing required wallet for vega chain")
-	assert.Nil(t, nw)
 	assert.NoError(t, os.RemoveAll(rootDir))
 
 }
