@@ -621,8 +621,8 @@ func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
 	for k, prop := range p.nodeProposals {
-		// this proposal has passed the node-voting period
-		if prop.validTime.Before(t) {
+		// this proposal has passed the node-voting period, or all nodes have voted/approved
+		if prop.validTime.Before(t) || len(prop.votes) == len(p.nodes) {
 			// if not all nodes have approved, just remove
 			if len(prop.votes) < len(p.nodes) {
 				p.log.Warn("proposal was not accepted by all nodes",

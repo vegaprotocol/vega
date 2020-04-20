@@ -155,6 +155,12 @@ func testOnTickPending(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	// Register a node, so the proposal is still pending
+	reg := &types.NodeRegistration{
+		PubKey: string(wal.key),
+	}
+	payload, err = proto.Marshal(reg)
+	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
 	// next time tick, proposal is pending but not past validation time
 	proc.tickCB(next)
 }
