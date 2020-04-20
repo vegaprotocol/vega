@@ -160,7 +160,7 @@ type Subscription {
     type: AccountType
   ): Account!
 
-  "Subscribe to the mark price changes"
+  "subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: String
@@ -173,9 +173,6 @@ type Subscription {
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketID: String
   ): MarginLevels!
-
-  "Subscribe to governance votes"
-  proposalVotes: Vote!
 }
 
 "Margins for a given a trader"
@@ -344,14 +341,18 @@ type Query {
 
   "All governance proposals in the VEGA network"
   proposals(
-    "Filter out only open proposals"
-    onlyOpen: Boolean
+    "Return only open proposals"
+    openOnly: Boolean
   ):[Proposal!]
 
-  "A governance proposal found by its ID or reference"
-  proposal(
-    proposalID: String
-    proposalReference: String
+  "A governance proposal located by its reference"
+  proposalByReference(
+    reference: String!
+  ): Proposal!
+
+  "A governance proposal located by its ID"
+  proposalByID(
+    id: String!
   ): Proposal!
 }
 
