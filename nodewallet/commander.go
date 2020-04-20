@@ -1,4 +1,4 @@
-package wallet
+package nodewallet
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(key *Keypair, cmd blockchain.Command, payload proto.Message) error {
+func (c *Commander) Command(key Wallet, cmd blockchain.Command, payload proto.Message) error {
 	if _, ok := unsigned[cmd]; key == nil && !ok {
 		return ErrCommandMustBeSigned
 	}
@@ -69,12 +69,15 @@ func (c *Commander) Command(key *Keypair, cmd blockchain.Command, payload proto.
 	if err != nil {
 		return err
 	}
-	sig, err := key.Algorithm.Sign(key.privBytes, tx)
+	sig, err := key.Sign(tx)
+	if err != nil {
+		return err
+	}
 	wrapped := &types.SignedBundle{
 		Data: tx,
 		Sig:  sig,
 		Auth: &types.SignedBundle_PubKey{
-			PubKey: key.pubBytes,
+			PubKey: key.PubKeyOrAddress(),
 		},
 	}
 	_, err = c.bc.SubmitTransaction(c.ctx, wrapped)

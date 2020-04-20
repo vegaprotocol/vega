@@ -33,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
-	"code.vegaprotocol.io/vega/wallet"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cenkalti/backoff/v4"
@@ -341,8 +340,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.mktscfg,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	commander := wallet.NewCommander(l.ctx, nil)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander)
+	commander := nodewallet.NewCommander(l.ctx, nil)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 

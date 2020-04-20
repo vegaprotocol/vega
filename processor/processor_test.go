@@ -7,10 +7,10 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/processor/mocks"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/wallet"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -26,6 +26,14 @@ type procTest struct {
 	tickCB func(time.Time)
 	ctrl   *gomock.Controller
 	cmd    *mocks.MockCommander
+	wallet *mocks.MockWallet
+}
+
+type stubWallet struct {
+	key    []byte
+	chain  string
+	signed []byte
+	err    error
 }
 
 func getTestProcessor(t *testing.T) *procTest {
@@ -35,11 +43,12 @@ func getTestProcessor(t *testing.T) *procTest {
 	ts := mocks.NewMockTimeService(ctrl)
 	stat := mocks.NewMockStats(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
+	wallet := mocks.NewMockWallet(ctrl)
 	var cb func(time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
 		cb = c
 	})
-	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd)
+	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet)
 	return &procTest{
 		Processor: proc,
 		eng:       eng,
@@ -48,6 +57,14 @@ func getTestProcessor(t *testing.T) *procTest {
 		tickCB:    cb,
 		ctrl:      ctrl,
 		cmd:       cmd,
+		wallet:    wallet,
+	}
+}
+
+func getTestStubWallet() *stubWallet {
+	return &stubWallet{
+		key:   []byte("test key"),
+		chain: string(nodewallet.Vega),
 	}
 }
 
@@ -63,11 +80,14 @@ func TestValidateSigned(t *testing.T) {
 func TestProcess(t *testing.T) {
 	t.Run("Test all basic process commands - Success", testProcessCommandSuccess)
 	t.Run("Test process asset proposal - Success", testProcessAssetProposalSuccess)
+	t.Run("Test process asset proposal - No Key/Wallet", testProcessAssetProposalNoKey)
 }
 
 func TestBeginCommit(t *testing.T) {
 	t.Run("Call Begin and Commit - success", testBeginCommitSuccess)
 	t.Run("Call begin, register node error - fail", testBeginRegisterError)
+	t.Run("Call Begin, vega wallet not found - fail", testBeginNodeWalletError)
+	t.Run("Call Begin twice, only calls commander once", testBeginCallsCommanderOnce)
 }
 
 func TestOnTick(t *testing.T) {
@@ -94,7 +114,10 @@ func testOnTickPending(t *testing.T) {
 	next := now.Add(time.Second) // 1 second later
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	// Begin was never called, so we expect nodewallet to be involved
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
@@ -117,7 +140,8 @@ func testOnTickPending(t *testing.T) {
 	}
 	payload, err := proto.Marshal(data)
 	assert.NoError(t, err)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		nv, ok := payload.(*types.NodeVote)
 		// make sure the correct command was issued
 		assert.True(t, ok)
@@ -137,7 +161,9 @@ func testOnTickSubmit(t *testing.T) {
 	next := now.Add(time.Hour * 96) //  4 days later, the validation period has expired for sure
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
@@ -160,7 +186,8 @@ func testOnTickSubmit(t *testing.T) {
 	}
 	payload, err := proto.Marshal(data)
 	assert.NoError(t, err)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		nv, ok := payload.(*types.NodeVote)
 		// make sure the correct command was issued
 		assert.True(t, ok)
@@ -185,7 +212,9 @@ func testOnTickSubmitRetry(t *testing.T) {
 	next := now.Add(time.Hour * 96) //  4 days later, the validation period has expired for sure
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
@@ -208,7 +237,8 @@ func testOnTickSubmitRetry(t *testing.T) {
 	}
 	payload, err := proto.Marshal(data)
 	assert.NoError(t, err)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		nv, ok := payload.(*types.NodeVote)
 		// make sure the correct command was issued
 		assert.True(t, ok)
@@ -242,7 +272,9 @@ func testOnTickReject(t *testing.T) {
 	next := now.Add(time.Hour * 96) //  4 days later, the validation period has expired for sure
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
@@ -276,7 +308,8 @@ func testOnTickReject(t *testing.T) {
 	}
 	payload, err := proto.Marshal(data)
 	assert.NoError(t, err)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		nv, ok := payload.(*types.NodeVote)
 		// make sure the correct command was issued
 		assert.True(t, ok)
@@ -300,7 +333,9 @@ func testBeginCommitSuccess(t *testing.T) {
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
@@ -334,13 +369,51 @@ func testBeginRegisterError(t *testing.T) {
 	expErr := errors.New("test error")
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
 	}).Return(expErr)
 	err := proc.Begin()
 	assert.Error(t, err)
 	assert.Equal(t, expErr, err)
+}
+
+func testBeginNodeWalletError(t *testing.T) {
+	proc := getTestProcessor(t)
+	defer proc.ctrl.Finish()
+
+	now := time.Now()
+	prev := now.Add(-time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(nil, false)
+	err := proc.Begin()
+	assert.Error(t, err)
+	assert.Equal(t, processor.ErrNoVegaWalletFound, err)
+}
+
+func testBeginCallsCommanderOnce(t *testing.T) {
+	proc := getTestProcessor(t)
+	defer proc.ctrl.Finish()
+
+	now := time.Now()
+	prev := now.Add(-time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(getTestStubWallet(), true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+		// check if the type is ok
+		_, ok := payload.(*types.NodeRegistration)
+		assert.True(t, ok)
+	}).Return(nil)
+	assert.NoError(t, proc.Begin())
+	// next block times
+	prev, now = now, now.Add(time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	assert.NoError(t, proc.Begin())
 }
 
 func testValidateSignedInvalidPayload(t *testing.T) {
@@ -545,11 +618,48 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 	}
 	payload, err := proto.Marshal(data)
 	assert.NoError(t, err)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ *wallet.Keypair, _ blockchain.Command, payload proto.Message) {
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(getTestStubWallet(), true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
 		nv, ok := payload.(*types.NodeVote)
 		// make sure the correct command was issued
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+}
+
+func testProcessAssetProposalNoKey(t *testing.T) {
+	proc := getTestProcessor(t)
+	defer proc.ctrl.Finish()
+	key := []byte("party-id")
+	party := hex.EncodeToString(key)
+	data := &types.Proposal{
+		PartyID:   party,
+		Reference: "proposal-ref",
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					ID: "asset-id",
+				},
+			},
+		},
+	}
+	payload, err := proto.Marshal(data)
+	assert.NoError(t, err)
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(nil, false)
+	err = proc.Process(payload, blockchain.ProposeCommand)
+	assert.Error(t, err)
+	assert.Equal(t, processor.ErrNoVegaWalletFound, err)
+}
+
+func (s stubWallet) Chain() string {
+	return s.chain
+}
+
+func (s stubWallet) PubKeyOrAddress() []byte {
+	return s.key
+}
+
+func (s stubWallet) Sign(_ []byte) ([]byte, error) {
+	return s.signed, s.err
 }

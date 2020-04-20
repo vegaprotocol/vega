@@ -1,25 +1,31 @@
-package wallet_test
+package nodewallet_test
 
 import (
 	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallet/mocks"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/wallet"
-	"code.vegaprotocol.io/vega/wallet/crypto"
-	"code.vegaprotocol.io/vega/wallet/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
 type testCommander struct {
-	*wallet.Commander
+	*nodewallet.Commander
 	ctx   context.Context
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
 	chain *mocks.MockChain
+}
+
+type stubWallet struct {
+	key    []byte
+	chain  string
+	signed []byte
+	err    error
 }
 
 func getTestCommander(t *testing.T) *testCommander {
@@ -27,7 +33,7 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
 	return &testCommander{
-		Commander: wallet.NewCommander(ctx, chain),
+		Commander: nodewallet.NewCommander(ctx, chain),
 		ctx:       ctx,
 		cfunc:     cfunc,
 		ctrl:      ctrl,
@@ -67,7 +73,7 @@ func testUnsignedCommandFail(t *testing.T) {
 	payload := &types.NodeVote{}
 	err := commander.Command(nil, cmd, payload)
 	assert.Error(t, err)
-	assert.Equal(t, wallet.ErrCommandMustBeSigned, err)
+	assert.Equal(t, nodewallet.ErrCommandMustBeSigned, err)
 }
 
 func testSignedCommandSuccess(t *testing.T) {
@@ -76,7 +82,7 @@ func testSignedCommandSuccess(t *testing.T) {
 
 	cmd := blockchain.NodeVoteCommand
 	payload := &types.NodeVote{}
-	key := wallet.NewKeypair(crypto.NewEd25519(), []byte{1, 2, 3, 255}, []byte{253, 3, 2, 1})
+	key := stubWallet{}
 	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
 	assert.NoError(t, commander.Command(&key, cmd, payload))
 }
@@ -88,7 +94,7 @@ func testSignedUnsignedSuccess(t *testing.T) {
 	// this command doesn't require a signature, let's sign it anyway
 	cmd := blockchain.NotifyTraderAccountCommand
 	payload := &types.NotifyTraderAccount{}
-	key := wallet.NewKeypair(crypto.NewEd25519(), []byte{1, 2, 3, 255}, []byte{253, 3, 2, 1})
+	key := stubWallet{}
 	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
 	assert.NoError(t, commander.Command(&key, cmd, payload))
 }
@@ -96,4 +102,16 @@ func testSignedUnsignedSuccess(t *testing.T) {
 func (t *testCommander) Finish() {
 	t.cfunc()
 	t.ctrl.Finish()
+}
+
+func (s stubWallet) Chain() string {
+	return s.chain
+}
+
+func (s stubWallet) PubKeyOrAddress() []byte {
+	return s.key
+}
+
+func (s stubWallet) Sign(_ []byte) ([]byte, error) {
+	return s.signed, s.err
 }

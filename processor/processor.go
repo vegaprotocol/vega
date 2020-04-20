@@ -7,9 +7,9 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
-	"code.vegaprotocol.io/vega/wallet"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -28,6 +28,7 @@ var (
 	ErrUnknownNodeKey                               = errors.New("node pubkey unknown")
 	ErrUnknownProposal                              = errors.New("proposal unknown")
 	ErrNotAnAssetProposal                           = errors.New("proposal is not a new asset proposal")
+	ErrNoVegaWalletFound                            = errors.New("node wallet not found")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -71,9 +72,14 @@ type Stats interface {
 	SetTradesPerSecond(i uint64)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
+type Wallet interface {
+	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(key *wallet.Keypair, cmd blockchain.Command, payload proto.Message) error
+	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
 }
 
 type NodeCommand struct {
@@ -91,10 +97,11 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
-	key               *wallet.Keypair // the key for this node
+	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
 	time              TimeService
+	wallet            Wallet
 	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
 	pendingValidation []*types.Proposal
@@ -104,7 +111,7 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -115,6 +122,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		Config:            config,
 		exec:              exec,
 		time:              ts,
+		wallet:            wallet,
 		nodes:             map[string]struct{}{},
 		nodeProposals:     map[string]*nodeProposal{},
 		pendingValidation: []*types.Proposal{},
@@ -138,9 +146,18 @@ func (p *Processor) Begin() error {
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
 	}
-	payload := &types.NodeRegistration{}
-	if err := p.cmd.Command(p.key, blockchain.RegisterNodeCommand, payload); err != nil {
-		return err
+	if !p.hasRegistered {
+		w, ok := p.wallet.Get(nodewallet.Vega)
+		if !ok {
+			return ErrNoVegaWalletFound
+		}
+		payload := &types.NodeRegistration{
+			PubKey: string(w.PubKeyOrAddress()),
+		}
+		if err := p.cmd.Command(nil, blockchain.RegisterNodeCommand, payload); err != nil {
+			return err
+		}
+		p.hasRegistered = true
 	}
 
 	if p.log.GetLevel() == logging.DebugLevel {
@@ -567,7 +584,11 @@ func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
 		PubKey:    "the node key",
 		Reference: prop.Reference,
 	}
-	if err := p.cmd.Command(p.key, blockchain.NodeVoteCommand, nv); err != nil {
+	key, ok := p.wallet.Get(nodewallet.Vega)
+	if !ok {
+		return false, ErrNoVegaWalletFound
+	}
+	if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
 		// @TODO keep in memory, retry later?
 		return false, err
 	}
