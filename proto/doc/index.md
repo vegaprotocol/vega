@@ -1489,7 +1489,7 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
+| changes | [Asset](#vega.Asset) |  |  |
 
 
 
@@ -1542,6 +1542,7 @@ To be implemented
 | closingTimestamp | [int64](#int64) |  |  |
 | enactmentTimestamp | [int64](#int64) |  |  |
 | minParticipationStake | [uint64](#uint64) |  |  |
+| validationTimestamp | [int64](#int64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |

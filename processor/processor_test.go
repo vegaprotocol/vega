@@ -133,7 +133,9 @@ func testOnTickPending(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ID: "asset-id",
+					Changes: &types.Asset{
+						ID: 1,
+					},
 				},
 			},
 		},
@@ -179,7 +181,9 @@ func testOnTickSubmit(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ID: "asset-id",
+					Changes: &types.Asset{
+						ID: 1,
+					},
 				},
 			},
 		},
@@ -230,7 +234,9 @@ func testOnTickSubmitRetry(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ID: "asset-id",
+					Changes: &types.Asset{
+						ID: 1,
+					},
 				},
 			},
 		},
@@ -301,7 +307,9 @@ func testOnTickReject(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ID: "asset-id",
+					Changes: &types.Asset{
+						ID: 1,
+					},
 				},
 			},
 		},
@@ -611,7 +619,9 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ID: "asset-id",
+					Changes: &types.Asset{
+						ID: 1,
+					},
 				},
 			},
 		},
@@ -639,7 +649,9 @@ func testProcessAssetProposalNoKey(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ID: "asset-id",
+					Changes: &types.Asset{
+						ID: 1,
+					},
 				},
 			},
 		},

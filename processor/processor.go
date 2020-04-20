@@ -578,7 +578,7 @@ func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
 	}
 	// @TODO validate times, return specific err
 	p.log.Debug("Validating asset",
-		logging.String("asset-id", asset.ID),
+		logging.Uint64("asset-id", asset.Changes.ID),
 	)
 	nv := &types.NodeVote{
 		PubKey:    "the node key",
