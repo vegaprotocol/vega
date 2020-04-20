@@ -328,7 +328,7 @@ func (r *myQueryResolver) Proposals(ctx context.Context, openOnly *bool) ([]*Pro
 	}
 	result := make([]*Proposal, len(proposals.Proposals))
 	for i, p := range proposals.Proposals {
-		converted, err := r.proposalFromProto(ctx, p.Proposal)
+		converted, err := r.convertProposal(ctx, p.Proposal)
 		if err != nil {
 			return nil, err
 		}
@@ -344,7 +344,7 @@ func (r *myQueryResolver) ProposalByReference(ctx context.Context, reference str
 	if err != nil {
 		return nil, err
 	}
-	return r.proposalFromProto(ctx, vote.Proposal)
+	return r.convertProposal(ctx, vote.Proposal)
 }
 
 func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposal, error) {
@@ -354,10 +354,10 @@ func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposa
 	if err != nil {
 		return nil, err
 	}
-	return r.proposalFromProto(ctx, vote.Proposal)
+	return r.convertProposal(ctx, vote.Proposal)
 }
 
-func (r *myQueryResolver) proposalFromProto(ctx context.Context, proposal *types.Proposal) (*Proposal, error) {
+func (r *myQueryResolver) convertProposal(ctx context.Context, proposal *types.Proposal) (*Proposal, error) {
 	terms, err := ProposalTermsFromProto(proposal.Terms)
 	if err != nil {
 		return nil, err
