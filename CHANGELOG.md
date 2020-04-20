@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.17.0
+
+*2020-TBC*
+
+### Features
+
+- TBD
+
+### Improvements
+
+- TBD
+
+## 0.16.2
+
+*2020-04-16*
+
+### Improvements
+
+- [#1545](https://github.com/vegaprotocol/vega/pull/1545) Improve error handling in `Prepare*Order` requests
+
+## 0.16.1
+
+*2020-04-15*
+
+### Improvements
+
+- [!651](https://gitlab.com/vega-protocol/trading-core/-/merge_requests/651) Prevent bad ED25519 key length causing node panic.
+
 ## 0.16.0
 
 *2020-03-02*
