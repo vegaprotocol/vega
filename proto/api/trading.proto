@@ -67,17 +67,14 @@ message NotifyTraderAccountResponse {
 
 message PrepareSubmitOrderResponse {
   bytes blob = 1;
-  vega.PendingOrder pendingOrder = 2;
 }
 
 message PrepareCancelOrderResponse {
   bytes blob = 1;
-  vega.PendingOrder pendingOrder = 2;
 }
 
 message PrepareAmendOrderResponse {
   bytes blob = 1;
-  vega.PendingOrder pendingOrder = 2;
 }
 
 message SubmitOrderRequest {

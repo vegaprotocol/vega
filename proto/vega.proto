@@ -269,19 +269,6 @@ enum ChainStatus {
     CONNECTED = 2;
 }
 
-message PendingOrder {
-  string reference = 1;
-  uint64 price = 2;
-  Order.TimeInForce timeInForce = 3;
-  Side side = 4;
-  string marketID = 5;
-  uint64 size = 6;
-  string partyID = 7;
-  Order.Status status = 8;
-  string id = 9;
-  Order.Type type = 10;
-}
-
 message NotifyTraderAccount {
   string traderID = 1;
   uint64 amount = 2;
