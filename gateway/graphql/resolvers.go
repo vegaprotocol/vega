@@ -179,11 +179,6 @@ func (r *VegaResolverRoot) Subscription() SubscriptionResolver {
 	return (*mySubscriptionResolver)(r)
 }
 
-// PendingOrder returns the pending orders resolver
-func (r *VegaResolverRoot) PendingOrder() PendingOrderResolver {
-	return (*myPendingOrderResolver)(r)
-}
-
 // Account returns the accounts resolver
 func (r *VegaResolverRoot) Account() AccountResolver {
 	return (*myAccountResolver)(r)
@@ -1240,8 +1235,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedSubmitOrder{
-		Blob:         base64.StdEncoding.EncodeToString(resp.Blob),
-		PendingOrder: resp.PendingOrder,
+		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 	}, nil
 }
 
@@ -1273,8 +1267,7 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedCancelOrder{
-		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-		PendingOrder: pendingOrder.PendingOrder,
+		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 	}, nil
 
 }
@@ -1409,8 +1402,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedAmendOrder{
-		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-		PendingOrder: pendingOrder.PendingOrder,
+		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 	}, nil
 }
 
@@ -1731,91 +1723,8 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 			c <- cdl
 		}
 	}()
-
 	return c, nil
-
 }
-
-type myPendingOrderResolver VegaResolverRoot
-
-func (r *myPendingOrderResolver) Type(ctx context.Context, obj *types.PendingOrder) (*OrderType, error) {
-	if obj != nil {
-		ot := OrderType(obj.Type.String())
-		return &ot, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) Price(ctx context.Context, obj *types.PendingOrder) (*string, error) {
-	if obj != nil {
-		str := fmt.Sprintf("%v", obj.Price)
-		return &str, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) TimeInForce(ctx context.Context, obj *types.PendingOrder) (*OrderTimeInForce, error) {
-	if obj != nil {
-		ot := OrderTimeInForce(obj.TimeInForce.String())
-		return &ot, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) Side(ctx context.Context, obj *types.PendingOrder) (*Side, error) {
-	if obj != nil {
-		s := Side(obj.Side.String())
-		return &s, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) Market(ctx context.Context, pord *types.PendingOrder) (*Market, error) {
-	if pord == nil {
-		return nil, errors.New("invalid pending order")
-	}
-
-	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
-	res, err := r.tradingDataClient.MarketByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return MarketFromProto(res.Market)
-}
-
-func (r *myPendingOrderResolver) Party(ctx context.Context, pendingOrder *types.PendingOrder) (*types.Party, error) {
-	if pendingOrder == nil {
-		return nil, nil
-	}
-	if len(pendingOrder.PartyID) == 0 {
-		return nil, errors.New("invalid party")
-	}
-	req := protoapi.PartyByIDRequest{PartyID: pendingOrder.PartyID}
-	res, err := r.tradingDataClient.PartyByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Party, nil
-}
-
-func (r *myPendingOrderResolver) Size(ctx context.Context, obj *types.PendingOrder) (*string, error) {
-	if obj != nil {
-		str := fmt.Sprintf("%v", obj.Size)
-		return &str, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-func (r *myPendingOrderResolver) Status(ctx context.Context, obj *types.PendingOrder) (*OrderStatus, error) {
-	if obj != nil {
-		os := OrderStatus(obj.Status.String())
-		return &os, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-// END: Subscription Resolver
 
 // START: Account Resolver
 

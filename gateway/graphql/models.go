@@ -255,15 +255,11 @@ type NewMarketInput struct {
 type PreparedAmendOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
-	// The pending order
-	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type PreparedCancelOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
-	// The pending order
-	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type PreparedProposal struct {
@@ -276,8 +272,6 @@ type PreparedProposal struct {
 type PreparedSubmitOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
-	// The pending order
-	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type PreparedVote struct {

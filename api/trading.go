@@ -20,9 +20,9 @@ import (
 // TradeOrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeOrderService
 type TradeOrderService interface {
-	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
-	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
-	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
+	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error
+	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) error
+	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 }
 
@@ -54,7 +54,7 @@ type tradingService struct {
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
-	pending, err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
+	err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
@@ -66,15 +66,14 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 		return nil, apiError(codes.Internal, ErrSubmitOrder)
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
-		Blob:         raw,
-		PendingOrder: pending,
+		Blob: raw,
 	}, nil
 }
 
 func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", startTime)
-	pending, err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
+	err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder)
 	}
@@ -86,15 +85,14 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 		return nil, apiError(codes.Internal, ErrCancelOrder)
 	}
 	return &protoapi.PrepareCancelOrderResponse{
-		Blob:         raw,
-		PendingOrder: pending,
+		Blob: raw,
 	}, nil
 }
 
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
-	pending, err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder)
 	}
@@ -106,8 +104,7 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 		return nil, apiError(codes.Internal, ErrAmendOrder)
 	}
 	return &protoapi.PrepareAmendOrderResponse{
-		Blob:         raw,
-		PendingOrder: pending,
+		Blob: raw,
 	}, nil
 }
 

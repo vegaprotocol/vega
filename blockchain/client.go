@@ -88,25 +88,14 @@ func (c *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) 
 }
 
 // CreateOrder will send a submit order transaction to the blockchain
-func (c *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
+func (c *Client) CreateOrder(ctx context.Context, order *types.Order) error {
 	order.Reference = uuid.NewV4().String()
 	_, err := c.sendOrderCommand(ctx, order, SubmitOrderCommand)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	return &types.PendingOrder{
-		Reference:   order.Reference,
-		Price:       order.Price,
-		TimeInForce: order.TimeInForce,
-		Side:        order.Side,
-		MarketID:    order.MarketID,
-		Size:        order.Size,
-		PartyID:     order.PartyID,
-		Status:      order.Status,
-		Type:        order.Type,
-	}, nil
+	return nil
 }
 
 // GetGenesisTime will retrieve the genesis time from the blockchain

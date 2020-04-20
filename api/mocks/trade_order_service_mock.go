@@ -35,12 +35,11 @@ func (m *MockTradeOrderService) EXPECT() *MockTradeOrderServiceMockRecorder {
 }
 
 // PrepareAmendOrder mocks base method
-func (m *MockTradeOrderService) PrepareAmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*proto.PendingOrder, error) {
+func (m *MockTradeOrderService) PrepareAmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareAmendOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // PrepareAmendOrder indicates an expected call of PrepareAmendOrder
@@ -50,12 +49,11 @@ func (mr *MockTradeOrderServiceMockRecorder) PrepareAmendOrder(arg0, arg1 interf
 }
 
 // PrepareCancelOrder mocks base method
-func (m *MockTradeOrderService) PrepareCancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.PendingOrder, error) {
+func (m *MockTradeOrderService) PrepareCancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareCancelOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // PrepareCancelOrder indicates an expected call of PrepareCancelOrder
@@ -65,12 +63,11 @@ func (mr *MockTradeOrderServiceMockRecorder) PrepareCancelOrder(arg0, arg1 inter
 }
 
 // PrepareSubmitOrder mocks base method
-func (m *MockTradeOrderService) PrepareSubmitOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (*proto.PendingOrder, error) {
+func (m *MockTradeOrderService) PrepareSubmitOrder(arg0 context.Context, arg1 *proto.OrderSubmission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareSubmitOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // PrepareSubmitOrder indicates an expected call of PrepareSubmitOrder

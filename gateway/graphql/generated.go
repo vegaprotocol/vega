@@ -46,7 +46,6 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Order() OrderResolver
 	Party() PartyResolver
-	PendingOrder() PendingOrderResolver
 	Position() PositionResolver
 	PriceLevel() PriceLevelResolver
 	Query() QueryResolver
@@ -210,19 +209,6 @@ type ComplexityRoot struct {
 		Trades    func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
 	}
 
-	PendingOrder struct {
-		Id          func(childComplexity int) int
-		Market      func(childComplexity int) int
-		Party       func(childComplexity int) int
-		Price       func(childComplexity int) int
-		Reference   func(childComplexity int) int
-		Side        func(childComplexity int) int
-		Size        func(childComplexity int) int
-		Status      func(childComplexity int) int
-		TimeInForce func(childComplexity int) int
-		Type        func(childComplexity int) int
-	}
-
 	Position struct {
 		AverageEntryPrice func(childComplexity int) int
 		Margins           func(childComplexity int) int
@@ -233,13 +219,11 @@ type ComplexityRoot struct {
 	}
 
 	PreparedAmendOrder struct {
-		Blob         func(childComplexity int) int
-		PendingOrder func(childComplexity int) int
+		Blob func(childComplexity int) int
 	}
 
 	PreparedCancelOrder struct {
-		Blob         func(childComplexity int) int
-		PendingOrder func(childComplexity int) int
+		Blob func(childComplexity int) int
 	}
 
 	PreparedProposal struct {
@@ -248,8 +232,7 @@ type ComplexityRoot struct {
 	}
 
 	PreparedSubmitOrder struct {
-		Blob         func(childComplexity int) int
-		PendingOrder func(childComplexity int) int
+		Blob func(childComplexity int) int
 	}
 
 	PreparedVote struct {
@@ -470,16 +453,6 @@ type PartyResolver interface {
 	Accounts(ctx context.Context, obj *proto.Party, marketID *string, asset *string, typeArg *AccountType) ([]*proto.Account, error)
 	Positions(ctx context.Context, obj *proto.Party) ([]*proto.Position, error)
 	Margins(ctx context.Context, obj *proto.Party, marketID *string) ([]*proto.MarginLevels, error)
-}
-type PendingOrderResolver interface {
-	Price(ctx context.Context, obj *proto.PendingOrder) (*string, error)
-	TimeInForce(ctx context.Context, obj *proto.PendingOrder) (*OrderTimeInForce, error)
-	Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error)
-	Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error)
-	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
-	Party(ctx context.Context, obj *proto.PendingOrder) (*proto.Party, error)
-	Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error)
-	Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*Market, error)
@@ -1304,76 +1277,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Trades(childComplexity, args["marketId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
-	case "PendingOrder.id":
-		if e.complexity.PendingOrder.Id == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Id(childComplexity), true
-
-	case "PendingOrder.market":
-		if e.complexity.PendingOrder.Market == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Market(childComplexity), true
-
-	case "PendingOrder.party":
-		if e.complexity.PendingOrder.Party == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Party(childComplexity), true
-
-	case "PendingOrder.price":
-		if e.complexity.PendingOrder.Price == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Price(childComplexity), true
-
-	case "PendingOrder.reference":
-		if e.complexity.PendingOrder.Reference == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Reference(childComplexity), true
-
-	case "PendingOrder.side":
-		if e.complexity.PendingOrder.Side == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Side(childComplexity), true
-
-	case "PendingOrder.size":
-		if e.complexity.PendingOrder.Size == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Size(childComplexity), true
-
-	case "PendingOrder.status":
-		if e.complexity.PendingOrder.Status == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Status(childComplexity), true
-
-	case "PendingOrder.timeInForce":
-		if e.complexity.PendingOrder.TimeInForce == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.TimeInForce(childComplexity), true
-
-	case "PendingOrder.type":
-		if e.complexity.PendingOrder.Type == nil {
-			break
-		}
-
-		return e.complexity.PendingOrder.Type(childComplexity), true
-
 	case "Position.averageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
 			break
@@ -1423,26 +1326,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PreparedAmendOrder.Blob(childComplexity), true
 
-	case "PreparedAmendOrder.pendingOrder":
-		if e.complexity.PreparedAmendOrder.PendingOrder == nil {
-			break
-		}
-
-		return e.complexity.PreparedAmendOrder.PendingOrder(childComplexity), true
-
 	case "PreparedCancelOrder.blob":
 		if e.complexity.PreparedCancelOrder.Blob == nil {
 			break
 		}
 
 		return e.complexity.PreparedCancelOrder.Blob(childComplexity), true
-
-	case "PreparedCancelOrder.pendingOrder":
-		if e.complexity.PreparedCancelOrder.PendingOrder == nil {
-			break
-		}
-
-		return e.complexity.PreparedCancelOrder.PendingOrder(childComplexity), true
 
 	case "PreparedProposal.blob":
 		if e.complexity.PreparedProposal.Blob == nil {
@@ -1464,13 +1353,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PreparedSubmitOrder.Blob(childComplexity), true
-
-	case "PreparedSubmitOrder.pendingOrder":
-		if e.complexity.PreparedSubmitOrder.PendingOrder == nil {
-			break
-		}
-
-		return e.complexity.PreparedSubmitOrder.PendingOrder(childComplexity), true
 
 	case "PreparedVote.blob":
 		if e.complexity.PreparedVote.Blob == nil {
@@ -2486,63 +2368,20 @@ type MarketData {
 type PreparedSubmitOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type PreparedCancelOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type PreparedAmendOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type TransactionSubmitted {
   success: Boolean!
-}
-
-"An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted."
-type PendingOrder {
-
-  "The id of the Order, can be null if the request was SubmitOrder"
-  id: String
-
-  "A UUID reference for the caller to aid in tracking operations on VEGA"
-  reference: String!
-
-  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
-  price: String
-
-  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
-  timeInForce: OrderTimeInForce
-
-  "Whether the order is to buy or sell"
-  side: Side
-
-  """
-  The market the order is trading on (probably stored internally as a hash of the market details)
-  could be nil if the submit order failed and no order is created.
-  """
-  market: Market
-
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
-  size: String
-
-  "The trader who place the order (probably stored internally as the trader's public key)"
-  party: Party
-
-  "The status of an order, for example 'Active'"
-  status: OrderStatus
-
-  "The type of the order"
-  type: OrderType
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."
@@ -7980,349 +7819,6 @@ func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.Co
 	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevelsᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PendingOrder_id(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Id, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_reference(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reference, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_price(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Price(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_timeInForce(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().TimeInForce(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*OrderTimeInForce)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Side(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Side)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_market(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Market(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Market)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_size(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Size(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_party(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Party(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*proto.Party)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Status(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*OrderStatus)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PendingOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Type(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*OrderType)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8579,43 +8075,6 @@ func (ec *executionContext) _PreparedAmendOrder_blob(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PreparedAmendOrder_pendingOrder(ctx context.Context, field graphql.CollectedField, obj *PreparedAmendOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PreparedAmendOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PendingOrder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.PendingOrder)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PreparedCancelOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedCancelOrder) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8651,43 +8110,6 @@ func (ec *executionContext) _PreparedCancelOrder_blob(ctx context.Context, field
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedCancelOrder_pendingOrder(ctx context.Context, field graphql.CollectedField, obj *PreparedCancelOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PreparedCancelOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PendingOrder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.PendingOrder)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreparedProposal_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedProposal) (ret graphql.Marshaler) {
@@ -8799,43 +8221,6 @@ func (ec *executionContext) _PreparedSubmitOrder_blob(ctx context.Context, field
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedSubmitOrder_pendingOrder(ctx context.Context, field graphql.CollectedField, obj *PreparedSubmitOrder) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PreparedSubmitOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PendingOrder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.PendingOrder)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreparedVote_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
@@ -15436,123 +14821,6 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var pendingOrderImplementors = []string{"PendingOrder"}
-
-func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.SelectionSet, obj *proto.PendingOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, pendingOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PendingOrder")
-		case "id":
-			out.Values[i] = ec._PendingOrder_id(ctx, field, obj)
-		case "reference":
-			out.Values[i] = ec._PendingOrder_reference(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "price":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_price(ctx, field, obj)
-				return res
-			})
-		case "timeInForce":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_timeInForce(ctx, field, obj)
-				return res
-			})
-		case "side":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_side(ctx, field, obj)
-				return res
-			})
-		case "market":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_market(ctx, field, obj)
-				return res
-			})
-		case "size":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_size(ctx, field, obj)
-				return res
-			})
-		case "party":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_party(ctx, field, obj)
-				return res
-			})
-		case "status":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_status(ctx, field, obj)
-				return res
-			})
-		case "type":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PendingOrder_type(ctx, field, obj)
-				return res
-			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var positionImplementors = []string{"Position"}
 
 func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet, obj *proto.Position) graphql.Marshaler {
@@ -15672,11 +14940,6 @@ func (ec *executionContext) _PreparedAmendOrder(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "pendingOrder":
-			out.Values[i] = ec._PreparedAmendOrder_pendingOrder(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15701,11 +14964,6 @@ func (ec *executionContext) _PreparedCancelOrder(ctx context.Context, sel ast.Se
 			out.Values[i] = graphql.MarshalString("PreparedCancelOrder")
 		case "blob":
 			out.Values[i] = ec._PreparedCancelOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "pendingOrder":
-			out.Values[i] = ec._PreparedCancelOrder_pendingOrder(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -15765,11 +15023,6 @@ func (ec *executionContext) _PreparedSubmitOrder(ctx context.Context, sel ast.Se
 			out.Values[i] = graphql.MarshalString("PreparedSubmitOrder")
 		case "blob":
 			out.Values[i] = ec._PreparedSubmitOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "pendingOrder":
-			out.Values[i] = ec._PreparedSubmitOrder_pendingOrder(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -17464,20 +16717,6 @@ func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Party(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPendingOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx context.Context, sel ast.SelectionSet, v proto.PendingOrder) graphql.Marshaler {
-	return ec._PendingOrder(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx context.Context, sel ast.SelectionSet, v *proto.PendingOrder) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PendingOrder(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNPosition2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPosition(ctx context.Context, sel ast.SelectionSet, v proto.Position) graphql.Marshaler {
 	return ec._Position(ctx, sel, &v)
 }
@@ -18454,54 +17693,6 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
-	var res OrderStatus
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v OrderStatus) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (*OrderStatus, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v *OrderStatus) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
-func (ec *executionContext) unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
-	var res OrderTimeInForce
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (*OrderTimeInForce, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
 func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
 	var res OrderType
 	return res, res.UnmarshalGQL(v)
@@ -18682,30 +17873,6 @@ func (ec *executionContext) unmarshalORejectionReason2ᚖcodeᚗvegaprotocolᚗi
 }
 
 func (ec *executionContext) marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, sel ast.SelectionSet, v *RejectionReason) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
-func (ec *executionContext) unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
-	var res Side
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v Side) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (*Side, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v *Side) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -1235,9 +1235,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1247,9 +1244,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1285,9 +1279,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -2047,43 +2038,6 @@
       "properties": {
         "id": {
           "type": "string"
-        }
-      }
-    },
-    "vegaPendingOrder": {
-      "type": "object",
-      "properties": {
-        "reference": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "timeInForce": {
-          "$ref": "#/definitions/OrderTimeInForce"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
-        },
-        "marketID": {
-          "type": "string"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "partyID": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/OrderStatus"
-        },
-        "id": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
         }
       }
     },

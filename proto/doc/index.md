@@ -150,7 +150,6 @@
     - [OrderConfirmation](#vega.OrderConfirmation)
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
-    - [PendingOrder](#vega.PendingOrder)
     - [Position](#vega.Position)
     - [PositionTrade](#vega.PositionTrade)
     - [PriceLevel](#vega.PriceLevel)
@@ -964,7 +963,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blob | [bytes](#bytes) |  |  |
-| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
 
 
 
@@ -980,7 +978,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blob | [bytes](#bytes) |  |  |
-| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
 
 
 
@@ -1029,7 +1026,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blob | [bytes](#bytes) |  |  |
-| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
 
 
 
@@ -2282,30 +2278,6 @@ Proposal can enter Failed state from any other state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.PendingOrder"></a>
-
-### PendingOrder
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| reference | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| side | [Side](#vega.Side) |  |  |
-| marketID | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
-| partyID | [string](#string) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  |  |
-| id | [string](#string) |  |  |
-| type | [Order.Type](#vega.Order.Type) |  |  |
 
 
 
