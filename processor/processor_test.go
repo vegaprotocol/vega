@@ -96,6 +96,7 @@ func TestOnTick(t *testing.T) {
 	t.Run("Test onTick callback with validated proposal", testOnTickSubmit)
 	t.Run("Test onTick callback with validated proposal, retry", testOnTickSubmitRetry)
 	t.Run("Test onTick callback with partially validated proposal (rejected)", testOnTickReject)
+	t.Run("Test onTick complex: actual node votes + retry", testOnTickWithNodes)
 }
 
 func testOnTickEmpty(t *testing.T) {
@@ -127,6 +128,8 @@ func testOnTickPending(t *testing.T) {
 	// submit an asset proposal
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(24 * time.Hour)
 	data := &types.Proposal{
 		PartyID:   party,
 		Reference: "proposal-ref",
@@ -138,6 +141,8 @@ func testOnTickPending(t *testing.T) {
 					},
 				},
 			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -160,7 +165,6 @@ func testOnTickSubmit(t *testing.T) {
 	// first, Begin a block (sets up the timestamps)
 	now := time.Now()
 	prev := now.Add(-time.Second)
-	next := now.Add(time.Hour * 96) //  4 days later, the validation period has expired for sure
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
@@ -175,6 +179,8 @@ func testOnTickSubmit(t *testing.T) {
 	// submit an asset proposal
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(24 * time.Hour)
 	data := &types.Proposal{
 		PartyID:   party,
 		Reference: "proposal-ref",
@@ -186,6 +192,8 @@ func testOnTickSubmit(t *testing.T) {
 					},
 				},
 			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -198,13 +206,19 @@ func testOnTickSubmit(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	// vote := &types.NodeVote{
+	// 	PubKey:    string(wal.PubKeyOrAddress()),
+	// 	Reference: data.Reference,
+	// }
+	// payload, err = proto.Marshal(vote)
+	// assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
 
 	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil).Do(func(sp *types.Proposal) {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 	})
 	// next time tick, proposal is pending but not past validation time
-	proc.tickCB(next)
+	proc.tickCB(validTS.Add(time.Second))
 }
 
 func testOnTickSubmitRetry(t *testing.T) {
@@ -213,7 +227,6 @@ func testOnTickSubmitRetry(t *testing.T) {
 	// first, Begin a block (sets up the timestamps)
 	now := time.Now()
 	prev := now.Add(-time.Second)
-	next := now.Add(time.Hour * 96) //  4 days later, the validation period has expired for sure
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
@@ -228,6 +241,8 @@ func testOnTickSubmitRetry(t *testing.T) {
 	// submit an asset proposal
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(24 * time.Hour)
 	data := &types.Proposal{
 		PartyID:   party,
 		Reference: "proposal-ref",
@@ -239,6 +254,8 @@ func testOnTickSubmitRetry(t *testing.T) {
 					},
 				},
 			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -251,6 +268,13 @@ func testOnTickSubmitRetry(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+
+	// vote := &types.NodeVote{
+	// 	PubKey:    string(wal.PubKeyOrAddress()),
+	// 	Reference: data.Reference,
+	// }
+	// payload, err = proto.Marshal(vote)
+	// assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
 
 	i := 0
 	returns := []error{
@@ -264,11 +288,100 @@ func testOnTickSubmitRetry(t *testing.T) {
 		i++
 		return ret
 	})
+	// next block - set timestamps
+	next := validTS.Add(time.Second)
 	// next time tick, proposal is pending but not past validation time
 	proc.tickCB(next) // this submit should fail
 	// next tick, we ought to try again
 	proc.tickCB(next.Add(time.Second))
 }
+
+func testOnTickWithNodes(t *testing.T) {
+	proc := getTestProcessor(t)
+	defer proc.ctrl.Finish()
+	// first, Begin a block (sets up the timestamps)
+	now := time.Now()
+	prev := now.Add(-time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+		// check if the type is ok
+		_, ok := payload.(*types.NodeRegistration)
+		assert.True(t, ok)
+	}).Return(nil)
+	// call Begin, expect no error
+	assert.NoError(t, proc.Begin())
+	// submit an asset proposal
+	key := []byte("party-id")
+	party := hex.EncodeToString(key)
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(24 * time.Hour)
+	data := &types.Proposal{
+		PartyID:   party,
+		Reference: "proposal-ref",
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.Asset{
+						ID: 1,
+					},
+				},
+			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
+		},
+	}
+	payload, err := proto.Marshal(data)
+	assert.NoError(t, err)
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.NodeVoteCommand, gomock.Any()).Times(1).Return(nil).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+		nv, ok := payload.(*types.NodeVote)
+		// make sure the correct command was issued
+		assert.True(t, ok)
+		assert.Equal(t, data.Reference, nv.Reference)
+	})
+	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+
+	// This node has received the proposal and validated it. We want to vote for it
+	// first process the RegisterNodeCommand transaction
+	prev, now = now, now.Add(time.Second)
+	reg := &types.NodeRegistration{
+		PubKey: string(wal.key),
+	}
+	payload, err = proto.Marshal(reg)
+	assert.NoError(t, err)
+	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
+
+	// Now this node can vote has to vote on the proposal
+	vote := &types.NodeVote{
+		PubKey:    string(wal.PubKeyOrAddress()),
+		Reference: data.Reference,
+	}
+	payload, err = proto.Marshal(vote)
+	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+
+	i := 0
+	returns := []error{
+		errors.New("random error for first call"),
+		nil,
+	}
+	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
+		assert.Equal(t, data.Reference, sp.Reference)
+		assert.Equal(t, data.PartyID, sp.PartyID)
+		ret := returns[i]
+		i++
+		return ret
+	})
+	// next block - set timestamps
+	next := validTS.Add(time.Second)
+	// next time tick, proposal is pending but not past validation time
+	proc.tickCB(next) // this submit should fail
+	// next tick, we ought to try again
+	proc.tickCB(next.Add(time.Second))
+}
+
 func testOnTickReject(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
@@ -298,6 +411,8 @@ func testOnTickReject(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, proc.Process(reg, blockchain.RegisterNodeCommand))
 
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(24 * time.Hour)
 	// submit an asset proposal
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
@@ -312,6 +427,8 @@ func testOnTickReject(t *testing.T) {
 					},
 				},
 			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -611,8 +728,24 @@ func testProcessCommandSuccess(t *testing.T) {
 func testProcessAssetProposalSuccess(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
+	// set current timetamps
+	now := time.Now()
+	prev := now.Add(-time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+		// check if the type is ok
+		_, ok := payload.(*types.NodeRegistration)
+		assert.True(t, ok)
+	}).Return(nil)
+	// call Begin, expect no error
+	assert.NoError(t, proc.Begin())
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(2 * time.Hour)
 	data := &types.Proposal{
 		PartyID:   party,
 		Reference: "proposal-ref",
@@ -624,6 +757,8 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 					},
 				},
 			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -641,8 +776,24 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 func testProcessAssetProposalNoKey(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
+	// set current timetamps
+	now := time.Now()
+	prev := now.Add(-time.Second)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	wal := getTestStubWallet()
+	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+		// check if the type is ok
+		_, ok := payload.(*types.NodeRegistration)
+		assert.True(t, ok)
+	}).Return(nil)
+	// call Begin, expect no error
+	assert.NoError(t, proc.Begin())
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
+	closeTS := time.Now().Add(120 * time.Hour)
+	validTS := time.Now().Add(24 * time.Hour)
 	data := &types.Proposal{
 		PartyID:   party,
 		Reference: "proposal-ref",
@@ -654,6 +805,8 @@ func testProcessAssetProposalNoKey(t *testing.T) {
 					},
 				},
 			},
+			ClosingTimestamp:    closeTS.Unix(),
+			ValidationTimestamp: validTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)

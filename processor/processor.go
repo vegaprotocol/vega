@@ -29,6 +29,8 @@ var (
 	ErrUnknownProposal                              = errors.New("proposal unknown")
 	ErrNotAnAssetProposal                           = errors.New("proposal is not a new asset proposal")
 	ErrNoVegaWalletFound                            = errors.New("node wallet not found")
+
+	ErrProposalValidationTimestampInvalid = errors.New("asset proposal validation timestamp invalid")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -425,10 +427,14 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		}
 		// proposal is a new asset proposal?
 		if na := proposal.Terms.GetNewAsset(); na != nil {
+			if err := p.checkAssetProposal(proposal); err != nil {
+				return err
+			}
+			// @TODO check valid timestamps
 			p.nodeProposals[proposal.Reference] = &nodeProposal{
 				Proposal:  proposal,
 				votes:     map[string]struct{}{},
-				validTime: p.currentTimestamp.Add(time.Duration(maxValidationPeriod) * time.Second),
+				validTime: time.Unix(proposal.Terms.ValidationTimestamp, 0),
 			}
 			if _, err := p.validateAsset(proposal); err != nil {
 				return err
@@ -567,6 +573,22 @@ func (p *Processor) amendOrder(order *types.OrderAmendment) error {
 	}
 	if p.LogOrderAmendDebug {
 		p.log.Debug("Order amended", logging.String("order", order.String()))
+	}
+	return nil
+}
+
+func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
+	asset := prop.Terms.GetNewAsset()
+	// only validate timestamps for new asset proposal
+	if asset == nil {
+		return nil
+	}
+	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
+		return ErrProposalValidationTimestampInvalid
+	}
+	minValid, maxValid := p.currentTimestamp.Add(minValidationPeriod*time.Second), p.currentTimestamp.Add(maxValidationPeriod*time.Second)
+	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
+		return ErrProposalValidationTimestampInvalid
 	}
 	return nil
 }
