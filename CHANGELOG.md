@@ -5,17 +5,17 @@
 *2020-04-21*
 
 ### Features
-- https://github.com/vegaprotocol/vega/issues/1458 Add root GraphQL Orders query.
-- https://github.com/vegaprotocol/vega/issues/1457 AddGraphQL query to list all known parties.
-- https://github.com/vegaprotocol/vega/issues/756 Remove party list from stats endpoint.
-- https://github.com/vegaprotocol/vega/issues/1448 Add `updatedAt` field to orders.
+- [#1458](https://github.com/vegaprotocol/vega/issues/1458) Add root GraphQL Orders query.
+- [#1457](https://github.com/vegaprotocol/vega/issues/1457) AddGraphQL query to list all known parties.
+- [#756](https://github.com/vegaprotocol/vega/issues/756) Remove party list from stats endpoint.
+- [#1448](https://github.com/vegaprotocol/vega/issues/1448) Add `updatedAt` field to orders.
 
 ### Improvements
-- https://github.com/vegaprotocol/vega/issues/1102 Return full Market details in nested GraphQL queries.
-- https://github.com/vegaprotocol/vega/issues/1466 Flush orders before trades. This fixes a rare scenario where a trade can be available through the API, but not the order that triggered it.
-- https://github.com/vegaprotocol/vega/issues/1491 Fix OrdersByMarket and OrdersByParty 'Open' parameter.
-- https://github.com/vegaprotocol/vega/issues/1472 Fix Orders by the same party matching.
-- https://github.com/vegaprotocol/vega/issues/1462 Fix node crash when incorrect key length is used.
+- [#1102](https://github.com/vegaprotocol/vega/issues/1102) Return full Market details in nested GraphQL queries.
+- [#1466](https://github.com/vegaprotocol/vega/issues/1466) Flush orders before trades. This fixes a rare scenario where a trade can be available through the API, but not the order that triggered it.
+- [#1491](https://github.com/vegaprotocol/vega/issues/1491) Fix OrdersByMarket and OrdersByParty 'Open' parameter.
+- [#1472](https://github.com/vegaprotocol/vega/issues/1472) Fix Orders by the same party matching.
+- [#1462](https://github.com/vegaprotocol/vega/issues/1462) Fix node crash when incorrect key length is used.
 
 ### Upcoming changes
 This release contains the unfinalised initial implementation of Governance. This will be finished and documented in 0.18.0.
