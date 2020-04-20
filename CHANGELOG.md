@@ -2,15 +2,23 @@
 
 ## 0.17.0
 
-*2020-TBC*
+*2020-04-21*
 
 ### Features
-
-- TBD
+- https://github.com/vegaprotocol/vega/issues/1458 Add root GraphQL Orders query.
+- https://github.com/vegaprotocol/vega/issues/1457 AddGraphQL query to list all known parties.
+- https://github.com/vegaprotocol/vega/issues/756 Remove party list from stats endpoint.
+- https://github.com/vegaprotocol/vega/issues/1448 Add `updatedAt` field to orders.
 
 ### Improvements
+- https://github.com/vegaprotocol/vega/issues/1102 Return full Market details in nested GraphQL queries.
+- https://github.com/vegaprotocol/vega/issues/1466 Flush orders before trades. This fixes a rare scenario where a trade can be available through the API, but not the order that triggered it.
+- https://github.com/vegaprotocol/vega/issues/1491 Fix OrdersByMarket and OrdersByParty 'Open' parameter.
+- https://github.com/vegaprotocol/vega/issues/1472 Fix Orders by the same party matching.
+- https://github.com/vegaprotocol/vega/issues/1462 Fix node crash when incorrect key length is used.
 
-- TBD
+### Upcoming changes
+This release contains the unfinalised initial implementation of Governance. This will be finished and documented in 0.18.0.
 
 ## 0.16.2
 
