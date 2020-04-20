@@ -1489,7 +1489,7 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [Asset](#vega.Asset) |  |  |
+| changes | [AssetSource](#vega.AssetSource) |  |  |
 
 
 

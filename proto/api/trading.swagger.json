@@ -1472,27 +1472,9 @@
       ],
       "default": "ALL"
     },
-    "vegaAsset": {
+    "vegaAssetSource": {
       "type": "object",
       "properties": {
-        "ID": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "name": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "totalSupply": {
-          "type": "string",
-          "title": "this may very much likely be a big.Int"
-        },
-        "decimals": {
-          "type": "string",
-          "format": "uint64"
-        },
         "builtinAsset": {
           "$ref": "#/definitions/vegaBuiltinAsset"
         },
@@ -1903,7 +1885,7 @@
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaAsset"
+          "$ref": "#/definitions/vegaAssetSource"
         }
       },
       "title": "To be implemented"

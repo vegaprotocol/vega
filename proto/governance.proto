@@ -30,7 +30,7 @@ message UpdateNetwork {
 
 // To be implemented
 message NewAsset {
-  Asset changes = 1 [(validator.field) = {msg_exists: true}];
+  AssetSource changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message ProposalTerms {

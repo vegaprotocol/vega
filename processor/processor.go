@@ -29,6 +29,7 @@ var (
 	ErrUnknownProposal                              = errors.New("proposal unknown")
 	ErrNotAnAssetProposal                           = errors.New("proposal is not a new asset proposal")
 	ErrNoVegaWalletFound                            = errors.New("node wallet not found")
+	ErrAssetProposalReferenceDuplicate              = errors.New("duplicate asset proposal for reference")
 
 	ErrProposalValidationTimestampInvalid = errors.New("asset proposal validation timestamp invalid")
 )
@@ -427,6 +428,10 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		}
 		// proposal is a new asset proposal?
 		if na := proposal.Terms.GetNewAsset(); na != nil {
+			_, ok := p.nodeProposals[proposal.Reference]
+			if ok {
+				return ErrAssetProposalReferenceDuplicate
+			}
 			if err := p.checkAssetProposal(proposal); err != nil {
 				return err
 			}
@@ -600,7 +605,7 @@ func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
 	}
 	// @TODO validate times, return specific err
 	p.log.Debug("Validating asset",
-		logging.Uint64("asset-id", asset.Changes.ID),
+		logging.String("asset-source", asset.Changes.String()),
 	)
 	nv := &types.NodeVote{
 		PubKey:    "the node key",

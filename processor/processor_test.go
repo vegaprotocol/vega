@@ -136,8 +136,10 @@ func testOnTickPending(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
@@ -193,8 +195,10 @@ func testOnTickSubmit(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
@@ -255,8 +259,10 @@ func testOnTickSubmitRetry(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
@@ -330,8 +336,10 @@ func testOnTickWithNodes(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
@@ -428,8 +436,10 @@ func testOnTickReject(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
@@ -758,8 +768,10 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
@@ -806,8 +818,10 @@ func testProcessAssetProposalNoKey(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.Asset{
-						ID: 1,
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
+						},
 					},
 				},
 			},
