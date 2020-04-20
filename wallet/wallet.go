@@ -14,7 +14,7 @@ import (
 
 var (
 	ErrWalletAlreadyExists = errors.New("a wallet with the same name already exists")
-	ErrWalletDoesNotExists = errors.New("wallet does not exists")
+	ErrWalletDoesNotExists = errors.New("wallet does not exist")
 )
 
 const (
@@ -60,12 +60,12 @@ func (k *Keypair) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	k.privBytes, err = hex.DecodeString(k.Priv)
-	return nil
+	return err
 }
 
 type Meta struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func New(owner string) Wallet {
@@ -125,6 +125,15 @@ func Create(root, owner, passphrase string) (*Wallet, error) {
 	return writeWallet(&w, root, owner, passphrase)
 }
 
+// WalletPath get the path to the wallet file, check if actually is a file
+func WalletPath(root, owner string) (string, error) {
+	path := filepath.Join(root, walletBaseFolder, owner)
+	if ok, err := fsutil.FileExists(path); !ok || err != nil {
+		return "", ErrWalletDoesNotExists
+	}
+	return path, nil
+}
+
 func AddKeypair(kp *Keypair, root, owner, passphrase string) (*Wallet, error) {
 	w, err := Read(root, owner, passphrase)
 	if err != nil {
@@ -167,6 +176,7 @@ func Write(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
 }
 
 func writeWallet(w *Wallet, root, owner, passphrase string) (*Wallet, error) {
+
 	// build walletpath
 	walletpath := filepath.Join(root, walletBaseFolder, owner)
 

@@ -12,11 +12,13 @@ import (
 	"code.vegaprotocol.io/vega/api/mocks"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -47,13 +49,12 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 		Submission: &types.OrderSubmission{
 			MarketID: "nonexistantmarket",
 		},
-		Token: "",
 	}
 
 	c := protoapi.NewTradingClient(conn)
 	sleepTime := 10 // milliseconds
 	for sleepTime < maxSleep {
-		_, err := c.SubmitOrder(ctx, req)
+		_, err := c.PrepareSubmitOrder(ctx, req)
 		if err == nil {
 			t.Fatalf("Expected some sort of error, but got none.")
 		}
@@ -214,6 +215,10 @@ func getTestGRPCServer(
 	}
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
+	// stub...
+	governancePlugin := plugins.NewProposals(nil, nil)
+
+	governanceService := governance.NewService(logger, conf.Governance, governancePlugin)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -229,6 +234,7 @@ func getTestGRPCServer(
 		accountService,
 		transferResponseService,
 		riskService,
+		governanceService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
@@ -257,7 +263,7 @@ func getTestGRPCServer(
 	return
 }
 
-func TestSubmitOrder(t *testing.T) {
+func TestPrepareProposal(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
 	defer cancel()
 
@@ -267,16 +273,21 @@ func TestSubmitOrder(t *testing.T) {
 	}
 	defer tidy()
 
-	req := &protoapi.SubmitOrderRequest{
-		Submission: &types.OrderSubmission{
-			MarketID: "nonexistantmarket",
+	client := protoapi.NewTradingClient(conn)
+	assert.NotNil(t, client)
+
+	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
+		PartyID: "invalid-party",
+		Proposal: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateNetwork{
+				UpdateNetwork: &types.UpdateNetwork{
+					Changes: &types.NetworkConfiguration{},
+				},
+			},
 		},
-		Token: "",
-	}
-	c := protoapi.NewTradingClient(conn)
-	pendingOrder, err := c.SubmitOrder(ctx, req)
+	})
 	assert.Contains(t, err.Error(), "Internal error")
-	assert.Nil(t, pendingOrder)
+	assert.Nil(t, proposal)
 
 	g.Stop()
 }

@@ -140,29 +140,6 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 	}
 }
 
-// MarketOrderPrice return the price that would be applied for a market
-// order based on the specified side.
-// In the case of a Buy side, the highest sell price will be returned
-// In the case of a Sell side, the lowest buy price will be returned
-// TODO(jeremy): we won't be able to place an order if there is no order available
-// in the meantime to make this function not failing we will return the
-// initialMarkPrice / lastTradePrice in this case, this will fail later on when trying to
-// place the order, by doing this we do not implement any more logic at this level
-func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
-	if s == types.Side_Buy {
-		p, err := b.sell.getHighestOrderPrice(types.Side_Sell)
-		if err != nil {
-			return b.lastTradedPrice
-		}
-		return p
-	}
-	p, err := b.buy.getLowestOrderPrice(types.Side_Buy)
-	if err != nil {
-		return b.lastTradedPrice
-	}
-	return p
-}
-
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
 	return b.buy.BestPriceAndVolume(types.Side_Buy)
@@ -200,15 +177,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	if order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT {
-		if order.Remaining != order.Size {
-			order.Status = types.Order_PartiallyFilled
-		} else {
-			order.Status = types.Order_Cancelled
-		}
-	} else {
-		order.Status = types.Order_Cancelled
-	}
+	order.Status = types.Order_Cancelled
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -246,6 +215,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 			return err
 		}
 	}
+	b.ordersByID[order.GetId()] = order
 
 	return nil
 }
@@ -268,7 +238,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+	trades, impactedOrders, lastTradedPrice, err := b.getOppositeSide(order.Side).uncross(order)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
@@ -279,7 +249,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// if order is persistent type add to order book to the correct side
-	if isPersistent(order) && order.Remaining > 0 {
+	// and we did not hit a error / wash trade error
+	if isPersistent(order) && order.Remaining > 0 && err == nil {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.TimeInForce == types.Order_GTT {
@@ -335,6 +306,11 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
+	// if we did hit a wash trade, set the status to stopped
+	if err != nil && err == ErrWashTrade {
+		order.Status = types.Order_Stopped
+	}
+
 	if order.Status == types.Order_Active {
 		b.ordersByID[order.Id] = order
 	}
@@ -373,13 +349,15 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 
 	// delete the orders now
 	for at := range expiredOrders {
-		order, _ := b.DeleteOrder(&expiredOrders[at])
-		if order.Remaining == order.Size {
+		order, err := b.DeleteOrder(&expiredOrders[at])
+		if err == nil {
+			// this may be not nil because the expiring order was cancelled before.
+			// so it was already deleted, we do not remove them from the expiringOrders
+			// when they get cancelled as this would required unnecessary computation that
+			// can be delayed for later.
 			order.Status = types.Order_Expired
-		} else {
-			order.Status = types.Order_PartiallyFilled
+			out = append(out, *order)
 		}
-		out = append(out, *order)
 	}
 
 	if b.LogRemovedOrdersDebug {
@@ -465,6 +443,7 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
+
 	return &types.OrderConfirmation{
 		Order:                 order,
 		PassiveOrdersAffected: impactedOrders,

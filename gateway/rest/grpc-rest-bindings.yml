@@ -10,13 +10,6 @@ apis:
 
 http:
   rules:
-    # Auth
-    - selector: api.trading.SignIn
-      post: '/auth/token'
-      body: "*"
-    - selector: api.trading.CheckToken
-      get: '/auth/token'
-
     # Markets
     - selector: api.trading_data.Markets
       get: '/markets'
@@ -56,16 +49,8 @@ http:
     - selector: api.trading.PrepareAmendOrder
       put: '/orders/prepare/{amendment.orderID}'
       body: "*"
-    - selector: api.trading.SubmitOrder
-      post: '/orders'
-      body: "*"
     - selector: api.trading_data.OrderByReference
       get: '/orders/{reference}'
-    - selector: api.trading.CancelOrder
-      delete: '/orders/{cancellation.orderID}'
-    - selector: api.trading.AmendOrder
-      put: '/orders/{amendment.orderID}'
-      body: "*"
     - selector: api.trading_data.TradesByOrder
       get: '/orders/{orderID}/trades'
 
@@ -87,6 +72,11 @@ http:
     - selector: api.trading.Withdraw
       post: '/parties/{withdraw.partyID}/withdrawals'
       body: '*'
+
+    # Governance
+    - selector: api.trading.PrepareProposal
+      post: '/governance/proposals'
+      body: "*"
 
     # Miscellaneous
     - selector: api.trading.NotifyTraderAccount

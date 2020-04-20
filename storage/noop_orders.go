@@ -106,7 +106,7 @@ func (os *NoopOrder) Close() error {
 }
 
 func (os *NoopOrder) GetByMarket(ctx context.Context, market string, skip,
-	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	limit uint64, descending bool, open bool) ([]*types.Order, error) {
 	return []*types.Order{}, nil
 }
 
@@ -116,7 +116,7 @@ func (os *NoopOrder) GetByMarketAndID(ctx context.Context, market string, id str
 }
 
 func (os *NoopOrder) GetByParty(ctx context.Context, party string, skip uint64,
-	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	limit uint64, descending bool, open bool) ([]*types.Order, error) {
 
 	return []*types.Order{}, nil
 }
@@ -126,7 +126,18 @@ func (os *NoopOrder) GetByPartyAndID(ctx context.Context, party string, id strin
 	return &order, nil
 }
 
+func (os *NoopOrder) GetAllVersionsByOrderID(ctx context.Context, id string,
+	skip, limit uint64, descending bool) (orders []*types.Order, err error) {
+
+	return []*types.Order{}, nil
+}
+
 func (os *NoopOrder) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
+	var order types.Order
+	return &order, nil
+}
+
+func (os *NoopOrder) GetByOrderID(ctx context.Context, orderID string, version *uint64) (*types.Order, error) {
 	var order types.Order
 	return &order, nil
 }

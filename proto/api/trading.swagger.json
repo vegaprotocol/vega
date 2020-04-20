@@ -15,44 +15,15 @@
     "application/json"
   ],
   "paths": {
-    "/auth/token": {
-      "get": {
-        "summary": "Check an API token",
-        "operationId": "CheckToken",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiCheckTokenResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      },
+    "/governance/proposals": {
       "post": {
-        "summary": "Sign In",
-        "operationId": "SignIn",
+        "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
+        "operationId": "PrepareProposal",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiSignInResponse"
+              "$ref": "#/definitions/apiPrepareProposalResponse"
             }
           }
         },
@@ -62,7 +33,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiSignInRequest"
+              "$ref": "#/definitions/apiPrepareProposalRequest"
             }
           }
         ],
@@ -422,33 +393,6 @@
         ]
       }
     },
-    "/orders": {
-      "post": {
-        "summary": "Submit an Order",
-        "operationId": "SubmitOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiSubmitOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/orders/prepare": {
       "post": {
         "summary": "Prepare a submit order request",
@@ -491,6 +435,7 @@
         "parameters": [
           {
             "name": "amendment.orderID",
+            "description": "required to find the order, not being updated",
             "in": "path",
             "required": true,
             "type": "string"
@@ -536,88 +481,6 @@
           },
           {
             "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/{amendment.orderID}": {
-      "put": {
-        "summary": "Amend an Order",
-        "operationId": "AmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "amendment.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/{cancellation.orderID}": {
-      "delete": {
-        "summary": "Cancel an Order",
-        "operationId": "CancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "cancellation.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "token",
             "in": "query",
             "required": false,
             "type": "string"
@@ -1059,14 +922,32 @@
       "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
       "title": "Order Time in Force"
     },
+    "ProposalState": {
+      "type": "string",
+      "enum": [
+        "FAILED",
+        "OPEN",
+        "PASSED",
+        "REJECTED",
+        "DECLINED",
+        "ENACTED"
+      ],
+      "default": "FAILED",
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal could not be enacted after being accepted by the network\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals)\n - DECLINED: Proposal didn't get enough votes\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+    },
+    "VoteValue": {
+      "type": "string",
+      "enum": [
+        "NO",
+        "YES"
+      ],
+      "default": "NO"
+    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
         "amendment": {
           "$ref": "#/definitions/vegaOrderAmendment"
-        },
-        "token": {
-          "type": "string"
         }
       }
     },
@@ -1081,12 +962,14 @@
         }
       }
     },
-    "apiCheckTokenResponse": {
+    "apiGetProposalsResponse": {
       "type": "object",
       "properties": {
-        "ok": {
-          "type": "boolean",
-          "format": "boolean"
+        "proposals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaProposalVote"
+          }
         }
       }
     },
@@ -1195,6 +1078,17 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
+    "apiOrderVersionsResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
         }
       }
     },
@@ -1313,6 +1207,32 @@
         }
       }
     },
+    "apiPrepareProposalRequest": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposalTerms"
+        }
+      }
+    },
+    "apiPrepareProposalResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        },
+        "pendingProposal": {
+          "$ref": "#/definitions/vegaProposal"
+        }
+      }
+    },
     "apiPrepareSubmitOrderResponse": {
       "type": "object",
       "properties": {
@@ -1325,25 +1245,15 @@
         }
       }
     },
-    "apiSignInRequest": {
+    "apiPrepareVoteResponse": {
       "type": "object",
       "properties": {
-        "id": {
+        "blob": {
           "type": "string",
-          "title": "a party ID"
+          "format": "byte"
         },
-        "password": {
-          "type": "string",
-          "title": "a password"
-        }
-      }
-    },
-    "apiSignInResponse": {
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string",
-          "title": "a token corresponding to the party given in the request, and valid for subsequent requests for that party"
+        "vote": {
+          "$ref": "#/definitions/vegaVote"
         }
       }
     },
@@ -1353,10 +1263,6 @@
         "submission": {
           "$ref": "#/definitions/vegaOrderSubmission",
           "description": "the bulk of the Order, including market, party, price, size, side, time in force, etc."
-        },
-        "token": {
-          "type": "string",
-          "description": "a token acquired from a SignIn request and corresponding to the party specified in the `submission`."
         }
       }
     },
@@ -1867,6 +1773,39 @@
         }
       }
     },
+    "vegaNetworkConfiguration": {
+      "type": "object",
+      "properties": {
+        "minCloseInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "maxCloseInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minEnactInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "maxEnactInSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minParticipationStake": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaNewMarket": {
+      "type": "object",
+      "properties": {
+        "changes": {
+          "$ref": "#/definitions/vegaMarket"
+        }
+      }
+    },
     "vegaOrder": {
       "type": "object",
       "properties": {
@@ -1917,6 +1856,15 @@
         },
         "reason": {
           "$ref": "#/definitions/vegaOrderError"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Versioning support for amends, orders start at version 1 and increment\nafter each successful amend"
         }
       }
     },
@@ -1924,7 +1872,8 @@
       "type": "object",
       "properties": {
         "orderID": {
-          "type": "string"
+          "type": "string",
+          "title": "required to find the order, not being updated"
         },
         "partyID": {
           "type": "string"
@@ -1934,18 +1883,19 @@
         },
         "price": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "these can be amended"
         },
-        "size": {
+        "sizeDelta": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "expiresAt": {
           "type": "string",
           "format": "int64"
         },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
+        "timeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         }
       }
     },
@@ -2130,6 +2080,76 @@
         }
       }
     },
+    "vegaProposal": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/ProposalState"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "terms": {
+          "$ref": "#/definitions/vegaProposalTerms"
+        }
+      }
+    },
+    "vegaProposalTerms": {
+      "type": "object",
+      "properties": {
+        "closingTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "enactmentTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "minParticipationStake": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "updateMarket": {
+          "$ref": "#/definitions/vegaUpdateMarket"
+        },
+        "newMarket": {
+          "$ref": "#/definitions/vegaNewMarket"
+        },
+        "updateNetwork": {
+          "$ref": "#/definitions/vegaUpdateNetwork"
+        }
+      }
+    },
+    "vegaProposalVote": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "yes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        },
+        "no": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        }
+      }
+    },
     "vegaScalingFactors": {
       "type": "object",
       "properties": {
@@ -2250,16 +2270,6 @@
         "totalMarkets": {
           "type": "string",
           "format": "uint64"
-        },
-        "totalParties": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "parties": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "totalAmendOrder": {
           "type": "string",
@@ -2429,6 +2439,31 @@
         }
       }
     },
+    "vegaUpdateMarket": {
+      "type": "object"
+    },
+    "vegaUpdateNetwork": {
+      "type": "object",
+      "properties": {
+        "changes": {
+          "$ref": "#/definitions/vegaNetworkConfiguration"
+        }
+      }
+    },
+    "vegaVote": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/VoteValue"
+        },
+        "proposalID": {
+          "type": "string"
+        }
+      }
+    },
     "vegaWithdraw": {
       "type": "object",
       "properties": {
@@ -2541,6 +2576,18 @@
         }
       },
       "title": "Stream result of vegaPosition"
+    },
+    "vegaProposalVote": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaProposalVote"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaProposalVote"
     },
     "vegaTransferResponse": {
       "type": "object",

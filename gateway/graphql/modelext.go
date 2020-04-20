@@ -1,6 +1,7 @@
 package gql
 
 import (
+	"math"
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -44,6 +45,14 @@ var (
 	ErrNilScalingFactors = errors.New("nil scaling factors")
 	// ErrNilMarginCalculator
 	ErrNilMarginCalculator = errors.New("nil margin calculator")
+	// ErrParticipationStake ...
+	ErrParticipationStake = errors.New("minimum participation stake contains too large value")
+	// ErrInvalidTickSize ...
+	ErrInvalidTickSize = errors.New("invalid tick size")
+	// ErrInvalidDecimalPlaces ...
+	ErrInvalidDecimalPlaces = errors.New("invalid decimal places value")
+	// ErrInvalidChange ...
+	ErrInvalidChange = errors.New("nil update market, new market and update network")
 )
 
 // IntoProto ...
@@ -501,4 +510,222 @@ func (a AccountType) IntoProto() types.AccountType {
 		return types.AccountType_ALL
 	}
 	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
+}
+
+// ProposalTermsFromProto ...
+func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) {
+	if terms.MinParticipationStake > math.MaxInt32 {
+		return nil, ErrParticipationStake
+	}
+	result := &ProposalTerms{
+		ClosingTimestamp:      timestampToString(terms.ClosingTimestamp),
+		EnactmentTimestamp:    timestampToString(terms.EnactmentTimestamp),
+		MinParticipationStake: int(terms.MinParticipationStake),
+	}
+	if terms.GetUpdateMarket() != nil {
+		result.Change = nil
+	} else if newMarket := terms.GetNewMarket(); newMarket != nil {
+		market, err := MarketFromProto(newMarket.Changes)
+		if err != nil {
+			return nil, err
+		}
+		result.Change = &NewMarket{Market: market}
+	} else if terms.GetUpdateNetwork() != nil {
+		result.Change = nil
+	}
+	return result, nil
+}
+
+// IntoProto ...
+func (i *InstrumentInput) IntoProto() (*types.Instrument, error) {
+	initMarkPrice, err := safeStringUint64(i.InitialMarkPrice)
+	if err != nil {
+		return nil, err
+	}
+	return &types.Instrument{
+		Id:        i.ID,
+		Code:      i.Code,
+		Name:      i.Name,
+		BaseName:  i.BaseName,
+		QuoteName: i.QuoteName,
+		Metadata: &types.InstrumentMetadata{
+			Tags: removePointers(i.Metadata.Tags),
+		},
+		InitialMarkPrice: initMarkPrice,
+		Product:          nil,
+	}, nil
+}
+
+// IntoProto ...
+func (m *MarginCalculatorInput) IntoProto() (*types.MarginCalculator, error) {
+	if m == nil {
+		return nil, ErrNilMarginCalculator
+	}
+	return &types.MarginCalculator{
+		ScalingFactors: &types.ScalingFactors{
+			SearchLevel:       m.ScalingFactors.SearchLevel,
+			InitialMargin:     m.ScalingFactors.InitialMargin,
+			CollateralRelease: m.ScalingFactors.CollateralRelease,
+		},
+	}, nil
+}
+
+func (f *FutureInput) oracleIntoProto(pf *types.Future) error {
+	if f.EthereumOracle != nil {
+		pf.Oracle = &types.Future_EthereumEvent{
+			EthereumEvent: &types.EthereumEvent{
+				ContractID: f.EthereumOracle.ContractID,
+				Event:      f.EthereumOracle.Event,
+			},
+		}
+		return nil
+	}
+	return ErrNilOracle
+}
+
+func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) error {
+	if future := i.FutureProduct; future != nil {
+		f := &types.Future{
+			Maturity: future.Maturity,
+			Asset:    future.Asset,
+		}
+		future.oracleIntoProto(f)
+		pinst.Product = &types.Instrument_Future{Future: f}
+		return nil
+	}
+	return ErrNilProduct
+}
+
+func (t *TradableInstrumentInput) riskModelInputIntoProto(trIn *types.TradableInstrument) error {
+	if t.SimpleRiskModel != nil {
+		trIn.RiskModel = &types.TradableInstrument_SimpleRiskModel{
+			SimpleRiskModel: &types.SimpleRiskModel{
+				Params: &types.SimpleModelParams{
+					FactorLong:  t.SimpleRiskModel.Params.FactorLong,
+					FactorShort: t.SimpleRiskModel.Params.FactorShort,
+				},
+			},
+		}
+	} else if t.LogNormalRiskModel != nil {
+		trIn.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+			LogNormalRiskModel: &types.LogNormalRiskModel{
+				RiskAversionParameter: t.LogNormalRiskModel.RiskAversionParameter,
+				Tau:                   t.LogNormalRiskModel.Tau,
+				Params: &types.LogNormalModelParams{
+					Mu:    t.LogNormalRiskModel.Params.Mu,
+					R:     t.LogNormalRiskModel.Params.R,
+					Sigma: t.LogNormalRiskModel.Params.Sigma,
+				},
+			},
+		}
+	} else {
+		return ErrNilRiskModel
+	}
+	return nil
+}
+
+// IntoProto ...
+func (t *TradableInstrumentInput) IntoProto() (*types.TradableInstrument, error) {
+	instrument, err := t.Instrument.IntoProto()
+	if err != nil {
+		return nil, err
+	}
+	calc, err := t.MarginCalculator.IntoProto()
+	if err != nil {
+		return nil, err
+	}
+	result := &types.TradableInstrument{
+		Instrument:       instrument,
+		MarginCalculator: calc,
+		RiskModel:        nil,
+	}
+	if err := t.Instrument.productInputIntoProto(result.Instrument); err != nil {
+		return nil, err
+	}
+	if err := t.riskModelInputIntoProto(result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (m *MarketInput) tradingModeInputIntoProto(market *types.Market) error {
+	if m.ContinuousTradingMode != nil {
+		if m.ContinuousTradingMode.TickSize < 0 {
+			return ErrInvalidTickSize
+		}
+		market.TradingMode = &types.Market_Continuous{
+			Continuous: &types.ContinuousTrading{
+				TickSize: uint64(m.ContinuousTradingMode.TickSize),
+			},
+		}
+	} else if m.DiscreteTradingMode != nil {
+		market.TradingMode = &types.Market_Discrete{
+			Discrete: &types.DiscreteTrading{
+				Duration: int64(m.DiscreteTradingMode.Duration),
+			},
+		}
+	} else {
+		return ErrNilTradingMode
+	}
+	return nil
+}
+
+// IntoProto ...
+func (m *MarketInput) IntoProto() (*types.Market, error) {
+	ti, err := m.TradableInstrument.IntoProto()
+	if err != nil {
+		return nil, err
+	}
+	if m.DecimalPlaces < 0 {
+		return nil, ErrInvalidDecimalPlaces
+	}
+	result := &types.Market{
+		Id:                 m.ID,
+		Name:               m.Name,
+		TradableInstrument: ti,
+		DecimalPlaces:      uint64(m.DecimalPlaces),
+		TradingMode:        nil,
+	}
+	if err := m.tradingModeInputIntoProto(result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// IntoProto ...
+func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
+	closing, err := parseTimestamp(p.ClosingTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	enactment, err := parseTimestamp(p.EnactmentTimestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &types.ProposalTerms{
+		ClosingTimestamp:      closing,
+		EnactmentTimestamp:    enactment,
+		MinParticipationStake: uint64(p.MinParticipationStake),
+	}
+	if p.UpdateMarket != nil {
+		result.Change = &types.ProposalTerms_UpdateMarket{}
+	} else if p.NewMarket != nil {
+		market, err := p.NewMarket.Market.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		result.Change = &types.ProposalTerms_NewMarket{
+			NewMarket: &types.NewMarket{
+				Changes: market,
+			},
+		}
+	} else if p.UpdateNetwork != nil {
+		result.Change = &types.ProposalTerms_UpdateMarket{}
+	} else {
+		return nil, ErrInvalidChange
+	}
+
+	return result, nil
 }

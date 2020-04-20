@@ -52,12 +52,6 @@ func (this *NotifyTraderAccountRequest) Validate() error {
 func (this *NotifyTraderAccountResponse) Validate() error {
 	return nil
 }
-func (this *SignInRequest) Validate() error {
-	return nil
-}
-func (this *SignInResponse) Validate() error {
-	return nil
-}
 func (this *PrepareSubmitOrderResponse) Validate() error {
 	if this.PendingOrder != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
@@ -102,6 +96,28 @@ func (this *AmendOrderRequest) Validate() error {
 	if this.Amendment != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Amendment); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Amendment", err)
+		}
+	}
+	return nil
+}
+func (this *GetProposalByIDRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
+	return nil
+}
+func (this *GetProposalByReferenceRequest) Validate() error {
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
+	}
+	return nil
+}
+func (this *GetProposalsResponse) Validate() error {
+	for _, item := range this.Proposals {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Proposals", err)
+			}
 		}
 	}
 	return nil
@@ -481,15 +497,68 @@ func (this *MarketAccountsResponse) Validate() error {
 	}
 	return nil
 }
-func (this *CheckTokenRequest) Validate() error {
+func (this *PrepareProposalRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if this.Token == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Token", fmt.Errorf(`value '%v' must not be an empty string`, this.Token))
+	if nil == this.Proposal {
+		return github_com_mwitkow_go_proto_validators.FieldError("Proposal", fmt.Errorf("message must exist"))
+	}
+	if this.Proposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+		}
 	}
 	return nil
 }
-func (this *CheckTokenResponse) Validate() error {
+func (this *PrepareProposalResponse) Validate() error {
+	if this.PendingProposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingProposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PendingProposal", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareVoteRequest) Validate() error {
+	if nil == this.Vote {
+		return github_com_mwitkow_go_proto_validators.FieldError("Vote", fmt.Errorf("message must exist"))
+	}
+	if this.Vote != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Vote); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareVoteResponse) Validate() error {
+	if this.Vote != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Vote); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+		}
+	}
+	return nil
+}
+func (this *OrderByIDRequest) Validate() error {
+	return nil
+}
+func (this *OrderByReferenceIDRequest) Validate() error {
+	return nil
+}
+func (this *OrderVersionsByIDRequest) Validate() error {
+	if this.Pagination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
+		}
+	}
+	return nil
+}
+func (this *OrderVersionsResponse) Validate() error {
+	for _, item := range this.Orders {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Orders", err)
+			}
+		}
+	}
 	return nil
 }

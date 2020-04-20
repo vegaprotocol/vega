@@ -8,16 +8,16 @@ require (
 	github.com/cenkalti/backoff/v4 v4.0.0
 	github.com/cucumber/godog v0.8.1
 	github.com/dgraph-io/badger/v2 v2.0.1-0.20191216081458-1b0c0742acd3
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/btree v1.0.0
 	github.com/google/protobuf v3.7.0+incompatible // indirect
-	github.com/gorilla/handlers v1.4.0
+	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.1
 	github.com/grpc-ecosystem/grpc-gateway v1.9.0
+	github.com/julienschmidt/httprouter v1.2.0
 	github.com/mwitkow/go-proto-validators v0.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.3
@@ -39,6 +39,6 @@ require (
 )
 
 replace (
-	code.vegaprotocol.io/quant => gitlab.com/vega-protocol/quant v0.1.0
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
+	github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.32.109
 )

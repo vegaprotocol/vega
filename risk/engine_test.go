@@ -106,7 +106,7 @@ func testMarginLevelsTS(t *testing.T) {
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(20), trans.Amount.Amount)
 	// min = 17 so we go back to search level
-	assert.Equal(t, int64(17), trans.Amount.MinAmount)
+	assert.Equal(t, int64(17), trans.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
 
@@ -136,7 +136,7 @@ func testMarginTopup(t *testing.T) {
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(20), trans.Amount.Amount)
 	// min = 17 so we go back to search level
-	assert.Equal(t, int64(17), trans.Amount.MinAmount)
+	assert.Equal(t, int64(17), trans.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
 
@@ -220,7 +220,7 @@ func testMarginOverflow(t *testing.T) {
 }
 
 // implementation of the test from the specs
-// https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md#pseudo-code-examples
+// https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md#pseudo-code--examples
 func testMarginWithOrderInBook(t *testing.T) {
 	// custom risk factors
 	r := &types.RiskResult{

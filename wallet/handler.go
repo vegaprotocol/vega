@@ -4,17 +4,21 @@ import (
 	"encoding/base64"
 	"errors"
 	"sync"
+	"sync/atomic"
+	"unicode"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 )
 
 var (
-	ErrPubKeyDoesNotExists  = errors.New("public key does not exists")
+	ErrPubKeyDoesNotExist   = errors.New("public key does not exist")
 	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
 	ErrPubKeyIsTainted      = errors.New("public key is tainted")
+	ErrPasspharseInvalid    = errors.New("passphrase does not meet requirements")
 )
 
+// Auth ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet Auth
 type Auth interface {
 	NewSession(walletname string) (string, error)
@@ -45,6 +49,9 @@ func NewHandler(log *logging.Logger, auth Auth, rootPath string) *Handler {
 
 // CreateWallet return the actual token
 func (h *Handler) CreateWallet(wallet, passphrase string) (string, error) {
+	if !checkPassphrase(passphrase) {
+		return "", ErrPasspharseInvalid
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -78,6 +85,14 @@ func (h *Handler) LoginWallet(wallet, passphrase string) (string, error) {
 	return h.auth.NewSession(wallet)
 }
 
+func (h *Handler) WalletPath(token string) (string, error) {
+	wallet, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return "", err
+	}
+	return WalletPath(h.rootPath, wallet)
+}
+
 func (h *Handler) RevokeToken(token string) error {
 	return h.auth.Revoke(token)
 }
@@ -87,6 +102,12 @@ func (h *Handler) GenerateKeypair(token, passphrase string) (string, error) {
 	defer h.mu.Unlock()
 
 	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return "", err
+	}
+
+	// validate passphrase
+	_, err = Read(h.rootPath, wname, passphrase)
 	if err != nil {
 		return "", err
 	}
@@ -111,6 +132,36 @@ func (h *Handler) GenerateKeypair(token, passphrase string) (string, error) {
 
 	h.store[wname] = w
 	return kp.Pub, nil
+}
+
+func (h *Handler) GetPublicKey(token, pubKey string) (*Keypair, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	wname, err := h.auth.VerifyToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	w, ok := h.store[wname]
+	if !ok {
+		// this should never happen as we cannot have a valid session
+		// without the actual wallet being loaded in memory but...
+		return nil, ErrWalletDoesNotExists
+	}
+
+	// copy the key so we do not propagate private keys
+	for _, v := range w.Keypairs {
+		if v.Pub != pubKey {
+			continue
+		}
+		out := v
+		out.Priv = ""
+		out.privBytes = []byte{}
+		return &out, nil
+	}
+
+	return nil, ErrPubKeyDoesNotExist
 }
 
 func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
@@ -174,7 +225,7 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 	}
 	// we did not find this pub key
 	if kp == nil {
-		return SignedBundle{}, ErrPubKeyDoesNotExists
+		return SignedBundle{}, ErrPubKeyDoesNotExist
 	}
 
 	if kp.Tainted {
@@ -203,6 +254,11 @@ func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
 		return err
 	}
 
+	_, err = Read(h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
 	w, ok := h.store[wname]
 	if !ok {
 		// this should never happen as we cannot have a valid session
@@ -220,7 +276,7 @@ func (h *Handler) TaintKey(token, pubkey, passphrase string) error {
 	}
 	// we did not find this pub key
 	if kp == nil {
-		return ErrPubKeyDoesNotExists
+		return ErrPubKeyDoesNotExist
 	}
 
 	if kp.Tainted {
@@ -247,6 +303,11 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 		return err
 	}
 
+	_, err = Read(h.rootPath, wname, passphrase)
+	if err != nil {
+		return err
+	}
+
 	w, ok := h.store[wname]
 	if !ok {
 		// this should never happen as we cannot have a valid session
@@ -264,7 +325,7 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 	}
 	// we did not find this pub key
 	if kp == nil {
-		return ErrPubKeyDoesNotExists
+		return ErrPubKeyDoesNotExist
 	}
 
 	kp.Meta = meta
@@ -276,4 +337,52 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 
 	h.store[wname] = w
 	return nil
+}
+
+func checkPassphrase(pass string) bool {
+	if len(pass) < 8 {
+		return false
+	}
+	var ok int64
+	wg := sync.WaitGroup{}
+	wg.Add(4)
+	runes := []rune(pass)
+	go func() {
+		defer wg.Done()
+		for _, r := range runes {
+			if unicode.IsUpper(r) {
+				return
+			}
+		}
+		atomic.AddInt64(&ok, 1)
+	}()
+	go func() {
+		defer wg.Done()
+		for _, r := range runes {
+			if unicode.IsPunct(r) || unicode.IsMark(r) || unicode.IsSymbol(r) {
+				return
+			}
+		}
+		atomic.AddInt64(&ok, 1)
+	}()
+	go func() {
+		defer wg.Done()
+		for _, r := range runes {
+			if unicode.IsNumber(r) {
+				return
+			}
+		}
+		atomic.AddInt64(&ok, 1)
+	}()
+	go func() {
+		defer wg.Done()
+		for _, r := range runes {
+			if unicode.IsLower(r) {
+				return
+			}
+		}
+		atomic.AddInt64(&ok, 1)
+	}()
+	wg.Wait()
+	return (ok == 0)
 }

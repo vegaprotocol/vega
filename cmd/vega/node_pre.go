@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/orders"
@@ -172,6 +173,8 @@ func (l *NodeCommand) setupBuffers() {
 	l.marginLevelsBuf.Register(l.riskStore)
 	l.settleBuf = buffer.NewSettlement()
 	l.lossSocBuf = buffer.NewLossSocialization()
+	l.proposalBuf = buffer.NewProposal()
+	l.voteBuf = buffer.NewVote()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -255,6 +258,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.marginLevelsBuf,
 		l.settleBuf,
 		l.lossSocBuf,
+		l.proposalBuf,
+		l.voteBuf,
 		l.mktscfg,
 	)
 
@@ -263,6 +268,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
 	l.settlePlugin.Start(l.ctx) // open channel from the start
+	l.proposalPlugin = plugins.NewProposals(l.proposalBuf, l.voteBuf)
+	l.proposalPlugin.Start(l.ctx)
+
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.executionEngine, l.timeService, l.stats.Blockchain, l.cancel)
 	if err != nil {
@@ -297,6 +305,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
+
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.proposalPlugin)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)

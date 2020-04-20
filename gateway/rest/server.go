@@ -91,10 +91,12 @@ func (s *ProxyServer) Start() {
 	// CORS support
 	handler := cors.Default().Handler(mux)
 	handler = healthCheckMiddleware(handler)
-	handler = gateway.TokenMiddleware(logger, handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
 	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
+	// Metric support
+	handler = gateway.MetricCollectionMiddleware(logger, handler)
+
 	// APM
 	if s.Config.REST.APMEnabled {
 		handler = apmhttp.Wrap(handler)

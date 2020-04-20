@@ -9,12 +9,12 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
-	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/metrics"
@@ -31,7 +31,6 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -92,17 +91,19 @@ type NodeCommand struct {
 	marginLevelsBuf *buffer.MarginLevels
 	settleBuf       *buffer.Settlement
 	lossSocBuf      *buffer.LossSocialization
+	proposalBuf     *buffer.Proposal
+	voteBuf         *buffer.Vote
 
-	candleService    *candles.Svc
-	tradeService     *trades.Svc
-	marketService    *markets.Svc
-	orderService     *orders.Svc
-	partyService     *parties.Svc
-	timeService      *vegatime.Svc
-	auth             *auth.Svc
-	accountsService  *accounts.Svc
-	transfersService *transfers.Svc
-	riskService      *risk.Svc
+	candleService     *candles.Svc
+	tradeService      *trades.Svc
+	marketService     *markets.Svc
+	orderService      *orders.Svc
+	partyService      *parties.Svc
+	timeService       *vegatime.Svc
+	accountsService   *accounts.Svc
+	transfersService  *transfers.Svc
+	riskService       *risk.Svc
+	governanceService *governance.Svc
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -121,7 +122,8 @@ type NodeCommand struct {
 	mktscfg         []proto.Market
 
 	// plugins
-	settlePlugin *plugins.Positions
+	settlePlugin   *plugins.Positions
+	proposalPlugin *plugins.Proposals
 }
 
 // Init initialises the node command.
@@ -165,13 +167,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	})
 
 	var err error
-	if l.conf.Auth.Enabled {
-		l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
-		if err != nil {
-			return errors.Wrap(err, "unable to start auth service")
-		}
-		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
-	}
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
@@ -188,13 +183,11 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.accountsService,
 		l.transfersService,
 		l.riskService,
+		l.governanceService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
-	if l.conf.Auth.Enabled {
-		l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
-	}
 	metrics.Start(l.conf.Metrics)
 
 	// start gateway

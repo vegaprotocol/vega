@@ -29,6 +29,8 @@ type ServiceExecutionEngine interface {
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
 	Generate() error
+	SubmitProposal(proposal *types.Proposal) error
+	VoteOnProposal(vote *types.Vote) error
 }
 
 type abciService struct {
@@ -188,16 +190,14 @@ func (s *abciService) CancelOrder(order *types.OrderCancellation) error {
 
 	// Submit the cancel new order request to the Vega trading core
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
-	if cancellationMessage != nil {
-		if s.LogOrderCancelDebug {
-			s.log.Debug("Order cancelled", logging.Order(*cancellationMessage.Order))
-		}
-	}
 	if errorMessage != nil {
 		s.log.Error("error message on cancelling order",
 			logging.String("order-id", order.OrderID),
 			logging.Error(errorMessage))
 		return errorMessage
+	}
+	if s.LogOrderCancelDebug {
+		s.log.Debug("Order cancelled", logging.Order(*cancellationMessage.Order))
 	}
 
 	return nil
@@ -278,4 +278,14 @@ func (s *abciService) setBatchStats() {
 
 	s.currentOrdersInBatch = 0
 	s.currentTradesInBatch = 0
+}
+
+func (s *abciService) SubmitProposal(proposal *types.Proposal) error {
+	err := s.execution.SubmitProposal(proposal)
+	return err
+}
+
+func (s *abciService) VoteOnProposal(vote *types.Vote) error {
+	err := s.execution.VoteOnProposal(vote)
+	return err
 }

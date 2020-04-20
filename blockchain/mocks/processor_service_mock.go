@@ -89,6 +89,34 @@ func (mr *MockProcessorServiceMockRecorder) SubmitOrder(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockProcessorService)(nil).SubmitOrder), arg0)
 }
 
+// SubmitProposal mocks base method
+func (m *MockProcessorService) SubmitProposal(arg0 *proto.Proposal) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitProposal", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitProposal indicates an expected call of SubmitProposal
+func (mr *MockProcessorServiceMockRecorder) SubmitProposal(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockProcessorService)(nil).SubmitProposal), arg0)
+}
+
+// VoteOnProposal mocks base method
+func (m *MockProcessorService) VoteOnProposal(arg0 *proto.Vote) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VoteOnProposal", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VoteOnProposal indicates an expected call of VoteOnProposal
+func (mr *MockProcessorServiceMockRecorder) VoteOnProposal(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteOnProposal", reflect.TypeOf((*MockProcessorService)(nil).VoteOnProposal), arg0)
+}
+
 // Withdraw mocks base method
 func (m *MockProcessorService) Withdraw(arg0 *proto.Withdraw) error {
 	m.ctrl.T.Helper()

@@ -181,7 +181,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
-func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
+func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64, error) {
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
@@ -206,8 +206,12 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 						totalVolume -= level.volume
 					}
 					totalPrice += level.price * factor
-				} else if level.price >= agg.Price {
+				} else if level.price >= agg.Price || agg.Type == types.Order_MARKET {
 					totalVolumeToFill += level.volume
+				}
+				// No need to keep looking once we pass the required amount
+				if totalVolumeToFill >= agg.Remaining {
+					break
 				}
 			}
 		}
@@ -223,8 +227,12 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 						totalVolume -= level.volume
 					}
 					totalPrice += level.price * factor
-				} else if level.price <= agg.Price {
+				} else if level.price <= agg.Price || agg.Type == types.Order_MARKET {
 					totalVolumeToFill += level.volume
+				}
+				// No need to keep looking once we pass the required amount
+				if totalVolumeToFill >= agg.Remaining {
+					break
 				}
 			}
 		}
@@ -240,7 +248,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if totalVolumeToFill < agg.Remaining {
 			timer.EngineTimeCounterAdd()
-			return trades, impactedOrders, 0
+			return trades, impactedOrders, 0, nil
 		}
 	}
 
@@ -249,6 +257,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		filled  bool
 		ntrades []*types.Trade
 		nimpact []*types.Order
+		err     error
 	)
 
 	if agg.Side == types.Side_Sell {
@@ -256,17 +265,20 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price >= agg.Price {
-				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
+			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_MARKET {
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
+				// break if a wash trade is detected
+				if err != nil && err == ErrWashTrade {
+					break
+				}
 				if len(s.levels[idx].orders) <= 0 {
 					idx--
 				}
 			} else {
 				break
 			}
-
 		}
 
 		// now we nil the price levels that have been completely emptied out
@@ -282,7 +294,6 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 			s.levels = s.levels[:idx]
 		}
-
 	}
 
 	if agg.Side == types.Side_Buy {
@@ -290,17 +301,19 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price <= agg.Price {
-				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
+			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_MARKET {
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
+				if err != nil && err == ErrWashTrade {
+					break
+				}
 				if len(s.levels[idx].orders) <= 0 {
 					idx--
 				}
 			} else {
 				break
 			}
-
 		}
 
 		// now we nil the price levels that have been completely emptied out
@@ -323,7 +336,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		lastTradedPrice = trades[len(trades)-1].Price
 	}
 	timer.EngineTimeCounterAdd()
-	return trades, impactedOrders, lastTradedPrice
+	return trades, impactedOrders, lastTradedPrice, err
 }
 
 func (s *OrderBookSide) getLevels() []*PriceLevel {

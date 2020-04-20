@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -15,11 +16,11 @@ import (
 
 var (
 	amend = proto.OrderAmendment{
-		OrderID:  "order_id",
-		PartyID:  "party",
-		Price:    10000,
-		Size:     1,
-		MarketID: "market",
+		OrderID:   "order_id",
+		PartyID:   "party",
+		Price:     10000,
+		SizeDelta: 1,
+		MarketID:  "market",
 	}
 )
 
@@ -36,19 +37,10 @@ func TestPrepareAmendOrder(t *testing.T) {
 	t.Run("Prepare amend order - order not in store", testPrepareAmendOrderNotFound)
 }
 
-func TestAmendOrder(t *testing.T) {
-	t.Run("Amend order - success", testAmendOrderSuccess)
-	t.Run("Amend order - expired", testAmendOrderExpired)
-	t.Run("Amend order - not active", testAmendOrderNotActive)
-	t.Run("Amend order - invalid payload", testAmendOrderInvalidPayload)
-	t.Run("Amend order - time service error", testAmendOrderTimeSvcErr)
-}
-
 func testPrepareAmendOrderSuccess(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(2 * time.Hour)
+	// now := vegatime.Now()
 	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
+	arg.TimeInForce = proto.Order_GTC
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -60,34 +52,8 @@ func testPrepareAmendOrderSuccess(t *testing.T) {
 		TimeInForce: proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	svc.block.EXPECT().AmendOrder(gomock.Any(), amendMatcher{e: arg}).Times(0)
 
 	pendingOrder, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.NotNil(t, pendingOrder)
-	assert.NoError(t, err)
-}
-
-func testAmendOrderSuccess(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(2 * time.Hour)
-	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	order := proto.Order{
-		Id:          arg.OrderID,
-		MarketID:    "market",
-		PartyID:     arg.PartyID,
-		Status:      proto.Order_Active,
-		TimeInForce: proto.Order_GTT,
-	}
-	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	svc.block.EXPECT().AmendOrder(gomock.Any(), amendMatcher{e: arg}).Times(1).Return(true, nil)
-
-	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.NotNil(t, pendingOrder)
 	assert.NoError(t, err)
 }
@@ -97,6 +63,7 @@ func testPrepareAmendOrderExpired(t *testing.T) {
 	expires := now.Add(-2 * time.Hour)
 	arg := amend
 	arg.ExpiresAt = expires.UnixNano()
+	arg.TimeInForce = types.Order_GTT
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -111,29 +78,6 @@ func testPrepareAmendOrderExpired(t *testing.T) {
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 
 	pendingOrder, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
-}
-
-func testAmendOrderExpired(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(-2 * time.Hour)
-	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	order := proto.Order{
-		Id:          arg.OrderID,
-		MarketID:    "market",
-		PartyID:     arg.PartyID,
-		Status:      proto.Order_Active,
-		TimeInForce: proto.Order_GTT,
-	}
-	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-
-	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
@@ -159,45 +103,13 @@ func testPrepareAmendOrderNotActive(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func testAmendOrderNotActive(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(2 * time.Hour)
-	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	order := proto.Order{
-		Id:       arg.OrderID,
-		MarketID: "market",
-		PartyID:  arg.PartyID,
-		Status:   proto.Order_Expired,
-	}
-	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
-
-	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
-}
-
 func testPrepareAmendOrderInvalidPayload(t *testing.T) {
 	arg := amend
-	arg.Size = 0
+	arg.OrderID = ""
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
 	pendingOrder, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
-}
-
-func testAmendOrderInvalidPayload(t *testing.T) {
-	arg := amend
-	arg.Size = 0
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
@@ -207,7 +119,9 @@ func testPrepareAmendOrderTimeSvcErr(t *testing.T) {
 	expires := now.Add(-2 * time.Hour)
 	expErr := errors.New("time service error")
 	arg := amend
+	arg.SizeDelta = 0
 	arg.ExpiresAt = expires.UnixNano()
+	arg.TimeInForce = types.Order_GTT
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -223,31 +137,8 @@ func testPrepareAmendOrderTimeSvcErr(t *testing.T) {
 
 	pendingOrder, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
-}
+	assert.EqualError(t, err, expErr.Error())
 
-func testAmendOrderTimeSvcErr(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(-2 * time.Hour)
-	expErr := errors.New("time service error")
-	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	order := proto.Order{
-		Id:          arg.OrderID,
-		MarketID:    "market",
-		PartyID:     arg.PartyID,
-		Status:      proto.Order_Active,
-		TimeInForce: proto.Order_GTT,
-	}
-	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, expErr)
-
-	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.Nil(t, pendingOrder)
-	assert.Error(t, err)
 }
 
 func testPrepareAmendOrderNotFound(t *testing.T) {
@@ -256,7 +147,7 @@ func testPrepareAmendOrderNotFound(t *testing.T) {
 	defer svc.ctrl.Finish()
 	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(nil, errors.New("not found"))
 	_, err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Error(t, err)
+	assert.Error(t, err, "not found")
 }
 
 func (m amendMatcher) String() string {
@@ -273,6 +164,6 @@ func (m amendMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.Size == v.Size &&
+	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.SizeDelta == v.SizeDelta &&
 		m.e.ExpiresAt == v.ExpiresAt)
 }

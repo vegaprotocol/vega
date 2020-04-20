@@ -18,6 +18,8 @@ const (
 	// if needed
 	systemOwner = "*"
 	noMarket    = "!"
+
+	TokenAsset = "_t0k3n_"
 )
 
 var (
@@ -30,6 +32,7 @@ var (
 	ErrAccountDoesNotExist                     = errors.New("account do not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
+	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 )
 
 // AccountBuffer ...
@@ -51,9 +54,10 @@ type Engine struct {
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	accs       map[string]*types.Account
-	buf        AccountBuffer
-	lossSocBuf LossSocializationBuf
+	accs        map[string]*types.Account
+	buf         AccountBuffer
+	lossSocBuf  LossSocializationBuf
+	totalTokens uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
@@ -213,11 +217,11 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		expectCollected int64
 	)
 
-	// iterate over transfer unti we get the first win, so we need we accumulated all loss
+	// iterate over transfer until we get the first win, so we need we accumulated all loss
 	for i, evt := range transfers {
 		transfer := evt.Transfer()
 
-		// get the state of the accoutns before processing transfers
+		// get the state of the accounts before processing transfers
 		// so they can be used in the marginEvt, and to calculate the missing funds
 		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
 		if err != nil {
@@ -524,7 +528,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		//   InitialMargin
 		// In both case either the order will not be accepted, or the trader will be closed
 		if transfer.Type == types.TransferType_MARGIN_LOW &&
-			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
+			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		}
 		response = append(response, res)
@@ -566,7 +570,7 @@ func (e *Engine) MarginUpdateOnOrder(
 
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
-	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.GetAmount().MinAmount) {
+	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
 	}
 
@@ -632,7 +636,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			ToAccount: []*types.Account{
 				settle,
 			},
-			Amount:    uint64(-p.Amount.Amount) * p.Size,
+			Amount:    uint64(-p.Amount.Amount),
 			MinAmount: 0,     // default value, but keep it here explicitly
 			Asset:     asset, // TBC
 			Reference: p.Type.String(),
@@ -650,7 +654,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			ToAccount: []*types.Account{
 				mEvt.margin,
 			},
-			Amount:    uint64(p.Amount.Amount) * p.Size,
+			Amount:    uint64(p.Amount.Amount),
 			MinAmount: 0,     // default value, but keep it here explicitly
 			Asset:     asset, // TBC
 			Reference: p.Type.String(),
@@ -658,9 +662,6 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	}
 
 	// just in case...
-	if p.Size == 0 {
-		p.Size = 1
-	}
 	if p.Type == types.TransferType_MARGIN_LOW {
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
@@ -669,8 +670,8 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			ToAccount: []*types.Account{
 				mEvt.margin,
 			},
-			Amount:    uint64(p.Amount.Amount) * p.Size,
-			MinAmount: uint64(p.Amount.MinAmount),
+			Amount:    uint64(p.Amount.Amount),
+			MinAmount: uint64(p.MinAmount),
 			Asset:     asset,
 			Reference: p.Type.String(),
 		}, nil
@@ -682,8 +683,8 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		ToAccount: []*types.Account{
 			mEvt.general,
 		},
-		Amount:    uint64(p.Amount.Amount) * p.Size,
-		MinAmount: uint64(p.Amount.MinAmount),
+		Amount:    uint64(p.Amount.Amount),
+		MinAmount: uint64(p.MinAmount),
 		Asset:     asset,
 		Reference: p.Type.String(),
 	}, nil
@@ -909,6 +910,19 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 		e.accs[generalID] = &acc
 		e.buf.Add(acc)
 	}
+	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_GENERAL)
+	if _, ok := e.accs[tID]; !ok {
+		acc := types.Account{
+			Id:       tID,
+			Asset:    TokenAsset,
+			MarketID: noMarket,
+			Balance:  0,
+			Owner:    partyID,
+			Type:     types.AccountType_GENERAL,
+		}
+		e.accs[tID] = &acc
+		e.buf.Add(acc)
+	}
 
 	return generalID
 }
@@ -1026,6 +1040,10 @@ func (e *Engine) UpdateBalance(id string, balance uint64) error {
 	if !ok {
 		return ErrAccountDoesNotExist
 	}
+	if acc.Asset == TokenAsset {
+		e.totalTokens -= uint64(acc.Balance)
+		e.totalTokens += uint64(balance)
+	}
 	acc.Balance = balance
 	e.buf.Add(*acc)
 	return nil
@@ -1039,6 +1057,9 @@ func (e *Engine) IncrementBalance(id string, inc uint64) error {
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance += inc
+	if acc.Asset == TokenAsset {
+		e.totalTokens += inc
+	}
 	e.buf.Add(*acc)
 	return nil
 }
@@ -1051,6 +1072,9 @@ func (e *Engine) DecrementBalance(id string, dec uint64) error {
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance -= dec
+	if acc.Asset == TokenAsset {
+		e.totalTokens -= dec
+	}
 	e.buf.Add(*acc)
 	return nil
 }
@@ -1063,6 +1087,22 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	}
 	acccpy := *acc
 	return &acccpy, nil
+}
+
+// GetPartyTokenBalance - get the token account for a given user
+func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
+	tID := e.accountID(noMarket, id, TokenAsset, types.AccountType_GENERAL)
+	acc, ok := e.accs[tID]
+	if !ok {
+		return nil, ErrPartyHasNoTokenAccount
+	}
+	cpy := *acc
+	return &cpy, nil
+}
+
+// GetTotalTokens - returns total amount of tokens in the network
+func (e *Engine) GetTotalTokens() uint64 {
+	return e.totalTokens
 }
 
 func (e *Engine) removeAccount(id string) error {

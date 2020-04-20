@@ -18,16 +18,16 @@ type Product interface {
 	IsProduct()
 }
 
+type ProposalChange interface {
+	IsProposalChange()
+}
+
 type RiskModel interface {
 	IsRiskModel()
 }
 
 type TradingMode interface {
 	IsTradingMode()
-}
-
-type CheckTokenResponse struct {
-	Ok bool `json:"ok"`
 }
 
 // A mode where Vega try to execute order as soon as they are received
@@ -38,6 +38,11 @@ type ContinuousTrading struct {
 
 func (ContinuousTrading) IsTradingMode() {}
 
+type ContinuousTradingInput struct {
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
+}
+
 // Some non continuous trading mode
 type DiscreteTrading struct {
 	// Duration of the trading (uint64)
@@ -45,6 +50,11 @@ type DiscreteTrading struct {
 }
 
 func (DiscreteTrading) IsTradingMode() {}
+
+type DiscreteTradingInput struct {
+	// Duration of the trading
+	Duration int `json:"duration"`
+}
 
 // An Ethereum oracle
 type EthereumEvent struct {
@@ -55,6 +65,13 @@ type EthereumEvent struct {
 }
 
 func (EthereumEvent) IsOracle() {}
+
+type EthereumEventInput struct {
+	// The ID of the ethereum contract to use
+	ContractID string `json:"contractId"`
+	// Name of the Ethereum event to listen to
+	Event string `json:"event"`
+}
 
 // A Future product
 type Future struct {
@@ -67,6 +84,15 @@ type Future struct {
 }
 
 func (Future) IsProduct() {}
+
+type FutureInput struct {
+	// The maturity date of the product
+	Maturity string `json:"maturity"`
+	// The name of the asset
+	Asset string `json:"asset"`
+	// The oracle used for this product
+	EthereumOracle *EthereumEventInput `json:"ethereumOracle"`
+}
 
 // Describe something that can be traded on Vega
 type Instrument struct {
@@ -86,6 +112,29 @@ type Instrument struct {
 	Product Product `json:"product"`
 }
 
+type InstrumentInput struct {
+	// Uniquely identify an instrument accrods all instruments available on Vega
+	ID string `json:"id"`
+	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
+	Code string `json:"code"`
+	// Full and fairly descriptive name for the instrument
+	Name string `json:"name"`
+	// String representing the base (e.g. BTCUSD -> BTC is base)
+	BaseName string `json:"baseName"`
+	// String representing the quote (e.g. BTCUSD -> USD is quote)
+	QuoteName        string `json:"quoteName"`
+	InitialMarkPrice string `json:"initialMarkPrice"`
+	// Metadata for this instrument
+	Metadata *InstrumentMetadatInput `json:"metadata"`
+	// A reference to or instance of a fully specified product, including all required product parameters for that product
+	FutureProduct *FutureInput `json:"futureProduct"`
+}
+
+type InstrumentMetadatInput struct {
+	// An arbitrary list of tags to associated to associate to the Instrument
+	Tags []*string `json:"tags"`
+}
+
 // A set of metadata to associate to an instruments
 type InstrumentMetadata struct {
 	// An arbitrary list of tags to associated to associate to the Instrument (string list)
@@ -94,6 +143,15 @@ type InstrumentMetadata struct {
 
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
+	// mu parameter
+	Mu float64 `json:"mu"`
+	// r parameter
+	R float64 `json:"r"`
+	// sigma parameter
+	Sigma float64 `json:"sigma"`
+}
+
+type LogNormalModelParamsInput struct {
 	// mu parameter
 	Mu float64 `json:"mu"`
 	// r parameter
@@ -114,9 +172,23 @@ type LogNormalRiskModel struct {
 
 func (LogNormalRiskModel) IsRiskModel() {}
 
+type LogNormalRiskModelInput struct {
+	// Lambda parameter of the risk model
+	RiskAversionParameter float64 `json:"riskAversionParameter"`
+	// Tau parameter of the risk model
+	Tau float64 `json:"tau"`
+	// Params for the log normal risk model
+	Params *LogNormalModelParamsInput `json:"params"`
+}
+
 type MarginCalculator struct {
 	// The scaling factors that will be used for margin calculation
 	ScalingFactors *ScalingFactors `json:"scalingFactors"`
+}
+
+type MarginCalculatorInput struct {
+	// The scaling factors that will be used for margin calculation
+	ScalingFactors *ScalingFactorsInput `json:"scalingFactors"`
 }
 
 // Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
@@ -159,6 +231,27 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
+// Input variation of market details same to those defined in Market type
+type MarketInput struct {
+	ID                    string                   `json:"id"`
+	Name                  string                   `json:"name"`
+	TradableInstrument    *TradableInstrumentInput `json:"tradableInstrument"`
+	ContinuousTradingMode *ContinuousTradingInput  `json:"continuousTradingMode"`
+	DiscreteTradingMode   *DiscreteTradingInput    `json:"discreteTradingMode"`
+	DecimalPlaces         int                      `json:"decimalPlaces"`
+}
+
+// Allows creating new markets on the network
+type NewMarket struct {
+	Market *Market `json:"market"`
+}
+
+func (NewMarket) IsProposalChange() {}
+
+type NewMarketInput struct {
+	Market *MarketInput `json:"market"`
+}
+
 type PreparedAmendOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
@@ -173,6 +266,13 @@ type PreparedCancelOrder struct {
 	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
+type PreparedProposal struct {
+	// Raw transaction data to sign & submit
+	Blob string `json:"blob"`
+	// The pending proposal
+	PendingProposal *Proposal `json:"pendingProposal"`
+}
+
 type PreparedSubmitOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
@@ -180,7 +280,62 @@ type PreparedSubmitOrder struct {
 	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
+type PreparedVote struct {
+	// Raw, serialised vote to be signed
+	Blob string `json:"blob"`
+	// The vote serialised in the blob field
+	Vote *Vote `json:"vote"`
+}
+
+type Proposal struct {
+	// Proposal id that is filled by VEGA once proposal reaches the network
+	ID *string `json:"id"`
+	// A UUID reference to aid tracking proposals on VEGA
+	Reference string `json:"reference"`
+	// An id of the party that prepared the proposal
+	PartyID string `json:"partyId"`
+	// State of the proposal
+	State ProposalState `json:"state"`
+	// time at which the proposal has reached the network
+	Timestamp string `json:"timestamp"`
+	// Terms of the proposal
+	Terms *ProposalTerms `json:"terms"`
+}
+
+type ProposalTerms struct {
+	// Timestamp when voting is closes for this proposal
+	ClosingTimestamp string `json:"closingTimestamp"`
+	// Timestamp when this proposal is executed (if passed)
+	EnactmentTimestamp string `json:"enactmentTimestamp"`
+	// Minimum participation stake required for this proposal to pass
+	MinParticipationStake int `json:"minParticipationStake"`
+	// Actual change being introduced by the proposal
+	Change ProposalChange `json:"change"`
+}
+
+type ProposalTermsInput struct {
+	// Timestamp when voting is closes for this proposal
+	ClosingTimestamp string `json:"closingTimestamp"`
+	// Timestamp when this proposal is executed (if passed)
+	EnactmentTimestamp string `json:"enactmentTimestamp"`
+	// Minimum participation stake required for this proposal to pass
+	MinParticipationStake int `json:"minParticipationStake"`
+	// Actual change being introduced by the proposal
+	UpdateMarket  *UpdateMarketInput  `json:"updateMarket"`
+	NewMarket     *NewMarketInput     `json:"newMarket"`
+	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+}
+
 type ScalingFactors struct {
+	// the scaling factor that determines the margin level at which we have to search for more money
+	SearchLevel float64 `json:"searchLevel"`
+	// the scaling factor that determines the optimal margin level
+	InitialMargin float64 `json:"initialMargin"`
+	// The scaling factor that determines the overflow margin level
+	CollateralRelease float64 `json:"collateralRelease"`
+}
+
+type ScalingFactorsInput struct {
 	// the scaling factor that determines the margin level at which we have to search for more money
 	SearchLevel float64 `json:"searchLevel"`
 	// the scaling factor that determines the optimal margin level
@@ -197,8 +352,20 @@ type SimpleRiskModel struct {
 
 func (SimpleRiskModel) IsRiskModel() {}
 
+type SimpleRiskModelInput struct {
+	// Params for the simple risk model
+	Params *SimpleRiskModelParamsInput `json:"params"`
+}
+
 // Parameters for the simple risk model
 type SimpleRiskModelParams struct {
+	// Risk factor for long
+	FactorLong float64 `json:"factorLong"`
+	// Risk factor for short
+	FactorShort float64 `json:"factorShort"`
+}
+
+type SimpleRiskModelParamsInput struct {
 	// Risk factor for long
 	FactorLong float64 `json:"factorLong"`
 	// Risk factor for short
@@ -215,8 +382,81 @@ type TradableInstrument struct {
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
 }
 
+// Input variation of tradable instrument details
+type TradableInstrumentInput struct {
+	Instrument         *InstrumentInput         `json:"instrument"`
+	SimpleRiskModel    *SimpleRiskModelInput    `json:"simpleRiskModel"`
+	LogNormalRiskModel *LogNormalRiskModelInput `json:"logNormalRiskModel"`
+	MarginCalculator   *MarginCalculatorInput   `json:"marginCalculator"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
+}
+
+// Incomplete change definition for governance proposal terms
+// TODO: complete the type
+type UpdateMarket struct {
+	MarketID string `json:"marketId"`
+}
+
+func (UpdateMarket) IsProposalChange() {}
+
+type UpdateMarketInput struct {
+	MarketID string `json:"marketId"`
+}
+
+// Allows submitting a proposal for changing governance network parameters
+type UpdateNetwork struct {
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to close voting. Value represents duration in seconds.
+	MinCloseInSeconds *int `json:"minCloseInSeconds"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to close voting. Value represents duration in seconds.
+	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in seconds.
+	MinEnactInSeconds *int `json:"minEnactInSeconds"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in seconds.
+	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
+	// Network parameter that restricts the minimum participation stake
+	// required for a proposal to pass.
+	MinParticipationStake *int `json:"minParticipationStake"`
+}
+
+func (UpdateNetwork) IsProposalChange() {}
+
+// Allows submitting a proposal for changing governance network parameters
+type UpdateNetworkInput struct {
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to close voting. Value represents duration in seconds.
+	MinCloseInSeconds *int `json:"minCloseInSeconds"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to close voting. Value represents duration in seconds.
+	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
+	// Network parameter that restricts when the earliest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in seconds.
+	MinEnactInSeconds *int `json:"minEnactInSeconds"`
+	// Network parameter that restricts when the latest a proposal
+	// can be set to be executed (if that proposal passed).
+	// Value represents duration in seconds.
+	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
+	// Network parameter that restricts the minimum participation stake
+	// required for a proposal to pass.
+	MinParticipationStake *int `json:"minParticipationStake"`
+}
+
+type Vote struct {
+	// The vote value cast
+	Value VoteValue `json:"Value"`
+	// The party casting the vote
+	PartyID string `json:"PartyID"`
+	// Proposal ID -> proposal casting the vote on
+	ProposalID string `json:"ProposalID"`
 }
 
 // The various account types we have (used by collateral)
@@ -480,6 +720,63 @@ func (e OrderType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Varoius states a proposal can transition through:
+//   Open ->
+//       - Passed -> Enacted.
+//       - Rejected.
+//   Proposal can enter Failed state from any other state.
+type ProposalState string
+
+const (
+	// Proposal became invalid and cannot be processed
+	ProposalStateFailed ProposalState = "Failed"
+	// Proposal is open for voting
+	ProposalStateOpen ProposalState = "Open"
+	// Proposal has gained enough support to be executed
+	ProposalStatePassed ProposalState = "Passed"
+	// Proposal has could not gain enough support to be executed
+	ProposalStateRejected ProposalState = "Rejected"
+	// Proposal has been executed and the changes under this proposal have now been applied
+	ProposalStateEnacted ProposalState = "Enacted"
+)
+
+var AllProposalState = []ProposalState{
+	ProposalStateFailed,
+	ProposalStateOpen,
+	ProposalStatePassed,
+	ProposalStateRejected,
+	ProposalStateEnacted,
+}
+
+func (e ProposalState) IsValid() bool {
+	switch e {
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateRejected, ProposalStateEnacted:
+		return true
+	}
+	return false
+}
+
+func (e ProposalState) String() string {
+	return string(e)
+}
+
+func (e *ProposalState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ProposalState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ProposalState", str)
+	}
+	return nil
+}
+
+func (e ProposalState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Reason for the order beeing rejected by the core node
 type RejectionReason string
 
@@ -604,5 +901,48 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type VoteValue string
+
+const (
+	// NO reject a proposal
+	VoteValueNo VoteValue = "NO"
+	// YES accept a proposal
+	VoteValueYes VoteValue = "YES"
+)
+
+var AllVoteValue = []VoteValue{
+	VoteValueNo,
+	VoteValueYes,
+}
+
+func (e VoteValue) IsValid() bool {
+	switch e {
+	case VoteValueNo, VoteValueYes:
+		return true
+	}
+	return false
+}
+
+func (e VoteValue) String() string {
+	return string(e)
+}
+
+func (e *VoteValue) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = VoteValue(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid VoteValue", str)
+	}
+	return nil
+}
+
+func (e VoteValue) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

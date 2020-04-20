@@ -73,6 +73,10 @@ var (
 	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
 	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
 	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
+	ErrMissingOrderIDParameter      = errors.New("missing orderID parameter")
+	ErrMissingReferenceIDParameter  = errors.New("missing referenceID parameter")
+	ErrOrderAndReferenceMismatch    = errors.New("referenceID and orderID do not match up")
+	ErrOrderNotFound                = errors.New("order not found")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
 	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
@@ -99,6 +103,10 @@ var (
 	ErrBlockchainBacklogLength = errors.New("failed to get backlog length from blockchain")
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
+	// Governance...
+	// ErrPrepareProposal is returned when preparation of a governance proposal fails for some reason.
+	ErrPrepareProposal = errors.New("failed to prepare a proposal")
+	ErrPrepareVote     = errors.New("failed to prepare vote")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

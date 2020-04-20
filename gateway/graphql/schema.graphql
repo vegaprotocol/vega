@@ -57,10 +57,40 @@ type Mutation {
     "New price for this order"
     price: String!
     "New size for this order"
-    size: String!
+    sizeDelta: String!
     "New expiration time"
     expiration: String
+    "Time in force"
+    timeInForce: OrderTimeInForce!
   ): PreparedAmendOrder!
+
+  """
+  Prepare a proposal so it can be sent into the network.
+  Returns a pending proposal along with a transaction blob ready for submission.
+  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
+  """
+  prepareProposal(
+    "ID of the party which created this proposal"
+    partyId: String!
+    "A UUID reference for the caller to aid in tracking operations on VEGA"
+    reference: String
+    "Terms of the proposal"
+    proposalTerms: ProposalTermsInput!
+  ): PreparedProposal!
+
+  """
+  Prepare a vote so it can be signed and submitted.
+  Returns a pending vote with a transaction blob for signing.
+  No validation other than the vote value being correct is done.
+  """
+  prepareVote(
+    "vote value"
+    value: VoteValue!
+    "the party casting the vote"
+    partyID: String!
+    "the proposal voted on"
+    propopsalID: String!
+  ): PreparedVote!
 
   """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
@@ -77,67 +107,6 @@ type Mutation {
     pubkey: String
   ): TransactionSubmitted!
 
-  """
-  Send a submit order request into VEGA network, this does not immediately create the order.
-  It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-  """
-  orderSubmit(
-    "ID of the market to place the order"
-    marketId: String!
-    "ID of the party placing the order"
-    partyId: String!
-    "Price of the asset"
-    price: String
-    "Size ofthe order"
-    size: String!
-    "Side of the order (Buy or Sell)"
-    side: Side!
-    "TimeInForce of the order"
-    timeInForce: OrderTimeInForce!
-    "exiration of the the order"
-    expiration: String
-    "type of the order"
-    type: OrderType!
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-
-  """
-  Send a cancel order request into VEGA network, this does not immediately cancel an order.
-  It validates and sends the request out for consensus.
-  """
-  orderCancel(
-    "ID of the order to cancel"
-    id: ID!
-    "ID of the party placing the order"
-    partyId: String!
-    "ID of the market where to find the order"
-    marketId: String!
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-  """
-  Send a amend order request into VEGA network, this does not immediately amend an order.
-  It validates and sends the request out for consensus.
-  """
-  orderAmend(
-    "ID of the order to amend"
-    id: ID!
-    "ID of the party which created the order"
-    partyId: String!
-    "New price for this order"
-    price: String!
-    "New size for this order"
-    size: String!
-    "New expiration time"
-    expiration: String
-  ): PendingOrder! @deprecated(reason: "this endpoint will soon be remove in favor of the combo of prepareX + submitTransaction")
-
-
-  "sign a party in using an username and password, then return a token"
-  signin(
-    "ID of the party to get logged in"
-    id: String!
-    "Password of the party"
-    password: String!): String! @deprecated(reason: "this endpoint will soon be remove in favor of the new wallet based auth")
 }
 
 
@@ -343,17 +312,17 @@ type Query {
   "a bunch of statistics about the node"
   statistics: Statistics!
 
-  "Check a partyID+Token combination"
-  checkToken(
-    "Party ID"
-    partyId: String!
-    "Token"
-    token: String!
-  ): CheckTokenResponse!
-}
+  "An order in the VEGA network found by orderID"
+  orderByID(
+    "ID for an order"
+    orderID: String!
+  ): Order!
 
-type CheckTokenResponse {
-  ok: Boolean!
+  "An order in the VEGA network found by referenceID"
+  orderByReferenceID(
+    "ReferenceID for an order"
+    referenceID: String!
+  ): Order!
 }
 
 "Statistics about the node"
@@ -399,12 +368,6 @@ type Statistics {
 
   "Total number of markets"
   totalMarkets: Int!
-
-  "Total number of parties"
-  totalParties: Int!
-
-  "Traders on the vega network"
-  parties: [String]!
 
   "Total number of amended orders"
   totalAmendOrder: Int!
@@ -1036,4 +999,314 @@ enum AccountType {
   Margin
   "General account - the account containing 'unused' collateral for traders"
   General
+}
+
+input InstrumentMetadatInput {
+  "An arbitrary list of tags to associated to associate to the Instrument"
+  tags: [String]!
+}
+
+input EthereumEventInput {
+  "The ID of the ethereum contract to use"
+  contractId: String!
+
+  "Name of the Ethereum event to listen to"
+  event: String!
+}
+
+input FutureInput {
+  "The maturity date of the product"
+  maturity: String!
+
+  "The name of the asset"
+  asset: String!
+
+  "The oracle used for this product"
+  ethereumOracle: EthereumEventInput!
+}
+
+input InstrumentInput {
+  "Uniquely identify an instrument accrods all instruments available on Vega"
+  id: String!
+
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
+  code: String!
+
+  "Full and fairly descriptive name for the instrument"
+  name: String!
+
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
+  initialMarkPrice: String!
+
+  "Metadata for this instrument"
+  metadata: InstrumentMetadatInput!
+
+  "A reference to or instance of a fully specified product, including all required product parameters for that product"
+  futureProduct: FutureInput!
+}
+
+input LogNormalModelParamsInput {
+  "mu parameter"
+  mu: Float!
+  "r parameter"
+  r: Float!
+  "sigma parameter"
+  sigma: Float!
+}
+
+input SimpleRiskModelParamsInput {
+  "Risk factor for long"
+  factorLong: Float!
+  "Risk factor for short"
+  factorShort: Float!
+}
+
+input LogNormalRiskModelInput {
+  "Lambda parameter of the risk model"
+  riskAversionParameter: Float!
+  "Tau parameter of the risk model"
+  tau: Float!
+  "Params for the log normal risk model"
+  params: LogNormalModelParamsInput!
+}
+
+input SimpleRiskModelInput {
+  "Params for the simple risk model"
+  params: SimpleRiskModelParamsInput!
+}
+
+input ScalingFactorsInput {
+  "the scaling factor that determines the margin level at which we have to search for more money"
+  searchLevel: Float!
+
+  "the scaling factor that determines the optimal margin level"
+  initialMargin: Float!
+
+  "The scaling factor that determines the overflow margin level"
+  collateralRelease: Float!
+}
+
+
+input MarginCalculatorInput {
+  "The scaling factors that will be used for margin calculation"
+  scalingFactors: ScalingFactorsInput!
+}
+
+"Input variation of tradable instrument details"
+input TradableInstrumentInput {
+  instrument: InstrumentInput!
+
+  simpleRiskModel: SimpleRiskModelInput
+  logNormalRiskModel: LogNormalRiskModelInput
+
+  marginCalculator: MarginCalculatorInput
+}
+
+
+input ContinuousTradingInput {
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
+}
+
+input DiscreteTradingInput {
+  "Duration of the trading"
+  duration: Int!
+}
+
+
+"Input variation of market details same to those defined in Market type"
+input MarketInput {
+  id: String!
+  name: String!
+  tradableInstrument: TradableInstrumentInput!
+  continuousTradingMode: ContinuousTradingInput
+  discreteTradingMode: DiscreteTradingInput
+  decimalPlaces: Int!
+}
+
+"""
+Incomplete change definition for governance proposal terms
+TODO: complete the type
+"""
+type UpdateMarket {
+  marketId: String!
+}
+input UpdateMarketInput {
+  marketId: String!
+}
+
+"""
+Allows creating new markets on the network
+"""
+type NewMarket {
+  market: Market!
+}
+input NewMarketInput {
+  market: MarketInput!
+}
+
+"Allows submitting a proposal for changing governance network parameters"
+type UpdateNetwork {
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  minCloseInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  maxCloseInSeconds: Int
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  minEnactInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  maxEnactInSeconds: Int
+
+  """
+  Network parameter that restricts the minimum participation stake
+  required for a proposal to pass.
+  """
+  minParticipationStake: Int
+}
+
+"Allows submitting a proposal for changing governance network parameters"
+input UpdateNetworkInput {
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  minCloseInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to close voting. Value represents duration in seconds.
+  """
+  maxCloseInSeconds: Int
+  """
+  Network parameter that restricts when the earliest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  minEnactInSeconds: Int
+  """
+  Network parameter that restricts when the latest a proposal
+  can be set to be executed (if that proposal passed).
+  Value represents duration in seconds.
+  """
+  maxEnactInSeconds: Int
+
+  """
+  Network parameter that restricts the minimum participation stake
+  required for a proposal to pass.
+  """
+  minParticipationStake: Int
+}
+
+
+union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
+# there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
+
+type ProposalTerms {
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
+  "Minimum participation stake required for this proposal to pass"
+  minParticipationStake: Int!
+  "Actual change being introduced by the proposal"
+  change: ProposalChange
+}
+
+input ProposalTermsInput {
+  "Timestamp when voting is closes for this proposal"
+  closingTimestamp: String!
+  "Timestamp when this proposal is executed (if passed)"
+  enactmentTimestamp: String!
+  "Minimum participation stake required for this proposal to pass"
+  minParticipationStake: Int!
+  "Actual change being introduced by the proposal"
+
+  updateMarket: UpdateMarketInput
+  newMarket: NewMarketInput
+  updateNetwork: UpdateNetworkInput
+}
+
+"""
+Varoius states a proposal can transition through:
+  Open ->
+      - Passed -> Enacted.
+      - Rejected.
+  Proposal can enter Failed state from any other state.
+"""
+enum ProposalState {
+  "Proposal became invalid and cannot be processed"
+  Failed
+  "Proposal is open for voting"
+  Open
+  "Proposal has gained enough support to be executed"
+  Passed
+  "Proposal has could not gain enough support to be executed"
+  Rejected
+  "Proposal has been executed and the changes under this proposal have now been applied"
+  Enacted
+}
+
+
+type Proposal {
+  "Proposal id that is filled by VEGA once proposal reaches the network"
+  id: ID
+  "A UUID reference to aid tracking proposals on VEGA"
+  reference: String!
+  "An id of the party that prepared the proposal"
+  partyId: String!
+  "State of the proposal"
+  state: ProposalState!
+  "time at which the proposal has reached the network"
+  timestamp: String!
+  "Terms of the proposal"
+  terms: ProposalTerms!
+}
+
+type PreparedProposal {
+  "Raw transaction data to sign & submit"
+  blob: String!
+  "The pending proposal"
+  pendingProposal: Proposal!
+}
+
+enum VoteValue {
+  "NO reject a proposal"
+  NO
+  "YES accept a proposal"
+  YES
+}
+
+type Vote {
+  "The vote value cast"
+  Value: VoteValue!
+
+  "The party casting the vote"
+  PartyID: String!
+
+  "Proposal ID -> proposal casting the vote on"
+  ProposalID: ID!
+}
+
+type PreparedVote {
+  "Raw, serialised vote to be signed"
+  blob: String!
+  "The vote serialised in the blob field"
+  vote: Vote!
 }

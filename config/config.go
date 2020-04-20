@@ -3,12 +3,12 @@ package config
 import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
-	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -47,9 +47,9 @@ type Config struct {
 	Time       vegatime.Config
 	Monitoring monitoring.Config
 	Gateway    gateway.Config
-	Auth       auth.Config
 	Metrics    metrics.Config
 	Transfers  transfers.Config
+	Governance governance.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -81,9 +81,9 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Position:       positions.NewDefaultConfig(),
 		Settlement:     settlement.NewDefaultConfig(),
 		Collateral:     collateral.NewDefaultConfig(),
-		Auth:           auth.NewDefaultConfig(),
 		Metrics:        metrics.NewDefaultConfig(),
 		Transfers:      transfers.NewDefaultConfig(),
+		Governance:     governance.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,

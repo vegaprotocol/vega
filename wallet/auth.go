@@ -12,6 +12,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -78,7 +79,7 @@ func (a *auth) NewSession(walletname string) (string, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
 	ss, err := token.SignedString(a.privKey)
 	if err != nil {
 		a.log.Error("unable to sign token", logging.Error(err))
@@ -142,8 +143,8 @@ func (a *auth) parseToken(tokenStr string) (*Claims, error) {
 }
 
 // ExtractToken this is public for testing purposes
-func ExtractToken(f func(string, http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func ExtractToken(f func(string, http.ResponseWriter, *http.Request, httprouter.Params)) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		token := r.Header.Get("Authorization")
 		if len(token) <= 0 {
 			// invalid token, return an error here
@@ -157,7 +158,7 @@ func ExtractToken(f func(string, http.ResponseWriter, *http.Request)) http.Handl
 			return
 		}
 		// then call the function
-		f(strings.TrimSpace(splitToken[1]), w, r)
+		f(strings.TrimSpace(splitToken[1]), w, r, ps)
 	}
 }
 

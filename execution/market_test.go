@@ -413,8 +413,8 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 
 func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	party1 := "party1"
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
+	now := time.Unix(100000, 0)
+	closingAt := time.Unix(1000000, 0)
 	tm := getTestMarket(t, now, closingAt)
 	defer tm.ctrl.Finish()
 
@@ -436,6 +436,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order",
+		Version:     execution.InitialOrderVersion,
 	}
 
 	// submit orders
@@ -443,8 +444,6 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// 	return &types.Party{Id: id}, nil
 	// })
 	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
@@ -460,6 +459,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		}
 	})
 
+	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1) // storing original version
 	_, err := tm.market.SubmitOrder(orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -470,11 +470,12 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 	// now try to amend and make sure monies are updated
 	amendedOrder := &types.OrderAmendment{
-		OrderID:   orderBuy.Id,
-		PartyID:   party1,
-		Price:     200,
-		Size:      200,
-		ExpiresAt: orderBuy.ExpiresAt,
+		OrderID:     orderBuy.Id,
+		PartyID:     party1,
+		Price:       200,
+		SizeDelta:   -50,
+		TimeInForce: types.Order_GTT,
+		ExpiresAt:   orderBuy.ExpiresAt,
 	}
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
@@ -491,7 +492,19 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 			}
 		}
 	})
-
+	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
+		if order.Id == amendedOrder.OrderID {
+			assert.EqualValues(t, orderBuy.Version+1, order.Version, "storing amended version")
+		}
+	})
+	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
+		if order.Id == amendedOrder.OrderID {
+			assert.EqualValues(t, orderBuy.Version, order.Version)
+		}
+	})
+	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
+		assert.NotEqual(t, order.Id, amendedOrder.OrderID)
+	})
 	_, err = tm.market.AmendOrder(amendedOrder)
 	assert.Nil(t, err)
 	if err != nil {

@@ -110,6 +110,11 @@ message Order {
   int64 expiresAt = 12;
   string reference = 13;
   OrderError reason = 14;
+  int64 updatedAt = 15;
+  
+  // Versioning support for amends, orders start at version 1 and increment
+  // after each successful amend
+  uint64 version = 16;
 }
 
 message OrderCancellationConfirmation {
@@ -235,8 +240,6 @@ message Statistics {
   uint64 tradesPerSecond = 11;
   uint64 ordersPerSecond = 12;
   uint64 totalMarkets = 13;
-  uint64 totalParties = 14;
-  repeated string parties = 15;
   uint64 totalAmendOrder = 16;
   uint64 totalCancelOrder = 17;
   uint64 totalCreateOrder = 18;
@@ -291,13 +294,16 @@ message Withdraw {
 }
 
 message OrderAmendment {
+  // required to find the order, not being updated
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
   string partyID = 2 [(validator.field) = {string_not_empty: true}];
   string marketID = 3;
+
+  // these can be amended
   uint64 price = 4 [(validator.field) = {int_gt: 0}];
-  uint64 size = 5 [(validator.field) = {int_gt: 0}];
+  int64 sizeDelta = 5;
   int64 expiresAt = 6;
-  Side side = 7;
+  Order.TimeInForce timeInForce = 7;
 }
 
 message OrderSubmission {
@@ -339,7 +345,6 @@ message Account {
 message FinancialAmount {
   int64 amount = 1;
   string asset = 2;
-  int64 minAmount = 3;
 }
 
 enum TransferType {
@@ -355,9 +360,9 @@ enum TransferType {
 
 message Transfer {
   string owner = 1;
-  uint64 size = 2;
-  FinancialAmount amount = 3;
-  TransferType type = 4;
+  FinancialAmount amount = 2;
+  TransferType type = 3;
+  int64 minAmount = 4;
 }
 
 message TransferRequest {

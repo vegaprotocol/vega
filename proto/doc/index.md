@@ -10,8 +10,9 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
-    - [CheckTokenRequest](#api.CheckTokenRequest)
-    - [CheckTokenResponse](#api.CheckTokenResponse)
+    - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
+    - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
+    - [GetProposalsResponse](#api.GetProposalsResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
@@ -29,10 +30,14 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
+    - [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
     - [OrderByReferenceResponse](#api.OrderByReferenceResponse)
+    - [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest)
+    - [OrderVersionsResponse](#api.OrderVersionsResponse)
     - [OrdersByMarketRequest](#api.OrdersByMarketRequest)
     - [OrdersByMarketResponse](#api.OrdersByMarketResponse)
     - [OrdersByPartyRequest](#api.OrdersByPartyRequest)
@@ -50,9 +55,11 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareProposalRequest](#api.PrepareProposalRequest)
+    - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
-    - [SignInRequest](#api.SignInRequest)
-    - [SignInResponse](#api.SignInResponse)
+    - [PrepareVoteRequest](#api.PrepareVoteRequest)
+    - [PrepareVoteResponse](#api.PrepareVoteResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
@@ -72,6 +79,22 @@
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
+
+
+- [proto/governance.proto](#proto/governance.proto)
+    - [NetworkConfiguration](#vega.NetworkConfiguration)
+    - [NewMarket](#vega.NewMarket)
+    - [Proposal](#vega.Proposal)
+    - [ProposalTerms](#vega.ProposalTerms)
+    - [ProposalVote](#vega.ProposalVote)
+    - [UpdateMarket](#vega.UpdateMarket)
+    - [UpdateNetwork](#vega.UpdateNetwork)
+    - [Vote](#vega.Vote)
+
+    - [Proposal.State](#vega.Proposal.State)
+    - [Vote.Value](#vega.Vote.Value)
+
+
 
 
 - [proto/markets.proto](#proto/markets.proto)
@@ -183,7 +206,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  |  |
-| token | [string](#string) |  |  |
 
 
 
@@ -199,7 +221,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | cancellation | [vega.OrderCancellation](#vega.OrderCancellation) |  |  |
-| token | [string](#string) |  |  |
 
 
 
@@ -254,31 +275,45 @@
 
 
 
-<a name="api.CheckTokenRequest"></a>
+<a name="api.GetProposalByIDRequest"></a>
 
-### CheckTokenRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| token | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="api.CheckTokenResponse"></a>
-
-### CheckTokenResponse
+### GetProposalByIDRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ok | [bool](#bool) |  |  |
+| ID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalByReferenceRequest"></a>
+
+### GetProposalByReferenceRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| Reference | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalsResponse"></a>
+
+### GetProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposals | [vega.ProposalVote](#vega.ProposalVote) | repeated |  |
 
 
 
@@ -547,6 +582,22 @@
 
 
 
+<a name="api.OrderByIDRequest"></a>
+
+### OrderByIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+| version | [uint64](#uint64) |  | version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) |
+
+
+
+
+
+
 <a name="api.OrderByMarketAndIdRequest"></a>
 
 ### OrderByMarketAndIdRequest
@@ -578,6 +629,21 @@
 
 
 
+<a name="api.OrderByReferenceIDRequest"></a>
+
+### OrderByReferenceIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| referenceID | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="api.OrderByReferenceRequest"></a>
 
 ### OrderByReferenceRequest
@@ -602,6 +668,37 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | order | [vega.Order](#vega.Order) |  |  |
+
+
+
+
+
+
+<a name="api.OrderVersionsByIDRequest"></a>
+
+### OrderVersionsByIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+| pagination | [Pagination](#api.Pagination) |  |  |
+
+
+
+
+
+
+<a name="api.OrderVersionsResponse"></a>
+
+### OrderVersionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orders | [vega.Order](#vega.Order) | repeated |  |
 
 
 
@@ -876,6 +973,39 @@
 
 
 
+<a name="api.PrepareProposalRequest"></a>
+
+### PrepareProposalRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
+| proposal | [vega.ProposalTerms](#vega.ProposalTerms) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareProposalResponse"></a>
+
+### PrepareProposalResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| pendingProposal | [vega.Proposal](#vega.Proposal) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareSubmitOrderResponse"></a>
 
 ### PrepareSubmitOrderResponse
@@ -892,31 +1022,31 @@
 
 
 
-<a name="api.SignInRequest"></a>
+<a name="api.PrepareVoteRequest"></a>
 
-### SignInRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | a party ID |
-| password | [string](#string) |  | a password |
-
-
-
-
-
-
-<a name="api.SignInResponse"></a>
-
-### SignInResponse
+### PrepareVoteRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| token | [string](#string) |  | a token corresponding to the party given in the request, and valid for subsequent requests for that party |
+| vote | [vega.Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareVoteResponse"></a>
+
+### PrepareVoteResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+| vote | [vega.Vote](#vega.Vote) |  |  |
 
 
 
@@ -932,7 +1062,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
-| token | [string](#string) |  | a token acquired from a SignIn request and corresponding to the party specified in the `submission`. |
 
 
 
@@ -1154,13 +1283,10 @@
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
-| SubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Submit an Order |
-| CancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Cancel an Order |
-| AmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [.vega.PendingOrder](#vega.PendingOrder) | Amend an Order |
-| SignIn | [SignInRequest](#api.SignInRequest) | [SignInResponse](#api.SignInResponse) | Sign In |
 | Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
-| CheckToken | [CheckTokenRequest](#api.CheckTokenRequest) | [CheckTokenResponse](#api.CheckTokenResponse) | Check an API token |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
+| PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
+| PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
 
 
 <a name="api.trading_data"></a>
@@ -1182,6 +1308,9 @@
 | OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
 | OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get a list of Orders by Market |
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
+| OrderByID | [OrderByIDRequest](#api.OrderByIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by orderID |
+| OrderByReferenceID | [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by referenceID |
+| OrderVersionsByID | [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest) | [OrderVersionsResponse](#api.OrderVersionsResponse) | Get all versions of the order by its orderID |
 | MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by PartyID |
 | Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
 | PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get a Party by ID |
@@ -1190,6 +1319,11 @@
 | TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
+| GetProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all proposals |
+| GetOpenProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all OPEN proposals |
+| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by ID |
+| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by reference |
+| ObserveProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.ProposalVote](#vega.ProposalVote) stream | Subscribe to a stream of updates to proposal data |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -1201,6 +1335,189 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+
+
+
+
+
+<a name="proto/governance.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/governance.proto
+
+
+
+<a name="vega.NetworkConfiguration"></a>
+
+### NetworkConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| minCloseInSeconds | [int64](#int64) |  |  |
+| maxCloseInSeconds | [int64](#int64) |  |  |
+| minEnactInSeconds | [int64](#int64) |  |  |
+| maxEnactInSeconds | [int64](#int64) |  |  |
+| minParticipationStake | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.NewMarket"></a>
+
+### NewMarket
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| changes | [Market](#vega.Market) |  |  |
+
+
+
+
+
+
+<a name="vega.Proposal"></a>
+
+### Proposal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| state | [Proposal.State](#vega.Proposal.State) |  |  |
+| timestamp | [int64](#int64) |  |  |
+| terms | [ProposalTerms](#vega.ProposalTerms) |  |  |
+
+
+
+
+
+
+<a name="vega.ProposalTerms"></a>
+
+### ProposalTerms
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| closingTimestamp | [int64](#int64) |  |  |
+| enactmentTimestamp | [int64](#int64) |  |  |
+| minParticipationStake | [uint64](#uint64) |  |  |
+| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
+| newMarket | [NewMarket](#vega.NewMarket) |  |  |
+| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
+
+
+
+
+
+
+<a name="vega.ProposalVote"></a>
+
+### ProposalVote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| yes | [Vote](#vega.Vote) | repeated |  |
+| no | [Vote](#vega.Vote) | repeated |  |
+
+
+
+
+
+
+<a name="vega.UpdateMarket"></a>
+
+### UpdateMarket
+TODO
+
+
+
+
+
+
+<a name="vega.UpdateNetwork"></a>
+
+### UpdateNetwork
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  |  |
+
+
+
+
+
+
+<a name="vega.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| value | [Vote.Value](#vega.Vote.Value) |  |  |
+| proposalID | [string](#string) |  |  |
+
+
+
+
+
+
+
+
+<a name="vega.Proposal.State"></a>
+
+### Proposal.State
+Proposal state transition:
+Open -&gt;
+  - Passed -&gt; Enacted.
+  - Passed -&gt; Failed.
+  - Declined
+Rejected
+Proposal can enter Failed state from any other state.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
+| OPEN | 1 | Proposal is open for voting. |
+| PASSED | 2 | Proposal has gained enough support to be executed. |
+| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
+| DECLINED | 4 | Proposal didn&#39;t get enough votes |
+| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
+
+
+
+<a name="vega.Vote.Value"></a>
+
+### Vote.Value
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NO | 0 |  |
+| YES | 1 |  |
+
+
+
+
+
 
 
 
@@ -1583,7 +1900,6 @@
 | ----- | ---- | ----- | ----------- |
 | amount | [int64](#int64) |  |  |
 | asset | [string](#string) |  |  |
-| minAmount | [int64](#int64) |  |  |
 
 
 
@@ -1693,6 +2009,8 @@
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
+| updatedAt | [int64](#int64) |  |  |
+| version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
 
 
 
@@ -1707,13 +2025,13 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
+| orderID | [string](#string) |  | required to find the order, not being updated |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
+| price | [uint64](#uint64) |  | these can be amended |
+| sizeDelta | [int64](#int64) |  |  |
 | expiresAt | [int64](#int64) |  |  |
-| side | [Side](#vega.Side) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 
 
 
@@ -1992,8 +2310,6 @@
 | tradesPerSecond | [uint64](#uint64) |  |  |
 | ordersPerSecond | [uint64](#uint64) |  |  |
 | totalMarkets | [uint64](#uint64) |  |  |
-| totalParties | [uint64](#uint64) |  |  |
-| parties | [string](#string) | repeated |  |
 | totalAmendOrder | [uint64](#uint64) |  |  |
 | totalCancelOrder | [uint64](#uint64) |  |  |
 | totalCreateOrder | [uint64](#uint64) |  |  |
@@ -2066,9 +2382,9 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | owner | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
 | amount | [FinancialAmount](#vega.FinancialAmount) |  |  |
 | type | [TransferType](#vega.TransferType) |  |  |
+| minAmount | [int64](#int64) |  |  |
 
 
 

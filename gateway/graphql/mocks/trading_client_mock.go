@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
 	api "code.vegaprotocol.io/vega/proto/api"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -34,66 +33,6 @@ func NewMockTradingClient(ctrl *gomock.Controller) *MockTradingClient {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockTradingClient) EXPECT() *MockTradingClientMockRecorder {
 	return m.recorder
-}
-
-// AmendOrder mocks base method
-func (m *MockTradingClient) AmendOrder(arg0 context.Context, arg1 *api.AmendOrderRequest, arg2 ...grpc.CallOption) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AmendOrder", varargs...)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AmendOrder indicates an expected call of AmendOrder
-func (mr *MockTradingClientMockRecorder) AmendOrder(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockTradingClient)(nil).AmendOrder), varargs...)
-}
-
-// CancelOrder mocks base method
-func (m *MockTradingClient) CancelOrder(arg0 context.Context, arg1 *api.CancelOrderRequest, arg2 ...grpc.CallOption) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CancelOrder", varargs...)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelOrder indicates an expected call of CancelOrder
-func (mr *MockTradingClientMockRecorder) CancelOrder(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockTradingClient)(nil).CancelOrder), varargs...)
-}
-
-// CheckToken mocks base method
-func (m *MockTradingClient) CheckToken(arg0 context.Context, arg1 *api.CheckTokenRequest, arg2 ...grpc.CallOption) (*api.CheckTokenResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CheckToken", varargs...)
-	ret0, _ := ret[0].(*api.CheckTokenResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckToken indicates an expected call of CheckToken
-func (mr *MockTradingClientMockRecorder) CheckToken(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckToken", reflect.TypeOf((*MockTradingClient)(nil).CheckToken), varargs...)
 }
 
 // PrepareAmendOrder mocks base method
@@ -136,6 +75,26 @@ func (mr *MockTradingClientMockRecorder) PrepareCancelOrder(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareCancelOrder", reflect.TypeOf((*MockTradingClient)(nil).PrepareCancelOrder), varargs...)
 }
 
+// PrepareProposal mocks base method
+func (m *MockTradingClient) PrepareProposal(arg0 context.Context, arg1 *api.PrepareProposalRequest, arg2 ...grpc.CallOption) (*api.PrepareProposalResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PrepareProposal", varargs...)
+	ret0, _ := ret[0].(*api.PrepareProposalResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareProposal indicates an expected call of PrepareProposal
+func (mr *MockTradingClientMockRecorder) PrepareProposal(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposal", reflect.TypeOf((*MockTradingClient)(nil).PrepareProposal), varargs...)
+}
+
 // PrepareSubmitOrder mocks base method
 func (m *MockTradingClient) PrepareSubmitOrder(arg0 context.Context, arg1 *api.SubmitOrderRequest, arg2 ...grpc.CallOption) (*api.PrepareSubmitOrderResponse, error) {
 	m.ctrl.T.Helper()
@@ -156,44 +115,24 @@ func (mr *MockTradingClientMockRecorder) PrepareSubmitOrder(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareSubmitOrder", reflect.TypeOf((*MockTradingClient)(nil).PrepareSubmitOrder), varargs...)
 }
 
-// SignIn mocks base method
-func (m *MockTradingClient) SignIn(arg0 context.Context, arg1 *api.SignInRequest, arg2 ...grpc.CallOption) (*api.SignInResponse, error) {
+// PrepareVote mocks base method
+func (m *MockTradingClient) PrepareVote(arg0 context.Context, arg1 *api.PrepareVoteRequest, arg2 ...grpc.CallOption) (*api.PrepareVoteResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "SignIn", varargs...)
-	ret0, _ := ret[0].(*api.SignInResponse)
+	ret := m.ctrl.Call(m, "PrepareVote", varargs...)
+	ret0, _ := ret[0].(*api.PrepareVoteResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SignIn indicates an expected call of SignIn
-func (mr *MockTradingClientMockRecorder) SignIn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// PrepareVote indicates an expected call of PrepareVote
+func (mr *MockTradingClientMockRecorder) PrepareVote(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignIn", reflect.TypeOf((*MockTradingClient)(nil).SignIn), varargs...)
-}
-
-// SubmitOrder mocks base method
-func (m *MockTradingClient) SubmitOrder(arg0 context.Context, arg1 *api.SubmitOrderRequest, arg2 ...grpc.CallOption) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "SubmitOrder", varargs...)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SubmitOrder indicates an expected call of SubmitOrder
-func (mr *MockTradingClientMockRecorder) SubmitOrder(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockTradingClient)(nil).SubmitOrder), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareVote", reflect.TypeOf((*MockTradingClient)(nil).PrepareVote), varargs...)
 }
 
 // SubmitTransaction mocks base method
