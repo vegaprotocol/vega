@@ -2127,7 +2127,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pubKey | [string](#string) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
 
 
 
@@ -2142,7 +2142,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pubKey | [string](#string) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
 | reference | [string](#string) |  |  |
 
 

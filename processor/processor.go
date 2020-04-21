@@ -155,7 +155,7 @@ func (p *Processor) Begin() error {
 			return ErrNoVegaWalletFound
 		}
 		payload := &types.NodeRegistration{
-			PubKey: string(w.PubKeyOrAddress()),
+			PubKey: w.PubKeyOrAddress(),
 		}
 		if err := p.cmd.Command(nil, blockchain.RegisterNodeCommand, payload); err != nil {
 			return err
@@ -458,20 +458,21 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		p.nodes[node.PubKey] = struct{}{}
+		p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
 	case blockchain.NodeVoteCommand:
 		vote, err := p.getNodeVote(data)
 		if err != nil {
 			return err
 		}
-		if _, ok := p.nodes[vote.PubKey]; !ok {
+		pubKey := hex.EncodeToString(vote.PubKey)
+		if _, ok := p.nodes[pubKey]; !ok {
 			return ErrUnknownNodeKey
 		}
 		prop, ok := p.nodeProposals[vote.Reference]
 		if !ok {
 			return ErrUnknownProposal
 		}
-		prop.votes[vote.PubKey] = struct{}{}
+		prop.votes[pubKey] = struct{}{}
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -607,13 +608,13 @@ func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
 	p.log.Debug("Validating asset",
 		logging.String("asset-source", asset.Changes.String()),
 	)
-	nv := &types.NodeVote{
-		PubKey:    "the node key",
-		Reference: prop.Reference,
-	}
 	key, ok := p.wallet.Get(nodewallet.Vega)
 	if !ok {
 		return false, ErrNoVegaWalletFound
+	}
+	nv := &types.NodeVote{
+		PubKey:    key.PubKeyOrAddress(),
+		Reference: prop.Reference,
 	}
 	if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
 		// @TODO keep in memory, retry later?
