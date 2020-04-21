@@ -326,11 +326,11 @@ message OrderCancellation {
 }
 
 message NodeRegistration {
-  string pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
 }
 
 message NodeVote {
-  string pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
   string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
 
