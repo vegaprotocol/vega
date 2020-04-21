@@ -155,7 +155,7 @@ func (p *Processor) Begin() error {
 			return ErrNoVegaWalletFound
 		}
 		payload := &types.NodeRegistration{
-			PubKey: string(w.PubKeyOrAddress()),
+			PubKey: hex.EncodeToString(w.PubKeyOrAddress()),
 		}
 		if err := p.cmd.Command(nil, blockchain.RegisterNodeCommand, payload); err != nil {
 			return err
