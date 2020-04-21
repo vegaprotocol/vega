@@ -53,6 +53,8 @@ var (
 	ErrInvalidDecimalPlaces = errors.New("invalid decimal places value")
 	// ErrInvalidChange ...
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
+	// ErrInvalidProposalState ...
+	ErrInvalidProposalState = errors.New("invalid proposal state")
 )
 
 // IntoProto ...
@@ -728,4 +730,21 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	}
 
 	return result, nil
+}
+
+// ProposalStateFromProto ...
+func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
+	switch state {
+	case types.Proposal_FAILED:
+		return ProposalStateFailed, nil
+	case types.Proposal_OPEN:
+		return ProposalStateOpen, nil
+	case types.Proposal_PASSED:
+		return ProposalStatePassed, nil
+	case types.Proposal_REJECTED:
+		return ProposalStateRejected, nil
+	case types.Proposal_ENACTED:
+		return ProposalStateEnacted, nil
+	}
+	return ProposalState(""), ErrInvalidProposalState
 }

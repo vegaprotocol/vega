@@ -87,6 +87,11 @@ type TradingDataClient interface {
 	MarketAccounts(ctx context.Context, req *protoapi.MarketAccountsRequest, opts ...grpc.CallOption) (*protoapi.MarketAccountsResponse, error)
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
+	// governance
+	GetProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
+	GetOpenProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
+	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
+	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -308,6 +313,71 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 	}
 	order, err := r.tradingDataClient.OrderByReferenceID(ctx, orderReq)
 	return order, err
+}
+
+func (r *myQueryResolver) Proposals(ctx context.Context, openOnly *bool) ([]*Proposal, error) {
+	var proposals *protoapi.GetProposalsResponse
+	var err error
+	if openOnly != nil && *openOnly {
+		proposals, err = r.tradingDataClient.GetOpenProposals(ctx, nil)
+	} else {
+		proposals, err = r.tradingDataClient.GetProposals(ctx, nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*Proposal, len(proposals.Proposals))
+	for i, p := range proposals.Proposals {
+		converted, err := r.convertProposal(ctx, p.Proposal)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = converted
+	}
+	return result, nil
+}
+
+func (r *myQueryResolver) ProposalByReference(ctx context.Context, reference string) (*Proposal, error) {
+	vote, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
+		Reference: reference,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.convertProposal(ctx, vote.Proposal)
+}
+
+func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposal, error) {
+	vote, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
+		ID: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.convertProposal(ctx, vote.Proposal)
+}
+
+func (r *myQueryResolver) convertProposal(ctx context.Context, proposal *types.Proposal) (*Proposal, error) {
+	terms, err := ProposalTermsFromProto(proposal.Terms)
+	if err != nil {
+		return nil, err
+	}
+	state, err := ProposalStateFromProto(proposal.State)
+	if err != nil {
+		return nil, err
+	}
+	party, err := getParty(ctx, r.log, r.tradingDataClient, proposal.PartyID)
+	if err != nil {
+		return nil, err
+	}
+	return &Proposal{
+		ID:        &proposal.ID,
+		Reference: proposal.Reference,
+		Party:     party,
+		State:     state,
+		Timestamp: timestampToString(proposal.Timestamp),
+		Terms:     terms,
+	}, nil
 }
 
 // END: Root Resolver

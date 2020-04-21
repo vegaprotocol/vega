@@ -97,6 +97,86 @@ func (mr *MockTradingDataClientMockRecorder) CandlesSubscribe(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandlesSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).CandlesSubscribe), varargs...)
 }
 
+// GetOpenProposals mocks base method
+func (m *MockTradingDataClient) GetOpenProposals(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.GetProposalsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetOpenProposals", varargs...)
+	ret0, _ := ret[0].(*api.GetProposalsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOpenProposals indicates an expected call of GetOpenProposals
+func (mr *MockTradingDataClientMockRecorder) GetOpenProposals(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenProposals", reflect.TypeOf((*MockTradingDataClient)(nil).GetOpenProposals), varargs...)
+}
+
+// GetProposalByID mocks base method
+func (m *MockTradingDataClient) GetProposalByID(arg0 context.Context, arg1 *api.GetProposalByIDRequest, arg2 ...grpc.CallOption) (*proto.ProposalVote, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetProposalByID", varargs...)
+	ret0, _ := ret[0].(*proto.ProposalVote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProposalByID indicates an expected call of GetProposalByID
+func (mr *MockTradingDataClientMockRecorder) GetProposalByID(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalByID", reflect.TypeOf((*MockTradingDataClient)(nil).GetProposalByID), varargs...)
+}
+
+// GetProposalByReference mocks base method
+func (m *MockTradingDataClient) GetProposalByReference(arg0 context.Context, arg1 *api.GetProposalByReferenceRequest, arg2 ...grpc.CallOption) (*proto.ProposalVote, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetProposalByReference", varargs...)
+	ret0, _ := ret[0].(*proto.ProposalVote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProposalByReference indicates an expected call of GetProposalByReference
+func (mr *MockTradingDataClientMockRecorder) GetProposalByReference(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalByReference", reflect.TypeOf((*MockTradingDataClient)(nil).GetProposalByReference), varargs...)
+}
+
+// GetProposals mocks base method
+func (m *MockTradingDataClient) GetProposals(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.GetProposalsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetProposals", varargs...)
+	ret0, _ := ret[0].(*api.GetProposalsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProposals indicates an expected call of GetProposals
+func (mr *MockTradingDataClientMockRecorder) GetProposals(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposals", reflect.TypeOf((*MockTradingDataClient)(nil).GetProposals), varargs...)
+}
+
 // GetVegaTime mocks base method
 func (m *MockTradingDataClient) GetVegaTime(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.VegaTimeResponse, error) {
 	m.ctrl.T.Helper()
