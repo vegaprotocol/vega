@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -26,6 +27,11 @@ var (
 	ErrCommandKindUnknown                           = errors.New("unknown command kind when validating payload")
 	ErrUnknownNodeKey                               = errors.New("node pubkey unknown")
 	ErrUnknownProposal                              = errors.New("proposal unknown")
+	ErrNotAnAssetProposal                           = errors.New("proposal is not a new asset proposal")
+	ErrNoVegaWalletFound                            = errors.New("node wallet not found")
+	ErrAssetProposalReferenceDuplicate              = errors.New("duplicate asset proposal for reference")
+
+	ErrProposalValidationTimestampInvalid = errors.New("asset proposal validation timestamp invalid")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -69,6 +75,21 @@ type Stats interface {
 	SetTradesPerSecond(i uint64)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
+type Wallet interface {
+	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+type Commander interface {
+	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
+}
+
+type NodeCommand struct {
+	Cmd blockchain.Command
+	msg proto.Message
+}
+
 type nodeProposal struct {
 	*types.Proposal
 	votes     map[string]struct{}
@@ -79,29 +100,36 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
+	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
 	time              TimeService
+	wallet            Wallet
 	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
+	pendingValidation []*types.Proposal
+	cmd               Commander
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	p := &Processor{
-		log:           log,
-		stat:          stat,
-		Config:        config,
-		exec:          exec,
-		time:          ts,
-		nodes:         map[string]struct{}{},
-		nodeProposals: map[string]*nodeProposal{},
+		log:               log,
+		stat:              stat,
+		Config:            config,
+		exec:              exec,
+		time:              ts,
+		wallet:            wallet,
+		nodes:             map[string]struct{}{},
+		nodeProposals:     map[string]*nodeProposal{},
+		pendingValidation: []*types.Proposal{},
+		cmd:               cmd,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -120,6 +148,19 @@ func (p *Processor) Begin() error {
 
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
+	}
+	if !p.hasRegistered {
+		w, ok := p.wallet.Get(nodewallet.Vega)
+		if !ok {
+			return ErrNoVegaWalletFound
+		}
+		payload := &types.NodeRegistration{
+			PubKey: string(w.PubKeyOrAddress()),
+		}
+		if err := p.cmd.Command(nil, blockchain.RegisterNodeCommand, payload); err != nil {
+			return err
+		}
+		p.hasRegistered = true
 	}
 
 	if p.log.GetLevel() == logging.DebugLevel {
@@ -387,11 +428,22 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		}
 		// proposal is a new asset proposal?
 		if na := proposal.Terms.GetNewAsset(); na != nil {
-			p.nodeProposals[proposal.Reference] = &nodeProposal{
-				Proposal: proposal,
-				votes:    map[string]struct{}{},
+			_, ok := p.nodeProposals[proposal.Reference]
+			if ok {
+				return ErrAssetProposalReferenceDuplicate
 			}
-			// @TODO validate proposal here + cast vote
+			if err := p.checkAssetProposal(proposal); err != nil {
+				return err
+			}
+			// @TODO check valid timestamps
+			p.nodeProposals[proposal.Reference] = &nodeProposal{
+				Proposal:  proposal,
+				votes:     map[string]struct{}{},
+				validTime: time.Unix(proposal.Terms.ValidationTimestamp, 0),
+			}
+			if _, err := p.validateAsset(proposal); err != nil {
+				return err
+			}
 			return nil
 		}
 		return p.exec.SubmitProposal(proposal)
@@ -472,16 +524,10 @@ func (p *Processor) submitOrder(o *types.Order) error {
 		p.stat.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 		p.stat.AddTotalTrades(uint64(len(conf.Trades)))
 		p.stat.IncCurrentOrdersInBatch()
-
-		// s.currentTradesInBatch += len(confirmationMessage.Trades)
-		// s.totalTrades += uint64(s.currentTradesInBatch)
-
-		// s.currentOrdersInBatch++
 	}
 
 	// increment total orders, even for failures so current ID strategy is valid.
 	p.stat.IncTotalOrders()
-	// s.totalOrders++
 
 	if err != nil {
 		p.log.Error("error message on creating order",
@@ -536,11 +582,52 @@ func (p *Processor) amendOrder(order *types.OrderAmendment) error {
 	return nil
 }
 
+func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
+	asset := prop.Terms.GetNewAsset()
+	// only validate timestamps for new asset proposal
+	if asset == nil {
+		return nil
+	}
+	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
+		return ErrProposalValidationTimestampInvalid
+	}
+	minValid, maxValid := p.currentTimestamp.Add(minValidationPeriod*time.Second), p.currentTimestamp.Add(maxValidationPeriod*time.Second)
+	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
+		return ErrProposalValidationTimestampInvalid
+	}
+	return nil
+}
+
+func (p *Processor) validateAsset(prop *types.Proposal) (bool, error) {
+	asset := prop.Terms.GetNewAsset()
+	if asset == nil {
+		return false, ErrNotAnAssetProposal
+	}
+	// @TODO validate times, return specific err
+	p.log.Debug("Validating asset",
+		logging.String("asset-source", asset.Changes.String()),
+	)
+	nv := &types.NodeVote{
+		PubKey:    "the node key",
+		Reference: prop.Reference,
+	}
+	key, ok := p.wallet.Get(nodewallet.Vega)
+	if !ok {
+		return false, ErrNoVegaWalletFound
+	}
+	if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
+		// @TODO keep in memory, retry later?
+		return false, err
+	}
+	// validation went fine
+	return true, nil
+}
+
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
 	for k, prop := range p.nodeProposals {
-		// this proposal has passed the node-voting period
-		if prop.validTime.Before(t) {
+		// this proposal has passed the node-voting period, or all nodes have voted/approved
+		if prop.validTime.Before(t) || len(prop.votes) == len(p.nodes) {
 			// if not all nodes have approved, just remove
 			if len(prop.votes) < len(p.nodes) {
 				p.log.Warn("proposal was not accepted by all nodes",

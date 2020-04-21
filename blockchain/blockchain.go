@@ -27,6 +27,10 @@ type ABCIEngine interface {
 	Begin() error
 }
 
+type Commander interface {
+	SetChain(*Client)
+}
+
 type chainImpl interface {
 	Stop() error
 }
@@ -47,6 +51,7 @@ func New(
 	abciEngine ABCIEngine,
 	time TimeService,
 	stats *stats.Blockchain,
+	commander Commander,
 	cancel func(),
 ) (*Blockchain, error) {
 	// setup logger
@@ -78,12 +83,14 @@ func New(
 	if err != nil {
 		return nil, err
 	}
+	client := newClient(clt)
+	commander.SetChain(client)
 
 	log.Info("vega blockchain initialised", logging.String("chain-provider", cfg.ChainProvider))
 
 	return &Blockchain{
 		log:        log,
-		clt:        newClient(clt),
+		clt:        client,
 		chain:      chain,
 		abciEngine: abciEngine,
 		time:       time,
