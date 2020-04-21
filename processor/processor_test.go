@@ -159,7 +159,7 @@ func testOnTickPending(t *testing.T) {
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
 	// Register a node, so the proposal is still pending
 	reg := &types.NodeRegistration{
-		PubKey: string(wal.key),
+		PubKey: wal.key,
 	}
 	payload, err = proto.Marshal(reg)
 	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
@@ -362,7 +362,7 @@ func testOnTickWithNodes(t *testing.T) {
 	// first process the RegisterNodeCommand transaction
 	prev, now = now, now.Add(time.Second)
 	reg := &types.NodeRegistration{
-		PubKey: string(wal.key),
+		PubKey: wal.key,
 	}
 	payload, err = proto.Marshal(reg)
 	assert.NoError(t, err)
@@ -370,7 +370,7 @@ func testOnTickWithNodes(t *testing.T) {
 
 	// Now this node can vote has to vote on the proposal
 	vote := &types.NodeVote{
-		PubKey:    string(wal.PubKeyOrAddress()),
+		PubKey:    wal.PubKeyOrAddress(),
 		Reference: data.Reference,
 	}
 	payload, err = proto.Marshal(vote)
@@ -417,9 +417,8 @@ func testOnTickReject(t *testing.T) {
 
 	// receive registration command of another node
 	secondNode := []byte("node-key")
-	nParty := hex.EncodeToString(secondNode)
 	nr := &types.NodeRegistration{
-		PubKey: nParty,
+		PubKey: secondNode,
 	}
 	reg, err := proto.Marshal(nr)
 	assert.NoError(t, err)
