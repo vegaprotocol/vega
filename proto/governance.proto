@@ -6,6 +6,7 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 import "proto/markets.proto";
+import "proto/assets.proto";
 
 message NetworkConfiguration {
   int64 minCloseInSeconds = 1;
@@ -29,13 +30,14 @@ message UpdateNetwork {
 
 // To be implemented
 message NewAsset {
-  string ID = 1;
+  AssetSource changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message ProposalTerms {
   int64 closingTimestamp       = 1 [(validator.field) = {int_gt: 0}];
   int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
   uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0}];
+  int64 validationTimestamp    = 4;
   oneof change {
     UpdateMarket  updateMarket  = 101;
     NewMarket     newMarket     = 102;

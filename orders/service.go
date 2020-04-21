@@ -26,7 +26,7 @@ var (
 	ErrInvalidPriceForLimitOrder = errors.New("invalid limit order (missing required price)")
 	// ErrInvalidPriceForMarketOrder signals that a price was specified for a market order but not price is required
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
-	// ErrNonGTTOrderWithExpiracy signals that a non GTT order what set with an expiracy
+	// ErrNonGTTOrderWithExpiry signals that a non GTT order what set with an expiracy
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
 	// ErrInvalidAmendmentSizeDelta ...
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")

@@ -345,7 +345,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.voteBuf,
 		l.mktscfg,
 	)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain)
+	// we cannot pass the Chain dependency here (that's set by the blockchain)
+	commander := nodewallet.NewCommander(l.ctx, nil)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
@@ -356,7 +358,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.proposalPlugin.Start(l.ctx)
 
 	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, l.cancel)
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)
 	if err != nil {
 		return errors.Wrap(err, "unable to start the blockchain")
 	}

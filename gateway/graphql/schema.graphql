@@ -338,6 +338,22 @@ type Query {
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
+
+  "All governance proposals in the VEGA network"
+  proposals(
+    "Return only open proposals"
+    openOnly: Boolean
+  ):[Proposal!]
+
+  "A governance proposal located by its reference"
+  proposalByReference(
+    reference: String!
+  ): Proposal!
+
+  "A governance proposal located by its ID"
+  proposalByID(
+    id: String!
+  ): Proposal!
 }
 
 "Statistics about the node"
