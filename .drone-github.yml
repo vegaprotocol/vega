@@ -235,8 +235,6 @@ steps:
     depends_on:
       - build-branch
     when:
-      event:
-        - push
       ref:
         - refs/heads/master
         - refs/heads/develop
