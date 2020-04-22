@@ -44,7 +44,7 @@ message ProposalTerms {
   };
 }
 
-message ProposalVote {
+message GovernanceData {
   Proposal proposal = 1;
   repeated Vote yes = 2;
   repeated Vote no = 3;

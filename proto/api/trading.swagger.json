@@ -1008,14 +1008,22 @@
         }
       }
     },
-    "apiGetProposalsResponse": {
+    "apiGetGovernanceDataResponse": {
       "type": "object",
       "properties": {
-        "proposals": {
+        "data": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaProposalVote"
+            "$ref": "#/definitions/vegaGovernanceData"
           }
+        }
+      }
+    },
+    "apiGetProposalResponse": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaGovernanceData"
         }
       }
     },
@@ -1579,6 +1587,26 @@
         },
         "ethereumEvent": {
           "$ref": "#/definitions/vegaEthereumEvent"
+        }
+      }
+    },
+    "vegaGovernanceData": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "yes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        },
+        "no": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
         }
       }
     },
@@ -2188,26 +2216,6 @@
         }
       }
     },
-    "vegaProposalVote": {
-      "type": "object",
-      "properties": {
-        "proposal": {
-          "$ref": "#/definitions/vegaProposal"
-        },
-        "yes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
-        },
-        "no": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
-        }
-      }
-    },
     "vegaScalingFactors": {
       "type": "object",
       "properties": {
@@ -2587,6 +2595,18 @@
       },
       "title": "Stream result of vegaCandle"
     },
+    "vegaGovernanceData": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaGovernanceData"
+    },
     "vegaMarginLevels": {
       "type": "object",
       "properties": {
@@ -2634,18 +2654,6 @@
         }
       },
       "title": "Stream result of vegaPosition"
-    },
-    "vegaProposalVote": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaProposalVote"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaProposalVote"
     },
     "vegaTransferResponse": {
       "type": "object",

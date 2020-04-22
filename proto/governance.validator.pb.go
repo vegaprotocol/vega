@@ -88,7 +88,7 @@ func (this *ProposalTerms) Validate() error {
 	}
 	return nil
 }
-func (this *ProposalVote) Validate() error {
+func (this *GovernanceData) Validate() error {
 	if this.Proposal != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)

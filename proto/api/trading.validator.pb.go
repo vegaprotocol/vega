@@ -100,6 +100,39 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
+func (this *GetProposalsByStateRequest) Validate() error {
+	return nil
+}
+func (this *GetGovernanceDataResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *GetProposalResponse) Validate() error {
+	if this.Proposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+		}
+	}
+	return nil
+}
+func (this *GetProposalsByMarketRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	return nil
+}
+func (this *GetProposalsByPartyRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	return nil
+}
 func (this *GetProposalByIDRequest) Validate() error {
 	if this.ID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
@@ -112,14 +145,13 @@ func (this *GetProposalByReferenceRequest) Validate() error {
 	}
 	return nil
 }
-func (this *GetProposalsResponse) Validate() error {
-	for _, item := range this.Proposals {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Proposals", err)
-			}
-		}
-	}
+func (this *ObserveMarketGovernanceRequest) Validate() error {
+	return nil
+}
+func (this *ObserveProposalsRequest) Validate() error {
+	return nil
+}
+func (this *ObserveVotesRequest) Validate() error {
 	return nil
 }
 func (this *MarginLevelsSubscribeRequest) Validate() error {

@@ -40,11 +40,11 @@ type Proposals struct {
 	vData      map[string]map[types.Vote_Value]map[string]types.Vote // nested map by proposal -> vote value -> party
 
 	// stream subscriptions
-	subs     map[int64]chan []types.ProposalVote
+	subs     map[int64]chan []types.GovernanceData
 	subCount int64
 }
 
-// NewProposal - return a new proposal plugin
+// NewProposals - return a new proposal plugin
 func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 	return &Proposals{
 		props:  p,
@@ -52,7 +52,7 @@ func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 		pData:  map[string]*types.Proposal{},
 		pByRef: map[string]*types.Proposal{},
 		vData:  map[string]map[types.Vote_Value]map[string]types.Vote{},
-		subs:   map[int64]chan []types.ProposalVote{},
+		subs:   map[int64]chan []types.GovernanceData{},
 	}
 }
 
@@ -160,10 +160,10 @@ func (p *Proposals) consume(ctx context.Context) {
 func (p *Proposals) notify(ids []string) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	data := make([]types.ProposalVote, 0, len(ids))
+	data := make([]types.GovernanceData, 0, len(ids))
 	for _, id := range ids {
 		if prop, ok := p.pData[id]; ok {
-			data = append(data, p.getPropVote(*prop))
+			data = append(data, *p.getGovernanceData(*prop))
 		}
 	}
 	for _, ch := range p.subs {
@@ -178,11 +178,11 @@ func (p *Proposals) notify(ids []string) {
 	}
 }
 
-// Subscribe- get all changes to proposals/votes
-func (p *Proposals) Subscribe() (<-chan []types.ProposalVote, int64) {
+// Subscribe - get all changes to proposals/votes
+func (p *Proposals) Subscribe() (<-chan []types.GovernanceData, int64) {
 	p.mu.Lock()
 	k := atomic.AddInt64(&p.subCount, 1)
-	ch := make(chan []types.ProposalVote, 1)
+	ch := make(chan []types.GovernanceData, 1)
 	p.subs[k] = ch
 	p.mu.Unlock()
 	return ch, k
@@ -198,53 +198,85 @@ func (p *Proposals) Unsubscribe(k int64) {
 	p.mu.Unlock()
 }
 
-// GetProposalByReference returns proposal and votes by reference (or error if proposal not found)
-func (p *Proposals) GetProposalByReference(ref string) (*types.ProposalVote, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if v, ok := p.pByRef[ref]; ok {
-		ret := p.getPropVote(*v)
-		return &ret, nil
+// GetAllGovernanceData get all proposals and votes
+func (p *Proposals) GetAllGovernanceData() []*types.GovernanceData {
+	return p.getProposals(nil)
+}
+
+// GetProposalsInState returns proposals + current votes in the specified state
+func (p *Proposals) GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData {
+	var inState propsalFilter = func(proposal *types.Proposal) bool {
+		return proposal.State != includeState
 	}
-	return nil, ErrProposalNotFound
+	return p.getProposals(&inState)
+}
+
+// GetProposalsNotInState returns proposals + current votes NOT in the specified state
+func (p *Proposals) GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData {
+	var notInState propsalFilter = func(proposal *types.Proposal) bool {
+		return proposal.State == excludeState
+	}
+	return p.getProposals(&notInState)
+}
+
+// GetProposalsByMarket returns proposals + current votes by market that is affected by these proposals
+func (p *Proposals) GetProposalsByMarket(marketID string) []*types.GovernanceData {
+	var byMarket propsalFilter = func(proposal *types.Proposal) bool {
+		if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil &&
+			newMarket.Changes.Id == marketID {
+			return false
+		}
+		// TODO: implement UpdateMarket handling here
+		return true
+	}
+	return p.getProposals(&byMarket)
+}
+
+// GetProposalsByParty returns proposals + current votes by party authoring them
+func (p *Proposals) GetProposalsByParty(partyID string) []*types.GovernanceData {
+	var byParty propsalFilter = func(proposal *types.Proposal) bool {
+		return proposal.PartyID != partyID
+	}
+	return p.getProposals(&byParty)
 }
 
 // GetProposalByID returns proposal and votes by ID
-func (p *Proposals) GetProposalByID(id string) (*types.ProposalVote, error) {
+func (p *Proposals) GetProposalByID(id string) (*types.GovernanceData, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
+
 	if v, ok := p.pData[id]; ok {
-		ret := p.getPropVote(*v)
-		return &ret, nil
+		return p.getGovernanceData(*v), nil
 	}
 	return nil, ErrProposalNotFound
 }
 
-// GetProposals get all proposals
-func (p *Proposals) GetProposals() []types.ProposalVote {
+// GetProposalByReference returns proposal by reference (or error if proposal not found)
+func (p *Proposals) GetProposalByReference(ref string) (*types.GovernanceData, error) {
 	p.mu.RLock()
-	ret := make([]types.ProposalVote, 0, len(p.pData))
-	for _, prop := range p.pData {
-		ret = append(ret, p.getPropVote(*prop))
+	defer p.mu.RUnlock()
+	if v, ok := p.pByRef[ref]; ok {
+		return p.getGovernanceData(*v), nil
 	}
-	p.mu.RUnlock()
-	return ret
+	return nil, ErrProposalNotFound
 }
 
-// GetOpenProposals returns proposals + current votes
-func (p *Proposals) GetOpenProposals() []types.ProposalVote {
+type propsalFilter func(p *types.Proposal) bool
+
+func (p *Proposals) getProposals(skip *propsalFilter) []*types.GovernanceData {
 	p.mu.RLock()
-	ret := []types.ProposalVote{}
+	defer p.mu.RUnlock()
+
+	result := []*types.GovernanceData{}
 	for _, prop := range p.pData {
-		if prop.State == types.Proposal_OPEN {
-			ret = append(ret, p.getPropVote(*prop))
+		if skip == nil || !(*skip)(prop) {
+			result = append(result, p.getGovernanceData(*prop))
 		}
 	}
-	p.mu.RUnlock()
-	return ret
+	return result
 }
 
-func (p *Proposals) getPropVote(v types.Proposal) types.ProposalVote {
+func (p *Proposals) getGovernanceData(v types.Proposal) *types.GovernanceData {
 	vData := p.vData[v.ID]
 	yes := make([]*types.Vote, 0, len(vData[types.Vote_YES]))
 	no := make([]*types.Vote, 0, len(vData[types.Vote_NO]))
@@ -256,7 +288,7 @@ func (p *Proposals) getPropVote(v types.Proposal) types.ProposalVote {
 		cpy := vote
 		no = append(no, &cpy)
 	}
-	return types.ProposalVote{
+	return &types.GovernanceData{
 		Proposal: &v,
 		Yes:      yes,
 		No:       no,

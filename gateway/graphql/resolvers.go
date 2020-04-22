@@ -88,10 +88,13 @@ type TradingDataClient interface {
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 	// governance
-	GetProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
-	GetOpenProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
-	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
-	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
+	GetAllGovernanceData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsNotInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsByMarket(ctx context.Context, in *protoapi.GetProposalsByMarketRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
+	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -316,18 +319,22 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 }
 
 func (r *myQueryResolver) Proposals(ctx context.Context, openOnly *bool) ([]*Proposal, error) {
-	var proposals *protoapi.GetProposalsResponse
+	var data *protoapi.GetGovernanceDataResponse
 	var err error
 	if openOnly != nil && *openOnly {
-		proposals, err = r.tradingDataClient.GetOpenProposals(ctx, nil)
+		data, err = r.tradingDataClient.GetProposalsInState(ctx,
+			&protoapi.GetProposalsByStateRequest{
+				State: protoapi.Proposal_State_OPEN,
+			},
+		)
 	} else {
-		proposals, err = r.tradingDataClient.GetProposals(ctx, nil)
+		data, err = r.tradingDataClient.GetAllGovernanceData(ctx, nil)
 	}
 	if err != nil {
 		return nil, err
 	}
 	result := make([]*Proposal, len(proposals.Proposals))
-	for i, p := range proposals.Proposals {
+	for i, p := range data.Data {
 		converted, err := r.convertProposal(ctx, p.Proposal)
 		if err != nil {
 			return nil, err

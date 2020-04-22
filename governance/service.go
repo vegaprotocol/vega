@@ -22,12 +22,17 @@ var (
 // Plugin ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/governance Plugin
 type Plugin interface {
-	GetOpenProposals() []types.ProposalVote
-	GetProposalByID(id string) (*types.ProposalVote, error)
-	GetProposalByReference(ref string) (*types.ProposalVote, error)
-	GetProposals() []types.ProposalVote
-	Subscribe() (<-chan []types.ProposalVote, int64)
+	Subscribe() (<-chan []types.GovernanceData, int64)
 	Unsubscribe(int64)
+
+	GetAllGovernanceData() []*types.GovernanceData
+	GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData
+	GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData
+	GetProposalsByMarket(marketID string) []*types.GovernanceData
+	GetProposalsByParty(partyID string) []*types.GovernanceData
+
+	GetProposalByID(id string) (*types.GovernanceData, error)
+	GetProposalByReference(ref string) (*types.GovernanceData, error)
 }
 
 type networkParameters struct {
@@ -85,12 +90,12 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.mu.Unlock()
 }
 
-// ObserveProposals - stream proposal vote updates to gRPC subscription stream
-func (s *Svc) ObserveProposals(ctx context.Context, retries int) <-chan []types.ProposalVote {
+// ObserveGovernance - stream all governance updates to gRPC subscription stream
+func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData {
 	var cfunc func()
 	ctx, cfunc = context.WithCancel(ctx)
 	// we're returning an extra channel because of the retry mechanic we want to add
-	rCh := make(chan []types.ProposalVote)
+	rCh := make(chan []types.GovernanceData)
 	ch, chID := s.plugin.Subscribe()
 	go func() {
 		defer func() {
@@ -130,24 +135,39 @@ func (s *Svc) ObserveProposals(ctx context.Context, retries int) <-chan []types.
 	return rCh
 }
 
-// GetProposalByReferece - as you'd expect, returns a proposel by reference _if it exists_
-func (s *Svc) GetProposalByReference(_ context.Context, ref string) (*types.ProposalVote, error) {
-	return s.plugin.GetProposalByReference(ref)
+// GetAllGovernanceData returns all governance data (proposals and votes)
+func (s *Svc) GetAllGovernanceData() []*types.GovernanceData {
+	return s.plugin.GetAllGovernanceData()
 }
 
-// GetProposalByID - same as by reference, only by ID
-func (s *Svc) GetProposalByID(_ context.Context, id string) (*types.ProposalVote, error) {
+// GetProposalsInState returns proposals and their votes only including those in the `includeState`
+func (s *Svc) GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetProposalsInState(includeState)
+}
+
+// GetProposalsNotInState returns proposals and their votes only excluding those in the `excludeState`
+func (s *Svc) GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetProposalsNotInState(excludeState)
+}
+
+// GetProposalsByMarket returns proposals and their votes by market that is affected by these proposals
+func (s *Svc) GetProposalsByMarket(marketID string) []*types.GovernanceData {
+	return s.plugin.GetProposalsByMarket(marketID)
+}
+
+// GetProposalsByParty returns proposals and their votes by party authoring them
+func (s *Svc) GetProposalsByParty(partyID string) []*types.GovernanceData {
+	return s.plugin.GetProposalsByParty(partyID)
+}
+
+// GetProposalByID returns a proposal and its votes by ID (if exists)
+func (s *Svc) GetProposalByID(id string) (*types.GovernanceData, error) {
 	return s.plugin.GetProposalByID(id)
 }
 
-// GetOpenProposals - returns all porposals currently being voted on
-func (s *Svc) GetOpenProposals() []types.ProposalVote {
-	return s.plugin.GetOpenProposals()
-}
-
-// GetProposals - returns a list of all proposals
-func (s *Svc) GetProposals() []types.ProposalVote {
-	return s.plugin.GetProposals()
+// GetProposalByReference returns a proposal and its votes by reference (if exists)
+func (s *Svc) GetProposalByReference(ref string) (*types.GovernanceData, error) {
+	return s.plugin.GetProposalByReference(ref)
 }
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal

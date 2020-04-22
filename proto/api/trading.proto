@@ -184,20 +184,38 @@ service trading_data {
 
   // Governance
 
-  // Get all proposals
-  rpc GetProposals(google.protobuf.Empty) returns (GetProposalsResponse);
+  // Get all governance data (proposals and votes)
+  rpc GetAllGovernanceData(google.protobuf.Empty) returns (GetGovernanceDataResponse);
 
-  // Get all OPEN proposals
-  rpc GetOpenProposals(google.protobuf.Empty) returns (GetProposalsResponse);
+  // Get proposals (and their current votes) that are in the specified state
+  rpc GetProposalsInState(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+
+  // Get proposals (and their current votes) excluding those in the specified state
+  rpc GetProposalsNotInState(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+
+  // Get proposals by market that is affected by these proposals
+  rpc GetProposalsByMarket(GetProposalsByMarketRequest) returns (GetGovernanceDataResponse);
+
+  // Get proposals by party authoring them
+  rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetGovernanceDataResponse);
 
   // Get a proposal by ID
-  rpc GetProposalByID(GetProposalByIDRequest) returns (vega.ProposalVote);
+  rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
 
   // Get a proposal by reference
-  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (vega.ProposalVote);
+  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalResponse);
 
-  // Subscribe to a stream of updates to proposal data
-  rpc ObserveProposals(google.protobuf.Empty) returns (stream vega.ProposalVote);
+  // Subscribe to a stream of all governance updates
+  rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
+  
+  // Subscribe to a stream of governance data updates for specified market
+  //rpc ObserveMarketGovernance(ObserveMarketGovernanceRequest) returns (stream vega.GovernanceData);
+  
+  // Subscribe to a stream of proposal updates
+  //rpc ObserveProposals(ObserveProposalsRequest) returns (stream vega.Proposal);
+
+  // Subscribe to a stream of proposal votes
+  //rpc ObserveVotes(ObserveVotesRequest) returns (stream vega.Vote);
 
   // Misc
 
@@ -235,6 +253,26 @@ service trading_data {
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 }
 
+message GetProposalsByStateRequest {
+  vega.Proposal.State state = 1;
+}
+
+message GetGovernanceDataResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
+message GetProposalResponse {
+  vega.GovernanceData proposal = 1;
+}
+
+message GetProposalsByMarketRequest {
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message GetProposalsByPartyRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
 message GetProposalByIDRequest {
   string ID = 1 [(validator.field) = {string_not_empty : true}];
 }
@@ -243,8 +281,19 @@ message GetProposalByReferenceRequest {
   string Reference = 1 [(validator.field) = {string_not_empty : true}];
 }
 
-message GetProposalsResponse {
-  repeated vega.ProposalVote proposals = 1;
+message ObserveMarketGovernanceRequest {
+  string marketID = 1;
+}
+
+message ObserveProposalsRequest {
+  string partyID = 1;
+}
+
+message ObserveVotesRequest {
+  oneof proposal {
+    string ID = 1;
+    string Reference = 2;
+  }
 }
 
 message MarginLevelsSubscribeRequest {
