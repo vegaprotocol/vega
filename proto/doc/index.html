@@ -6049,17 +6049,6 @@ after each successful amend </p></td>
                   </td>
                 </tr>
 
-                <tr>
-                  <td>price</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
               </tbody>
             </table>
 
@@ -7502,26 +7491,32 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>GTC</td>
+                <td>UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, can be valid for an amend</p></td>
+              </tr>
+
+              <tr>
+                <td>GTC</td>
+                <td>1</td>
                 <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
                 <td>GTT</td>
-                <td>1</td>
+                <td>2</td>
                 <td><p>good til time</p></td>
               </tr>
 
               <tr>
                 <td>IOC</td>
-                <td>2</td>
+                <td>3</td>
                 <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
                 <td>FOK</td>
-                <td>3</td>
+                <td>4</td>
                 <td><p>fill or kill</p></td>
               </tr>
 

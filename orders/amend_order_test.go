@@ -2,14 +2,11 @@ package orders_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,18 +25,23 @@ type amendMatcher struct {
 }
 
 func TestPrepareAmendOrder(t *testing.T) {
-	// PETETODO remove these and replace with new checks
-	t.Run("Prepare amend order - success", testPrepareAmendOrderSuccess)
-	t.Run("Prepare amend order - expired", testPrepareAmendOrderExpired)
-	t.Run("Prepare amend order - not active", testPrepareAmendOrderNotActive)
-	t.Run("Prepare amend order - invalid payload", testPrepareAmendOrderInvalidPayload)
-	t.Run("Prepare amend order - time service error", testPrepareAmendOrderTimeSvcErr)
+	t.Run("Prepare amend order price - success", testPrepareAmendOrderJustPriceSuccess)
+	t.Run("Prepare amend order reduce - success", testPrepareAmendOrderJustReduceSuccess)
+	t.Run("Prepare amend order increase - success", testPrepareAmendOrderJustIncreaseSuccess)
+	t.Run("Prepare amend order expiry - success", testPrepareAmendOrderJustExpirySuccess)
+	t.Run("Prepare amend order tif - success", testPrepareAmendOrderJustTIFSuccess)
+
+	t.Run("Prepare amend order empty - fail", testPrepareAmendOrderEmptyFail)
+	t.Run("Prepare amend order nil - fail", testPrepareAmendOrderNilFail)
+	t.Run("Prepare amend order invalid expiry type - fail", testPrepareAmendOrderInvalidExpiryFail)
 }
 
-func testPrepareAmendOrderSuccess(t *testing.T) {
-	// now := vegatime.Now()
-	arg := amend
-	arg.TimeInForce = proto.Order_GTC
+func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID: "orderid",
+		PartyID: "partyid",
+		Price:   1000,
+	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -47,72 +49,103 @@ func testPrepareAmendOrderSuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testPrepareAmendOrderExpired(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(-2 * time.Hour)
-	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
-	arg.TimeInForce = types.Order_GTT
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Error(t, err)
-}
-
-func testPrepareAmendOrderNotActive(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(2 * time.Hour)
-	arg := amend
-	arg.ExpiresAt = expires.UnixNano()
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Error(t, err)
-}
-
-func testPrepareAmendOrderInvalidPayload(t *testing.T) {
-	arg := amend
-	arg.OrderID = ""
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.Error(t, err)
-}
-
-func testPrepareAmendOrderTimeSvcErr(t *testing.T) {
-	now := vegatime.Now()
-	expires := now.Add(-2 * time.Hour)
-	expErr := errors.New("time service error")
-	arg := amend
-	arg.SizeDelta = 0
-	arg.ExpiresAt = expires.UnixNano()
-	arg.TimeInForce = types.Order_GTT
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, expErr)
-	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
-	assert.EqualError(t, err, expErr.Error())
-}
-
-func (m amendMatcher) String() string {
-	return fmt.Sprintf("%#v", m.e)
-}
-
-func (m amendMatcher) Matches(x interface{}) bool {
-	var v proto.OrderAmendment
-	switch val := x.(type) {
-	case *proto.OrderAmendment:
-		v = *val
-	case proto.OrderAmendment:
-		v = val
-	default:
-		return false
+func testPrepareAmendOrderJustReduceSuccess(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID:   "orderid",
+		PartyID:   "partyid",
+		SizeDelta: -10,
 	}
-	return (m.e.OrderID == v.OrderID && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.SizeDelta == v.SizeDelta &&
-		m.e.ExpiresAt == v.ExpiresAt)
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.NoError(t, err)
+}
+
+func testPrepareAmendOrderJustIncreaseSuccess(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID:   "orderid",
+		PartyID:   "partyid",
+		SizeDelta: 10,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.NoError(t, err)
+}
+
+func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
+	now := vegatime.Now()
+	expires := now.Add(-2 * time.Hour)
+	arg := proto.OrderAmendment{
+		OrderID:   "orderid",
+		PartyID:   "partyid",
+		ExpiresAt: expires.UnixNano(),
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.NoError(t, err)
+}
+
+func testPrepareAmendOrderJustTIFSuccess(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID:     "orderid",
+		PartyID:     "partyid",
+		TimeInForce: proto.Order_GTC,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.NoError(t, err)
+}
+
+func testPrepareAmendOrderEmptyFail(t *testing.T) {
+	arg := proto.OrderAmendment{}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
+
+	arg2 := proto.OrderAmendment{
+		OrderID: "orderid",
+		PartyID: "partyid",
+	}
+	err = svc.svc.PrepareAmendOrder(context.Background(), &arg2)
+	assert.Error(t, err)
+}
+
+func testPrepareAmendOrderNilFail(t *testing.T) {
+	var arg proto.OrderAmendment
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
+}
+
+func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID:     "orderid",
+		PartyID:     "partyid",
+		TimeInForce: proto.Order_GTC,
+		ExpiresAt:   10,
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
+
+	arg.TimeInForce = proto.Order_FOK
+	err = svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
+
+	arg.TimeInForce = proto.Order_IOC
+	err = svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
 }

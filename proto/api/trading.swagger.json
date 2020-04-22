@@ -959,13 +959,14 @@
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
+        "UNSPECIFIED",
         "GTC",
         "GTT",
         "IOC",
         "FOK"
       ],
-      "default": "GTC",
-      "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "default": "UNSPECIFIED",
+      "description": "- UNSPECIFIED: Default value, can be valid for an amend\n - GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
       "title": "Order Time in Force"
     },
     "ProposalState": {

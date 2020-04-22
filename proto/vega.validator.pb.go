@@ -122,9 +122,6 @@ func (this *OrderAmendment) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if !(this.Price > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Price", fmt.Errorf(`value '%v' must be greater than '0'`, this.Price))
-	}
 	return nil
 }
 func (this *OrderSubmission) Validate() error {

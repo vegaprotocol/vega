@@ -2665,10 +2665,11 @@ Order Time in Force
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| GTC | 0 | good til cancelled |
-| GTT | 1 | good til time |
-| IOC | 2 | immediate or cancel |
-| FOK | 3 | fill or kill |
+| UNSPECIFIED | 0 | Default value, can be valid for an amend |
+| GTC | 1 | good til cancelled |
+| GTT | 2 | good til time |
+| IOC | 3 | immediate or cancel |
+| FOK | 4 | fill or kill |
 
 
 
