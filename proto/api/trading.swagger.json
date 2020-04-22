@@ -1480,6 +1480,35 @@
       ],
       "default": "ALL"
     },
+    "vegaAssetSource": {
+      "type": "object",
+      "properties": {
+        "builtinAsset": {
+          "$ref": "#/definitions/vegaBuiltinAsset"
+        },
+        "erc20": {
+          "$ref": "#/definitions/vegaERC20"
+        }
+      }
+    },
+    "vegaBuiltinAsset": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -1541,6 +1570,14 @@
         "duration": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "vegaERC20": {
+      "type": "object",
+      "properties": {
+        "contractAddress": {
+          "type": "string"
         }
       }
     },
@@ -1875,8 +1912,8 @@
     "vegaNewAsset": {
       "type": "object",
       "properties": {
-        "ID": {
-          "type": "string"
+        "changes": {
+          "$ref": "#/definitions/vegaAssetSource"
         }
       },
       "title": "To be implemented"
@@ -2201,6 +2238,10 @@
         "minParticipationStake": {
           "type": "string",
           "format": "uint64"
+        },
+        "validationTimestamp": {
+          "type": "string",
+          "format": "int64"
         },
         "updateMarket": {
           "$ref": "#/definitions/vegaUpdateMarket"

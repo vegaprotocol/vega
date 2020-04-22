@@ -1622,7 +1622,7 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
+| changes | [AssetSource](#vega.AssetSource) |  |  |
 
 
 
@@ -1675,6 +1675,7 @@ To be implemented
 | closingTimestamp | [int64](#int64) |  |  |
 | enactmentTimestamp | [int64](#int64) |  |  |
 | minParticipationStake | [uint64](#uint64) |  |  |
+| validationTimestamp | [int64](#int64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
@@ -2242,7 +2243,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pubKey | [string](#string) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
 
 
 
@@ -2257,7 +2258,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pubKey | [string](#string) |  |  |
+| pubKey | [bytes](#bytes) |  |  |
 | reference | [string](#string) |  |  |
 
 

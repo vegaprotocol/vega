@@ -46,6 +46,14 @@ func (this *UpdateNetwork) Validate() error {
 	return nil
 }
 func (this *NewAsset) Validate() error {
+	if nil == this.Changes {
+		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
+	}
+	if this.Changes != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Changes); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
+		}
+	}
 	return nil
 }
 func (this *ProposalTerms) Validate() error {

@@ -5,9 +5,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// namedLogger is the identifier for package and should ideally match the package name
-// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "processor"
+const (
+	namedLogger = "processor"
+
+	minValidationPeriod = 600       // ten minutes
+	maxValidationPeriod = 48 * 3600 // 2 days
+	nodeApproval        = 1         // float for percentage
+)
 
 // Config represent the configuration of the blockchain package
 type Config struct {
