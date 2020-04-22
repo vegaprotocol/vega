@@ -104,7 +104,7 @@ steps:
     pull: always
     commands:
       # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
-      - /usr/local/bin/systemtests.sh
+      - /usr/local/bin/systemtests.sh -v all
     depends_on:
       - test-PR
     when:
