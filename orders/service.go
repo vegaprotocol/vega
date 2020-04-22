@@ -37,6 +37,8 @@ var (
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 	// ErrEmptySubmitTransactionRequest empty transaction
 	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
+	// ErrNoParamsInAmendRequest no amended fields have been provided
+	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
 )
 
 // TimeService ...
@@ -177,6 +179,23 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 		return errors.Wrap(err, "order amendment validation failed")
 	}
 
+	// Check we have at least one field to update
+	if amendment.Price == 0 &&
+		amendment.SizeDelta == 0 &&
+		amendment.ExpiresAt == 0 &&
+		amendment.TimeInForce == types.Order_UNSPECIFIED {
+		return ErrNoParamsInAmendRequest
+	}
+
+	// Only update ExpiresAt when TIF is related
+	if amendment.ExpiresAt > 0 {
+		if amendment.TimeInForce != types.Order_GTT &&
+			amendment.TimeInForce != types.Order_UNSPECIFIED {
+			// We cannot change the expire time for this order type
+			return ErrNonGTTOrderWithExpiry
+		}
+	}
+
 	// if order is GTT convert datetime to blockchain ts
 	if amendment.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
@@ -184,14 +203,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return err
 		}
-	} else if amendment.TimeInForce == types.Order_GTC {
-		// this is cool, but we need to ensure and expiry is not set
-		if amendment.ExpiresAt != 0 {
-			return ErrNonGTTOrderWithExpiry
-		}
-	} else {
-		// IOC and FOK are not acceptable for amend order
-		return ErrInvalidAmendOrderTIF
 	}
 	return nil
 }

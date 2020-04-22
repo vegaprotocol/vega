@@ -57,18 +57,20 @@ message Order {
 
   // Order Time in Force
   enum TimeInForce {
-
+    // Default value, can be valid for an amend
+    UNSPECIFIED = 0;
+    
     // good til cancelled
-    GTC = 0;
+    GTC = 1;
 
     // good til time
-    GTT = 1;
+    GTT = 2;
 
     // immediate or cancel
-    IOC = 2;
+    IOC = 3;
 
     // fill or kill
-    FOK = 3;
+    FOK = 4;
   }
 
   // Order Type
@@ -287,7 +289,7 @@ message OrderAmendment {
   string marketID = 3;
 
   // these can be amended
-  uint64 price = 4 [(validator.field) = {int_gt: 0}];
+  uint64 price = 4;
   int64 sizeDelta = 5;
   int64 expiresAt = 6;
   Order.TimeInForce timeInForce = 7;
