@@ -39,6 +39,8 @@ var (
 	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
 	// ErrNoParamsInAmendRequest no amended fields have been provided
 	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
+	// ErrNoTimeInForce no value has been set for the time in force
+	ErrNoTimeInForce = errors.New("no value has been set for the time in force")
 )
 
 // TimeService ...
@@ -135,6 +137,11 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	if err := sub.Validate(); err != nil {
 		return errors.Wrap(err, "order validation failed")
 	}
+
+	if sub.TimeInForce == types.Order_UNSPECIFIED {
+		return ErrNoTimeInForce
+	}
+
 	if sub.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
 		if err != nil {

@@ -43,10 +43,8 @@ type orderMatcher struct {
 }
 
 func TestPrepareOrder(t *testing.T) {
-	// PETETODO replace with new tests
 	t.Run("Create order with reference - successful", testPrepareOrderSuccess)
 	t.Run("Create order without reference - successful", testPrepareOrderRefSuccess)
-	t.Run("Create order - expired", testPrepareOrderExpired)
 	t.Run("Prepare submit order with nil point", testPrepareSubmitOrderWithNilPointer)
 	t.Run("Prepare cancel order with nil point", testPrepareCancelOrderWithNilPointer)
 	t.Run("Prepare amend order with nil point", testPrepareAmendOrderWithNilPointer)
@@ -54,12 +52,10 @@ func TestPrepareOrder(t *testing.T) {
 
 func TestPrepareCancelOrder(t *testing.T) {
 	t.Run("Successfully cancel an order", testPrepareCancelOrderSuccess)
-	t.Run("Fail to cancel an order for any number of reasons", testPrepareCancelOrderFail)
 }
 
 func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - successful", testOrderSuccess)
-	t.Run("Create order - expired", testOrderExpired)
 	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
 }
 
@@ -143,17 +139,6 @@ func testOrderSuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testPrepareOrderExpired(t *testing.T) {
-	// now
-	now := vegatime.Now()
-	order := orderSubmission
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
-	assert.Error(t, err)
-}
-
 func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	order := orderSubmission
 	svc := getTestService(t)
@@ -162,26 +147,11 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	order.TimeInForce = types.Order_GTC
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
-	err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
-	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 
 	// ensure it works with a 0 expiry
 	order.ExpiresAt = 0
 	err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
-}
-
-func testOrderExpired(t *testing.T) {
-	// now
-	now := vegatime.Now()
-	//expired 2 hours ago
-	// expires := now.Add(time.Hour * -2)
-	order := orderSubmission
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
-	assert.Error(t, err)
 }
 
 func testPrepareCancelOrderSuccess(t *testing.T) {
@@ -195,24 +165,6 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 
 	// ensure the blockchain client is not called
 	err := svc.svc.PrepareCancelOrder(context.Background(), &cancel)
-	assert.NoError(t, err)
-}
-
-func testPrepareCancelOrderFail(t *testing.T) {
-	// PETE TODO, need to flesh these out with all fail cases for fields
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-
-	var (
-		err    error
-		cancel types.OrderCancellation
-	)
-	cancel = types.OrderCancellation{
-		OrderID:  "123",
-		MarketID: "346",
-		PartyID:  "foobar",
-	}
-	err = svc.svc.PrepareCancelOrder(context.Background(), &cancel)
 	assert.NoError(t, err)
 }
 
