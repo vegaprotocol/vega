@@ -341,19 +341,24 @@ type Query {
 
   "All governance proposals in the VEGA network"
   proposals(
-    "Return only open proposals"
-    openOnly: Boolean
-  ):[Proposal!]
+    "Return only proposals in the specified state."
+    "Leave out to set notInState or skip both to get all proposals"
+    inState: ProposalState
+
+    "Return proposals excluding those in the specified state"
+    "Leave out to set inState or skip both to get all proposals"
+    notInState: ProposalState
+  ):[GovernanceData!]
 
   "A governance proposal located by its reference"
   proposalByReference(
     reference: String!
-  ): Proposal!
+  ): GovernanceData!
 
   "A governance proposal located by its ID"
   proposalByID(
     id: String!
-  ): Proposal!
+  ): GovernanceData!
 }
 
 "Statistics about the node"
@@ -664,6 +669,11 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
+
+  proposals(
+    "Select only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal]
 }
 
 """
@@ -774,6 +784,13 @@ type Party {
     "market id off the margin to get, nil if all markets"
     marketId: String,
   ): [MarginLevels!]
+
+  proposals(
+    "Select only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal]
+
+  votes: [Vote]
 }
 
 """
@@ -1308,6 +1325,14 @@ type Proposal {
   timestamp: String!
   "Terms of the proposal"
   terms: ProposalTerms!
+}
+
+type GovernanceData {
+  proposal: Proposal!
+  "Yes votes cast for this proposal"
+  yesVotes: [Vote]
+  "No votes cast for this proposal"
+  noVotes: [Vote]
 }
 
 type PreparedProposal {
