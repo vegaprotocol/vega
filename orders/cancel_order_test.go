@@ -2,7 +2,6 @@ package orders_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/proto"
@@ -23,12 +22,10 @@ type cancelMatcher struct {
 }
 
 func TestCancelOrder(t *testing.T) {
-	// PETETODO repalce with new versions for validation checks
 	t.Run("Cancel order - success", testCancelOrderSuccess)
-	t.Run("Cancel order - order not in storage", testCancelOrderNotFound)
-	t.Run("Cancel order - already cancelled", testCancelOrderDuplicate)
-	t.Run("Cancel order - order filled", testCancelOrderFilled)
-	t.Run("Cancel order - party mismatch", testCancelOrderPartyMismatch)
+	t.Run("Cancel order - missing orderID", testCancelOrderNoOrderID)
+	t.Run("Cancel order - missing partyID", testCancelOrderNoPartyID)
+	t.Run("Cancel order - missing marketID", testCancelOrderNoMarketID)
 }
 
 func testCancelOrderSuccess(t *testing.T) {
@@ -40,68 +37,40 @@ func testCancelOrderSuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testCancelOrderNotFound(t *testing.T) {
+func testCancelOrderNoOrderID(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	ctx := context.Background()
-	arg := cancel
-
-	err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.NoError(t, err)
-}
-
-/*
- * If we try to prepare a cancel for an order that is already cancelled, the prepare statement
- * will succeed as it does not have access to the order book.
- */
-func testCancelOrderDuplicate(t *testing.T) {
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-	ctx := context.Background()
-	arg := cancel
-	err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.NoError(t, err)
-}
-
-/*
- * If we try to prepare a cancel for an order that is already filled, the prepare statement
- * will succeed as it does not have access to the order book.
- */
-func testCancelOrderFilled(t *testing.T) {
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-	ctx := context.Background()
-	arg := cancel
-	err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.NoError(t, err)
-}
-
-/*
- * If we try to prepare a cancel for an order with an incorrect partyID, the prepare statement
- * will succeed as it does not have access to the order book to validate it.
- */
-func testCancelOrderPartyMismatch(t *testing.T) {
-	svc := getTestService(t)
-	defer svc.ctrl.Finish()
-	ctx := context.Background()
-	arg := cancel
-	err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.NoError(t, err)
-}
-
-func (m cancelMatcher) String() string {
-	return fmt.Sprintf("%#v", m.e)
-}
-
-func (m cancelMatcher) Matches(x interface{}) bool {
-	var v proto.Order
-	switch val := x.(type) {
-	case *proto.Order:
-		v = *val
-	case proto.Order:
-		v = val
-	default:
-		return false
+	arg := proto.OrderCancellation{
+		MarketID: "marketid",
+		PartyID:  "partyid",
 	}
-	return (m.e.OrderID == v.Id && m.e.MarketID == v.MarketID && m.e.PartyID == v.PartyID)
+	err := svc.svc.PrepareCancelOrder(ctx, &arg)
+	assert.Error(t, err)
+}
+
+func testCancelOrderNoPartyID(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+	ctx := context.Background()
+	arg := proto.OrderCancellation{
+		MarketID: "marketid",
+		PartyID:  "partyid",
+	}
+
+	err := svc.svc.PrepareCancelOrder(ctx, &arg)
+	assert.Error(t, err)
+}
+
+func testCancelOrderNoMarketID(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+	ctx := context.Background()
+	arg := proto.OrderCancellation{
+		OrderID: "orderid",
+		PartyID: "partyid",
+	}
+
+	err := svc.svc.PrepareCancelOrder(ctx, &arg)
+	assert.Error(t, err)
 }
