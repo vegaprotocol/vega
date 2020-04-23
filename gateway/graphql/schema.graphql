@@ -356,6 +356,21 @@ type Query {
   proposalByID(
     id: String!
   ): GovernanceData!
+
+  "Governance proposals that aim creating new markets"
+  newMarketProposals(
+    "Optionally, select proposals for a specific market. Leave out for all"
+    marketId: String
+  ): [GovernanceData!]
+
+  "Governance proposals that aim updating existing markets"
+  updateMarketProposals(
+    "Optionally, select proposals for a specific market. Leave out for all"
+    marketId: String
+  ): [GovernanceData!]
+
+  "Governance proposals that aim updating Vega network parameters"
+  networkParametersProposals: [GovernanceData!]
 }
 
 "Statistics about the node"
