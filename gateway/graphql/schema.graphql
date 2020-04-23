@@ -685,7 +685,7 @@ type Market {
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal]
+  ): [GovernanceData]
 }
 
 """
@@ -1317,12 +1317,13 @@ enum ProposalState {
   Open
   "Proposal has gained enough support to be executed"
   Passed
+  "Proposal didn't get enough votes"
+  Declined
   "Proposal has could not gain enough support to be executed"
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
 }
-
 
 type Proposal {
   "Proposal id that is filled by VEGA once proposal reaches the network"
