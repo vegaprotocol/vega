@@ -1241,7 +1241,8 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig st
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*PreparedSubmitOrder, error) {
+func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string) (*PreparedSubmitOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -1292,6 +1293,9 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = expiresAt.UnixNano()
+	}
+	if reference != nil {
+		order.Reference = *reference
 	}
 
 	req := protoapi.SubmitOrderRequest{

@@ -172,7 +172,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		PrepareOrderAmend  func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) int
 		PrepareOrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
 		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
@@ -427,7 +427,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*PreparedSubmitOrder, error)
+	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id string, partyID string, marketID string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
@@ -1071,7 +1071,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string)), true
 
 	case "Mutation.prepareProposal":
 		if e.complexity.Mutation.PrepareProposal == nil {
@@ -2197,7 +2197,7 @@ schema {
 type Mutation {
 
   """
-  Send a submit order request to be prepared, and returns a pending order + blob of the transaction to submit.
+  Send a submit order request to be prepared, and returns a blob of the transaction to submit.
   The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
   """
   prepareOrderSubmit(
@@ -2207,7 +2207,7 @@ type Mutation {
     partyId: String!
     "Price of the asset"
     price: String
-    "Size ofthe order"
+    "Size of the order"
     size: String!
     "Side of the order (Buy or Sell)"
     side: Side!
@@ -2217,6 +2217,8 @@ type Mutation {
     expiration: String
     "type of the order"
     type: OrderType!
+    "client reference for the order"
+    reference: String
   ): PreparedSubmitOrder!
 
   """
@@ -3775,6 +3777,14 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 		}
 	}
 	args["type"] = arg7
+	var arg8 *string
+	if tmp, ok := rawArgs["reference"]; ok {
+		arg8, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg8
 	return args, nil
 }
 
@@ -6866,7 +6876,7 @@ func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
+		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

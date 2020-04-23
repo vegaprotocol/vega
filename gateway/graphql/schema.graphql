@@ -10,7 +10,7 @@ schema {
 type Mutation {
 
   """
-  Send a submit order request to be prepared, and returns a pending order + blob of the transaction to submit.
+  Send a submit order request to be prepared, and returns a blob of the transaction to submit.
   The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
   """
   prepareOrderSubmit(
@@ -20,7 +20,7 @@ type Mutation {
     partyId: String!
     "Price of the asset"
     price: String
-    "Size ofthe order"
+    "Size of the order"
     size: String!
     "Side of the order (Buy or Sell)"
     side: Side!
@@ -30,6 +30,8 @@ type Mutation {
     expiration: String
     "type of the order"
     type: OrderType!
+    "client reference for the order"
+    reference: String
   ): PreparedSubmitOrder!
 
   """
