@@ -11,7 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/wallet Chain
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 	SubmitNodeRegistration(ctx context.Context, reg *types.NodeRegistration) (bool, error)
@@ -23,9 +23,7 @@ type Commander struct {
 }
 
 var (
-	unsigned = map[blockchain.Command]struct{}{
-		blockchain.RegisterNodeCommand: {},
-	}
+	unsigned = map[blockchain.Command]struct{}{}
 
 	ErrCommandMustBeSigned        = errors.New("command requires a signature")
 	ErrPayloadNotNodeRegistration = errors.New("expected node registration payload")
@@ -50,16 +48,6 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 func (c *Commander) Command(key Wallet, cmd blockchain.Command, payload proto.Message) error {
 	if _, ok := unsigned[cmd]; key == nil && !ok {
 		return ErrCommandMustBeSigned
-	}
-	if key == nil {
-		reg, ok := payload.(*types.NodeRegistration)
-		if !ok {
-			return ErrPayloadNotNodeRegistration
-		}
-		if _, err := c.bc.SubmitNodeRegistration(c.ctx, reg); err != nil {
-			return err
-		}
-		return nil
 	}
 	raw, err := proto.Marshal(payload)
 	if err != nil {

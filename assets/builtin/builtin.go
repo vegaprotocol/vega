@@ -11,7 +11,7 @@ type Builtin struct {
 	asset *types.Asset
 }
 
-func New(id uint64, asset *types.BuiltinAsset) *Builtin {
+func New(id string, asset *types.BuiltinAsset) *Builtin {
 	return &Builtin{
 		asset: &types.Asset{
 			ID:          id,
