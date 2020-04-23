@@ -2665,7 +2665,7 @@ Order Time in Force
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNSPECIFIED | 0 | Default value, can be valid for an amend |
+| TIF_UNSPECIFIED | 0 | Default value, can be valid for an amend |
 | GTC | 1 | good til cancelled |
 | GTT | 2 | good til time |
 | IOC | 3 | immediate or cancel |

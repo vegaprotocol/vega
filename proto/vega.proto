@@ -58,7 +58,7 @@ message Order {
   // Order Time in Force
   enum TimeInForce {
     // Default value, can be valid for an amend
-    UNSPECIFIED = 0;
+    TIF_UNSPECIFIED = 0;
     
     // good til cancelled
     GTC = 1;

@@ -138,7 +138,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return errors.Wrap(err, "order validation failed")
 	}
 
-	if sub.TimeInForce == types.Order_UNSPECIFIED {
+	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoTimeInForce
 	}
 
@@ -190,14 +190,14 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	if amendment.Price == 0 &&
 		amendment.SizeDelta == 0 &&
 		amendment.ExpiresAt == 0 &&
-		amendment.TimeInForce == types.Order_UNSPECIFIED {
+		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoParamsInAmendRequest
 	}
 
 	// Only update ExpiresAt when TIF is related
 	if amendment.ExpiresAt > 0 {
 		if amendment.TimeInForce != types.Order_GTT &&
-			amendment.TimeInForce != types.Order_UNSPECIFIED {
+			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
 			// We cannot change the expire time for this order type
 			return ErrNonGTTOrderWithExpiry
 		}
