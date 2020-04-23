@@ -133,7 +133,7 @@ func testOnTickPending(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
-	proc.assets.EXPECT().NewAsset(gomock.Any()).Times(1).Return(assetID, nil)
+	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
 	// call Begin, expect no error
@@ -209,7 +209,7 @@ func testOnTickSubmit(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
-	proc.assets.EXPECT().NewAsset(gomock.Any()).Times(1).Return(assetID, nil)
+	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
 	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
@@ -295,7 +295,7 @@ func testOnTickSubmitRetry(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
-	proc.assets.EXPECT().NewAsset(gomock.Any()).Times(1).Return(assetID, nil)
+	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
 	wal := getTestStubWallet()
@@ -398,7 +398,7 @@ func testOnTickWithNodes(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
-	proc.assets.EXPECT().NewAsset(gomock.Any()).Times(1).Return(assetID, nil)
+	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
 	wal := getTestStubWallet()
@@ -512,7 +512,7 @@ func testOnTickReject(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
-	proc.assets.EXPECT().NewAsset(gomock.Any()).Times(1).Return(assetID, nil)
+	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
@@ -880,7 +880,7 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
-	proc.assets.EXPECT().NewAsset(gomock.Any()).Times(1).Return(assetID, nil)
+	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
 	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
