@@ -85,7 +85,7 @@ type Wallet interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
-	NewAsset(assetSrc *types.AssetSource) (string, error)
+	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
 	Get(assetID string) (assets.Asset, error)
 }
 
@@ -511,7 +511,8 @@ func (p *Processor) startAssetNodeProposal(proposal *types.Proposal) error {
 		return err
 	}
 
-	assetID, err := p.assets.NewAsset(proposal.Terms.GetNewAsset().GetChanges())
+	assetID, err := p.assets.NewAsset(proposal.Reference,
+		proposal.Terms.GetNewAsset().GetChanges())
 	if err != nil {
 		return err
 	}

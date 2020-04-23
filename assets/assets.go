@@ -19,6 +19,7 @@ var (
 	ErrAssetDoesNotExist = errors.New("asset does not exist")
 	ErrAssetExistForID   = errors.New("an asset already exist for this ID")
 	ErrUnknowAssetSource = errors.New("unknown asset source")
+	ErrNoAssetForRef     = errors.New("no assets for proposal reference")
 )
 
 type Asset interface {
@@ -69,6 +70,11 @@ type Service struct {
 	// the proposal is accepted by both the nodes and the users
 	pendingAssets map[string]Asset
 
+	// map of reference to proposal id
+	// use to find back an asset when the governance process
+	// is still ongoing
+	refs map[string]string
+
 	nw NodeWallet
 
 	idgen *IDgenerator
@@ -83,6 +89,7 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 		cfg:           cfg,
 		assets:        map[string]Asset{},
 		pendingAssets: map[string]Asset{},
+		refs:          map[string]string{},
 		nw:            nw,
 		idgen:         NewIDGen(),
 	}
@@ -110,8 +117,9 @@ func (a *Service) Enable(assetID string) error {
 }
 
 // NewAsset add a new asset to the pending list of assets
+// the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
-func (s *Service) NewAsset(assetSrc *types.AssetSource) (string, error) {
+func (s *Service) NewAsset(ref string, assetSrc *types.AssetSource) (string, error) {
 	// make a new asset id
 	assetID := s.idgen.NewID()
 	src := assetSrc.Source
@@ -131,6 +139,9 @@ func (s *Service) NewAsset(assetSrc *types.AssetSource) (string, error) {
 	default:
 		return "", ErrUnknowAssetSource
 	}
+	// setup the ref lookup table
+	s.refs[ref] = assetID
+
 	return assetID, nil
 }
 
@@ -165,7 +176,15 @@ func (s *Service) Get(assetID string) (Asset, error) {
 		return asset, nil
 	}
 	return nil, ErrAssetDoesNotExist
+}
 
+func (s *Service) GetByRef(ref string) (Asset, error) {
+	id, ok := s.refs[ref]
+	if !ok {
+		return nil, ErrNoAssetForRef
+	}
+
+	return s.Get(id)
 }
 
 // GetAssetHash return an hash of the given asset to be used

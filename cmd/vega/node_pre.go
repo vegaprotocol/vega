@@ -39,6 +39,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -180,7 +181,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 
 	for _, v := range assetSrcs {
 		v := v
-		aid, err := l.assets.NewAsset(v)
+		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
 		if err != nil {
 			return fmt.Errorf("error instanciating asset %v\n", err)
 		}

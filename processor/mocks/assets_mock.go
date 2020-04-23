@@ -50,16 +50,16 @@ func (mr *MockAssetsMockRecorder) Get(arg0 interface{}) *gomock.Call {
 }
 
 // NewAsset mocks base method
-func (m *MockAssets) NewAsset(arg0 *proto.AssetSource) (string, error) {
+func (m *MockAssets) NewAsset(arg0 string, arg1 *proto.AssetSource) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewAsset", arg0)
+	ret := m.ctrl.Call(m, "NewAsset", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewAsset indicates an expected call of NewAsset
-func (mr *MockAssetsMockRecorder) NewAsset(arg0 interface{}) *gomock.Call {
+func (mr *MockAssetsMockRecorder) NewAsset(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAsset", reflect.TypeOf((*MockAssets)(nil).NewAsset), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAsset", reflect.TypeOf((*MockAssets)(nil).NewAsset), arg0, arg1)
 }
