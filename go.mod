@@ -1,5 +1,7 @@
 module code.vegaprotocol.io/vega
 
+go 1.13
+
 require (
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.10.2

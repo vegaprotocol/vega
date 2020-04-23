@@ -1,6 +1,6 @@
 package processor
 
-type node struct {
-	key    string
-	active bool
-}
+// type node struct {
+// 	key    string
+// 	active bool
+// }

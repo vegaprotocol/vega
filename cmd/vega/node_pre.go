@@ -118,6 +118,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
 
+	// this doesn't fail
+	l.timeService = vegatime.New(l.conf.Time)
+
 	if err = l.loadMarketsConfig(); err != nil {
 		return err
 	}
@@ -164,7 +167,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	// initialize the assets service now
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet)
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
 	if err != nil {
 		return err
 	}
@@ -175,10 +178,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 
-	var aid uint64
 	for _, v := range assetSrcs {
 		v := v
-		err = l.assets.NewAsset(aid, v)
+		aid, err := l.assets.NewAsset(v)
 		if err != nil {
 			return fmt.Errorf("error instanciating asset %v\n", err)
 		}
@@ -207,7 +209,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		}
 		l.Log.Info("new asset added successfully",
 			logging.String("asset", asset.String()))
-		aid += 1
 	}
 
 	return nil
@@ -322,8 +323,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 			l.cancel()
 		}
 	}()
-	// this doesn't fail
-	l.timeService = vegatime.New(l.conf.Time)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -347,7 +346,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
