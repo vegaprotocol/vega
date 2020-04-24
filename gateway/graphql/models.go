@@ -94,14 +94,6 @@ type FutureInput struct {
 	EthereumOracle *EthereumEventInput `json:"ethereumOracle"`
 }
 
-type GovernanceData struct {
-	Proposal *Proposal `json:"proposal"`
-	// Yes votes cast for this proposal
-	YesVotes []*Vote `json:"yesVotes"`
-	// No votes cast for this proposal
-	NoVotes []*Vote `json:"noVotes"`
-}
-
 // Describe something that can be traded on Vega
 type Instrument struct {
 	// Uniquely identify an instrument accrods all instruments available on Vega (string)
@@ -237,7 +229,7 @@ type Market struct {
 	OrderByReference *proto.Order `json:"orderByReference"`
 	// marketData for the given market
 	Data      *proto.MarketData `json:"data"`
-	Proposals []*GovernanceData `json:"proposals"`
+	Proposals []*Proposal       `json:"proposals"`
 }
 
 // Input variation of market details same to those defined in Market type
@@ -293,7 +285,7 @@ type PreparedVote struct {
 	// Raw, serialised vote to be signed
 	Blob string `json:"blob"`
 	// The vote serialised in the blob field
-	Vote *Vote `json:"vote"`
+	Vote *ProposalVote `json:"vote"`
 }
 
 type Proposal struct {
@@ -309,6 +301,10 @@ type Proposal struct {
 	Timestamp string `json:"timestamp"`
 	// Terms of the proposal
 	Terms *ProposalTerms `json:"terms"`
+	// Yes votes cast for this proposal
+	YesVotes []*Vote `json:"yesVotes"`
+	// No votes cast for this proposal
+	NoVotes []*Vote `json:"noVotes"`
 }
 
 type ProposalTerms struct {
@@ -333,6 +329,13 @@ type ProposalTermsInput struct {
 	UpdateMarket  *UpdateMarketInput  `json:"updateMarket"`
 	NewMarket     *NewMarketInput     `json:"newMarket"`
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+}
+
+type ProposalVote struct {
+	// Cast vote
+	Vote *Vote `json:"vote"`
+	// Proposal -> proposal casting the vote on
+	Proposal *Proposal `json:"proposal"`
 }
 
 type ScalingFactors struct {
@@ -461,11 +464,9 @@ type UpdateNetworkInput struct {
 
 type Vote struct {
 	// The vote value cast
-	Value VoteValue `json:"Value"`
+	Value VoteValue `json:"value"`
 	// The party casting the vote
-	Party *proto.Party `json:"Party"`
-	// Proposal ID -> proposal casting the vote on
-	ProposalID string `json:"ProposalID"`
+	Party *proto.Party `json:"party"`
 }
 
 // The various account types we have (used by collateral)
