@@ -114,8 +114,7 @@ steps:
           /usr/local/bin/systemtests.sh -v all ;
           echo "$$?" >"$$codefile"
         ) 2>&1 | tee "$$logfile"
-      - code="$$(cat "$$codefile")"
-      - if test "$$code" -gt 0 ; then
+      - if test "$$(cat "$$codefile")" -gt 0 ; then
           echo "system-tests failed" ;
           msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)" ;
           if test "$$DRONE_TARGET_BRANCH" == master ; then
@@ -136,9 +135,9 @@ steps:
           (
             echo "system-tests failed." ;
             echo ;
-            echo '```' ;
-            grep -A1000 '=== Test summary ===' "$$logfile" ;
-            echo '```'
+            echo "\`\`\`" ;
+            grep -A1000 "=== Test summary ===" "$$logfile" ;
+            echo "\`\`\`"
           ) >/tmp/comment.txt ;
           github_issue_comment.py
             --token "$$GITHUB_API_TOKEN"
