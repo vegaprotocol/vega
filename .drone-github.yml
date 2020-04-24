@@ -18,86 +18,86 @@ steps:
 
   # ====== Pipeline for pull requests ======
 
-  # - name: build-PR
-  #   image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
-  #   pull: always
-  #   volumes:
-  #     - name: gocache
-  #       path: /go/cache
-  #     - name: gopkg
-  #       path: /go/pkg
-  #   environment:
-  #     CGO_ENABLED: "1"
-  #     GO111MODULE: "on"
-  #     GOARCH: amd64
-  #     GOCACHE: /go/cache
-  #     GOOS: linux
-  #     GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
-  #       from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
-  #     GITHUB_DEPLOY_SSH_PRIVATE_KEY:
-  #       from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
-  #   commands:
-  #     # The following git+ssh config enables accessing private github repos.
-  #     - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-  #     - eval "$$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
-  #     - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
-  #         echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
-  #     - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
-  #         echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
-  #     - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
-  #     - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-  #     - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
-  #     - make deps
-  #     - make build
-  #   depends_on:
-  #     - fetch
-  #   when:
-  #     event:
-  #       - pull_request
+  - name: build-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      CGO_ENABLED: "1"
+      GO111MODULE: "on"
+      GOARCH: amd64
+      GOCACHE: /go/cache
+      GOOS: linux
+      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
+        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - eval "$$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - make deps
+      - make build
+    depends_on:
+      - fetch
+    when:
+      event:
+        - pull_request
 
-  # - name: markdownspellcheck-PR
-  #   image: docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest
-  #   pull: always
-  #   environment: {}
-  #   commands:
-  #     # Make sure the mdspell command matches the one in Makefile.
-  #     - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
-  #   depends_on:
-  #     - build-PR
-  #   when:
-  #     event:
-  #       - pull_request
+  - name: markdownspellcheck-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest
+    pull: always
+    environment: {}
+    commands:
+      # Make sure the mdspell command matches the one in Makefile.
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
+    depends_on:
+      - build-PR
+    when:
+      event:
+        - pull_request
 
-  # - name: test-PR
-  #   image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
-  #   volumes:
-  #     - name: gocache
-  #       path: /go/cache
-  #     - name: gopkg
-  #       path: /go/pkg
-  #   environment:
-  #     GOCACHE: /go/cache
-  #     GITHUB_API_TOKEN:
-  #       from_secret: GITHUB_API_TOKEN
-  #     SLACK_HOOK_URL:
-  #       from_secret: SLACK_HOOK_URL
-  #   commands:
-  #     - make retest
-  #     # More small checks. Run all, instead of exitng after first failure.
-  #     - failed=""
-  #     - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
-  #         echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
-  #     - /usr/local/bin/check-rest-endpoints.py
-  #         --bindings gateway/rest/grpc-rest-bindings.yml
-  #         --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-  #     - /usr/local/bin/multilint || failed="$$failed multilint"
-  #     - make staticcheck || true  # Ignore failures until they're all fixed.
-  #     - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
-  #   depends_on:
-  #     - build-PR
-  #   when:
-  #     event:
-  #       - pull_request
+  - name: test-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GOCACHE: /go/cache
+      GITHUB_API_TOKEN:
+        from_secret: GITHUB_API_TOKEN
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
+    commands:
+      - make retest
+      # More small checks. Run all, instead of exitng after first failure.
+      - failed=""
+      - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - /usr/local/bin/check-rest-endpoints.py
+          --bindings gateway/rest/grpc-rest-bindings.yml
+          --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
+      - /usr/local/bin/multilint || failed="$$failed multilint"
+      - make staticcheck || true  # Ignore failures until they're all fixed.
+      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
+    depends_on:
+      - build-PR
+    when:
+      event:
+        - pull_request
 
   - name: systemtests-PR
     image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:latest
@@ -111,9 +111,8 @@ steps:
       # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
       - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
       - (
-          echo /usr/local/bin/systemtests.sh -v all ;
-          echo "$$?" >"$$codefile" ;
-          echo 1 >"$$codefile"
+          /usr/local/bin/systemtests.sh -v all ;
+          echo "$$?" >"$$codefile"
         ) 2>&1 | tee "$$logfile"
       - test "$$(cat "$$codefile")" = 0 && exit 0
       # system-tests failed
@@ -129,7 +128,7 @@ steps:
       # Notify Slack
       - msg="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$msg")"
       - 'curl -s -XPOST
-          -d "{\"channel\": \"#tradingcore\", \"icon_emoji\": \":robot:\", \"text\": $$msg, \"username\": \"nagbot\" }"
+          -d "{\"channel\": \"#tradingcore-notify\", \"icon_emoji\": \":robot:\", \"text\": $$msg, \"username\": \"nagbot\" }"
           "$$SLACK_HOOK_URL"'
       # Make Github PR comment
       - commentfile="$$(mktemp)"
@@ -148,8 +147,7 @@ steps:
           "https://api.github.com/repos/vegaprotocol/vega/issues/$$DRONE_PULL_REQUEST/comments"'
       - exit "$$exitcode"
     depends_on:
-      - fetch # !!!!!!!!!!!!!!!!!! DO NOT MERGE !!!!!!!!!!!!!!!!!!!!!!!!!
-      # - test-PR
+      - test-PR
     when:
       event:
         - pull_request
