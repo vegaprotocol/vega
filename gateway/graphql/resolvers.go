@@ -26,6 +26,9 @@ var (
 	ErrNilPendingOrder = errors.New("nil pending order")
 	// ErrUnknownAccountType a account type specified does not exist
 	ErrUnknownAccountType = errors.New("unknown account type")
+	// ErrInvalidProposalByStateRequest is returned if request to look up proposals by state
+	// specified both state to include and filter out
+	ErrInvalidProposalByStateRequest = errors.New("specified both state to include and filter out")
 )
 
 // TradingClient ...
@@ -92,7 +95,11 @@ type TradingDataClient interface {
 	GetProposalsInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalsNotInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalsByMarket(ctx context.Context, in *protoapi.GetProposalsByMarketRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsByParty(ctx context.Context, in *protoapi.GetGovernanceByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetVotesByParty(ctx context.Context, in *protoapi.GetGovernanceByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesResponse, error)
+	GetNewMarketProposals(ctx context.Context, in *protoapi.GetMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetNetworkParametersProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 }
@@ -318,73 +325,128 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 	return order, err
 }
 
-func (r *myQueryResolver) Proposals(ctx context.Context, openOnly *bool) ([]*Proposal, error) {
-	var data *protoapi.GetGovernanceDataResponse
+func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState, notInState *ProposalState,
+) ([]*Proposal, error) {
+
+	if inState != nil && notInState != nil {
+		return nil, ErrInvalidProposalByStateRequest
+	}
+
+	var resp *protoapi.GetGovernanceDataResponse
 	var err error
-	if openOnly != nil && *openOnly {
-		data, err = r.tradingDataClient.GetProposalsInState(ctx,
-			&protoapi.GetProposalsByStateRequest{
-				State: types.Proposal_OPEN,
-			},
-		)
+	if inState != nil && notInState == nil {
+		var state types.Proposal_State
+		if state, err = inState.IntoProto(); err == nil {
+			resp, err = r.tradingDataClient.GetProposalsInState(ctx, &protoapi.GetProposalsByStateRequest{
+				State: state,
+			})
+		}
+	} else if inState == nil && notInState != nil {
+		var state types.Proposal_State
+		if state, err = inState.IntoProto(); err == nil {
+			resp, err = r.tradingDataClient.GetProposalsInState(ctx, &protoapi.GetProposalsByStateRequest{
+				State: state,
+			})
+		}
 	} else {
-		data, err = r.tradingDataClient.GetAllGovernanceData(ctx, nil)
+		resp, err = r.tradingDataClient.GetAllGovernanceData(ctx, nil)
 	}
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(proposals.Proposals))
-	for i, p := range data.Data {
-		converted, err := r.convertProposal(ctx, p.Proposal)
+	result := make([]*Proposal, len(resp.Data))
+	for i, gov := range resp.Data {
+		converted, err := r.convertProposal(ctx, gov)
 		if err != nil {
 			return nil, err
 		}
 		result[i] = converted
+
 	}
 	return result, nil
 }
 
 func (r *myQueryResolver) ProposalByReference(ctx context.Context, reference string) (*Proposal, error) {
-	vote, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
+	resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
 		Reference: reference,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return r.convertProposal(ctx, vote.Proposal)
+	return r.convertProposal(ctx, resp.Proposal)
 }
 
 func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposal, error) {
-	vote, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
+	resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
 		ID: id,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return r.convertProposal(ctx, vote.Proposal)
+	return r.convertProposal(ctx, resp.Proposal)
 }
 
-func (r *myQueryResolver) convertProposal(ctx context.Context, proposal *types.Proposal) (*Proposal, error) {
-	terms, err := ProposalTermsFromProto(proposal.Terms)
+func (r *myQueryResolver) convertProposal(ctx context.Context, gov *types.GovernanceData) (*Proposal, error) {
+	terms, err := ProposalTermsFromProto(gov.Proposal.Terms)
 	if err != nil {
 		return nil, err
 	}
-	state, err := ProposalStateFromProto(proposal.State)
+	state, err := ProposalStateFromProto(gov.Proposal.State)
 	if err != nil {
 		return nil, err
 	}
-	party, err := getParty(ctx, r.log, r.tradingDataClient, proposal.PartyID)
+	party, err := getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
 	if err != nil {
 		return nil, err
 	}
-	return &Proposal{
-		ID:        &proposal.ID,
-		Reference: proposal.Reference,
+	result := &Proposal{
+		ID:        &gov.Proposal.ID,
+		Reference: gov.Proposal.Reference,
 		Party:     party,
 		State:     state,
-		Timestamp: timestampToString(proposal.Timestamp),
+		Timestamp: timestampToString(gov.Proposal.Timestamp),
 		Terms:     terms,
+		YesVotes:  make([]*Vote, len(gov.Yes)),
+		NoVotes:   make([]*Vote, len(gov.No)),
+	}
+	for i, v := range gov.Yes {
+		aye, err := r.convertVote(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		result.YesVotes[i] = aye
+	}
+	for i, v := range gov.No {
+		no, err := r.convertVote(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		result.NoVotes[i] = no
+	}
+	return result, nil
+}
+
+func (r *myQueryResolver) convertVote(ctx context.Context, vote *types.Vote) (*Vote, error) {
+	party, err := getParty(ctx, r.log, r.tradingDataClient, vote.PartyID)
+	if err != nil {
+		return nil, err
+	}
+	return &Vote{
+		Value: VoteValueFromProto(vote.Value),
+		Party: party,
 	}, nil
+}
+
+func (r *myQueryResolver) convertProposalVote(ctx context.Context,
+	parent *Proposal,
+	vote *types.Vote,
+) (*ProposalVote, error) {
+
+	converted, err := r.convertVote(ctx, vote)
+	if err != nil {
+		return nil, err
+	}
+	return &ProposalVote{Vote: converted, Proposal: parent}, nil
 }
 
 // END: Root Resolver

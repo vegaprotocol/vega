@@ -732,6 +732,25 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	return result, nil
 }
 
+// IntoProto ...
+func (s ProposalState) IntoProto() (types.Proposal_State, error) {
+	switch s {
+	case ProposalStateFailed:
+		return types.Proposal_FAILED, nil
+	case ProposalStateOpen:
+		return types.Proposal_OPEN, nil
+	case ProposalStatePassed:
+		return types.Proposal_PASSED, nil
+	case ProposalStateDeclined:
+		return types.Proposal_DECLINED, nil
+	case ProposalStateRejected:
+		return types.Proposal_REJECTED, nil
+	case ProposalStateEnacted:
+		return types.Proposal_ENACTED, nil
+	}
+	return types.Proposal_State(-1), ErrInvalidProposalState
+}
+
 // ProposalStateFromProto ...
 func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
 	switch state {
@@ -741,10 +760,37 @@ func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
 		return ProposalStateOpen, nil
 	case types.Proposal_PASSED:
 		return ProposalStatePassed, nil
+	case types.Proposal_DECLINED:
+		return ProposalStateDeclined, nil
 	case types.Proposal_REJECTED:
 		return ProposalStateRejected, nil
 	case types.Proposal_ENACTED:
 		return ProposalStateEnacted, nil
 	}
 	return ProposalState(""), ErrInvalidProposalState
+}
+
+// VoteValueFromProto ...
+func VoteValueFromProto(v types.Vote_Value) VoteValue {
+	if v == types.Vote_YES {
+		return VoteValueYes
+	}
+	return VoteValueNo
+}
+
+// IntoProto ...
+func (v VoteValue) IntoProto() types.Vote_Value {
+	if v == VoteValueYes {
+		return types.Vote_YES
+	}
+	return types.Vote_NO
+}
+
+// IntoProto ...
+func (p ProposalVote) IntoProto() (*types.Vote, error) {
+	return &types.Vote{
+		PartyID:    p.Vote.Party.Id,
+		ProposalID: *p.Proposal.ID,
+		Value:      p.Vote.Value.IntoProto(),
+	}, nil
 }
