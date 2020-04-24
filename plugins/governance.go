@@ -29,15 +29,20 @@ type VoteBuffer interface {
 }
 
 type Proposals struct {
-	mu         sync.RWMutex
-	props      PropBuffer
-	votes      VoteBuffer
-	pref, vref int
-	pch        <-chan []types.Proposal
-	vch        <-chan []types.Vote
-	pData      map[string]*types.Proposal
-	pByRef     map[string]*types.Proposal
-	vData      map[string]map[types.Vote_Value]map[string]types.Vote // nested map by proposal -> vote value -> party
+	mu             sync.RWMutex
+	props          PropBuffer
+	votes          VoteBuffer
+	pref, vref     int
+	pch            <-chan []types.Proposal
+	vch            <-chan []types.Vote
+	pData          map[string]*types.Proposal
+	pByRef         map[string]*types.Proposal
+	vData          map[string]map[types.Vote_Value]map[string]*types.Vote // nested map by proposal -> vote value -> party
+	pByPartyID     map[string][]*types.Proposal
+	vByPartyID     map[string][]*types.Vote
+	newMarkets     map[string]*types.Proposal
+	marketUpdates  map[string][]*types.Proposal
+	networkUpdates []*types.Proposal
 
 	// stream subscriptions
 	subs     map[int64]chan []types.GovernanceData
@@ -47,12 +52,16 @@ type Proposals struct {
 // NewProposals - return a new proposal plugin
 func NewProposals(p PropBuffer, v VoteBuffer) *Proposals {
 	return &Proposals{
-		props:  p,
-		votes:  v,
-		pData:  map[string]*types.Proposal{},
-		pByRef: map[string]*types.Proposal{},
-		vData:  map[string]map[types.Vote_Value]map[string]types.Vote{},
-		subs:   map[int64]chan []types.GovernanceData{},
+		props:         p,
+		votes:         v,
+		pData:         map[string]*types.Proposal{},
+		pByRef:        map[string]*types.Proposal{},
+		vData:         map[string]map[types.Vote_Value]map[string]*types.Vote{},
+		pByPartyID:    map[string][]*types.Proposal{},
+		vByPartyID:    map[string][]*types.Vote{},
+		newMarkets:    map[string]*types.Proposal{},
+		marketUpdates: map[string][]*types.Proposal{},
+		subs:          map[int64]chan []types.GovernanceData{},
 	}
 }
 
@@ -88,6 +97,27 @@ func (p *Proposals) Stop() {
 	p.mu.Unlock()
 }
 
+func (p *Proposals) storeProposal(proposal *types.Proposal) {
+	p.pData[proposal.ID] = proposal
+	p.pByRef[proposal.Reference] = proposal
+	p.pByPartyID[proposal.PartyID] = append(p.pByPartyID[proposal.PartyID], proposal)
+	if _, ok := p.vData[proposal.ID]; !ok {
+		p.vData[proposal.ID] = map[types.Vote_Value]map[string]*types.Vote{
+			types.Vote_YES: map[string]*types.Vote{},
+			types.Vote_NO:  map[string]*types.Vote{},
+		}
+	}
+	switch proposal.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		p.newMarkets[proposal.Terms.GetNewMarket().Changes.Id] = proposal // each market has unique id
+	case *types.ProposalTerms_UpdateMarket:
+		//id := proposal.Terms.GetUpdateMarket().Changes.Id
+		//p.marketUpdates[id] = append(p.marketUpdates[id], proposal)
+	case *types.ProposalTerms_UpdateNetwork:
+		p.networkUpdates = append(p.networkUpdates, proposal)
+	}
+}
+
 func (p *Proposals) consume(ctx context.Context) {
 	defer func() {
 		p.Stop()
@@ -110,14 +140,7 @@ func (p *Proposals) consume(ctx context.Context) {
 			updates := make([]string, 0, len(proposals))
 			p.mu.Lock()
 			for _, v := range proposals {
-				p.pData[v.ID] = &v
-				p.pByRef[v.Reference] = &v
-				if _, ok := p.vData[v.ID]; !ok {
-					p.vData[v.ID] = map[types.Vote_Value]map[string]types.Vote{
-						types.Vote_YES: map[string]types.Vote{},
-						types.Vote_NO:  map[string]types.Vote{},
-					}
-				}
+				p.storeProposal(&v)
 				updates = append(updates, v.ID)
 			}
 			go p.notify(updates)
@@ -136,19 +159,20 @@ func (p *Proposals) consume(ctx context.Context) {
 			for _, v := range votes {
 				pvotes, ok := p.vData[v.ProposalID]
 				if !ok {
-					pvotes = map[types.Vote_Value]map[string]types.Vote{
-						types.Vote_YES: map[string]types.Vote{},
-						types.Vote_NO:  map[string]types.Vote{},
+					pvotes = map[types.Vote_Value]map[string]*types.Vote{
+						types.Vote_YES: map[string]*types.Vote{},
+						types.Vote_NO:  map[string]*types.Vote{},
 					}
 				}
 				// value maps always exist
-				pvotes[v.Value][v.PartyID] = v
+				pvotes[v.Value][v.PartyID] = &v
 				oppositeValue := types.Vote_NO
 				if v.Value == oppositeValue {
 					oppositeValue = types.Vote_YES
 				}
 				delete(pvotes[oppositeValue], v.PartyID)
 				p.vData[v.ProposalID] = pvotes
+				p.vByPartyID[v.PartyID] = append(p.vByPartyID[v.PartyID], &v)
 				updates = append(updates, v.ProposalID)
 			}
 			go p.notify(updates)
@@ -205,7 +229,7 @@ func (p *Proposals) GetAllGovernanceData() []*types.GovernanceData {
 
 // GetProposalsInState returns proposals + current votes in the specified state
 func (p *Proposals) GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData {
-	var inState propsalFilter = func(proposal *types.Proposal) bool {
+	var inState proposalFilter = func(proposal *types.Proposal) bool {
 		return proposal.State != includeState
 	}
 	return p.getProposals(&inState)
@@ -213,7 +237,7 @@ func (p *Proposals) GetProposalsInState(includeState types.Proposal_State) []*ty
 
 // GetProposalsNotInState returns proposals + current votes NOT in the specified state
 func (p *Proposals) GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData {
-	var notInState propsalFilter = func(proposal *types.Proposal) bool {
+	var notInState proposalFilter = func(proposal *types.Proposal) bool {
 		return proposal.State == excludeState
 	}
 	return p.getProposals(&notInState)
@@ -221,23 +245,42 @@ func (p *Proposals) GetProposalsNotInState(excludeState types.Proposal_State) []
 
 // GetProposalsByMarket returns proposals + current votes by market that is affected by these proposals
 func (p *Proposals) GetProposalsByMarket(marketID string) []*types.GovernanceData {
-	var byMarket propsalFilter = func(proposal *types.Proposal) bool {
-		if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil &&
-			newMarket.Changes.Id == marketID {
-			return false
-		}
-		// TODO: implement UpdateMarket handling here
-		return true
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	updated := p.marketUpdates[marketID]
+	total := len(updated)
+
+	added, ok := p.newMarkets[marketID]
+	if ok {
+		total++
 	}
-	return p.getProposals(&byMarket)
+	result := make([]*types.GovernanceData, 0, total)
+	result = append(result, p.getGovernanceData(*added))
+	for _, prop := range updated {
+		result = append(result, p.getGovernanceData(*prop))
+	}
+	return result
 }
 
 // GetProposalsByParty returns proposals + current votes by party authoring them
 func (p *Proposals) GetProposalsByParty(partyID string) []*types.GovernanceData {
-	var byParty propsalFilter = func(proposal *types.Proposal) bool {
-		return proposal.PartyID != partyID
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	found := p.pByPartyID[partyID]
+	result := make([]*types.GovernanceData, 0, len(found))
+	for _, prop := range found {
+		result = append(result, p.getGovernanceData(*prop))
 	}
-	return p.getProposals(&byParty)
+	return result
+}
+
+// GetVotesByParty returns votes by party
+func (p *Proposals) GetVotesByParty(partyID string) []*types.Vote {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.vByPartyID[partyID]
 }
 
 // GetProposalByID returns proposal and votes by ID
@@ -261,18 +304,71 @@ func (p *Proposals) GetProposalByReference(ref string) (*types.GovernanceData, e
 	return nil, ErrProposalNotFound
 }
 
-type propsalFilter func(p *types.Proposal) bool
+// GetNewMarketProposals returns proposals aiming to create new markets
+func (p *Proposals) GetNewMarketProposals(marketID string) []*types.GovernanceData {
+	if len(marketID) != 0 {
+		p.mu.RLock()
+		defer p.mu.RUnlock()
+		if v, ok := p.newMarkets[marketID]; ok {
+			return []*types.GovernanceData{p.getGovernanceData(*v)}
+		}
+		return nil
+	}
 
-func (p *Proposals) getProposals(skip *propsalFilter) []*types.GovernanceData {
+	p.mu.RLock()
+	result := make([]*types.GovernanceData, 0, len(p.newMarkets))
+	for _, v := range p.newMarkets {
+		result = append(result, p.getGovernanceData(*v))
+	}
+	p.mu.RUnlock()
+	return result
+}
+
+// GetUpdateMarketProposals returns proposals aiming to update markets
+func (p *Proposals) GetUpdateMarketProposals(marketID string) []*types.GovernanceData {
+	if len(marketID) != 0 {
+		p.mu.RLock()
+		defer p.mu.RUnlock()
+		return p.pickAllProposals(p.marketUpdates[marketID])
+	}
+	p.mu.RLock()
+	result := []*types.GovernanceData{}
+	for _, props := range p.marketUpdates {
+		result = append(result, p.pickAllProposals(props)...)
+	}
+	p.mu.RUnlock()
+	return result
+}
+
+// GetNetworkParametersProposals returns proposals aiming to update network
+func (p *Proposals) GetNetworkParametersProposals() []*types.GovernanceData {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
+	return p.pickAllProposals(p.networkUpdates)
+}
 
-	result := []*types.GovernanceData{}
+func (p *Proposals) pickAllProposals(from []*types.Proposal) []*types.GovernanceData {
+	result := make([]*types.GovernanceData, 0, len(from))
+	for _, prop := range from {
+		result = append(result, p.getGovernanceData(*prop))
+	}
+	return result
+}
+
+type proposalFilter func(p *types.Proposal) bool
+
+func (p *Proposals) getProposals(canSkip *proposalFilter) []*types.GovernanceData {
+	var result []*types.GovernanceData
+	p.mu.RLock()
+	if canSkip == nil {
+		result = make([]*types.GovernanceData, 0, len(p.pData))
+	}
 	for _, prop := range p.pData {
-		if skip == nil || !(*skip)(prop) {
+		if canSkip == nil || !(*canSkip)(prop) {
 			result = append(result, p.getGovernanceData(*prop))
 		}
 	}
+	p.mu.RUnlock()
 	return result
 }
 
@@ -281,12 +377,10 @@ func (p *Proposals) getGovernanceData(v types.Proposal) *types.GovernanceData {
 	yes := make([]*types.Vote, 0, len(vData[types.Vote_YES]))
 	no := make([]*types.Vote, 0, len(vData[types.Vote_NO]))
 	for _, vote := range vData[types.Vote_YES] {
-		cpy := vote
-		yes = append(yes, &cpy)
+		yes = append(yes, vote)
 	}
 	for _, vote := range vData[types.Vote_NO] {
-		cpy := vote
-		no = append(no, &cpy)
+		no = append(no, vote)
 	}
 	return &types.GovernanceData{
 		Proposal: &v,

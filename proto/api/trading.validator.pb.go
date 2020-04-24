@@ -145,6 +145,9 @@ func (this *GetProposalByReferenceRequest) Validate() error {
 	}
 	return nil
 }
+func (this *GetMarketProposalsRequest) Validate() error {
+	return nil
+}
 func (this *ObserveMarketGovernanceRequest) Validate() error {
 	return nil
 }

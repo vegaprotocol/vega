@@ -207,6 +207,10 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetMarketProposalsRequest"><span class="badge">M</span>GetMarketProposalsRequest</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -1129,6 +1133,30 @@
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetMarketProposalsRequest">GetMarketProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
 
@@ -3962,6 +3990,27 @@
                 <td><a href="#api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
                 <td><p>Get proposals by party authoring them</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNewMarketProposals</td>
+                <td><a href="#api.GetMarketProposalsRequest">GetMarketProposalsRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get proposals that aim creating new markets</p></td>
+              </tr>
+
+              <tr>
+                <td>GetUpdateMarketProposals</td>
+                <td><a href="#api.GetMarketProposalsRequest">GetMarketProposalsRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get proposals that aim updating new markets</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNetworkParametersProposals</td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get proposals that aim updating Vega network parameters</p></td>
               </tr>
 
               <tr>

@@ -324,7 +324,7 @@ func (r *myQueryResolver) Proposals(ctx context.Context, openOnly *bool) ([]*Pro
 	if openOnly != nil && *openOnly {
 		data, err = r.tradingDataClient.GetProposalsInState(ctx,
 			&protoapi.GetProposalsByStateRequest{
-				State: protoapi.Proposal_State_OPEN,
+				State: types.Proposal_OPEN,
 			},
 		)
 	} else {

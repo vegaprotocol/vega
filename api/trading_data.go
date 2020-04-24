@@ -1422,6 +1422,21 @@ func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 	}, nil
 }
 
+func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
+	in *protoapi.GetMarketProposalsRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetNewMarketProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetProposalsByParty(in.PartyID),
+	}, nil
+}
+
 func (h *tradingDataService) GetProposalByID(_ context.Context,
 	in *protoapi.GetProposalByIDRequest,
 ) (*protoapi.GetProposalResponse, error) {

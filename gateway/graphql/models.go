@@ -94,6 +94,14 @@ type FutureInput struct {
 	EthereumOracle *EthereumEventInput `json:"ethereumOracle"`
 }
 
+type GovernanceData struct {
+	Proposal *Proposal `json:"proposal"`
+	// Yes votes cast for this proposal
+	YesVotes []*Vote `json:"yesVotes"`
+	// No votes cast for this proposal
+	NoVotes []*Vote `json:"noVotes"`
+}
+
 // Describe something that can be traded on Vega
 type Instrument struct {
 	// Uniquely identify an instrument accrods all instruments available on Vega (string)
@@ -228,7 +236,8 @@ type Market struct {
 	// Query an order by reference for the given market
 	OrderByReference *proto.Order `json:"orderByReference"`
 	// marketData for the given market
-	Data *proto.MarketData `json:"data"`
+	Data      *proto.MarketData `json:"data"`
+	Proposals []*GovernanceData `json:"proposals"`
 }
 
 // Input variation of market details same to those defined in Market type
@@ -734,6 +743,8 @@ const (
 	ProposalStateOpen ProposalState = "Open"
 	// Proposal has gained enough support to be executed
 	ProposalStatePassed ProposalState = "Passed"
+	// Proposal didn't get enough votes
+	ProposalStateDeclined ProposalState = "Declined"
 	// Proposal has could not gain enough support to be executed
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
@@ -744,13 +755,14 @@ var AllProposalState = []ProposalState{
 	ProposalStateFailed,
 	ProposalStateOpen,
 	ProposalStatePassed,
+	ProposalStateDeclined,
 	ProposalStateRejected,
 	ProposalStateEnacted,
 }
 
 func (e ProposalState) IsValid() bool {
 	switch e {
-	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateRejected, ProposalStateEnacted:
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted:
 		return true
 	}
 	return false

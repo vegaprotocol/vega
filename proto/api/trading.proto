@@ -199,6 +199,15 @@ service trading_data {
   // Get proposals by party authoring them
   rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetGovernanceDataResponse);
 
+  // Get proposals that aim creating new markets
+  rpc GetNewMarketProposals(GetMarketProposalsRequest) returns (GetGovernanceDataResponse);
+
+  // Get proposals that aim updating new markets
+  rpc GetUpdateMarketProposals(GetMarketProposalsRequest) returns (GetGovernanceDataResponse);
+
+  // Get proposals that aim updating Vega network parameters
+  rpc GetNetworkParametersProposals(google.protobuf.Empty) returns (GetGovernanceDataResponse);
+
   // Get a proposal by ID
   rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
 
@@ -279,6 +288,10 @@ message GetProposalByIDRequest {
 
 message GetProposalByReferenceRequest {
   string Reference = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message GetMarketProposalsRequest {
+  string marketID = 1;
 }
 
 message ObserveMarketGovernanceRequest {
