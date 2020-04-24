@@ -47,6 +47,34 @@ func (mr *MockPluginMockRecorder) GetAllGovernanceData() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllGovernanceData", reflect.TypeOf((*MockPlugin)(nil).GetAllGovernanceData))
 }
 
+// GetNetworkParametersProposals mocks base method
+func (m *MockPlugin) GetNetworkParametersProposals() []*proto.GovernanceData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetworkParametersProposals")
+	ret0, _ := ret[0].([]*proto.GovernanceData)
+	return ret0
+}
+
+// GetNetworkParametersProposals indicates an expected call of GetNetworkParametersProposals
+func (mr *MockPluginMockRecorder) GetNetworkParametersProposals() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkParametersProposals", reflect.TypeOf((*MockPlugin)(nil).GetNetworkParametersProposals))
+}
+
+// GetNewMarketProposals mocks base method
+func (m *MockPlugin) GetNewMarketProposals(arg0 string) []*proto.GovernanceData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNewMarketProposals", arg0)
+	ret0, _ := ret[0].([]*proto.GovernanceData)
+	return ret0
+}
+
+// GetNewMarketProposals indicates an expected call of GetNewMarketProposals
+func (mr *MockPluginMockRecorder) GetNewMarketProposals(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewMarketProposals", reflect.TypeOf((*MockPlugin)(nil).GetNewMarketProposals), arg0)
+}
+
 // GetProposalByID mocks base method
 func (m *MockPlugin) GetProposalByID(arg0 string) (*proto.GovernanceData, error) {
 	m.ctrl.T.Helper()
@@ -131,6 +159,34 @@ func (m *MockPlugin) GetProposalsNotInState(arg0 proto.Proposal_State) []*proto.
 func (mr *MockPluginMockRecorder) GetProposalsNotInState(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalsNotInState", reflect.TypeOf((*MockPlugin)(nil).GetProposalsNotInState), arg0)
+}
+
+// GetUpdateMarketProposals mocks base method
+func (m *MockPlugin) GetUpdateMarketProposals(arg0 string) []*proto.GovernanceData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUpdateMarketProposals", arg0)
+	ret0, _ := ret[0].([]*proto.GovernanceData)
+	return ret0
+}
+
+// GetUpdateMarketProposals indicates an expected call of GetUpdateMarketProposals
+func (mr *MockPluginMockRecorder) GetUpdateMarketProposals(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateMarketProposals", reflect.TypeOf((*MockPlugin)(nil).GetUpdateMarketProposals), arg0)
+}
+
+// GetVotesByParty mocks base method
+func (m *MockPlugin) GetVotesByParty(arg0 string) []*proto.Vote {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVotesByParty", arg0)
+	ret0, _ := ret[0].([]*proto.Vote)
+	return ret0
+}
+
+// GetVotesByParty indicates an expected call of GetVotesByParty
+func (mr *MockPluginMockRecorder) GetVotesByParty(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotesByParty", reflect.TypeOf((*MockPlugin)(nil).GetVotesByParty), arg0)
 }
 
 // Subscribe mocks base method
