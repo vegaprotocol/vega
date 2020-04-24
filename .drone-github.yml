@@ -116,17 +116,17 @@ steps:
         ) 2>&1 | tee "$$logfile"
       - code="$$(cat "$$codefile")"
       - if test "$$code" -gt 0 ; then
-          # system-tests failed
+          echo "system-tests failed" ;
           msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)" ;
           if test "$$DRONE_TARGET_BRANCH" == master ; then
-            # Failure while attempting to merge to master is fatal.
+            echo "Failure while attempting to merge to master is fatal." ;
             exitcode=1 ;
             msg="$$msgprefix *pipeline failed* :cry:" ;
           else
             exitcode=0 ;
             msg="$$msgprefix (pipeline continues)" ;
           fi ;
-          # Notify Slack
+          echo "Notify Slack" ;
           slack-notify.py
             --hookurl "$$SLACK_HOOK_URL"
             --recipient "#tradingcore"
