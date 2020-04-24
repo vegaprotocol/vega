@@ -140,10 +140,10 @@ steps:
           grep -A1000 "=== Test summary ===" "$$logfile" || echo "No test summary found" ;
           echo "\`\`\`"
         ) >"$$commentfile"
-      - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$(cat "$$commentfile")")"
+      - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$(cat "$$commentfile")")"
       - 'curl -s -XPOST
           -H "Accept: application/vnd.github.v3+json"
-          -H "Authorization: $$GITHUB_API_TOKEN"
+          -H "Authorization: token $$GITHUB_API_TOKEN"
           -d "{\"body\": $$body}"
           "https://api.github.com/repos/vegaprotocol/vega/issues/$$DRONE_PULL_REQUEST/comments"'
       - exit "$$exitcode"
