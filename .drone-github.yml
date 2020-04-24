@@ -117,8 +117,8 @@ steps:
       - test "$$(cat "$$codefile")" = 0 && exit 0
       # system-tests failed
       - msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)"
+      # Failure is fatal only while attempting to merge to master.
       - if test "$$DRONE_TARGET_BRANCH" = master ; then
-          echo "Failure while attempting to merge to master is fatal." ;
           exitcode=1 ;
           msg="$$msgprefix *pipeline failed* :cry:" ;
         else
