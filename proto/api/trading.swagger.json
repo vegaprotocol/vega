@@ -1027,6 +1027,17 @@
         }
       }
     },
+    "apiGetVotesResponse": {
+      "type": "object",
+      "properties": {
+        "votes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        }
+      }
+    },
     "apiLastTradeResponse": {
       "type": "object",
       "properties": {

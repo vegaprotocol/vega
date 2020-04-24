@@ -10,14 +10,15 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest)
     - [GetGovernanceDataResponse](#api.GetGovernanceDataResponse)
     - [GetMarketProposalsRequest](#api.GetMarketProposalsRequest)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
     - [GetProposalResponse](#api.GetProposalResponse)
     - [GetProposalsByMarketRequest](#api.GetProposalsByMarketRequest)
-    - [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest)
     - [GetProposalsByStateRequest](#api.GetProposalsByStateRequest)
+    - [GetVotesResponse](#api.GetVotesResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
@@ -297,6 +298,21 @@
 
 
 
+<a name="api.GetGovernanceByPartyRequest"></a>
+
+### GetGovernanceByPartyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="api.GetGovernanceDataResponse"></a>
 
 ### GetGovernanceDataResponse
@@ -387,21 +403,6 @@
 
 
 
-<a name="api.GetProposalsByPartyRequest"></a>
-
-### GetProposalsByPartyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="api.GetProposalsByStateRequest"></a>
 
 ### GetProposalsByStateRequest
@@ -411,6 +412,21 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | state | [vega.Proposal.State](#vega.Proposal.State) |  |  |
+
+
+
+
+
+
+<a name="api.GetVotesResponse"></a>
+
+### GetVotesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| votes | [vega.Vote](#vega.Vote) | repeated |  |
 
 
 
@@ -1466,7 +1482,8 @@
 | GetProposalsInState | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals (and their current votes) that are in the specified state |
 | GetProposalsNotInState | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals (and their current votes) excluding those in the specified state |
 | GetProposalsByMarket | [GetProposalsByMarketRequest](#api.GetProposalsByMarketRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals by market that is affected by these proposals |
-| GetProposalsByParty | [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals by party authoring them |
+| GetProposalsByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals by party authoring them |
+| GetVotesByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get proposals by party authoring them |
 | GetNewMarketProposals | [GetMarketProposalsRequest](#api.GetMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim creating new markets |
 | GetUpdateMarketProposals | [GetMarketProposalsRequest](#api.GetMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating new markets |
 | GetNetworkParametersProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating Vega network parameters |

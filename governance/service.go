@@ -29,10 +29,16 @@ type Plugin interface {
 	GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData
 	GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData
 	GetProposalsByMarket(marketID string) []*types.GovernanceData
+
 	GetProposalsByParty(partyID string) []*types.GovernanceData
+	GetVotesByParty(partyID string) []*types.Vote
 
 	GetProposalByID(id string) (*types.GovernanceData, error)
 	GetProposalByReference(ref string) (*types.GovernanceData, error)
+
+	GetNewMarketProposals(marketID string) []*types.GovernanceData
+	GetUpdateMarketProposals(marketID string) []*types.GovernanceData
+	GetNetworkParametersProposals() []*types.GovernanceData
 }
 
 type networkParameters struct {
@@ -160,6 +166,11 @@ func (s *Svc) GetProposalsByParty(partyID string) []*types.GovernanceData {
 	return s.plugin.GetProposalsByParty(partyID)
 }
 
+// GetVotesByParty returns votes by party
+func (s *Svc) GetVotesByParty(partyID string) []*types.Vote {
+	return s.plugin.GetVotesByParty(partyID)
+}
+
 // GetProposalByID returns a proposal and its votes by ID (if exists)
 func (s *Svc) GetProposalByID(id string) (*types.GovernanceData, error) {
 	return s.plugin.GetProposalByID(id)
@@ -168,6 +179,21 @@ func (s *Svc) GetProposalByID(id string) (*types.GovernanceData, error) {
 // GetProposalByReference returns a proposal and its votes by reference (if exists)
 func (s *Svc) GetProposalByReference(ref string) (*types.GovernanceData, error) {
 	return s.plugin.GetProposalByReference(ref)
+}
+
+// GetNewMarketProposals returns proposals aiming to create new markets
+func (s *Svc) GetNewMarketProposals(marketID string) []*types.GovernanceData {
+	return s.plugin.GetNewMarketProposals(marketID)
+}
+
+// GetUpdateMarketProposals returns proposals aiming to update markets
+func (s *Svc) GetUpdateMarketProposals(marketID string) []*types.GovernanceData {
+	return s.plugin.GetUpdateMarketProposals(marketID)
+}
+
+// GetNetworkParametersProposals returns proposals aiming to update network
+func (s *Svc) GetNetworkParametersProposals() []*types.GovernanceData {
+	return s.plugin.GetNetworkParametersProposals()
 }
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal

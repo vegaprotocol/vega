@@ -123,9 +123,17 @@ type GovernanceDataService interface {
 	GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData
 	GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData
 	GetProposalsByMarket(marketID string) []*types.GovernanceData
+
 	GetProposalsByParty(partyID string) []*types.GovernanceData
+	GetVotesByParty(partyID string) []*types.Vote
+
 	GetProposalByID(id string) (*types.GovernanceData, error)
 	GetProposalByReference(ref string) (*types.GovernanceData, error)
+
+	GetNewMarketProposals(marketID string) []*types.GovernanceData
+	GetUpdateMarketProposals(marketID string) []*types.GovernanceData
+	GetNetworkParametersProposals() []*types.GovernanceData
+
 	ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData
 }
 
@@ -1408,7 +1416,7 @@ func (h *tradingDataService) GetProposalsByMarket(_ context.Context,
 }
 
 func (h *tradingDataService) GetProposalsByParty(_ context.Context,
-	in *protoapi.GetProposalsByPartyRequest,
+	in *protoapi.GetGovernanceByPartyRequest,
 ) (*protoapi.GetGovernanceDataResponse, error) {
 
 	startTime := vegatime.Now()
@@ -1419,6 +1427,21 @@ func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 	}
 	return &protoapi.GetGovernanceDataResponse{
 		Data: h.governanceService.GetProposalsByParty(in.PartyID),
+	}, nil
+}
+
+func (h *tradingDataService) GetVotesByParty(_ context.Context,
+	in *protoapi.GetGovernanceByPartyRequest,
+) (*protoapi.GetVotesResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetVotesByParty", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	return &protoapi.GetVotesResponse{
+		Votes: h.governanceService.GetVotesByParty(in.PartyID),
 	}, nil
 }
 
@@ -1433,7 +1456,30 @@ func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
 		return nil, err
 	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetProposalsByParty(in.PartyID),
+		Data: h.governanceService.GetNewMarketProposals(in.MarketID),
+	}, nil
+}
+
+func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
+	in *protoapi.GetMarketProposalsRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetUpdateMarketProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetNewMarketProposals(in.MarketID),
+	}, nil
+}
+
+func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context, _ *empty.Empty) (*protoapi.GetGovernanceDataResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetNetworkParametersProposals", startTime)
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetNetworkParametersProposals(),
 	}, nil
 }
 

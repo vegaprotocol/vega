@@ -197,7 +197,10 @@ service trading_data {
   rpc GetProposalsByMarket(GetProposalsByMarketRequest) returns (GetGovernanceDataResponse);
 
   // Get proposals by party authoring them
-  rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetGovernanceDataResponse);
+  rpc GetProposalsByParty(GetGovernanceByPartyRequest) returns (GetGovernanceDataResponse);
+
+  // Get proposals by party authoring them
+  rpc GetVotesByParty(GetGovernanceByPartyRequest) returns (GetVotesResponse);
 
   // Get proposals that aim creating new markets
   rpc GetNewMarketProposals(GetMarketProposalsRequest) returns (GetGovernanceDataResponse);
@@ -274,11 +277,15 @@ message GetProposalResponse {
   vega.GovernanceData proposal = 1;
 }
 
+message GetVotesResponse {
+  repeated vega.Vote votes = 1;
+}
+
 message GetProposalsByMarketRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
-message GetProposalsByPartyRequest {
+message GetGovernanceByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
 }
 

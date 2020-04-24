@@ -121,13 +121,23 @@ func (this *GetProposalResponse) Validate() error {
 	}
 	return nil
 }
+func (this *GetVotesResponse) Validate() error {
+	for _, item := range this.Votes {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Votes", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *GetProposalsByMarketRequest) Validate() error {
 	if this.MarketID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
 	}
 	return nil
 }
-func (this *GetProposalsByPartyRequest) Validate() error {
+func (this *GetGovernanceByPartyRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
