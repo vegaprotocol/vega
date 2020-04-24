@@ -345,32 +345,32 @@ type Query {
     inState: ProposalState
     "Returns proposals excluding those in the specified state. Leave out to set inState or skip both to get all proposals"
     notInState: ProposalState
-  ): [GovernanceData!]
+  ): [Proposal!]
 
   "A governance proposal located by its reference"
   proposalByReference(
     reference: String!
-  ): GovernanceData!
+  ): Proposal!
 
   "A governance proposal located by its ID"
   proposalByID(
     id: String!
-  ): GovernanceData!
+  ): Proposal!
 
   "Governance proposals that aim creating new markets"
   newMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
     marketId: String
-  ): [GovernanceData!]
+  ): [Proposal!]
 
   "Governance proposals that aim updating existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
     marketId: String
-  ): [GovernanceData!]
+  ): [Proposal!]
 
   "Governance proposals that aim updating Vega network parameters"
-  networkParametersProposals: [GovernanceData!]
+  networkParametersProposals: [Proposal!]
 }
 
 "Statistics about the node"
@@ -685,7 +685,7 @@ type Market {
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [GovernanceData]
+  ): [Proposal]
 }
 
 """
@@ -802,7 +802,7 @@ type Party {
     inState: ProposalState
   ): [Proposal]
 
-  votes: [Vote]
+  votes: [ProposalVote]
 }
 
 """
@@ -1338,10 +1338,7 @@ type Proposal {
   timestamp: String!
   "Terms of the proposal"
   terms: ProposalTerms!
-}
 
-type GovernanceData {
-  proposal: Proposal!
   "Yes votes cast for this proposal"
   yesVotes: [Vote]
   "No votes cast for this proposal"
@@ -1364,18 +1361,23 @@ enum VoteValue {
 
 type Vote {
   "The vote value cast"
-  Value: VoteValue!
+  value: VoteValue!
 
   "The party casting the vote"
-  Party: Party!
+  party: Party!
+}
 
-  "Proposal ID -> proposal casting the vote on"
-  ProposalID: ID!
+type ProposalVote {
+  "Cast vote"
+  vote: Vote!
+
+  "Proposal -> proposal casting the vote on"
+  proposal: Proposal!
 }
 
 type PreparedVote {
   "Raw, serialised vote to be signed"
   blob: String!
   "The vote serialised in the blob field"
-  vote: Vote!
+  vote: ProposalVote!
 }
