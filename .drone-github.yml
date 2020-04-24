@@ -137,7 +137,7 @@ steps:
           echo "system-tests failed." ;
           echo ;
           echo "\`\`\`" ;
-          grep -A1000 "=== Test summary ===" "$$logfile" ;
+          grep -A1000 "=== Test summary ===" "$$logfile" || echo "No test summary found" ;
           echo "\`\`\`"
         ) >"$$commentfile"
       - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$(cat "$$commentfile")")"
