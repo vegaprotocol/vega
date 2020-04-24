@@ -111,8 +111,9 @@ steps:
       # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
       - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
       - (
-          /usr/local/bin/systemtests.sh -v all ;
-          echo "$$?" >"$$codefile"
+          echo /usr/local/bin/systemtests.sh -v all ;
+          echo "$$?" >"$$codefile" ;
+          echo 1 >"$$codefile"
         ) 2>&1 | tee "$$logfile"
       - if test "$$(cat "$$codefile")" -gt 0 ; then
           echo "system-tests failed" ;
