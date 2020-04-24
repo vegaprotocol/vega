@@ -317,7 +317,9 @@ func (m *NewAsset) GetChanges() *AssetSource {
 }
 
 type ProposalTerms struct {
-	ClosingTimestamp      int64  `protobuf:"varint,1,opt,name=closingTimestamp,proto3" json:"closingTimestamp,omitempty"`
+	// Timestamp (Unix time in seconds) when voting closes for this proposal
+	ClosingTimestamp int64 `protobuf:"varint,1,opt,name=closingTimestamp,proto3" json:"closingTimestamp,omitempty"`
+	// Timestamp (Unix time in seconds) when proposal gets enacted (if passed)
 	EnactmentTimestamp    int64  `protobuf:"varint,2,opt,name=enactmentTimestamp,proto3" json:"enactmentTimestamp,omitempty"`
 	MinParticipationStake uint64 `protobuf:"varint,3,opt,name=minParticipationStake,proto3" json:"minParticipationStake,omitempty"`
 	ValidationTimestamp   int64  `protobuf:"varint,4,opt,name=validationTimestamp,proto3" json:"validationTimestamp,omitempty"`

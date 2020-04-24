@@ -2240,11 +2240,13 @@
       "properties": {
         "closingTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Timestamp (Unix time in seconds) when voting closes for this proposal"
         },
         "enactmentTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed)"
         },
         "minParticipationStake": {
           "type": "string",

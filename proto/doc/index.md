@@ -1708,8 +1708,8 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| closingTimestamp | [int64](#int64) |  |  |
-| enactmentTimestamp | [int64](#int64) |  |  |
+| closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
+| enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
 | minParticipationStake | [uint64](#uint64) |  |  |
 | validationTimestamp | [int64](#int64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
