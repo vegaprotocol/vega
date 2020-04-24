@@ -115,39 +115,38 @@ steps:
           echo "$$?" >"$$codefile" ;
           echo 1 >"$$codefile"
         ) 2>&1 | tee "$$logfile"
-      - if test "$$(cat "$$codefile")" -gt 0 ; then
-          echo "system-tests failed" ;
-          msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)" ;
-          if test "$$DRONE_TARGET_BRANCH" = master ; then
-            echo "Failure while attempting to merge to master is fatal." ;
-            exitcode=1 ;
-            msg="$$msgprefix *pipeline failed* :cry:" ;
-          else
-            exitcode=0 ;
-            msg="$$msgprefix (pipeline continues)" ;
-          fi ;
-          echo "Notify Slack" ;
-          slack_notify.py
-            --hookurl "$$SLACK_HOOK_URL"
-            --recipient "#tradingcore"
-            --text "$$msg"
-            --username "nagbot" ;
-          fi ;
-          (
-            echo "system-tests failed." ;
-            echo ;
-            echo "\`\`\`" ;
-            grep -A1000 "=== Test summary ===" "$$logfile" ;
-            echo "\`\`\`"
-          ) >/tmp/comment.txt ;
-          github_issue_comment.py
-            --token "$$GITHUB_API_TOKEN"
-            --owner vegaprotocol
-            --repo vega
-            --issue "$$DRONE_PULL_REQUEST"
-            --comment "$$(cat /tmp/comment.txt)" ;
-          exit "$$exitcode" ;
+      - test "$$(cat "$$codefile")" = 0 && exit 0
+      # system-tests failed
+      - msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)"
+      - if test "$$DRONE_TARGET_BRANCH" = master ; then
+          echo "Failure while attempting to merge to master is fatal." ;
+          exitcode=1 ;
+          msg="$$msgprefix *pipeline failed* :cry:" ;
+        else
+          exitcode=0 ;
+          msg="$$msgprefix (pipeline continues)" ;
         fi
+      # Notify Slack
+      - msg="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$msg")"
+      - 'curl -s -XPOST
+          -d "{\"channel\": \"#tradingcore\", \"icon_emoji\": \":robot:\", \"text\": $$msg, \"username\": \"nagbot\" }"
+          "$$SLACK_HOOK_URL"'
+      # Make Github PR comment
+      - commentfile="$$(mktemp)"
+      - (
+          echo "system-tests failed." ;
+          echo ;
+          echo "\`\`\`" ;
+          grep -A1000 "=== Test summary ===" "$$logfile" ;
+          echo "\`\`\`"
+        ) >"$$commentfile"
+      - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$(cat "$$commentfile")")"
+      - 'curl -s -XPOST
+          -H "Accept: application/vnd.github.v3+json"
+          -H "Authorization: $$GITHUB_API_TOKEN"
+          -d "{\"body\": $$body}"
+          "https://api.github.com/repos/vegaprotocol/vega/issues/$$DRONE_PULL_REQUEST/comments"'
+      - exit "$$exitcode"
     depends_on:
       - fetch # !!!!!!!!!!!!!!!!!! DO NOT MERGE !!!!!!!!!!!!!!!!!!!!!!!!!
       # - test-PR
