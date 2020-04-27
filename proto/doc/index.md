@@ -1464,7 +1464,6 @@
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
 | GetAllGovernanceData | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get all governance data (proposals and votes) |
 | GetProposalsInState | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals (and their current votes) that are in the specified state |
-| GetProposalsNotInState | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals (and their current votes) excluding those in the specified state |
 | GetProposalsByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals by party authoring them |
 | GetVotesByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get proposals by party authoring them |
 | GetNewMarketProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim creating new markets |

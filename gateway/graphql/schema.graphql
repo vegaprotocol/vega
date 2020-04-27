@@ -357,10 +357,8 @@ type Query {
 
   "All governance proposals in the VEGA network"
   proposals(
-    "Returns only proposals in the specified state. Leave out to set notInState or skip both to get all proposals"
+    "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-    "Returns proposals excluding those in the specified state. Leave out to set inState or skip both to get all proposals"
-    notInState: ProposalState
   ): [Proposal!]
 
   "A governance proposal located by its reference"

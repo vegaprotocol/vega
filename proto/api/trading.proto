@@ -190,9 +190,6 @@ service trading_data {
   // Get proposals (and their current votes) that are in the specified state
   rpc GetProposalsInState(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
-  // Get proposals (and their current votes) excluding those in the specified state
-  rpc GetProposalsNotInState(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
-
   // Get proposals by party authoring them
   rpc GetProposalsByParty(GetGovernanceByPartyRequest) returns (GetGovernanceDataResponse);
 

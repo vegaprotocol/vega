@@ -301,7 +301,7 @@ type ComplexityRoot struct {
 		Party                      func(childComplexity int, id string) int
 		ProposalByID               func(childComplexity int, id string) int
 		ProposalByReference        func(childComplexity int, reference string) int
-		Proposals                  func(childComplexity int, inState *ProposalState, notInState *ProposalState) int
+		Proposals                  func(childComplexity int, inState *ProposalState) int
 		Statistics                 func(childComplexity int) int
 		UpdateMarketProposals      func(childComplexity int, marketID *string) int
 	}
@@ -522,7 +522,7 @@ type QueryResolver interface {
 	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*proto.Order, error)
 	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
-	Proposals(ctx context.Context, inState *ProposalState, notInState *ProposalState) ([]*Proposal, error)
+	Proposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error)
 	ProposalByReference(ctx context.Context, reference string) (*Proposal, error)
 	ProposalByID(ctx context.Context, id string) (*Proposal, error)
 	NewMarketProposals(ctx context.Context) ([]*Proposal, error)
@@ -1789,7 +1789,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Proposals(childComplexity, args["inState"].(*ProposalState), args["notInState"].(*ProposalState)), true
+		return e.complexity.Query.Proposals(childComplexity, args["inState"].(*ProposalState)), true
 
 	case "Query.statistics":
 		if e.complexity.Query.Statistics == nil {
@@ -2772,10 +2772,8 @@ type Query {
 
   "All governance proposals in the VEGA network"
   proposals(
-    "Returns only proposals in the specified state. Leave out to set notInState or skip both to get all proposals"
+    "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-    "Returns proposals excluding those in the specified state. Leave out to set inState or skip both to get all proposals"
-    notInState: ProposalState
   ): [Proposal!]
 
   "A governance proposal located by its reference"
@@ -4512,14 +4510,6 @@ func (ec *executionContext) field_Query_proposals_args(ctx context.Context, rawA
 		}
 	}
 	args["inState"] = arg0
-	var arg1 *ProposalState
-	if tmp, ok := rawArgs["notInState"]; ok {
-		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["notInState"] = arg1
 	return args, nil
 }
 
@@ -10335,7 +10325,7 @@ func (ec *executionContext) _Query_proposals(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Proposals(rctx, args["inState"].(*ProposalState), args["notInState"].(*ProposalState))
+		return ec.resolvers.Query().Proposals(rctx, args["inState"].(*ProposalState))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
