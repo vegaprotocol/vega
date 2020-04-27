@@ -3,6 +3,7 @@ package assets
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/common"
@@ -18,6 +19,7 @@ var (
 	ErrAssetDoesNotExist = errors.New("asset does not exist")
 	ErrAssetExistForID   = errors.New("an asset already exist for this ID")
 	ErrUnknowAssetSource = errors.New("unknown asset source")
+	ErrNoAssetForRef     = errors.New("no assets for proposal reference")
 )
 
 type Asset interface {
@@ -45,6 +47,12 @@ type Asset interface {
 	String() string
 }
 
+// TimeService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/assets TimeService
+type TimeService interface {
+	NotifyOnTick(f func(time.Time))
+}
+
 type NodeWallet interface {
 	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
@@ -55,30 +63,47 @@ type Service struct {
 
 	// id to asset
 	// these assets exists and have been save
-	assets map[uint64]Asset
+	assets map[string]Asset
 
 	// this is a list of pending asset which are currently going through
 	// proposal, they can later on be promoted to the asset lists once
 	// the proposal is accepted by both the nodes and the users
-	pendingAssets map[uint64]Asset
+	pendingAssets map[string]Asset
+
+	// map of reference to proposal id
+	// use to find back an asset when the governance process
+	// is still ongoing
+	refs map[string]string
 
 	nw NodeWallet
+
+	idgen *IDgenerator
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet) (*Service, error) {
+func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	return &Service{
+
+	s := &Service{
 		log:           log,
 		cfg:           cfg,
-		assets:        map[uint64]Asset{},
-		pendingAssets: map[uint64]Asset{},
+		assets:        map[string]Asset{},
+		pendingAssets: map[string]Asset{},
+		refs:          map[string]string{},
 		nw:            nw,
-	}, nil
+		idgen:         NewIDGen(),
+	}
+	ts.NotifyOnTick(s.onTick)
+	return s, nil
+}
+
+func (a *Service) onTick(t time.Time) {
+	// update block time on id generator
+	a.idgen.NewBatch()
 }
 
 // Enable move the state of an from pending the list of valid and accepted assets
-func (a *Service) Enable(assetID uint64) error {
+func (a *Service) Enable(assetID string) error {
 	asset, ok := a.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
@@ -92,16 +117,11 @@ func (a *Service) Enable(assetID uint64) error {
 }
 
 // NewAsset add a new asset to the pending list of assets
-func (s *Service) NewAsset(assetID uint64, assetSrc *types.AssetSource) error {
-	// ensure an idea for this asset does note exists already
-	_, ok := s.pendingAssets[assetID]
-	if ok {
-		return ErrAssetExistForID
-	}
-	_, ok = s.assets[assetID]
-	if ok {
-		return ErrAssetExistForID
-	}
+// the ref is the reference of proposal which submitted the new asset
+// returns the assetID and an error
+func (s *Service) NewAsset(ref string, assetSrc *types.AssetSource) (string, error) {
+	// make a new asset id
+	assetID := s.idgen.NewID()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
@@ -109,21 +129,24 @@ func (s *Service) NewAsset(assetID uint64, assetSrc *types.AssetSource) error {
 	case *types.AssetSource_Erc20:
 		wal, ok := s.nw.Get(nodewallet.Ethereum)
 		if !ok {
-			return errors.New("missing wallet for ETH")
+			return "", errors.New("missing wallet for ETH")
 		}
 		asset, err := erc20.New(assetID, assetSrcImpl.Erc20, wal)
 		if err != nil {
-			return err
+			return "", err
 		}
 		s.pendingAssets[assetID] = asset
 	default:
-		return ErrUnknowAssetSource
+		return "", ErrUnknowAssetSource
 	}
-	return nil
+	// setup the ref lookup table
+	s.refs[ref] = assetID
+
+	return assetID, nil
 }
 
 // RemovePending remove and asset from the list of pending assets
-func (s *Service) RemovePending(assetID uint64) error {
+func (s *Service) RemovePending(assetID string) error {
 	_, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
@@ -143,7 +166,7 @@ func (s *Service) assetHash(asset Asset) []byte {
 	return hash([]byte(buf))
 }
 
-func (s *Service) Get(assetID uint64) (Asset, error) {
+func (s *Service) Get(assetID string) (Asset, error) {
 	asset, ok := s.assets[assetID]
 	if ok {
 		return asset, nil
@@ -153,12 +176,20 @@ func (s *Service) Get(assetID uint64) (Asset, error) {
 		return asset, nil
 	}
 	return nil, ErrAssetDoesNotExist
+}
 
+func (s *Service) GetByRef(ref string) (Asset, error) {
+	id, ok := s.refs[ref]
+	if !ok {
+		return nil, ErrNoAssetForRef
+	}
+
+	return s.Get(id)
 }
 
 // GetAssetHash return an hash of the given asset to be used
 // signed to validate the asset on the vega chain
-func (s *Service) AssetHash(assetID uint64) ([]byte, error) {
+func (s *Service) AssetHash(assetID string) ([]byte, error) {
 	asset, ok := s.assets[assetID]
 	if ok {
 		return s.assetHash(asset), nil

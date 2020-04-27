@@ -23,7 +23,7 @@ type ERC20 struct {
 	wallet  nodewallet.ETHWallet
 }
 
-func New(id uint64, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
+func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 	wal, ok := w.(nodewallet.ETHWallet)
 	if !ok {
 		return nil, ErrMissingETHWalletFromNodeWallet

@@ -42,7 +42,6 @@ func getTestCommander(t *testing.T) *testCommander {
 }
 
 func TestCommand(t *testing.T) {
-	t.Run("Unsigned command - success", testUnsignedCommandSuccess)
 	t.Run("Unsigned command - Fail", testUnsignedCommandFail)
 	t.Run("Signed command - success", testSignedCommandSuccess)
 	t.Run("Signed command - signature not required", testSignedUnsignedSuccess)
@@ -53,16 +52,6 @@ func testSetChain(t *testing.T) {
 	commander := getTestCommander(t)
 	defer commander.Finish()
 	commander.SetChain(&blockchain.Client{})
-}
-
-func testUnsignedCommandSuccess(t *testing.T) {
-	commander := getTestCommander(t)
-	defer commander.Finish()
-
-	cmd := blockchain.RegisterNodeCommand
-	payload := &types.NodeRegistration{}
-	commander.chain.EXPECT().SubmitNodeRegistration(commander.ctx, gomock.Any()).Times(1)
-	assert.NoError(t, commander.Command(nil, cmd, payload))
 }
 
 func testUnsignedCommandFail(t *testing.T) {

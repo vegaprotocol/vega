@@ -1541,7 +1541,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [uint64](#uint64) |  |  |
+| ID | [string](#string) |  |  |
 | name | [string](#string) |  |  |
 | symbol | [string](#string) |  |  |
 | totalSupply | [string](#string) |  | this may very much likely be a big.Int |
