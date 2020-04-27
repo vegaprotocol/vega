@@ -311,11 +311,15 @@
                 </li>
 
                 <li>
-                  <a href="#api.ObserveProposalsRequest"><span class="badge">M</span>ObserveProposalsRequest</a>
+                  <a href="#api.ObservePartyProposalsRequest"><span class="badge">M</span>ObservePartyProposalsRequest</a>
                 </li>
 
                 <li>
-                  <a href="#api.ObserveVotesRequest"><span class="badge">M</span>ObserveVotesRequest</a>
+                  <a href="#api.ObservePartyVotesRequest"><span class="badge">M</span>ObservePartyVotesRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObserveProposalVotesRequest"><span class="badge">M</span>ObserveProposalVotesRequest</a>
                 </li>
 
                 <li>
@@ -2117,7 +2121,7 @@
 
 
 
-        <h3 id="api.ObserveProposalsRequest">ObserveProposalsRequest</h3>
+        <h3 id="api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</h3>
         <p></p>
 
 
@@ -2141,7 +2145,58 @@
 
 
 
-        <h3 id="api.ObserveVotesRequest">ObserveVotesRequest</h3>
+        <h3 id="api.ObservePartyVotesRequest">ObservePartyVotesRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.ObserveProposalVotesRequest">ObserveProposalVotesRequest</h3>
         <p></p>
 
 
@@ -4067,6 +4122,34 @@
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
                 <td><a href="#vega.GovernanceData">.vega.GovernanceData</a> stream</td>
                 <td><p>Subscribe to a stream of all governance updates</p></td>
+              </tr>
+
+              <tr>
+                <td>ObserveMarketGovernance</td>
+                <td><a href="#api.ObserveMarketGovernanceRequest">ObserveMarketGovernanceRequest</a></td>
+                <td><a href="#vega.GovernanceData">.vega.GovernanceData</a> stream</td>
+                <td><p>Subscribe to a stream of governance data updates for specified market</p></td>
+              </tr>
+
+              <tr>
+                <td>ObservePartyProposals</td>
+                <td><a href="#api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</a></td>
+                <td><a href="#vega.Proposal">.vega.Proposal</a> stream</td>
+                <td><p>Subscribe to a stream of proposal updates</p></td>
+              </tr>
+
+              <tr>
+                <td>ObservePartyVotes</td>
+                <td><a href="#api.ObservePartyVotesRequest">ObservePartyVotesRequest</a></td>
+                <td><a href="#vega.Vote">.vega.Vote</a> stream</td>
+                <td><p>Subscribe to a stream of votes cast by a specific party</p></td>
+              </tr>
+
+              <tr>
+                <td>ObserveProposalVotes</td>
+                <td><a href="#api.ObserveProposalVotesRequest">ObserveProposalVotesRequest</a></td>
+                <td><a href="#vega.Vote">.vega.Vote</a> stream</td>
+                <td><p>Subscribe to a stream of proposal votes</p></td>
               </tr>
 
               <tr>

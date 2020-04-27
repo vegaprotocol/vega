@@ -361,7 +361,9 @@ type ComplexityRoot struct {
 		MarketDepth func(childComplexity int, marketID string) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
 		Positions   func(childComplexity int, partyID string) int
+		Proposals   func(childComplexity int, partyID *string, marketID *string) int
 		Trades      func(childComplexity int, marketID *string, partyID *string) int
+		Votes       func(childComplexity int, proposalID *string, proposalReference *string, partyID *string) int
 	}
 
 	TradableInstrument struct {
@@ -562,6 +564,8 @@ type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
+	Proposals(ctx context.Context, partyID *string, marketID *string) (<-chan *Proposal, error)
+	Votes(ctx context.Context, proposalID *string, proposalReference *string, partyID *string) (<-chan *ProposalVote, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -2146,6 +2150,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Positions(childComplexity, args["partyId"].(string)), true
 
+	case "Subscription.proposals":
+		if e.complexity.Subscription.Proposals == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_proposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Proposals(childComplexity, args["partyID"].(*string), args["marketID"].(*string)), true
+
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
 			break
@@ -2157,6 +2173,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Trades(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
+
+	case "Subscription.votes":
+		if e.complexity.Subscription.Votes == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_votes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Votes(childComplexity, args["proposalID"].(*string), args["proposalReference"].(*string), args["partyID"].(*string)), true
 
 	case "TradableInstrument.instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -2565,7 +2593,7 @@ type Subscription {
     type: AccountType
   ): Account!
 
-  "subscribe to the mark price changes"
+  "Subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: String
@@ -2578,6 +2606,24 @@ type Subscription {
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketID: String
   ): MarginLevels!
+
+  "Subscribe to proposals. Leave out all arguments to receive all proposals"
+  proposals(
+    "Optional party id whose proposals are to be streamed"
+    partyID: String
+    "Stream governance data affecting this market, selected by optional market id"
+    marketID: String
+  ): Proposal!
+
+  "Subscribe to votes. Leave out all arguments to receive all votes"
+  votes(
+    "Optional proposal id which votes are to be streamed"
+    proposalID: String
+    "Optional proposal reference which votes are to be streamed"
+    proposalReference: String
+    "Optional party id whose votes are to be streamed"
+    partyID: String
+  ): ProposalVote!
 }
 
 "Margins for a given a trader"
@@ -4693,6 +4739,28 @@ func (ec *executionContext) field_Subscription_positions_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Subscription_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyID"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["marketID"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketID"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4712,6 +4780,36 @@ func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, 
 		}
 	}
 	args["partyId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_votes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["proposalID"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["proposalID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["proposalReference"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["proposalReference"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["partyID"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyID"] = arg2
 	return args, nil
 }
 
@@ -12312,6 +12410,112 @@ func (ec *executionContext) _Subscription_margins(ctx context.Context, field gra
 	}
 }
 
+func (ec *executionContext) _Subscription_proposals(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_proposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Proposals(rctx, args["partyID"].(*string), args["marketID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *Proposal)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
+func (ec *executionContext) _Subscription_votes(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_votes_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Votes(rctx, args["proposalID"].(*string), args["proposalReference"].(*string), args["partyID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *ProposalVote)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -17487,6 +17691,10 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_marketData(ctx, fields[0])
 	case "margins":
 		return ec._Subscription_margins(ctx, fields[0])
+	case "proposals":
+		return ec._Subscription_proposals(ctx, fields[0])
+	case "votes":
+		return ec._Subscription_votes(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}

@@ -161,10 +161,16 @@ func (this *GetMarketProposalsRequest) Validate() error {
 func (this *ObserveMarketGovernanceRequest) Validate() error {
 	return nil
 }
-func (this *ObserveProposalsRequest) Validate() error {
+func (this *ObservePartyProposalsRequest) Validate() error {
 	return nil
 }
-func (this *ObserveVotesRequest) Validate() error {
+func (this *ObserveProposalVotesRequest) Validate() error {
+	return nil
+}
+func (this *ObservePartyVotesRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *MarginLevelsSubscribeRequest) Validate() error {

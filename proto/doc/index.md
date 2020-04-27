@@ -37,8 +37,9 @@
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
     - [ObserveMarketGovernanceRequest](#api.ObserveMarketGovernanceRequest)
-    - [ObserveProposalsRequest](#api.ObserveProposalsRequest)
-    - [ObserveVotesRequest](#api.ObserveVotesRequest)
+    - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
+    - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
+    - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
     - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
@@ -710,9 +711,9 @@
 
 
 
-<a name="api.ObserveProposalsRequest"></a>
+<a name="api.ObservePartyProposalsRequest"></a>
 
-### ObserveProposalsRequest
+### ObservePartyProposalsRequest
 
 
 
@@ -725,9 +726,24 @@
 
 
 
-<a name="api.ObserveVotesRequest"></a>
+<a name="api.ObservePartyVotesRequest"></a>
 
-### ObserveVotesRequest
+### ObservePartyVotesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.ObserveProposalVotesRequest"></a>
+
+### ObserveProposalVotesRequest
 
 
 
@@ -1490,6 +1506,10 @@
 | GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get a proposal by ID |
 | GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get a proposal by reference |
 | ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
+| ObserveMarketGovernance | [ObserveMarketGovernanceRequest](#api.ObserveMarketGovernanceRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of governance data updates for specified market |
+| ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.Proposal](#vega.Proposal) stream | Subscribe to a stream of proposal updates |
+| ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
+| ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |

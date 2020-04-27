@@ -221,13 +221,16 @@ service trading_data {
   rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
   
   // Subscribe to a stream of governance data updates for specified market
-  //rpc ObserveMarketGovernance(ObserveMarketGovernanceRequest) returns (stream vega.GovernanceData);
+  rpc ObserveMarketGovernance(ObserveMarketGovernanceRequest) returns (stream vega.GovernanceData);
   
   // Subscribe to a stream of proposal updates
-  //rpc ObserveProposals(ObserveProposalsRequest) returns (stream vega.Proposal);
+  rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.Proposal);
+
+  // Subscribe to a stream of votes cast by a specific party
+  rpc ObservePartyVotes(ObservePartyVotesRequest) returns (stream vega.Vote);
 
   // Subscribe to a stream of proposal votes
-  //rpc ObserveVotes(ObserveVotesRequest) returns (stream vega.Vote);
+  rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
   // Misc
 
@@ -305,15 +308,18 @@ message ObserveMarketGovernanceRequest {
   string marketID = 1;
 }
 
-message ObserveProposalsRequest {
+message ObservePartyProposalsRequest {
   string partyID = 1;
 }
 
-message ObserveVotesRequest {
+message ObserveProposalVotesRequest {
   oneof proposal {
     string ID = 1;
     string Reference = 2;
   }
+}
+message ObservePartyVotesRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message MarginLevelsSubscribeRequest {

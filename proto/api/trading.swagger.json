@@ -2709,6 +2709,18 @@
       },
       "title": "Stream result of vegaPosition"
     },
+    "vegaProposal": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaProposal"
+    },
     "vegaTransferResponse": {
       "type": "object",
       "properties": {
@@ -2720,6 +2732,18 @@
         }
       },
       "title": "Stream result of vegaTransferResponse"
+    },
+    "vegaVote": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaVote"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaVote"
     }
   }
 }

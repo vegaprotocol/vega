@@ -160,7 +160,7 @@ type Subscription {
     type: AccountType
   ): Account!
 
-  "subscribe to the mark price changes"
+  "Subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: String
@@ -173,6 +173,24 @@ type Subscription {
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketID: String
   ): MarginLevels!
+
+  "Subscribe to proposals. Leave out all arguments to receive all proposals"
+  proposals(
+    "Optional party id whose proposals are to be streamed"
+    partyID: String
+    "Stream governance data affecting this market, selected by optional market id"
+    marketID: String
+  ): Proposal!
+
+  "Subscribe to votes. Leave out all arguments to receive all votes"
+  votes(
+    "Optional proposal id which votes are to be streamed"
+    proposalID: String
+    "Optional proposal reference which votes are to be streamed"
+    proposalReference: String
+    "Optional party id whose votes are to be streamed"
+    partyID: String
+  ): ProposalVote!
 }
 
 "Margins for a given a trader"
