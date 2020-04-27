@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -434,7 +435,9 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
 	for _, v := range execsetup.accounts.data {
-		cumul += uint64(v.Balance)
+		if v.Asset != collateral.TokenAsset {
+			cumul += uint64(v.Balance)
+		}
 	}
 
 	if amount != cumul {

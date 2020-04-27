@@ -76,6 +76,21 @@ func (mr *MockCollateralMockRecorder) GetAccountByID(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountByID", reflect.TypeOf((*MockCollateral)(nil).GetAccountByID), arg0)
 }
 
+// GetPartyTokenAccount mocks base method
+func (m *MockCollateral) GetPartyTokenAccount(arg0 string) (*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartyTokenAccount", arg0)
+	ret0, _ := ret[0].(*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartyTokenAccount indicates an expected call of GetPartyTokenAccount
+func (mr *MockCollateralMockRecorder) GetPartyTokenAccount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyTokenAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyTokenAccount), arg0)
+}
+
 // IncrementBalance mocks base method
 func (m *MockCollateral) IncrementBalance(arg0 string, arg1 uint64) error {
 	m.ctrl.T.Helper()
