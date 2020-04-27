@@ -107,11 +107,11 @@ func (p *Proposals) storeProposal(proposal *types.Proposal) {
 			types.Vote_NO:  map[string]*types.Vote{},
 		}
 	}
-	switch proposal.Terms.Change.(type) {
+	switch t := proposal.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		p.newMarkets[proposal.Terms.GetNewMarket().Changes.Id] = proposal // each market has unique id
+		p.newMarkets[t.Changes.Id] = proposal // each market has unique id
 	case *types.ProposalTerms_UpdateMarket:
-		//id := proposal.Terms.GetUpdateMarket().Changes.Id
+		//id := t.Changes.Id
 		//p.marketUpdates[id] = append(p.marketUpdates[id], proposal)
 	case *types.ProposalTerms_UpdateNetwork:
 		p.networkUpdates = append(p.networkUpdates, proposal)
