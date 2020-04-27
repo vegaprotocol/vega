@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
@@ -39,7 +38,6 @@ type Config struct {
 	Position   positions.Config
 	Settlement settlement.Config
 	Collateral collateral.Config
-	Governance governance.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -57,7 +55,6 @@ func NewDefaultConfig(defaultConfigDirPath string) Config {
 		Position:                    positions.NewDefaultConfig(),
 		Settlement:                  settlement.NewDefaultConfig(),
 		Collateral:                  collateral.NewDefaultConfig(),
-		Governance:                  governance.NewDefaultConfig(),
 	}
 	return c
 }

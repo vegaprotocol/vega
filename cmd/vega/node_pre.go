@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -39,6 +40,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 )
@@ -325,6 +327,22 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
+	var (
+		err error
+	)
+
+	now, err := time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap("unable to get the time now", err)
+	}
+
+	//  create collateral
+	l.collateral, err = collateral.New(log, l.conf.Collateral, l.accountBuf, l.lossSocBuf, now)
+	if err != nil {
+		log.Error("unable to initialise collateral", logging.Error(err))
+		return nil
+	}
+
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
@@ -344,7 +362,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.proposalBuf,
 		l.voteBuf,
 		l.mktscfg,
+		l.collateral
 	)
+
+
+	l.governance := governance.NewEngine(log, l.conf.Governance, cengine, l.proposalBuf, l.voteBuf, now)
+
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
 	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets)

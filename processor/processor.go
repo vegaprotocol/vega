@@ -56,6 +56,10 @@ type ExecutionEngine interface {
 	VoteOnProposal(vote *types.Vote) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
+type GovernanceEngine interface {
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
 type Stats interface {
 	IncTotalCreateOrder()
@@ -117,6 +121,7 @@ type Processor struct {
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
+	gov               GovernanceEngine
 	time              TimeService
 	wallet            Wallet
 	assets            Assets
@@ -129,7 +134,7 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -139,6 +144,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		stat:              stat,
 		Config:            config,
 		exec:              exec,
+		gov:               gov,
 		time:              ts,
 		wallet:            wallet,
 		assets:            assets,
