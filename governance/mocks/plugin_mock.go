@@ -47,6 +47,20 @@ func (mr *MockPluginMockRecorder) GetAllGovernanceData() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllGovernanceData", reflect.TypeOf((*MockPlugin)(nil).GetAllGovernanceData))
 }
 
+// GetAllNewMarketProposals mocks base method
+func (m *MockPlugin) GetAllNewMarketProposals() []*proto.GovernanceData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllNewMarketProposals")
+	ret0, _ := ret[0].([]*proto.GovernanceData)
+	return ret0
+}
+
+// GetAllNewMarketProposals indicates an expected call of GetAllNewMarketProposals
+func (mr *MockPluginMockRecorder) GetAllNewMarketProposals() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNewMarketProposals", reflect.TypeOf((*MockPlugin)(nil).GetAllNewMarketProposals))
+}
+
 // GetNetworkParametersProposals mocks base method
 func (m *MockPlugin) GetNetworkParametersProposals() []*proto.GovernanceData {
 	m.ctrl.T.Helper()
@@ -61,18 +75,19 @@ func (mr *MockPluginMockRecorder) GetNetworkParametersProposals() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkParametersProposals", reflect.TypeOf((*MockPlugin)(nil).GetNetworkParametersProposals))
 }
 
-// GetNewMarketProposals mocks base method
-func (m *MockPlugin) GetNewMarketProposals(arg0 string) []*proto.GovernanceData {
+// GetNewMarketProposal mocks base method
+func (m *MockPlugin) GetNewMarketProposal(arg0 string) (*proto.GovernanceData, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNewMarketProposals", arg0)
-	ret0, _ := ret[0].([]*proto.GovernanceData)
-	return ret0
+	ret := m.ctrl.Call(m, "GetNewMarketProposal", arg0)
+	ret0, _ := ret[0].(*proto.GovernanceData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// GetNewMarketProposals indicates an expected call of GetNewMarketProposals
-func (mr *MockPluginMockRecorder) GetNewMarketProposals(arg0 interface{}) *gomock.Call {
+// GetNewMarketProposal indicates an expected call of GetNewMarketProposal
+func (mr *MockPluginMockRecorder) GetNewMarketProposal(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewMarketProposals", reflect.TypeOf((*MockPlugin)(nil).GetNewMarketProposals), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewMarketProposal", reflect.TypeOf((*MockPlugin)(nil).GetNewMarketProposal), arg0)
 }
 
 // GetProposalByID mocks base method

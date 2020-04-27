@@ -3730,7 +3730,7 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Timestamp when voting is closes for this proposal"
+  "Timestamp when voting closes for this proposal"
   closingTimestamp: String!
   "Timestamp when this proposal is executed (if passed)"
   enactmentTimestamp: String!

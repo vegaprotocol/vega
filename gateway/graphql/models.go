@@ -308,7 +308,7 @@ type Proposal struct {
 }
 
 type ProposalTerms struct {
-	// Timestamp when voting is closes for this proposal
+	// Timestamp when voting closes for this proposal
 	ClosingTimestamp string `json:"closingTimestamp"`
 	// Timestamp when this proposal is executed (if passed)
 	EnactmentTimestamp string `json:"enactmentTimestamp"`
