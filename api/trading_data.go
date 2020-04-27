@@ -130,7 +130,9 @@ type GovernanceDataService interface {
 	GetProposalByID(id string) (*types.GovernanceData, error)
 	GetProposalByReference(ref string) (*types.GovernanceData, error)
 
-	GetNewMarketProposals(marketID string) []*types.GovernanceData
+	GetNewMarketProposal(marketID string) (*types.GovernanceData, error)
+	GetAllNewMarketProposals() []*types.GovernanceData
+
 	GetUpdateMarketProposals(marketID string) []*types.GovernanceData
 	GetNetworkParametersProposals() []*types.GovernanceData
 
@@ -1455,8 +1457,17 @@ func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
+	if len(in.MarketID) == 0 {
+		return &protoapi.GetGovernanceDataResponse{
+			Data: h.governanceService.GetAllNewMarketProposals(),
+		}, nil
+	}
+	specifcNewMarket, err := h.governanceService.GetNewMarketProposal(in.MarketID)
+	if err != nil {
+		return nil, err
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetNewMarketProposals(in.MarketID),
+		Data: []*types.GovernanceData{specifcNewMarket},
 	}, nil
 }
 
@@ -1471,7 +1482,7 @@ func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
 		return nil, err
 	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetNewMarketProposals(in.MarketID),
+		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID),
 	}, nil
 }
 

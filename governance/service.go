@@ -36,7 +36,8 @@ type Plugin interface {
 	GetProposalByID(id string) (*types.GovernanceData, error)
 	GetProposalByReference(ref string) (*types.GovernanceData, error)
 
-	GetNewMarketProposals(marketID string) []*types.GovernanceData
+	GetNewMarketProposal(marketID string) (*types.GovernanceData, error)
+	GetAllNewMarketProposals() []*types.GovernanceData
 	GetUpdateMarketProposals(marketID string) []*types.GovernanceData
 	GetNetworkParametersProposals() []*types.GovernanceData
 }
@@ -181,9 +182,14 @@ func (s *Svc) GetProposalByReference(ref string) (*types.GovernanceData, error) 
 	return s.plugin.GetProposalByReference(ref)
 }
 
-// GetNewMarketProposals returns proposals aiming to create new markets
-func (s *Svc) GetNewMarketProposals(marketID string) []*types.GovernanceData {
-	return s.plugin.GetNewMarketProposals(marketID)
+// GetNewMarketProposal returns proposal aiming to create specific new market
+func (s *Svc) GetNewMarketProposal(marketID string) (*types.GovernanceData, error) {
+	return s.plugin.GetNewMarketProposal(marketID)
+}
+
+// GetAllNewMarketProposals returns proposals aiming to create new markets
+func (s *Svc) GetAllNewMarketProposals() []*types.GovernanceData {
+	return s.plugin.GetAllNewMarketProposals()
 }
 
 // GetUpdateMarketProposals returns proposals aiming to update markets

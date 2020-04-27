@@ -109,10 +109,10 @@ func (p *Proposals) storeProposal(proposal *types.Proposal) {
 	}
 	switch t := proposal.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		p.newMarkets[t.Changes.Id] = proposal // each market has unique id
-	case *types.ProposalTerms_UpdateMarket:
-		//id := t.Changes.Id
-		//p.marketUpdates[id] = append(p.marketUpdates[id], proposal)
+		p.newMarkets[t.NewMarket.Changes.Id] = proposal // each market has unique id
+	//case *types.ProposalTerms_UpdateMarket:
+	//id := t.Changes.Id
+	//p.marketUpdates[id] = append(p.marketUpdates[id], proposal)
 	case *types.ProposalTerms_UpdateNetwork:
 		p.networkUpdates = append(p.networkUpdates, proposal)
 	}
@@ -304,17 +304,20 @@ func (p *Proposals) GetProposalByReference(ref string) (*types.GovernanceData, e
 	return nil, ErrProposalNotFound
 }
 
-// GetNewMarketProposals returns proposals aiming to create new markets
-func (p *Proposals) GetNewMarketProposals(marketID string) []*types.GovernanceData {
+// GetNewMarketProposal returns proposal aiming to create a specific new market
+func (p *Proposals) GetNewMarketProposal(marketID string) (*types.GovernanceData, error) {
 	if len(marketID) != 0 {
 		p.mu.RLock()
 		defer p.mu.RUnlock()
 		if v, ok := p.newMarkets[marketID]; ok {
-			return []*types.GovernanceData{p.getGovernanceData(*v)}
+			return p.getGovernanceData(*v), nil
 		}
-		return nil
 	}
+	return nil, ErrMarketNotFound
+}
 
+// GetAllNewMarketProposals returns proposals aiming to create new markets
+func (p *Proposals) GetAllNewMarketProposals() []*types.GovernanceData {
 	p.mu.RLock()
 	result := make([]*types.GovernanceData, 0, len(p.newMarkets))
 	for _, v := range p.newMarkets {
