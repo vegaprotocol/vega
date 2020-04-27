@@ -178,8 +178,6 @@ type Subscription {
   proposals(
     "Optional party id whose proposals are to be streamed"
     partyID: String
-    "Stream governance data affecting this market, selected by optional market id"
-    marketID: String
   ): Proposal!
 
   "Subscribe to votes. Leave out all arguments to receive all votes"
@@ -376,10 +374,7 @@ type Query {
   ): Proposal!
 
   "Governance proposals that aim creating new markets"
-  newMarketProposals(
-    "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: String
-  ): [Proposal!]
+  newMarketProposals: [Proposal!]
 
   "Governance proposals that aim updating existing markets"
   updateMarketProposals(
@@ -699,11 +694,6 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
-
-  proposals(
-    "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal]
 }
 
 """

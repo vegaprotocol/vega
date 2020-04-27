@@ -131,7 +131,7 @@ func (this *GetVotesResponse) Validate() error {
 	}
 	return nil
 }
-func (this *GetProposalsByMarketRequest) Validate() error {
+func (this *GetUpdateMarketProposalsRequest) Validate() error {
 	if this.MarketID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
 	}
@@ -153,12 +153,6 @@ func (this *GetProposalByReferenceRequest) Validate() error {
 	if this.Reference == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
 	}
-	return nil
-}
-func (this *GetMarketProposalsRequest) Validate() error {
-	return nil
-}
-func (this *ObserveMarketGovernanceRequest) Validate() error {
 	return nil
 }
 func (this *ObservePartyProposalsRequest) Validate() error {

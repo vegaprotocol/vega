@@ -228,8 +228,7 @@ type Market struct {
 	// Query an order by reference for the given market
 	OrderByReference *proto.Order `json:"orderByReference"`
 	// marketData for the given market
-	Data      *proto.MarketData `json:"data"`
-	Proposals []*Proposal       `json:"proposals"`
+	Data *proto.MarketData `json:"data"`
 }
 
 // Input variation of market details same to those defined in Market type

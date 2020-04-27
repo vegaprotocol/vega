@@ -147,7 +147,6 @@ type ComplexityRoot struct {
 		Name               func(childComplexity int) int
 		OrderByReference   func(childComplexity int, reference string) int
 		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
-		Proposals          func(childComplexity int, inState *ProposalState) int
 		TradableInstrument func(childComplexity int) int
 		Trades             func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode        func(childComplexity int) int
@@ -294,7 +293,7 @@ type ComplexityRoot struct {
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
 		NetworkParametersProposals func(childComplexity int) int
-		NewMarketProposals         func(childComplexity int, marketID *string) int
+		NewMarketProposals         func(childComplexity int) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
 		OrderByReferenceID         func(childComplexity int, referenceID string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
@@ -361,7 +360,7 @@ type ComplexityRoot struct {
 		MarketDepth func(childComplexity int, marketID string) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
 		Positions   func(childComplexity int, partyID string) int
-		Proposals   func(childComplexity int, partyID *string, marketID *string) int
+		Proposals   func(childComplexity int, partyID *string) int
 		Trades      func(childComplexity int, marketID *string, partyID *string) int
 		Votes       func(childComplexity int, proposalID *string, proposalReference *string, partyID *string) int
 	}
@@ -526,7 +525,7 @@ type QueryResolver interface {
 	Proposals(ctx context.Context, inState *ProposalState, notInState *ProposalState) ([]*Proposal, error)
 	ProposalByReference(ctx context.Context, reference string) (*Proposal, error)
 	ProposalByID(ctx context.Context, id string) (*Proposal, error)
-	NewMarketProposals(ctx context.Context, marketID *string) ([]*Proposal, error)
+	NewMarketProposals(ctx context.Context) ([]*Proposal, error)
 	UpdateMarketProposals(ctx context.Context, marketID *string) ([]*Proposal, error)
 	NetworkParametersProposals(ctx context.Context) ([]*Proposal, error)
 }
@@ -564,7 +563,7 @@ type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
-	Proposals(ctx context.Context, partyID *string, marketID *string) (<-chan *Proposal, error)
+	Proposals(ctx context.Context, partyID *string) (<-chan *Proposal, error)
 	Votes(ctx context.Context, proposalID *string, proposalReference *string, partyID *string) (<-chan *ProposalVote, error)
 }
 type TradeResolver interface {
@@ -974,18 +973,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
-
-	case "Market.proposals":
-		if e.complexity.Market.Proposals == nil {
-			break
-		}
-
-		args, err := ec.field_Market_proposals_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.Proposals(childComplexity, args["inState"].(*ProposalState)), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -1706,12 +1693,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_newMarketProposals_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.NewMarketProposals(childComplexity, args["marketId"].(*string)), true
+		return e.complexity.Query.NewMarketProposals(childComplexity), true
 
 	case "Query.orderByID":
 		if e.complexity.Query.OrderByID == nil {
@@ -2160,7 +2142,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Proposals(childComplexity, args["partyID"].(*string), args["marketID"].(*string)), true
+		return e.complexity.Subscription.Proposals(childComplexity, args["partyID"].(*string)), true
 
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
@@ -2611,8 +2593,6 @@ type Subscription {
   proposals(
     "Optional party id whose proposals are to be streamed"
     partyID: String
-    "Stream governance data affecting this market, selected by optional market id"
-    marketID: String
   ): Proposal!
 
   "Subscribe to votes. Leave out all arguments to receive all votes"
@@ -2809,10 +2789,7 @@ type Query {
   ): Proposal!
 
   "Governance proposals that aim creating new markets"
-  newMarketProposals(
-    "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: String
-  ): [Proposal!]
+  newMarketProposals: [Proposal!]
 
   "Governance proposals that aim updating existing markets"
   updateMarketProposals(
@@ -3132,11 +3109,6 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
-
-  proposals(
-    "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal]
 }
 
 """
@@ -3941,20 +3913,6 @@ func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArg
 	return args, nil
 }
 
-func (ec *executionContext) field_Market_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *ProposalState
-	if tmp, ok := rawArgs["inState"]; ok {
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["inState"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4413,20 +4371,6 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_newMarketProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4750,14 +4694,6 @@ func (ec *executionContext) field_Subscription_proposals_args(ctx context.Contex
 		}
 	}
 	args["partyID"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["marketID"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketID"] = arg1
 	return args, nil
 }
 
@@ -6866,47 +6802,6 @@ func (ec *executionContext) _Market_data(ctx context.Context, field graphql.Coll
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Market_proposals(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Market",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Market_proposals_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Proposals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*Proposal)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -10559,17 +10454,10 @@ func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field
 		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_newMarketProposals_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NewMarketProposals(rctx, args["marketId"].(*string))
+		return ec.resolvers.Query().NewMarketProposals(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12436,7 +12324,7 @@ func (ec *executionContext) _Subscription_proposals(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Proposals(rctx, args["partyID"].(*string), args["marketID"].(*string))
+		return ec.resolvers.Subscription().Proposals(rctx, args["partyID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15847,8 +15735,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
-		case "proposals":
-			out.Values[i] = ec._Market_proposals(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
