@@ -139,7 +139,7 @@ vega init -f --gen-dev-nodewallet
 * To remove Vega store content then run a Vega node, use:
 
   ```bash
-  rm -rf "$HOME/.vega/"*store
+  rm -rf "$HOME/.vega/"*[r,e]store
   vega node
 ```
 
