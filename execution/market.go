@@ -1097,13 +1097,13 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// order book in the matching engine for this market
 	existingOrder, err := m.matching.GetOrderByID(orderAmendment.OrderID)
 	if err != nil {
-		m.log.Error("Invalid order reference",
+		m.log.Error("Invalid order ID",
 			logging.String("id", orderAmendment.GetOrderID()),
 			logging.String("party", orderAmendment.GetPartyID()),
 			logging.String("market", orderAmendment.GetMarketID()),
 			logging.Error(err))
 
-		return nil, types.ErrInvalidOrderReference
+		return nil, types.ErrInvalidOrderID
 	}
 
 	// Validate Market
@@ -1257,12 +1257,17 @@ func (m *Market) validateOrderAmendment(
 		if amendment.ExpiresAt != 0 {
 			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
 		}
-	} else {
+	} else if amendment.TimeInForce == types.Order_FOK ||
+		amendment.TimeInForce == types.Order_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return errors.New("amend order, TIF FOK and IOC are not allowed")
 	}
 
-	// nothing to check for the prices
+	// Check any price change is actually a change
+	if amendment.Price != 0 &&
+		amendment.Price == order.Price {
+		return errors.New("amend order, new price same as original price")
+	}
 
 	return nil
 }
