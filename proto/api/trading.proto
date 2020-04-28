@@ -67,6 +67,7 @@ message NotifyTraderAccountResponse {
 
 message PrepareSubmitOrderResponse {
   bytes blob = 1;
+  string submitID = 2;
 }
 
 message PrepareCancelOrderResponse {

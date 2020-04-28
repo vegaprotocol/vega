@@ -66,7 +66,8 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 		return nil, apiError(codes.Internal, ErrSubmitOrder)
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
-		Blob: raw,
+		Blob:     raw,
+		SubmitID: req.Submission.Reference,
 	}, nil
 }
 

@@ -1280,6 +1280,9 @@
         "blob": {
           "type": "string",
           "format": "byte"
+        },
+        "submitID": {
+          "type": "string"
         }
       }
     },
