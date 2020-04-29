@@ -316,8 +316,8 @@ func (g *Governance) storeProposals(proposals []types.Proposal) {
 
 	g.mu.Lock()
 	for i, v := range proposals {
-		v := v
 		datum, exists := g.data[v.ID]
+		v := v
 		if exists {
 			datum.Proposal = &v
 		} else {
@@ -379,19 +379,19 @@ func (g *Governance) consume(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			return
 		case proposals, ok := <-g.pch:
 			if !ok { // channel is closed
 				return
 			}
-			if len(proposals) > 0 { // allow empty slices for testing
+			if len(proposals) > 0 { // expect empty slices in testing
 				g.storeProposals(proposals)
 			}
 		case votes, ok := <-g.vch:
 			if !ok {
 				return
 			}
-			if len(votes) > 0 { // allow empty slices for testing
+			if len(votes) > 0 { // expect empty slices in testing
 				g.storeVotes(votes)
 			}
 		}
