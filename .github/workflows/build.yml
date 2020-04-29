@@ -2,8 +2,11 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    # tags:
+    #   - 'v*'
+    branches: [ 1595-build-vega-binaries-for-multiple-platforms ]
+  pull_request:
+    branches: [ develop ]
 
 jobs:
   release:
