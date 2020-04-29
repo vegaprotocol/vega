@@ -334,6 +334,17 @@ message NodeVote {
   string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
 
+enum NodeSignatureKind {
+  ASSET_NEW = 0;
+  ASSET_WITHDRAWAL = 1;
+}
+
+message NodeSignature {
+  string ID = 1;
+  bytes sig = 2;
+  NodeSignatureKind kind = 3;
+}
+
 enum AccountType {
   ALL = 0;
   INSURANCE = 1;

@@ -16,8 +16,8 @@ var (
 )
 
 type Processor interface {
-	Process(payload []byte, cmd Command) error
-	ValidateSigned(key, payload []byte, cmd Command) error
+	Process(key, payload, sig []byte, cmd Command) error
+	ValidateSigned(key, payload, sig []byte, cmd Command) error
 }
 
 type codec struct {
@@ -84,6 +84,8 @@ func (c *codec) Process(payload []byte) error {
 
 	var (
 		data []byte
+		key  []byte
+		sig  []byte
 		cmd  Command
 	)
 	// first is that a signed or unsigned command?
@@ -96,6 +98,8 @@ func (c *codec) Process(payload []byte) error {
 			return err
 		}
 		data, cmd, err = txDecode(bundle.Data)
+		key = bundle.GetPubKey()
+		sig = bundle.Sig
 	case CommandKindUnsigned:
 		data, cmd, err = txDecode(payload[1:])
 	default:
@@ -108,7 +112,7 @@ func (c *codec) Process(payload []byte) error {
 		return err
 	}
 	// Actually process the transaction
-	if err := c.p.Process(data, cmd); err != nil {
+	if err := c.p.Process(key, data, sig, cmd); err != nil {
 		return err
 	}
 	return nil
@@ -150,7 +154,7 @@ func (c *codec) validateSigned(payload []byte) error {
 	if _, ok := commandName[cmd]; !ok {
 		return errors.New("unknown command when validating payload")
 	}
-	return c.p.ValidateSigned(bundle.GetPubKey(), data, cmd)
+	return c.p.ValidateSigned(bundle.GetPubKey(), data, bundle.Sig, cmd)
 }
 
 // hasSeen helper performs duplicate checking on an incoming transaction payload.

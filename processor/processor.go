@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -35,6 +36,7 @@ var (
 	ErrAssetProposalReferenceDuplicate              = errors.New("duplicate asset proposal for reference")
 	ErrRegisterNodePubKeyDoesNotMatch               = errors.New("node register key does not match")
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
+	ErrUnknownSignatureKind                         = errors.New("unknown signature kind")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -114,6 +116,13 @@ type VoteBuf interface {
 	Flush()
 }
 
+// NodeSigsBuf...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_sigs_buf_mock.go -package mocks code.vegaprotocol.io/vega/processor NodeSigsBuf
+type NodeSigsBuf interface {
+	Add([]types.NodeSignature)
+	Flush()
+}
+
 const (
 	notValidAssetProposal uint32 = iota
 	validAssetProposal
@@ -151,10 +160,13 @@ type Processor struct {
 
 	proposalBuf ProposalBuf
 	voteBuf     VoteBuf
+	nodeSigBuf  NodeSigsBuf
+
+	notary *notary.Notary
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine, proposalBuf ProposalBuf, voteBuf VoteBuf) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine, proposalBuf ProposalBuf, voteBuf VoteBuf, notry *notary.Notary, nodeSigsBuf NodeSigsBuf) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -175,6 +187,8 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		proposalBuf:       proposalBuf,
 		voteBuf:           voteBuf,
 		idgen:             NewIDGen(),
+		notary:            notry,
+		nodeSigBuf:        nodeSigsBuf,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -370,9 +384,18 @@ func (p *Processor) getVoteSubmission(payload []byte) (*types.Vote, error) {
 	return voteSubmission, nil
 }
 
+func (p *Processor) getNodeSignature(payload []byte) (*types.NodeSignature, error) {
+	nodeSignature := &types.NodeSignature{}
+	err := proto.Unmarshal(payload, nodeSignature)
+	if err != nil {
+		return nil, err
+	}
+	return nodeSignature, nil
+}
+
 // ValidateSigned - validates a signed transaction. This sits here because it's actual data processing
 // related. We need to unmarshal the payload to validate the partyID
-func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) error {
+func (p *Processor) ValidateSigned(key, data, sig []byte, cmd blockchain.Command) error {
 	switch cmd {
 	case blockchain.SubmitOrderCommand:
 		order, err := p.getOrderSubmission(data)
@@ -442,13 +465,19 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrRegisterNodePubKeyDoesNotMatch
 		}
 		return nil
+	case blockchain.NodeSignatureCommand:
+		_, err := p.getNodeSignature(data)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
 
 // Process performs validation and then sends the command and data to
 // the underlying blockchain service handlers e.g. submit order, etc.
-func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
+func (p *Processor) Process(key, data, sig []byte, cmd blockchain.Command) error {
 	// first is that a signed or unsigned command?
 	switch cmd {
 	case blockchain.SubmitOrderCommand:
@@ -518,11 +547,50 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 			return err
 		}
 		return p.exec.NotifyTraderAccount(notify)
+	case blockchain.NodeSignatureCommand:
+		ns, err := p.getNodeSignature(data)
+		if err != nil {
+			return err
+		}
+
+		return p.registerNodeSignature(key, ns)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
 	}
 	return nil
+}
+
+func (p *Processor) registerNodeSignature(nodePubKey []byte, ns *types.NodeSignature) (err error) {
+	sigs, ok, err := p.notary.AddSig(ns.ID, ns.Kind, nodePubKey, ns.Sig)
+	if err != nil {
+		return err
+	}
+
+	// nothing to do
+	if !ok {
+		return err
+	}
+
+	defer func() {
+		if err == nil && len(sigs) > 0 {
+			p.nodeSigBuf.Add(sigs)
+		}
+	}()
+	// signature are OK, move on to apply changes or propagat
+	// down to the exec engine
+	switch sigs[0].Kind {
+	case types.NodeSignatureKind_ASSET_NEW:
+		// actually nothing to here apart from making sure
+		// the sig are sent to the buf and made available to the users.
+		return nil
+	case types.NodeSignatureKind_ASSET_WITHDRAWAL:
+		// TODO
+		return nil
+	default:
+		// this should most likely not happen but..
+		return ErrUnknownSignatureKind
+	}
 }
 
 func (p *Processor) startAssetNodeProposal(proposal *types.Proposal) error {
@@ -721,6 +789,11 @@ func (p *Processor) validateAsset(ctx context.Context, np *nodeProposal, prop *t
 
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
+	vegaKey, ok := p.wallet.Get(nodewallet.Vega)
+	if !ok {
+		p.log.Error("no vega wallet found")
+		return
+	}
 	for k, prop := range p.nodeProposals {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote agregated, and own vote sent
@@ -749,16 +822,11 @@ func (p *Processor) onTick(t time.Time) {
 		// or check if the proposal if valid,
 		// if it is, we will send our own message through the network.
 		if state == validAssetProposal {
-			key, ok := p.wallet.Get(nodewallet.Vega)
-			if !ok {
-				p.log.Error("no vega wallet found")
-				continue
-			}
 			nv := &types.NodeVote{
-				PubKey:    key.PubKeyOrAddress(),
+				PubKey:    vegaKey.PubKeyOrAddress(),
 				Reference: prop.Reference,
 			}
-			if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
+			if err := p.cmd.Command(vegaKey, blockchain.NodeVoteCommand, nv); err != nil {
 				p.log.Error("unable tosend command", logging.Error(err))
 				// @TODO keep in memory, retry later?
 				continue
@@ -773,11 +841,20 @@ func (p *Processor) onTick(t time.Time) {
 	// then run proposal through governance
 	acceptedProposals := p.gov.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
-		if err := p.exec.EnactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_FAILED
-			p.log.Error("unable to enact proposal",
-				logging.String("proposal-id", proposal.ID),
-				logging.Error(err))
+		// is asset prposal we need to start aggregating
+		asset := proposal.Terms.GetNewAsset()
+		if asset != nil {
+			err := p.assetEnactFirstStep(proposal)
+			if err != nil {
+				continue
+			}
+		} else {
+			if err := p.exec.EnactProposal(proposal); err != nil {
+				proposal.State = types.Proposal_FAILED
+				p.log.Error("unable to enact proposal",
+					logging.String("proposal-id", proposal.ID),
+					logging.Error(err))
+			}
 		}
 		p.proposalBuf.Add(*proposal)
 	}
@@ -786,6 +863,44 @@ func (p *Processor) onTick(t time.Time) {
 	p.proposalBuf.Flush()
 	p.voteBuf.Flush()
 
+}
+
+func (p *Processor) assetEnactFirstStep(proposal *types.Proposal) error {
+	vegaKey, ok := p.wallet.Get(nodewallet.Vega)
+	if !ok {
+		p.log.Error("no vega wallet found")
+		return errors.New("no vega wallet found")
+	}
+	// this will be enacted later on, once the next steps of it are done
+	p.notary.StartAggregate(proposal.ID, types.NodeSignatureKind_ASSET_NEW)
+	// then send the command to the
+
+	asset, err := p.assets.Get(proposal.ID)
+	if err != nil {
+		p.log.Error("invalid asset", logging.String("id", proposal.ID), logging.Error(err))
+		return err
+	}
+
+	_, sig, err := asset.SignBridgeWhitelisting()
+	if err != nil {
+		p.log.Error("unable to sign bridge whitelisting command", logging.String("id", proposal.ID), logging.Error(err))
+		return err
+	}
+
+	ns := &types.NodeSignature{
+		ID:   proposal.ID,
+		Sig:  sig,
+		Kind: types.NodeSignatureKind_ASSET_NEW,
+	}
+	if err := p.cmd.Command(vegaKey, blockchain.NodeVoteCommand, ns); err != nil {
+		p.log.Error("unable to send command", logging.Error(err))
+		// @TODO keep in memory, retry later?
+		return err
+	}
+
+	// TODO(jeremy): once we receive the event from the bridge,
+	// we'll need to enact this proposal
+	return nil
 }
 
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine

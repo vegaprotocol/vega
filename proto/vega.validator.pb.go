@@ -172,6 +172,9 @@ func (this *NodeVote) Validate() error {
 	}
 	return nil
 }
+func (this *NodeSignature) Validate() error {
+	return nil
+}
 func (this *Account) Validate() error {
 	return nil
 }

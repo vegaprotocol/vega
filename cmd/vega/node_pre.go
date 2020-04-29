@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -262,6 +263,7 @@ func (l *NodeCommand) setupBuffers() {
 	l.lossSocBuf = buffer.NewLossSocialization()
 	l.proposalBuf = buffer.NewProposal()
 	l.voteBuf = buffer.NewVote()
+	l.nodeSigBuf = buffer.NewNodeSig()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -363,15 +365,19 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.proposalBuf, l.voteBuf, now)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) })
 
+	l.notary = notary.New(l.Log, l.conf.Notary)
+
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.governance, l.proposalBuf, l.voteBuf)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.governance, l.proposalBuf, l.voteBuf, l.notary, l.nodeSigBuf)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
 	l.settlePlugin.Start(l.ctx) // open channel from the start
+	l.nodeSigsPlugin = plugins.NewNodeSigs(l.nodeSigBuf)
+	l.nodeSigsPlugin.Start(l.ctx) // open channel from the start
 	l.proposalPlugin = plugins.NewProposals(l.proposalBuf, l.voteBuf)
 	l.proposalPlugin.Start(l.ctx)
 
@@ -412,6 +418,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.proposalPlugin)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
+
+	l.nodeSigsService = notary.NewService(l.Log, l.conf.Notary, l.nodeSigsPlugin)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)

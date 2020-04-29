@@ -10,6 +10,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest)
+    - [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
     - [GetProposalsResponse](#api.GetProposalsResponse)
@@ -142,6 +144,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [NodeRegistration](#vega.NodeRegistration)
+    - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
@@ -171,6 +174,7 @@
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -283,6 +287,36 @@
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | interval | [vega.Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateRequest"></a>
+
+### GetNodeSignaturesAggregateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateResponse"></a>
+
+### GetNodeSignaturesAggregateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| signatures | [vega.NodeSignature](#vega.NodeSignature) | repeated |  |
 
 
 
@@ -1333,6 +1367,7 @@
 | TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
 | GetProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all proposals |
 | GetOpenProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all OPEN proposals |
 | GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by ID |
@@ -2134,6 +2169,23 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.NodeSignature"></a>
+
+### NodeSignature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| sig | [bytes](#bytes) |  |  |
+| kind | [NodeSignatureKind](#vega.NodeSignatureKind) |  |  |
+
+
+
+
+
+
 <a name="vega.NodeVote"></a>
 
 ### NodeVote
@@ -2666,6 +2718,18 @@ Proposal can enter Failed state from any other state.
 | I1H | 3 | 1 hour |
 | I6H | 4 | 6 hours |
 | I1D | 5 | 1 day |
+
+
+
+<a name="vega.NodeSignatureKind"></a>
+
+### NodeSignatureKind
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ASSET_NEW | 0 |  |
+| ASSET_WITHDRAWAL | 1 |  |
 
 
 

@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -97,6 +98,7 @@ type NodeCommand struct {
 	lossSocBuf      *buffer.LossSocialization
 	proposalBuf     *buffer.Proposal
 	voteBuf         *buffer.Vote
+	nodeSigBuf      *buffer.NodeSig
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -108,6 +110,7 @@ type NodeCommand struct {
 	transfersService  *transfers.Svc
 	riskService       *risk.Svc
 	governanceService *governance.Svc
+	nodeSigsService   *notary.Svc
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -126,7 +129,9 @@ type NodeCommand struct {
 	collateral      *collateral.Engine
 	governance      *governance.Engine
 	processor       *processor.Processor
-	mktscfg         []proto.Market
+	notary          *notary.Notary
+
+	mktscfg []proto.Market
 
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
@@ -136,6 +141,7 @@ type NodeCommand struct {
 	// plugins
 	settlePlugin   *plugins.Positions
 	proposalPlugin *plugins.Proposals
+	nodeSigsPlugin *plugins.NodeSigs
 }
 
 // Init initialises the node command.
@@ -197,6 +203,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.transfersService,
 		l.riskService,
 		l.governanceService,
+		l.nodeSigsService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

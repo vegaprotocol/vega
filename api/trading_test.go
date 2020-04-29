@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -220,6 +221,9 @@ func getTestGRPCServer(
 
 	governanceService := governance.NewService(logger, conf.Governance, governancePlugin)
 
+	notaryPlugin := plugins.NewNodeSigs(nil)
+	notaryService := notary.NewService(logger, conf.Notary, notaryPlugin)
+
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -235,6 +239,7 @@ func getTestGRPCServer(
 		transferResponseService,
 		riskService,
 		governanceService,
+		notaryService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

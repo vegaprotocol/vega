@@ -1008,6 +1008,17 @@
         }
       }
     },
+    "apiGetNodeSignaturesAggregateResponse": {
+      "type": "object",
+      "properties": {
+        "signatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaNodeSignature"
+          }
+        }
+      }
+    },
     "apiGetProposalsResponse": {
       "type": "object",
       "properties": {
@@ -1897,6 +1908,29 @@
           "$ref": "#/definitions/vegaMarket"
         }
       }
+    },
+    "vegaNodeSignature": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "sig": {
+          "type": "string",
+          "format": "byte"
+        },
+        "kind": {
+          "$ref": "#/definitions/vegaNodeSignatureKind"
+        }
+      }
+    },
+    "vegaNodeSignatureKind": {
+      "type": "string",
+      "enum": [
+        "ASSET_NEW",
+        "ASSET_WITHDRAWAL"
+      ],
+      "default": "ASSET_NEW"
     },
     "vegaOrder": {
       "type": "object",

@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -44,6 +45,7 @@ type GRPCServer struct {
 	transferResponseService *transfers.Svc
 	riskService             *risk.Svc
 	governanceService       *governance.Svc
+	nodeSigsService         *notary.Svc
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -71,6 +73,7 @@ func NewGRPCServer(
 	transferResponseService *transfers.Svc,
 	riskService *risk.Svc,
 	governanceService *governance.Svc,
+	nodeSigsService *notary.Svc,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -93,6 +96,7 @@ func NewGRPCServer(
 		transferResponseService: transferResponseService,
 		riskService:             riskService,
 		governanceService:       governanceService,
+		nodeSigsService:         nodeSigsService,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -205,6 +209,7 @@ func (g *GRPCServer) Start() {
 		TransferResponseService: g.transferResponseService,
 		RiskService:             g.riskService,
 		governanceService:       g.governanceService,
+		nodeSigsService:         g.nodeSigsService,
 		statusChecker:           g.statusChecker,
 		ctx:                     g.ctx,
 	}

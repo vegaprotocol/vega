@@ -203,6 +203,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetNodeSignaturesAggregateRequest"><span class="badge">M</span>GetNodeSignaturesAggregateRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNodeSignaturesAggregateResponse"><span class="badge">M</span>GetNodeSignaturesAggregateResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -679,6 +687,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NodeSignature"><span class="badge">M</span>NodeSignature</a>
+                </li>
+
+                <li>
                   <a href="#vega.NodeVote"><span class="badge">M</span>NodeVote</a>
                 </li>
 
@@ -789,6 +801,10 @@
 
                 <li>
                   <a href="#vega.Interval"><span class="badge">E</span>Interval</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NodeSignatureKind"><span class="badge">E</span>NodeSignatureKind</a>
                 </li>
 
                 <li>
@@ -1082,6 +1098,54 @@
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>signatures</td>
+                  <td><a href="#vega.NodeSignature">vega.NodeSignature</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -3673,6 +3737,13 @@
               </tr>
 
               <tr>
+                <td>GetNodeSignaturesAggregate</td>
+                <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
+                <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
+                <td><p>Get an aggregate of signature from all the node of the network</p></td>
+              </tr>
+
+              <tr>
                 <td>GetProposals</td>
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
                 <td><a href="#api.GetProposalsResponse">GetProposalsResponse</a></td>
@@ -5778,6 +5849,44 @@
 
 
 
+        <h3 id="vega.NodeSignature">NodeSignature</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sig</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>kind</td>
+                  <td><a href="#vega.NodeSignatureKind">NodeSignatureKind</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.NodeVote">NodeVote</h3>
         <p></p>
 
@@ -7547,6 +7656,29 @@ after each successful amend </p></td>
                 <td>I1D</td>
                 <td>5</td>
                 <td><p>1 day</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.NodeSignatureKind">NodeSignatureKind</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>ASSET_NEW</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>ASSET_WITHDRAWAL</td>
+                <td>1</td>
+                <td><p></p></td>
               </tr>
 
           </tbody>

@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
@@ -135,6 +136,12 @@ type RiskService interface {
 	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
 }
 
+// NodeSigsService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_sigs_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NodeSigsService
+type NodeSigsService interface {
+	GetByID(id string) ([]types.NodeSignature, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -150,8 +157,35 @@ type tradingDataService struct {
 	RiskService             RiskService
 	TransferResponseService TransferResponseService
 	governanceService       GovernanceDataService
+	nodeSigsService         NodeSigsService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
+}
+
+func (h *tradingDataService) GetNodeSignaturesAggregate(ctx context.Context,
+	req *protoapi.GetNodeSignaturesAggregateRequest) (*protoapi.GetNodeSignaturesAggregateResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("empty request"))
+	}
+
+	if len(req.ID) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+	}
+
+	sigs, err := h.nodeSigsService.GetByID(req.ID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	out := make([]*types.NodeSignature, 0, len(sigs))
+	for _, v := range sigs {
+		v := v
+		out = append(out, &v)
+	}
+
+	return &protoapi.GetNodeSignaturesAggregateResponse{
+		Signatures: out,
+	}, nil
 }
 
 // OrdersByMarket provides a list of orders for a given market.
