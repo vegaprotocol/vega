@@ -60,10 +60,10 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	}
 	raw, err := proto.Marshal(req.Submission)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrSubmitOrder)
+		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
 	if raw, err = txEncode(raw, blockchain.SubmitOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrSubmitOrder)
+		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
 		Blob:     raw,
@@ -76,14 +76,14 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 	defer metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", startTime)
 	err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder)
+		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
 	raw, err := proto.Marshal(req.Cancellation)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder)
+		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
 	if raw, err = txEncode(raw, blockchain.CancelOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder)
+		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
 	return &protoapi.PrepareCancelOrderResponse{
 		Blob: raw,
@@ -95,14 +95,14 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
 	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder)
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
 	raw, err := proto.Marshal(req.Amendment)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder)
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
 	if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder)
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
 	return &protoapi.PrepareAmendOrderResponse{
 		Blob: raw,
