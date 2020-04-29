@@ -5,8 +5,6 @@ on:
     # tags:
     #   - 'v*'
     branches: [ 1595-build-vega-binaries-for-multiple-platforms ]
-  pull_request:
-    branches: [ develop ]
 
 jobs:
   release:
@@ -34,8 +32,8 @@ jobs:
       id: release
       uses: softprops/action-gh-release@v1
       with:
-        files:
-          - cmd/*/*-linux-386
-          - cmd/*/*-linux-amd64
+        files: |
+          cmd/*/*-linux-386
+          cmd/*/*-linux-amd64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
