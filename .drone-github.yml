@@ -184,7 +184,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
-      - make build
+      - make build-linux-amd64
     depends_on:
       - fetch
     when:
@@ -234,7 +234,7 @@ steps:
       # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
       # - SLACK_HOOK_URL
-      - /usr/local/bin/deploy-trading-core.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      - /usr/local/bin/deploy-trading-core.sh devnet vega "cmd/vega/vega-linux-amd64:/home/vega/current/vega:0755"
       # Set up wallets, keypairs and free money.
       - /usr/local/bin/init-wallets-tokenbalances.py
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
@@ -280,20 +280,6 @@ steps:
         - refs/heads/master
         - refs/heads/develop
         - refs/tags/*
-
-  # http://plugins.drone.io/drone-plugins/drone-github-release/
-  - name: publish_artefacts
-    image: plugins/github-release
-    pull: always
-    settings:
-      api_token:
-        from_secret: GITHUB_API_TOKEN
-      files:
-        - cmd/vega/vega
-    when:
-      event: tag
-    depends_on:
-      - build-branch
 
 volumes:
   - name: dockersock

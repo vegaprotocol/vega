@@ -92,21 +92,47 @@ deps: ## Get the dependencies
 	@modvendor -copy="**/*.proto"
 
 .PHONY: build
-build: ## install the binaries in cmd/{progname}/
+build: build-linux-amd64 ## install the binaries (for linux/amd64) in cmd/{progname}/
+
+.PHONY: build-%
+build-%: ## Build the binaries for a particular OS+ARCH combination in cmd/{progname}/
 	@v="${VERSION}" vh="${VERSION_HASH}" gcflags="" suffix="" ; \
 	if test -n "$$DEBUGVEGA" ; then \
 		gcflags="all=-N -l" ; \
 		suffix="-dbg" ; \
 		v="debug-$$v" ; \
 	fi ; \
+	goos="$$(echo "$*" | cut -f1 -d-)" ; \
+	goarch="$$(echo "$*" | cut -f2 -d-)" ; \
+	if echo "$$goarch" | grep -q '^arm[5-7]$$' ; then \
+		goarch=arm ; goarm="$$(echo "$$goarch" | cut -b4)" ; \
+	fi ; \
 	ldflags="-X main.Version=$$v -X main.VersionHash=$$vh" ; \
 	echo "Version: $$v ($$vh)" ; \
 	for app in $(APPS) ; do \
-		env CGO_ENABLED=1 go build -v \
-			-ldflags "$$ldflags" \
-			-gcflags "$$gcflags" \
-			-o "./cmd/$$app/$$app$$suffix" "./cmd/$$app" \
+		o="./cmd/$$app/$$app-$$goos-$$goarch$$goarm$$suffix" ; \
+		echo "Building $$o" ; \
+		env CGO_ENABLED=1 "GOARCH=$$goarch" "GOARM=$$goarm" "GOOS=$$goos" \
+			go build -v -ldflags "$$ldflags" -gcflags "$$gcflags" -o "$$o" "./cmd/$$app" \
 			|| exit 1 ; \
+	done
+
+.PHONY: buildall
+buildall: ## Build the binaries for all OS+ARCH combinations
+	@go tool dist list | tr / " " | while read -r os arch ; do \
+		if test "$$arch" = arm ; then \
+			for v in 5 6 7 ; do \
+				target="build-$${os}-$${arch}$${v}" ; \
+				echo -n "$$target " ; \
+				make "$$target" 1>"$$target.log" 2>&1 || echo -n "failed" ; \
+				echo ; \
+			done ; \
+		else \
+			target="build-$${os}-$${arch}" ; \
+			echo -n "$$target " ; \
+			make "build-$${os}-$${arch}" 1>"$$target.log" 2>&1 || echo -n "failed" ; \
+			echo ; \
+		fi ; \
 	done
 
 .PHONY: gofmtsimplify
@@ -242,7 +268,7 @@ staticcheck: ## Run statick analysis checks
 
 .PHONY: clean
 clean: ## Remove previous build
-	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done
+	@for app in $(APPS) ; do rm -f "$$app" build-*.log "cmd/$$app/$$app" "cmd/$$app/$$app"-* ; done
 
 .PHONY: help
 help: ## Display this help screen

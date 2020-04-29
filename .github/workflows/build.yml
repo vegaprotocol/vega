@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.11.13
+      id: go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.11.13
+
+    - name: Check out
+      uses: actions/checkout@v2
+
+    - name: Build
+      id: build
+      run: |
+        make deps
+        make test
+        make build-linux-amd64 build-linux-386
+
+    - name: Release
+      id: release
+      uses: softprops/action-gh-release@v1
+      with:
+        files:
+          - cmd/*/*-linux-386
+          - cmd/*/*-linux-amd64
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
