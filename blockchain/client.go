@@ -105,10 +105,7 @@ func (c *Client) CreateOrder(ctx context.Context, order *types.Order) error {
 	order.Reference = uuid.NewV4().String()
 	_, err := c.sendOrderCommand(ctx, order, SubmitOrderCommand)
 
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // GetGenesisTime will retrieve the genesis time from the blockchain
