@@ -52,12 +52,14 @@ type ExecutionEngine interface {
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
 	Generate() error
-	SubmitProposal(proposal *types.Proposal) error
-	VoteOnProposal(vote *types.Vote) error
+	EnactProposal(*types.Proposal) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
+	OnChainTimeUpdate(t time.Time) []*types.Proposal
+	AddProposal(p types.Proposal) error
+	AddVote(v types.Vote) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -98,6 +100,20 @@ type Commander interface {
 	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
 }
 
+// ProposalBuf...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buf_mock.go -package mocks code.vegaprotocol.io/vega/processor ProposalBuf
+type ProposalBuf interface {
+	Add(types.Proposal)
+	Flush()
+}
+
+// VoteBuf...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buf_mock.go -package mocks code.vegaprotocol.io/vega/processor VoteBuf
+type VoteBuf interface {
+	Add(types.Vote)
+	Flush()
+}
+
 const (
 	notValidAssetProposal uint32 = iota
 	validAssetProposal
@@ -131,10 +147,14 @@ type Processor struct {
 	cmd               Commander
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
+	idgen             *IDgenerator
+
+	proposalBuf ProposalBuf
+	voteBuf     VoteBuf
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine, proposalBuf ProposalBuf, voteBuf VoteBuf) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -152,6 +172,9 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		nodeProposals:     map[string]*nodeProposal{},
 		pendingValidation: []*types.Proposal{},
 		cmd:               cmd,
+		proposalBuf:       proposalBuf,
+		voteBuf:           voteBuf,
+		idgen:             NewIDGen(),
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -462,13 +485,13 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if na := proposal.Terms.GetNewAsset(); na != nil {
 			return p.startAssetNodeProposal(proposal)
 		}
-		return p.exec.SubmitProposal(proposal)
+		return p.SubmitProposal(proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		return p.exec.VoteOnProposal(vote)
+		return p.VoteOnProposal(vote)
 	case blockchain.RegisterNodeCommand:
 		node, err := p.getNodeRegistration(data)
 		if err != nil {
@@ -710,7 +733,7 @@ func (p *Processor) onTick(t time.Time) {
 					logging.Int("vote-count", len(prop.votes)),
 					logging.Int("node-count", len(p.nodes)),
 				)
-			} else if err := p.exec.SubmitProposal(prop.Proposal); err != nil {
+			} else if err := p.SubmitProposal(prop.Proposal); err != nil {
 				p.log.Error("Failed to submit node-approved proposal",
 					logging.String("proposal", prop.Proposal.String()),
 				)
@@ -746,4 +769,45 @@ func (p *Processor) onTick(t time.Time) {
 			prop.cancel()
 		}
 	}
+
+	// then run proposal through governance
+	acceptedProposals := p.gov.OnChainTimeUpdate(t)
+	for _, proposal := range acceptedProposals {
+		if err := p.exec.EnactProposal(proposal); err != nil {
+			proposal.State = types.Proposal_FAILED
+			p.log.Error("unable to enact proposal",
+				logging.String("proposal-id", proposal.ID),
+				logging.Error(err))
+		}
+		p.proposalBuf.Add(*proposal)
+	}
+
+	// governance buffers
+	p.proposalBuf.Flush()
+	p.voteBuf.Flush()
+
+}
+
+// SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
+func (p *Processor) SubmitProposal(proposal *types.Proposal) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Submitting proposal",
+			logging.String("proposal-id", proposal.ID),
+			logging.String("proposal-reference", proposal.Reference),
+			logging.String("proposal-party", proposal.PartyID),
+			logging.String("proposal-terms", proposal.Terms.String()))
+	}
+	p.idgen.SetProposalID(proposal)
+	return p.gov.AddProposal(*proposal)
+}
+
+// VoteOnProposal sends proposal vote to governance engine
+func (p *Processor) VoteOnProposal(vote *types.Vote) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Voting on proposal",
+			logging.String("proposal-id", vote.ProposalID),
+			logging.String("vote-party", vote.PartyID),
+			logging.String("vote-value", vote.Value.String()))
+	}
+	return p.gov.AddVote(*vote)
 }

@@ -21,14 +21,17 @@ import (
 
 type procTest struct {
 	*processor.Processor
-	eng    *mocks.MockExecutionEngine
-	ts     *mocks.MockTimeService
-	stat   *mocks.MockStats
-	tickCB func(time.Time)
-	ctrl   *gomock.Controller
-	cmd    *mocks.MockCommander
-	wallet *mocks.MockWallet
-	assets *mocks.MockAssets
+	eng         *mocks.MockExecutionEngine
+	ts          *mocks.MockTimeService
+	stat        *mocks.MockStats
+	tickCB      func(time.Time)
+	ctrl        *gomock.Controller
+	cmd         *mocks.MockCommander
+	wallet      *mocks.MockWallet
+	assets      *mocks.MockAssets
+	gov         *mocks.MockGovernanceEngine
+	proposalBuf *mocks.MockProposalBuf
+	voteBuf     *mocks.MockVoteBuf
 }
 
 type stubWallet struct {
@@ -47,22 +50,28 @@ func getTestProcessor(t *testing.T) *procTest {
 	cmd := mocks.NewMockCommander(ctrl)
 	wallet := mocks.NewMockWallet(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
+	gov := mocks.NewMockGovernanceEngine(ctrl)
+	proposalBuf := mocks.NewMockProposalBuf(ctrl)
+	voteBuf := mocks.NewMockVoteBuf(ctrl)
 
 	var cb func(time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
 		cb = c
 	})
-	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets)
+	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, gov, proposalBuf, voteBuf)
 	return &procTest{
-		Processor: proc,
-		eng:       eng,
-		ts:        ts,
-		stat:      stat,
-		tickCB:    cb,
-		ctrl:      ctrl,
-		cmd:       cmd,
-		wallet:    wallet,
-		assets:    assets,
+		Processor:   proc,
+		eng:         eng,
+		ts:          ts,
+		stat:        stat,
+		tickCB:      cb,
+		ctrl:        ctrl,
+		cmd:         cmd,
+		wallet:      wallet,
+		assets:      assets,
+		gov:         gov,
+		proposalBuf: proposalBuf,
+		voteBuf:     voteBuf,
 	}
 }
 
@@ -107,6 +116,10 @@ func testOnTickEmpty(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
+
 	proc.tickCB(time.Now())
 }
 
@@ -117,6 +130,11 @@ func testOnTickPending(t *testing.T) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	next := now.Add(time.Second) // 1 second later
+
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
+
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	// Begin was never called, so we expect nodewallet to be involved
@@ -204,6 +222,10 @@ func testOnTickSubmit(t *testing.T) {
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
 
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
+
 	assetID := "asset-id-1"
 	asset := assetStub{
 		valid: true,
@@ -252,19 +274,17 @@ func testOnTickSubmit(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
-	// vote := &types.NodeVote{
-	// 	PubKey:    string(wal.PubKeyOrAddress()),
-	// 	Reference: data.Reference,
-	// }
-	// payload, err = proto.Marshal(vote)
-	// assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
 
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil).Do(func(sp *types.Proposal) {
-		assert.Equal(t, data.Reference, sp.Reference)
-		assert.Equal(t, data.PartyID, sp.PartyID)
-		ch <- struct{}{}
-	})
+	proc.gov.EXPECT().
+		AddProposal(gomock.Any()).
+		Times(1).
+		Return(nil).
+		Do(func(sp types.Proposal) {
+			assert.Equal(t, data.Reference, sp.Reference)
+			assert.Equal(t, data.PartyID, sp.PartyID)
+			ch <- struct{}{}
+		})
 	// next time tick, proposal is pending but not past validation time
 
 	tick := time.NewTicker(50 * time.Millisecond)
@@ -290,6 +310,11 @@ func testOnTickSubmitRetry(t *testing.T) {
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).AnyTimes().Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
+
 	assetID := "asset-id-1"
 	asset := assetStub{
 		valid: true,
@@ -353,16 +378,19 @@ func testOnTickSubmitRetry(t *testing.T) {
 		nil,
 	}
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
-		assert.Equal(t, data.Reference, sp.Reference)
-		assert.Equal(t, data.PartyID, sp.PartyID)
-		ret := returns[i]
-		if ret == nil {
-			ch <- struct{}{}
-		}
-		i++
-		return ret
-	})
+	proc.gov.EXPECT().
+		AddProposal(gomock.Any()).
+		Times(2).
+		DoAndReturn(func(sp types.Proposal) error {
+			assert.Equal(t, data.Reference, sp.Reference)
+			assert.Equal(t, data.PartyID, sp.PartyID)
+			ret := returns[i]
+			if ret == nil {
+				ch <- struct{}{}
+			}
+			i++
+			return ret
+		})
 	// next block - set timestamps
 	next := validTS.Add(time.Second)
 	// next time tick, proposal is pending but not past validation time
@@ -392,6 +420,10 @@ func testOnTickWithNodes(t *testing.T) {
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).AnyTimes().Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
 
 	assetID := "asset-id-1"
 	asset := assetStub{
@@ -467,16 +499,19 @@ func testOnTickWithNodes(t *testing.T) {
 		nil,
 	}
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
-		assert.Equal(t, data.Reference, sp.Reference)
-		assert.Equal(t, data.PartyID, sp.PartyID)
-		ret := returns[i]
-		i++
-		if ret == nil {
-			ch <- struct{}{}
-		}
-		return ret
-	})
+	proc.gov.EXPECT().
+		AddProposal(gomock.Any()).
+		Times(2).
+		DoAndReturn(func(sp types.Proposal) error {
+			assert.Equal(t, data.Reference, sp.Reference)
+			assert.Equal(t, data.PartyID, sp.PartyID)
+			ret := returns[i]
+			i++
+			if ret == nil {
+				ch <- struct{}{}
+			}
+			return ret
+		})
 	// next block - set timestamps
 	next := validTS.Add(time.Second)
 	// next time tick, proposal is pending but not past validation time
@@ -506,6 +541,10 @@ func testOnTickReject(t *testing.T) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	next := now.Add(time.Hour * 96) //  4 days later, the validation period has expired for sure
+
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).AnyTimes().Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
 
 	assetID := "asset-id-1"
 	asset := assetStub{
@@ -572,7 +611,7 @@ func testOnTickReject(t *testing.T) {
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
 
 	// We expect SubmitProposal to NOT be called (other node did NOT validate
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(0).Return(nil)
+	proc.gov.EXPECT().AddProposal(gomock.Any()).Times(0).Return(nil)
 
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()
@@ -841,6 +880,11 @@ func testProcessCommandSuccess(t *testing.T) {
 	}
 	zero := uint64(0)
 	proc := getTestProcessor(t)
+
+	proc.gov.EXPECT().AddVote(gomock.Any()).Times(1).Return(nil)
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
+
 	proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
@@ -854,8 +898,8 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.eng.EXPECT().SubmitOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
 	proc.eng.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.eng.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
+	// proc.eng.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().AddProposal(gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
@@ -872,6 +916,10 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	next := now.Add(time.Second)
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).AnyTimes()
+	proc.proposalBuf.EXPECT().Flush().AnyTimes()
+	proc.voteBuf.EXPECT().Flush().AnyTimes()
+
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
@@ -956,12 +1004,12 @@ type assetStub struct {
 	err   error
 }
 
-func (a assetStub) Data() *types.Asset                      { return nil }
-func (a assetStub) GetAssetClass() common.AssetClass        { return common.ERC20 }
-func (a assetStub) IsValid() bool                           { return a.valid }
-func (a assetStub) Validate() error                         { return a.err }
-func (a assetStub) SignBridgeWhitelisting() ([]byte, error) { return nil, nil }
-func (a assetStub) ValidateWithdrawal() error               { return nil }
-func (a assetStub) SignWithdrawal() ([]byte, error)         { return nil, nil }
-func (a assetStub) ValidateDeposit() error                  { return nil }
-func (a assetStub) String() string                          { return "" }
+func (a assetStub) Data() *types.Asset                              { return nil }
+func (a assetStub) GetAssetClass() common.AssetClass                { return common.ERC20 }
+func (a assetStub) IsValid() bool                                   { return a.valid }
+func (a assetStub) Validate() error                                 { return a.err }
+func (a assetStub) SignBridgeWhitelisting() ([]byte, []byte, error) { return nil, nil, nil }
+func (a assetStub) ValidateWithdrawal() error                       { return nil }
+func (a assetStub) SignWithdrawal() ([]byte, error)                 { return nil, nil }
+func (a assetStub) ValidateDeposit() error                          { return nil }
+func (a assetStub) String() string                                  { return "" }

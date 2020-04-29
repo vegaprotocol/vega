@@ -327,21 +327,18 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
-	var (
-		err error
-	)
-
-	now, err := time.GetTimeNow()
+	now, err := l.timeService.GetTimeNow()
 	if err != nil {
-		return errors.Wrap("unable to get the time now", err)
+		return errors.Wrap(err, "unable to get the time now")
 	}
 
 	//  create collateral
-	l.collateral, err = collateral.New(log, l.conf.Collateral, l.accountBuf, l.lossSocBuf, now)
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.accountBuf, l.lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.collateral.ReloadConf(cfg.Collateral) })
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -359,18 +356,16 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.marginLevelsBuf,
 		l.settleBuf,
 		l.lossSocBuf,
-		l.proposalBuf,
-		l.voteBuf,
 		l.mktscfg,
-		l.collateral
+		l.collateral,
 	)
 
-
-	l.governance := governance.NewEngine(log, l.conf.Governance, cengine, l.proposalBuf, l.voteBuf, now)
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.proposalBuf, l.voteBuf, now)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) })
 
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.governance, l.proposalBuf, l.voteBuf)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 

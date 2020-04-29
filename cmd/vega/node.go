@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/governance"
@@ -122,6 +123,8 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
+	collateral      *collateral.Engine
+	governance      *governance.Engine
 	processor       *processor.Processor
 	mktscfg         []proto.Market
 
