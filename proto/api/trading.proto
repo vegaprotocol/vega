@@ -303,6 +303,7 @@ message ObservePartyProposalsRequest {
 message ObserveProposalVotesRequest {
   string proposalID = 1  [(validator.field) = {string_not_empty : true }];
 }
+
 message ObservePartyVotesRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
