@@ -29,6 +29,8 @@ var (
 	// ErrInvalidProposalByStateRequest is returned if request to look up proposals by state
 	// specified both state to include and filter out
 	ErrInvalidProposalByStateRequest = errors.New("specified both state to include and filter out")
+	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
+	ErrMissingIDOrReference = errors.New("missing id or reference")
 )
 
 // TradingClient ...
@@ -93,13 +95,12 @@ type TradingDataClient interface {
 	// governance
 	GetAllGovernanceData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalsInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalsNotInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalsByMarket(ctx context.Context, in *protoapi.GetProposalsByMarketRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalsByParty(ctx context.Context, in *protoapi.GetGovernanceByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetVotesByParty(ctx context.Context, in *protoapi.GetGovernanceByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesResponse, error)
-	GetNewMarketProposals(ctx context.Context, in *protoapi.GetMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetNetworkParametersProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetNewMarketProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetNewAssetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 }
@@ -325,32 +326,18 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 	return order, err
 }
 
-func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState, notInState *ProposalState,
-) ([]*Proposal, error) {
-
-	if inState != nil && notInState != nil {
-		return nil, ErrInvalidProposalByStateRequest
-	}
-
-	var resp *protoapi.GetGovernanceDataResponse
-	var err error
-	if inState != nil && notInState == nil {
-		var state types.Proposal_State
-		if state, err = inState.IntoProto(); err == nil {
-			resp, err = r.tradingDataClient.GetProposalsInState(ctx, &protoapi.GetProposalsByStateRequest{
-				State: state,
-			})
+func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+	var filter *protoapi.OptionalState
+	if inState != nil {
+		if state, err = inState.IntoProto(); err != nil {
+			return nil, err
+		} else {
+			filter = &protoapi.OptionalState{Value: state}
 		}
-	} else if inState == nil && notInState != nil {
-		var state types.Proposal_State
-		if state, err = inState.IntoProto(); err == nil {
-			resp, err = r.tradingDataClient.GetProposalsInState(ctx, &protoapi.GetProposalsByStateRequest{
-				State: state,
-			})
-		}
-	} else {
-		resp, err = r.tradingDataClient.GetAllGovernanceData(ctx, nil)
 	}
+	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -366,24 +353,66 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState,
 	return result, nil
 }
 
-func (r *myQueryResolver) ProposalByReference(ctx context.Context, reference string) (*Proposal, error) {
-	resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
-		Reference: reference,
-	})
-	if err != nil {
-		return nil, err
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*Proposal, error) {
+	if (id == nil || len(*id) == 0) && (reference == nil || len(*reference) == 0) {
+		return nil, ErrMissingIDOrReference
 	}
-	return r.convertProposal(ctx, resp.Proposal)
+
+	var proposal *types.GovernanceData
+	if id != nil {
+		resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
+			ID: *id,
+		})
+		if err != nil {
+			return nil, err
+		}
+		proposal = resp.Proposal
+	} else if reference != nil {
+		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
+			Reference: *reference,
+		})
+		if err != nil {
+			return nil, err
+		}
+		proposal = resp.Proposal
+	
+	return r.convertProposal(ctx, proposal), nil
 }
 
-func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposal, error) {
-	resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
-		ID: id,
-	})
-	if err != nil {
-		return nil, err
+func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+	if (id == nil || len(*id) == 0) && (reference == nil || len(*reference) == 0) {
+		return nil, ErrMissingIDOrReference
 	}
-	return r.convertProposal(ctx, resp.Proposal)
+
+	var proposal *types.GovernanceData
+	if id != nil {
+		resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetProposalsByStateRequest{
+			State: ,
+		})
+		if err != nil {
+			return nil, err
+		}
+		proposal = resp.Proposal
+	} else if reference != nil {
+		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
+			Reference: *reference,
+		})
+		if err != nil {
+			return nil, err
+		}
+		proposal = resp.Proposal
+	
+	return r.convertProposal(ctx, proposal), nil
+}
+
+func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*Proposal, error) {
+
+}
+func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+
+}
+func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+
 }
 
 func (r *myQueryResolver) convertProposal(ctx context.Context, gov *types.GovernanceData) (*Proposal, error) {
@@ -424,29 +453,6 @@ func (r *myQueryResolver) convertProposal(ctx context.Context, gov *types.Govern
 		result.NoVotes[i] = no
 	}
 	return result, nil
-}
-
-func (r *myQueryResolver) convertVote(ctx context.Context, vote *types.Vote) (*Vote, error) {
-	party, err := getParty(ctx, r.log, r.tradingDataClient, vote.PartyID)
-	if err != nil {
-		return nil, err
-	}
-	return &Vote{
-		Value: VoteValueFromProto(vote.Value),
-		Party: party,
-	}, nil
-}
-
-func (r *myQueryResolver) convertProposalVote(ctx context.Context,
-	parent *Proposal,
-	vote *types.Vote,
-) (*ProposalVote, error) {
-
-	converted, err := r.convertVote(ctx, vote)
-	if err != nil {
-		return nil, err
-	}
-	return &ProposalVote{Vote: converted, Proposal: parent}, nil
 }
 
 // END: Root Resolver
@@ -1467,7 +1473,6 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-
 	req := &protoapi.PrepareVoteRequest{
 		Vote: &types.Vote{
 			Value:      types.Vote_NO,
@@ -1482,18 +1487,16 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	gqResp := &PreparedVote{
+	return &PreparedVote{
 		Blob: string(resp.Blob),
-		Vote: &Vote{
-			Party:      party,
-			ProposalID: resp.Vote.ProposalID,
-			Value:      VoteValueNo,
+		Vote: &ProposalVote{
+			Vote: &Vote{
+				Party: party,
+				Value: VoteValueFromProto(resp.Vote.Value),
+			},
+			Proposal: resp.Vote.ProposalID,
 		},
-	}
-	if resp.Vote.Value == types.Vote_YES {
-		gqResp.Vote.Value = VoteValueYes
-	}
-	return gqResp, nil
+	}, nil
 }
 
 func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {

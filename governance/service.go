@@ -34,7 +34,7 @@ type Plugin interface {
 	SubscribeProposalVotes(proposalID string) (<-chan []types.Vote, int64)
 	UnsubscribeProposalVotes(proposalID string, idx int64)
 
-	GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData
+	GetProposals(inState *types.Proposal_State) []*types.GovernanceData
 	GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData
 	GetVotesByParty(partyID string) []*types.Vote
 
@@ -246,9 +246,9 @@ func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID 
 	return output
 }
 
-// GetAllGovernanceData returns all governance data (proposals and votes)
-func (s *Svc) GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData {
-	return s.plugin.GetAllGovernanceData(inState)
+// GetProposals returns all governance data (proposals and votes)
+func (s *Svc) GetProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetProposals(inState)
 }
 
 // GetProposalsByParty returns proposals and their votes by party authoring them

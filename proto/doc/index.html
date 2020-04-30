@@ -315,6 +315,10 @@
                 </li>
 
                 <li>
+                  <a href="#api.OptionalState"><span class="badge">M</span>OptionalState</a>
+                </li>
+
+                <li>
                   <a href="#api.OrderByIDRequest"><span class="badge">M</span>OrderByIDRequest</a>
                 </li>
 
@@ -1138,7 +1142,7 @@
 
                 <tr>
                   <td>state</td>
-                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
+                  <td><a href="#api.OptionalState">OptionalState</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -1339,7 +1343,7 @@
 
                 <tr>
                   <td>state</td>
-                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
+                  <td><a href="#api.OptionalState">OptionalState</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -1370,7 +1374,7 @@
 
                 <tr>
                   <td>state</td>
-                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
+                  <td><a href="#api.OptionalState">OptionalState</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2227,6 +2231,30 @@
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.OptionalState">OptionalState</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -4046,73 +4074,66 @@
               </tr>
 
               <tr>
-                <td>GetAllGovernanceData</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get all governance data (proposals and votes)</p></td>
-              </tr>
-
-              <tr>
-                <td>GetProposalsInState</td>
+                <td>GetProposals</td>
                 <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get proposals (and their current votes) that are in the specified state</p></td>
+                <td><p>Get governance data (proposals and votes) for all proposals</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalsByParty</td>
                 <td><a href="#api.GetGovernanceByPartyRequest">GetGovernanceByPartyRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get proposals by party authoring them</p></td>
+                <td><p>Get governance data (proposals and votes) for proposals by party authoring them</p></td>
               </tr>
 
               <tr>
                 <td>GetVotesByParty</td>
                 <td><a href="#api.GetGovernanceByPartyRequest">GetGovernanceByPartyRequest</a></td>
                 <td><a href="#api.GetVotesResponse">GetVotesResponse</a></td>
-                <td><p>Get proposals by party authoring them</p></td>
+                <td><p>Get votes by party casting them</p></td>
               </tr>
 
               <tr>
                 <td>GetNewMarketProposals</td>
                 <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get proposals that aim creating new markets</p></td>
+                <td><p>Get governance data (proposals and votes) for proposals that aim creating new markets</p></td>
               </tr>
 
               <tr>
                 <td>GetUpdateMarketProposals</td>
                 <td><a href="#api.GetUpdateMarketProposalsRequest">GetUpdateMarketProposalsRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get proposals that aim updating markets</p></td>
+                <td><p>Get governance data (proposals and votes) for proposals that aim updating markets</p></td>
               </tr>
 
               <tr>
                 <td>GetNetworkParametersProposals</td>
                 <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get proposals that aim updating Vega network parameters</p></td>
+                <td><p>Get governance data (proposals and votes) for proposals that aim updating Vega network parameters</p></td>
               </tr>
 
               <tr>
                 <td>GetNewAssetProposals</td>
                 <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
-                <td><p>Get proposals aiming to create new assets</p></td>
+                <td><p>Get governance data (proposals and votes) for proposals aiming to create new assets</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalByID</td>
                 <td><a href="#api.GetProposalByIDRequest">GetProposalByIDRequest</a></td>
                 <td><a href="#api.GetProposalResponse">GetProposalResponse</a></td>
-                <td><p>Get a proposal by ID</p></td>
+                <td><p>Get governance data (proposals and votes) for a proposal located by ID</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalByReference</td>
                 <td><a href="#api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</a></td>
                 <td><a href="#api.GetProposalResponse">GetProposalResponse</a></td>
-                <td><p>Get a proposal by reference</p></td>
+                <td><p>Get governance data (proposals and votes) for a proposal located by reference</p></td>
               </tr>
 
               <tr>

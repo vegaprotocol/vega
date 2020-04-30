@@ -333,8 +333,8 @@ type ProposalTermsInput struct {
 type ProposalVote struct {
 	// Cast vote
 	Vote *Vote `json:"vote"`
-	// Proposal -> proposal casting the vote on
-	Proposal *Proposal `json:"proposal"`
+	// Proposal casting the vote on
+	Proposal string `json:"proposal"`
 }
 
 type ScalingFactors struct {

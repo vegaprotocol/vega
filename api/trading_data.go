@@ -119,7 +119,7 @@ type TransferResponseService interface {
 // GovernanceDataService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceDataService
 type GovernanceDataService interface {
-	GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData
+	GetProposals(inState *types.Proposal_State) []*types.GovernanceData
 	GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData
 	GetVotesByParty(partyID string) []*types.Vote
 
@@ -1361,27 +1361,22 @@ func (h *tradingDataService) OrderVersionsByID(
 	return nil, err
 }
 
-func (h *tradingDataService) GetAllGovernanceData(_ context.Context, in *empty.Empty) (*protoapi.GetGovernanceDataResponse, error) {
-	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("GetAllGovernanceData", startTime)
-
-	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetAllGovernanceData(nil),
-	}, nil
-}
-
-func (h *tradingDataService) GetProposalsInState(_ context.Context,
+func (h *tradingDataService) GetProposals(_ context.Context,
 	in *protoapi.GetProposalsByStateRequest,
 ) (*protoapi.GetGovernanceDataResponse, error) {
 
 	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("GetProposalsInState", startTime)
+	defer metrics.APIRequestAndTimeGRPC("GetProposals", startTime)
 
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetAllGovernanceData(&in.State),
+		Data: h.governanceService.GetProposals(inState),
 	}, nil
 }
 
@@ -1395,8 +1390,12 @@ func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetProposalsByParty(in.PartyID, &in.State),
+		Data: h.governanceService.GetProposalsByParty(in.PartyID, inState),
 	}, nil
 }
 
@@ -1422,8 +1421,16 @@ func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNewMarketProposals", startTime)
 
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetNewMarketProposals(&in.State),
+		Data: h.governanceService.GetNewMarketProposals(inState),
 	}, nil
 }
 
@@ -1437,8 +1444,13 @@ func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
+
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID, &in.State),
+		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID, inState),
 	}, nil
 }
 
@@ -1449,8 +1461,15 @@ func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context,
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNetworkParametersProposals", startTime)
 
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetNetworkParametersProposals(&in.State),
+		Data: h.governanceService.GetNetworkParametersProposals(inState),
 	}, nil
 }
 
@@ -1461,8 +1480,15 @@ func (h *tradingDataService) GetNewAssetProposals(_ context.Context,
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNewAssetProposals", startTime)
 
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetNewAssetProposals(&in.State),
+		Data: h.governanceService.GetNewAssetProposals(inState),
 	}, nil
 }
 

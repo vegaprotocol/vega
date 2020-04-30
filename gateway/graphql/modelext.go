@@ -778,6 +778,17 @@ func VoteValueFromProto(v types.Vote_Value) VoteValue {
 	return VoteValueNo
 }
 
+// ProposalVoteFromProto ...
+func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
+	return &ProposalVote{
+		Vote: &Vote{
+			Party: caster,
+			Value: VoteValueFromProto(v.Value),
+		},
+		Proposal: v.ProposalID,
+	}
+}
+
 // IntoProto ...
 func (v VoteValue) IntoProto() types.Vote_Value {
 	if v == VoteValueYes {

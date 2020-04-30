@@ -1130,6 +1130,14 @@
         }
       }
     },
+    "apiOptionalState": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/ProposalState"
+        }
+      }
+    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {

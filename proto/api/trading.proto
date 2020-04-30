@@ -184,34 +184,31 @@ service trading_data {
 
   // Governance
 
-  // Get all governance data (proposals and votes)
-  rpc GetAllGovernanceData(google.protobuf.Empty) returns (GetGovernanceDataResponse);
+  // Get governance data (proposals and votes) for all proposals
+  rpc GetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
-  // Get proposals (and their current votes) that are in the specified state
-  rpc GetProposalsInState(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
-
-  // Get proposals by party authoring them
+  // Get governance data (proposals and votes) for proposals by party authoring them
   rpc GetProposalsByParty(GetGovernanceByPartyRequest) returns (GetGovernanceDataResponse);
 
-  // Get proposals by party authoring them
+  // Get votes by party casting them
   rpc GetVotesByParty(GetGovernanceByPartyRequest) returns (GetVotesResponse);
 
-  // Get proposals that aim creating new markets
+  // Get governance data (proposals and votes) for proposals that aim creating new markets
   rpc GetNewMarketProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
-  // Get proposals that aim updating markets
+  // Get governance data (proposals and votes) for proposals that aim updating markets
   rpc GetUpdateMarketProposals(GetUpdateMarketProposalsRequest) returns (GetGovernanceDataResponse);
 
-  // Get proposals that aim updating Vega network parameters
+  // Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
   rpc GetNetworkParametersProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
   
-  // Get proposals aiming to create new assets
+  // Get governance data (proposals and votes) for proposals aiming to create new assets
   rpc GetNewAssetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
-  // Get a proposal by ID
+  // Get governance data (proposals and votes) for a proposal located by ID
   rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
 
-  // Get a proposal by reference
+  // Get governance data (proposals and votes) for a proposal located by reference
   rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalResponse);
 
   // Subscribe to a stream of all governance updates
@@ -262,8 +259,12 @@ service trading_data {
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 }
 
+message OptionalState {
+  vega.Proposal.State value = 1;
+}
+
 message GetProposalsByStateRequest {
-  vega.Proposal.State state = 1;
+  OptionalState state = 1;
 }
 
 message GetGovernanceDataResponse {
@@ -280,12 +281,12 @@ message GetVotesResponse {
 
 message GetGovernanceByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
-  vega.Proposal.State state = 2;
+  OptionalState state = 2;
 }
 
 message GetUpdateMarketProposalsRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
-  vega.Proposal.State state = 2;
+  OptionalState state = 2;
 }
 
 message GetProposalByIDRequest {

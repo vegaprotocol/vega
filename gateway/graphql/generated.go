@@ -3814,8 +3814,8 @@ type ProposalVote {
   "Cast vote"
   vote: Vote!
 
-  "Proposal -> proposal casting the vote on"
-  proposal: Proposal!
+  "Proposal casting the vote on"
+  proposal: ID!
 }
 
 type PreparedVote {
@@ -10029,10 +10029,10 @@ func (ec *executionContext) _ProposalVote_proposal(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Proposal)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {

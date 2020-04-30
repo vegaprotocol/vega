@@ -134,8 +134,8 @@ func (g *Governance) UnsubscribeProposalVotes(proposalID string, k int64) {
 	g.subs.unsubscribeProposalVotes(proposalID, k)
 }
 
-// GetAllGovernanceData get all proposals and votes filtered by the state if specified
-func (g *Governance) GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData {
+// GetProposals get all proposals and votes filtered by the state if specified
+func (g *Governance) GetProposals(inState *types.Proposal_State) []*types.GovernanceData {
 	g.mu.RLock()
 	result := make([]*types.GovernanceData, 0, len(g.proposalsData))
 	for _, v := range g.proposalsData {

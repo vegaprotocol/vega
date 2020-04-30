@@ -38,6 +38,7 @@
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
     - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
     - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
+    - [OptionalState](#api.OptionalState)
     - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
@@ -306,7 +307,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
-| state | [vega.Proposal.State](#vega.Proposal.State) |  |  |
+| state | [OptionalState](#api.OptionalState) |  |  |
 
 
 
@@ -381,7 +382,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| state | [vega.Proposal.State](#vega.Proposal.State) |  |  |
+| state | [OptionalState](#api.OptionalState) |  |  |
 
 
 
@@ -397,7 +398,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
-| state | [vega.Proposal.State](#vega.Proposal.State) |  |  |
+| state | [OptionalState](#api.OptionalState) |  |  |
 
 
 
@@ -720,6 +721,21 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | proposalID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.OptionalState"></a>
+
+### OptionalState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [vega.Proposal.State](#vega.Proposal.State) |  |  |
 
 
 
@@ -1463,16 +1479,15 @@
 | TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
-| GetAllGovernanceData | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get all governance data (proposals and votes) |
-| GetProposalsInState | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals (and their current votes) that are in the specified state |
-| GetProposalsByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals by party authoring them |
-| GetVotesByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get proposals by party authoring them |
-| GetNewMarketProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim creating new markets |
-| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating markets |
-| GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating Vega network parameters |
-| GetNewAssetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals aiming to create new assets |
-| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get a proposal by ID |
-| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get a proposal by reference |
+| GetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for all proposals |
+| GetProposalsByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
+| GetVotesByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get votes by party casting them |
+| GetNewMarketProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
+| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
+| GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
+| GetNewAssetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
+| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by ID |
+| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by reference |
 | ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.Proposal](#vega.Proposal) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
