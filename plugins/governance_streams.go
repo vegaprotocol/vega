@@ -34,7 +34,7 @@ func newStreams() streams {
 }
 
 // notifications for all updates
-func (s streams) notifyAll(proposals []types.GovernanceData) {
+func (s *streams) notifyAll(proposals []types.GovernanceData) {
 	s.overallMu.RLock()
 	for _, ch := range s.overall {
 		// push onto channel, but don't wait for consumer to read the data
@@ -49,7 +49,7 @@ func (s streams) notifyAll(proposals []types.GovernanceData) {
 	s.overallMu.RUnlock()
 }
 
-func (s streams) subscribeAll() (<-chan []types.GovernanceData, int64) {
+func (s *streams) subscribeAll() (<-chan []types.GovernanceData, int64) {
 	ch := make(chan []types.GovernanceData, 1)
 	//TODO: measure, these atomic operations are likely meaningless here
 	k := atomic.AddInt64(&s.overallCount, 1)
@@ -61,7 +61,7 @@ func (s streams) subscribeAll() (<-chan []types.GovernanceData, int64) {
 	return ch, k
 }
 
-func (s streams) unsubscribeAll(k int64) {
+func (s *streams) unsubscribeAll(k int64) {
 	s.overallMu.Lock()
 	if ch, ok := s.overall[k]; ok {
 		close(ch)
@@ -79,7 +79,7 @@ func partitionProposalsByParty(proposals []types.GovernanceData) map[string][]ty
 }
 
 // notifications for proposal updates (no votes)
-func (s streams) notifyProposals(data []types.GovernanceData) {
+func (s *streams) notifyProposals(data []types.GovernanceData) {
 	byParty := partitionProposalsByParty(data)
 
 	s.partyProposalsMu.RLock()
@@ -101,7 +101,7 @@ func (s streams) notifyProposals(data []types.GovernanceData) {
 	s.partyProposalsMu.RUnlock()
 }
 
-func (s streams) subscribePartyProposals(partyID string) (<-chan []types.GovernanceData, int64) {
+func (s *streams) subscribePartyProposals(partyID string) (<-chan []types.GovernanceData, int64) {
 	ch := make(chan []types.GovernanceData, 1)
 	k := atomic.AddInt64(&s.partyProposalsCount, 1)
 
@@ -117,7 +117,7 @@ func (s streams) subscribePartyProposals(partyID string) (<-chan []types.Governa
 	return ch, k
 }
 
-func (s streams) unsubscribePartyProposals(partyID string, k int64) {
+func (s *streams) unsubscribePartyProposals(partyID string, k int64) {
 	s.partyProposalsMu.Lock()
 	if subs, exists := s.partyProposals[partyID]; exists {
 		if ch, ok := subs[k]; ok {
@@ -145,7 +145,7 @@ func partitionVotesByProposalID(votes []types.Vote) map[string][]types.Vote {
 }
 
 // notifications for vote casts (no other proposal updates otherwise)
-func (s streams) notifyVotes(votes []types.Vote) {
+func (s *streams) notifyVotes(votes []types.Vote) {
 	byParty := partitionVotesByParty(votes)
 	byProposal := partitionVotesByProposalID(votes)
 
@@ -180,7 +180,7 @@ func (s streams) notifyVotes(votes []types.Vote) {
 	s.votesMu.RUnlock()
 }
 
-func (s streams) subscribePartyVotes(partyID string) (<-chan []types.Vote, int64) {
+func (s *streams) subscribePartyVotes(partyID string) (<-chan []types.Vote, int64) {
 	k := atomic.AddInt64(&s.partyVotesCount, 1)
 	ch := make(chan []types.Vote, 1)
 
@@ -195,7 +195,7 @@ func (s streams) subscribePartyVotes(partyID string) (<-chan []types.Vote, int64
 	return ch, k
 }
 
-func (s streams) unsubscribePartyVotes(partyID string, k int64) {
+func (s *streams) unsubscribePartyVotes(partyID string, k int64) {
 	s.votesMu.Lock()
 	if subs, exists := s.partyVotes[partyID]; exists {
 		if ch, ok := subs[k]; ok {
@@ -206,7 +206,7 @@ func (s streams) unsubscribePartyVotes(partyID string, k int64) {
 	s.votesMu.Unlock()
 }
 
-func (s streams) subscribeProposalVotes(proposalID string) (<-chan []types.Vote, int64) {
+func (s *streams) subscribeProposalVotes(proposalID string) (<-chan []types.Vote, int64) {
 	ch := make(chan []types.Vote, 1)
 	k := atomic.AddInt64(&s.proposalVotesCount, 1)
 
@@ -221,7 +221,7 @@ func (s streams) subscribeProposalVotes(proposalID string) (<-chan []types.Vote,
 	return ch, k
 }
 
-func (s streams) unsubscribeProposalVotes(proposalID string, k int64) {
+func (s *streams) unsubscribeProposalVotes(proposalID string, k int64) {
 	s.votesMu.Lock()
 	if subs, exists := s.proposalVotes[proposalID]; exists {
 		if ch, ok := subs[k]; ok {
