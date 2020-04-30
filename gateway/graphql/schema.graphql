@@ -361,27 +361,39 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
-  "A governance proposal located by its reference"
-  proposalByReference(
-    reference: String!
-  ): Proposal!
-
-  "A governance proposal located by its ID"
-  proposalByID(
-    id: String!
+  "A governance proposal located by either its id or reference. If both are set, id is used."
+  proposal(
+    "Optionally, locate proposal by its id"
+    id: String
+    "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
+    reference: String
   ): Proposal!
 
   "Governance proposals that aim creating new markets"
-  newMarketProposals: [Proposal!]
+  newMarketProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
 
   "Governance proposals that aim updating existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
     marketId: String
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
   ): [Proposal!]
 
   "Governance proposals that aim updating Vega network parameters"
-  networkParametersProposals: [Proposal!]
+  networkParametersProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim creating new assets in Vega"
+  newAssetProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
 }
 
 "Statistics about the node"
