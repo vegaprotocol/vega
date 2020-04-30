@@ -33,20 +33,6 @@ func (m *MockPlugin) EXPECT() *MockPluginMockRecorder {
 	return m.recorder
 }
 
-// GetAllGovernanceData mocks base method
-func (m *MockPlugin) GetAllGovernanceData(arg0 *proto.Proposal_State) []*proto.GovernanceData {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllGovernanceData", arg0)
-	ret0, _ := ret[0].([]*proto.GovernanceData)
-	return ret0
-}
-
-// GetAllGovernanceData indicates an expected call of GetAllGovernanceData
-func (mr *MockPluginMockRecorder) GetAllGovernanceData(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllGovernanceData", reflect.TypeOf((*MockPlugin)(nil).GetAllGovernanceData), arg0)
-}
-
 // GetNetworkParametersProposals mocks base method
 func (m *MockPlugin) GetNetworkParametersProposals(arg0 *proto.Proposal_State) []*proto.GovernanceData {
 	m.ctrl.T.Helper()
@@ -117,6 +103,20 @@ func (m *MockPlugin) GetProposalByReference(arg0 string) (*proto.GovernanceData,
 func (mr *MockPluginMockRecorder) GetProposalByReference(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalByReference", reflect.TypeOf((*MockPlugin)(nil).GetProposalByReference), arg0)
+}
+
+// GetProposals mocks base method
+func (m *MockPlugin) GetProposals(arg0 *proto.Proposal_State) []*proto.GovernanceData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProposals", arg0)
+	ret0, _ := ret[0].([]*proto.GovernanceData)
+	return ret0
+}
+
+// GetProposals indicates an expected call of GetProposals
+func (mr *MockPluginMockRecorder) GetProposals(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposals", reflect.TypeOf((*MockPlugin)(nil).GetProposals), arg0)
 }
 
 // GetProposalsByParty mocks base method

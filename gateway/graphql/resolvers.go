@@ -26,11 +26,10 @@ var (
 	ErrNilPendingOrder = errors.New("nil pending order")
 	// ErrUnknownAccountType a account type specified does not exist
 	ErrUnknownAccountType = errors.New("unknown account type")
-	// ErrInvalidProposalByStateRequest is returned if request to look up proposals by state
-	// specified both state to include and filter out
-	ErrInvalidProposalByStateRequest = errors.New("specified both state to include and filter out")
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
+	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
+	ErrInvalidVotesSubscription = errors.New("invlid subscription, either proposal or party ID required")
 )
 
 // TradingClient ...
@@ -93,16 +92,20 @@ type TradingDataClient interface {
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 	// governance
-	GetAllGovernanceData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalsInState(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalsByParty(ctx context.Context, in *protoapi.GetGovernanceByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetVotesByParty(ctx context.Context, in *protoapi.GetGovernanceByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesResponse, error)
+	GetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetVotesByParty(ctx context.Context, in *protoapi.GetVotesByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesResponse, error)
 	GetNewMarketProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetNewAssetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
+
+	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingData_ObserveGovernanceClient, error)
+	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyProposalsClient, error)
+	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyVotesClient, error)
+	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveProposalVotesClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -327,13 +330,9 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 }
 
 func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-	var filter *protoapi.OptionalState
-	if inState != nil {
-		if state, err = inState.IntoProto(); err != nil {
-			return nil, err
-		} else {
-			filter = &protoapi.OptionalState{Value: state}
-		}
+	filter, err := inState.ToOptionalState()
+	if err != nil {
+		return nil, err
 	}
 	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsByStateRequest{
 		State: filter,
@@ -343,7 +342,9 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 	}
 	result := make([]*Proposal, len(resp.Data))
 	for i, gov := range resp.Data {
-		converted, err := r.convertProposal(ctx, gov)
+		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
+			return getParty(ctx, r.log, r.tradingDataClient, partyID)
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -358,15 +359,15 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		return nil, ErrMissingIDOrReference
 	}
 
-	var proposal *types.GovernanceData
+	var data *types.GovernanceData
 	if id != nil {
 		resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
-			ID: *id,
+			ProposalID: *id,
 		})
 		if err != nil {
 			return nil, err
 		}
-		proposal = resp.Proposal
+		data = resp.Proposal
 	} else if reference != nil {
 		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
 			Reference: *reference,
@@ -374,83 +375,111 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
-		proposal = resp.Proposal
-	
-	return r.convertProposal(ctx, proposal), nil
+		data = resp.Proposal
+	}
+
+	return ProposalFromProto(data, func(partyID string) (*types.Party, error) {
+		return getParty(ctx, r.log, r.tradingDataClient, partyID)
+	})
 }
 
 func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-	if (id == nil || len(*id) == 0) && (reference == nil || len(*reference) == 0) {
-		return nil, ErrMissingIDOrReference
+	filter, err := inState.ToOptionalState()
+	if err != nil {
+		return nil, err
 	}
-
-	var proposal *types.GovernanceData
-	if id != nil {
-		resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetProposalsByStateRequest{
-			State: ,
+	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*Proposal, len(resp.Data))
+	for i, gov := range resp.Data {
+		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
+			return getParty(ctx, r.log, r.tradingDataClient, partyID)
 		})
 		if err != nil {
 			return nil, err
 		}
-		proposal = resp.Proposal
-	} else if reference != nil {
-		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
-			Reference: *reference,
-		})
-		if err != nil {
-			return nil, err
-		}
-		proposal = resp.Proposal
-	
-	return r.convertProposal(ctx, proposal), nil
+		result[i] = converted
+	}
+	return result, nil
 }
 
 func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*Proposal, error) {
-
+	filter, err := inState.ToOptionalState()
+	if err != nil {
+		return nil, err
+	}
+	var market string
+	if marketID != nil {
+		market = *marketID
+	}
+	resp, err := r.tradingDataClient.GetUpdateMarketProposals(ctx, &protoapi.GetUpdateMarketProposalsRequest{
+		MarketID: market,
+		State:    filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*Proposal, len(resp.Data))
+	for i, gov := range resp.Data {
+		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
+			return getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
+		})
+		if err != nil {
+			return nil, err
+		}
+		result[i] = converted
+	}
+	return result, nil
 }
+
 func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-
+	filter, err := inState.ToOptionalState()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*Proposal, len(resp.Data))
+	for i, gov := range resp.Data {
+		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
+			return getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
+		})
+		if err != nil {
+			return nil, err
+		}
+		result[i] = converted
+	}
+	return result, nil
 }
+
 func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-
-}
-
-func (r *myQueryResolver) convertProposal(ctx context.Context, gov *types.GovernanceData) (*Proposal, error) {
-	terms, err := ProposalTermsFromProto(gov.Proposal.Terms)
+	filter, err := inState.ToOptionalState()
 	if err != nil {
 		return nil, err
 	}
-	state, err := ProposalStateFromProto(gov.Proposal.State)
+	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
 	if err != nil {
 		return nil, err
 	}
-	party, err := getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
-	if err != nil {
-		return nil, err
-	}
-	result := &Proposal{
-		ID:        &gov.Proposal.ID,
-		Reference: gov.Proposal.Reference,
-		Party:     party,
-		State:     state,
-		Timestamp: timestampToString(gov.Proposal.Timestamp),
-		Terms:     terms,
-		YesVotes:  make([]*Vote, len(gov.Yes)),
-		NoVotes:   make([]*Vote, len(gov.No)),
-	}
-	for i, v := range gov.Yes {
-		aye, err := r.convertVote(ctx, v)
+	result := make([]*Proposal, len(resp.Data))
+	for i, gov := range resp.Data {
+		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
+			return getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
+		})
 		if err != nil {
 			return nil, err
 		}
-		result.YesVotes[i] = aye
-	}
-	for i, v := range gov.No {
-		no, err := r.convertVote(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-		result.NoVotes[i] = no
+		result[i] = converted
 	}
 	return result, nil
 }
@@ -797,6 +826,51 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		// mandatory return field in schema
 		return []*types.Account{}, nil
 	}
+}
+
+func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*Proposal, error) {
+	filter, err := inState.ToOptionalState()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.tradingDataClient.GetProposalsByParty(ctx, &protoapi.GetProposalsByPartyRequest{
+		PartyID: party.Id,
+		State:   filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*Proposal, len(resp.Data))
+	for i, gov := range resp.Data {
+		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
+			return getParty(ctx, r.log, r.tradingDataClient, partyID)
+		})
+		if err != nil {
+			return nil, err
+		}
+		result[i] = converted
+
+	}
+	return result, nil
+}
+
+func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
+	resp, err := r.tradingDataClient.GetVotesByParty(ctx, &protoapi.GetVotesByPartyRequest{
+		PartyID: party.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*ProposalVote, len(resp.Votes))
+	for i, vote := range resp.Votes {
+		//TODO: voter might be shortcut to party once all testing is done, vote.PartyID should be party.ID
+		voter, err := getParty(ctx, r.log, r.tradingDataClient, vote.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = ProposalVoteFromProto(vote, voter)
+	}
+	return result, nil
 }
 
 // END: Party Resolver
@@ -1494,7 +1568,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 				Party: party,
 				Value: VoteValueFromProto(resp.Vote.Value),
 			},
-			Proposal: resp.Vote.ProposalID,
+			ProposalID: resp.Vote.ProposalID,
 		},
 	}, nil
 }
@@ -1875,7 +1949,153 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 	}()
 
 	return c, nil
+}
 
+func isStreamClosed(err error, log *logging.Logger) bool {
+	if err == io.EOF {
+		log.Error("stream closed by server", logging.Error(err))
+		return true
+	}
+	if err != nil {
+		log.Error("stream closed", logging.Error(err))
+		return true
+	}
+	return false
+}
+
+func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *Proposal, error) {
+	output := make(chan *Proposal)
+	stream, err := r.tradingDataClient.ObserveGovernance(ctx, nil)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				break
+			}
+			proposal, err := ProposalFromProto(data, func(partyID string) (*types.Party, error) {
+				return getParty(ctx, r.log, r.tradingDataClient, partyID)
+			})
+			if err != nil {
+				r.log.Error("Proposals subscriber. ProposalFromProto error", logging.Error(err))
+				break
+			}
+			output <- proposal
+		}
+	}()
+	return output, nil
+}
+
+func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, partyID string) (<-chan *Proposal, error) {
+	output := make(chan *Proposal)
+	stream, err := r.tradingDataClient.ObservePartyProposals(ctx, &protoapi.ObservePartyProposalsRequest{
+		PartyID: partyID,
+	})
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				break
+			}
+			proposal, err := ProposalFromProto(data, func(partyID string) (*types.Party, error) {
+				return getParty(ctx, r.log, r.tradingDataClient, partyID)
+			})
+			if err != nil {
+				r.log.Error("Proposals subscriber. ProposalFromProto error", logging.Error(err))
+				break
+			}
+			output <- proposal
+		}
+	}()
+	return output, nil
+}
+
+func (r *mySubscriptionResolver) Proposals(ctx context.Context, partyID *string) (<-chan *Proposal, error) {
+	if partyID != nil && len(*partyID) > 0 {
+		return r.subscribePartyProposals(ctx, *partyID)
+	}
+	return r.subscribeAllProposals(ctx)
+}
+
+func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, proposalID string) (<-chan *ProposalVote, error) {
+	output := make(chan *ProposalVote)
+	stream, err := r.tradingDataClient.ObserveProposalVotes(ctx, &protoapi.ObserveProposalVotesRequest{
+		ProposalID: proposalID,
+	})
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				break
+			}
+			party, err := getParty(ctx, r.log, r.tradingDataClient, data.PartyID)
+			if err != nil {
+				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
+				break
+			}
+			output <- ProposalVoteFromProto(data, party)
+		}
+	}()
+	return output, nil
+}
+
+func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyID string) (<-chan *ProposalVote, error) {
+	output := make(chan *ProposalVote)
+	stream, err := r.tradingDataClient.ObservePartyVotes(ctx, &protoapi.ObservePartyVotesRequest{
+		PartyID: partyID,
+	})
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				break
+			}
+			party, err := getParty(ctx, r.log, r.tradingDataClient, data.PartyID)
+			if err != nil {
+				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
+				break
+			}
+			output <- ProposalVoteFromProto(data, party)
+		}
+	}()
+	return output, nil
+}
+
+func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error) {
+
+	if proposalID != nil && len(*proposalID) == 0 {
+		return r.subscribeProposalVotes(ctx, *proposalID)
+	} else if partyID != nil && len(*partyID) == 0 {
+		return r.subscribePartyVotes(ctx, *partyID)
+	}
+	return nil, ErrInvalidVotesSubscription
 }
 
 type myPendingOrderResolver VegaResolverRoot

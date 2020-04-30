@@ -180,12 +180,10 @@ type Subscription {
     partyID: String
   ): Proposal!
 
-  "Subscribe to votes. Leave out all arguments to receive all votes"
+  "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
     proposalID: String
-    "Optional proposal reference which votes are to be streamed"
-    proposalReference: String
     "Optional party id whose votes are to be streamed"
     partyID: String
   ): ProposalVote!

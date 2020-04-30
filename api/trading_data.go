@@ -1381,7 +1381,7 @@ func (h *tradingDataService) GetProposals(_ context.Context,
 }
 
 func (h *tradingDataService) GetProposalsByParty(_ context.Context,
-	in *protoapi.GetGovernanceByPartyRequest,
+	in *protoapi.GetProposalsByPartyRequest,
 ) (*protoapi.GetGovernanceDataResponse, error) {
 
 	startTime := vegatime.Now()
@@ -1400,7 +1400,7 @@ func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 }
 
 func (h *tradingDataService) GetVotesByParty(_ context.Context,
-	in *protoapi.GetGovernanceByPartyRequest,
+	in *protoapi.GetVotesByPartyRequest,
 ) (*protoapi.GetVotesResponse, error) {
 
 	startTime := vegatime.Now()
@@ -1502,7 +1502,7 @@ func (h *tradingDataService) GetProposalByID(_ context.Context,
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-	proposal, err := h.governanceService.GetProposalByID(in.ID)
+	proposal, err := h.governanceService.GetProposalByID(in.ProposalID)
 	if err != nil {
 		return nil, err
 	}
@@ -1526,7 +1526,11 @@ func (h *tradingDataService) GetProposalByReference(_ context.Context,
 	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
 }
 
-func (h *tradingDataService) ObserveGovernance(_ *empty.Empty, stream protoapi.TradingData_ObserveGovernanceServer) error {
+func (h *tradingDataService) ObserveGovernance(
+	_ *empty.Empty,
+	stream protoapi.TradingData_ObserveGovernanceServer,
+) error {
+
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("ObserveGovernance", startTime)
 	ctx, cfunc := context.WithCancel(stream.Context())
@@ -1577,7 +1581,7 @@ func (h *tradingDataService) ObservePartyProposals(
 				return nil
 			}
 			for _, p := range props {
-				if err := stream.Send(p.Proposal); err != nil {
+				if err := stream.Send(&p); err != nil {
 					h.log.Error("failed to send party proposal into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())

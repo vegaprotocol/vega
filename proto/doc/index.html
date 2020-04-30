@@ -203,10 +203,6 @@
                 </li>
 
                 <li>
-                  <a href="#api.GetGovernanceByPartyRequest"><span class="badge">M</span>GetGovernanceByPartyRequest</a>
-                </li>
-
-                <li>
                   <a href="#api.GetGovernanceDataResponse"><span class="badge">M</span>GetGovernanceDataResponse</a>
                 </li>
 
@@ -223,11 +219,19 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetProposalsByPartyRequest"><span class="badge">M</span>GetProposalsByPartyRequest</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalsByStateRequest"><span class="badge">M</span>GetProposalsByStateRequest</a>
                 </li>
 
                 <li>
                   <a href="#api.GetUpdateMarketProposalsRequest"><span class="badge">M</span>GetUpdateMarketProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetVotesByPartyRequest"><span class="badge">M</span>GetVotesByPartyRequest</a>
                 </li>
 
                 <li>
@@ -1123,64 +1127,6 @@
 
 
 
-        <h3 id="api.GetGovernanceByPartyRequest">GetGovernanceByPartyRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>state</td>
-                  <td><a href="#api.OptionalState">OptionalState</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
         <h3 id="api.GetGovernanceDataResponse">GetGovernanceDataResponse</h3>
         <p></p>
 
@@ -1216,7 +1162,7 @@
             <tbody>
 
                 <tr>
-                  <td>ID</td>
+                  <td>proposalID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -1239,7 +1185,7 @@
               <tbody>
 
                 <tr>
-                  <td>ID</td>
+                  <td>proposalID</td>
                   <td>
                     <ul>
 
@@ -1331,6 +1277,64 @@
 
 
 
+        <h3 id="api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>state</td>
+                  <td><a href="#api.OptionalState">OptionalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
         <h3 id="api.GetProposalsByStateRequest">GetProposalsByStateRequest</h3>
         <p></p>
 
@@ -1397,6 +1401,57 @@
 
                 <tr>
                   <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.GetVotesByPartyRequest">GetVotesByPartyRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
                   <td>
                     <ul>
 
@@ -4082,14 +4137,14 @@
 
               <tr>
                 <td>GetProposalsByParty</td>
-                <td><a href="#api.GetGovernanceByPartyRequest">GetGovernanceByPartyRequest</a></td>
+                <td><a href="#api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for proposals by party authoring them</p></td>
               </tr>
 
               <tr>
                 <td>GetVotesByParty</td>
-                <td><a href="#api.GetGovernanceByPartyRequest">GetGovernanceByPartyRequest</a></td>
+                <td><a href="#api.GetVotesByPartyRequest">GetVotesByPartyRequest</a></td>
                 <td><a href="#api.GetVotesResponse">GetVotesResponse</a></td>
                 <td><p>Get votes by party casting them</p></td>
               </tr>
@@ -4146,7 +4201,7 @@
               <tr>
                 <td>ObservePartyProposals</td>
                 <td><a href="#api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</a></td>
-                <td><a href="#vega.Proposal">.vega.Proposal</a> stream</td>
+                <td><a href="#vega.GovernanceData">.vega.GovernanceData</a> stream</td>
                 <td><p>Subscribe to a stream of proposal updates</p></td>
               </tr>
 

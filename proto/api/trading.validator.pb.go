@@ -139,7 +139,7 @@ func (this *GetVotesResponse) Validate() error {
 	}
 	return nil
 }
-func (this *GetGovernanceByPartyRequest) Validate() error {
+func (this *GetProposalsByPartyRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
@@ -147,6 +147,12 @@ func (this *GetGovernanceByPartyRequest) Validate() error {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
 		}
+	}
+	return nil
+}
+func (this *GetVotesByPartyRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
 	return nil
 }
@@ -162,8 +168,8 @@ func (this *GetUpdateMarketProposalsRequest) Validate() error {
 	return nil
 }
 func (this *GetProposalByIDRequest) Validate() error {
-	if this.ID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	if this.ProposalID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProposalID", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalID))
 	}
 	return nil
 }

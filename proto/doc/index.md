@@ -10,13 +10,14 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
-    - [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest)
     - [GetGovernanceDataResponse](#api.GetGovernanceDataResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
     - [GetProposalResponse](#api.GetProposalResponse)
+    - [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest)
     - [GetProposalsByStateRequest](#api.GetProposalsByStateRequest)
     - [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest)
+    - [GetVotesByPartyRequest](#api.GetVotesByPartyRequest)
     - [GetVotesResponse](#api.GetVotesResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
@@ -298,22 +299,6 @@
 
 
 
-<a name="api.GetGovernanceByPartyRequest"></a>
-
-### GetGovernanceByPartyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| state | [OptionalState](#api.OptionalState) |  |  |
-
-
-
-
-
-
 <a name="api.GetGovernanceDataResponse"></a>
 
 ### GetGovernanceDataResponse
@@ -337,7 +322,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
+| proposalID | [string](#string) |  |  |
 
 
 
@@ -374,6 +359,22 @@
 
 
 
+<a name="api.GetProposalsByPartyRequest"></a>
+
+### GetProposalsByPartyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| state | [OptionalState](#api.OptionalState) |  |  |
+
+
+
+
+
+
 <a name="api.GetProposalsByStateRequest"></a>
 
 ### GetProposalsByStateRequest
@@ -399,6 +400,21 @@
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | state | [OptionalState](#api.OptionalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetVotesByPartyRequest"></a>
+
+### GetVotesByPartyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
 
 
 
@@ -1480,8 +1496,8 @@
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
 | GetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for all proposals |
-| GetProposalsByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
-| GetVotesByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get votes by party casting them |
+| GetProposalsByParty | [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
+| GetVotesByParty | [GetVotesByPartyRequest](#api.GetVotesByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get votes by party casting them |
 | GetNewMarketProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
 | GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
 | GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
@@ -1489,7 +1505,7 @@
 | GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by ID |
 | GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by reference |
 | ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
-| ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.Proposal](#vega.Proposal) stream | Subscribe to a stream of proposal updates |
+| ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |

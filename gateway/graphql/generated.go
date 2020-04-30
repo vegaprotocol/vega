@@ -362,7 +362,7 @@ type ComplexityRoot struct {
 		Positions   func(childComplexity int, partyID string) int
 		Proposals   func(childComplexity int, partyID *string) int
 		Trades      func(childComplexity int, marketID *string, partyID *string) int
-		Votes       func(childComplexity int, proposalID *string, proposalReference *string, partyID *string) int
+		Votes       func(childComplexity int, proposalID *string, partyID *string) int
 	}
 
 	TradableInstrument struct {
@@ -564,7 +564,7 @@ type SubscriptionResolver interface {
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *Proposal, error)
-	Votes(ctx context.Context, proposalID *string, proposalReference *string, partyID *string) (<-chan *ProposalVote, error)
+	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -2176,7 +2176,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Votes(childComplexity, args["proposalID"].(*string), args["proposalReference"].(*string), args["partyID"].(*string)), true
+		return e.complexity.Subscription.Votes(childComplexity, args["proposalID"].(*string), args["partyID"].(*string)), true
 
 	case "TradableInstrument.instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -2605,12 +2605,10 @@ type Subscription {
     partyID: String
   ): Proposal!
 
-  "Subscribe to votes. Leave out all arguments to receive all votes"
+  "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
     proposalID: String
-    "Optional proposal reference which votes are to be streamed"
-    proposalReference: String
     "Optional party id whose votes are to be streamed"
     partyID: String
   ): ProposalVote!
@@ -4787,21 +4785,13 @@ func (ec *executionContext) field_Subscription_votes_args(ctx context.Context, r
 	}
 	args["proposalID"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["proposalReference"]; ok {
+	if tmp, ok := rawArgs["partyID"]; ok {
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["proposalReference"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["partyID"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyID"] = arg2
+	args["partyID"] = arg1
 	return args, nil
 }
 
@@ -12444,7 +12434,7 @@ func (ec *executionContext) _Subscription_votes(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Votes(rctx, args["proposalID"].(*string), args["proposalReference"].(*string), args["partyID"].(*string))
+		return ec.resolvers.Subscription().Votes(rctx, args["proposalID"].(*string), args["partyID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

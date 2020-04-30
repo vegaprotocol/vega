@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
 )
 
@@ -732,8 +733,22 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	return result, nil
 }
 
-// IntoProto ...
-func (s ProposalState) IntoProto() (types.Proposal_State, error) {
+// ToOptionalState ...
+func (s *ProposalState) ToOptionalState() (*protoapi.OptionalState, error) {
+	if s != nil {
+		value, err := s.IntoProtoValue()
+		if err != nil {
+			return nil, err
+		}
+		return &protoapi.OptionalState{
+			Value: value,
+		}, nil
+	}
+	return nil, nil
+}
+
+// IntoProtoValue ...
+func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
 	switch s {
 	case ProposalStateFailed:
 		return types.Proposal_FAILED, nil
@@ -785,7 +800,7 @@ func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 			Party: caster,
 			Value: VoteValueFromProto(v.Value),
 		},
-		Proposal: v.ProposalID,
+		ProposalID: v.ProposalID,
 	}
 }
 
@@ -804,4 +819,53 @@ func (p ProposalVote) IntoProto() (*types.Vote, error) {
 		ProposalID: p.ProposalID,
 		Value:      p.Vote.Value.IntoProto(),
 	}, nil
+}
+
+type fetchParty func(partyID string) (*types.Party, error)
+
+// ProposalFromProto ...
+func ProposalFromProto(gov *types.GovernanceData, getParty fetchParty) (*Proposal, error) {
+	terms, err := ProposalTermsFromProto(gov.Proposal.Terms)
+	if err != nil {
+		return nil, err
+	}
+	state, err := ProposalStateFromProto(gov.Proposal.State)
+	if err != nil {
+		return nil, err
+	}
+	party, err := getParty(gov.Proposal.PartyID)
+	if err != nil {
+		return nil, err
+	}
+	result := &Proposal{
+		ID:        &gov.Proposal.ID,
+		Reference: gov.Proposal.Reference,
+		Party:     party,
+		State:     state,
+		Timestamp: timestampToString(gov.Proposal.Timestamp),
+		Terms:     terms,
+		YesVotes:  make([]*Vote, len(gov.Yes)),
+		NoVotes:   make([]*Vote, len(gov.No)),
+	}
+	for i, v := range gov.Yes {
+		voter, err := getParty(gov.Proposal.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result.YesVotes[i] = &Vote{
+			Value: VoteValueFromProto(v.Value),
+			Party: voter,
+		}
+	}
+	for i, v := range gov.No {
+		voter, err := getParty(gov.Proposal.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result.NoVotes[i] = &Vote{
+			Value: VoteValueFromProto(v.Value),
+			Party: voter,
+		}
+	}
+	return result, nil
 }

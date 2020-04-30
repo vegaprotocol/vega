@@ -188,10 +188,10 @@ service trading_data {
   rpc GetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
   // Get governance data (proposals and votes) for proposals by party authoring them
-  rpc GetProposalsByParty(GetGovernanceByPartyRequest) returns (GetGovernanceDataResponse);
+  rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetGovernanceDataResponse);
 
   // Get votes by party casting them
-  rpc GetVotesByParty(GetGovernanceByPartyRequest) returns (GetVotesResponse);
+  rpc GetVotesByParty(GetVotesByPartyRequest) returns (GetVotesResponse);
 
   // Get governance data (proposals and votes) for proposals that aim creating new markets
   rpc GetNewMarketProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
@@ -215,7 +215,7 @@ service trading_data {
   rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
   
   // Subscribe to a stream of proposal updates
-  rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.Proposal);
+  rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.GovernanceData);
 
   // Subscribe to a stream of votes cast by a specific party
   rpc ObservePartyVotes(ObservePartyVotesRequest) returns (stream vega.Vote);
@@ -279,9 +279,13 @@ message GetVotesResponse {
   repeated vega.Vote votes = 1;
 }
 
-message GetGovernanceByPartyRequest {
+message GetProposalsByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
   OptionalState state = 2;
+}
+
+message GetVotesByPartyRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 message GetUpdateMarketProposalsRequest {
@@ -290,7 +294,7 @@ message GetUpdateMarketProposalsRequest {
 }
 
 message GetProposalByIDRequest {
-  string ID = 1 [(validator.field) = {string_not_empty : true}];
+  string proposalID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 message GetProposalByReferenceRequest {

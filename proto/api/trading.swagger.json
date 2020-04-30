@@ -2717,18 +2717,6 @@
       },
       "title": "Stream result of vegaPosition"
     },
-    "vegaProposal": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaProposal"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaProposal"
-    },
     "vegaTransferResponse": {
       "type": "object",
       "properties": {
