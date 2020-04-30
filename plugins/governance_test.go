@@ -124,16 +124,6 @@ func TestProposals(t *testing.T) {
 		assert.Equal(t, err, plugins.ErrProposalNotFound)
 		assert.Nil(t, prop)
 	})
-	t.Run("new market proposal", func(t *testing.T) {
-		props := plugin.GetNewMarketProposals(nil)
-		assert.Len(t, props, 1)
-		assert.NotNil(t, props)
-		/*assert.Equal(t, *props[0].Proposal, proposal1)
-
-		selector := types.Proposal_REJECTED
-		props = plugin.GetNewMarketProposals(&selector)
-		assert.Len(t, props, 0)*/
-	})
 }
 
 func testNewProposalChangingVoteSuccess(t *testing.T) {
@@ -275,12 +265,12 @@ func testNewProposalThenVoteSuccess(t *testing.T) {
 
 	// proposal is open, should get it from the open proposals
 	state := types.Proposal_OPEN
-	open := plugin.GetAllGovernanceData(&state)
+	open := plugin.GetProposals(&state)
 	assert.NotEmpty(t, open)
 	assert.Equal(t, 1, len(open))
 	assert.Equal(t, proposal, *open[0].Proposal)
 
-	all := plugin.GetAllGovernanceData(nil)
+	all := plugin.GetProposals(nil)
 	assert.NotEmpty(t, all)
 	assert.Equal(t, proposal, *all[0].Proposal)
 }
