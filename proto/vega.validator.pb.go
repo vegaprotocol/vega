@@ -17,6 +17,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *Price) Validate() error {
+	return nil
+}
+func (this *Timestamp) Validate() error {
+	return nil
+}
 func (this *Amount) Validate() error {
 	return nil
 }
@@ -121,6 +127,16 @@ func (this *OrderAmendment) Validate() error {
 	}
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	if this.Price != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Price); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Price", err)
+		}
+	}
+	if this.ExpiresAt != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.ExpiresAt); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", err)
+		}
 	}
 	return nil
 }

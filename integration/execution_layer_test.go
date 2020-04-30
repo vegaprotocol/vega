@@ -762,11 +762,17 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			return err
 		}
 
+		value := u64val(row, 2)
+		var price *proto.Price
+		if value != 0 {
+			price = &proto.Price{Value: value}
+		}
+
 		amend := proto.OrderAmendment{
 			OrderID:     o.Id,
 			PartyID:     o.PartyID,
 			MarketID:    o.MarketID,
-			Price:       u64val(row, 2),
+			Price:       price,
 			SizeDelta:   i64val(row, 3),
 			TimeInForce: tif,
 		}

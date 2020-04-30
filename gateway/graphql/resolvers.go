@@ -14,6 +14,7 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -1438,12 +1439,13 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	order.PartyID = party
 
 	var err error
-	order.Price, err = strconv.ParseUint(price, 10, 64)
+	pricevalue, err := strconv.ParseUint(price, 10, 64)
 	if err != nil {
 		r.log.Error("unable to convert price from string in order amend",
 			logging.Error(err))
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
+	order.Price = &proto.Price{Value: pricevalue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
@@ -1465,7 +1467,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		order.ExpiresAt = &proto.Timestamp{Value: expiresAt.UnixNano()}
 	}
 
 	req := protoapi.AmendOrderRequest{

@@ -28,6 +28,14 @@ enum Interval {
   I1D = 5;
 }
 
+message Price {
+  uint64 value = 1;
+}
+
+message Timestamp {
+  int64 value = 1;
+}
+
 message Amount {
   string value = 1;
 }
@@ -289,9 +297,9 @@ message OrderAmendment {
   string marketID = 3;
 
   // these can be amended
-  uint64 price = 4;
+  Price price = 4;
   int64 sizeDelta = 5;
-  int64 expiresAt = 6;
+  Timestamp expiresAt = 6;
   Order.TimeInForce timeInForce = 7;
 }
 

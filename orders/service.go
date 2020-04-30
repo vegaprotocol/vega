@@ -28,6 +28,8 @@ var (
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
 	// ErrNonGTTOrderWithExpiry signals that a non GTT order what set with an expiracy
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
+	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiracy
+	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 	// ErrInvalidAmendmentSizeDelta ...
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
 	// ErrInvalidAmendOrderTIF ...
@@ -187,15 +189,15 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	}
 
 	// Check we have at least one field to update
-	if amendment.Price == 0 &&
+	if amendment.Price == nil &&
 		amendment.SizeDelta == 0 &&
-		amendment.ExpiresAt == 0 &&
+		amendment.ExpiresAt == nil &&
 		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoParamsInAmendRequest
 	}
 
 	// Only update ExpiresAt when TIF is related
-	if amendment.ExpiresAt > 0 {
+	if amendment.ExpiresAt != nil && amendment.ExpiresAt.Value > 0 {
 		if amendment.TimeInForce != types.Order_GTT &&
 			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
 			// We cannot change the expire time for this order type
@@ -205,7 +207,12 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 
 	// if order is GTT convert datetime to blockchain ts
 	if amendment.TimeInForce == types.Order_GTT {
-		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
+		if amendment.ExpiresAt == nil {
+			s.log.Error("unable to set trade type to GTT when no expiry given")
+			return ErrGTTOrderWithNoExpiry
+		}
+
+		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt.Value)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return err

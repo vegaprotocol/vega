@@ -1242,19 +1242,21 @@ func (m *Market) validateOrderAmendment(
 		if newSize <= 0 {
 			return errors.New("amend order size can't be <= 0")
 		}
-
 	}
 
 	// check TIF and expiracy
 	if amendment.TimeInForce == types.Order_GTT {
+		if amendment.ExpiresAt == nil {
+			return errors.New("cannot amend to order type GTT without an expiryAt value")
+		}
 		// if expiresAt is before or equal to created at
 		// we return an error
-		if amendment.ExpiresAt <= order.CreatedAt {
+		if amendment.ExpiresAt.Value <= order.CreatedAt {
 			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
 		}
 	} else if amendment.TimeInForce == types.Order_GTC {
 		// this is cool, but we need to ensure and expiry is not set
-		if amendment.ExpiresAt != 0 {
+		if amendment.ExpiresAt != nil {
 			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
 		}
 	} else if amendment.TimeInForce == types.Order_FOK ||
@@ -1264,8 +1266,8 @@ func (m *Market) validateOrderAmendment(
 	}
 
 	// Check any price change is actually a change
-	if amendment.Price != 0 &&
-		amendment.Price == order.Price {
+	if amendment.Price != nil &&
+		amendment.Price.Value == order.Price {
 		return errors.New("amend order, new price same as original price")
 	}
 
@@ -1300,8 +1302,8 @@ func (m *Market) applyOrderAmendment(
 	}
 
 	// apply price changes
-	if amendment.Price != 0 && existingOrder.Price != amendment.Price {
-		order.Price = amendment.Price
+	if amendment.Price != nil && existingOrder.Price != amendment.Price.Value {
+		order.Price = amendment.Price.Value
 	}
 
 	// apply size changes
@@ -1316,7 +1318,9 @@ func (m *Market) applyOrderAmendment(
 
 	// apply tif
 	order.TimeInForce = amendment.TimeInForce
-	order.ExpiresAt = amendment.ExpiresAt
+	if amendment.ExpiresAt != nil {
+		order.ExpiresAt = amendment.ExpiresAt.Value
+	}
 	return
 }
 

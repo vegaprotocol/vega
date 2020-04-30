@@ -14,7 +14,7 @@ var (
 	amend = proto.OrderAmendment{
 		OrderID:   "order_id",
 		PartyID:   "party",
-		Price:     10000,
+		Price:     &proto.Price{Value: 10000},
 		SizeDelta: 1,
 		MarketID:  "market",
 	}
@@ -40,7 +40,7 @@ func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID: "orderid",
 		PartyID: "partyid",
-		Price:   1000,
+		Price:   &proto.Price{Value: 1000},
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -81,7 +81,7 @@ func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:   "orderid",
 		PartyID:   "partyid",
-		ExpiresAt: expires.UnixNano(),
+		ExpiresAt: &proto.Timestamp{Value: expires.UnixNano()},
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -133,7 +133,7 @@ func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
 		OrderID:     "orderid",
 		PartyID:     "partyid",
 		TimeInForce: proto.Order_GTC,
-		ExpiresAt:   10,
+		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()

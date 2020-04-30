@@ -719,6 +719,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Price"><span class="badge">M</span>Price</a>
+                </li>
+
+                <li>
                   <a href="#vega.PriceLevel"><span class="badge">M</span>PriceLevel</a>
                 </li>
 
@@ -744,6 +748,10 @@
 
                 <li>
                   <a href="#vega.Statistics"><span class="badge">M</span>Statistics</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Timestamp"><span class="badge">M</span>Timestamp</a>
                 </li>
 
                 <li>
@@ -5992,7 +6000,7 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>price</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#vega.Price">Price</a></td>
                   <td></td>
                   <td><p>these can be amended </p></td>
                 </tr>
@@ -6006,7 +6014,7 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>expiresAt</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#vega.Timestamp">Timestamp</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -6533,6 +6541,30 @@ after each successful amend </p></td>
 
 
 
+        <h3 id="vega.Price">Price</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.PriceLevel">PriceLevel</h3>
         <p></p>
 
@@ -6986,6 +7018,30 @@ after each successful amend </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Timestamp">Timestamp</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>

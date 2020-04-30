@@ -1969,8 +1969,7 @@
           "type": "string"
         },
         "price": {
-          "type": "string",
-          "format": "uint64",
+          "$ref": "#/definitions/vegaPrice",
           "title": "these can be amended"
         },
         "sizeDelta": {
@@ -1978,8 +1977,7 @@
           "format": "int64"
         },
         "expiresAt": {
-          "type": "string",
-          "format": "int64"
+          "$ref": "#/definitions/vegaTimestamp"
         },
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
@@ -2104,6 +2102,15 @@
           "format": "int64"
         },
         "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaPrice": {
+      "type": "object",
+      "properties": {
+        "value": {
           "type": "string",
           "format": "uint64"
         }
@@ -2393,6 +2400,15 @@
         "uptime": {
           "type": "string",
           "title": "ISO 8601 datetime, nanosecond precision"
+        }
+      }
+    },
+    "vegaTimestamp": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
