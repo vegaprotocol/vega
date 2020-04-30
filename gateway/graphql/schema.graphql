@@ -1390,7 +1390,7 @@ type ProposalVote {
   vote: Vote!
 
   "Proposal casting the vote on"
-  proposal: ID!
+  proposalID: ID!
 }
 
 type PreparedVote {

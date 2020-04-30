@@ -334,7 +334,7 @@ type ProposalVote struct {
 	// Cast vote
 	Vote *Vote `json:"vote"`
 	// Proposal casting the vote on
-	Proposal string `json:"proposal"`
+	ProposalID string `json:"proposalID"`
 }
 
 type ScalingFactors struct {

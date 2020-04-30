@@ -801,7 +801,7 @@ func (v VoteValue) IntoProto() types.Vote_Value {
 func (p ProposalVote) IntoProto() (*types.Vote, error) {
 	return &types.Vote{
 		PartyID:    p.Vote.Party.Id,
-		ProposalID: *p.Proposal.ID,
+		ProposalID: p.ProposalID,
 		Value:      p.Vote.Value.IntoProto(),
 	}, nil
 }

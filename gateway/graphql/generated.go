@@ -285,8 +285,8 @@ type ComplexityRoot struct {
 	}
 
 	ProposalVote struct {
-		Proposal func(childComplexity int) int
-		Vote     func(childComplexity int) int
+		ProposalID func(childComplexity int) int
+		Vote       func(childComplexity int) int
 	}
 
 	Query struct {
@@ -1643,12 +1643,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.MinParticipationStake(childComplexity), true
 
-	case "ProposalVote.proposal":
-		if e.complexity.ProposalVote.Proposal == nil {
+	case "ProposalVote.proposalID":
+		if e.complexity.ProposalVote.ProposalID == nil {
 			break
 		}
 
-		return e.complexity.ProposalVote.Proposal(childComplexity), true
+		return e.complexity.ProposalVote.ProposalID(childComplexity), true
 
 	case "ProposalVote.vote":
 		if e.complexity.ProposalVote.Vote == nil {
@@ -3815,7 +3815,7 @@ type ProposalVote {
   vote: Vote!
 
   "Proposal casting the vote on"
-  proposal: ID!
+  proposalID: ID!
 }
 
 type PreparedVote {
@@ -9998,7 +9998,7 @@ func (ec *executionContext) _ProposalVote_vote(ctx context.Context, field graphq
 	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalVote_proposal(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalVote_proposalID(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -10017,7 +10017,7 @@ func (ec *executionContext) _ProposalVote_proposal(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Proposal, nil
+		return obj.ProposalID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16953,8 +16953,8 @@ func (ec *executionContext) _ProposalVote(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "proposal":
-			out.Values[i] = ec._ProposalVote_proposal(ctx, field, obj)
+		case "proposalID":
+			out.Values[i] = ec._ProposalVote_proposalID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
