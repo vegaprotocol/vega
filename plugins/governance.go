@@ -3,7 +3,6 @@ package plugins
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -29,253 +28,37 @@ type VoteBuffer interface {
 	Unsubscribe(int)
 }
 
+// Governance stores governance data
 // threaded contention points:
-// - Proposal - can be updated if votes are recorded before the proposal
+// - Proposal - can be updated if state changes
 // - Yes - updated on receiving a yes vote
 // - No - updated on receiving a no vote
-type governanceData types.GovernanceData
-
-func newProposal(proposal *types.Proposal) *governanceData {
-	return &governanceData{
-		Proposal: proposal,
-	}
-}
-
-// used for the case when vote arrives bofore the proposal
-func newDanglingVote(vote *types.Vote) *governanceData {
-	result := &governanceData{}
-	result.addVote(vote)
-	return result
-}
-
-func (d *governanceData) addVote(vote *types.Vote) {
-	if vote.Value == types.Vote_YES {
-		d.Yes = append(d.Yes, vote)
-	} else if vote.Value == types.Vote_NO {
-		d.No = append(d.No, vote)
-	}
-}
-
-func cloneVotes(from []*types.Vote) []*types.Vote {
-	result := make([]*types.Vote, len(from))
-	for i, v := range from {
-		result[i] = v // vote itself considered immutable
-	}
-	return result
-}
-
-func (d *governanceData) isDangling() bool {
-	return d.Proposal == nil
-}
-
-func (d *governanceData) clone() *types.GovernanceData {
-	if d.Proposal != nil {
-		proposal := *d.Proposal
-		return &types.GovernanceData{
-			Proposal: &proposal,
-			Yes:      cloneVotes(d.Yes),
-			No:       cloneVotes(d.No),
-		}
-	}
-	return nil
-}
-
-type filterProposals = func(*governanceData) bool
-
-func selectInState(inState *types.Proposal_State) *filterProposals {
-	if inState == nil {
-		return nil
-	}
-	impl := func(proposal *governanceData) bool {
-		return proposal.Proposal.State != *inState
-	}
-	return &impl
-}
-
-func cloneProposals(data []*governanceData, skip *filterProposals) []*types.GovernanceData {
-	var result []*types.GovernanceData
-	if skip == nil {
-		result = make([]*types.GovernanceData, 0, len(data))
-	}
-	for _, v := range data {
-		if !v.isDangling() && (skip == nil || !(*skip)(v)) {
-			result = append(result, v.clone())
-		}
-	}
-	return result
-}
-
-type searchViews struct {
-	// party id to votes view
-	partyVotes map[string][]*types.Vote
-	// typed slices
-	newMarkets     []*governanceData
-	marketUpdates  map[string][]*governanceData
-	networkUpdates []*governanceData
-	newAssets      []*governanceData
-}
-
-func newViews() searchViews {
-	return searchViews{
-		partyVotes:    map[string][]*types.Vote{},
-		marketUpdates: map[string][]*governanceData{},
-	}
-}
-
-func (s searchViews) addProposal(data *governanceData) {
-	switch data.Proposal.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
-		s.newMarkets = append(s.newMarkets, data)
-	//case *types.ProposalTerms_UpdateMarket:
-	//TODO:
-	case *types.ProposalTerms_UpdateNetwork:
-		s.networkUpdates = append(s.networkUpdates, data)
-	case *types.ProposalTerms_NewAsset:
-		s.newAssets = append(s.newAssets, data)
-	}
-}
-
-func (s searchViews) addVote(vote *types.Vote) {
-	s.partyVotes[vote.PartyID] = append(s.partyVotes[vote.PartyID], vote)
-}
-
-type streams struct {
-	overall      map[int64]chan []types.GovernanceData
-	overallCount int64
-
-	partyProposals      map[string]map[int64]chan []types.GovernanceData
-	partyProposalsCount int64 // flat counter across all parties
-
-	partyVotes      map[string]map[int64]chan []types.Vote
-	partyVotesCount int64 // flat counter across all parties
-
-	proposalVotes      map[string]map[int64]chan []types.Vote
-	proposalVotesCount int64 // flat counter across all proposals
-}
-
-func newStreams() streams {
-	return streams{
-		overall:        map[int64]chan []types.GovernanceData{},
-		partyProposals: map[string]map[int64]chan []types.GovernanceData{},
-		partyVotes:     map[string]map[int64]chan []types.Vote{},
-		proposalVotes:  map[string]map[int64]chan []types.Vote{},
-	}
-}
-
-// notifications for all updates
-func (s streams) notifyAll(proposals []types.GovernanceData) {
-	for _, ch := range s.overall {
-		// push onto channel, but don't wait for consumer to read the data
-		// the channel is buffered to 1, so we can write if the channel is empty
-		select {
-		case ch <- proposals:
-			continue
-		default:
-			continue
-		}
-	}
-}
-
-func partitionProposalsByParty(proposals []types.GovernanceData) map[string][]types.GovernanceData {
-	result := map[string][]types.GovernanceData{}
-	for _, v := range proposals {
-		result[v.Proposal.ID] = append(result[v.Proposal.ID], v)
-	}
-	return result
-}
-
-// notifications for proposal updates (no votes)
-func (s streams) notifyProposals(data []types.GovernanceData) {
-	byParty := partitionProposalsByParty(data)
-
-	// the assumption here is that there is likely to be less per party proposal
-	// subscriptions than new proposals received by the node
-	// if this assumption is incorrect, next two lines have to be inverted
-	for partyID, subs := range s.partyProposals {
-		if proposals, exists := byParty[partyID]; exists {
-			for _, ch := range subs {
-				select {
-				case ch <- proposals:
-					continue
-				default:
-					continue
-				}
-			}
-		}
-	}
-}
-
-func partitionVotesByParty(votes []types.Vote) map[string][]types.Vote {
-	result := map[string][]types.Vote{}
-	for _, v := range votes {
-		result[v.PartyID] = append(result[v.PartyID], v)
-	}
-	return result
-}
-
-func partitionVotesByProposalID(votes []types.Vote) map[string][]types.Vote {
-	result := map[string][]types.Vote{}
-	for _, v := range votes {
-		result[v.ProposalID] = append(result[v.ProposalID], v)
-	}
-	return result
-}
-
-// notifications for vote casts (no other proposal updates otherwise)
-func (s streams) notifyVotes(votes []types.Vote) {
-	byParty := partitionVotesByParty(votes)
-	// the assumption here is that there is likely to be less per party vote
-	// subscriptions than new votes received by the node
-	for partyID, subs := range s.partyVotes {
-		if votes, exists := byParty[partyID]; exists {
-			for _, ch := range subs {
-				select {
-				case ch <- votes:
-					continue
-				default:
-					continue
-				}
-			}
-		}
-	}
-	byProposal := partitionVotesByProposalID(votes)
-	for proposalID, subs := range s.proposalVotes {
-		if votes, exists := byProposal[proposalID]; exists {
-			for _, ch := range subs {
-				select {
-				case ch <- votes:
-					continue
-				default:
-					continue
-				}
-			}
-		}
-	}
-}
-
-// Governance stores governance data
+// each vote itself may be deleted
 type Governance struct {
-	mu         sync.RWMutex
+	mu sync.RWMutex
+
 	props      PropBuffer
 	votes      VoteBuffer
 	pref, vref int
 	pch        <-chan []types.Proposal
 	vch        <-chan []types.Vote
 
-	data  map[string]*governanceData
-	views searchViews
+	proposalsData map[string]*types.Proposal // Proposal.ID : Proposal
+	votesData     map[string]votes           // Proposal.ID : Votes
 
-	subs streams
+	views searchViews
+	subs  streams
 }
 
 // NewGovernance - return a new governance plugin
 func NewGovernance(p PropBuffer, v VoteBuffer) *Governance {
 	return &Governance{
-		props: p,
-		votes: v,
-		data:  map[string]*governanceData{},
-		views: newViews(),
-		subs:  newStreams(),
+		props:         p,
+		votes:         v,
+		proposalsData: map[string]*types.Proposal{},
+		votesData:     map[string]votes{},
+		views:         newViews(),
+		subs:          newStreams(),
 	}
 }
 
@@ -311,63 +94,161 @@ func (g *Governance) Stop() {
 	g.mu.Unlock()
 }
 
-func (g *Governance) storeProposals(proposals []types.Proposal) {
-	added := make([]types.GovernanceData, len(proposals))
-
-	g.mu.Lock()
-	for i, v := range proposals {
-		datum, exists := g.data[v.ID]
-		v := v
-		if exists {
-			datum.Proposal = &v
-		} else {
-			datum = newProposal(&v)
-			g.data[v.ID] = datum
-		}
-		g.views.addProposal(datum)
-		added[i] = *datum.clone()
-	}
-	g.mu.Unlock()
-
-	// notify the proposals have been stored
-	go func() {
-		g.mu.Lock()
-		g.subs.notifyAll(added)
-		g.subs.notifyProposals(added)
-		g.mu.Unlock()
-	}()
+// SubscribeAll streams all governance data
+func (g *Governance) SubscribeAll() (<-chan []types.GovernanceData, int64) {
+	return g.subs.subscribeAll()
 }
 
-func (g *Governance) storeVotes(votes []types.Vote) {
-	generalUpdate := make([]types.GovernanceData, len(votes))
+// UnsubscribeAll removes governance data stream
+func (g *Governance) UnsubscribeAll(k int64) {
+	g.subs.unsubscribeAll(k)
+}
 
-	g.mu.Lock()
-	for i, v := range votes {
-		v := v
-		datum, exists := g.data[v.ProposalID]
-		if !exists { // create if does not exist
-			datum = newDanglingVote(&v)
-			g.data[v.ProposalID] = datum
-		} else {
-			datum.addVote(&v)
-		}
-		g.views.addVote(&v)
+// SubscribePartyProposals streams proposals authored by the specific party
+func (g *Governance) SubscribePartyProposals(partyID string) (<-chan []types.GovernanceData, int64) {
+	return g.subs.subscribePartyProposals(partyID)
+}
 
-		// notify general channel only about votes that are received after the proposal (ignore dangling)
-		// channel dedicated to votes will receive everything
-		if !datum.isDangling() {
-			generalUpdate[i] = *datum.clone()
+// UnsubscribePartyProposals removes stream of proposals for authored by the party
+func (g *Governance) UnsubscribePartyProposals(partyID string, k int64) {
+	g.subs.unsubscribePartyProposals(partyID, k)
+}
+
+// SubscribePartyVotes streams all votes cast by the specific party
+func (g *Governance) SubscribePartyVotes(partyID string) (<-chan []types.Vote, int64) {
+	return g.subs.subscribePartyVotes(partyID)
+}
+
+// UnsubscribePartyVotes removes stream of votes for the specific party
+func (g *Governance) UnsubscribePartyVotes(partyID string, k int64) {
+	g.subs.unsubscribePartyVotes(partyID, k)
+}
+
+// SubscribeProposalVotes streams all votes cast for the specific proposal
+func (g *Governance) SubscribeProposalVotes(proposalID string) (<-chan []types.Vote, int64) {
+	return g.subs.subscribeProposalVotes(proposalID)
+}
+
+// UnsubscribeProposalVotes removes stream of votes for the proposal
+func (g *Governance) UnsubscribeProposalVotes(proposalID string, k int64) {
+	g.subs.unsubscribeProposalVotes(proposalID, k)
+}
+
+// GetAllGovernanceData get all proposals and votes filtered by the state if specified
+func (g *Governance) GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData {
+	g.mu.RLock()
+	result := make([]*types.GovernanceData, 0, len(g.proposalsData))
+	for _, v := range g.proposalsData {
+		if inState == nil || v.State == *inState {
+			result = append(result, makeGovernanceData(v, g.votesData[v.ID]))
 		}
 	}
-	g.mu.Unlock()
+	g.mu.RUnlock()
+	return result
+}
 
-	// notify the votes have been stored
-	go func() {
-		g.mu.Lock()
-		g.subs.notifyAll(generalUpdate)
-		g.subs.notifyVotes(votes)
-		g.mu.Unlock()
-	}()
+// GetProposalsByParty returns proposals (+votes) by the party that authoring them
+func (g *Governance) GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData {
+	var result []*types.GovernanceData
+	g.mu.RLock()
+	for _, v := range g.proposalsData {
+		if v.PartyID == partyID && (inState == nil || v.State == *inState) {
+			result = append(result, makeGovernanceData(v, g.votesData[v.ID]))
+		}
+	}
+	g.mu.RUnlock()
+	return result
+}
+
+// GetVotesByParty returns votes cast by the party
+func (g *Governance) GetVotesByParty(partyID string) []*types.Vote {
+	var result []*types.Vote
+	g.mu.RLock()
+	if data, exists := g.views.partyVotes[partyID]; exists {
+		result = make([]*types.Vote, len(data))
+		for i, v := range data {
+			result[i] = v
+		}
+	}
+	g.mu.RUnlock()
+	return result
+}
+
+// GetProposalByID returns proposal and votes by proposal ID
+func (g *Governance) GetProposalByID(id string) (*types.GovernanceData, error) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	if datum, exists := g.proposalsData[id]; exists {
+		return makeGovernanceData(datum, g.votesData[id]), nil
+	}
+	return nil, ErrProposalNotFound
+}
+
+// GetProposalByReference returns proposal and votes by reference
+func (g *Governance) GetProposalByReference(ref string) (*types.GovernanceData, error) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	for _, v := range g.proposalsData {
+		if v.Reference == ref {
+			return makeGovernanceData(v, g.votesData[v.ID]), nil
+		}
+	}
+	return nil, ErrProposalNotFound
+}
+
+// GetNewMarketProposals returns proposals aiming to create new markets
+func (g *Governance) GetNewMarketProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	skipper := selectInState(inState)
+
+	g.mu.RLock()
+	result := collectProposals(g.views.newMarkets, g.votesData, skipper)
+	g.mu.RUnlock()
+
+	return result
+}
+
+// GetUpdateMarketProposals returns proposals aiming to update existing market
+func (g *Governance) GetUpdateMarketProposals(marketID string, inState *types.Proposal_State) []*types.GovernanceData {
+	var result []*types.GovernanceData
+	g.mu.RLock()
+
+	if len(marketID) == 0 { // all market updates
+		for _, updates := range g.views.marketUpdates {
+			for _, v := range updates {
+				if inState == nil || v.State == *inState {
+					result = append(result, makeGovernanceData(v, g.votesData[v.ID]))
+				}
+			}
+		}
+	} else if updates, exists := g.views.marketUpdates[marketID]; exists {
+		result = collectProposals(updates, g.votesData, selectInState(inState))
+	}
+	g.mu.RUnlock()
+	return result
+}
+
+// GetNetworkParametersProposals returns proposals aiming to update network
+func (g *Governance) GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	skipper := selectInState(inState)
+
+	g.mu.RLock()
+	result := collectProposals(g.views.networkUpdates, g.votesData, skipper)
+	g.mu.RUnlock()
+
+	return result
+}
+
+// GetNewAssetProposals returns proposals aiming to create new markets
+func (g *Governance) GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	skipper := selectInState(inState)
+
+	g.mu.RLock()
+	result := collectProposals(g.views.newAssets, g.votesData, skipper)
+	g.mu.RUnlock()
+
+	return result
 }
 
 func (g *Governance) consume(ctx context.Context) {
@@ -398,217 +279,146 @@ func (g *Governance) consume(ctx context.Context) {
 	}
 }
 
-// SubscribeAll streams all governance data
-func (g *Governance) SubscribeAll() (<-chan []types.GovernanceData, int64) {
-	k := atomic.AddInt64(&g.subs.overallCount, 1)
+func (g *Governance) storeProposals(proposals []types.Proposal) {
+	added := make([]types.GovernanceData, len(proposals))
 
 	g.mu.Lock()
-	ch := make(chan []types.GovernanceData, 1)
-	g.subs.overall[k] = ch
-	g.mu.Unlock()
+	for i, v := range proposals {
+		v := v
+		g.proposalsData[v.ID] = &v
 
-	return ch, k
-}
-
-// UnsubscribeAll removes governance data stream
-func (g *Governance) UnsubscribeAll(k int64) {
-	g.mu.Lock()
-	if ch, ok := g.subs.overall[k]; ok {
-		close(ch)
-		delete(g.subs.overall, k)
+		g.views.addProposal(&v)
+		added[i] = *makeGovernanceData(&v, g.votesData[v.ID])
 	}
 	g.mu.Unlock()
+
+	go g.subs.notifyAll(added)
+	go g.subs.notifyProposals(added)
 }
 
-// SubscribePartyProposals streams proposals authored by the specific party
-func (g *Governance) SubscribePartyProposals(partyID string) (<-chan []types.GovernanceData, int64) {
-	k := atomic.AddInt64(&g.subs.partyProposalsCount, 1)
+func (g *Governance) storeVotes(votes []types.Vote) {
+	var proposals []types.GovernanceData
 
 	g.mu.Lock()
-	byPartySubs, exists := g.subs.partyProposals[partyID]
-	if !exists {
-		byPartySubs = map[int64]chan []types.GovernanceData{}
-		g.subs.partyProposals[partyID] = byPartySubs
-	}
-	ch := make(chan []types.GovernanceData, 1)
-	byPartySubs[k] = ch
-	g.mu.Unlock()
+	for _, v := range votes {
+		datum, exists := g.votesData[v.ProposalID]
+		if !exists {
+			datum = newVotes()
+			g.votesData[v.ProposalID] = datum
+		}
+		datum.store(v)
+		g.views.addVote(&v)
 
-	return ch, k
-}
-
-// UnsubscribePartyProposals removes stream of proposals for authored by the party
-func (g *Governance) UnsubscribePartyProposals(partyID string, k int64) {
-	g.mu.Lock()
-	if subs, exists := g.subs.partyProposals[partyID]; exists {
-		if ch, ok := subs[k]; ok {
-			close(ch)
-			delete(subs, k)
+		if p, exists := g.proposalsData[v.ProposalID]; exists {
+			proposals = append(proposals, *makeGovernanceData(p, g.votesData[v.ProposalID]))
 		}
 	}
 	g.mu.Unlock()
+
+	go g.subs.notifyAll(proposals)
+	go g.subs.notifyVotes(votes)
 }
 
-// SubscribePartyVotes streams all votes cast by the specific party
-func (g *Governance) SubscribePartyVotes(partyID string) (<-chan []types.Vote, int64) {
-	k := atomic.AddInt64(&g.subs.partyVotesCount, 1)
+type filterProposals = func(*types.Proposal) bool
 
-	g.mu.Lock()
-	byPartySubs, exists := g.subs.partyVotes[partyID]
-	if !exists {
-		byPartySubs = map[int64]chan []types.Vote{}
-		g.subs.partyVotes[partyID] = byPartySubs
+func selectInState(inState *types.Proposal_State) *filterProposals {
+	if inState == nil {
+		return nil
 	}
-	ch := make(chan []types.Vote, 1)
-	byPartySubs[k] = ch
-	g.mu.Unlock()
-
-	return ch, k
-}
-
-// UnsubscribePartyVotes removes stream of votes for the specific party
-func (g *Governance) UnsubscribePartyVotes(partyID string, k int64) {
-	g.mu.Lock()
-	if subs, exists := g.subs.partyVotes[partyID]; exists {
-		if ch, ok := subs[k]; ok {
-			close(ch)
-			delete(subs, k)
-		}
+	impl := func(proposal *types.Proposal) bool {
+		return proposal.State != *inState
 	}
-	g.mu.Unlock()
+	return &impl
 }
 
-// SubscribeProposalVotes streams all votes cast for the specific proposal
-func (g *Governance) SubscribeProposalVotes(proposalID string) (<-chan []types.Vote, int64) {
-	k := atomic.AddInt64(&g.subs.proposalVotesCount, 1)
-
-	g.mu.Lock()
-	byProposalSubs, exists := g.subs.proposalVotes[proposalID]
-	if !exists {
-		byProposalSubs = map[int64]chan []types.Vote{}
-		g.subs.proposalVotes[proposalID] = byProposalSubs
-	}
-	ch := make(chan []types.Vote, 1)
-	byProposalSubs[k] = ch
-	g.mu.Unlock()
-
-	return ch, k
-}
-
-// UnsubscribeProposalVotes removes stream of votes for the proposal
-func (g *Governance) UnsubscribeProposalVotes(proposalID string, k int64) {
-	g.mu.Lock()
-	if subs, exists := g.subs.proposalVotes[proposalID]; exists {
-		if ch, ok := subs[k]; ok {
-			close(ch)
-			delete(subs, k)
-		}
-	}
-	g.mu.Unlock()
-}
-
-// GetAllGovernanceData get all proposals and votes filtered by the state if specified
-func (g *Governance) GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData {
-	g.mu.RLock()
-	result := make([]*types.GovernanceData, 0, len(g.data))
-	for _, v := range g.data {
-		if !v.isDangling() && (inState == nil || v.Proposal.State == *inState) {
-			result = append(result, v.clone())
-		}
-	}
-	g.mu.RUnlock()
-	return result
-}
-
-// GetProposalsByParty returns proposals (+votes) by the party that authoring them
-func (g *Governance) GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData {
+func collectProposals(p []*types.Proposal, v map[string]votes, skip *filterProposals) []*types.GovernanceData {
 	var result []*types.GovernanceData
-	g.mu.RLock()
-	for _, v := range g.data {
-		if !v.isDangling() && v.Proposal.PartyID == partyID && (inState == nil || v.Proposal.State == *inState) {
-			result = append(result, v.clone())
+	if skip == nil {
+		result = make([]*types.GovernanceData, 0, len(p))
+	}
+	for _, i := range p {
+		if skip == nil || !(*skip)(i) {
+			result = append(result, makeGovernanceData(i, v[i.ID]))
 		}
 	}
-	g.mu.RUnlock()
 	return result
 }
 
-// GetVotesByParty returns votes cast by the party
-func (g *Governance) GetVotesByParty(partyID string) []*types.Vote {
-	var result []*types.Vote
-	g.mu.RLock()
-	if data, exists := g.views.partyVotes[partyID]; exists {
-		result = make([]*types.Vote, len(data))
-		for i, v := range data {
-			result[i] = v
-		}
+type searchViews struct {
+	partyVotes map[string][]*types.Vote // partyId : votes
+	// typed slices
+	newMarkets     []*types.Proposal
+	marketUpdates  map[string][]*types.Proposal
+	networkUpdates []*types.Proposal
+	newAssets      []*types.Proposal
+}
+
+func newViews() searchViews {
+	return searchViews{
+		partyVotes:    map[string][]*types.Vote{},
+		marketUpdates: map[string][]*types.Proposal{},
 	}
-	g.mu.RUnlock()
-	return result
 }
 
-// GetProposalByID returns proposal and votes by proposal ID
-func (g *Governance) GetProposalByID(id string) (*types.GovernanceData, error) {
-	g.mu.RLock()
-	defer g.mu.RUnlock()
-
-	if datum, exists := g.data[id]; exists && !datum.isDangling() {
-		return datum.clone(), nil
+func (s searchViews) addProposal(proposal *types.Proposal) {
+	switch proposal.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		s.newMarkets = append(s.newMarkets, proposal)
+	//case *types.ProposalTerms_UpdateMarket:
+	//TODO:
+	case *types.ProposalTerms_UpdateNetwork:
+		s.networkUpdates = append(s.networkUpdates, proposal)
+	case *types.ProposalTerms_NewAsset:
+		s.newAssets = append(s.newAssets, proposal)
 	}
-	return nil, ErrProposalNotFound
 }
 
-// GetProposalByReference returns proposal and votes by reference
-func (g *Governance) GetProposalByReference(ref string) (*types.GovernanceData, error) {
-	g.mu.RLock()
-	defer g.mu.RUnlock()
+func (s searchViews) addVote(vote *types.Vote) {
+	s.partyVotes[vote.PartyID] = append(s.partyVotes[vote.PartyID], vote)
+}
 
-	for _, v := range g.data {
-		if !v.isDangling() && v.Proposal.Reference == ref {
-			return v.clone(), nil
-		}
+type votes map[types.Vote_Value]map[string]types.Vote
+
+func newVotes() votes {
+	return votes{
+		types.Vote_YES: map[string]types.Vote{},
+		types.Vote_NO:  map[string]types.Vote{},
 	}
-	return nil, ErrProposalNotFound
 }
 
-// GetNewMarketProposals returns proposals aiming to create new markets
-func (g *Governance) GetNewMarketProposals(inState *types.Proposal_State) []*types.GovernanceData {
-	skipper := selectInState(inState)
-
-	g.mu.RLock()
-	result := cloneProposals(g.views.newMarkets, skipper)
-	g.mu.RUnlock()
-
-	return result
-}
-
-// GetUpdateMarketProposals returns proposals aiming to update existing market
-func (g *Governance) GetUpdateMarketProposals(marketID string, inState *types.Proposal_State) []*types.GovernanceData {
-	var result []*types.GovernanceData
-	g.mu.RLock()
-
-	if len(marketID) == 0 { // all market updates
-		for _, updates := range g.views.marketUpdates {
-			for _, v := range updates {
-				if !v.isDangling() && (inState == nil || v.Proposal.State == *inState) {
-					result = append(result, v.clone())
-				}
-			}
-		}
-	} else if updates, exists := g.views.marketUpdates[marketID]; exists {
-		result = cloneProposals(updates, selectInState(inState))
+// since votes can hold one of two values,
+// the function will only attempt removing opposite value
+func (v votes) removeOld(partyID string, newValue types.Vote_Value) {
+	opposite := types.Vote_NO
+	if newValue == opposite {
+		opposite = types.Vote_YES
 	}
-	g.mu.RUnlock()
+	delete(v[opposite], partyID)
+}
+
+func (v votes) store(vote types.Vote) {
+	v[vote.Value][vote.PartyID] = vote
+	v.removeOld(vote.PartyID, vote.Value)
+}
+
+func (v votes) getVotes(proposalID string, value types.Vote_Value) []*types.Vote {
+	if v == nil {
+		return nil
+	}
+	result := make([]*types.Vote, 0, len(v[value]))
+	for _, vote := range v[value] {
+		vote := vote
+		result = append(result, &vote)
+	}
 	return result
 }
 
-// GetNetworkParametersProposals returns proposals aiming to update network
-func (g *Governance) GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData {
-	skipper := selectInState(inState)
-
-	g.mu.RLock()
-	result := cloneProposals(g.views.networkUpdates, skipper)
-	g.mu.RUnlock()
-
-	return result
+func makeGovernanceData(proposal *types.Proposal, v votes) *types.GovernanceData {
+	// copy whole proposal to avoid data races
+	copy := *proposal
+	return &types.GovernanceData{
+		Proposal: &copy,
+		Yes:      v.getVotes(proposal.ID, types.Vote_YES),
+		No:       v.getVotes(proposal.ID, types.Vote_NO),
+	}
 }
