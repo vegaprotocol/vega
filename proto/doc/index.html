@@ -1136,6 +1136,13 @@
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>state</td>
+                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -1357,6 +1364,13 @@
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>state</td>
+                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2088,6 +2102,33 @@
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.ObservePartyVotesRequest">ObservePartyVotesRequest</h3>
         <p></p>
@@ -2151,14 +2192,7 @@
             <tbody>
 
                 <tr>
-                  <td>ID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>Reference</td>
+                  <td>proposalID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -2166,6 +2200,33 @@
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>proposalID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -4014,7 +4075,7 @@
 
               <tr>
                 <td>GetNewMarketProposals</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
                 <td><p>Get proposals that aim creating new markets</p></td>
               </tr>
@@ -4028,9 +4089,16 @@
 
               <tr>
                 <td>GetNetworkParametersProposals</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
                 <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
                 <td><p>Get proposals that aim updating Vega network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNewAssetProposals</td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get proposals aiming to create new assets</p></td>
               </tr>
 
               <tr>

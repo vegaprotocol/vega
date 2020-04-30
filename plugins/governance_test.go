@@ -124,6 +124,16 @@ func TestProposals(t *testing.T) {
 		assert.Equal(t, err, plugins.ErrProposalNotFound)
 		assert.Nil(t, prop)
 	})
+	t.Run("new market proposal", func(t *testing.T) {
+		props := plugin.GetNewMarketProposals(nil)
+		assert.Len(t, props, 1)
+		assert.NotNil(t, props)
+		/*assert.Equal(t, *props[0].Proposal, proposal1)
+
+		selector := types.Proposal_REJECTED
+		props = plugin.GetNewMarketProposals(&selector)
+		assert.Len(t, props, 0)*/
+	})
 }
 
 func testNewProposalChangingVoteSuccess(t *testing.T) {

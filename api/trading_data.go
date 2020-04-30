@@ -119,24 +119,22 @@ type TransferResponseService interface {
 // GovernanceDataService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceDataService
 type GovernanceDataService interface {
-	GetAllGovernanceData() []*types.GovernanceData
-	GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData
-	GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData
-	GetProposalsByMarket(marketID string) []*types.GovernanceData
-
-	GetProposalsByParty(partyID string) []*types.GovernanceData
+	GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData
+	GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData
 	GetVotesByParty(partyID string) []*types.Vote
 
 	GetProposalByID(id string) (*types.GovernanceData, error)
 	GetProposalByReference(ref string) (*types.GovernanceData, error)
 
-	GetNewMarketProposal(marketID string) (*types.GovernanceData, error)
-	GetAllNewMarketProposals() []*types.GovernanceData
-
-	GetUpdateMarketProposals(marketID string) []*types.GovernanceData
-	GetNetworkParametersProposals() []*types.GovernanceData
+	GetNewMarketProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetUpdateMarketProposals(marketID string, inState *types.Proposal_State) []*types.GovernanceData
+	GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData
 
 	ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData
+	ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData
+	ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []types.Vote
+	ObserveProposalVotes(ctx context.Context, retries int, proposalID string) <-chan []types.Vote
 }
 
 // RiskService ...
@@ -1368,7 +1366,7 @@ func (h *tradingDataService) GetAllGovernanceData(_ context.Context, in *empty.E
 	defer metrics.APIRequestAndTimeGRPC("GetAllGovernanceData", startTime)
 
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetAllGovernanceData(),
+		Data: h.governanceService.GetAllGovernanceData(nil),
 	}, nil
 }
 
@@ -1383,37 +1381,7 @@ func (h *tradingDataService) GetProposalsInState(_ context.Context,
 		return nil, err
 	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetProposalsInState(in.State),
-	}, nil
-}
-
-func (h *tradingDataService) GetProposalsNotInState(_ context.Context,
-	in *protoapi.GetProposalsByStateRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
-
-	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("GetProposalsNotInState", startTime)
-
-	if err := in.Validate(); err != nil {
-		return nil, err
-	}
-	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetProposalsNotInState(in.State),
-	}, nil
-}
-
-func (h *tradingDataService) GetProposalsByMarket(_ context.Context,
-	in *protoapi.GetProposalsByMarketRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
-
-	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("GetProposalsByMarket", startTime)
-
-	if err := in.Validate(); err != nil {
-		return nil, err
-	}
-	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetProposalsByMarket(in.MarketID),
+		Data: h.governanceService.GetAllGovernanceData(&in.State),
 	}, nil
 }
 
@@ -1428,7 +1396,7 @@ func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 		return nil, err
 	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetProposalsByParty(in.PartyID),
+		Data: h.governanceService.GetProposalsByParty(in.PartyID, &in.State),
 	}, nil
 }
 
@@ -1448,31 +1416,19 @@ func (h *tradingDataService) GetVotesByParty(_ context.Context,
 }
 
 func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
-	in *protoapi.GetMarketProposalsRequest,
+	in *protoapi.GetProposalsByStateRequest,
 ) (*protoapi.GetGovernanceDataResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNewMarketProposals", startTime)
 
-	if err := in.Validate(); err != nil {
-		return nil, err
-	}
-	if len(in.MarketID) == 0 {
-		return &protoapi.GetGovernanceDataResponse{
-			Data: h.governanceService.GetAllNewMarketProposals(),
-		}, nil
-	}
-	specifcNewMarket, err := h.governanceService.GetNewMarketProposal(in.MarketID)
-	if err != nil {
-		return nil, err
-	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: []*types.GovernanceData{specifcNewMarket},
+		Data: h.governanceService.GetNewMarketProposals(&in.State),
 	}, nil
 }
 
 func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
-	in *protoapi.GetMarketProposalsRequest,
+	in *protoapi.GetUpdateMarketProposalsRequest,
 ) (*protoapi.GetGovernanceDataResponse, error) {
 
 	startTime := vegatime.Now()
@@ -1482,15 +1438,31 @@ func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
 		return nil, err
 	}
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID),
+		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID, &in.State),
 	}, nil
 }
 
-func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context, _ *empty.Empty) (*protoapi.GetGovernanceDataResponse, error) {
+func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context,
+	in *protoapi.GetProposalsByStateRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNetworkParametersProposals", startTime)
+
 	return &protoapi.GetGovernanceDataResponse{
-		Data: h.governanceService.GetNetworkParametersProposals(),
+		Data: h.governanceService.GetNetworkParametersProposals(&in.State),
+	}, nil
+}
+
+func (h *tradingDataService) GetNewAssetProposals(_ context.Context,
+	in *protoapi.GetProposalsByStateRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetNewAssetProposals", startTime)
+
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetNewAssetProposals(&in.State),
 	}, nil
 }
 
@@ -1530,11 +1502,11 @@ func (h *tradingDataService) GetProposalByReference(_ context.Context,
 
 func (h *tradingDataService) ObserveGovernance(_ *empty.Empty, stream protoapi.TradingData_ObserveGovernanceServer) error {
 	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("ObserveProposals", startTime)
+	defer metrics.APIRequestAndTimeGRPC("ObserveGovernance", startTime)
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if h.log.GetLevel() == logging.DebugLevel {
-		h.log.Debug("starting streaming proposal updates")
+		h.log.Debug("starting streaming governance updates")
 	}
 	ch := h.governanceService.ObserveGovernance(ctx, h.Config.StreamRetries)
 	for {
@@ -1546,7 +1518,111 @@ func (h *tradingDataService) ObserveGovernance(_ *empty.Empty, stream protoapi.T
 			}
 			for _, p := range props {
 				if err := stream.Send(&p); err != nil {
-					h.log.Error("failed to send proposal to stream",
+					h.log.Error("failed to send governance data into stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+func (h *tradingDataService) ObservePartyProposals(
+	in *protoapi.ObservePartyProposalsRequest,
+	stream protoapi.TradingData_ObservePartyProposalsServer,
+) error {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObservePartyProposals", startTime)
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming party proposals")
+	}
+	ch := h.governanceService.ObservePartyProposals(ctx, h.Config.StreamRetries, in.PartyID)
+	for {
+		select {
+		case props, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range props {
+				if err := stream.Send(p.Proposal); err != nil {
+					h.log.Error("failed to send party proposal into stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+
+func (h *tradingDataService) ObservePartyVotes(
+	in *protoapi.ObservePartyVotesRequest,
+	stream protoapi.TradingData_ObservePartyVotesServer,
+) error {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObservePartyVotes", startTime)
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming party votes")
+	}
+	ch := h.governanceService.ObservePartyVotes(ctx, h.Config.StreamRetries, in.PartyID)
+	for {
+		select {
+		case votes, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range votes {
+				if err := stream.Send(&p); err != nil {
+					h.log.Error("failed to send party vote into stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+
+func (h *tradingDataService) ObserveProposalVotes(
+	in *protoapi.ObserveProposalVotesRequest,
+	stream protoapi.TradingData_ObserveProposalVotesServer,
+) error {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObserveProposalVotes", startTime)
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming proposal votes")
+	}
+	ch := h.governanceService.ObserveProposalVotes(ctx, h.Config.StreamRetries, in.ProposalID)
+	for {
+		select {
+		case votes, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range votes {
+				if err := stream.Send(&p); err != nil {
+					h.log.Error("failed to send proposal vote into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 				}

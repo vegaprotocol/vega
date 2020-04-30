@@ -306,6 +306,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
+| state | [vega.Proposal.State](#vega.Proposal.State) |  |  |
 
 
 
@@ -396,6 +397,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
+| state | [vega.Proposal.State](#vega.Proposal.State) |  |  |
 
 
 
@@ -717,8 +719,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| Reference | [string](#string) |  |  |
+| proposalID | [string](#string) |  |  |
 
 
 
@@ -1466,9 +1467,10 @@
 | GetProposalsInState | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals (and their current votes) that are in the specified state |
 | GetProposalsByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals by party authoring them |
 | GetVotesByParty | [GetGovernanceByPartyRequest](#api.GetGovernanceByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get proposals by party authoring them |
-| GetNewMarketProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim creating new markets |
+| GetNewMarketProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim creating new markets |
 | GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating markets |
-| GetNetworkParametersProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating Vega network parameters |
+| GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals that aim updating Vega network parameters |
+| GetNewAssetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get proposals aiming to create new assets |
 | GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get a proposal by ID |
 | GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get a proposal by reference |
 | ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |

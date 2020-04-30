@@ -240,7 +240,7 @@ func (g *Governance) GetNetworkParametersProposals(inState *types.Proposal_State
 	return result
 }
 
-// GetNewAssetProposals returns proposals aiming to create new markets
+// GetNewAssetProposals returns proposals aiming to create new assets
 func (g *Governance) GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData {
 	skipper := selectInState(inState)
 

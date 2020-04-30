@@ -197,13 +197,16 @@ service trading_data {
   rpc GetVotesByParty(GetGovernanceByPartyRequest) returns (GetVotesResponse);
 
   // Get proposals that aim creating new markets
-  rpc GetNewMarketProposals(google.protobuf.Empty) returns (GetGovernanceDataResponse);
+  rpc GetNewMarketProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
   // Get proposals that aim updating markets
   rpc GetUpdateMarketProposals(GetUpdateMarketProposalsRequest) returns (GetGovernanceDataResponse);
 
   // Get proposals that aim updating Vega network parameters
-  rpc GetNetworkParametersProposals(google.protobuf.Empty) returns (GetGovernanceDataResponse);
+  rpc GetNetworkParametersProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+  
+  // Get proposals aiming to create new assets
+  rpc GetNewAssetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
   // Get a proposal by ID
   rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
@@ -275,12 +278,14 @@ message GetVotesResponse {
   repeated vega.Vote votes = 1;
 }
 
-message GetUpdateMarketProposalsRequest {
-  string marketID = 1 [(validator.field) = {string_not_empty : true}];
-}
-
 message GetGovernanceByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  vega.Proposal.State state = 2;
+}
+
+message GetUpdateMarketProposalsRequest {
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
+  vega.Proposal.State state = 2;
 }
 
 message GetProposalByIDRequest {
@@ -292,14 +297,11 @@ message GetProposalByReferenceRequest {
 }
 
 message ObservePartyProposalsRequest {
-  string partyID = 1;
+  string partyID = 1  [(validator.field) = {string_not_empty : true }];
 }
 
 message ObserveProposalVotesRequest {
-  oneof proposal {
-    string ID = 1;
-    string Reference = 2;
-  }
+  string proposalID = 1  [(validator.field) = {string_not_empty : true }];
 }
 message ObservePartyVotesRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true }];

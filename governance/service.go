@@ -22,24 +22,29 @@ var (
 // Plugin ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/governance Plugin
 type Plugin interface {
-	Subscribe() (<-chan []types.GovernanceData, int64)
-	Unsubscribe(int64)
+	SubscribeAll() (<-chan []types.GovernanceData, int64)
+	UnsubscribeAll(int64)
 
-	GetAllGovernanceData() []*types.GovernanceData
-	GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData
-	GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData
-	GetProposalsByMarket(marketID string) []*types.GovernanceData
+	SubscribePartyProposals(partyID string) (<-chan []types.GovernanceData, int64)
+	UnsubscribePartyProposals(partyID string, idx int64)
 
-	GetProposalsByParty(partyID string) []*types.GovernanceData
+	SubscribePartyVotes(partyID string) (<-chan []types.Vote, int64)
+	UnsubscribePartyVotes(partyID string, idx int64)
+
+	SubscribeProposalVotes(proposalID string) (<-chan []types.Vote, int64)
+	UnsubscribeProposalVotes(proposalID string, idx int64)
+
+	GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData
+	GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData
 	GetVotesByParty(partyID string) []*types.Vote
 
 	GetProposalByID(id string) (*types.GovernanceData, error)
 	GetProposalByReference(ref string) (*types.GovernanceData, error)
 
-	GetNewMarketProposal(marketID string) (*types.GovernanceData, error)
-	GetAllNewMarketProposals() []*types.GovernanceData
-	GetUpdateMarketProposals(marketID string) []*types.GovernanceData
-	GetNetworkParametersProposals() []*types.GovernanceData
+	GetNewMarketProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetUpdateMarketProposals(marketID string, inState *types.Proposal_State) []*types.GovernanceData
+	GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData
 }
 
 type networkParameters struct {
@@ -97,74 +102,158 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.mu.Unlock()
 }
 
-// ObserveGovernance - stream all governance updates to gRPC subscription stream
-func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData {
-	var cfunc func()
-	ctx, cfunc = context.WithCancel(ctx)
-	// we're returning an extra channel because of the retry mechanic we want to add
-	rCh := make(chan []types.GovernanceData)
-	ch, chID := s.plugin.Subscribe()
-	go func() {
-		defer func() {
-			// cancel context
-			cfunc()
-			// unsubscribe from plugin
-			s.plugin.Unsubscribe(chID)
-			// close channel to handler
-			close(rCh)
-		}()
-		for {
+func streamVotes(ctx context.Context,
+	retries int,
+	input <-chan []types.Vote,
+	output chan []types.Vote,
+	log *logging.Logger,
+) bool {
+
+	select {
+	case <-ctx.Done():
+		log.Debug("votes subscriber closed the connection")
+		return false
+	case updates := <-input:
+		// received new data
+		retryCount := retries
+		success := false
+		for !success && retryCount >= 0 {
 			select {
-			case <-ctx.Done():
-				s.log.Debug("proposal subscriber closed the connection")
-				return
-			case updates := <-ch:
-				// received new proposal data
-				retryCount := retries
-				success := false
-				for !success && retryCount >= 0 {
-					select {
-					case rCh <- updates:
-						success = true
-					default:
-						s.log.Debug("failed to push proposal update onto subscriber channel")
-						retryCount--
-						time.Sleep(time.Millisecond * 10)
-					}
-				}
-				if !success {
-					s.log.Warn("Failed to push update to stream, reached end of retries")
-					return
-				}
+			case output <- updates:
+				success = true
+			default:
+				log.Debug("failed to push votes update onto subscriber channel")
+				retryCount--
+				time.Sleep(time.Millisecond * 10)
 			}
 		}
+		if !success {
+			log.Warn("Failed to push votes update to stream, reached end of retries")
+			return false
+		}
+	}
+	return true
+}
+
+// TODO: explore https://godoc.org/github.com/eapache/channels#Wrap to reduce copy-paste
+func streamGovernance(ctx context.Context,
+	retries int,
+	input <-chan []types.GovernanceData,
+	output chan []types.GovernanceData,
+	log *logging.Logger,
+) bool {
+
+	select {
+	case <-ctx.Done():
+		log.Debug("governance subscriber closed the connection")
+		return false
+	case updates := <-input:
+		// received new data
+		retryCount := retries
+		success := false
+		for !success && retryCount >= 0 {
+			select {
+			case output <- updates:
+				success = true
+			default:
+				log.Debug("failed to push governance update onto subscriber channel")
+				retryCount--
+				time.Sleep(time.Millisecond * 10)
+			}
+		}
+		if !success {
+			log.Warn("Failed to push governance update to stream, reached end of retries")
+			return false
+		}
+	}
+	return true
+}
+
+// ObserveGovernance streams all governance updates
+func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData {
+	var cancelContext func()
+	ctx, cancelContext = context.WithCancel(ctx)
+	// we're returning an extra channel because of the retry mechanic we want to add
+	output := make(chan []types.GovernanceData)
+	input, inputIdx := s.plugin.SubscribeAll()
+
+	go func() {
+		defer func() {
+			cancelContext()
+			s.plugin.UnsubscribeAll(inputIdx)
+			close(output)
+		}()
+		for streamGovernance(ctx, retries, input, output, s.log) {
+		}
 	}()
-	return rCh
+	return output
+}
+
+// ObservePartyProposals streams proposals submitted by the specific party
+func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData {
+	var cancelContext func()
+	ctx, cancelContext = context.WithCancel(ctx)
+	output := make(chan []types.GovernanceData)
+	input, inputIdx := s.plugin.SubscribePartyProposals(partyID)
+
+	go func() {
+		defer func() {
+			cancelContext()
+			s.plugin.UnsubscribePartyProposals(partyID, inputIdx)
+			close(output)
+		}()
+		for streamGovernance(ctx, retries, input, output, s.log) {
+		}
+	}()
+	return output
+}
+
+// ObservePartyVotes streams votes cast by the specific party
+func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []types.Vote {
+	var cancelContext func()
+	ctx, cancelContext = context.WithCancel(ctx)
+	output := make(chan []types.Vote)
+	input, inputIdx := s.plugin.SubscribePartyVotes(partyID)
+
+	go func() {
+		defer func() {
+			cancelContext()
+			s.plugin.UnsubscribePartyVotes(partyID, inputIdx)
+			close(output)
+		}()
+		for streamVotes(ctx, retries, input, output, s.log) {
+		}
+	}()
+	return output
+}
+
+// ObserveProposalVotes streams votes cast for/against specific proposal
+func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID string) <-chan []types.Vote {
+	var cancelContext func()
+	ctx, cancelContext = context.WithCancel(ctx)
+	output := make(chan []types.Vote)
+	input, inputIdx := s.plugin.SubscribeProposalVotes(proposalID)
+
+	go func() {
+		defer func() {
+			cancelContext()
+			s.plugin.UnsubscribeProposalVotes(proposalID, inputIdx)
+			close(output)
+		}()
+		for streamVotes(ctx, retries, input, output, s.log) {
+		}
+	}()
+	return output
 }
 
 // GetAllGovernanceData returns all governance data (proposals and votes)
-func (s *Svc) GetAllGovernanceData() []*types.GovernanceData {
-	return s.plugin.GetAllGovernanceData()
-}
-
-// GetProposalsInState returns proposals and their votes only including those in the `includeState`
-func (s *Svc) GetProposalsInState(includeState types.Proposal_State) []*types.GovernanceData {
-	return s.plugin.GetProposalsInState(includeState)
-}
-
-// GetProposalsNotInState returns proposals and their votes only excluding those in the `excludeState`
-func (s *Svc) GetProposalsNotInState(excludeState types.Proposal_State) []*types.GovernanceData {
-	return s.plugin.GetProposalsNotInState(excludeState)
-}
-
-// GetProposalsByMarket returns proposals and their votes by market that is affected by these proposals
-func (s *Svc) GetProposalsByMarket(marketID string) []*types.GovernanceData {
-	return s.plugin.GetProposalsByMarket(marketID)
+func (s *Svc) GetAllGovernanceData(inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetAllGovernanceData(inState)
 }
 
 // GetProposalsByParty returns proposals and their votes by party authoring them
-func (s *Svc) GetProposalsByParty(partyID string) []*types.GovernanceData {
-	return s.plugin.GetProposalsByParty(partyID)
+func (s *Svc) GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetProposalsByParty(partyID, inState)
 }
 
 // GetVotesByParty returns votes by party
@@ -182,24 +271,24 @@ func (s *Svc) GetProposalByReference(ref string) (*types.GovernanceData, error) 
 	return s.plugin.GetProposalByReference(ref)
 }
 
-// GetNewMarketProposal returns proposal aiming to create specific new market
-func (s *Svc) GetNewMarketProposal(marketID string) (*types.GovernanceData, error) {
-	return s.plugin.GetNewMarketProposal(marketID)
+// GetNewMarketProposals returns proposals aiming to create new markets
+func (s *Svc) GetNewMarketProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetNewMarketProposals(inState)
 }
 
-// GetAllNewMarketProposals returns proposals aiming to create new markets
-func (s *Svc) GetAllNewMarketProposals() []*types.GovernanceData {
-	return s.plugin.GetAllNewMarketProposals()
-}
-
-// GetUpdateMarketProposals returns proposals aiming to update markets
-func (s *Svc) GetUpdateMarketProposals(marketID string) []*types.GovernanceData {
-	return s.plugin.GetUpdateMarketProposals(marketID)
+// GetUpdateMarketProposals returns proposals aiming to update existing markets
+func (s *Svc) GetUpdateMarketProposals(marketID string, inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetUpdateMarketProposals(marketID, inState)
 }
 
 // GetNetworkParametersProposals returns proposals aiming to update network
-func (s *Svc) GetNetworkParametersProposals() []*types.GovernanceData {
-	return s.plugin.GetNetworkParametersProposals()
+func (s *Svc) GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetNetworkParametersProposals(inState)
+}
+
+// GetNewAssetProposals returns proposals aiming to create new assets
+func (s *Svc) GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData {
+	return s.plugin.GetNewAssetProposals(inState)
 }
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
