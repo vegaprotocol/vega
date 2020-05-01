@@ -39,7 +39,10 @@ jobs:
           echo "${DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
           unset DEPLOY_SSH_PRIVATE_KEY
           go get github.com/vegaprotocol/modvendor@v0.0.2
-          find / -name modvendor |sort
+          export PATH="$PATH:/home/runner/go/bin/modvendor"
+          echo "PATH=$PATH"
+          find / -name modvendor 2>/dev/null |sort
+          command -v modvendor
           make deps
           make test
           make build-linux-amd64 build-linux-386
