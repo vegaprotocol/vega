@@ -25,6 +25,8 @@ jobs:
 
       - name: Build
         id: build
+        # default shell: bash --noprofile --norc -eo pipefail {0}
+        shell: bash --noprofile --norc -exo pipefail {0}
         env:
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,11 +40,16 @@ jobs:
           fi
           echo "${DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
           unset DEPLOY_SSH_PRIVATE_KEY
+
+          # The following config adds tools
+          mkdir -p "$GOPATH/src/tmpproject"
+          pushd "$GOPATH/src/tmpproject 1>/dev/null
           go get github.com/vegaprotocol/modvendor@v0.0.2
-          export PATH="$PATH:/home/runner/go/bin/modvendor"
-          echo "PATH=$PATH"
-          find / -name modvendor 2>/dev/null |sort
+          export PATH="$PATH:$GOPATH/bin/modvendor"
           command -v modvendor
+          popd 1>/dev/null
+
+          # Now build
           make deps
           make test
           make build-linux-amd64 build-linux-386
