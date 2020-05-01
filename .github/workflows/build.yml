@@ -44,7 +44,7 @@ jobs:
 
           # The following config adds tools
           mkdir -p "$GOPATH/src/tmpproject"
-          pushd "$GOPATH/src/tmpproject 1>/dev/null
+          pushd "$GOPATH/src/tmpproject" 1>/dev/null
           go get github.com/vegaprotocol/modvendor@v0.0.2
           export PATH="$PATH:$GOPATH/bin/modvendor"
           command -v modvendor
