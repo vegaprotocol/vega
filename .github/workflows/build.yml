@@ -28,6 +28,7 @@ jobs:
         # default shell: bash --noprofile --norc -eo pipefail {0}
         shell: bash --noprofile --norc -exo pipefail {0}
         env:
+          GOPATH: /home/runner/go
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
