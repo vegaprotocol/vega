@@ -36,6 +36,7 @@ jobs:
         fi
         echo "${DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
         unset DEPLOY_SSH_PRIVATE_KEY
+        go get github.com/vegaprotocol/modvendor@v0.0.2
         make deps
         make test
         make build-linux-amd64 build-linux-386
