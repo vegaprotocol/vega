@@ -49,6 +49,7 @@ jobs:
           go mod init
           go get github.com/vegaprotocol/modvendor@v0.0.2
           export PATH="$PATH:$GOPATH/bin/modvendor"
+          find / -name modvendor 2>/dev/null
           command -v modvendor
           popd 1>/dev/null
 
