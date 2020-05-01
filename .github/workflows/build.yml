@@ -23,7 +23,21 @@ jobs:
 
     - name: Build
       id: build
+      env:
+        DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # The following git+ssh config enables accessing private github repos.
+        git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+        eval "$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
+        ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+        ssh-add -l
+        if ! echo "${DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1
+        fi
+        echo "${DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+        unset DEPLOY_SSH_PRIVATE_KEY
+        ssh-add -l
         make deps
         make test
         make build-linux-amd64 build-linux-386
@@ -33,7 +47,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          cmd/*/*-linux-386
-          cmd/*/*-linux-amd64
+          cmd/*/*-linux-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
