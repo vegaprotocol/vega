@@ -48,8 +48,7 @@ jobs:
           pushd "$GOPATH/src/tmpproject" 1>/dev/null
           go mod init
           go get github.com/vegaprotocol/modvendor@v0.0.2
-          export PATH="$PATH:$GOPATH/bin/modvendor"
-          # find / -name modvendor 2>/dev/null
+          export PATH="$PATH:$GOPATH/bin"
           popd 1>/dev/null
 
           # Now build
