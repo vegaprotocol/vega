@@ -28,7 +28,6 @@ jobs:
         # default shell: bash --noprofile --norc -eo pipefail {0}
         shell: bash --noprofile --norc -exo pipefail {0}
         env:
-          GOPATH: /home/runner/go
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -45,7 +44,7 @@ jobs:
           # The following config adds tools
           pushd / 1>/dev/null
           go get github.com/vegaprotocol/modvendor@v0.0.2
-          export PATH="$PATH:$GOPATH/bin/modvendor"
+          export PATH="$PATH:/home/runner/go/bin/modvendor"
           command -v modvendor
           popd 1>/dev/null
 
