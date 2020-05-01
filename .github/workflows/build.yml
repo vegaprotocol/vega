@@ -31,7 +31,6 @@ jobs:
         git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
         eval "$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
         ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
-        ssh-add -l
         if ! echo "${DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1
         fi
