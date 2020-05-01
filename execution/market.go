@@ -1264,13 +1264,6 @@ func (m *Market) validateOrderAmendment(
 		// IOC and FOK are not acceptable for amend order
 		return errors.New("amend order, TIF FOK and IOC are not allowed")
 	}
-
-	// Check any price change is actually a change
-	if amendment.Price != nil &&
-		amendment.Price.Value == order.Price {
-		return errors.New("amend order, new price same as original price")
-	}
-
 	return nil
 }
 
