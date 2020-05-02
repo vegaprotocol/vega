@@ -348,7 +348,7 @@ type searchViews struct {
 	partyVotes map[string][]*types.Vote // partyId : votes
 	// typed slices
 	newMarkets     []*types.Proposal
-	marketUpdates  map[string][]*types.Proposal
+	marketUpdates  map[string][]*types.Proposal // marketID : []proposals
 	networkUpdates []*types.Proposal
 	newAssets      []*types.Proposal
 }
@@ -360,12 +360,13 @@ func newViews() searchViews {
 	}
 }
 
-func (s searchViews) addProposal(proposal *types.Proposal) {
+func (s *searchViews) addProposal(proposal *types.Proposal) {
 	switch proposal.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
 		s.newMarkets = append(s.newMarkets, proposal)
-	//case *types.ProposalTerms_UpdateMarket:
-	//TODO:
+	case *types.ProposalTerms_UpdateMarket:
+		//TODO: add real market id once the update proposals are implemented
+		s.marketUpdates[""] = append(s.marketUpdates[""], proposal)
 	case *types.ProposalTerms_UpdateNetwork:
 		s.networkUpdates = append(s.networkUpdates, proposal)
 	case *types.ProposalTerms_NewAsset:
@@ -373,7 +374,7 @@ func (s searchViews) addProposal(proposal *types.Proposal) {
 	}
 }
 
-func (s searchViews) addVote(vote *types.Vote) {
+func (s *searchViews) addVote(vote *types.Vote) {
 	s.partyVotes[vote.PartyID] = append(s.partyVotes[vote.PartyID], vote)
 }
 

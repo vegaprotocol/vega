@@ -67,62 +67,105 @@ func TestProposals(t *testing.T) {
 	plugin.Start(plugin.ctx)
 
 	party := "prop-party"
-	proposal1 := types.Proposal{
+	proposals := []types.Proposal{{
 		ID:        "prop-1",
 		Reference: "prop-ref1",
 		PartyID:   party,
 		State:     types.Proposal_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
-	}
-	proposal2 := types.Proposal{
+	}, {
 		ID:        "prop-2",
 		Reference: "prop-ref2",
 		PartyID:   party,
-		State:     types.Proposal_REJECTED,
+		State:     types.Proposal_FAILED,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewAsset{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
-	}
+	}, {
+		ID:        "prop-3",
+		Reference: "prop-ref2", // colliding reference
+		PartyID:   party,
+		State:     types.Proposal_REJECTED,
+		Terms: &types.ProposalTerms{Change: &types.ProposalTerms_UpdateMarket{
+			UpdateMarket: &types.UpdateMarket{},
+		}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        "prop-4",
+		Reference: "prop-ref4",
+		PartyID:   party,
+		State:     types.Proposal_PASSED,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        "prop-5",
+		Reference: "prop-ref5",
+		PartyID:   party,
+		State:     types.Proposal_ENACTED,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
 
-	plugin.pCh <- []types.Proposal{proposal1, proposal2}
+	plugin.pCh <- proposals
 
 	t.Run("proposals by party", func(t *testing.T) {
-		props := plugin.GetProposalsByParty(party, nil)
-		assert.Len(t, props, 2)
+		loaded := plugin.GetProposalsByParty(party, nil)
+		assert.Len(t, loaded, len(proposals))
 
 		selector := types.Proposal_REJECTED
-		props = plugin.GetProposalsByParty(party, &selector)
-		assert.Len(t, props, 1)
-		assert.Equal(t, *props[0].Proposal, proposal2)
-		assert.Len(t, props[0].Yes, 0)
-		assert.Len(t, props[0].No, 0)
+		loaded = plugin.GetProposalsByParty(party, &selector)
+		assert.Len(t, loaded, 1)
+		assert.Equal(t, *loaded[0].Proposal, proposals[2])
+		assert.Len(t, loaded[0].Yes, 0)
+		assert.Len(t, loaded[0].No, 0)
 
-		props = plugin.GetProposalsByParty("not-a-party", nil)
-		assert.Len(t, props, 0)
+		loaded = plugin.GetProposalsByParty("not-a-party", nil)
+		assert.Len(t, loaded, 0)
 	})
 
 	t.Run("proposal by id", func(t *testing.T) {
-		prop, err := plugin.GetProposalByID("prop-1")
+		loaded, err := plugin.GetProposalByID("prop-1")
 		assert.NoError(t, err)
-		assert.NotNil(t, prop)
-		assert.Equal(t, *prop.Proposal, proposal1)
+		assert.NotNil(t, loaded)
+		assert.Equal(t, *loaded.Proposal, proposals[0])
 
-		prop, err = plugin.GetProposalByID("not-an-id")
+		loaded, err = plugin.GetProposalByID("not-an-id")
 		assert.Error(t, err)
 		assert.Equal(t, err, plugins.ErrProposalNotFound)
-		assert.Nil(t, prop)
+		assert.Nil(t, loaded)
 	})
 
 	t.Run("proposal by reference", func(t *testing.T) {
-		prop, err := plugin.GetProposalByReference("prop-ref2")
+		loaded, err := plugin.GetProposalByReference("prop-ref2")
 		assert.NoError(t, err)
-		assert.NotNil(t, prop)
-		assert.Equal(t, *prop.Proposal, proposal2)
+		assert.NotNil(t, loaded)
+		assert.Equal(t, *loaded.Proposal, proposals[1],
+			"picks the first submitted proposal with the matching reference")
 
-		prop, err = plugin.GetProposalByReference("not-a-ref")
+		loaded, err = plugin.GetProposalByReference("not-a-ref")
 		assert.Error(t, err)
 		assert.Equal(t, err, plugins.ErrProposalNotFound)
-		assert.Nil(t, prop)
+		assert.Nil(t, loaded)
+	})
+	t.Run("new market proposals", func(t *testing.T) {
+		loaded := plugin.GetNewMarketProposals(nil)
+		assert.Len(t, loaded, 1)
+		assert.NotNil(t, loaded)
+	})
+	t.Run("new asset proposals", func(t *testing.T) {
+		loaded := plugin.GetNewAssetProposals(nil)
+		assert.Len(t, loaded, 1)
+		assert.NotNil(t, loaded)
+	})
+	t.Run("update market proposals", func(t *testing.T) {
+		loaded := plugin.GetUpdateMarketProposals("", nil)
+		assert.Len(t, loaded, 1)
+		assert.NotNil(t, loaded)
+	})
+	t.Run("network parameters proposals", func(t *testing.T) {
+		loaded := plugin.GetNetworkParametersProposals(nil)
+		assert.Len(t, loaded, 2)
+		assert.NotNil(t, loaded)
 	})
 
 	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
