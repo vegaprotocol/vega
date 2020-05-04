@@ -173,6 +173,120 @@ func TestProposals(t *testing.T) {
 	plugin.Stop()
 }
 
+func TestVotes(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	party1 := "party1"
+	wait4Party1Votes, party1VotesSub := plugin.SubscribePartyVotes(party1)
+
+	proposal1ID := "prop-1"
+	votes1 := []types.Vote{{
+		PartyID:    party1,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    party1,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_NO,
+	}}
+	plugin.vCh <- votes1
+	<-wait4Party1Votes
+
+	t.Run("dangling votes must not appear in governance data", func(t *testing.T) {
+		loaded := plugin.GetProposals(nil)
+		assert.Empty(t, loaded)
+	})
+
+	t.Run("dangling votes by party", func(t *testing.T) {
+		loaded := plugin.GetVotesByParty(party1)
+		assert.Len(t, loaded, 2)
+		assert.Equal(t, party1, loaded[0].PartyID)
+		assert.Equal(t, votes1[0], *loaded[0])
+		assert.Equal(t, votes1[1], *loaded[1])
+	})
+
+	plugin.pCh <- []types.Proposal{{
+		ID:        proposal1ID,
+		PartyID:   party1,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
+	wait4Proposals, propSub := plugin.SubscribeAll()
+	<-wait4Proposals
+	plugin.UnsubscribeAll(propSub)
+
+	t.Run("no dangling votes since proposal shows up", func(t *testing.T) {
+		props := plugin.GetProposals(nil)
+		assert.Len(t, props, 1)
+		assert.NotNil(t, props[0])
+		assert.Empty(t, props[0].Yes, "previous vote is ignored")
+		assert.Len(t, props[0].No, 1, "overriding vote is counted")
+
+		votes := plugin.GetVotesByParty(party1)
+		assert.Len(t, votes, 2, "despite only 1 one on proposal, total votes cast is 2")
+	})
+
+	proposal2ID := "prop-2"
+	party2 := "party2"
+	plugin.vCh <- []types.Vote{{
+		PartyID:    party2,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    party1,
+		ProposalID: proposal2ID,
+		Value:      types.Vote_NO,
+	}}
+	<-wait4Party1Votes
+	plugin.UnsubscribePartyVotes(party1, party1VotesSub)
+
+	t.Run("regular + dangling votes", func(t *testing.T) {
+		votes := plugin.GetVotesByParty(party1)
+		assert.Len(t, votes, 3, "track all votes, even dangling and overriden ones")
+
+		prop, err := plugin.GetProposalByID(proposal2ID)
+		assert.Error(t, err, "dangling vote should not create proposals")
+		assert.Nil(t, prop)
+
+		prop, err = plugin.GetProposalByID(proposal1ID)
+		assert.NoError(t, err)
+		assert.NotNil(t, prop)
+		assert.Len(t, prop.Yes, 1)
+		assert.Equal(t, prop.Yes[0].PartyID, party2)
+		assert.Len(t, prop.No, 1)
+		assert.Equal(t, prop.No[0].PartyID, party1)
+	})
+
+	party3 := "party3"
+	wait4Party3Votes, party3VotesSub := plugin.SubscribePartyVotes(party3)
+	plugin.vCh <- []types.Vote{{
+		PartyID:    party3,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_YES,
+	}}
+	<-wait4Party3Votes
+	plugin.UnsubscribePartyVotes(party3, party3VotesSub)
+
+	t.Run("normal boring vote", func(t *testing.T) {
+		loaded := plugin.GetVotesByParty(party3)
+		assert.Len(t, loaded, 1)
+		assert.Equal(t, party3, loaded[0].PartyID)
+
+		prop, err := plugin.GetProposalByID(proposal1ID)
+		assert.NoError(t, err)
+		assert.NotNil(t, prop)
+		assert.Len(t, prop.Yes, 2)
+	})
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
 func testNewProposalChangingVoteSuccess(t *testing.T) {
 	plugin := getTestGovernance(t)
 	defer plugin.Finish()

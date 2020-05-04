@@ -44,7 +44,7 @@ type Governance struct {
 	vch        <-chan []types.Vote
 
 	proposalsData map[string]*types.Proposal // Proposal.ID : Proposal
-	votesData     map[string]votes           // Proposal.ID : Votes
+	votesData     map[string]*proposalVotes  // Proposal.ID : Votes
 
 	views searchViews
 	subs  streams
@@ -56,7 +56,7 @@ func NewGovernance(p PropBuffer, v VoteBuffer) *Governance {
 		props:         p,
 		votes:         v,
 		proposalsData: map[string]*types.Proposal{},
-		votesData:     map[string]votes{},
+		votesData:     map[string]*proposalVotes{},
 		views:         newViews(),
 		subs:          newStreams(),
 	}
@@ -137,10 +137,11 @@ func (g *Governance) UnsubscribeProposalVotes(proposalID string, k int64) {
 // GetProposals get all proposals and votes filtered by the state if specified
 func (g *Governance) GetProposals(inState *types.Proposal_State) []*types.GovernanceData {
 	g.mu.RLock()
+
 	result := make([]*types.GovernanceData, 0, len(g.proposalsData))
-	for _, v := range g.proposalsData {
-		if inState == nil || v.State == *inState {
-			result = append(result, makeGovernanceData(v, g.votesData[v.ID]))
+	for _, p := range g.proposalsData {
+		if inState == nil || p.State == *inState {
+			result = append(result, makeGovernanceData(p, g.votesData[p.ID]))
 		}
 	}
 	g.mu.RUnlock()
@@ -151,9 +152,9 @@ func (g *Governance) GetProposals(inState *types.Proposal_State) []*types.Govern
 func (g *Governance) GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData {
 	var result []*types.GovernanceData
 	g.mu.RLock()
-	for _, v := range g.proposalsData {
-		if v.PartyID == partyID && (inState == nil || v.State == *inState) {
-			result = append(result, makeGovernanceData(v, g.votesData[v.ID]))
+	for _, p := range g.proposalsData {
+		if p.PartyID == partyID && (inState == nil || p.State == *inState) {
+			result = append(result, makeGovernanceData(p, g.votesData[p.ID]))
 		}
 	}
 	g.mu.RUnlock()
@@ -190,9 +191,9 @@ func (g *Governance) GetProposalByReference(ref string) (*types.GovernanceData, 
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	for _, v := range g.proposalsData {
-		if v.Reference == ref {
-			return makeGovernanceData(v, g.votesData[v.ID]), nil
+	for _, p := range g.proposalsData {
+		if p.Reference == ref {
+			return makeGovernanceData(p, g.votesData[p.ID]), nil
 		}
 	}
 	return nil, ErrProposalNotFound
@@ -216,9 +217,9 @@ func (g *Governance) GetUpdateMarketProposals(marketID string, inState *types.Pr
 
 	if len(marketID) == 0 { // all market updates
 		for _, updates := range g.views.marketUpdates {
-			for _, v := range updates {
-				if inState == nil || v.State == *inState {
-					result = append(result, makeGovernanceData(v, g.votesData[v.ID]))
+			for _, p := range updates {
+				if inState == nil || p.State == *inState {
+					result = append(result, makeGovernanceData(p, g.votesData[p.ID]))
 				}
 			}
 		}
@@ -283,13 +284,15 @@ func (g *Governance) storeProposals(proposals []types.Proposal) {
 	added := make([]types.GovernanceData, len(proposals))
 
 	g.mu.Lock()
-	for i, v := range proposals {
-		v := v
-		g.proposalsData[v.ID] = &v
 
-		g.views.addProposal(&v)
-		added[i] = *makeGovernanceData(&v, g.votesData[v.ID])
+	for i, p := range proposals {
+		p := p
+		g.proposalsData[p.ID] = &p
+
+		g.views.addProposal(&p)
+		added[i] = *makeGovernanceData(&p, g.votesData[p.ID])
 	}
+
 	g.mu.Unlock()
 
 	go g.subs.notifyAll(added)
@@ -301,6 +304,7 @@ func (g *Governance) storeVotes(votes []types.Vote) {
 
 	g.mu.Lock()
 	for _, v := range votes {
+		v := v
 		datum, exists := g.votesData[v.ProposalID]
 		if !exists {
 			datum = newVotes()
@@ -331,7 +335,7 @@ func selectInState(inState *types.Proposal_State) *filterProposals {
 	return &impl
 }
 
-func collectProposals(p []*types.Proposal, v map[string]votes, skip *filterProposals) []*types.GovernanceData {
+func collectProposals(p []*types.Proposal, v map[string]*proposalVotes, skip *filterProposals) []*types.GovernanceData {
 	var result []*types.GovernanceData
 	if skip == nil {
 		result = make([]*types.GovernanceData, 0, len(p))
@@ -375,46 +379,48 @@ func (s *searchViews) addProposal(proposal *types.Proposal) {
 }
 
 func (s *searchViews) addVote(vote *types.Vote) {
+	// all votes are tracked and never removed even if party submitted opposing vote
+	// this is different to the votes stored for proposals
 	s.partyVotes[vote.PartyID] = append(s.partyVotes[vote.PartyID], vote)
 }
 
-type votes map[types.Vote_Value]map[string]types.Vote
+type proposalVotes map[types.Vote_Value]map[string]types.Vote
 
-func newVotes() votes {
-	return votes{
+func newVotes() *proposalVotes {
+	return &proposalVotes{
 		types.Vote_YES: map[string]types.Vote{},
 		types.Vote_NO:  map[string]types.Vote{},
 	}
 }
 
-// since votes can hold one of two values,
+// since proposalVotes can hold one of two values,
 // the function will only attempt removing opposite value
-func (v votes) removeOld(partyID string, newValue types.Vote_Value) {
+func (v *proposalVotes) removeOld(partyID string, newValue types.Vote_Value) {
 	opposite := types.Vote_NO
 	if newValue == opposite {
 		opposite = types.Vote_YES
 	}
-	delete(v[opposite], partyID)
+	delete((*v)[opposite], partyID)
 }
 
-func (v votes) store(vote types.Vote) {
-	v[vote.Value][vote.PartyID] = vote
+func (v *proposalVotes) store(vote types.Vote) {
+	(*v)[vote.Value][vote.PartyID] = vote
 	v.removeOld(vote.PartyID, vote.Value)
 }
 
-func (v votes) getVotes(proposalID string, value types.Vote_Value) []*types.Vote {
-	if v == nil {
+func (v *proposalVotes) getVotes(proposalID string, value types.Vote_Value) []*types.Vote {
+	if v == nil || len(*v) == 0 {
 		return nil
 	}
-	result := make([]*types.Vote, 0, len(v[value]))
-	for _, vote := range v[value] {
+	result := make([]*types.Vote, 0, len((*v)[value]))
+	for _, vote := range (*v)[value] {
 		vote := vote
 		result = append(result, &vote)
 	}
 	return result
 }
 
-func makeGovernanceData(proposal *types.Proposal, v votes) *types.GovernanceData {
+func makeGovernanceData(proposal *types.Proposal, v *proposalVotes) *types.GovernanceData {
 	// copy whole proposal to avoid data races
 	copy := *proposal
 	return &types.GovernanceData{
