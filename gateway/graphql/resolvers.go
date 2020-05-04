@@ -340,15 +340,15 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(resp.Data))
-	for i, gov := range resp.Data {
+	result := make([]*Proposal, 0, len(resp.Data))
+	for _, gov := range resp.Data {
 		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
 			return getParty(ctx, r.log, r.tradingDataClient, partyID)
 		})
 		if err != nil {
 			return nil, err
 		}
-		result[i] = converted
+		result = append(result, converted)
 
 	}
 	return result, nil
