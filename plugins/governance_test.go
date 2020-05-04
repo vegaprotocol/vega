@@ -293,6 +293,8 @@ func TestStreamSubscriptions(t *testing.T) {
 	t.Run("test reading closed subscription", readClosedSubs)
 	t.Run("test general governance stream", generalGovernanceSubs)
 	t.Run("test party proposals stream", partyProposalsSubs)
+	t.Run("test party votes stream", partyVotesSubs)
+	t.Run("test proposal votes stream", proposalVotesSubs)
 }
 
 func danglingVoteImpactOnProposals(t *testing.T) {
@@ -511,6 +513,266 @@ func partyProposalsSubs(t *testing.T) {
 
 	plugin.UnsubscribePartyProposals(partyA, idxA)
 	plugin.UnsubscribePartyProposals(partyB, idxB)
+
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
+func partyVotesSubs(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	partyA, partyB := "partyA", "partyB"
+	chA, idxA := plugin.SubscribePartyVotes(partyA)
+	chB, idxB := plugin.SubscribePartyVotes(partyB)
+
+	proposal1, proposal2 := "proposal1", "proposal2"
+
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_NO,
+	}}
+	receivedA := <-chA
+	assert.Len(t, receivedA, 2)
+	assert.Equal(t, partyA, receivedA[0].PartyID)
+	assert.Equal(t, partyA, receivedA[1].PartyID)
+	assert.Equal(t, proposal1, receivedA[0].ProposalID)
+	assert.Equal(t, proposal2, receivedA[1].ProposalID)
+
+	receivedB := <-chB
+	assert.Len(t, receivedB, 2)
+	assert.Equal(t, partyB, receivedB[0].PartyID)
+	assert.Equal(t, partyB, receivedB[1].PartyID)
+	assert.Equal(t, proposal2, receivedB[0].ProposalID)
+	assert.Equal(t, proposal1, receivedB[1].ProposalID)
+
+	plugin.pCh <- []types.Proposal{{
+		ID:        proposal1,
+		PartyID:   partyA,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        proposal2,
+		PartyID:   partyB,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
+
+	// inverting votes
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}}
+	receivedA = <-chA
+	assert.Len(t, receivedA, 2)
+	assert.Equal(t, partyA, receivedA[0].PartyID)
+	assert.Equal(t, partyA, receivedA[1].PartyID)
+	assert.Equal(t, proposal1, receivedA[0].ProposalID)
+	assert.Equal(t, proposal2, receivedA[1].ProposalID)
+
+	receivedB = <-chB
+	assert.Len(t, receivedB, 2)
+	assert.Equal(t, partyB, receivedB[0].PartyID)
+	assert.Equal(t, partyB, receivedB[1].PartyID)
+	assert.Equal(t, proposal2, receivedB[0].ProposalID)
+	assert.Equal(t, proposal1, receivedB[1].ProposalID)
+
+	// duplicate votes
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}}
+	receivedA = <-chA
+	assert.Len(t, receivedA, 2)
+	assert.Equal(t, partyA, receivedA[0].PartyID)
+	assert.Equal(t, partyA, receivedA[1].PartyID)
+	assert.Equal(t, proposal1, receivedA[0].ProposalID)
+	assert.Equal(t, proposal2, receivedA[1].ProposalID)
+
+	receivedB = <-chB
+	assert.Len(t, receivedB, 2)
+	assert.Equal(t, partyB, receivedB[0].PartyID)
+	assert.Equal(t, partyB, receivedB[1].PartyID)
+	assert.Equal(t, proposal2, receivedB[0].ProposalID)
+	assert.Equal(t, proposal1, receivedB[1].ProposalID)
+
+	plugin.UnsubscribePartyVotes(partyA, idxA)
+	plugin.UnsubscribePartyVotes(partyB, idxB)
+
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
+func proposalVotesSubs(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	proposal1, proposal2 := "proposal1", "proposal2"
+	ch1, idx1 := plugin.SubscribeProposalVotes(proposal1)
+	ch2, idx2 := plugin.SubscribeProposalVotes(proposal2)
+
+	partyA, partyB := "partyA", "partyB"
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_NO,
+	}}
+	received1 := <-ch1
+	assert.Len(t, received1, 2)
+	assert.Equal(t, proposal1, received1[0].ProposalID)
+	assert.Equal(t, proposal1, received1[1].ProposalID)
+	assert.Equal(t, partyA, received1[0].PartyID)
+	assert.Equal(t, partyB, received1[1].PartyID)
+
+	received2 := <-ch2
+	assert.Len(t, received2, 2)
+	assert.Equal(t, proposal2, received2[0].ProposalID)
+	assert.Equal(t, proposal2, received2[1].ProposalID)
+	assert.Equal(t, partyA, received2[0].PartyID)
+	assert.Equal(t, partyB, received2[1].PartyID)
+
+	plugin.pCh <- []types.Proposal{{
+		ID:        proposal1,
+		PartyID:   partyA,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        proposal2,
+		PartyID:   partyB,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
+
+	// inverting votes
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}}
+	received1 = <-ch1
+	assert.Len(t, received1, 2)
+	assert.Equal(t, proposal1, received1[0].ProposalID)
+	assert.Equal(t, proposal1, received1[1].ProposalID)
+	assert.Equal(t, partyA, received1[0].PartyID)
+	assert.Equal(t, partyB, received1[1].PartyID)
+
+	received2 = <-ch2
+	assert.Len(t, received2, 2)
+	assert.Equal(t, proposal2, received2[0].ProposalID)
+	assert.Equal(t, proposal2, received2[1].ProposalID)
+	assert.Equal(t, partyA, received2[0].PartyID)
+	assert.Equal(t, partyB, received2[1].PartyID)
+
+	// duplicate votes
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}}
+	received1 = <-ch1
+	assert.Len(t, received1, 2)
+	assert.Equal(t, proposal1, received1[0].ProposalID)
+	assert.Equal(t, proposal1, received1[1].ProposalID)
+	assert.Equal(t, partyA, received1[0].PartyID)
+	assert.Equal(t, partyB, received1[1].PartyID)
+
+	received2 = <-ch2
+	assert.Len(t, received2, 2)
+	assert.Equal(t, proposal2, received2[0].ProposalID)
+	assert.Equal(t, proposal2, received2[1].ProposalID)
+	assert.Equal(t, partyA, received2[0].PartyID)
+	assert.Equal(t, partyB, received2[1].PartyID)
+
+	plugin.UnsubscribeProposalVotes(proposal1, idx1)
+	plugin.UnsubscribeProposalVotes(proposal2, idx2)
 
 	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
 	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
