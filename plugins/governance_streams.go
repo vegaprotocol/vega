@@ -35,18 +35,20 @@ func newStreams() streams {
 
 // notifications for all updates
 func (s *streams) notifyAll(proposals []types.GovernanceData) {
-	s.overallMu.RLock()
-	for _, ch := range s.overall {
-		// push onto channel, but don't wait for consumer to read the data
-		// the channel is buffered to 1, so we can write if the channel is empty
-		select {
-		case ch <- proposals:
-			continue
-		default:
-			continue
+	if len(proposals) > 0 { // disallow empty notifications
+		s.overallMu.RLock()
+		for _, ch := range s.overall {
+			// push onto channel, but don't wait for consumer to read the data
+			// the channel is buffered to 1, so we can write if the channel is empty
+			select {
+			case ch <- proposals:
+				continue
+			default:
+				continue
+			}
 		}
+		s.overallMu.RUnlock()
 	}
-	s.overallMu.RUnlock()
 }
 
 func (s *streams) subscribeAll() (<-chan []types.GovernanceData, int64) {
@@ -80,25 +82,27 @@ func partitionProposalsByParty(proposals []types.GovernanceData) map[string][]ty
 
 // notifications for proposal updates (no votes)
 func (s *streams) notifyProposals(data []types.GovernanceData) {
-	byParty := partitionProposalsByParty(data)
+	if len(data) > 0 {
+		byParty := partitionProposalsByParty(data)
 
-	s.partyProposalsMu.RLock()
-	// the assumption here is that there is likely to be less per party proposal
-	// subscriptions than new proposals received by the node
-	// if this assumption is incorrect, next two lines have to be inverted
-	for partyID, subs := range s.partyProposals {
-		if proposals, exists := byParty[partyID]; exists {
-			for _, ch := range subs {
-				select {
-				case ch <- proposals:
-					continue
-				default:
-					continue
+		s.partyProposalsMu.RLock()
+		// the assumption here is that there is likely to be less per party proposal
+		// subscriptions than new proposals received by the node
+		// if this assumption is incorrect, next two lines have to be inverted
+		for partyID, subs := range s.partyProposals {
+			if proposals, exists := byParty[partyID]; exists {
+				for _, ch := range subs {
+					select {
+					case ch <- proposals:
+						continue
+					default:
+						continue
+					}
 				}
 			}
 		}
+		s.partyProposalsMu.RUnlock()
 	}
-	s.partyProposalsMu.RUnlock()
 }
 
 func (s *streams) subscribePartyProposals(partyID string) (<-chan []types.GovernanceData, int64) {
@@ -146,38 +150,40 @@ func partitionVotesByProposalID(votes []types.Vote) map[string][]types.Vote {
 
 // notifications for vote casts (no other proposal updates otherwise)
 func (s *streams) notifyVotes(votes []types.Vote) {
-	byParty := partitionVotesByParty(votes)
-	byProposal := partitionVotesByProposalID(votes)
+	if len(votes) > 0 {
+		byParty := partitionVotesByParty(votes)
+		byProposal := partitionVotesByProposalID(votes)
 
-	s.votesMu.RLock()
+		s.votesMu.RLock()
 
-	// the assumption here is that there is likely to be less per party vote
-	// subscriptions than new votes received by the node
-	for partyID, subs := range s.partyVotes {
-		if votes, exists := byParty[partyID]; exists {
-			for _, ch := range subs {
-				select {
-				case ch <- votes:
-					continue
-				default:
-					continue
+		// the assumption here is that there is likely to be less per party vote
+		// subscriptions than new votes received by the node
+		for partyID, subs := range s.partyVotes {
+			if votes, exists := byParty[partyID]; exists {
+				for _, ch := range subs {
+					select {
+					case ch <- votes:
+						continue
+					default:
+						continue
+					}
 				}
 			}
 		}
-	}
-	for proposalID, subs := range s.proposalVotes {
-		if votes, exists := byProposal[proposalID]; exists {
-			for _, ch := range subs {
-				select {
-				case ch <- votes:
-					continue
-				default:
-					continue
+		for proposalID, subs := range s.proposalVotes {
+			if votes, exists := byProposal[proposalID]; exists {
+				for _, ch := range subs {
+					select {
+					case ch <- votes:
+						continue
+					default:
+						continue
+					}
 				}
 			}
 		}
+		s.votesMu.RUnlock()
 	}
-	s.votesMu.RUnlock()
 }
 
 func (s *streams) subscribePartyVotes(partyID string) (<-chan []types.Vote, int64) {
