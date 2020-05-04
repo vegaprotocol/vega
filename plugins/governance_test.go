@@ -290,7 +290,9 @@ func TestVotes(t *testing.T) {
 
 func TestStreamSubscriptions(t *testing.T) {
 	t.Run("test that dangling votes do not produce gov data", danglingVoteImpactOnProposals)
+	t.Run("test reading closed subscription", readClosedSubs)
 	t.Run("test general governance stream", generalGovernanceSubs)
+	t.Run("test party proposals stream", partyProposalsSubs)
 }
 
 func danglingVoteImpactOnProposals(t *testing.T) {
@@ -331,6 +333,61 @@ func danglingVoteImpactOnProposals(t *testing.T) {
 	}
 	plugin.UnsubscribeAll(idxG)
 	plugin.UnsubscribeAll(idxParty)
+
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
+func readClosedSubs(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	ch1, idx1 := plugin.SubscribeAll()
+	ch2, idx2 := plugin.SubscribeAll()
+	ch3, idx3 := plugin.SubscribePartyProposals("partyX")
+	ch4, idx4 := plugin.SubscribePartyVotes("partyX")
+	ch5, idx5 := plugin.SubscribeProposalVotes("proposal-1")
+	plugin.UnsubscribeAll(idx1)
+	plugin.UnsubscribeAll(idx2)
+	plugin.UnsubscribePartyProposals("partyX", idx3)
+	plugin.UnsubscribePartyVotes("partyX", idx4)
+	plugin.UnsubscribeProposalVotes("proposal-1", idx5)
+
+	plugin.pCh <- []types.Proposal{{
+		ID:        "proposal-post-close",
+		PartyID:   "some-other-party",
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
+	plugin.vCh <- []types.Vote{{
+		PartyID:    "some-other-party",
+		ProposalID: "proposal-post-close",
+		Value:      types.Vote_YES,
+	}}
+
+	// poll for 300ms give plugin to make sure the proposal
+	// isn't skipped due to concurrency issues
+	for i := 0; i < 100; i++ {
+		select {
+		case data := <-ch1:
+			assert.Empty(t, data, "received data after closing channel 1")
+		case data := <-ch2:
+			assert.Empty(t, data, "received data after closing channel 2")
+		case data := <-ch3:
+			assert.Empty(t, data, "received data after closing channel 3")
+		case data := <-ch4:
+			assert.Empty(t, data, "received data after closing channel 4")
+		case data := <-ch5:
+			assert.Empty(t, data, "received data after closing channel 5")
+		default:
+		}
+		time.Sleep(time.Millisecond * 3)
+	}
 
 	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
 	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
@@ -390,26 +447,70 @@ func generalGovernanceSubs(t *testing.T) {
 	}
 	plugin.UnsubscribeAll(idx1)
 
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
+func partyProposalsSubs(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	partyA, partyB := "partyA", "partyB"
+	chA, idxA := plugin.SubscribePartyProposals(partyA)
+	chB, idxB := plugin.SubscribePartyProposals(partyB)
+
+	proposal1, proposal2 := "proposal1", "proposal2"
+
+	plugin.vCh <- []types.Vote{{
+		PartyID:    partyA,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyA,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal1,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    partyB,
+		ProposalID: proposal2,
+		Value:      types.Vote_NO,
+	}}
 	plugin.pCh <- []types.Proposal{{
-		ID:        "proposal-post-close",
-		PartyID:   "some-other-party",
+		ID:        proposal1,
+		PartyID:   partyA,
 		State:     types.Proposal_OPEN,
-		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        proposal2,
+		PartyID:   partyB,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
+	receivedA := <-chA
+	assert.Len(t, receivedA, 1)
+	assert.Equal(t, proposal1, receivedA[0].Proposal.ID)
+	assert.Equal(t, partyA, receivedA[0].Proposal.PartyID)
+	assert.Len(t, receivedA[0].Yes, 2)
+	assert.Len(t, receivedA[0].No, 0)
 
-	// poll for 300ms give plugin to make sure the proposal
-	// isn't skipped due to concurrency issues
-	for i := 0; i < 100; i++ {
-		select {
-		case data := <-ch1:
-			assert.Empty(t, data, "received data after closing channel 1")
-		case data := <-ch2:
-			assert.Empty(t, data, "received data after closing channel 2")
-		default:
-		}
-		time.Sleep(time.Millisecond * 3)
-	}
+	receivedB := <-chB
+	assert.Len(t, receivedB, 1)
+	assert.Equal(t, proposal2, receivedB[0].Proposal.ID)
+	assert.Equal(t, partyB, receivedB[0].Proposal.PartyID)
+	assert.Len(t, receivedB[0].Yes, 0)
+	assert.Len(t, receivedB[0].No, 2)
+
+	plugin.UnsubscribePartyProposals(partyA, idxA)
+	plugin.UnsubscribePartyProposals(partyB, idxB)
 
 	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
 	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)

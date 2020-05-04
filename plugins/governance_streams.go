@@ -75,7 +75,7 @@ func (s *streams) unsubscribeAll(k int64) {
 func partitionProposalsByParty(proposals []types.GovernanceData) map[string][]types.GovernanceData {
 	result := map[string][]types.GovernanceData{}
 	for _, v := range proposals {
-		result[v.Proposal.ID] = append(result[v.Proposal.ID], v)
+		result[v.Proposal.PartyID] = append(result[v.Proposal.PartyID], v)
 	}
 	return result
 }
