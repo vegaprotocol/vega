@@ -39,7 +39,7 @@
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
     - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
     - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
-    - [OptionalState](#api.OptionalState)
+    - [OptionalProposalState](#api.OptionalProposalState)
     - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
@@ -368,7 +368,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
-| state | [OptionalState](#api.OptionalState) |  |  |
+| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
 
 
 
@@ -383,7 +383,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| state | [OptionalState](#api.OptionalState) |  |  |
+| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
 
 
 
@@ -399,7 +399,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
-| state | [OptionalState](#api.OptionalState) |  |  |
+| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
 
 
 
@@ -743,9 +743,9 @@
 
 
 
-<a name="api.OptionalState"></a>
+<a name="api.OptionalProposalState"></a>
 
-### OptionalState
+### OptionalProposalState
 
 
 

@@ -733,14 +733,14 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	return result, nil
 }
 
-// ToOptionalState ...
-func (s *ProposalState) ToOptionalState() (*protoapi.OptionalState, error) {
+// ToOptionalProposalState ...
+func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalState, error) {
 	if s != nil {
 		value, err := s.IntoProtoValue()
 		if err != nil {
 			return nil, err
 		}
-		return &protoapi.OptionalState{
+		return &protoapi.OptionalProposalState{
 			Value: value,
 		}, nil
 	}

@@ -100,7 +100,7 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
-func (this *OptionalState) Validate() error {
+func (this *OptionalProposalState) Validate() error {
 	return nil
 }
 func (this *GetProposalsByStateRequest) Validate() error {

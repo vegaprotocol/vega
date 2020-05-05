@@ -330,7 +330,7 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 }
 
 func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-	filter, err := inState.ToOptionalState()
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 }
 
 func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-	filter, err := inState.ToOptionalState()
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +408,7 @@ func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *Propo
 }
 
 func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*Proposal, error) {
-	filter, err := inState.ToOptionalState()
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +437,7 @@ func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *s
 }
 
 func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-	filter, err := inState.ToOptionalState()
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
@@ -461,7 +461,7 @@ func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inStat
 }
 
 func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
-	filter, err := inState.ToOptionalState()
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
@@ -829,7 +829,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*Proposal, error) {
-	filter, err := inState.ToOptionalState()
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}

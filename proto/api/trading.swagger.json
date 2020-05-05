@@ -1130,7 +1130,7 @@
         }
       }
     },
-    "apiOptionalState": {
+    "apiOptionalProposalState": {
       "type": "object",
       "properties": {
         "value": {

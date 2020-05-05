@@ -259,12 +259,12 @@ service trading_data {
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 }
 
-message OptionalState {
+message OptionalProposalState {
   vega.Proposal.State value = 1;
 }
 
 message GetProposalsByStateRequest {
-  OptionalState state = 1;
+  OptionalProposalState state = 1;
 }
 
 message GetGovernanceDataResponse {
@@ -281,7 +281,7 @@ message GetVotesResponse {
 
 message GetProposalsByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
-  OptionalState state = 2;
+  OptionalProposalState state = 2;
 }
 
 message GetVotesByPartyRequest {
@@ -290,7 +290,7 @@ message GetVotesByPartyRequest {
 
 message GetUpdateMarketProposalsRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
-  OptionalState state = 2;
+  OptionalProposalState state = 2;
 }
 
 message GetProposalByIDRequest {
