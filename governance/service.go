@@ -107,32 +107,32 @@ func streamVotes(ctx context.Context,
 	input <-chan []types.Vote,
 	output chan []types.Vote,
 	log *logging.Logger,
-) bool {
-
-	select {
-	case <-ctx.Done():
-		log.Debug("votes subscriber closed the connection")
-		return false
-	case updates := <-input:
-		// received new data
-		retryCount := retries
-		success := false
-		for !success && retryCount >= 0 {
-			select {
-			case output <- updates:
-				success = true
-			default:
-				log.Debug("failed to push votes update onto subscriber channel")
-				retryCount--
-				time.Sleep(time.Millisecond * 10)
+) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug("votes subscriber closed the connection")
+			return
+		case updates := <-input:
+			// received new data
+			retryCount := retries
+			success := false
+			for !success && retryCount >= 0 {
+				select {
+				case output <- updates:
+					success = true
+				default:
+					log.Debug("failed to push votes update onto subscriber channel")
+					retryCount--
+					time.Sleep(time.Millisecond * 10)
+				}
+			}
+			if !success {
+				log.Warn("Failed to push votes update to stream, reached end of retries")
+				return
 			}
 		}
-		if !success {
-			log.Warn("Failed to push votes update to stream, reached end of retries")
-			return false
-		}
 	}
-	return true
 }
 
 // TODO: explore https://godoc.org/github.com/eapache/channels#Wrap to reduce copy-paste
@@ -221,8 +221,7 @@ func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string
 			s.plugin.UnsubscribePartyVotes(partyID, inputIdx)
 			close(output)
 		}()
-		for streamVotes(ctx, retries, input, output, s.log) {
-		}
+		streamVotes(ctx, retries, input, output, s.log)
 	}()
 	return output
 }
@@ -240,8 +239,7 @@ func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID 
 			s.plugin.UnsubscribeProposalVotes(proposalID, inputIdx)
 			close(output)
 		}()
-		for streamVotes(ctx, retries, input, output, s.log) {
-		}
+		streamVotes(ctx, retries, input, output, s.log)
 	}()
 	return output
 }
