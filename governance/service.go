@@ -111,7 +111,7 @@ func streamVotes(ctx context.Context,
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debug("votes subscriber closed the connection")
+			log.Debug("votes subscriber closed the connection", logging.Error(ctx.Err()))
 			return
 		case updates := <-input:
 			// received new data
@@ -145,7 +145,7 @@ func streamGovernance(ctx context.Context,
 
 	select {
 	case <-ctx.Done():
-		log.Debug("governance subscriber closed the connection")
+		log.Debug("governance subscriber closed the connection", logging.Error(ctx.Err()))
 		return false
 	case updates := <-input:
 		// received new data
