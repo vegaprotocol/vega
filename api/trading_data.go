@@ -1619,7 +1619,7 @@ func (h *tradingDataService) ObservePartyVotes(
 				if err := stream.Send(&p); err != nil {
 					h.log.Error("failed to send party vote into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
