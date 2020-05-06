@@ -57,3 +57,5 @@ models:
         resolver: true
       margins:
         resolver: true
+  Proposal:
+    model: code.vegaprotocol.io/vega/proto.GovernanceData

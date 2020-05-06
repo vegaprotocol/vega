@@ -30,6 +30,8 @@ var (
 	ErrMissingIDOrReference = errors.New("missing id or reference")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
 	ErrInvalidVotesSubscription = errors.New("invlid subscription, either proposal or party ID required")
+	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
+	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
 // TradingClient ...
@@ -213,6 +215,11 @@ func (r *VegaResolverRoot) Statistics() StatisticsResolver {
 	return (*myStatisticsResolver)(r)
 }
 
+// Proposal returns the proposal resolver
+func (r *VegaResolverRoot) Proposal() ProposalResolver {
+	return (*myProposalResolver)(r)
+}
+
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
@@ -329,7 +336,7 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 	return order, err
 }
 
-func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
 	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
@@ -340,26 +347,10 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, 0, len(resp.Data))
-	for _, gov := range resp.Data {
-		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
-			return getParty(ctx, r.log, r.tradingDataClient, partyID)
-		})
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, converted)
-
-	}
-	return result, nil
+	return resp.Data, nil
 }
 
-func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*Proposal, error) {
-	if (id == nil || len(*id) == 0) && (reference == nil || len(*reference) == 0) {
-		return nil, ErrMissingIDOrReference
-	}
-
-	var data *types.GovernanceData
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*types.GovernanceData, error) {
 	if id != nil {
 		resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
 			ProposalID: *id,
@@ -367,7 +358,7 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
-		data = resp.Proposal
+		return resp.Proposal, nil
 	} else if reference != nil {
 		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
 			Reference: *reference,
@@ -375,15 +366,13 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
-		data = resp.Proposal
+		return resp.Proposal, nil
 	}
 
-	return ProposalFromProto(data, func(partyID string) (*types.Party, error) {
-		return getParty(ctx, r.log, r.tradingDataClient, partyID)
-	})
+	return nil, ErrMissingIDOrReference
 }
 
-func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
 	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
@@ -394,20 +383,10 @@ func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *Propo
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(resp.Data))
-	for i, gov := range resp.Data {
-		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
-			return getParty(ctx, r.log, r.tradingDataClient, partyID)
-		})
-		if err != nil {
-			return nil, err
-		}
-		result[i] = converted
-	}
-	return result, nil
+	return resp.Data, nil
 }
 
-func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*Proposal, error) {
+func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*types.GovernanceData, error) {
 	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
@@ -423,20 +402,10 @@ func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *s
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(resp.Data))
-	for i, gov := range resp.Data {
-		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
-			return getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
-		})
-		if err != nil {
-			return nil, err
-		}
-		result[i] = converted
-	}
-	return result, nil
+	return resp.Data, nil
 }
 
-func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
 	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
@@ -447,20 +416,10 @@ func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inStat
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(resp.Data))
-	for i, gov := range resp.Data {
-		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
-			return getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
-		})
-		if err != nil {
-			return nil, err
-		}
-		result[i] = converted
-	}
-	return result, nil
+	return resp.Data, nil
 }
 
-func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*Proposal, error) {
+func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
 	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
@@ -471,17 +430,7 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(resp.Data))
-	for i, gov := range resp.Data {
-		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
-			return getParty(ctx, r.log, r.tradingDataClient, gov.Proposal.PartyID)
-		})
-		if err != nil {
-			return nil, err
-		}
-		result[i] = converted
-	}
-	return result, nil
+	return resp.Data, nil
 }
 
 // END: Root Resolver
@@ -828,7 +777,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	}
 }
 
-func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*Proposal, error) {
+func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*types.GovernanceData, error) {
 	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
@@ -840,18 +789,7 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(resp.Data))
-	for i, gov := range resp.Data {
-		converted, err := ProposalFromProto(gov, func(partyID string) (*types.Party, error) {
-			return getParty(ctx, r.log, r.tradingDataClient, partyID)
-		})
-		if err != nil {
-			return nil, err
-		}
-		result[i] = converted
-
-	}
-	return result, nil
+	return resp.Data, nil
 }
 
 func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
@@ -874,6 +812,92 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 }
 
 // END: Party Resolver
+
+// BEGIN: Proposal Resolver
+
+type myProposalResolver VegaResolverRoot
+
+func (r *myProposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return &data.Proposal.ID, nil
+}
+
+func (r *myProposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return "", ErrInvalidProposal
+	}
+	return data.Proposal.Reference, nil
+}
+
+func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceData) (*types.Party, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+}
+
+func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return "", ErrInvalidProposal
+	}
+	return ProposalStateFromProto(data.Proposal.State)
+}
+
+func (r *myProposalResolver) Timestamp(ctx context.Context, data *types.GovernanceData) (string, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return "", ErrInvalidProposal
+	}
+	return timestampToString(data.Proposal.Timestamp), nil
+}
+
+func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*ProposalTerms, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return ProposalTermsFromProto(data.Proposal.Terms)
+}
+
+func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+
+	result := make([]*Vote, len(data.Yes))
+	for i, v := range data.Yes {
+		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = &Vote{
+			Value: VoteValueFromProto(v.Value),
+			Party: voter,
+		}
+	}
+	return result, nil
+}
+
+func (r *myProposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+
+	result := make([]*Vote, len(data.No))
+	for i, v := range data.No {
+		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = &Vote{
+			Value: VoteValueFromProto(v.Value),
+			Party: voter,
+		}
+	}
+	return result, nil
+}
+
+// END: Proposal Resolver
 
 // BEGIN: MarginLevels Resolver
 
@@ -1501,10 +1525,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 func (r *myMutationResolver) PrepareProposal(
 	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
 
-	party, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
-	if err != nil {
-		return nil, err
-	}
 	if proposalTerms.MinParticipationStake < 0 {
 		return nil, errors.New("minParticipationStake is invalid, must be positive")
 	}
@@ -1525,19 +1545,10 @@ func (r *myMutationResolver) PrepareProposal(
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	verifiedTerms, err := ProposalTermsFromProto(pendingProposal.PendingProposal.Terms)
-	if err != nil {
-		return nil, err
-	}
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
-		PendingProposal: &Proposal{
-			ID:        &pendingProposal.PendingProposal.ID,
-			Reference: pendingProposal.PendingProposal.Reference,
-			Party:     party,
-			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
-			Timestamp: timestampToString(pendingProposal.PendingProposal.Timestamp),
-			Terms:     verifiedTerms,
+		PendingProposal: &types.GovernanceData{
+			Proposal: pendingProposal.PendingProposal,
 		},
 	}, nil
 }
@@ -1963,71 +1974,52 @@ func isStreamClosed(err error, log *logging.Logger) bool {
 	return false
 }
 
-func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *Proposal, error) {
-	output := make(chan *Proposal)
+func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
 	stream, err := r.tradingDataClient.ObserveGovernance(ctx, nil)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
 			stream.CloseSend()
 			close(output)
 		}()
-		for {
-			data, err := stream.Recv()
-			if isStreamClosed(err, r.log) {
-				break
-			}
-			proposal, err := ProposalFromProto(data, func(partyID string) (*types.Party, error) {
-				return getParty(ctx, r.log, r.tradingDataClient, partyID)
-			})
-			if err != nil {
-				r.log.Error("Proposals subscriber. ProposalFromProto error", logging.Error(err))
-				break
-			}
-			output <- proposal
+		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
+			output <- data
 		}
 	}()
 	return output, nil
 }
 
-func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, partyID string) (<-chan *Proposal, error) {
-	output := make(chan *Proposal)
+func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, partyID string) (<-chan *types.GovernanceData, error) {
 	stream, err := r.tradingDataClient.ObservePartyProposals(ctx, &protoapi.ObservePartyProposalsRequest{
 		PartyID: partyID,
 	})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
 			stream.CloseSend()
 			close(output)
 		}()
-		for {
-			data, err := stream.Recv()
-			if isStreamClosed(err, r.log) {
-				break
-			}
-			proposal, err := ProposalFromProto(data, func(partyID string) (*types.Party, error) {
-				return getParty(ctx, r.log, r.tradingDataClient, partyID)
-			})
-			if err != nil {
-				r.log.Error("Proposals subscriber. ProposalFromProto error", logging.Error(err))
-				break
-			}
-			output <- proposal
+		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
+			output <- data
 		}
 	}()
 	return output, nil
 }
 
-func (r *mySubscriptionResolver) Proposals(ctx context.Context, partyID *string) (<-chan *Proposal, error) {
+func (r *mySubscriptionResolver) Proposals(ctx context.Context, partyID *string) (<-chan *types.GovernanceData, error) {
+	output := make(chan *types.GovernanceData)
 	if partyID != nil && len(*partyID) > 0 {
 		return r.subscribePartyProposals(ctx, *partyID)
 	}
 	return r.subscribeAllProposals(ctx)
+
+	return output, nil
 }
 
 func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, proposalID string) (<-chan *ProposalVote, error) {

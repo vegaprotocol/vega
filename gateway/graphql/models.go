@@ -270,7 +270,7 @@ type PreparedProposal struct {
 	// Raw transaction data to sign & submit
 	Blob string `json:"blob"`
 	// The pending proposal
-	PendingProposal *Proposal `json:"pendingProposal"`
+	PendingProposal *proto.GovernanceData `json:"pendingProposal"`
 }
 
 type PreparedSubmitOrder struct {
@@ -285,25 +285,6 @@ type PreparedVote struct {
 	Blob string `json:"blob"`
 	// The vote serialised in the blob field
 	Vote *ProposalVote `json:"vote"`
-}
-
-type Proposal struct {
-	// Proposal id that is filled by VEGA once proposal reaches the network
-	ID *string `json:"id"`
-	// A UUID reference to aid tracking proposals on VEGA
-	Reference string `json:"reference"`
-	// Party that prepared the proposal
-	Party *proto.Party `json:"party"`
-	// State of the proposal
-	State ProposalState `json:"state"`
-	// time at which the proposal has reached the network
-	Timestamp string `json:"timestamp"`
-	// Terms of the proposal
-	Terms *ProposalTerms `json:"terms"`
-	// Yes votes cast for this proposal
-	YesVotes []*Vote `json:"yesVotes"`
-	// No votes cast for this proposal
-	NoVotes []*Vote `json:"noVotes"`
 }
 
 type ProposalTerms struct {
