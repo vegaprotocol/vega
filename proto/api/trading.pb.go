@@ -502,8 +502,336 @@ func (m *AmendOrderRequest) GetAmendment() *proto1.OrderAmendment {
 	return nil
 }
 
+type OptionalProposalState struct {
+	Value                proto1.Proposal_State `protobuf:"varint,1,opt,name=value,proto3,enum=vega.Proposal_State" json:"value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *OptionalProposalState) Reset()         { *m = OptionalProposalState{} }
+func (m *OptionalProposalState) String() string { return proto.CompactTextString(m) }
+func (*OptionalProposalState) ProtoMessage()    {}
+func (*OptionalProposalState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{12}
+}
+
+func (m *OptionalProposalState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OptionalProposalState.Unmarshal(m, b)
+}
+func (m *OptionalProposalState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OptionalProposalState.Marshal(b, m, deterministic)
+}
+func (m *OptionalProposalState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OptionalProposalState.Merge(m, src)
+}
+func (m *OptionalProposalState) XXX_Size() int {
+	return xxx_messageInfo_OptionalProposalState.Size(m)
+}
+func (m *OptionalProposalState) XXX_DiscardUnknown() {
+	xxx_messageInfo_OptionalProposalState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OptionalProposalState proto.InternalMessageInfo
+
+func (m *OptionalProposalState) GetValue() proto1.Proposal_State {
+	if m != nil {
+		return m.Value
+	}
+	return proto1.Proposal_FAILED
+}
+
+type GetProposalsByStateRequest struct {
+	State                *OptionalProposalState `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *GetProposalsByStateRequest) Reset()         { *m = GetProposalsByStateRequest{} }
+func (m *GetProposalsByStateRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProposalsByStateRequest) ProtoMessage()    {}
+func (*GetProposalsByStateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{13}
+}
+
+func (m *GetProposalsByStateRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetProposalsByStateRequest.Unmarshal(m, b)
+}
+func (m *GetProposalsByStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetProposalsByStateRequest.Marshal(b, m, deterministic)
+}
+func (m *GetProposalsByStateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProposalsByStateRequest.Merge(m, src)
+}
+func (m *GetProposalsByStateRequest) XXX_Size() int {
+	return xxx_messageInfo_GetProposalsByStateRequest.Size(m)
+}
+func (m *GetProposalsByStateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProposalsByStateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProposalsByStateRequest proto.InternalMessageInfo
+
+func (m *GetProposalsByStateRequest) GetState() *OptionalProposalState {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+type GetGovernanceDataResponse struct {
+	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *GetGovernanceDataResponse) Reset()         { *m = GetGovernanceDataResponse{} }
+func (m *GetGovernanceDataResponse) String() string { return proto.CompactTextString(m) }
+func (*GetGovernanceDataResponse) ProtoMessage()    {}
+func (*GetGovernanceDataResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{14}
+}
+
+func (m *GetGovernanceDataResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGovernanceDataResponse.Unmarshal(m, b)
+}
+func (m *GetGovernanceDataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGovernanceDataResponse.Marshal(b, m, deterministic)
+}
+func (m *GetGovernanceDataResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGovernanceDataResponse.Merge(m, src)
+}
+func (m *GetGovernanceDataResponse) XXX_Size() int {
+	return xxx_messageInfo_GetGovernanceDataResponse.Size(m)
+}
+func (m *GetGovernanceDataResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGovernanceDataResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGovernanceDataResponse proto.InternalMessageInfo
+
+func (m *GetGovernanceDataResponse) GetData() []*proto1.GovernanceData {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type GetProposalResponse struct {
+	Proposal             *proto1.GovernanceData `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *GetProposalResponse) Reset()         { *m = GetProposalResponse{} }
+func (m *GetProposalResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProposalResponse) ProtoMessage()    {}
+func (*GetProposalResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{15}
+}
+
+func (m *GetProposalResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetProposalResponse.Unmarshal(m, b)
+}
+func (m *GetProposalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetProposalResponse.Marshal(b, m, deterministic)
+}
+func (m *GetProposalResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProposalResponse.Merge(m, src)
+}
+func (m *GetProposalResponse) XXX_Size() int {
+	return xxx_messageInfo_GetProposalResponse.Size(m)
+}
+func (m *GetProposalResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProposalResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProposalResponse proto.InternalMessageInfo
+
+func (m *GetProposalResponse) GetProposal() *proto1.GovernanceData {
+	if m != nil {
+		return m.Proposal
+	}
+	return nil
+}
+
+type GetVotesResponse struct {
+	Votes                []*proto1.Vote `protobuf:"bytes,1,rep,name=votes,proto3" json:"votes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *GetVotesResponse) Reset()         { *m = GetVotesResponse{} }
+func (m *GetVotesResponse) String() string { return proto.CompactTextString(m) }
+func (*GetVotesResponse) ProtoMessage()    {}
+func (*GetVotesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{16}
+}
+
+func (m *GetVotesResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVotesResponse.Unmarshal(m, b)
+}
+func (m *GetVotesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVotesResponse.Marshal(b, m, deterministic)
+}
+func (m *GetVotesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVotesResponse.Merge(m, src)
+}
+func (m *GetVotesResponse) XXX_Size() int {
+	return xxx_messageInfo_GetVotesResponse.Size(m)
+}
+func (m *GetVotesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVotesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVotesResponse proto.InternalMessageInfo
+
+func (m *GetVotesResponse) GetVotes() []*proto1.Vote {
+	if m != nil {
+		return m.Votes
+	}
+	return nil
+}
+
+type GetProposalsByPartyRequest struct {
+	PartyID              string                 `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	State                *OptionalProposalState `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *GetProposalsByPartyRequest) Reset()         { *m = GetProposalsByPartyRequest{} }
+func (m *GetProposalsByPartyRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProposalsByPartyRequest) ProtoMessage()    {}
+func (*GetProposalsByPartyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{17}
+}
+
+func (m *GetProposalsByPartyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetProposalsByPartyRequest.Unmarshal(m, b)
+}
+func (m *GetProposalsByPartyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetProposalsByPartyRequest.Marshal(b, m, deterministic)
+}
+func (m *GetProposalsByPartyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProposalsByPartyRequest.Merge(m, src)
+}
+func (m *GetProposalsByPartyRequest) XXX_Size() int {
+	return xxx_messageInfo_GetProposalsByPartyRequest.Size(m)
+}
+func (m *GetProposalsByPartyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProposalsByPartyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProposalsByPartyRequest proto.InternalMessageInfo
+
+func (m *GetProposalsByPartyRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
+}
+
+func (m *GetProposalsByPartyRequest) GetState() *OptionalProposalState {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+type GetVotesByPartyRequest struct {
+	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetVotesByPartyRequest) Reset()         { *m = GetVotesByPartyRequest{} }
+func (m *GetVotesByPartyRequest) String() string { return proto.CompactTextString(m) }
+func (*GetVotesByPartyRequest) ProtoMessage()    {}
+func (*GetVotesByPartyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{18}
+}
+
+func (m *GetVotesByPartyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVotesByPartyRequest.Unmarshal(m, b)
+}
+func (m *GetVotesByPartyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVotesByPartyRequest.Marshal(b, m, deterministic)
+}
+func (m *GetVotesByPartyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVotesByPartyRequest.Merge(m, src)
+}
+func (m *GetVotesByPartyRequest) XXX_Size() int {
+	return xxx_messageInfo_GetVotesByPartyRequest.Size(m)
+}
+func (m *GetVotesByPartyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVotesByPartyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVotesByPartyRequest proto.InternalMessageInfo
+
+func (m *GetVotesByPartyRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
+}
+
+type GetUpdateMarketProposalsRequest struct {
+	MarketID             string                 `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	State                *OptionalProposalState `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *GetUpdateMarketProposalsRequest) Reset()         { *m = GetUpdateMarketProposalsRequest{} }
+func (m *GetUpdateMarketProposalsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetUpdateMarketProposalsRequest) ProtoMessage()    {}
+func (*GetUpdateMarketProposalsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{19}
+}
+
+func (m *GetUpdateMarketProposalsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetUpdateMarketProposalsRequest.Unmarshal(m, b)
+}
+func (m *GetUpdateMarketProposalsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetUpdateMarketProposalsRequest.Marshal(b, m, deterministic)
+}
+func (m *GetUpdateMarketProposalsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetUpdateMarketProposalsRequest.Merge(m, src)
+}
+func (m *GetUpdateMarketProposalsRequest) XXX_Size() int {
+	return xxx_messageInfo_GetUpdateMarketProposalsRequest.Size(m)
+}
+func (m *GetUpdateMarketProposalsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetUpdateMarketProposalsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetUpdateMarketProposalsRequest proto.InternalMessageInfo
+
+func (m *GetUpdateMarketProposalsRequest) GetMarketID() string {
+	if m != nil {
+		return m.MarketID
+	}
+	return ""
+}
+
+func (m *GetUpdateMarketProposalsRequest) GetState() *OptionalProposalState {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
 type GetProposalByIDRequest struct {
-	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	ProposalID           string   `protobuf:"bytes,1,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -513,7 +841,7 @@ func (m *GetProposalByIDRequest) Reset()         { *m = GetProposalByIDRequest{}
 func (m *GetProposalByIDRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProposalByIDRequest) ProtoMessage()    {}
 func (*GetProposalByIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{12}
+	return fileDescriptor_efb848134bda36f4, []int{20}
 }
 
 func (m *GetProposalByIDRequest) XXX_Unmarshal(b []byte) error {
@@ -534,9 +862,9 @@ func (m *GetProposalByIDRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetProposalByIDRequest proto.InternalMessageInfo
 
-func (m *GetProposalByIDRequest) GetID() string {
+func (m *GetProposalByIDRequest) GetProposalID() string {
 	if m != nil {
-		return m.ID
+		return m.ProposalID
 	}
 	return ""
 }
@@ -552,7 +880,7 @@ func (m *GetProposalByReferenceRequest) Reset()         { *m = GetProposalByRefe
 func (m *GetProposalByReferenceRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProposalByReferenceRequest) ProtoMessage()    {}
 func (*GetProposalByReferenceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{13}
+	return fileDescriptor_efb848134bda36f4, []int{21}
 }
 
 func (m *GetProposalByReferenceRequest) XXX_Unmarshal(b []byte) error {
@@ -580,43 +908,121 @@ func (m *GetProposalByReferenceRequest) GetReference() string {
 	return ""
 }
 
-type GetProposalsResponse struct {
-	Proposals            []*proto1.ProposalVote `protobuf:"bytes,1,rep,name=proposals,proto3" json:"proposals,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
-	XXX_unrecognized     []byte                 `json:"-"`
-	XXX_sizecache        int32                  `json:"-"`
+type ObservePartyProposalsRequest struct {
+	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetProposalsResponse) Reset()         { *m = GetProposalsResponse{} }
-func (m *GetProposalsResponse) String() string { return proto.CompactTextString(m) }
-func (*GetProposalsResponse) ProtoMessage()    {}
-func (*GetProposalsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{14}
+func (m *ObservePartyProposalsRequest) Reset()         { *m = ObservePartyProposalsRequest{} }
+func (m *ObservePartyProposalsRequest) String() string { return proto.CompactTextString(m) }
+func (*ObservePartyProposalsRequest) ProtoMessage()    {}
+func (*ObservePartyProposalsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{22}
 }
 
-func (m *GetProposalsResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetProposalsResponse.Unmarshal(m, b)
+func (m *ObservePartyProposalsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ObservePartyProposalsRequest.Unmarshal(m, b)
 }
-func (m *GetProposalsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetProposalsResponse.Marshal(b, m, deterministic)
+func (m *ObservePartyProposalsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ObservePartyProposalsRequest.Marshal(b, m, deterministic)
 }
-func (m *GetProposalsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetProposalsResponse.Merge(m, src)
+func (m *ObservePartyProposalsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObservePartyProposalsRequest.Merge(m, src)
 }
-func (m *GetProposalsResponse) XXX_Size() int {
-	return xxx_messageInfo_GetProposalsResponse.Size(m)
+func (m *ObservePartyProposalsRequest) XXX_Size() int {
+	return xxx_messageInfo_ObservePartyProposalsRequest.Size(m)
 }
-func (m *GetProposalsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetProposalsResponse.DiscardUnknown(m)
+func (m *ObservePartyProposalsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObservePartyProposalsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetProposalsResponse proto.InternalMessageInfo
+var xxx_messageInfo_ObservePartyProposalsRequest proto.InternalMessageInfo
 
-func (m *GetProposalsResponse) GetProposals() []*proto1.ProposalVote {
+func (m *ObservePartyProposalsRequest) GetPartyID() string {
 	if m != nil {
-		return m.Proposals
+		return m.PartyID
 	}
-	return nil
+	return ""
+}
+
+type ObserveProposalVotesRequest struct {
+	ProposalID           string   `protobuf:"bytes,1,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ObserveProposalVotesRequest) Reset()         { *m = ObserveProposalVotesRequest{} }
+func (m *ObserveProposalVotesRequest) String() string { return proto.CompactTextString(m) }
+func (*ObserveProposalVotesRequest) ProtoMessage()    {}
+func (*ObserveProposalVotesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{23}
+}
+
+func (m *ObserveProposalVotesRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ObserveProposalVotesRequest.Unmarshal(m, b)
+}
+func (m *ObserveProposalVotesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ObserveProposalVotesRequest.Marshal(b, m, deterministic)
+}
+func (m *ObserveProposalVotesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObserveProposalVotesRequest.Merge(m, src)
+}
+func (m *ObserveProposalVotesRequest) XXX_Size() int {
+	return xxx_messageInfo_ObserveProposalVotesRequest.Size(m)
+}
+func (m *ObserveProposalVotesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObserveProposalVotesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ObserveProposalVotesRequest proto.InternalMessageInfo
+
+func (m *ObserveProposalVotesRequest) GetProposalID() string {
+	if m != nil {
+		return m.ProposalID
+	}
+	return ""
+}
+
+type ObservePartyVotesRequest struct {
+	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ObservePartyVotesRequest) Reset()         { *m = ObservePartyVotesRequest{} }
+func (m *ObservePartyVotesRequest) String() string { return proto.CompactTextString(m) }
+func (*ObservePartyVotesRequest) ProtoMessage()    {}
+func (*ObservePartyVotesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{24}
+}
+
+func (m *ObservePartyVotesRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ObservePartyVotesRequest.Unmarshal(m, b)
+}
+func (m *ObservePartyVotesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ObservePartyVotesRequest.Marshal(b, m, deterministic)
+}
+func (m *ObservePartyVotesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObservePartyVotesRequest.Merge(m, src)
+}
+func (m *ObservePartyVotesRequest) XXX_Size() int {
+	return xxx_messageInfo_ObservePartyVotesRequest.Size(m)
+}
+func (m *ObservePartyVotesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObservePartyVotesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ObservePartyVotesRequest proto.InternalMessageInfo
+
+func (m *ObservePartyVotesRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
 }
 
 type MarginLevelsSubscribeRequest struct {
@@ -631,7 +1037,7 @@ func (m *MarginLevelsSubscribeRequest) Reset()         { *m = MarginLevelsSubscr
 func (m *MarginLevelsSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*MarginLevelsSubscribeRequest) ProtoMessage()    {}
 func (*MarginLevelsSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{15}
+	return fileDescriptor_efb848134bda36f4, []int{25}
 }
 
 func (m *MarginLevelsSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -678,7 +1084,7 @@ func (m *MarginLevelsRequest) Reset()         { *m = MarginLevelsRequest{} }
 func (m *MarginLevelsRequest) String() string { return proto.CompactTextString(m) }
 func (*MarginLevelsRequest) ProtoMessage()    {}
 func (*MarginLevelsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{16}
+	return fileDescriptor_efb848134bda36f4, []int{26}
 }
 
 func (m *MarginLevelsRequest) XXX_Unmarshal(b []byte) error {
@@ -724,7 +1130,7 @@ func (m *MarginLevelsResponse) Reset()         { *m = MarginLevelsResponse{} }
 func (m *MarginLevelsResponse) String() string { return proto.CompactTextString(m) }
 func (*MarginLevelsResponse) ProtoMessage()    {}
 func (*MarginLevelsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{17}
+	return fileDescriptor_efb848134bda36f4, []int{27}
 }
 
 func (m *MarginLevelsResponse) XXX_Unmarshal(b []byte) error {
@@ -763,7 +1169,7 @@ func (m *MarketsDataSubscribeRequest) Reset()         { *m = MarketsDataSubscrib
 func (m *MarketsDataSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketsDataSubscribeRequest) ProtoMessage()    {}
 func (*MarketsDataSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{18}
+	return fileDescriptor_efb848134bda36f4, []int{28}
 }
 
 func (m *MarketsDataSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -802,7 +1208,7 @@ func (m *MarketDataByIDRequest) Reset()         { *m = MarketDataByIDRequest{} }
 func (m *MarketDataByIDRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketDataByIDRequest) ProtoMessage()    {}
 func (*MarketDataByIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{19}
+	return fileDescriptor_efb848134bda36f4, []int{29}
 }
 
 func (m *MarketDataByIDRequest) XXX_Unmarshal(b []byte) error {
@@ -841,7 +1247,7 @@ func (m *MarketDataByIDResponse) Reset()         { *m = MarketDataByIDResponse{}
 func (m *MarketDataByIDResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketDataByIDResponse) ProtoMessage()    {}
 func (*MarketDataByIDResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{20}
+	return fileDescriptor_efb848134bda36f4, []int{30}
 }
 
 func (m *MarketDataByIDResponse) XXX_Unmarshal(b []byte) error {
@@ -880,7 +1286,7 @@ func (m *MarketsDataResponse) Reset()         { *m = MarketsDataResponse{} }
 func (m *MarketsDataResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketsDataResponse) ProtoMessage()    {}
 func (*MarketsDataResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{21}
+	return fileDescriptor_efb848134bda36f4, []int{31}
 }
 
 func (m *MarketsDataResponse) XXX_Unmarshal(b []byte) error {
@@ -919,7 +1325,7 @@ func (m *LastTradeRequest) Reset()         { *m = LastTradeRequest{} }
 func (m *LastTradeRequest) String() string { return proto.CompactTextString(m) }
 func (*LastTradeRequest) ProtoMessage()    {}
 func (*LastTradeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{22}
+	return fileDescriptor_efb848134bda36f4, []int{32}
 }
 
 func (m *LastTradeRequest) XXX_Unmarshal(b []byte) error {
@@ -958,7 +1364,7 @@ func (m *LastTradeResponse) Reset()         { *m = LastTradeResponse{} }
 func (m *LastTradeResponse) String() string { return proto.CompactTextString(m) }
 func (*LastTradeResponse) ProtoMessage()    {}
 func (*LastTradeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{23}
+	return fileDescriptor_efb848134bda36f4, []int{33}
 }
 
 func (m *LastTradeResponse) XXX_Unmarshal(b []byte) error {
@@ -997,7 +1403,7 @@ func (m *MarketByIDRequest) Reset()         { *m = MarketByIDRequest{} }
 func (m *MarketByIDRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketByIDRequest) ProtoMessage()    {}
 func (*MarketByIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{24}
+	return fileDescriptor_efb848134bda36f4, []int{34}
 }
 
 func (m *MarketByIDRequest) XXX_Unmarshal(b []byte) error {
@@ -1036,7 +1442,7 @@ func (m *MarketByIDResponse) Reset()         { *m = MarketByIDResponse{} }
 func (m *MarketByIDResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketByIDResponse) ProtoMessage()    {}
 func (*MarketByIDResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{25}
+	return fileDescriptor_efb848134bda36f4, []int{35}
 }
 
 func (m *MarketByIDResponse) XXX_Unmarshal(b []byte) error {
@@ -1075,7 +1481,7 @@ func (m *PartyByIDRequest) Reset()         { *m = PartyByIDRequest{} }
 func (m *PartyByIDRequest) String() string { return proto.CompactTextString(m) }
 func (*PartyByIDRequest) ProtoMessage()    {}
 func (*PartyByIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{26}
+	return fileDescriptor_efb848134bda36f4, []int{36}
 }
 
 func (m *PartyByIDRequest) XXX_Unmarshal(b []byte) error {
@@ -1114,7 +1520,7 @@ func (m *PartyByIDResponse) Reset()         { *m = PartyByIDResponse{} }
 func (m *PartyByIDResponse) String() string { return proto.CompactTextString(m) }
 func (*PartyByIDResponse) ProtoMessage()    {}
 func (*PartyByIDResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{27}
+	return fileDescriptor_efb848134bda36f4, []int{37}
 }
 
 func (m *PartyByIDResponse) XXX_Unmarshal(b []byte) error {
@@ -1153,7 +1559,7 @@ func (m *PartiesResponse) Reset()         { *m = PartiesResponse{} }
 func (m *PartiesResponse) String() string { return proto.CompactTextString(m) }
 func (*PartiesResponse) ProtoMessage()    {}
 func (*PartiesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{28}
+	return fileDescriptor_efb848134bda36f4, []int{38}
 }
 
 func (m *PartiesResponse) XXX_Unmarshal(b []byte) error {
@@ -1194,7 +1600,7 @@ func (m *TradesByPartyRequest) Reset()         { *m = TradesByPartyRequest{} }
 func (m *TradesByPartyRequest) String() string { return proto.CompactTextString(m) }
 func (*TradesByPartyRequest) ProtoMessage()    {}
 func (*TradesByPartyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{29}
+	return fileDescriptor_efb848134bda36f4, []int{39}
 }
 
 func (m *TradesByPartyRequest) XXX_Unmarshal(b []byte) error {
@@ -1247,7 +1653,7 @@ func (m *TradesByPartyResponse) Reset()         { *m = TradesByPartyResponse{} }
 func (m *TradesByPartyResponse) String() string { return proto.CompactTextString(m) }
 func (*TradesByPartyResponse) ProtoMessage()    {}
 func (*TradesByPartyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{30}
+	return fileDescriptor_efb848134bda36f4, []int{40}
 }
 
 func (m *TradesByPartyResponse) XXX_Unmarshal(b []byte) error {
@@ -1286,7 +1692,7 @@ func (m *TradesByOrderRequest) Reset()         { *m = TradesByOrderRequest{} }
 func (m *TradesByOrderRequest) String() string { return proto.CompactTextString(m) }
 func (*TradesByOrderRequest) ProtoMessage()    {}
 func (*TradesByOrderRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{31}
+	return fileDescriptor_efb848134bda36f4, []int{41}
 }
 
 func (m *TradesByOrderRequest) XXX_Unmarshal(b []byte) error {
@@ -1325,7 +1731,7 @@ func (m *TradesByOrderResponse) Reset()         { *m = TradesByOrderResponse{} }
 func (m *TradesByOrderResponse) String() string { return proto.CompactTextString(m) }
 func (*TradesByOrderResponse) ProtoMessage()    {}
 func (*TradesByOrderResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{32}
+	return fileDescriptor_efb848134bda36f4, []int{42}
 }
 
 func (m *TradesByOrderResponse) XXX_Unmarshal(b []byte) error {
@@ -1367,7 +1773,7 @@ func (m *AccountsSubscribeRequest) Reset()         { *m = AccountsSubscribeReque
 func (m *AccountsSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*AccountsSubscribeRequest) ProtoMessage()    {}
 func (*AccountsSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{33}
+	return fileDescriptor_efb848134bda36f4, []int{43}
 }
 
 func (m *AccountsSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -1428,7 +1834,7 @@ func (m *OrdersSubscribeRequest) Reset()         { *m = OrdersSubscribeRequest{}
 func (m *OrdersSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*OrdersSubscribeRequest) ProtoMessage()    {}
 func (*OrdersSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{34}
+	return fileDescriptor_efb848134bda36f4, []int{44}
 }
 
 func (m *OrdersSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -1475,7 +1881,7 @@ func (m *TradesSubscribeRequest) Reset()         { *m = TradesSubscribeRequest{}
 func (m *TradesSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*TradesSubscribeRequest) ProtoMessage()    {}
 func (*TradesSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{35}
+	return fileDescriptor_efb848134bda36f4, []int{45}
 }
 
 func (m *TradesSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -1522,7 +1928,7 @@ func (m *CandlesSubscribeRequest) Reset()         { *m = CandlesSubscribeRequest
 func (m *CandlesSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*CandlesSubscribeRequest) ProtoMessage()    {}
 func (*CandlesSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{36}
+	return fileDescriptor_efb848134bda36f4, []int{46}
 }
 
 func (m *CandlesSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -1568,7 +1974,7 @@ func (m *MarketDepthSubscribeRequest) Reset()         { *m = MarketDepthSubscrib
 func (m *MarketDepthSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketDepthSubscribeRequest) ProtoMessage()    {}
 func (*MarketDepthSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{37}
+	return fileDescriptor_efb848134bda36f4, []int{47}
 }
 
 func (m *MarketDepthSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -1607,7 +2013,7 @@ func (m *PositionsSubscribeRequest) Reset()         { *m = PositionsSubscribeReq
 func (m *PositionsSubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*PositionsSubscribeRequest) ProtoMessage()    {}
 func (*PositionsSubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{38}
+	return fileDescriptor_efb848134bda36f4, []int{48}
 }
 
 func (m *PositionsSubscribeRequest) XXX_Unmarshal(b []byte) error {
@@ -1648,7 +2054,7 @@ func (m *OrdersByMarketRequest) Reset()         { *m = OrdersByMarketRequest{} }
 func (m *OrdersByMarketRequest) String() string { return proto.CompactTextString(m) }
 func (*OrdersByMarketRequest) ProtoMessage()    {}
 func (*OrdersByMarketRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{39}
+	return fileDescriptor_efb848134bda36f4, []int{49}
 }
 
 func (m *OrdersByMarketRequest) XXX_Unmarshal(b []byte) error {
@@ -1701,7 +2107,7 @@ func (m *OrdersByMarketResponse) Reset()         { *m = OrdersByMarketResponse{}
 func (m *OrdersByMarketResponse) String() string { return proto.CompactTextString(m) }
 func (*OrdersByMarketResponse) ProtoMessage()    {}
 func (*OrdersByMarketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{40}
+	return fileDescriptor_efb848134bda36f4, []int{50}
 }
 
 func (m *OrdersByMarketResponse) XXX_Unmarshal(b []byte) error {
@@ -1742,7 +2148,7 @@ func (m *OrdersByPartyRequest) Reset()         { *m = OrdersByPartyRequest{} }
 func (m *OrdersByPartyRequest) String() string { return proto.CompactTextString(m) }
 func (*OrdersByPartyRequest) ProtoMessage()    {}
 func (*OrdersByPartyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{41}
+	return fileDescriptor_efb848134bda36f4, []int{51}
 }
 
 func (m *OrdersByPartyRequest) XXX_Unmarshal(b []byte) error {
@@ -1795,7 +2201,7 @@ func (m *OrdersByPartyResponse) Reset()         { *m = OrdersByPartyResponse{} }
 func (m *OrdersByPartyResponse) String() string { return proto.CompactTextString(m) }
 func (*OrdersByPartyResponse) ProtoMessage()    {}
 func (*OrdersByPartyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{42}
+	return fileDescriptor_efb848134bda36f4, []int{52}
 }
 
 func (m *OrdersByPartyResponse) XXX_Unmarshal(b []byte) error {
@@ -1835,7 +2241,7 @@ func (m *OrderByMarketAndIdRequest) Reset()         { *m = OrderByMarketAndIdReq
 func (m *OrderByMarketAndIdRequest) String() string { return proto.CompactTextString(m) }
 func (*OrderByMarketAndIdRequest) ProtoMessage()    {}
 func (*OrderByMarketAndIdRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{43}
+	return fileDescriptor_efb848134bda36f4, []int{53}
 }
 
 func (m *OrderByMarketAndIdRequest) XXX_Unmarshal(b []byte) error {
@@ -1881,7 +2287,7 @@ func (m *OrderByMarketAndIdResponse) Reset()         { *m = OrderByMarketAndIdRe
 func (m *OrderByMarketAndIdResponse) String() string { return proto.CompactTextString(m) }
 func (*OrderByMarketAndIdResponse) ProtoMessage()    {}
 func (*OrderByMarketAndIdResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{44}
+	return fileDescriptor_efb848134bda36f4, []int{54}
 }
 
 func (m *OrderByMarketAndIdResponse) XXX_Unmarshal(b []byte) error {
@@ -1920,7 +2326,7 @@ func (m *OrderByReferenceRequest) Reset()         { *m = OrderByReferenceRequest
 func (m *OrderByReferenceRequest) String() string { return proto.CompactTextString(m) }
 func (*OrderByReferenceRequest) ProtoMessage()    {}
 func (*OrderByReferenceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{45}
+	return fileDescriptor_efb848134bda36f4, []int{55}
 }
 
 func (m *OrderByReferenceRequest) XXX_Unmarshal(b []byte) error {
@@ -1959,7 +2365,7 @@ func (m *OrderByReferenceResponse) Reset()         { *m = OrderByReferenceRespon
 func (m *OrderByReferenceResponse) String() string { return proto.CompactTextString(m) }
 func (*OrderByReferenceResponse) ProtoMessage()    {}
 func (*OrderByReferenceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{46}
+	return fileDescriptor_efb848134bda36f4, []int{56}
 }
 
 func (m *OrderByReferenceResponse) XXX_Unmarshal(b []byte) error {
@@ -1999,7 +2405,7 @@ func (m *MarketsResponse) Reset()         { *m = MarketsResponse{} }
 func (m *MarketsResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketsResponse) ProtoMessage()    {}
 func (*MarketsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{47}
+	return fileDescriptor_efb848134bda36f4, []int{57}
 }
 
 func (m *MarketsResponse) XXX_Unmarshal(b []byte) error {
@@ -2041,7 +2447,7 @@ func (m *CandlesRequest) Reset()         { *m = CandlesRequest{} }
 func (m *CandlesRequest) String() string { return proto.CompactTextString(m) }
 func (*CandlesRequest) ProtoMessage()    {}
 func (*CandlesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{48}
+	return fileDescriptor_efb848134bda36f4, []int{58}
 }
 
 func (m *CandlesRequest) XXX_Unmarshal(b []byte) error {
@@ -2094,7 +2500,7 @@ func (m *CandlesResponse) Reset()         { *m = CandlesResponse{} }
 func (m *CandlesResponse) String() string { return proto.CompactTextString(m) }
 func (*CandlesResponse) ProtoMessage()    {}
 func (*CandlesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{49}
+	return fileDescriptor_efb848134bda36f4, []int{59}
 }
 
 func (m *CandlesResponse) XXX_Unmarshal(b []byte) error {
@@ -2134,7 +2540,7 @@ func (m *MarketDepthRequest) Reset()         { *m = MarketDepthRequest{} }
 func (m *MarketDepthRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketDepthRequest) ProtoMessage()    {}
 func (*MarketDepthRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{50}
+	return fileDescriptor_efb848134bda36f4, []int{60}
 }
 
 func (m *MarketDepthRequest) XXX_Unmarshal(b []byte) error {
@@ -2183,7 +2589,7 @@ func (m *MarketDepthResponse) Reset()         { *m = MarketDepthResponse{} }
 func (m *MarketDepthResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketDepthResponse) ProtoMessage()    {}
 func (*MarketDepthResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{51}
+	return fileDescriptor_efb848134bda36f4, []int{61}
 }
 
 func (m *MarketDepthResponse) XXX_Unmarshal(b []byte) error {
@@ -2244,7 +2650,7 @@ func (m *TradesByMarketRequest) Reset()         { *m = TradesByMarketRequest{} }
 func (m *TradesByMarketRequest) String() string { return proto.CompactTextString(m) }
 func (*TradesByMarketRequest) ProtoMessage()    {}
 func (*TradesByMarketRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{52}
+	return fileDescriptor_efb848134bda36f4, []int{62}
 }
 
 func (m *TradesByMarketRequest) XXX_Unmarshal(b []byte) error {
@@ -2290,7 +2696,7 @@ func (m *TradesByMarketResponse) Reset()         { *m = TradesByMarketResponse{}
 func (m *TradesByMarketResponse) String() string { return proto.CompactTextString(m) }
 func (*TradesByMarketResponse) ProtoMessage()    {}
 func (*TradesByMarketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{53}
+	return fileDescriptor_efb848134bda36f4, []int{63}
 }
 
 func (m *TradesByMarketResponse) XXX_Unmarshal(b []byte) error {
@@ -2330,7 +2736,7 @@ func (m *PositionsByPartyRequest) Reset()         { *m = PositionsByPartyRequest
 func (m *PositionsByPartyRequest) String() string { return proto.CompactTextString(m) }
 func (*PositionsByPartyRequest) ProtoMessage()    {}
 func (*PositionsByPartyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{54}
+	return fileDescriptor_efb848134bda36f4, []int{64}
 }
 
 func (m *PositionsByPartyRequest) XXX_Unmarshal(b []byte) error {
@@ -2376,7 +2782,7 @@ func (m *PositionsByPartyResponse) Reset()         { *m = PositionsByPartyRespon
 func (m *PositionsByPartyResponse) String() string { return proto.CompactTextString(m) }
 func (*PositionsByPartyResponse) ProtoMessage()    {}
 func (*PositionsByPartyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{55}
+	return fileDescriptor_efb848134bda36f4, []int{65}
 }
 
 func (m *PositionsByPartyResponse) XXX_Unmarshal(b []byte) error {
@@ -2416,7 +2822,7 @@ func (m *VegaTimeResponse) Reset()         { *m = VegaTimeResponse{} }
 func (m *VegaTimeResponse) String() string { return proto.CompactTextString(m) }
 func (*VegaTimeResponse) ProtoMessage()    {}
 func (*VegaTimeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{56}
+	return fileDescriptor_efb848134bda36f4, []int{66}
 }
 
 func (m *VegaTimeResponse) XXX_Unmarshal(b []byte) error {
@@ -2457,7 +2863,7 @@ func (m *Pagination) Reset()         { *m = Pagination{} }
 func (m *Pagination) String() string { return proto.CompactTextString(m) }
 func (*Pagination) ProtoMessage()    {}
 func (*Pagination) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{57}
+	return fileDescriptor_efb848134bda36f4, []int{67}
 }
 
 func (m *Pagination) XXX_Unmarshal(b []byte) error {
@@ -2510,7 +2916,7 @@ func (m *OrdersStream) Reset()         { *m = OrdersStream{} }
 func (m *OrdersStream) String() string { return proto.CompactTextString(m) }
 func (*OrdersStream) ProtoMessage()    {}
 func (*OrdersStream) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{58}
+	return fileDescriptor_efb848134bda36f4, []int{68}
 }
 
 func (m *OrdersStream) XXX_Unmarshal(b []byte) error {
@@ -2549,7 +2955,7 @@ func (m *TradesStream) Reset()         { *m = TradesStream{} }
 func (m *TradesStream) String() string { return proto.CompactTextString(m) }
 func (*TradesStream) ProtoMessage()    {}
 func (*TradesStream) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{59}
+	return fileDescriptor_efb848134bda36f4, []int{69}
 }
 
 func (m *TradesStream) XXX_Unmarshal(b []byte) error {
@@ -2591,7 +2997,7 @@ func (m *PartyAccountsRequest) Reset()         { *m = PartyAccountsRequest{} }
 func (m *PartyAccountsRequest) String() string { return proto.CompactTextString(m) }
 func (*PartyAccountsRequest) ProtoMessage()    {}
 func (*PartyAccountsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{60}
+	return fileDescriptor_efb848134bda36f4, []int{70}
 }
 
 func (m *PartyAccountsRequest) XXX_Unmarshal(b []byte) error {
@@ -2651,7 +3057,7 @@ func (m *PartyAccountsResponse) Reset()         { *m = PartyAccountsResponse{} }
 func (m *PartyAccountsResponse) String() string { return proto.CompactTextString(m) }
 func (*PartyAccountsResponse) ProtoMessage()    {}
 func (*PartyAccountsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{61}
+	return fileDescriptor_efb848134bda36f4, []int{71}
 }
 
 func (m *PartyAccountsResponse) XXX_Unmarshal(b []byte) error {
@@ -2691,7 +3097,7 @@ func (m *MarketAccountsRequest) Reset()         { *m = MarketAccountsRequest{} }
 func (m *MarketAccountsRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketAccountsRequest) ProtoMessage()    {}
 func (*MarketAccountsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{62}
+	return fileDescriptor_efb848134bda36f4, []int{72}
 }
 
 func (m *MarketAccountsRequest) XXX_Unmarshal(b []byte) error {
@@ -2737,7 +3143,7 @@ func (m *MarketAccountsResponse) Reset()         { *m = MarketAccountsResponse{}
 func (m *MarketAccountsResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketAccountsResponse) ProtoMessage()    {}
 func (*MarketAccountsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{63}
+	return fileDescriptor_efb848134bda36f4, []int{73}
 }
 
 func (m *MarketAccountsResponse) XXX_Unmarshal(b []byte) error {
@@ -2778,7 +3184,7 @@ func (m *PrepareProposalRequest) Reset()         { *m = PrepareProposalRequest{}
 func (m *PrepareProposalRequest) String() string { return proto.CompactTextString(m) }
 func (*PrepareProposalRequest) ProtoMessage()    {}
 func (*PrepareProposalRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{64}
+	return fileDescriptor_efb848134bda36f4, []int{74}
 }
 
 func (m *PrepareProposalRequest) XXX_Unmarshal(b []byte) error {
@@ -2832,7 +3238,7 @@ func (m *PrepareProposalResponse) Reset()         { *m = PrepareProposalResponse
 func (m *PrepareProposalResponse) String() string { return proto.CompactTextString(m) }
 func (*PrepareProposalResponse) ProtoMessage()    {}
 func (*PrepareProposalResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{65}
+	return fileDescriptor_efb848134bda36f4, []int{75}
 }
 
 func (m *PrepareProposalResponse) XXX_Unmarshal(b []byte) error {
@@ -2878,7 +3284,7 @@ func (m *PrepareVoteRequest) Reset()         { *m = PrepareVoteRequest{} }
 func (m *PrepareVoteRequest) String() string { return proto.CompactTextString(m) }
 func (*PrepareVoteRequest) ProtoMessage()    {}
 func (*PrepareVoteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{66}
+	return fileDescriptor_efb848134bda36f4, []int{76}
 }
 
 func (m *PrepareVoteRequest) XXX_Unmarshal(b []byte) error {
@@ -2918,7 +3324,7 @@ func (m *PrepareVoteResponse) Reset()         { *m = PrepareVoteResponse{} }
 func (m *PrepareVoteResponse) String() string { return proto.CompactTextString(m) }
 func (*PrepareVoteResponse) ProtoMessage()    {}
 func (*PrepareVoteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{67}
+	return fileDescriptor_efb848134bda36f4, []int{77}
 }
 
 func (m *PrepareVoteResponse) XXX_Unmarshal(b []byte) error {
@@ -2966,7 +3372,7 @@ func (m *OrderByIDRequest) Reset()         { *m = OrderByIDRequest{} }
 func (m *OrderByIDRequest) String() string { return proto.CompactTextString(m) }
 func (*OrderByIDRequest) ProtoMessage()    {}
 func (*OrderByIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{68}
+	return fileDescriptor_efb848134bda36f4, []int{78}
 }
 
 func (m *OrderByIDRequest) XXX_Unmarshal(b []byte) error {
@@ -3012,7 +3418,7 @@ func (m *OrderByReferenceIDRequest) Reset()         { *m = OrderByReferenceIDReq
 func (m *OrderByReferenceIDRequest) String() string { return proto.CompactTextString(m) }
 func (*OrderByReferenceIDRequest) ProtoMessage()    {}
 func (*OrderByReferenceIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{69}
+	return fileDescriptor_efb848134bda36f4, []int{79}
 }
 
 func (m *OrderByReferenceIDRequest) XXX_Unmarshal(b []byte) error {
@@ -3052,7 +3458,7 @@ func (m *OrderVersionsByIDRequest) Reset()         { *m = OrderVersionsByIDReque
 func (m *OrderVersionsByIDRequest) String() string { return proto.CompactTextString(m) }
 func (*OrderVersionsByIDRequest) ProtoMessage()    {}
 func (*OrderVersionsByIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{70}
+	return fileDescriptor_efb848134bda36f4, []int{80}
 }
 
 func (m *OrderVersionsByIDRequest) XXX_Unmarshal(b []byte) error {
@@ -3098,7 +3504,7 @@ func (m *OrderVersionsResponse) Reset()         { *m = OrderVersionsResponse{} }
 func (m *OrderVersionsResponse) String() string { return proto.CompactTextString(m) }
 func (*OrderVersionsResponse) ProtoMessage()    {}
 func (*OrderVersionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efb848134bda36f4, []int{71}
+	return fileDescriptor_efb848134bda36f4, []int{81}
 }
 
 func (m *OrderVersionsResponse) XXX_Unmarshal(b []byte) error {
@@ -3139,9 +3545,19 @@ func init() {
 	proto.RegisterType((*SubmitOrderRequest)(nil), "api.SubmitOrderRequest")
 	proto.RegisterType((*CancelOrderRequest)(nil), "api.CancelOrderRequest")
 	proto.RegisterType((*AmendOrderRequest)(nil), "api.AmendOrderRequest")
+	proto.RegisterType((*OptionalProposalState)(nil), "api.OptionalProposalState")
+	proto.RegisterType((*GetProposalsByStateRequest)(nil), "api.GetProposalsByStateRequest")
+	proto.RegisterType((*GetGovernanceDataResponse)(nil), "api.GetGovernanceDataResponse")
+	proto.RegisterType((*GetProposalResponse)(nil), "api.GetProposalResponse")
+	proto.RegisterType((*GetVotesResponse)(nil), "api.GetVotesResponse")
+	proto.RegisterType((*GetProposalsByPartyRequest)(nil), "api.GetProposalsByPartyRequest")
+	proto.RegisterType((*GetVotesByPartyRequest)(nil), "api.GetVotesByPartyRequest")
+	proto.RegisterType((*GetUpdateMarketProposalsRequest)(nil), "api.GetUpdateMarketProposalsRequest")
 	proto.RegisterType((*GetProposalByIDRequest)(nil), "api.GetProposalByIDRequest")
 	proto.RegisterType((*GetProposalByReferenceRequest)(nil), "api.GetProposalByReferenceRequest")
-	proto.RegisterType((*GetProposalsResponse)(nil), "api.GetProposalsResponse")
+	proto.RegisterType((*ObservePartyProposalsRequest)(nil), "api.ObservePartyProposalsRequest")
+	proto.RegisterType((*ObserveProposalVotesRequest)(nil), "api.ObserveProposalVotesRequest")
+	proto.RegisterType((*ObservePartyVotesRequest)(nil), "api.ObservePartyVotesRequest")
 	proto.RegisterType((*MarginLevelsSubscribeRequest)(nil), "api.MarginLevelsSubscribeRequest")
 	proto.RegisterType((*MarginLevelsRequest)(nil), "api.MarginLevelsRequest")
 	proto.RegisterType((*MarginLevelsResponse)(nil), "api.MarginLevelsResponse")
@@ -3204,157 +3620,175 @@ func init() {
 func init() { proto.RegisterFile("proto/api/trading.proto", fileDescriptor_efb848134bda36f4) }
 
 var fileDescriptor_efb848134bda36f4 = []byte{
-	// 2393 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x1a, 0xdb, 0x6e, 0x1b, 0xc7,
-	0xb5, 0x4b, 0x29, 0x96, 0x78, 0x24, 0xeb, 0x32, 0xd6, 0x85, 0x5a, 0x5f, 0xa2, 0x4c, 0xec, 0xc0,
-	0x29, 0x12, 0x91, 0x90, 0x13, 0x3b, 0xbe, 0xd5, 0xd1, 0xc5, 0x76, 0xd8, 0xc8, 0xb2, 0xba, 0x52,
-	0x9d, 0xa0, 0x28, 0x50, 0x2c, 0xc9, 0x31, 0xbd, 0x30, 0xb9, 0xbb, 0xdd, 0x5d, 0xc9, 0xe6, 0x43,
-	0x81, 0xbe, 0xf6, 0xa1, 0x40, 0xfb, 0x13, 0x7d, 0xec, 0x2f, 0x15, 0xe8, 0x7b, 0xff, 0xa1, 0xd8,
-	0x99, 0x33, 0xb3, 0x33, 0x7b, 0x11, 0xc5, 0xda, 0x7d, 0xe3, 0x9e, 0xdb, 0x9c, 0x33, 0x73, 0xe6,
-	0xdc, 0x86, 0xb0, 0x1e, 0x46, 0x41, 0x12, 0x34, 0xdd, 0xd0, 0x6b, 0x26, 0x91, 0xdb, 0xf3, 0xfc,
-	0xfe, 0x16, 0x87, 0x90, 0x29, 0x37, 0xf4, 0xec, 0x25, 0x81, 0x3d, 0x63, 0x7d, 0x57, 0x80, 0xed,
-	0x2b, 0x02, 0x32, 0x74, 0xa3, 0xb7, 0x2c, 0x89, 0x11, 0xb8, 0x26, 0x80, 0xfd, 0xe0, 0x8c, 0x45,
-	0xbe, 0xeb, 0x77, 0x19, 0xc2, 0xaf, 0xf6, 0x83, 0xa0, 0x3f, 0x60, 0x4d, 0xfe, 0xd5, 0x39, 0x7d,
-	0xdd, 0x64, 0xc3, 0x30, 0x19, 0x21, 0xf2, 0x6e, 0xdf, 0x4b, 0xde, 0x9c, 0x76, 0xb6, 0xba, 0xc1,
-	0xb0, 0x39, 0x7c, 0xe7, 0x25, 0x6f, 0x83, 0x77, 0xcd, 0x7e, 0xf0, 0x35, 0x47, 0x7e, 0x7d, 0xe6,
-	0x0e, 0xbc, 0x9e, 0x9b, 0x04, 0x51, 0xdc, 0x54, 0x3f, 0x05, 0x1f, 0xfd, 0x15, 0x34, 0x8e, 0x4f,
-	0x3b, 0x43, 0x2f, 0x39, 0x89, 0x5c, 0x3f, 0x76, 0xbb, 0x89, 0x17, 0xf8, 0x0e, 0xfb, 0xe3, 0x29,
-	0x8b, 0x13, 0x42, 0xa1, 0x96, 0xbc, 0x6f, 0x58, 0x9b, 0xd6, 0xed, 0xb9, 0x6d, 0xb2, 0xc5, 0xd5,
-	0x3e, 0xf6, 0xfa, 0x3e, 0xeb, 0xed, 0x9e, 0xfa, 0xbd, 0x01, 0x73, 0x6a, 0xc9, 0x7b, 0xfa, 0x2d,
-	0x6c, 0x94, 0xf0, 0xc7, 0x61, 0xe0, 0xc7, 0x8c, 0x34, 0x60, 0x26, 0x3e, 0xed, 0x76, 0x59, 0x1c,
-	0x73, 0x29, 0xb3, 0x8e, 0xfc, 0xa4, 0x8f, 0x61, 0xf1, 0x27, 0x2f, 0x79, 0xd3, 0x8b, 0xdc, 0x77,
-	0x72, 0xb5, 0x5f, 0xc2, 0xec, 0x3b, 0x04, 0xe1, 0x9a, 0x0b, 0x62, 0x4d, 0x45, 0xa8, 0xf0, 0xf4,
-	0x2b, 0x58, 0xca, 0xd8, 0xc7, 0x2e, 0xf6, 0x02, 0xec, 0xc3, 0x20, 0xf1, 0x5e, 0x8f, 0x4e, 0x22,
-	0xb7, 0xc7, 0xa2, 0x9d, 0x6e, 0x37, 0x38, 0xf5, 0x13, 0xb9, 0x6e, 0x13, 0x3e, 0xf1, 0x53, 0x2c,
-	0x2e, 0xba, 0x21, 0x16, 0x2d, 0x63, 0x10, 0x74, 0xf4, 0x21, 0x5c, 0x2d, 0x15, 0x87, 0x7a, 0x5c,
-	0x83, 0x7a, 0xcc, 0x77, 0x24, 0x61, 0x3d, 0xd4, 0x24, 0x03, 0xd0, 0x03, 0xb0, 0x8f, 0x22, 0x16,
-	0xba, 0x11, 0x13, 0xdb, 0xf6, 0x32, 0xea, 0xb1, 0x48, 0xf1, 0x12, 0x98, 0xee, 0x0c, 0x82, 0x0e,
-	0x67, 0x9b, 0x77, 0xf8, 0x6f, 0x62, 0xc3, 0xac, 0x60, 0x6f, 0xef, 0x37, 0x6a, 0x9b, 0xd6, 0xed,
-	0xba, 0xa3, 0xbe, 0x69, 0x4b, 0x49, 0xdb, 0x4b, 0x1d, 0x65, 0x30, 0x56, 0x1a, 0x6d, 0xc2, 0x06,
-	0x72, 0xec, 0x0c, 0x99, 0xdf, 0x1b, 0xcf, 0xf0, 0x23, 0x10, 0x43, 0x53, 0xb1, 0x69, 0xdf, 0x02,
-	0x70, 0x25, 0xe2, 0xd8, 0x0b, 0x7c, 0xdc, 0xb9, 0x55, 0xb1, 0x73, 0x9c, 0xee, 0x58, 0x21, 0x1d,
-	0x8d, 0x90, 0xfe, 0x06, 0x88, 0xa1, 0xa8, 0x10, 0xf6, 0x10, 0xe6, 0xbb, 0x1c, 0x3a, 0x70, 0x93,
-	0x4c, 0xdc, 0xba, 0x26, 0x6e, 0x4f, 0x43, 0x3b, 0x06, 0x31, 0x7d, 0x0e, 0xcb, 0xba, 0x25, 0x42,
-	0xe2, 0x36, 0xd4, 0xdd, 0x14, 0x38, 0x64, 0x7e, 0x82, 0xe2, 0x56, 0x34, 0x71, 0x3b, 0x12, 0xe7,
-	0x64, 0x64, 0xb4, 0x05, 0x6b, 0xcf, 0x59, 0x72, 0x14, 0x05, 0x61, 0x10, 0xbb, 0x83, 0xdd, 0x51,
-	0x7b, 0x5f, 0x4a, 0x5b, 0x83, 0x5a, 0x7b, 0x9f, 0x8b, 0xa9, 0xef, 0x5e, 0xfa, 0xf7, 0xbf, 0x3e,
-	0xad, 0xfd, 0x6c, 0x39, 0xb5, 0xf6, 0x3e, 0x7d, 0x0a, 0xd7, 0x0d, 0x0e, 0x87, 0xbd, 0x66, 0x11,
-	0xf3, 0xbb, 0x4c, 0x32, 0xde, 0x84, 0xba, 0x82, 0xe5, 0xf8, 0x33, 0x04, 0xfd, 0x01, 0x56, 0x34,
-	0x31, 0xb1, 0x3a, 0x8d, 0x16, 0xd4, 0x43, 0x09, 0x6c, 0x58, 0x9b, 0x53, 0xd9, 0x2d, 0x94, 0xb4,
-	0xaf, 0x82, 0x84, 0x39, 0x19, 0x11, 0xfd, 0x3d, 0x5c, 0x7b, 0xe1, 0x46, 0x7d, 0xcf, 0x3f, 0x60,
-	0x67, 0x6c, 0x10, 0x1f, 0x9f, 0x76, 0xe2, 0x6e, 0xe4, 0x75, 0x94, 0x3e, 0x9b, 0x30, 0x13, 0xba,
-	0x51, 0x32, 0x2a, 0x58, 0x23, 0xc1, 0xa9, 0xb3, 0x89, 0x60, 0x94, 0x39, 0x9b, 0xfc, 0xa6, 0xc7,
-	0x70, 0x45, 0x97, 0xfe, 0x71, 0x84, 0x1e, 0xc2, 0x8a, 0x29, 0x14, 0x8d, 0xbf, 0x0b, 0xf3, 0x43,
-	0x0d, 0x6e, 0xda, 0x6f, 0x70, 0x18, 0x74, 0xf4, 0x3e, 0x5c, 0x7d, 0x21, 0xa2, 0xe9, 0xbe, 0x9b,
-	0xb8, 0x85, 0x1d, 0xd0, 0x55, 0xb1, 0x72, 0xaa, 0x3c, 0x84, 0x55, 0xc1, 0x9a, 0x72, 0xea, 0xe7,
-	0x4f, 0xf3, 0x4c, 0xca, 0xc4, 0x8c, 0xf9, 0xd7, 0xb0, 0x96, 0x67, 0x56, 0xc7, 0x08, 0x43, 0x85,
-	0x41, 0x67, 0x5c, 0x52, 0x76, 0x20, 0xdc, 0xd1, 0x68, 0x68, 0x9b, 0x6f, 0xb4, 0xb4, 0x41, 0x09,
-	0xda, 0x86, 0xb9, 0x61, 0x06, 0xc6, 0x1d, 0x29, 0x4a, 0xd2, 0x89, 0xe8, 0x5d, 0x58, 0x3a, 0x70,
-	0xe3, 0x84, 0x47, 0xaa, 0x49, 0xcc, 0xb9, 0x0b, 0xcb, 0x1a, 0x1f, 0x2a, 0xf0, 0x19, 0x7c, 0x92,
-	0x66, 0x35, 0x86, 0x46, 0xcc, 0x89, 0xa5, 0x05, 0x8d, 0xc0, 0xd0, 0x7b, 0xb0, 0x2c, 0x54, 0x99,
-	0x74, 0xff, 0x1e, 0x00, 0xd1, 0x19, 0x71, 0xc5, 0x9b, 0x70, 0x49, 0x50, 0xe0, 0x92, 0xf3, 0xba,
-	0xb5, 0x0e, 0xe2, 0xe8, 0x37, 0xb0, 0x74, 0x94, 0xba, 0x9a, 0xbe, 0xe6, 0x58, 0xaf, 0x4c, 0x4d,
-	0xd4, 0xb8, 0x32, 0x13, 0x39, 0xde, 0x34, 0x91, 0xd3, 0x39, 0x02, 0x43, 0xbf, 0x83, 0xc5, 0xf4,
-	0xdb, 0x63, 0x99, 0xb3, 0xde, 0x12, 0x8b, 0x79, 0x4c, 0xfa, 0xa9, 0xc1, 0x27, 0x71, 0xf4, 0x4f,
-	0xb0, 0xc2, 0x37, 0x2b, 0xde, 0x1d, 0x09, 0x0c, 0xea, 0xda, 0xc8, 0xe9, 0x7a, 0xa1, 0x9b, 0x43,
-	0x9a, 0x00, 0xa1, 0xdb, 0xf7, 0x7c, 0x11, 0x33, 0xa7, 0xb8, 0xbe, 0x8b, 0x5b, 0x6e, 0xe8, 0x6d,
-	0x1d, 0x29, 0xb0, 0xa3, 0x91, 0xd0, 0x47, 0xb0, 0x9a, 0x5b, 0x1e, 0xd5, 0xff, 0x1c, 0x2e, 0xf1,
-	0xd3, 0xcb, 0x69, 0x2f, 0x0e, 0x16, 0x51, 0xb4, 0x95, 0x29, 0x6f, 0x84, 0xda, 0x06, 0xcc, 0x04,
-	0xe9, 0x77, 0xa6, 0x3c, 0x7e, 0xea, 0xeb, 0x99, 0x69, 0xe6, 0x42, 0xeb, 0xfd, 0xd5, 0x82, 0x06,
-	0xa6, 0xd6, 0x78, 0x92, 0x6b, 0xac, 0xef, 0x66, 0xcd, 0xdc, 0xcd, 0x15, 0xf8, 0xc4, 0x8d, 0x63,
-	0x96, 0xf0, 0xcd, 0xaa, 0x3b, 0xe2, 0x83, 0xdc, 0x82, 0xe9, 0x64, 0x14, 0xb2, 0xc6, 0xf4, 0xa6,
-	0x75, 0x7b, 0x61, 0x7b, 0x59, 0xe8, 0x82, 0x2b, 0x9f, 0x8c, 0x42, 0xe6, 0x70, 0x34, 0x3d, 0x84,
-	0x35, 0x6e, 0xc5, 0x47, 0x52, 0x26, 0x95, 0x27, 0x76, 0xe7, 0x23, 0xc9, 0xf3, 0x60, 0x7d, 0xcf,
-	0x4d, 0xcb, 0xb2, 0xa2, 0xc0, 0x0b, 0xdc, 0xbf, 0xb4, 0xfa, 0xf2, 0xfc, 0x84, 0x45, 0x67, 0xee,
-	0x80, 0x4b, 0x5e, 0x90, 0xd5, 0x57, 0x1b, 0xa1, 0x8e, 0xc2, 0xd3, 0x1d, 0x19, 0x63, 0xf7, 0x59,
-	0x98, 0xbc, 0xf9, 0x5f, 0x96, 0x4b, 0xcb, 0xc6, 0xa3, 0x20, 0xf6, 0x52, 0xbf, 0x2c, 0xea, 0x5b,
-	0x79, 0x1f, 0xe8, 0x9f, 0x2d, 0x58, 0x15, 0xa7, 0xb0, 0x3b, 0xc2, 0x20, 0x30, 0x81, 0x8d, 0xe6,
-	0x8d, 0xa9, 0x8d, 0xbd, 0x31, 0x69, 0x3d, 0x14, 0x84, 0x4c, 0x5c, 0xae, 0x59, 0x87, 0xff, 0xa6,
-	0x8f, 0xa5, 0x1f, 0x64, 0x1a, 0x64, 0x6e, 0xcd, 0x5d, 0x3f, 0xe7, 0xd6, 0xc2, 0xf7, 0x11, 0x95,
-	0xc6, 0x00, 0xc9, 0x6e, 0xc4, 0x80, 0xf1, 0x59, 0xf4, 0xa3, 0x68, 0xff, 0x28, 0xdb, 0xbf, 0x42,
-	0x0c, 0x18, 0xaf, 0xbc, 0x0b, 0x1b, 0x1c, 0x20, 0x4d, 0xdf, 0xf1, 0x7b, 0xed, 0xde, 0x24, 0x27,
-	0xb0, 0x99, 0x05, 0x8b, 0x9a, 0x69, 0xa5, 0x0c, 0x1a, 0x4f, 0xc0, 0x2e, 0x5b, 0x22, 0x0b, 0xcf,
-	0x9c, 0xd0, 0x0c, 0xcf, 0x42, 0x49, 0x81, 0xa1, 0x4f, 0x60, 0x1d, 0x05, 0x94, 0x95, 0x63, 0x51,
-	0x55, 0x39, 0xa6, 0x10, 0xf4, 0x31, 0x34, 0x8a, 0x02, 0x2e, 0xbe, 0xfe, 0x7d, 0x58, 0xc4, 0xe4,
-	0xad, 0xb8, 0xbe, 0x80, 0x19, 0xcc, 0xc9, 0xb8, 0xb9, 0x66, 0x1a, 0x93, 0x48, 0xfa, 0x37, 0x0b,
-	0x16, 0xf0, 0x0e, 0x4f, 0xb2, 0xa9, 0x5b, 0xb0, 0x10, 0x7b, 0x7e, 0x97, 0x9d, 0x78, 0x43, 0x16,
-	0x27, 0xee, 0x30, 0xe4, 0x7b, 0x3b, 0x25, 0x28, 0x97, 0x7e, 0xe1, 0xe4, 0xb0, 0xc6, 0x55, 0x9f,
-	0x1a, 0x73, 0xd5, 0xef, 0xc3, 0xa2, 0xd2, 0x28, 0xb3, 0xa6, 0x2b, 0x40, 0xa6, 0x35, 0x82, 0xce,
-	0x91, 0x48, 0x7a, 0x22, 0x33, 0x3a, 0x8f, 0x12, 0x93, 0x18, 0xc4, 0x03, 0xe0, 0x7b, 0xce, 0xc6,
-	0x4d, 0x99, 0x76, 0xd4, 0x37, 0xfd, 0x87, 0x25, 0x8b, 0x23, 0x14, 0x8b, 0x5a, 0x9d, 0x17, 0x34,
-	0x29, 0x4c, 0x75, 0x4e, 0x47, 0x8d, 0x9a, 0x5e, 0x30, 0x1d, 0x45, 0x5e, 0x97, 0xf1, 0x9a, 0xd1,
-	0x49, 0x91, 0xe4, 0x26, 0x4c, 0xc7, 0x6c, 0x90, 0x6e, 0x48, 0x39, 0x11, 0xc7, 0x92, 0x2f, 0xa1,
-	0x3e, 0x90, 0x65, 0x11, 0x4f, 0x18, 0xb9, 0xe4, 0x95, 0x61, 0xe9, 0x20, 0xcb, 0x7e, 0xff, 0xff,
-	0x48, 0x95, 0x46, 0xa5, 0xfc, 0x6a, 0x93, 0x24, 0xdb, 0x9f, 0x60, 0x5d, 0x85, 0xe3, 0x89, 0x03,
-	0xd3, 0x79, 0xe5, 0xfd, 0x0f, 0xd0, 0x28, 0x0a, 0x46, 0xcd, 0xbe, 0x82, 0x7a, 0x28, 0x71, 0xa8,
-	0x1c, 0x3a, 0xa2, 0x64, 0x71, 0x32, 0x02, 0xda, 0x82, 0xa5, 0x57, 0xac, 0xef, 0xa6, 0x6e, 0xac,
-	0xb7, 0xda, 0x89, 0x72, 0xfa, 0x54, 0xbb, 0x29, 0x27, 0x03, 0xd0, 0x57, 0x00, 0x47, 0x46, 0x34,
-	0x8c, 0xdf, 0x7a, 0x82, 0x6c, 0xda, 0xe1, 0xbf, 0xd3, 0x82, 0x60, 0xe0, 0x0d, 0xbd, 0x04, 0xbd,
-	0x4c, 0x7c, 0x90, 0x1b, 0x00, 0x3d, 0x16, 0x77, 0x99, 0xdf, 0xf3, 0xfc, 0x3e, 0x46, 0x4f, 0x0d,
-	0x42, 0xef, 0xc0, 0x3c, 0x56, 0x02, 0x49, 0xc4, 0xdc, 0xe1, 0xc5, 0x42, 0xe7, 0x1d, 0x98, 0xc7,
-	0x74, 0xaf, 0x98, 0xc6, 0x1f, 0xcb, 0x5f, 0x2c, 0x58, 0xe1, 0x7b, 0x26, 0x0b, 0xa1, 0x0f, 0xab,
-	0x18, 0x65, 0xa5, 0x33, 0x75, 0x6e, 0xa5, 0x93, 0x95, 0x49, 0xd3, 0x5a, 0x99, 0x44, 0x77, 0x61,
-	0x35, 0xa7, 0x0a, 0x1e, 0xc2, 0x97, 0x30, 0xeb, 0x22, 0x0c, 0x6d, 0xb9, 0x6c, 0x48, 0x76, 0x14,
-	0x9a, 0xb6, 0x65, 0x87, 0x95, 0xb7, 0xe7, 0xbc, 0xdb, 0xab, 0xd4, 0xa9, 0xe9, 0xea, 0xec, 0xc9,
-	0x7e, 0xeb, 0x43, 0xf4, 0xf9, 0xbb, 0x05, 0x6b, 0x38, 0x0d, 0x91, 0x2d, 0xf5, 0xc5, 0xdd, 0xfe,
-	0x9a, 0x9e, 0x4d, 0x84, 0x6e, 0x19, 0x80, 0xdc, 0x83, 0x59, 0xd9, 0x97, 0x63, 0x6d, 0x7e, 0xc5,
-	0xec, 0xdd, 0x4f, 0x58, 0x34, 0x8c, 0x85, 0xd4, 0x4d, 0xcb, 0x51, 0xc4, 0xb4, 0x0f, 0xeb, 0x05,
-	0x95, 0xce, 0x99, 0x0e, 0x7d, 0x07, 0x8b, 0xa1, 0xf0, 0x4b, 0x49, 0x8e, 0xe1, 0x62, 0xc1, 0x5c,
-	0xce, 0xc9, 0x93, 0xd1, 0x47, 0x40, 0x70, 0x21, 0x3e, 0x46, 0x40, 0xbb, 0xbf, 0x80, 0xe9, 0xb3,
-	0x20, 0x91, 0x2d, 0x1e, 0x08, 0x21, 0x29, 0x81, 0x52, 0x95, 0xe3, 0xd3, 0x1e, 0xd5, 0xe0, 0x3e,
-	0x47, 0xc5, 0x1b, 0x28, 0xb2, 0x96, 0x17, 0x89, 0xa2, 0x0e, 0x61, 0x09, 0x13, 0xae, 0xd1, 0xbe,
-	0x19, 0x5d, 0x85, 0x5a, 0x5d, 0x82, 0xd3, 0x2b, 0x70, 0xc6, 0xa2, 0x58, 0xc6, 0xc7, 0x69, 0x47,
-	0x7e, 0xd2, 0xa7, 0xaa, 0x4a, 0x51, 0x09, 0x3c, 0x13, 0x7c, 0x1b, 0xe6, 0xa2, 0x0c, 0x9a, 0x13,
-	0xae, 0xa3, 0xe8, 0x10, 0xeb, 0x80, 0x57, 0x42, 0x6c, 0x3c, 0x99, 0x7a, 0x13, 0x47, 0x70, 0x59,
-	0x99, 0xc9, 0xe5, 0x26, 0xaa, 0xcc, 0xb6, 0xff, 0x33, 0x0d, 0x33, 0x38, 0x71, 0x26, 0x87, 0xea,
-	0x60, 0xb5, 0xc1, 0x1d, 0x59, 0xe7, 0x8b, 0x17, 0x47, 0x79, 0xf6, 0xa7, 0x42, 0xab, 0xea, 0xa1,
-	0x64, 0x26, 0x4f, 0x9b, 0xdd, 0xa1, 0xbc, 0xe2, 0x34, 0xcf, 0x94, 0x57, 0x36, 0x96, 0xfc, 0x11,
-	0x96, 0x0b, 0x23, 0x48, 0xb2, 0xc6, 0xb9, 0x0a, 0x93, 0x3c, 0xfb, 0x86, 0x2e, 0xad, 0x64, 0x64,
-	0xf9, 0x33, 0x5c, 0x29, 0x19, 0xc6, 0x12, 0xa1, 0x44, 0xf5, 0xd4, 0xd7, 0xde, 0xac, 0x26, 0x40,
-	0xc9, 0xf7, 0x60, 0x56, 0xce, 0x98, 0xc9, 0x0a, 0xa7, 0xce, 0x4d, 0xac, 0xed, 0xd5, 0x1c, 0x14,
-	0x19, 0x1d, 0x58, 0x2e, 0x8c, 0xc4, 0xc9, 0x75, 0x6d, 0xfb, 0x8b, 0xa3, 0x76, 0x34, 0xb3, 0x7a,
-	0x92, 0x7e, 0x00, 0x8b, 0xb9, 0xa8, 0x40, 0xae, 0xea, 0x3b, 0x93, 0x0b, 0x5f, 0xf6, 0xb5, 0x72,
-	0x24, 0x4a, 0xfb, 0x1e, 0xe6, 0xb4, 0xcb, 0x8b, 0x47, 0x59, 0x0c, 0x06, 0x76, 0xa3, 0x88, 0x10,
-	0x12, 0xb6, 0xff, 0xb9, 0x0a, 0xf3, 0xe8, 0x6f, 0x7f, 0xe8, 0xb9, 0x89, 0x4b, 0xda, 0xb0, 0x60,
-	0xc6, 0x63, 0x62, 0x73, 0xe6, 0xd2, 0x78, 0x6f, 0x5f, 0x2d, 0xc5, 0xa1, 0x76, 0xcf, 0xe0, 0xb2,
-	0x91, 0x69, 0xc8, 0x06, 0xde, 0x9b, 0x62, 0x22, 0xb4, 0xed, 0x32, 0x14, 0xca, 0xf9, 0x06, 0x66,
-	0xb0, 0x76, 0x25, 0x57, 0xa4, 0xb3, 0x6a, 0xb5, 0xb5, 0xbd, 0x62, 0x02, 0x91, 0x4b, 0x19, 0x22,
-	0x07, 0x79, 0x86, 0x21, 0xb9, 0xd1, 0xa0, 0x61, 0x48, 0x61, 0xf2, 0xf7, 0x04, 0xe6, 0xb4, 0x39,
-	0x1e, 0x59, 0xdb, 0x12, 0x0f, 0x38, 0x5b, 0xf2, 0x01, 0x67, 0xeb, 0xe9, 0x30, 0x4c, 0x46, 0xb8,
-	0xcb, 0x65, 0x13, 0xbf, 0xc7, 0x00, 0xd9, 0x50, 0x0c, 0xaf, 0x48, 0x61, 0xbc, 0x66, 0xaf, 0x17,
-	0xe0, 0xd9, 0x31, 0x6b, 0xa5, 0x32, 0xd1, 0xe9, 0xf4, 0x9a, 0xdc, 0x50, 0xc0, 0xac, 0xaa, 0xef,
-	0xc1, 0x0c, 0xea, 0x55, 0xa9, 0xfd, 0x8a, 0xae, 0xbd, 0x62, 0xfc, 0x2d, 0x90, 0x42, 0x1b, 0xb7,
-	0x4f, 0x84, 0x97, 0x57, 0xb6, 0x90, 0x18, 0x3a, 0xce, 0xe9, 0xff, 0x5e, 0xaa, 0x54, 0xa1, 0x42,
-	0x3b, 0xb9, 0xa6, 0x33, 0xe5, 0x7b, 0x3e, 0xfb, 0x7a, 0x05, 0x36, 0x3b, 0x6d, 0xb3, 0x9b, 0xc7,
-	0xd3, 0x2e, 0x1d, 0x32, 0xe0, 0x69, 0x57, 0xb4, 0xff, 0xcf, 0xe0, 0xb2, 0xd1, 0x5a, 0xa3, 0xdb,
-	0x96, 0x75, 0xfb, 0xb6, 0x5d, 0x86, 0x42, 0x39, 0x4d, 0xa8, 0xab, 0x74, 0x48, 0x56, 0x75, 0xf5,
-	0xb3, 0x23, 0xd7, 0x73, 0x00, 0xd9, 0x51, 0x7b, 0xad, 0xe5, 0x3b, 0x73, 0xaf, 0x8b, 0x89, 0xd0,
-	0x14, 0x71, 0x08, 0xcb, 0x85, 0x5c, 0x47, 0xb4, 0xad, 0x2b, 0xc9, 0x81, 0xba, 0x0d, 0x85, 0x9c,
-	0xb5, 0x07, 0xf3, 0xfa, 0x8c, 0x9e, 0x28, 0x0f, 0xcb, 0xbf, 0x1e, 0xd8, 0x1b, 0x25, 0x98, 0xcc,
-	0xf9, 0x70, 0xd0, 0x3a, 0xc6, 0xf9, 0xf2, 0xe3, 0xd8, 0x07, 0x50, 0x57, 0x93, 0x5d, 0xdc, 0xc1,
-	0xfc, 0x7c, 0xd8, 0x5e, 0xcb, 0x83, 0x33, 0x0f, 0xcb, 0x37, 0x2c, 0xe8, 0x61, 0x15, 0x0d, 0x12,
-	0x7a, 0x58, 0x65, 0x97, 0xf3, 0x00, 0xea, 0x6a, 0x92, 0x8e, 0xca, 0xe4, 0x27, 0xf2, 0xa8, 0x4c,
-	0x71, 0xe0, 0xde, 0x86, 0x05, 0xb3, 0xab, 0x43, 0xef, 0x2c, 0x6d, 0x2c, 0xd1, 0x3b, 0x2b, 0xda,
-	0xc0, 0x67, 0x70, 0xd9, 0x18, 0xc6, 0xa2, 0x77, 0x96, 0x8d, 0x74, 0x6d, 0xbb, 0x0c, 0x55, 0x94,
-	0xa3, 0x7b, 0x79, 0xd9, 0x5c, 0x3b, 0x27, 0xc7, 0xdc, 0x96, 0x1d, 0x98, 0xd7, 0x1f, 0xbd, 0x2a,
-	0x4f, 0x58, 0x88, 0x2f, 0x7d, 0x1f, 0x7b, 0x0a, 0x4b, 0xcf, 0x59, 0xf2, 0x32, 0x64, 0xfe, 0x07,
-	0x89, 0xd9, 0x85, 0xc5, 0xdc, 0xbb, 0x1f, 0xa6, 0xd6, 0xf2, 0xd7, 0x40, 0xbb, 0xe4, 0x0d, 0x8e,
-	0x1c, 0xe5, 0xde, 0x0e, 0xb3, 0xe8, 0x44, 0x8b, 0xa2, 0x0a, 0x31, 0xaa, 0x4c, 0xe2, 0xf7, 0xb0,
-	0xf4, 0xb2, 0x13, 0xb3, 0xe8, 0x8c, 0x8d, 0x37, 0xae, 0x84, 0xbf, 0x65, 0x91, 0xbb, 0x00, 0xc7,
-	0x89, 0x9b, 0x78, 0x71, 0xe2, 0x75, 0xab, 0x79, 0x71, 0xd2, 0xa1, 0x51, 0x3e, 0x82, 0xb9, 0xe7,
-	0x2c, 0x91, 0xbd, 0x76, 0x25, 0xa3, 0x70, 0xe5, 0x42, 0x4b, 0xbe, 0x07, 0xcb, 0x85, 0xa9, 0x3d,
-	0x46, 0x92, 0xaa, 0x69, 0xbe, 0x6d, 0xf6, 0x67, 0x2d, 0x2b, 0x35, 0x3e, 0x3f, 0xcb, 0xc6, 0x4b,
-	0x58, 0x31, 0xe2, 0xb6, 0x8d, 0x19, 0x54, 0xcb, 0x22, 0x47, 0xbc, 0xd3, 0x2c, 0xbe, 0x84, 0x92,
-	0xcf, 0x0a, 0xf1, 0xa6, 0x20, 0xab, 0xe4, 0x91, 0xb1, 0x65, 0x91, 0x17, 0xfc, 0xa1, 0xb2, 0x30,
-	0xf4, 0x26, 0x9b, 0xf9, 0xe4, 0x59, 0x90, 0xb7, 0x6c, 0x3c, 0xd1, 0xa5, 0x24, 0x2d, 0x8b, 0x1c,
-	0x48, 0x71, 0xe6, 0x3b, 0xa5, 0x21, 0xae, 0xf4, 0x09, 0xd3, 0x2e, 0xbc, 0xf8, 0xb5, 0x2c, 0xb2,
-	0x07, 0x8b, 0xb9, 0xc7, 0x09, 0xa2, 0xe7, 0xaa, 0x12, 0x95, 0x34, 0x24, 0x1f, 0x48, 0xb4, 0x2c,
-	0xf2, 0x0c, 0x48, 0x71, 0x26, 0x8f, 0x79, 0xa4, 0x72, 0x58, 0x6f, 0xe7, 0x46, 0x36, 0x42, 0x99,
-	0xdc, 0xcb, 0x06, 0xd1, 0x43, 0x53, 0x85, 0x32, 0xfa, 0x74, 0xa4, 0x65, 0x91, 0x43, 0xb0, 0x79,
-	0x1d, 0xfc, 0x3a, 0x8b, 0x3d, 0x9a, 0xbc, 0x2a, 0xa7, 0x5c, 0x53, 0x53, 0x14, 0x83, 0xb3, 0x65,
-	0xed, 0xde, 0xfa, 0xdd, 0xe7, 0xdd, 0xa0, 0xc7, 0x38, 0x9e, 0x33, 0x75, 0x83, 0xc1, 0x96, 0x27,
-	0xfe, 0x8c, 0xd3, 0x54, 0xff, 0xda, 0xe9, 0x5c, 0xe2, 0x3f, 0xef, 0xfc, 0x37, 0x00, 0x00, 0xff,
-	0xff, 0x22, 0x4a, 0xbd, 0x87, 0xc9, 0x23, 0x00, 0x00,
+	// 2688 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x5a, 0x4b, 0x73, 0x1b, 0xb9,
+	0x11, 0x0e, 0xf5, 0xb0, 0xa4, 0x96, 0xac, 0x07, 0xf4, 0xa2, 0x46, 0xb2, 0xad, 0xc5, 0xda, 0x5b,
+	0x5e, 0xd7, 0xae, 0xc8, 0xb2, 0x77, 0xe5, 0xf5, 0x2b, 0xb6, 0x5e, 0xd6, 0x2a, 0x6b, 0xcb, 0xca,
+	0x48, 0x2b, 0xbb, 0x52, 0xa9, 0x4a, 0x46, 0x24, 0x4c, 0x4f, 0x99, 0xe4, 0x30, 0x33, 0x90, 0x64,
+	0x1d, 0x52, 0x95, 0x6b, 0x0e, 0xa9, 0x4a, 0xfe, 0x44, 0xfe, 0x56, 0xaa, 0x72, 0xcf, 0x3d, 0xc7,
+	0xd4, 0x00, 0x0d, 0x0c, 0x30, 0x0f, 0x52, 0x5c, 0x2b, 0x37, 0x0e, 0x1a, 0xfd, 0xa1, 0xd1, 0x68,
+	0x74, 0x37, 0xba, 0x09, 0x8b, 0x9d, 0x30, 0xe0, 0x41, 0xc5, 0xeb, 0xf8, 0x15, 0x1e, 0x7a, 0x75,
+	0xbf, 0xdd, 0x58, 0x13, 0x23, 0x64, 0xd0, 0xeb, 0xf8, 0xce, 0xb4, 0xa4, 0x9e, 0xb1, 0x86, 0x27,
+	0x87, 0x9d, 0x59, 0x39, 0xd2, 0xf2, 0xc2, 0x8f, 0x8c, 0x47, 0x38, 0xb8, 0x20, 0x07, 0x1b, 0xc1,
+	0x19, 0x0b, 0xdb, 0x5e, 0xbb, 0xc6, 0x70, 0x7c, 0xb9, 0x11, 0x04, 0x8d, 0x26, 0xab, 0x88, 0xaf,
+	0x93, 0xd3, 0xf7, 0x15, 0xd6, 0xea, 0xf0, 0x0b, 0x24, 0xae, 0x37, 0x7c, 0xfe, 0xe1, 0xf4, 0x64,
+	0xad, 0x16, 0xb4, 0x2a, 0xad, 0x73, 0x9f, 0x7f, 0x0c, 0xce, 0x2b, 0x8d, 0xe0, 0x5b, 0x41, 0xfc,
+	0xf6, 0xcc, 0x6b, 0xfa, 0x75, 0x8f, 0x07, 0x61, 0x54, 0xd1, 0x3f, 0x25, 0x1f, 0xfd, 0x35, 0x94,
+	0x0f, 0x4f, 0x4f, 0x5a, 0x3e, 0x3f, 0x0a, 0xbd, 0x76, 0xe4, 0xd5, 0xb8, 0x1f, 0xb4, 0x5d, 0xf6,
+	0xa7, 0x53, 0x16, 0x71, 0x42, 0x61, 0x80, 0x7f, 0x2a, 0x97, 0x56, 0x4b, 0x77, 0xc7, 0xef, 0x93,
+	0x35, 0x21, 0xf6, 0xa1, 0xdf, 0x68, 0xb3, 0xfa, 0xe6, 0x69, 0xbb, 0xde, 0x64, 0xee, 0x00, 0xff,
+	0x44, 0xbf, 0x87, 0xa5, 0x1c, 0xfe, 0xa8, 0x13, 0xb4, 0x23, 0x46, 0xca, 0x30, 0x12, 0x9d, 0xd6,
+	0x6a, 0x2c, 0x8a, 0x04, 0xca, 0xa8, 0xab, 0x3e, 0xe9, 0x33, 0x98, 0x7a, 0xeb, 0xf3, 0x0f, 0xf5,
+	0xd0, 0x3b, 0x57, 0xab, 0xdd, 0x83, 0xd1, 0x73, 0x1c, 0xc2, 0x35, 0x27, 0xe5, 0x9a, 0x7a, 0xa2,
+	0xa6, 0xd3, 0x6f, 0x60, 0x3a, 0x61, 0xef, 0xb9, 0xd8, 0x6b, 0x70, 0xf6, 0x03, 0xee, 0xbf, 0xbf,
+	0x38, 0x0a, 0xbd, 0x3a, 0x0b, 0x37, 0x6a, 0xb5, 0xe0, 0xb4, 0xcd, 0xd5, 0xba, 0x15, 0x18, 0x6e,
+	0xc7, 0x54, 0x5c, 0x74, 0x49, 0x2e, 0x9a, 0xc7, 0x20, 0xe7, 0xd1, 0x27, 0xb0, 0x9c, 0x0b, 0x87,
+	0x72, 0xac, 0xc0, 0x58, 0x24, 0x34, 0xc2, 0x59, 0x1d, 0x25, 0x49, 0x06, 0xe8, 0x2b, 0x70, 0x0e,
+	0x42, 0xd6, 0xf1, 0x42, 0x26, 0xd5, 0xf6, 0x26, 0xac, 0xb3, 0x50, 0xf3, 0x12, 0x18, 0x3a, 0x69,
+	0x06, 0x27, 0x82, 0x6d, 0xc2, 0x15, 0xbf, 0x89, 0x03, 0xa3, 0x92, 0x7d, 0x6f, 0xbb, 0x3c, 0xb0,
+	0x5a, 0xba, 0x3b, 0xe6, 0xea, 0x6f, 0x5a, 0xd5, 0x68, 0x5b, 0xb1, 0xa1, 0x34, 0x7b, 0xa2, 0xd1,
+	0x0a, 0x2c, 0x21, 0xc7, 0x46, 0x8b, 0xb5, 0xeb, 0xbd, 0x19, 0x7e, 0x02, 0x62, 0x49, 0x2a, 0x95,
+	0xf6, 0x3d, 0x80, 0x10, 0x22, 0x8a, 0xfc, 0xa0, 0x8d, 0x9a, 0x9b, 0x97, 0x9a, 0x13, 0xf3, 0x0e,
+	0x35, 0xd1, 0x35, 0x26, 0xd2, 0xdf, 0x02, 0xb1, 0x04, 0x95, 0x60, 0x4f, 0x60, 0xa2, 0x26, 0x46,
+	0x9b, 0x1e, 0x4f, 0xe0, 0x16, 0x0d, 0xb8, 0x2d, 0x83, 0xec, 0x5a, 0x93, 0xe9, 0x2e, 0xcc, 0x98,
+	0x3b, 0x91, 0x88, 0xf7, 0x61, 0xcc, 0x8b, 0x07, 0x5b, 0xac, 0xcd, 0x11, 0x6e, 0xce, 0x80, 0xdb,
+	0x50, 0x34, 0x37, 0x99, 0x46, 0xb7, 0x60, 0xfe, 0x4d, 0x27, 0x86, 0xf4, 0x9a, 0x07, 0x61, 0xd0,
+	0x09, 0x22, 0xaf, 0x79, 0xc8, 0x3d, 0xce, 0xc8, 0x3d, 0x18, 0x3e, 0xf3, 0x9a, 0xa7, 0x4c, 0x00,
+	0x4d, 0x2a, 0x20, 0x35, 0x67, 0x4d, 0x4c, 0x72, 0xe5, 0x14, 0xba, 0x0f, 0xce, 0x2e, 0xe3, 0x8a,
+	0x16, 0x6d, 0x5e, 0x48, 0x2a, 0x8a, 0x55, 0x85, 0xe1, 0x28, 0xfe, 0x46, 0x91, 0x9c, 0x35, 0xaf,
+	0xe3, 0xaf, 0xe5, 0x2e, 0xea, 0xca, 0x89, 0x74, 0x07, 0x96, 0x76, 0x19, 0xdf, 0xd5, 0xae, 0x60,
+	0xdb, 0xe3, 0x9e, 0x3e, 0xae, 0xbb, 0x30, 0x54, 0xf7, 0xb8, 0x57, 0x2e, 0xad, 0x0e, 0x26, 0x1b,
+	0x4c, 0xcd, 0x15, 0x33, 0xe8, 0x2e, 0xcc, 0x1a, 0x62, 0x69, 0x80, 0x2a, 0x8c, 0x76, 0x70, 0xcc,
+	0xd6, 0x52, 0x0a, 0x44, 0xcf, 0xa2, 0xdf, 0xc1, 0xf4, 0x2e, 0xe3, 0xc7, 0x01, 0x67, 0x91, 0x46,
+	0x59, 0x85, 0xe1, 0xb3, 0x78, 0x00, 0xe5, 0x00, 0x09, 0x11, 0xcf, 0x71, 0x25, 0x81, 0x76, 0xd2,
+	0x5a, 0x39, 0xf0, 0x42, 0x7e, 0xa1, 0xb4, 0xb2, 0x0a, 0x23, 0x9d, 0xf8, 0x7b, 0x6f, 0x5b, 0x08,
+	0x31, 0xb6, 0x79, 0xed, 0xdf, 0xff, 0xba, 0x35, 0xf0, 0xae, 0xe4, 0xaa, 0xe1, 0x44, 0x6f, 0x03,
+	0x97, 0xd5, 0xdb, 0x63, 0x58, 0x50, 0x72, 0xf6, 0xbb, 0x1a, 0x3d, 0x87, 0x5b, 0xbb, 0x8c, 0xff,
+	0xdc, 0xa9, 0x7b, 0x9c, 0xbd, 0x16, 0x9e, 0x59, 0x4b, 0x9e, 0x78, 0xc6, 0x51, 0xe9, 0xb3, 0x33,
+	0x28, 0x7a, 0xfc, 0x17, 0x08, 0xfd, 0x42, 0x08, 0xad, 0x48, 0x9b, 0x17, 0x7b, 0xdb, 0x6a, 0xbd,
+	0xaf, 0x00, 0xd4, 0x11, 0x64, 0x56, 0x34, 0x28, 0x74, 0x07, 0x6e, 0x58, 0x08, 0x2e, 0x7b, 0xcf,
+	0x42, 0xd6, 0xae, 0x69, 0x0b, 0xbc, 0x0d, 0x63, 0x7a, 0x2c, 0x85, 0x93, 0x10, 0xe8, 0x0b, 0x58,
+	0x79, 0x73, 0x12, 0xb1, 0xf0, 0x8c, 0x09, 0xd5, 0x65, 0xb6, 0xdf, 0x5b, 0x87, 0x3b, 0xb0, 0xac,
+	0x10, 0x90, 0x19, 0x6d, 0xa6, 0xbf, 0xfd, 0x3c, 0x85, 0xb2, 0x29, 0x88, 0x85, 0xd1, 0x5b, 0x88,
+	0xdf, 0xc3, 0xca, 0x6b, 0x2f, 0x6c, 0xf8, 0xed, 0x57, 0xec, 0x8c, 0x35, 0xa3, 0xc3, 0xd3, 0x93,
+	0xa8, 0x16, 0xfa, 0x27, 0xec, 0xf2, 0x86, 0xe7, 0x18, 0xe7, 0x8c, 0xbe, 0x57, 0x7d, 0xd3, 0x43,
+	0x98, 0x35, 0xd1, 0xaf, 0x06, 0x74, 0x1f, 0xe6, 0x6c, 0x50, 0xbc, 0x63, 0xeb, 0x30, 0xd1, 0x32,
+	0xc6, 0xf1, 0xaa, 0x61, 0x50, 0xb6, 0x38, 0xac, 0x79, 0xf4, 0x11, 0x2c, 0x4b, 0x13, 0x8e, 0xe2,
+	0x8b, 0x9c, 0xd1, 0x80, 0x93, 0xb6, 0x63, 0x43, 0x94, 0x27, 0x30, 0x2f, 0x59, 0x63, 0x4e, 0xd3,
+	0x18, 0x2f, 0x61, 0xfc, 0xf4, 0x37, 0xb0, 0x90, 0x66, 0xd6, 0x3e, 0x07, 0x5a, 0x9a, 0x82, 0x5e,
+	0x67, 0x5a, 0xef, 0x03, 0xc7, 0x5d, 0x63, 0x0e, 0xdd, 0x13, 0x8a, 0x56, 0x7b, 0xd0, 0x40, 0xf7,
+	0x61, 0xbc, 0x95, 0x0c, 0xa3, 0x46, 0xb2, 0x48, 0xe6, 0x24, 0xba, 0x0e, 0xd3, 0xaf, 0xbc, 0x88,
+	0x8b, 0xc0, 0xdd, 0xcf, 0x76, 0xd6, 0x61, 0xc6, 0xe0, 0x43, 0x01, 0xbe, 0x80, 0xe1, 0x38, 0xc9,
+	0x53, 0xde, 0x7c, 0x5c, 0x2e, 0x2d, 0xe7, 0x48, 0x0a, 0x7d, 0x08, 0x33, 0x52, 0x94, 0x7e, 0xf5,
+	0xf7, 0x18, 0x88, 0xc9, 0x88, 0x2b, 0xde, 0x86, 0x6b, 0x72, 0x06, 0x2e, 0x39, 0x61, 0xee, 0xd6,
+	0x45, 0x5a, 0xec, 0xa3, 0xc5, 0x6d, 0x31, 0xd7, 0xec, 0x7d, 0x59, 0xd6, 0x61, 0xc6, 0xe0, 0x4a,
+	0xb6, 0x28, 0xe8, 0xf6, 0x16, 0xa5, 0x3f, 0x95, 0x14, 0xfa, 0x03, 0x4c, 0xc5, 0xdf, 0xbe, 0x11,
+	0x10, 0xee, 0xc8, 0xc5, 0x7c, 0x1d, 0x12, 0x2c, 0x3e, 0x45, 0xa3, 0x7f, 0x86, 0x39, 0xa1, 0xac,
+	0xb4, 0x87, 0x2e, 0xa7, 0x64, 0xbd, 0xd4, 0xcd, 0x21, 0x15, 0x80, 0x8e, 0xd7, 0xf0, 0xdb, 0x32,
+	0x85, 0x18, 0x14, 0xf2, 0x4e, 0x09, 0x9f, 0x7b, 0xa0, 0x87, 0x5d, 0x63, 0x0a, 0x7d, 0x0a, 0xf3,
+	0xa9, 0xe5, 0x51, 0xfc, 0x2f, 0xe1, 0x9a, 0x38, 0xbd, 0x94, 0xf4, 0xf2, 0x60, 0x91, 0x44, 0xab,
+	0x89, 0xf0, 0x56, 0xe6, 0x51, 0x86, 0x91, 0x20, 0xfe, 0x4e, 0x84, 0xc7, 0x4f, 0x73, 0x3d, 0x3b,
+	0xeb, 0xba, 0xd4, 0x7a, 0x7f, 0x2b, 0x41, 0x19, 0x33, 0xcd, 0xa8, 0x9f, 0x6b, 0x6c, 0x6a, 0x73,
+	0xc0, 0xd6, 0xe6, 0x1c, 0x0c, 0x7b, 0x51, 0xc4, 0xb8, 0x50, 0xd6, 0x98, 0x2b, 0x3f, 0xc8, 0x1d,
+	0x18, 0xe2, 0x17, 0x1d, 0x56, 0x1e, 0x12, 0xc9, 0xce, 0x8c, 0x94, 0x05, 0x57, 0x3e, 0xba, 0xe8,
+	0x30, 0x57, 0x90, 0xe9, 0x3e, 0x2c, 0x88, 0x5d, 0x5c, 0x91, 0x30, 0x31, 0x9e, 0xd4, 0xce, 0x15,
+	0xe1, 0xf9, 0xb0, 0xb8, 0xe5, 0xc5, 0xaf, 0x94, 0x2c, 0xe0, 0x65, 0x82, 0xf7, 0x3d, 0x18, 0xf5,
+	0xdb, 0x9c, 0x85, 0x67, 0x5e, 0x53, 0x20, 0x4f, 0xaa, 0xc7, 0xc8, 0x1e, 0x8e, 0xba, 0x9a, 0x4e,
+	0x37, 0x94, 0x8f, 0xdd, 0x66, 0x1d, 0xfe, 0xe1, 0x97, 0x2c, 0x17, 0xbf, 0xa2, 0x0e, 0x82, 0xc8,
+	0x8f, 0xed, 0x32, 0x2b, 0x6f, 0xe1, 0x7d, 0xa0, 0x7f, 0x29, 0xc1, 0xbc, 0x3c, 0x85, 0xcd, 0x0b,
+	0x74, 0x02, 0x7d, 0xec, 0xd1, 0xbe, 0x31, 0x03, 0x3d, 0x6f, 0x4c, 0xfc, 0x3c, 0x08, 0x3a, 0x4c,
+	0x5e, 0xae, 0x51, 0x57, 0xfc, 0xa6, 0xcf, 0x94, 0x1d, 0x24, 0x12, 0x24, 0x66, 0x2d, 0x4c, 0x3f,
+	0x65, 0xd6, 0xd2, 0xf6, 0x91, 0x14, 0xfb, 0x00, 0xc5, 0xde, 0x67, 0x4e, 0x78, 0x25, 0xd2, 0x3f,
+	0x4d, 0xf4, 0x97, 0xf1, 0x01, 0xbd, 0x85, 0xf7, 0x60, 0x49, 0x0c, 0xa8, 0xad, 0x6f, 0xb4, 0xeb,
+	0x7b, 0xf5, 0x7e, 0x4e, 0x60, 0x35, 0x71, 0x16, 0x03, 0xf6, 0x2e, 0x95, 0xd3, 0x78, 0x0e, 0x4e,
+	0xde, 0x12, 0x89, 0x7b, 0x16, 0x13, 0x6d, 0xf7, 0x2c, 0x85, 0x94, 0x14, 0xfa, 0x1c, 0x16, 0x11,
+	0x20, 0x2f, 0x17, 0x0c, 0x8b, 0x72, 0x41, 0x4d, 0xa0, 0xcf, 0xa0, 0x9c, 0x05, 0xb8, 0xfc, 0xfa,
+	0x8f, 0x60, 0x0a, 0x83, 0xb7, 0xe6, 0xfa, 0x0a, 0x46, 0x30, 0x26, 0xa3, 0x72, 0xed, 0x30, 0xa6,
+	0x88, 0xf4, 0xef, 0x25, 0x98, 0xc4, 0x3b, 0xdc, 0x8f, 0x52, 0xd7, 0x60, 0x32, 0xf2, 0xdb, 0x35,
+	0x76, 0xe4, 0xb7, 0x58, 0xc4, 0xbd, 0x56, 0x47, 0xe8, 0x76, 0x50, 0xce, 0x9c, 0xfe, 0x95, 0x9b,
+	0xa2, 0x5a, 0x57, 0x7d, 0xb0, 0xc7, 0x55, 0x7f, 0x04, 0x53, 0x5a, 0xa2, 0x64, 0x37, 0x35, 0x39,
+	0x64, 0xef, 0x46, 0xce, 0x73, 0x15, 0x91, 0x1e, 0xa9, 0x88, 0x2e, 0xbc, 0x44, 0x3f, 0x1b, 0x12,
+	0x0e, 0xf0, 0x93, 0x60, 0x13, 0x5b, 0x19, 0x72, 0xf5, 0x37, 0xfd, 0x67, 0x49, 0x25, 0x47, 0x08,
+	0x8b, 0x52, 0x75, 0x73, 0x9a, 0x14, 0x06, 0x4f, 0x4e, 0x2f, 0xca, 0x03, 0x66, 0xc2, 0x74, 0x10,
+	0xfa, 0x35, 0x26, 0x72, 0x46, 0x37, 0x26, 0x92, 0xdb, 0x30, 0x14, 0xb1, 0x66, 0xac, 0x90, 0xfc,
+	0x49, 0x82, 0x4a, 0xbe, 0x86, 0xb1, 0xa6, 0x4a, 0x8b, 0x44, 0xc0, 0x48, 0x05, 0xaf, 0x84, 0x4a,
+	0x9b, 0x49, 0xf4, 0xfb, 0xff, 0x7b, 0xaa, 0xd8, 0x2b, 0xa5, 0x57, 0xeb, 0x27, 0xd8, 0xbe, 0x85,
+	0x45, 0xed, 0x8e, 0xfb, 0x76, 0x4c, 0xdd, 0xd2, 0xfb, 0x1f, 0xa1, 0x9c, 0x05, 0x46, 0xc9, 0xbe,
+	0x81, 0xb1, 0x8e, 0xa2, 0xa1, 0x70, 0x68, 0x88, 0x8a, 0xc5, 0x4d, 0x26, 0xd0, 0x2a, 0x4c, 0x1f,
+	0xb3, 0x86, 0x17, 0x9b, 0xb1, 0x59, 0x79, 0xe2, 0xda, 0xe8, 0x63, 0xe9, 0x06, 0xdd, 0x64, 0x80,
+	0x1e, 0x03, 0x1c, 0x58, 0xde, 0x30, 0xfa, 0xe8, 0xcb, 0x69, 0x43, 0xae, 0xf8, 0x1d, 0x27, 0x04,
+	0x4d, 0xbf, 0xe5, 0x73, 0xb4, 0x32, 0xf9, 0x41, 0x6e, 0x02, 0xd4, 0x59, 0x54, 0x63, 0xed, 0xba,
+	0xdf, 0x6e, 0xa0, 0xf7, 0x34, 0x46, 0xe8, 0x03, 0x98, 0xc0, 0x4c, 0x80, 0x87, 0xcc, 0x6b, 0x5d,
+	0xce, 0x75, 0x3e, 0x80, 0x09, 0x0c, 0xf7, 0x9a, 0xa9, 0xf7, 0xb1, 0xfc, 0xb5, 0x04, 0x73, 0x42,
+	0x67, 0x2a, 0x11, 0xfa, 0xbc, 0x8c, 0x51, 0x65, 0x3a, 0x83, 0x5d, 0x33, 0x9d, 0x24, 0x4d, 0x1a,
+	0x32, 0xd2, 0x24, 0xba, 0x09, 0xf3, 0x29, 0x51, 0xf0, 0x10, 0xbe, 0x86, 0x51, 0x0f, 0xc7, 0x70,
+	0x2f, 0xd7, 0x2d, 0x64, 0x57, 0x93, 0xe9, 0x9e, 0x7a, 0x61, 0xa5, 0xf7, 0xd3, 0xed, 0xf6, 0x6a,
+	0x71, 0x06, 0x4c, 0x71, 0xb6, 0xd4, 0x7b, 0xeb, 0x73, 0xe4, 0xf9, 0x47, 0x09, 0x16, 0xb0, 0x38,
+	0x98, 0x94, 0x8a, 0x2e, 0x6b, 0xf6, 0x2b, 0x66, 0x34, 0x91, 0xb2, 0x25, 0x03, 0xe4, 0xa1, 0x51,
+	0x69, 0x92, 0xb9, 0xf9, 0xac, 0x5d, 0x46, 0x3b, 0x62, 0x61, 0x2b, 0x92, 0xa8, 0xab, 0x25, 0xa3,
+	0xe0, 0xd4, 0x80, 0xc5, 0x8c, 0x48, 0x5d, 0x8a, 0xa5, 0x3f, 0xc0, 0x54, 0x47, 0xda, 0xa5, 0x9a,
+	0x8e, 0xee, 0x62, 0xd2, 0x5e, 0xce, 0x4d, 0x4f, 0xa3, 0x4f, 0x81, 0xe0, 0x42, 0xa2, 0x72, 0xa5,
+	0x0b, 0x15, 0x43, 0x67, 0x81, 0x2e, 0xd8, 0x19, 0xa5, 0x2d, 0x2d, 0xaa, 0xa0, 0xc7, 0x6f, 0x54,
+	0x8b, 0xbb, 0x8b, 0x88, 0x37, 0x11, 0x72, 0x20, 0x0d, 0x89, 0x50, 0xfb, 0x30, 0x8d, 0x01, 0xd7,
+	0x7a, 0xbe, 0x59, 0xaf, 0x0a, 0xbd, 0xba, 0x1a, 0x8e, 0xaf, 0xc0, 0x19, 0x0b, 0x23, 0xe5, 0x1f,
+	0x87, 0x5c, 0xf5, 0x49, 0x77, 0x74, 0x96, 0xa2, 0x03, 0x78, 0x02, 0x7c, 0x17, 0xc6, 0xc3, 0x64,
+	0x34, 0x05, 0x6e, 0x92, 0x68, 0x0b, 0xf3, 0x80, 0x63, 0x09, 0x1b, 0xf5, 0x27, 0x5e, 0xdf, 0x1e,
+	0x5c, 0x65, 0x66, 0x6a, 0xb9, 0xbe, 0x32, 0xb3, 0xfb, 0xff, 0x19, 0x82, 0x11, 0x6c, 0xc0, 0x90,
+	0x7d, 0x7d, 0xb0, 0x46, 0x1d, 0x9b, 0x2c, 0x8a, 0xc5, 0xb3, 0x95, 0x6d, 0xe7, 0x96, 0x94, 0xaa,
+	0xb8, 0x46, 0x9f, 0xe0, 0x19, 0xa5, 0x6c, 0xc4, 0xcb, 0x16, 0xb7, 0x6d, 0xbc, 0xbc, 0x2a, 0xfd,
+	0x4f, 0x30, 0x93, 0xa9, 0xc8, 0x93, 0x05, 0xc1, 0x95, 0x29, 0x6c, 0x3b, 0x37, 0x4d, 0xb4, 0x9c,
+	0x0a, 0xfe, 0x3b, 0x98, 0xcd, 0xe9, 0x4d, 0x10, 0x29, 0x44, 0x71, 0x13, 0xc4, 0x59, 0x2d, 0x9e,
+	0x80, 0xc8, 0x0f, 0x61, 0x54, 0xb5, 0x5c, 0xc8, 0x9c, 0x98, 0x9d, 0x6a, 0xe0, 0x38, 0xf3, 0xa9,
+	0x51, 0x64, 0x74, 0x61, 0x26, 0xd3, 0x21, 0x22, 0x37, 0x0c, 0xf5, 0x67, 0x3b, 0x4f, 0xb8, 0xcd,
+	0xe2, 0xc6, 0xd2, 0x2b, 0x98, 0x4a, 0x79, 0x05, 0xb2, 0x6c, 0x6a, 0x26, 0xe5, 0xbe, 0x9c, 0x95,
+	0x7c, 0x22, 0xa2, 0xbd, 0x80, 0x71, 0xe3, 0xf2, 0xe2, 0x51, 0x66, 0x9d, 0x81, 0x53, 0xce, 0x12,
+	0x24, 0xc2, 0xfd, 0xff, 0x3a, 0x30, 0x81, 0xf6, 0xf6, 0x87, 0xba, 0xc7, 0x3d, 0xb2, 0x07, 0x93,
+	0xb6, 0x3f, 0x26, 0xb2, 0xfe, 0x9b, 0xeb, 0xef, 0x9d, 0xe5, 0x5c, 0x1a, 0x4a, 0xf7, 0x12, 0xae,
+	0x5b, 0x91, 0x86, 0x2c, 0xe1, 0xbd, 0xc9, 0x06, 0x42, 0xc7, 0xc9, 0x23, 0x21, 0xce, 0x77, 0x30,
+	0x82, 0xb9, 0x2b, 0x99, 0x55, 0xc6, 0x6a, 0xe4, 0xd6, 0xce, 0x9c, 0x3d, 0x88, 0x5c, 0x7a, 0x23,
+	0xaa, 0x90, 0x67, 0x6d, 0x24, 0x55, 0x1a, 0xb4, 0x36, 0x92, 0xa9, 0xfc, 0x3d, 0x87, 0x71, 0xa3,
+	0x8e, 0x47, 0x16, 0xd6, 0x64, 0x3f, 0x73, 0x4d, 0xf5, 0x33, 0xd7, 0x76, 0x5a, 0x1d, 0x7e, 0x81,
+	0x5a, 0xce, 0xab, 0xf8, 0x3d, 0x03, 0x48, 0x8a, 0x62, 0x78, 0x45, 0x32, 0xe5, 0x35, 0x67, 0x31,
+	0x33, 0x9e, 0x1c, 0xb3, 0x91, 0x2a, 0x13, 0x73, 0x9e, 0x99, 0x93, 0x5b, 0x02, 0xd8, 0x59, 0xf5,
+	0x43, 0x18, 0x41, 0xb9, 0x0a, 0xa5, 0x9f, 0x33, 0xa5, 0xd7, 0x8c, 0x3f, 0x03, 0xc9, 0x3c, 0xe3,
+	0xb6, 0x89, 0xb4, 0xf2, 0xc2, 0x27, 0x24, 0xba, 0x8e, 0x2e, 0xef, 0xbf, 0x37, 0x3a, 0x54, 0x68,
+	0xd7, 0x4e, 0x56, 0x4c, 0xa6, 0xf4, 0x9b, 0xcf, 0xb9, 0x51, 0x40, 0x4d, 0x4e, 0xdb, 0x7e, 0xcd,
+	0xe3, 0x69, 0xe7, 0x16, 0x19, 0xf0, 0xb4, 0x0b, 0x9e, 0xff, 0x2f, 0xe1, 0xba, 0xf5, 0xb4, 0x46,
+	0xb3, 0xcd, 0x7b, 0xed, 0x3b, 0x4e, 0x1e, 0x09, 0x71, 0x2a, 0x30, 0xa6, 0xc3, 0x21, 0x99, 0x37,
+	0xc5, 0x4f, 0x8e, 0xdc, 0x8c, 0x01, 0x64, 0x43, 0xeb, 0xda, 0x88, 0x77, 0xb6, 0xae, 0xb3, 0x81,
+	0xd0, 0x86, 0xd8, 0x87, 0x99, 0x4c, 0xac, 0x23, 0x86, 0xea, 0x72, 0x62, 0xa0, 0xb9, 0x87, 0x4c,
+	0xcc, 0xda, 0x82, 0x09, 0xb3, 0x46, 0x4f, 0xb4, 0x85, 0xa5, 0xbb, 0x07, 0xce, 0x52, 0x0e, 0x25,
+	0x31, 0x3e, 0x2c, 0xb4, 0xf6, 0x30, 0xbe, 0x74, 0x39, 0xf6, 0x31, 0x8c, 0xe9, 0xca, 0x2e, 0x6a,
+	0x30, 0x5d, 0x1f, 0x76, 0x16, 0xd2, 0xc3, 0x89, 0x85, 0xa5, 0x1f, 0x2c, 0x68, 0x61, 0x05, 0x0f,
+	0x24, 0xb4, 0xb0, 0xc2, 0x57, 0xce, 0x63, 0x18, 0xd3, 0x95, 0x74, 0x14, 0x26, 0x5d, 0x91, 0x47,
+	0x61, 0xb2, 0x05, 0xf7, 0x3d, 0x98, 0xb4, 0x5f, 0x75, 0x68, 0x9d, 0xb9, 0x0f, 0x4b, 0xb4, 0xce,
+	0x82, 0x67, 0xe0, 0x4b, 0xb8, 0x6e, 0x15, 0x63, 0xd1, 0x3a, 0xf3, 0x4a, 0xba, 0x8e, 0x93, 0x47,
+	0xca, 0xe2, 0x98, 0x56, 0x9e, 0x57, 0xd7, 0x4e, 0xe1, 0xd8, 0x6a, 0x79, 0x03, 0x13, 0x66, 0x87,
+	0x14, 0x03, 0x76, 0x71, 0x2b, 0x19, 0x23, 0x64, 0x71, 0x6f, 0xf8, 0xd8, 0xea, 0xf8, 0x6a, 0xf1,
+	0xf2, 0x70, 0x2d, 0x21, 0x7b, 0xe1, 0xee, 0xc0, 0x54, 0xaa, 0xb1, 0x8a, 0x91, 0x37, 0xbf, 0xdd,
+	0x8a, 0x49, 0x41, 0xa6, 0x67, 0xfc, 0x0e, 0xe6, 0x77, 0x19, 0xdf, 0x67, 0xe7, 0xa9, 0x06, 0xeb,
+	0xe7, 0x6f, 0xfc, 0x8f, 0x50, 0x2e, 0xea, 0xde, 0x92, 0xdb, 0x8a, 0xb7, 0x5b, 0x73, 0xf7, 0x12,
+	0x2b, 0xdc, 0x10, 0xb2, 0xf3, 0xf3, 0x20, 0xfc, 0x78, 0xe0, 0x85, 0x5e, 0x8b, 0x71, 0x16, 0x46,
+	0x57, 0xb8, 0x87, 0xb7, 0x30, 0x27, 0xb5, 0xb3, 0x11, 0x3f, 0xee, 0xae, 0x10, 0xf8, 0x47, 0x71,
+	0x7a, 0x66, 0x87, 0x39, 0x39, 0xbd, 0x9c, 0xbe, 0x33, 0x86, 0xc2, 0xbc, 0xbf, 0x0e, 0x1c, 0xa7,
+	0x7a, 0xd5, 0x49, 0x00, 0xa2, 0x59, 0xc0, 0x4c, 0x18, 0x2a, 0xc6, 0xdd, 0x82, 0x19, 0xec, 0xf8,
+	0x26, 0x5b, 0xe8, 0xe2, 0xef, 0x72, 0xfe, 0xad, 0x50, 0x2d, 0x11, 0x17, 0xe6, 0x73, 0xfb, 0xd7,
+	0xe4, 0x0b, 0xe9, 0xa4, 0xbb, 0xf4, 0xb6, 0x0b, 0x31, 0x5f, 0x68, 0xc1, 0x92, 0x56, 0xb4, 0x8a,
+	0x09, 0x05, 0x2d, 0x6a, 0xc7, 0x78, 0xdc, 0x55, 0x4b, 0xe4, 0x25, 0xcc, 0xe5, 0xf5, 0xc4, 0xc9,
+	0xaa, 0x05, 0x92, 0xd3, 0x2e, 0x4f, 0xe1, 0xac, 0x03, 0xc4, 0x87, 0xee, 0x47, 0xdc, 0xaf, 0x15,
+	0xc7, 0x02, 0xac, 0xd9, 0x19, 0x33, 0x9f, 0xc2, 0x78, 0x7c, 0x0f, 0xb1, 0x6a, 0x54, 0xc8, 0x28,
+	0x6f, 0x6c, 0xa6, 0xb8, 0xb4, 0x05, 0x33, 0x99, 0xfe, 0x13, 0xee, 0xbf, 0xa8, 0x2f, 0xe5, 0xd8,
+	0x95, 0x06, 0xa1, 0xc4, 0xe9, 0x74, 0x57, 0x06, 0xc3, 0x49, 0x41, 0xb3, 0xc6, 0xb1, 0xaa, 0xa9,
+	0xd5, 0x12, 0x39, 0x10, 0x35, 0x93, 0x6c, 0x4f, 0x1f, 0x8f, 0xb6, 0x5b, 0xbf, 0xdf, 0xc9, 0x69,
+	0x97, 0x57, 0x4b, 0xe4, 0xb5, 0x68, 0xb9, 0x67, 0xda, 0x37, 0x78, 0x2c, 0x5d, 0x3a, 0x3b, 0xce,
+	0x8c, 0xd5, 0x6c, 0x8e, 0xa7, 0x54, 0x4b, 0xe4, 0x95, 0x82, 0xb3, 0x3b, 0xee, 0x16, 0x5c, 0x6e,
+	0x33, 0xde, 0xc9, 0xf4, 0xae, 0xab, 0x25, 0xb2, 0x05, 0x53, 0xa9, 0x36, 0x1b, 0x31, 0xb3, 0xae,
+	0x1c, 0x91, 0x0c, 0xa2, 0x28, 0xad, 0x09, 0xc3, 0x23, 0xd9, 0xee, 0x12, 0x66, 0x44, 0x85, 0x6d,
+	0x27, 0x27, 0x55, 0x7c, 0x94, 0xc2, 0xa4, 0x7a, 0x74, 0xc4, 0x0c, 0xb2, 0x05, 0xc2, 0x98, 0x75,
+	0xbe, 0x6a, 0x89, 0xec, 0x83, 0x23, 0x5e, 0x74, 0xef, 0x93, 0x28, 0x6a, 0xe0, 0x15, 0x19, 0xe5,
+	0x82, 0xae, 0x07, 0x5a, 0x9c, 0xd5, 0xd2, 0xe6, 0x9d, 0xdf, 0x7d, 0x59, 0x0b, 0xea, 0x4c, 0xd0,
+	0x05, 0x53, 0x2d, 0x68, 0xae, 0xf9, 0xf2, 0x5f, 0x96, 0x15, 0xfd, 0x77, 0xcc, 0x93, 0x6b, 0xe2,
+	0xe7, 0x83, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0x85, 0x29, 0xd6, 0x28, 0xa2, 0x29, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -3726,16 +4160,32 @@ type TradingDataClient interface {
 	TradesByOrder(ctx context.Context, in *TradesByOrderRequest, opts ...grpc.CallOption) (*TradesByOrderResponse, error)
 	// Get a list of Trades by Party
 	TradesByParty(ctx context.Context, in *TradesByPartyRequest, opts ...grpc.CallOption) (*TradesByPartyResponse, error)
-	// Get all proposals
-	GetProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetProposalsResponse, error)
-	// Get all OPEN proposals
-	GetOpenProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetProposalsResponse, error)
-	// Get a proposal by ID
-	GetProposalByID(ctx context.Context, in *GetProposalByIDRequest, opts ...grpc.CallOption) (*proto1.ProposalVote, error)
-	// Get a proposal by reference
-	GetProposalByReference(ctx context.Context, in *GetProposalByReferenceRequest, opts ...grpc.CallOption) (*proto1.ProposalVote, error)
-	// Subscribe to a stream of updates to proposal data
-	ObserveProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_ObserveProposalsClient, error)
+	// Get governance data (proposals and votes) for all proposals
+	GetProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals by party authoring them
+	GetProposalsByParty(ctx context.Context, in *GetProposalsByPartyRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get votes by party casting them
+	GetVotesByParty(ctx context.Context, in *GetVotesByPartyRequest, opts ...grpc.CallOption) (*GetVotesResponse, error)
+	// Get governance data (proposals and votes) for proposals that aim creating new markets
+	GetNewMarketProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals that aim updating markets
+	GetUpdateMarketProposals(ctx context.Context, in *GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
+	GetNetworkParametersProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals aiming to create new assets
+	GetNewAssetProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for a proposal located by ID
+	GetProposalByID(ctx context.Context, in *GetProposalByIDRequest, opts ...grpc.CallOption) (*GetProposalResponse, error)
+	// Get governance data (proposals and votes) for a proposal located by reference
+	GetProposalByReference(ctx context.Context, in *GetProposalByReferenceRequest, opts ...grpc.CallOption) (*GetProposalResponse, error)
+	// Subscribe to a stream of all governance updates
+	ObserveGovernance(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_ObserveGovernanceClient, error)
+	// Subscribe to a stream of proposal updates
+	ObservePartyProposals(ctx context.Context, in *ObservePartyProposalsRequest, opts ...grpc.CallOption) (TradingData_ObservePartyProposalsClient, error)
+	// Subscribe to a stream of votes cast by a specific party
+	ObservePartyVotes(ctx context.Context, in *ObservePartyVotesRequest, opts ...grpc.CallOption) (TradingData_ObservePartyVotesClient, error)
+	// Subscribe to a stream of proposal votes
+	ObserveProposalVotes(ctx context.Context, in *ObserveProposalVotesRequest, opts ...grpc.CallOption) (TradingData_ObserveProposalVotesClient, error)
 	// Get Statistics
 	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error)
 	// Get Time
@@ -3975,8 +4425,8 @@ func (c *tradingDataClient) TradesByParty(ctx context.Context, in *TradesByParty
 	return out, nil
 }
 
-func (c *tradingDataClient) GetProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetProposalsResponse, error) {
-	out := new(GetProposalsResponse)
+func (c *tradingDataClient) GetProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/GetProposals", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -3984,17 +4434,62 @@ func (c *tradingDataClient) GetProposals(ctx context.Context, in *empty.Empty, o
 	return out, nil
 }
 
-func (c *tradingDataClient) GetOpenProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetProposalsResponse, error) {
-	out := new(GetProposalsResponse)
-	err := c.cc.Invoke(ctx, "/api.trading_data/GetOpenProposals", in, out, opts...)
+func (c *tradingDataClient) GetProposalsByParty(ctx context.Context, in *GetProposalsByPartyRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetProposalsByParty", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *tradingDataClient) GetProposalByID(ctx context.Context, in *GetProposalByIDRequest, opts ...grpc.CallOption) (*proto1.ProposalVote, error) {
-	out := new(proto1.ProposalVote)
+func (c *tradingDataClient) GetVotesByParty(ctx context.Context, in *GetVotesByPartyRequest, opts ...grpc.CallOption) (*GetVotesResponse, error) {
+	out := new(GetVotesResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetVotesByParty", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) GetNewMarketProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetNewMarketProposals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) GetUpdateMarketProposals(ctx context.Context, in *GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetUpdateMarketProposals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) GetNetworkParametersProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetNetworkParametersProposals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) GetNewAssetProposals(ctx context.Context, in *GetProposalsByStateRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/GetNewAssetProposals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) GetProposalByID(ctx context.Context, in *GetProposalByIDRequest, opts ...grpc.CallOption) (*GetProposalResponse, error) {
+	out := new(GetProposalResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/GetProposalByID", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4002,8 +4497,8 @@ func (c *tradingDataClient) GetProposalByID(ctx context.Context, in *GetProposal
 	return out, nil
 }
 
-func (c *tradingDataClient) GetProposalByReference(ctx context.Context, in *GetProposalByReferenceRequest, opts ...grpc.CallOption) (*proto1.ProposalVote, error) {
-	out := new(proto1.ProposalVote)
+func (c *tradingDataClient) GetProposalByReference(ctx context.Context, in *GetProposalByReferenceRequest, opts ...grpc.CallOption) (*GetProposalResponse, error) {
+	out := new(GetProposalResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/GetProposalByReference", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -4011,12 +4506,12 @@ func (c *tradingDataClient) GetProposalByReference(ctx context.Context, in *GetP
 	return out, nil
 }
 
-func (c *tradingDataClient) ObserveProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_ObserveProposalsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[0], "/api.trading_data/ObserveProposals", opts...)
+func (c *tradingDataClient) ObserveGovernance(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_ObserveGovernanceClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[0], "/api.trading_data/ObserveGovernance", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataObserveProposalsClient{stream}
+	x := &tradingDataObserveGovernanceClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -4026,17 +4521,113 @@ func (c *tradingDataClient) ObserveProposals(ctx context.Context, in *empty.Empt
 	return x, nil
 }
 
-type TradingData_ObserveProposalsClient interface {
-	Recv() (*proto1.ProposalVote, error)
+type TradingData_ObserveGovernanceClient interface {
+	Recv() (*proto1.GovernanceData, error)
 	grpc.ClientStream
 }
 
-type tradingDataObserveProposalsClient struct {
+type tradingDataObserveGovernanceClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataObserveProposalsClient) Recv() (*proto1.ProposalVote, error) {
-	m := new(proto1.ProposalVote)
+func (x *tradingDataObserveGovernanceClient) Recv() (*proto1.GovernanceData, error) {
+	m := new(proto1.GovernanceData)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataClient) ObservePartyProposals(ctx context.Context, in *ObservePartyProposalsRequest, opts ...grpc.CallOption) (TradingData_ObservePartyProposalsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[1], "/api.trading_data/ObservePartyProposals", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataObservePartyProposalsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_ObservePartyProposalsClient interface {
+	Recv() (*proto1.GovernanceData, error)
+	grpc.ClientStream
+}
+
+type tradingDataObservePartyProposalsClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataObservePartyProposalsClient) Recv() (*proto1.GovernanceData, error) {
+	m := new(proto1.GovernanceData)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataClient) ObservePartyVotes(ctx context.Context, in *ObservePartyVotesRequest, opts ...grpc.CallOption) (TradingData_ObservePartyVotesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[2], "/api.trading_data/ObservePartyVotes", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataObservePartyVotesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_ObservePartyVotesClient interface {
+	Recv() (*proto1.Vote, error)
+	grpc.ClientStream
+}
+
+type tradingDataObservePartyVotesClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataObservePartyVotesClient) Recv() (*proto1.Vote, error) {
+	m := new(proto1.Vote)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataClient) ObserveProposalVotes(ctx context.Context, in *ObserveProposalVotesRequest, opts ...grpc.CallOption) (TradingData_ObserveProposalVotesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[3], "/api.trading_data/ObserveProposalVotes", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataObserveProposalVotesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_ObserveProposalVotesClient interface {
+	Recv() (*proto1.Vote, error)
+	grpc.ClientStream
+}
+
+type tradingDataObserveProposalVotesClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataObserveProposalVotesClient) Recv() (*proto1.Vote, error) {
+	m := new(proto1.Vote)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -4062,7 +4653,7 @@ func (c *tradingDataClient) GetVegaTime(ctx context.Context, in *empty.Empty, op
 }
 
 func (c *tradingDataClient) AccountsSubscribe(ctx context.Context, in *AccountsSubscribeRequest, opts ...grpc.CallOption) (TradingData_AccountsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[1], "/api.trading_data/AccountsSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[4], "/api.trading_data/AccountsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4094,7 +4685,7 @@ func (x *tradingDataAccountsSubscribeClient) Recv() (*proto1.Account, error) {
 }
 
 func (c *tradingDataClient) CandlesSubscribe(ctx context.Context, in *CandlesSubscribeRequest, opts ...grpc.CallOption) (TradingData_CandlesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[2], "/api.trading_data/CandlesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[5], "/api.trading_data/CandlesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4126,7 +4717,7 @@ func (x *tradingDataCandlesSubscribeClient) Recv() (*proto1.Candle, error) {
 }
 
 func (c *tradingDataClient) MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[3], "/api.trading_data/MarginLevelsSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[6], "/api.trading_data/MarginLevelsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4158,7 +4749,7 @@ func (x *tradingDataMarginLevelsSubscribeClient) Recv() (*proto1.MarginLevels, e
 }
 
 func (c *tradingDataClient) MarketDepthSubscribe(ctx context.Context, in *MarketDepthSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketDepthSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[4], "/api.trading_data/MarketDepthSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[7], "/api.trading_data/MarketDepthSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4190,7 +4781,7 @@ func (x *tradingDataMarketDepthSubscribeClient) Recv() (*proto1.MarketDepth, err
 }
 
 func (c *tradingDataClient) MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[5], "/api.trading_data/MarketsDataSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[8], "/api.trading_data/MarketsDataSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4222,7 +4813,7 @@ func (x *tradingDataMarketsDataSubscribeClient) Recv() (*proto1.MarketData, erro
 }
 
 func (c *tradingDataClient) OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[6], "/api.trading_data/OrdersSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[9], "/api.trading_data/OrdersSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4254,7 +4845,7 @@ func (x *tradingDataOrdersSubscribeClient) Recv() (*OrdersStream, error) {
 }
 
 func (c *tradingDataClient) PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingData_PositionsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[7], "/api.trading_data/PositionsSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[10], "/api.trading_data/PositionsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4286,7 +4877,7 @@ func (x *tradingDataPositionsSubscribeClient) Recv() (*proto1.Position, error) {
 }
 
 func (c *tradingDataClient) TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[8], "/api.trading_data/TradesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[11], "/api.trading_data/TradesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4318,7 +4909,7 @@ func (x *tradingDataTradesSubscribeClient) Recv() (*TradesStream, error) {
 }
 
 func (c *tradingDataClient) TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[9], "/api.trading_data/TransferResponsesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[12], "/api.trading_data/TransferResponsesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4397,16 +4988,32 @@ type TradingDataServer interface {
 	TradesByOrder(context.Context, *TradesByOrderRequest) (*TradesByOrderResponse, error)
 	// Get a list of Trades by Party
 	TradesByParty(context.Context, *TradesByPartyRequest) (*TradesByPartyResponse, error)
-	// Get all proposals
-	GetProposals(context.Context, *empty.Empty) (*GetProposalsResponse, error)
-	// Get all OPEN proposals
-	GetOpenProposals(context.Context, *empty.Empty) (*GetProposalsResponse, error)
-	// Get a proposal by ID
-	GetProposalByID(context.Context, *GetProposalByIDRequest) (*proto1.ProposalVote, error)
-	// Get a proposal by reference
-	GetProposalByReference(context.Context, *GetProposalByReferenceRequest) (*proto1.ProposalVote, error)
-	// Subscribe to a stream of updates to proposal data
-	ObserveProposals(*empty.Empty, TradingData_ObserveProposalsServer) error
+	// Get governance data (proposals and votes) for all proposals
+	GetProposals(context.Context, *GetProposalsByStateRequest) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals by party authoring them
+	GetProposalsByParty(context.Context, *GetProposalsByPartyRequest) (*GetGovernanceDataResponse, error)
+	// Get votes by party casting them
+	GetVotesByParty(context.Context, *GetVotesByPartyRequest) (*GetVotesResponse, error)
+	// Get governance data (proposals and votes) for proposals that aim creating new markets
+	GetNewMarketProposals(context.Context, *GetProposalsByStateRequest) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals that aim updating markets
+	GetUpdateMarketProposals(context.Context, *GetUpdateMarketProposalsRequest) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
+	GetNetworkParametersProposals(context.Context, *GetProposalsByStateRequest) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for proposals aiming to create new assets
+	GetNewAssetProposals(context.Context, *GetProposalsByStateRequest) (*GetGovernanceDataResponse, error)
+	// Get governance data (proposals and votes) for a proposal located by ID
+	GetProposalByID(context.Context, *GetProposalByIDRequest) (*GetProposalResponse, error)
+	// Get governance data (proposals and votes) for a proposal located by reference
+	GetProposalByReference(context.Context, *GetProposalByReferenceRequest) (*GetProposalResponse, error)
+	// Subscribe to a stream of all governance updates
+	ObserveGovernance(*empty.Empty, TradingData_ObserveGovernanceServer) error
+	// Subscribe to a stream of proposal updates
+	ObservePartyProposals(*ObservePartyProposalsRequest, TradingData_ObservePartyProposalsServer) error
+	// Subscribe to a stream of votes cast by a specific party
+	ObservePartyVotes(*ObservePartyVotesRequest, TradingData_ObservePartyVotesServer) error
+	// Subscribe to a stream of proposal votes
+	ObserveProposalVotes(*ObserveProposalVotesRequest, TradingData_ObserveProposalVotesServer) error
 	// Get Statistics
 	Statistics(context.Context, *empty.Empty) (*proto1.Statistics, error)
 	// Get Time
@@ -4850,7 +5457,7 @@ func _TradingData_TradesByParty_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _TradingData_GetProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(GetProposalsByStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -4862,25 +5469,115 @@ func _TradingData_GetProposals_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/api.trading_data/GetProposals",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).GetProposals(ctx, req.(*empty.Empty))
+		return srv.(TradingDataServer).GetProposals(ctx, req.(*GetProposalsByStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingData_GetOpenProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+func _TradingData_GetProposalsByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProposalsByPartyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServer).GetOpenProposals(ctx, in)
+		return srv.(TradingDataServer).GetProposalsByParty(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.trading_data/GetOpenProposals",
+		FullMethod: "/api.trading_data/GetProposalsByParty",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServer).GetOpenProposals(ctx, req.(*empty.Empty))
+		return srv.(TradingDataServer).GetProposalsByParty(ctx, req.(*GetProposalsByPartyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_GetVotesByParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVotesByPartyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).GetVotesByParty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/GetVotesByParty",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).GetVotesByParty(ctx, req.(*GetVotesByPartyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_GetNewMarketProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProposalsByStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).GetNewMarketProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/GetNewMarketProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).GetNewMarketProposals(ctx, req.(*GetProposalsByStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_GetUpdateMarketProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUpdateMarketProposalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).GetUpdateMarketProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/GetUpdateMarketProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).GetUpdateMarketProposals(ctx, req.(*GetUpdateMarketProposalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_GetNetworkParametersProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProposalsByStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).GetNetworkParametersProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/GetNetworkParametersProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).GetNetworkParametersProposals(ctx, req.(*GetProposalsByStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_GetNewAssetProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProposalsByStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).GetNewAssetProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/GetNewAssetProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).GetNewAssetProposals(ctx, req.(*GetProposalsByStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4921,24 +5618,87 @@ func _TradingData_GetProposalByReference_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingData_ObserveProposals_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _TradingData_ObserveGovernance_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(empty.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServer).ObserveProposals(m, &tradingDataObserveProposalsServer{stream})
+	return srv.(TradingDataServer).ObserveGovernance(m, &tradingDataObserveGovernanceServer{stream})
 }
 
-type TradingData_ObserveProposalsServer interface {
-	Send(*proto1.ProposalVote) error
+type TradingData_ObserveGovernanceServer interface {
+	Send(*proto1.GovernanceData) error
 	grpc.ServerStream
 }
 
-type tradingDataObserveProposalsServer struct {
+type tradingDataObserveGovernanceServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataObserveProposalsServer) Send(m *proto1.ProposalVote) error {
+func (x *tradingDataObserveGovernanceServer) Send(m *proto1.GovernanceData) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingData_ObservePartyProposals_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObservePartyProposalsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServer).ObservePartyProposals(m, &tradingDataObservePartyProposalsServer{stream})
+}
+
+type TradingData_ObservePartyProposalsServer interface {
+	Send(*proto1.GovernanceData) error
+	grpc.ServerStream
+}
+
+type tradingDataObservePartyProposalsServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataObservePartyProposalsServer) Send(m *proto1.GovernanceData) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingData_ObservePartyVotes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObservePartyVotesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServer).ObservePartyVotes(m, &tradingDataObservePartyVotesServer{stream})
+}
+
+type TradingData_ObservePartyVotesServer interface {
+	Send(*proto1.Vote) error
+	grpc.ServerStream
+}
+
+type tradingDataObservePartyVotesServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataObservePartyVotesServer) Send(m *proto1.Vote) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingData_ObserveProposalVotes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveProposalVotesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServer).ObserveProposalVotes(m, &tradingDataObserveProposalVotesServer{stream})
+}
+
+type TradingData_ObserveProposalVotesServer interface {
+	Send(*proto1.Vote) error
+	grpc.ServerStream
+}
+
+type tradingDataObserveProposalVotesServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataObserveProposalVotesServer) Send(m *proto1.Vote) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -5268,8 +6028,28 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 			Handler:    _TradingData_GetProposals_Handler,
 		},
 		{
-			MethodName: "GetOpenProposals",
-			Handler:    _TradingData_GetOpenProposals_Handler,
+			MethodName: "GetProposalsByParty",
+			Handler:    _TradingData_GetProposalsByParty_Handler,
+		},
+		{
+			MethodName: "GetVotesByParty",
+			Handler:    _TradingData_GetVotesByParty_Handler,
+		},
+		{
+			MethodName: "GetNewMarketProposals",
+			Handler:    _TradingData_GetNewMarketProposals_Handler,
+		},
+		{
+			MethodName: "GetUpdateMarketProposals",
+			Handler:    _TradingData_GetUpdateMarketProposals_Handler,
+		},
+		{
+			MethodName: "GetNetworkParametersProposals",
+			Handler:    _TradingData_GetNetworkParametersProposals_Handler,
+		},
+		{
+			MethodName: "GetNewAssetProposals",
+			Handler:    _TradingData_GetNewAssetProposals_Handler,
 		},
 		{
 			MethodName: "GetProposalByID",
@@ -5290,8 +6070,23 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ObserveProposals",
-			Handler:       _TradingData_ObserveProposals_Handler,
+			StreamName:    "ObserveGovernance",
+			Handler:       _TradingData_ObserveGovernance_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObservePartyProposals",
+			Handler:       _TradingData_ObservePartyProposals_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObservePartyVotes",
+			Handler:       _TradingData_ObservePartyVotes_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObserveProposalVotes",
+			Handler:       _TradingData_ObserveProposalVotes_Handler,
 			ServerStreams: true,
 		},
 		{

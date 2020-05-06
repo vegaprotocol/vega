@@ -48,6 +48,7 @@ type ResolverRoot interface {
 	Party() PartyResolver
 	Position() PositionResolver
 	PriceLevel() PriceLevelResolver
+	Proposal() ProposalResolver
 	Query() QueryResolver
 	Statistics() StatisticsResolver
 	Subscription() SubscriptionResolver
@@ -206,7 +207,9 @@ type ComplexityRoot struct {
 		Margins   func(childComplexity int, marketID *string) int
 		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
+		Proposals func(childComplexity int, inState *ProposalState) int
 		Trades    func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		Votes     func(childComplexity int) int
 	}
 
 	Position struct {
@@ -249,11 +252,13 @@ type ComplexityRoot struct {
 
 	Proposal struct {
 		ID        func(childComplexity int) int
+		NoVotes   func(childComplexity int) int
 		Party     func(childComplexity int) int
 		Reference func(childComplexity int) int
 		State     func(childComplexity int) int
 		Terms     func(childComplexity int) int
 		Timestamp func(childComplexity int) int
+		YesVotes  func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
@@ -263,18 +268,26 @@ type ComplexityRoot struct {
 		MinParticipationStake func(childComplexity int) int
 	}
 
+	ProposalVote struct {
+		ProposalID func(childComplexity int) int
+		Vote       func(childComplexity int) int
+	}
+
 	Query struct {
-		Market              func(childComplexity int, id string) int
-		Markets             func(childComplexity int, id *string) int
-		OrderByID           func(childComplexity int, orderID string, version *int) int
-		OrderByReferenceID  func(childComplexity int, referenceID string) int
-		OrderVersions       func(childComplexity int, orderID string, skip *int, first *int, last *int) int
-		Parties             func(childComplexity int, id *string) int
-		Party               func(childComplexity int, id string) int
-		ProposalByID        func(childComplexity int, id string) int
-		ProposalByReference func(childComplexity int, reference string) int
-		Proposals           func(childComplexity int, openOnly *bool) int
-		Statistics          func(childComplexity int) int
+		Market                     func(childComplexity int, id string) int
+		Markets                    func(childComplexity int, id *string) int
+		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
+		NewAssetProposals          func(childComplexity int, inState *ProposalState) int
+		NewMarketProposals         func(childComplexity int, inState *ProposalState) int
+		OrderByID                  func(childComplexity int, orderID string, version *int) int
+		OrderByReferenceID         func(childComplexity int, referenceID string) int
+		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
+		Parties                    func(childComplexity int, id *string) int
+		Party                      func(childComplexity int, id string) int
+		Proposal                   func(childComplexity int, id *string, reference *string) int
+		Proposals                  func(childComplexity int, inState *ProposalState) int
+		Statistics                 func(childComplexity int) int
+		UpdateMarketProposals      func(childComplexity int, marketID *string, inState *ProposalState) int
 	}
 
 	ScalingFactors struct {
@@ -331,7 +344,9 @@ type ComplexityRoot struct {
 		MarketDepth func(childComplexity int, marketID string) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
 		Positions   func(childComplexity int, partyID string) int
+		Proposals   func(childComplexity int, partyID *string) int
 		Trades      func(childComplexity int, marketID *string, partyID *string) int
+		Votes       func(childComplexity int, proposalID *string, partyID *string) int
 	}
 
 	TradableInstrument struct {
@@ -370,9 +385,8 @@ type ComplexityRoot struct {
 	}
 
 	Vote struct {
-		Party      func(childComplexity int) int
-		ProposalID func(childComplexity int) int
-		Value      func(childComplexity int) int
+		Party func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 }
 
@@ -456,6 +470,8 @@ type PartyResolver interface {
 	Accounts(ctx context.Context, obj *proto.Party, marketID *string, asset *string, typeArg *AccountType) ([]*proto.Account, error)
 	Positions(ctx context.Context, obj *proto.Party) ([]*proto.Position, error)
 	Margins(ctx context.Context, obj *proto.Party, marketID *string) ([]*proto.MarginLevels, error)
+	Proposals(ctx context.Context, obj *proto.Party, inState *ProposalState) ([]*proto.GovernanceData, error)
+	Votes(ctx context.Context, obj *proto.Party) ([]*ProposalVote, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*Market, error)
@@ -471,6 +487,16 @@ type PriceLevelResolver interface {
 	NumberOfOrders(ctx context.Context, obj *proto.PriceLevel) (string, error)
 	CumulativeVolume(ctx context.Context, obj *proto.PriceLevel) (string, error)
 }
+type ProposalResolver interface {
+	ID(ctx context.Context, obj *proto.GovernanceData) (*string, error)
+	Reference(ctx context.Context, obj *proto.GovernanceData) (string, error)
+	Party(ctx context.Context, obj *proto.GovernanceData) (*proto.Party, error)
+	State(ctx context.Context, obj *proto.GovernanceData) (ProposalState, error)
+	Timestamp(ctx context.Context, obj *proto.GovernanceData) (string, error)
+	Terms(ctx context.Context, obj *proto.GovernanceData) (*ProposalTerms, error)
+	YesVotes(ctx context.Context, obj *proto.GovernanceData) ([]*Vote, error)
+	NoVotes(ctx context.Context, obj *proto.GovernanceData) ([]*Vote, error)
+}
 type QueryResolver interface {
 	Markets(ctx context.Context, id *string) ([]*Market, error)
 	Market(ctx context.Context, id string) (*Market, error)
@@ -480,9 +506,12 @@ type QueryResolver interface {
 	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*proto.Order, error)
 	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
-	Proposals(ctx context.Context, openOnly *bool) ([]*Proposal, error)
-	ProposalByReference(ctx context.Context, reference string) (*Proposal, error)
-	ProposalByID(ctx context.Context, id string) (*Proposal, error)
+	Proposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
+	Proposal(ctx context.Context, id *string, reference *string) (*proto.GovernanceData, error)
+	NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
+	UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*proto.GovernanceData, error)
+	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
+	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -518,6 +547,8 @@ type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
+	Proposals(ctx context.Context, partyID *string) (<-chan *proto.GovernanceData, error)
+	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -1271,6 +1302,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Positions(childComplexity), true
 
+	case "Party.proposals":
+		if e.complexity.Party.Proposals == nil {
+			break
+		}
+
+		args, err := ec.field_Party_proposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.Proposals(childComplexity, args["inState"].(*ProposalState)), true
+
 	case "Party.trades":
 		if e.complexity.Party.Trades == nil {
 			break
@@ -1282,6 +1325,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Trades(childComplexity, args["marketId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Party.votes":
+		if e.complexity.Party.Votes == nil {
+			break
+		}
+
+		return e.complexity.Party.Votes(childComplexity), true
 
 	case "Position.averageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
@@ -1409,6 +1459,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.ID(childComplexity), true
 
+	case "Proposal.noVotes":
+		if e.complexity.Proposal.NoVotes == nil {
+			break
+		}
+
+		return e.complexity.Proposal.NoVotes(childComplexity), true
+
 	case "Proposal.party":
 		if e.complexity.Proposal.Party == nil {
 			break
@@ -1444,6 +1501,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.Timestamp(childComplexity), true
 
+	case "Proposal.yesVotes":
+		if e.complexity.Proposal.YesVotes == nil {
+			break
+		}
+
+		return e.complexity.Proposal.YesVotes(childComplexity), true
+
 	case "ProposalTerms.change":
 		if e.complexity.ProposalTerms.Change == nil {
 			break
@@ -1472,6 +1536,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.MinParticipationStake(childComplexity), true
 
+	case "ProposalVote.proposalID":
+		if e.complexity.ProposalVote.ProposalID == nil {
+			break
+		}
+
+		return e.complexity.ProposalVote.ProposalID(childComplexity), true
+
+	case "ProposalVote.vote":
+		if e.complexity.ProposalVote.Vote == nil {
+			break
+		}
+
+		return e.complexity.ProposalVote.Vote(childComplexity), true
+
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
 			break
@@ -1495,6 +1573,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Markets(childComplexity, args["id"].(*string)), true
+
+	case "Query.networkParametersProposals":
+		if e.complexity.Query.NetworkParametersProposals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_networkParametersProposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NetworkParametersProposals(childComplexity, args["inState"].(*ProposalState)), true
+
+	case "Query.newAssetProposals":
+		if e.complexity.Query.NewAssetProposals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_newAssetProposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NewAssetProposals(childComplexity, args["inState"].(*ProposalState)), true
+
+	case "Query.newMarketProposals":
+		if e.complexity.Query.NewMarketProposals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_newMarketProposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NewMarketProposals(childComplexity, args["inState"].(*ProposalState)), true
 
 	case "Query.orderByID":
 		if e.complexity.Query.OrderByID == nil {
@@ -1556,29 +1670,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Party(childComplexity, args["id"].(string)), true
 
-	case "Query.proposalByID":
-		if e.complexity.Query.ProposalByID == nil {
+	case "Query.proposal":
+		if e.complexity.Query.Proposal == nil {
 			break
 		}
 
-		args, err := ec.field_Query_proposalByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_proposal_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.ProposalByID(childComplexity, args["id"].(string)), true
-
-	case "Query.proposalByReference":
-		if e.complexity.Query.ProposalByReference == nil {
-			break
-		}
-
-		args, err := ec.field_Query_proposalByReference_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.ProposalByReference(childComplexity, args["reference"].(string)), true
+		return e.complexity.Query.Proposal(childComplexity, args["id"].(*string), args["reference"].(*string)), true
 
 	case "Query.proposals":
 		if e.complexity.Query.Proposals == nil {
@@ -1590,7 +1692,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Proposals(childComplexity, args["openOnly"].(*bool)), true
+		return e.complexity.Query.Proposals(childComplexity, args["inState"].(*ProposalState)), true
 
 	case "Query.statistics":
 		if e.complexity.Query.Statistics == nil {
@@ -1598,6 +1700,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Statistics(childComplexity), true
+
+	case "Query.updateMarketProposals":
+		if e.complexity.Query.UpdateMarketProposals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_updateMarketProposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UpdateMarketProposals(childComplexity, args["marketId"].(*string), args["inState"].(*ProposalState)), true
 
 	case "ScalingFactors.collateralRelease":
 		if e.complexity.ScalingFactors.CollateralRelease == nil {
@@ -1921,6 +2035,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Positions(childComplexity, args["partyId"].(string)), true
 
+	case "Subscription.proposals":
+		if e.complexity.Subscription.Proposals == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_proposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Proposals(childComplexity, args["partyID"].(*string)), true
+
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
 			break
@@ -1932,6 +2058,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Trades(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
+
+	case "Subscription.votes":
+		if e.complexity.Subscription.Votes == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_votes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Votes(childComplexity, args["proposalID"].(*string), args["partyID"].(*string)), true
 
 	case "TradableInstrument.instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -2073,21 +2211,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateNetwork.MinParticipationStake(childComplexity), true
 
-	case "Vote.Party":
+	case "Vote.party":
 		if e.complexity.Vote.Party == nil {
 			break
 		}
 
 		return e.complexity.Vote.Party(childComplexity), true
 
-	case "Vote.ProposalID":
-		if e.complexity.Vote.ProposalID == nil {
-			break
-		}
-
-		return e.complexity.Vote.ProposalID(childComplexity), true
-
-	case "Vote.Value":
+	case "Vote.value":
 		if e.complexity.Vote.Value == nil {
 			break
 		}
@@ -2349,7 +2480,7 @@ type Subscription {
     type: AccountType
   ): Account!
 
-  "subscribe to the mark price changes"
+  "Subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: String
@@ -2362,6 +2493,20 @@ type Subscription {
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketID: String
   ): MarginLevels!
+
+  "Subscribe to proposals. Leave out all arguments to receive all proposals"
+  proposals(
+    "Optional party id whose proposals are to be streamed"
+    partyID: String
+  ): Proposal!
+
+  "Subscribe to votes, either by proposal id or pary id"
+  votes(
+    "Optional proposal id which votes are to be streamed"
+    proposalID: String
+    "Optional party id whose votes are to be streamed"
+    partyID: String
+  ): ProposalVote!
 }
 
 "Margins for a given a trader"
@@ -2487,19 +2632,43 @@ type Query {
 
   "All governance proposals in the VEGA network"
   proposals(
-    "Return only open proposals"
-    openOnly: Boolean
-  ):[Proposal!]
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
 
-  "A governance proposal located by its reference"
-  proposalByReference(
-    reference: String!
+  "A governance proposal located by either its id or reference. If both are set, id is used."
+  proposal(
+    "Optionally, locate proposal by its id"
+    id: String
+    "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
+    reference: String
   ): Proposal!
 
-  "A governance proposal located by its ID"
-  proposalByID(
-    id: String!
-  ): Proposal!
+  "Governance proposals that aim creating new markets"
+  newMarketProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim updating existing markets"
+  updateMarketProposals(
+    "Optionally, select proposals for a specific market. Leave out for all"
+    marketId: String
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim updating Vega network parameters"
+  networkParametersProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim creating new assets in Vega"
+  newAssetProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
 }
 
 "Statistics about the node"
@@ -2920,6 +3089,13 @@ type Party {
     "market id off the margin to get, nil if all markets"
     marketId: String,
   ): [MarginLevels!]
+
+  proposals(
+    "Select only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal]
+
+  votes: [ProposalVote]
 }
 
 """
@@ -3396,7 +3572,7 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Timestamp when voting is closes for this proposal"
+  "Timestamp when voting closes for this proposal"
   closingTimestamp: String!
   "Timestamp when this proposal is executed (if passed)"
   enactmentTimestamp: String!
@@ -3434,12 +3610,13 @@ enum ProposalState {
   Open
   "Proposal has gained enough support to be executed"
   Passed
+  "Proposal didn't get enough votes"
+  Declined
   "Proposal has could not gain enough support to be executed"
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
 }
-
 
 type Proposal {
   "Proposal id that is filled by VEGA once proposal reaches the network"
@@ -3454,6 +3631,11 @@ type Proposal {
   timestamp: String!
   "Terms of the proposal"
   terms: ProposalTerms!
+
+  "Yes votes cast for this proposal"
+  yesVotes: [Vote]
+  "No votes cast for this proposal"
+  noVotes: [Vote]
 }
 
 type PreparedProposal {
@@ -3472,20 +3654,25 @@ enum VoteValue {
 
 type Vote {
   "The vote value cast"
-  Value: VoteValue!
+  value: VoteValue!
 
   "The party casting the vote"
-  Party: Party!
+  party: Party!
+}
 
-  "Proposal ID -> proposal casting the vote on"
-  ProposalID: ID!
+type ProposalVote {
+  "Cast vote"
+  vote: Vote!
+
+  "Proposal casting the vote on"
+  proposalID: ID!
 }
 
 type PreparedVote {
   "Raw, serialised vote to be signed"
   blob: String!
   "The vote serialised in the blob field"
-  vote: Vote!
+  vote: ProposalVote!
 }
 `},
 )
@@ -3968,6 +4155,20 @@ func (ec *executionContext) field_Party_orders_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Party_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4045,6 +4246,48 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_networkParametersProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_newAssetProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_newMarketProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg0
 	return args, nil
 }
 
@@ -4150,45 +4393,61 @@ func (ec *executionContext) field_Query_party_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_proposalByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_proposal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_proposalByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
+	var arg1 *string
 	if tmp, ok := rawArgs["reference"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["reference"] = arg0
+	args["reference"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Query_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["openOnly"]; ok {
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["openOnly"] = arg0
+	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_updateMarketProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg1
 	return args, nil
 }
 
@@ -4338,6 +4597,20 @@ func (ec *executionContext) field_Subscription_positions_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Subscription_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyID"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4357,6 +4630,28 @@ func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, 
 		}
 	}
 	args["partyId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_votes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["proposalID"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["proposalID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["partyID"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyID"] = arg1
 	return args, nil
 }
 
@@ -7929,6 +8224,81 @@ func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.Co
 	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevelsᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Party_proposals(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_proposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().Proposals(rctx, obj, args["inState"].(*ProposalState))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.GovernanceData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_votes(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().Votes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ProposalVote)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProposalVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8290,10 +8660,10 @@ func (ec *executionContext) _PreparedProposal_pendingProposal(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Proposal)
+	res := resTmp.(*proto.GovernanceData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, field.Selections, res)
+	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreparedSubmitOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedSubmitOrder) (ret graphql.Marshaler) {
@@ -8401,10 +8771,10 @@ func (ec *executionContext) _PreparedVote_vote(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Vote)
+	res := resTmp.(*ProposalVote)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
+	return ec.marshalNProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) (ret graphql.Marshaler) {
@@ -8555,7 +8925,7 @@ func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_id(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_id(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8568,13 +8938,13 @@ func (ec *executionContext) _Proposal_id(ctx context.Context, field graphql.Coll
 		Object:   "Proposal",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return ec.resolvers.Proposal().ID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8589,7 +8959,7 @@ func (ec *executionContext) _Proposal_id(ctx context.Context, field graphql.Coll
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_reference(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_reference(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8602,13 +8972,13 @@ func (ec *executionContext) _Proposal_reference(ctx context.Context, field graph
 		Object:   "Proposal",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Reference, nil
+		return ec.resolvers.Proposal().Reference(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8626,7 +8996,7 @@ func (ec *executionContext) _Proposal_reference(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_party(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_party(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8639,13 +9009,13 @@ func (ec *executionContext) _Proposal_party(ctx context.Context, field graphql.C
 		Object:   "Proposal",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Party, nil
+		return ec.resolvers.Proposal().Party(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8663,7 +9033,7 @@ func (ec *executionContext) _Proposal_party(ctx context.Context, field graphql.C
 	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8676,13 +9046,13 @@ func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.C
 		Object:   "Proposal",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.State, nil
+		return ec.resolvers.Proposal().State(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8700,7 +9070,7 @@ func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.C
 	return ec.marshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8713,13 +9083,13 @@ func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graph
 		Object:   "Proposal",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Timestamp, nil
+		return ec.resolvers.Proposal().Timestamp(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8737,7 +9107,7 @@ func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.CollectedField, obj *Proposal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -8750,13 +9120,13 @@ func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.C
 		Object:   "Proposal",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Terms, nil
+		return ec.resolvers.Proposal().Terms(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8772,6 +9142,74 @@ func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalTerms(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Proposal_yesVotes(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Proposal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Proposal().YesVotes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Vote)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Proposal_noVotes(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Proposal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Proposal().NoVotes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Vote)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_closingTimestamp(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
@@ -8917,6 +9355,80 @@ func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOProposalChange2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalChange(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalVote_vote(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ProposalVote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Vote, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Vote)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalVote_proposalID(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ProposalVote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProposalID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9275,7 +9787,7 @@ func (ec *executionContext) _Query_proposals(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Proposals(rctx, args["openOnly"].(*bool))
+		return ec.resolvers.Query().Proposals(rctx, args["inState"].(*ProposalState))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9284,13 +9796,13 @@ func (ec *executionContext) _Query_proposals(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Proposal)
+	res := resTmp.([]*proto.GovernanceData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_proposalByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9307,7 +9819,7 @@ func (ec *executionContext) _Query_proposalByReference(ctx context.Context, fiel
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_proposalByReference_args(ctx, rawArgs)
+	args, err := ec.field_Query_proposal_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9316,7 +9828,7 @@ func (ec *executionContext) _Query_proposalByReference(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ProposalByReference(rctx, args["reference"].(string))
+		return ec.resolvers.Query().Proposal(rctx, args["id"].(*string), args["reference"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9328,13 +9840,13 @@ func (ec *executionContext) _Query_proposalByReference(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Proposal)
+	res := resTmp.(*proto.GovernanceData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, field.Selections, res)
+	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_proposalByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9351,7 +9863,7 @@ func (ec *executionContext) _Query_proposalByID(ctx context.Context, field graph
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_proposalByID_args(ctx, rawArgs)
+	args, err := ec.field_Query_newMarketProposals_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9360,22 +9872,142 @@ func (ec *executionContext) _Query_proposalByID(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ProposalByID(rctx, args["id"].(string))
+		return ec.resolvers.Query().NewMarketProposals(rctx, args["inState"].(*ProposalState))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*Proposal)
+	res := resTmp.([]*proto.GovernanceData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_updateMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_updateMarketProposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UpdateMarketProposals(rctx, args["marketId"].(*string), args["inState"].(*ProposalState))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.GovernanceData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_networkParametersProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_networkParametersProposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NetworkParametersProposals(rctx, args["inState"].(*ProposalState))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.GovernanceData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_newAssetProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_newAssetProposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NewAssetProposals(rctx, args["inState"].(*ProposalState))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.GovernanceData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11129,6 +11761,112 @@ func (ec *executionContext) _Subscription_margins(ctx context.Context, field gra
 	}
 }
 
+func (ec *executionContext) _Subscription_proposals(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_proposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Proposals(rctx, args["partyID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *proto.GovernanceData)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
+func (ec *executionContext) _Subscription_votes(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_votes_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Votes(rctx, args["proposalID"].(*string), args["partyID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *ProposalVote)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -11851,7 +12589,7 @@ func (ec *executionContext) _UpdateNetwork_minParticipationStake(ctx context.Con
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Vote_Value(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+func (ec *executionContext) _Vote_value(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -11888,7 +12626,7 @@ func (ec *executionContext) _Vote_Value(ctx context.Context, field graphql.Colle
 	return ec.marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Vote_Party(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+func (ec *executionContext) _Vote_party(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -11923,43 +12661,6 @@ func (ec *executionContext) _Vote_Party(ctx context.Context, field graphql.Colle
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Vote_ProposalID(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Vote",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProposalID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -15049,6 +15750,28 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Party_margins(ctx, field, obj)
 				return res
 			})
+		case "proposals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_proposals(ctx, field, obj)
+				return res
+			})
+		case "votes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_votes(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15388,7 +16111,7 @@ func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSe
 
 var proposalImplementors = []string{"Proposal"}
 
-func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet, obj *Proposal) graphql.Marshaler {
+func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet, obj *proto.GovernanceData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, proposalImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15398,32 +16121,108 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Proposal")
 		case "id":
-			out.Values[i] = ec._Proposal_id(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_id(ctx, field, obj)
+				return res
+			})
 		case "reference":
-			out.Values[i] = ec._Proposal_reference(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_reference(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "party":
-			out.Values[i] = ec._Proposal_party(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_party(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "state":
-			out.Values[i] = ec._Proposal_state(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_state(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "timestamp":
-			out.Values[i] = ec._Proposal_timestamp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_timestamp(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "terms":
-			out.Values[i] = ec._Proposal_terms(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_terms(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "yesVotes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_yesVotes(ctx, field, obj)
+				return res
+			})
+		case "noVotes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_noVotes(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15463,6 +16262,38 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 			}
 		case "change":
 			out.Values[i] = ec._ProposalTerms_change(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var proposalVoteImplementors = []string{"ProposalVote"}
+
+func (ec *executionContext) _ProposalVote(ctx context.Context, sel ast.SelectionSet, obj *ProposalVote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, proposalVoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProposalVote")
+		case "vote":
+			out.Values[i] = ec._ProposalVote_vote(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "proposalID":
+			out.Values[i] = ec._ProposalVote_proposalID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15597,7 +16428,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_proposals(ctx, field)
 				return res
 			})
-		case "proposalByReference":
+		case "proposal":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -15605,13 +16436,13 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_proposalByReference(ctx, field)
+				res = ec._Query_proposal(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
-		case "proposalByID":
+		case "newMarketProposals":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -15619,10 +16450,40 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_proposalByID(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._Query_newMarketProposals(ctx, field)
+				return res
+			})
+		case "updateMarketProposals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_updateMarketProposals(ctx, field)
+				return res
+			})
+		case "networkParametersProposals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_networkParametersProposals(ctx, field)
+				return res
+			})
+		case "newAssetProposals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_newAssetProposals(ctx, field)
 				return res
 			})
 		case "__type":
@@ -16116,6 +16977,10 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_marketData(ctx, fields[0])
 	case "margins":
 		return ec._Subscription_margins(ctx, fields[0])
+	case "proposals":
+		return ec._Subscription_proposals(ctx, fields[0])
+	case "votes":
+		return ec._Subscription_votes(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -16387,18 +17252,13 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Vote")
-		case "Value":
-			out.Values[i] = ec._Vote_Value(ctx, field, obj)
+		case "value":
+			out.Values[i] = ec._Vote_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "Party":
-			out.Values[i] = ec._Vote_Party(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "ProposalID":
-			out.Values[i] = ec._Vote_ProposalID(ctx, field, obj)
+		case "party":
+			out.Values[i] = ec._Vote_party(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -17103,11 +17963,11 @@ func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋga
 	return ec._Product(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProposal2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx context.Context, sel ast.SelectionSet, v Proposal) graphql.Marshaler {
+func (ec *executionContext) marshalNProposal2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v proto.GovernanceData) graphql.Marshaler {
 	return ec._Proposal(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx context.Context, sel ast.SelectionSet, v *Proposal) graphql.Marshaler {
+func (ec *executionContext) marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *proto.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -17142,6 +18002,20 @@ func (ec *executionContext) marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋ
 
 func (ec *executionContext) unmarshalNProposalTermsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalTermsInput(ctx context.Context, v interface{}) (ProposalTermsInput, error) {
 	return ec.unmarshalInputProposalTermsInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNProposalVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v ProposalVote) graphql.Marshaler {
+	return ec._ProposalVote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v *ProposalVote) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ProposalVote(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx context.Context, sel ast.SelectionSet, v RiskModel) graphql.Marshaler {
@@ -18126,7 +19000,11 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalᚄ(ctx context.Context, sel ast.SelectionSet, v []*Proposal) graphql.Marshaler {
+func (ec *executionContext) marshalOProposal2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v proto.GovernanceData) graphql.Marshaler {
+	return ec._Proposal(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v []*proto.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -18153,7 +19031,7 @@ func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposal(ctx, sel, v[i])
+			ret[i] = ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -18166,11 +19044,133 @@ func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
+func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.GovernanceData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *proto.GovernanceData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Proposal(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOProposalChange2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalChange(ctx context.Context, sel ast.SelectionSet, v ProposalChange) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ProposalChange(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {
+	var res ProposalState
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, sel ast.SelectionSet, v ProposalState) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (*ProposalState, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, sel ast.SelectionSet, v *ProposalState) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOProposalVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v ProposalVote) graphql.Marshaler {
+	return ec._ProposalVote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOProposalVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v []*ProposalVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v *ProposalVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProposalVote(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, v interface{}) (RejectionReason, error) {
@@ -18305,6 +19305,57 @@ func (ec *executionContext) unmarshalOUpdateNetworkInput2ᚖcodeᚗvegaprotocol�
 	}
 	res, err := ec.unmarshalOUpdateNetworkInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx context.Context, sel ast.SelectionSet, v Vote) graphql.Marshaler {
+	return ec._Vote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx context.Context, sel ast.SelectionSet, v []*Vote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx context.Context, sel ast.SelectionSet, v *Vote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Vote(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

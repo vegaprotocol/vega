@@ -119,11 +119,22 @@ type TransferResponseService interface {
 // GovernanceDataService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceDataService
 type GovernanceDataService interface {
-	GetProposals() []types.ProposalVote
-	GetOpenProposals() []types.ProposalVote
-	GetProposalByID(ctx context.Context, id string) (*types.ProposalVote, error)
-	GetProposalByReference(ctx context.Context, ref string) (*types.ProposalVote, error)
-	ObserveProposals(ctx context.Context, retries int) <-chan []types.ProposalVote
+	GetProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetProposalsByParty(partyID string, inState *types.Proposal_State) []*types.GovernanceData
+	GetVotesByParty(partyID string) []*types.Vote
+
+	GetProposalByID(id string) (*types.GovernanceData, error)
+	GetProposalByReference(ref string) (*types.GovernanceData, error)
+
+	GetNewMarketProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetUpdateMarketProposals(marketID string, inState *types.Proposal_State) []*types.GovernanceData
+	GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData
+	GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData
+
+	ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData
+	ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData
+	ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []types.Vote
+	ObserveProposalVotes(ctx context.Context, retries int, proposalID string) <-chan []types.Vote
 }
 
 // RiskService ...
@@ -1350,61 +1361,184 @@ func (h *tradingDataService) OrderVersionsByID(
 	return nil, err
 }
 
-func (h *tradingDataService) GetProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
+func (h *tradingDataService) GetProposals(_ context.Context,
+	in *protoapi.GetProposalsByStateRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposals", startTime)
-	all := h.governanceService.GetProposals()
-	resp := protoapi.GetProposalsResponse{
-		Proposals: make([]*types.ProposalVote, len(all)),
+
+	if err := in.Validate(); err != nil {
+		return nil, err
 	}
-	for i := range all {
-		resp.Proposals[i] = &all[i]
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
 	}
-	return &resp, nil
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetProposals(inState),
+	}, nil
 }
 
-func (h *tradingDataService) GetOpenProposals(ctx context.Context, in *empty.Empty) (*protoapi.GetProposalsResponse, error) {
+func (h *tradingDataService) GetProposalsByParty(_ context.Context,
+	in *protoapi.GetProposalsByPartyRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
 	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("GetOpenProposals", startTime)
-	open := h.governanceService.GetOpenProposals()
-	resp := protoapi.GetProposalsResponse{
-		Proposals: make([]*types.ProposalVote, len(open)),
+	defer metrics.APIRequestAndTimeGRPC("GetProposalsByParty", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
 	}
-	for i := range open {
-		resp.Proposals[i] = &open[i]
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
 	}
-	return &resp, nil
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetProposalsByParty(in.PartyID, inState),
+	}, nil
 }
 
-func (h *tradingDataService) GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest) (*types.ProposalVote, error) {
+func (h *tradingDataService) GetVotesByParty(_ context.Context,
+	in *protoapi.GetVotesByPartyRequest,
+) (*protoapi.GetVotesResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetVotesByParty", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	return &protoapi.GetVotesResponse{
+		Votes: h.governanceService.GetVotesByParty(in.PartyID),
+	}, nil
+}
+
+func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
+	in *protoapi.GetProposalsByStateRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetNewMarketProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetNewMarketProposals(inState),
+	}, nil
+}
+
+func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
+	in *protoapi.GetUpdateMarketProposalsRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetUpdateMarketProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID, inState),
+	}, nil
+}
+
+func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context,
+	in *protoapi.GetProposalsByStateRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetNetworkParametersProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetNetworkParametersProposals(inState),
+	}, nil
+}
+
+func (h *tradingDataService) GetNewAssetProposals(_ context.Context,
+	in *protoapi.GetProposalsByStateRequest,
+) (*protoapi.GetGovernanceDataResponse, error) {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("GetNewAssetProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+	var inState *types.Proposal_State
+	if in.State != nil {
+		inState = &in.State.Value
+	}
+	return &protoapi.GetGovernanceDataResponse{
+		Data: h.governanceService.GetNewAssetProposals(inState),
+	}, nil
+}
+
+func (h *tradingDataService) GetProposalByID(_ context.Context,
+	in *protoapi.GetProposalByIDRequest,
+) (*protoapi.GetProposalResponse, error) {
+
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByID", startTime)
+
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-
-	return h.governanceService.GetProposalByID(ctx, in.ID)
+	proposal, err := h.governanceService.GetProposalByID(in.ProposalID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
 }
 
-func (h *tradingDataService) GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest) (*types.ProposalVote, error) {
+func (h *tradingDataService) GetProposalByReference(_ context.Context,
+	in *protoapi.GetProposalByReferenceRequest,
+) (*protoapi.GetProposalResponse, error) {
+
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByReference", startTime)
+
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-
-	return h.governanceService.GetProposalByReference(ctx, in.Reference)
+	proposal, err := h.governanceService.GetProposalByReference(in.Reference)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
 }
 
-func (h *tradingDataService) ObserveProposals(_ *empty.Empty, stream protoapi.TradingData_ObserveProposalsServer) error {
+func (h *tradingDataService) ObserveGovernance(
+	_ *empty.Empty,
+	stream protoapi.TradingData_ObserveGovernanceServer,
+) error {
+
 	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("ObserveProposals", startTime)
+	defer metrics.APIRequestAndTimeGRPC("ObserveGovernance", startTime)
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if h.log.GetLevel() == logging.DebugLevel {
-		h.log.Debug("starting streaming proposal updates")
+		h.log.Debug("starting streaming governance updates")
 	}
-	ch := h.governanceService.ObserveProposals(ctx, h.Config.StreamRetries)
+	ch := h.governanceService.ObserveGovernance(ctx, h.Config.StreamRetries)
 	for {
 		select {
 		case props, ok := <-ch:
@@ -1414,7 +1548,111 @@ func (h *tradingDataService) ObserveProposals(_ *empty.Empty, stream protoapi.Tr
 			}
 			for _, p := range props {
 				if err := stream.Send(&p); err != nil {
-					h.log.Error("failed to send proposal to stream",
+					h.log.Error("failed to send governance data into stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+func (h *tradingDataService) ObservePartyProposals(
+	in *protoapi.ObservePartyProposalsRequest,
+	stream protoapi.TradingData_ObservePartyProposalsServer,
+) error {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObservePartyProposals", startTime)
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming party proposals")
+	}
+	ch := h.governanceService.ObservePartyProposals(ctx, h.Config.StreamRetries, in.PartyID)
+	for {
+		select {
+		case props, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range props {
+				if err := stream.Send(&p); err != nil {
+					h.log.Error("failed to send party proposal into stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+
+func (h *tradingDataService) ObservePartyVotes(
+	in *protoapi.ObservePartyVotesRequest,
+	stream protoapi.TradingData_ObservePartyVotesServer,
+) error {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObservePartyVotes", startTime)
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming party votes")
+	}
+	ch := h.governanceService.ObservePartyVotes(ctx, h.Config.StreamRetries, in.PartyID)
+	for {
+		select {
+		case votes, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range votes {
+				if err := stream.Send(&p); err != nil {
+					h.log.Error("failed to send party vote into stream",
+						logging.Error(err))
+					return apiError(codes.Internal, ErrStreamInternal, err)
+				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-h.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+	}
+}
+
+func (h *tradingDataService) ObserveProposalVotes(
+	in *protoapi.ObserveProposalVotesRequest,
+	stream protoapi.TradingData_ObserveProposalVotesServer,
+) error {
+
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObserveProposalVotes", startTime)
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("starting streaming proposal votes")
+	}
+	ch := h.governanceService.ObserveProposalVotes(ctx, h.Config.StreamRetries, in.ProposalID)
+	for {
+		select {
+		case votes, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+			for _, p := range votes {
+				if err := stream.Send(&p); err != nil {
+					h.log.Error("failed to send proposal vote into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 				}

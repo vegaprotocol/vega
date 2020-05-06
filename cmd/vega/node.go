@@ -131,8 +131,8 @@ type NodeCommand struct {
 	assets *assets.Service
 
 	// plugins
-	settlePlugin   *plugins.Positions
-	proposalPlugin *plugins.Proposals
+	settlePlugin     *plugins.Positions
+	governancePlugin *plugins.Governance
 }
 
 // Init initialises the node command.

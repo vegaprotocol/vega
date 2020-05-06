@@ -354,8 +354,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
 	l.settlePlugin.Start(l.ctx) // open channel from the start
-	l.proposalPlugin = plugins.NewProposals(l.proposalBuf, l.voteBuf)
-	l.proposalPlugin.Start(l.ctx)
+	l.governancePlugin = plugins.NewGovernance(l.proposalBuf, l.voteBuf)
+	l.governancePlugin.Start(l.ctx)
 
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)
@@ -392,7 +392,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
 
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.proposalPlugin)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.governancePlugin)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it

@@ -182,20 +182,44 @@ service trading_data {
 
   // Governance
 
-  // Get all proposals
-  rpc GetProposals(google.protobuf.Empty) returns (GetProposalsResponse);
+  // Get governance data (proposals and votes) for all proposals
+  rpc GetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
-  // Get all OPEN proposals
-  rpc GetOpenProposals(google.protobuf.Empty) returns (GetProposalsResponse);
+  // Get governance data (proposals and votes) for proposals by party authoring them
+  rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetGovernanceDataResponse);
 
-  // Get a proposal by ID
-  rpc GetProposalByID(GetProposalByIDRequest) returns (vega.ProposalVote);
+  // Get votes by party casting them
+  rpc GetVotesByParty(GetVotesByPartyRequest) returns (GetVotesResponse);
 
-  // Get a proposal by reference
-  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (vega.ProposalVote);
+  // Get governance data (proposals and votes) for proposals that aim creating new markets
+  rpc GetNewMarketProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
-  // Subscribe to a stream of updates to proposal data
-  rpc ObserveProposals(google.protobuf.Empty) returns (stream vega.ProposalVote);
+  // Get governance data (proposals and votes) for proposals that aim updating markets
+  rpc GetUpdateMarketProposals(GetUpdateMarketProposalsRequest) returns (GetGovernanceDataResponse);
+
+  // Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
+  rpc GetNetworkParametersProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+  
+  // Get governance data (proposals and votes) for proposals aiming to create new assets
+  rpc GetNewAssetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+
+  // Get governance data (proposals and votes) for a proposal located by ID
+  rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
+
+  // Get governance data (proposals and votes) for a proposal located by reference
+  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalResponse);
+
+  // Subscribe to a stream of all governance updates
+  rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
+  
+  // Subscribe to a stream of proposal updates
+  rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.GovernanceData);
+
+  // Subscribe to a stream of votes cast by a specific party
+  rpc ObservePartyVotes(ObservePartyVotesRequest) returns (stream vega.Vote);
+
+  // Subscribe to a stream of proposal votes
+  rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
   // Misc
 
@@ -233,16 +257,58 @@ service trading_data {
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 }
 
+message OptionalProposalState {
+  vega.Proposal.State value = 1;
+}
+
+message GetProposalsByStateRequest {
+  OptionalProposalState state = 1;
+}
+
+message GetGovernanceDataResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
+message GetProposalResponse {
+  vega.GovernanceData proposal = 1;
+}
+
+message GetVotesResponse {
+  repeated vega.Vote votes = 1;
+}
+
+message GetProposalsByPartyRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  OptionalProposalState state = 2;
+}
+
+message GetVotesByPartyRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message GetUpdateMarketProposalsRequest {
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
+  OptionalProposalState state = 2;
+}
+
 message GetProposalByIDRequest {
-  string ID = 1 [(validator.field) = {string_not_empty : true}];
+  string proposalID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 message GetProposalByReferenceRequest {
   string Reference = 1 [(validator.field) = {string_not_empty : true}];
 }
 
-message GetProposalsResponse {
-  repeated vega.ProposalVote proposals = 1;
+message ObservePartyProposalsRequest {
+  string partyID = 1  [(validator.field) = {string_not_empty : true }];
+}
+
+message ObserveProposalVotesRequest {
+  string proposalID = 1  [(validator.field) = {string_not_empty : true }];
+}
+
+message ObservePartyVotesRequest {
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 message MarginLevelsSubscribeRequest {

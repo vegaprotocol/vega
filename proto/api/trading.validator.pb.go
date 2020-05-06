@@ -85,9 +85,76 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
+func (this *OptionalProposalState) Validate() error {
+	return nil
+}
+func (this *GetProposalsByStateRequest) Validate() error {
+	if this.State != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
+		}
+	}
+	return nil
+}
+func (this *GetGovernanceDataResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *GetProposalResponse) Validate() error {
+	if this.Proposal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+		}
+	}
+	return nil
+}
+func (this *GetVotesResponse) Validate() error {
+	for _, item := range this.Votes {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Votes", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *GetProposalsByPartyRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	if this.State != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
+		}
+	}
+	return nil
+}
+func (this *GetVotesByPartyRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	return nil
+}
+func (this *GetUpdateMarketProposalsRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	if this.State != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
+		}
+	}
+	return nil
+}
 func (this *GetProposalByIDRequest) Validate() error {
-	if this.ID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	if this.ProposalID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProposalID", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalID))
 	}
 	return nil
 }
@@ -97,13 +164,21 @@ func (this *GetProposalByReferenceRequest) Validate() error {
 	}
 	return nil
 }
-func (this *GetProposalsResponse) Validate() error {
-	for _, item := range this.Proposals {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Proposals", err)
-			}
-		}
+func (this *ObservePartyProposalsRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	return nil
+}
+func (this *ObserveProposalVotesRequest) Validate() error {
+	if this.ProposalID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProposalID", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalID))
+	}
+	return nil
+}
+func (this *ObservePartyVotesRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
 	return nil
 }

@@ -10,9 +10,15 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [GetGovernanceDataResponse](#api.GetGovernanceDataResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
-    - [GetProposalsResponse](#api.GetProposalsResponse)
+    - [GetProposalResponse](#api.GetProposalResponse)
+    - [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest)
+    - [GetProposalsByStateRequest](#api.GetProposalsByStateRequest)
+    - [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest)
+    - [GetVotesByPartyRequest](#api.GetVotesByPartyRequest)
+    - [GetVotesResponse](#api.GetVotesResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
@@ -30,6 +36,10 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
+    - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
+    - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
+    - [OptionalProposalState](#api.OptionalProposalState)
     - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
@@ -93,12 +103,12 @@
 
 
 - [proto/governance.proto](#proto/governance.proto)
+    - [GovernanceData](#vega.GovernanceData)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
-    - [ProposalVote](#vega.ProposalVote)
     - [UpdateMarket](#vega.UpdateMarket)
     - [UpdateNetwork](#vega.UpdateNetwork)
     - [Vote](#vega.Vote)
@@ -290,6 +300,21 @@
 
 
 
+<a name="api.GetGovernanceDataResponse"></a>
+
+### GetGovernanceDataResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
 <a name="api.GetProposalByIDRequest"></a>
 
 ### GetProposalByIDRequest
@@ -298,7 +323,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
+| proposalID | [string](#string) |  |  |
 
 
 
@@ -320,15 +345,92 @@
 
 
 
-<a name="api.GetProposalsResponse"></a>
+<a name="api.GetProposalResponse"></a>
 
-### GetProposalsResponse
+### GetProposalResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposals | [vega.ProposalVote](#vega.ProposalVote) | repeated |  |
+| proposal | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalsByPartyRequest"></a>
+
+### GetProposalsByPartyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalsByStateRequest"></a>
+
+### GetProposalsByStateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetUpdateMarketProposalsRequest"></a>
+
+### GetUpdateMarketProposalsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetVotesByPartyRequest"></a>
+
+### GetVotesByPartyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetVotesResponse"></a>
+
+### GetVotesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| votes | [vega.Vote](#vega.Vote) | repeated |  |
 
 
 
@@ -591,6 +693,66 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | markets | [vega.Market](#vega.Market) | repeated | a list of Markets |
+
+
+
+
+
+
+<a name="api.ObservePartyProposalsRequest"></a>
+
+### ObservePartyProposalsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.ObservePartyVotesRequest"></a>
+
+### ObservePartyVotesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.ObserveProposalVotesRequest"></a>
+
+### ObserveProposalVotesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposalID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.OptionalProposalState"></a>
+
+### OptionalProposalState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [vega.Proposal.State](#vega.Proposal.State) |  |  |
 
 
 
@@ -1332,11 +1494,19 @@
 | TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
-| GetProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all proposals |
-| GetOpenProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetProposalsResponse](#api.GetProposalsResponse) | Get all OPEN proposals |
-| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by ID |
-| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [.vega.ProposalVote](#vega.ProposalVote) | Get a proposal by reference |
-| ObserveProposals | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.ProposalVote](#vega.ProposalVote) stream | Subscribe to a stream of updates to proposal data |
+| GetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for all proposals |
+| GetProposalsByParty | [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
+| GetVotesByParty | [GetVotesByPartyRequest](#api.GetVotesByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get votes by party casting them |
+| GetNewMarketProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
+| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
+| GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
+| GetNewAssetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
+| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by ID |
+| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by reference |
+| ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
+| ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
+| ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
+| ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -1461,6 +1631,23 @@
 
 
 
+<a name="vega.GovernanceData"></a>
+
+### GovernanceData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| yes | [Vote](#vega.Vote) | repeated |  |
+| no | [Vote](#vega.Vote) | repeated |  |
+
+
+
+
+
+
 <a name="vega.NetworkConfiguration"></a>
 
 ### NetworkConfiguration
@@ -1538,31 +1725,14 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| closingTimestamp | [int64](#int64) |  |  |
-| enactmentTimestamp | [int64](#int64) |  |  |
+| closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
+| enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
 | minParticipationStake | [uint64](#uint64) |  |  |
 | validationTimestamp | [int64](#int64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
 | newAsset | [NewAsset](#vega.NewAsset) |  |  |
-
-
-
-
-
-
-<a name="vega.ProposalVote"></a>
-
-### ProposalVote
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| proposal | [Proposal](#vega.Proposal) |  |  |
-| yes | [Vote](#vega.Vote) | repeated |  |
-| no | [Vote](#vega.Vote) | repeated |  |
 
 
 
