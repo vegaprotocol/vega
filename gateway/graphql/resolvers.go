@@ -859,13 +859,9 @@ func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceDa
 	return ProposalTermsFromProto(data.Proposal.Terms)
 }
 
-func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
-		return nil, ErrInvalidProposal
-	}
-
-	result := make([]*Vote, len(data.Yes))
-	for i, v := range data.Yes {
+func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vote) ([]*Vote, error) {
+	result := make([]*Vote, len(data))
+	for i, v := range data {
 		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
 		if err != nil {
 			return nil, err
@@ -878,23 +874,18 @@ func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.Governanc
 	return result, nil
 }
 
+func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return r.convertVotes(ctx, data.Yes)
+}
+
 func (r *myProposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
 	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
 		return nil, ErrInvalidProposal
 	}
-
-	result := make([]*Vote, len(data.No))
-	for i, v := range data.No {
-		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = &Vote{
-			Value: VoteValueFromProto(v.Value),
-			Party: voter,
-		}
-	}
-	return result, nil
+	return r.convertVotes(ctx, data.No)
 }
 
 // END: Proposal Resolver
@@ -2013,13 +2004,10 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 }
 
 func (r *mySubscriptionResolver) Proposals(ctx context.Context, partyID *string) (<-chan *types.GovernanceData, error) {
-	output := make(chan *types.GovernanceData)
 	if partyID != nil && len(*partyID) > 0 {
 		return r.subscribePartyProposals(ctx, *partyID)
 	}
 	return r.subscribeAllProposals(ctx)
-
-	return output, nil
 }
 
 func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, proposalID string) (<-chan *ProposalVote, error) {
