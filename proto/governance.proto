@@ -34,7 +34,9 @@ message NewAsset {
 }
 
 message ProposalTerms {
+  // Timestamp (Unix time in seconds) when voting closes for this proposal
   int64 closingTimestamp       = 1 [(validator.field) = {int_gt: 0}];
+  // Timestamp (Unix time in seconds) when proposal gets enacted (if passed)
   int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
   uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0}];
   int64 validationTimestamp    = 4;
@@ -46,7 +48,7 @@ message ProposalTerms {
   };
 }
 
-message ProposalVote {
+message GovernanceData {
   Proposal proposal = 1;
   repeated Vote yes = 2;
   repeated Vote no = 3;

@@ -959,13 +959,14 @@
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
+        "TIF_UNSPECIFIED",
         "GTC",
         "GTT",
         "IOC",
         "FOK"
       ],
-      "default": "GTC",
-      "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "default": "TIF_UNSPECIFIED",
+      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
       "title": "Order Time in Force"
     },
     "ProposalState": {
@@ -1008,13 +1009,32 @@
         }
       }
     },
-    "apiGetProposalsResponse": {
+    "apiGetGovernanceDataResponse": {
       "type": "object",
       "properties": {
-        "proposals": {
+        "data": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaProposalVote"
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalResponse": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
+    "apiGetVotesResponse": {
+      "type": "object",
+      "properties": {
+        "votes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
           }
         }
       }
@@ -1108,6 +1128,14 @@
             "$ref": "#/definitions/vegaMarket"
           },
           "title": "a list of Markets"
+        }
+      }
+    },
+    "apiOptionalProposalState": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/ProposalState"
         }
       }
     },
@@ -1235,9 +1263,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1247,9 +1272,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1286,8 +1308,8 @@
           "type": "string",
           "format": "byte"
         },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
+        "submitID": {
+          "type": "string"
         }
       }
     },
@@ -1616,6 +1638,26 @@
         },
         "ethereumEvent": {
           "$ref": "#/definitions/vegaEthereumEvent"
+        }
+      }
+    },
+    "vegaGovernanceData": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "yes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        },
+        "no": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
         }
       }
     },
@@ -1974,8 +2016,7 @@
           "type": "string"
         },
         "price": {
-          "type": "string",
-          "format": "uint64",
+          "$ref": "#/definitions/vegaPrice",
           "title": "these can be amended"
         },
         "sizeDelta": {
@@ -1983,8 +2024,7 @@
           "format": "int64"
         },
         "expiresAt": {
-          "type": "string",
-          "format": "int64"
+          "$ref": "#/definitions/vegaTimestamp"
         },
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
@@ -2087,43 +2127,6 @@
         }
       }
     },
-    "vegaPendingOrder": {
-      "type": "object",
-      "properties": {
-        "reference": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "timeInForce": {
-          "$ref": "#/definitions/OrderTimeInForce"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
-        },
-        "marketID": {
-          "type": "string"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "partyID": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/OrderStatus"
-        },
-        "id": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
-        }
-      }
-    },
     "vegaPosition": {
       "type": "object",
       "properties": {
@@ -2146,6 +2149,15 @@
           "format": "int64"
         },
         "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaPrice": {
+      "type": "object",
+      "properties": {
+        "value": {
           "type": "string",
           "format": "uint64"
         }
@@ -2201,11 +2213,13 @@
       "properties": {
         "closingTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Timestamp (Unix time in seconds) when voting closes for this proposal"
         },
         "enactmentTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed)"
         },
         "minParticipationStake": {
           "type": "string",
@@ -2226,26 +2240,6 @@
         },
         "newAsset": {
           "$ref": "#/definitions/vegaNewAsset"
-        }
-      }
-    },
-    "vegaProposalVote": {
-      "type": "object",
-      "properties": {
-        "proposal": {
-          "$ref": "#/definitions/vegaProposal"
-        },
-        "yes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
-        },
-        "no": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
         }
       }
     },
@@ -2435,6 +2429,15 @@
         "uptime": {
           "type": "string",
           "title": "ISO 8601 datetime, nanosecond precision"
+        }
+      }
+    },
+    "vegaTimestamp": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -2628,6 +2631,18 @@
       },
       "title": "Stream result of vegaCandle"
     },
+    "vegaGovernanceData": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaGovernanceData"
+    },
     "vegaMarginLevels": {
       "type": "object",
       "properties": {
@@ -2676,18 +2691,6 @@
       },
       "title": "Stream result of vegaPosition"
     },
-    "vegaProposalVote": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaProposalVote"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaProposalVote"
-    },
     "vegaTransferResponse": {
       "type": "object",
       "properties": {
@@ -2699,6 +2702,18 @@
         }
       },
       "title": "Stream result of vegaTransferResponse"
+    },
+    "vegaVote": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaVote"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaVote"
     }
   }
 }

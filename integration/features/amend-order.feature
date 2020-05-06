@@ -47,7 +47,7 @@ Feature: Amend orders
 # reducing size
     Then traders amends the following orders reference:
       | trader | reference   | price | sizeDelta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     1 |        -2 |         0 | GTC | true    |
+      | myboi  | myboi-ref-1 |     0 |        -2 |         0 | GTC | true    |
 
 # matching the order now
 # this should match with the size 3 order of myboi
@@ -80,7 +80,7 @@ Feature: Amend orders
 # reducing size
     Then traders amends the following orders reference:
       | trader | reference   | price | sizeDelta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     1 |        3  |         0 | GTC | true    |
+      | myboi  | myboi-ref-1 |     0 |        3  |         0 | GTC | true    |
 
 # matching the order now
 # this should match with the size 3 order of myboi
@@ -119,7 +119,7 @@ Feature: Amend orders
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then traders amends the following orders reference:
       | trader | reference   | price | sizeDelta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     1 |        -3 |         0 | GTC | true    |
+      | myboi  | myboi-ref-1 |     0 |        -3 |         0 | GTC | true    |
 
 # check the order status, it should be cancelled
     Then verify the status of the order reference:
@@ -140,10 +140,10 @@ Feature: Amend orders
       | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | GTC | myboi-ref-1 |
 
 
-# reducing size, remaining goes from 2 to -1, this will cancel
+# cannot amend TIF to FOK so this will be rejected
     Then traders amends the following orders reference:
       | trader | reference   | price | sizeDelta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     1 |        0  |         0 | FOK | false |
+      | myboi  | myboi-ref-1 |     0 |        0  |         0 | FOK | false |
 
   Scenario: GTC to GTT rejected without expiry
 # setup accounts
@@ -159,10 +159,10 @@ Feature: Amend orders
       | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | GTC | myboi-ref-1 |
 
 
-# reducing size, remaining goes from 2 to -1, this will cancel
+# GTT rejected because of missing expiresAt
     Then traders amends the following orders reference:
       | trader | reference   | price | sizeDelta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     1 |         0 |         0 | GTT | false   |
+      | myboi  | myboi-ref-1 |     0 |         0 |         0 | GTT | false   |
 
   Scenario: GTC to GTT with time in the past
 # setup accounts

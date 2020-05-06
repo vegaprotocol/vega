@@ -222,7 +222,7 @@ steps:
     commands:
       - /usr/local/bin/diff_bot.py
           --github-token "$$GITHUB_API_TOKEN"
-          --file1 "github:vegaprotocol:0:console:develop:packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql"
+          --file1 "github:vegaprotocol:0:console:develop:src/api/vega-graphql/vega-schema/schema.graphql"
           --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
           --slack-hookurl "$${SLACK_HOOK_URL}"
           --slack-recipient "#uidev-notify"

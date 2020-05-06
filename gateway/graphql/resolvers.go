@@ -14,6 +14,7 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -26,6 +27,12 @@ var (
 	ErrNilPendingOrder = errors.New("nil pending order")
 	// ErrUnknownAccountType a account type specified does not exist
 	ErrUnknownAccountType = errors.New("unknown account type")
+	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
+	ErrMissingIDOrReference = errors.New("missing id or reference")
+	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
+	ErrInvalidVotesSubscription = errors.New("invlid subscription, either proposal or party ID required")
+	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
+	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
 // TradingClient ...
@@ -88,10 +95,20 @@ type TradingDataClient interface {
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 	// governance
-	GetProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
-	GetOpenProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
-	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
-	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
+	GetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetVotesByParty(ctx context.Context, in *protoapi.GetVotesByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesResponse, error)
+	GetNewMarketProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetNewAssetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
+	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
+	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
+
+	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingData_ObserveGovernanceClient, error)
+	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyProposalsClient, error)
+	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyVotesClient, error)
+	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveProposalVotesClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -184,11 +201,6 @@ func (r *VegaResolverRoot) Subscription() SubscriptionResolver {
 	return (*mySubscriptionResolver)(r)
 }
 
-// PendingOrder returns the pending orders resolver
-func (r *VegaResolverRoot) PendingOrder() PendingOrderResolver {
-	return (*myPendingOrderResolver)(r)
-}
-
 // Account returns the accounts resolver
 func (r *VegaResolverRoot) Account() AccountResolver {
 	return (*myAccountResolver)(r)
@@ -197,6 +209,11 @@ func (r *VegaResolverRoot) Account() AccountResolver {
 // Statistics returns the statistics resolver
 func (r *VegaResolverRoot) Statistics() StatisticsResolver {
 	return (*myStatisticsResolver)(r)
+}
+
+// Proposal returns the proposal resolver
+func (r *VegaResolverRoot) Proposal() ProposalResolver {
+	return (*myProposalResolver)(r)
 }
 
 // BEGIN: Query Resolver
@@ -315,69 +332,101 @@ func (r *myQueryResolver) OrderByReferenceID(ctx context.Context, referenceID st
 	return order, err
 }
 
-func (r *myQueryResolver) Proposals(ctx context.Context, openOnly *bool) ([]*Proposal, error) {
-	var proposals *protoapi.GetProposalsResponse
-	var err error
-	if openOnly != nil && *openOnly {
-		proposals, err = r.tradingDataClient.GetOpenProposals(ctx, nil)
-	} else {
-		proposals, err = r.tradingDataClient.GetProposals(ctx, nil)
-	}
+func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*Proposal, len(proposals.Proposals))
-	for i, p := range proposals.Proposals {
-		converted, err := r.convertProposal(ctx, p.Proposal)
+	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*types.GovernanceData, error) {
+	if id != nil {
+		resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
+			ProposalID: *id,
+		})
 		if err != nil {
 			return nil, err
 		}
-		result[i] = converted
+		return resp.Proposal, nil
+	} else if reference != nil {
+		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
+			Reference: *reference,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return resp.Proposal, nil
 	}
-	return result, nil
+
+	return nil, ErrMissingIDOrReference
 }
 
-func (r *myQueryResolver) ProposalByReference(ctx context.Context, reference string) (*Proposal, error) {
-	vote, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
-		Reference: reference,
+func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return r.convertProposal(ctx, vote.Proposal)
+	return resp.Data, nil
 }
 
-func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposal, error) {
-	vote, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
-		ID: id,
+func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
+	if err != nil {
+		return nil, err
+	}
+	var market string
+	if marketID != nil {
+		market = *marketID
+	}
+	resp, err := r.tradingDataClient.GetUpdateMarketProposals(ctx, &protoapi.GetUpdateMarketProposalsRequest{
+		MarketID: market,
+		State:    filter,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return r.convertProposal(ctx, vote.Proposal)
+	return resp.Data, nil
 }
 
-func (r *myQueryResolver) convertProposal(ctx context.Context, proposal *types.Proposal) (*Proposal, error) {
-	terms, err := ProposalTermsFromProto(proposal.Terms)
+func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
-	state, err := ProposalStateFromProto(proposal.State)
+	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
 	if err != nil {
 		return nil, err
 	}
-	party, err := getParty(ctx, r.log, r.tradingDataClient, proposal.PartyID)
+	return resp.Data, nil
+}
+
+func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
 	if err != nil {
 		return nil, err
 	}
-	return &Proposal{
-		ID:        &proposal.ID,
-		Reference: proposal.Reference,
-		Party:     party,
-		State:     state,
-		Timestamp: timestampToString(proposal.Timestamp),
-		Terms:     terms,
-	}, nil
+	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetProposalsByStateRequest{
+		State: filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 // END: Root Resolver
@@ -724,7 +773,118 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	}
 }
 
+func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.tradingDataClient.GetProposalsByParty(ctx, &protoapi.GetProposalsByPartyRequest{
+		PartyID: party.Id,
+		State:   filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
+	resp, err := r.tradingDataClient.GetVotesByParty(ctx, &protoapi.GetVotesByPartyRequest{
+		PartyID: party.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*ProposalVote, len(resp.Votes))
+	for i, vote := range resp.Votes {
+		//TODO: voter might be shortcut to party once all testing is done, vote.PartyID should be party.ID
+		voter, err := getParty(ctx, r.log, r.tradingDataClient, vote.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = ProposalVoteFromProto(vote, voter)
+	}
+	return result, nil
+}
+
 // END: Party Resolver
+
+// BEGIN: Proposal Resolver
+
+type myProposalResolver VegaResolverRoot
+
+func (r *myProposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return &data.Proposal.ID, nil
+}
+
+func (r *myProposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return "", ErrInvalidProposal
+	}
+	return data.Proposal.Reference, nil
+}
+
+func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceData) (*types.Party, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+}
+
+func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return "", ErrInvalidProposal
+	}
+	return ProposalStateFromProto(data.Proposal.State)
+}
+
+func (r *myProposalResolver) Timestamp(ctx context.Context, data *types.GovernanceData) (string, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return "", ErrInvalidProposal
+	}
+	return timestampToString(data.Proposal.Timestamp), nil
+}
+
+func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*ProposalTerms, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return ProposalTermsFromProto(data.Proposal.Terms)
+}
+
+func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vote) ([]*Vote, error) {
+	result := make([]*Vote, len(data))
+	for i, v := range data {
+		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = &Vote{
+			Value: VoteValueFromProto(v.Value),
+			Party: voter,
+		}
+	}
+	return result, nil
+}
+
+func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return r.convertVotes(ctx, data.Yes)
+}
+
+func (r *myProposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+		return nil, ErrInvalidProposal
+	}
+	return r.convertVotes(ctx, data.No)
+}
+
+// END: Proposal Resolver
 
 // BEGIN: MarginLevels Resolver
 
@@ -1246,7 +1406,8 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig st
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*PreparedSubmitOrder, error) {
+func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string) (*PreparedSubmitOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -1298,6 +1459,9 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = expiresAt.UnixNano()
 	}
+	if reference != nil {
+		order.Reference = *reference
+	}
 
 	req := protoapi.SubmitOrderRequest{
 		Submission: order,
@@ -1310,8 +1474,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedSubmitOrder{
-		Blob:         base64.StdEncoding.EncodeToString(resp.Blob),
-		PendingOrder: resp.PendingOrder,
+		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 	}, nil
 }
 
@@ -1343,8 +1506,7 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedCancelOrder{
-		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-		PendingOrder: pendingOrder.PendingOrder,
+		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 	}, nil
 
 }
@@ -1352,10 +1514,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 func (r *myMutationResolver) PrepareProposal(
 	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
 
-	party, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
-	if err != nil {
-		return nil, err
-	}
 	if proposalTerms.MinParticipationStake < 0 {
 		return nil, errors.New("minParticipationStake is invalid, must be positive")
 	}
@@ -1376,19 +1534,10 @@ func (r *myMutationResolver) PrepareProposal(
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	verifiedTerms, err := ProposalTermsFromProto(pendingProposal.PendingProposal.Terms)
-	if err != nil {
-		return nil, err
-	}
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
-		PendingProposal: &Proposal{
-			ID:        &pendingProposal.PendingProposal.ID,
-			Reference: pendingProposal.PendingProposal.Reference,
-			Party:     party,
-			State:     ProposalState(pendingProposal.PendingProposal.State.String()),
-			Timestamp: timestampToString(pendingProposal.PendingProposal.Timestamp),
-			Terms:     verifiedTerms,
+		PendingProposal: &types.GovernanceData{
+			Proposal: pendingProposal.PendingProposal,
 		},
 	}, nil
 }
@@ -1398,7 +1547,6 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-
 	req := &protoapi.PrepareVoteRequest{
 		Vote: &types.Vote{
 			Value:      types.Vote_NO,
@@ -1413,18 +1561,16 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	gqResp := &PreparedVote{
+	return &PreparedVote{
 		Blob: string(resp.Blob),
-		Vote: &Vote{
-			Party:      party,
+		Vote: &ProposalVote{
+			Vote: &Vote{
+				Party: party,
+				Value: VoteValueFromProto(resp.Vote.Value),
+			},
 			ProposalID: resp.Vote.ProposalID,
-			Value:      VoteValueNo,
 		},
-	}
-	if resp.Vote.Value == types.Vote_YES {
-		gqResp.Vote.Value = VoteValueYes
-	}
-	return gqResp, nil
+	}, nil
 }
 
 func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
@@ -1441,12 +1587,13 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	order.PartyID = party
 
 	var err error
-	order.Price, err = strconv.ParseUint(price, 10, 64)
+	pricevalue, err := strconv.ParseUint(price, 10, 64)
 	if err != nil {
 		r.log.Error("unable to convert price from string in order amend",
 			logging.Error(err))
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
+	order.Price = &proto.Price{Value: pricevalue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
@@ -1468,7 +1615,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		order.ExpiresAt = &proto.Timestamp{Value: expiresAt.UnixNano()}
 	}
 
 	req := protoapi.AmendOrderRequest{
@@ -1479,8 +1626,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedAmendOrder{
-		Blob:         base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-		PendingOrder: pendingOrder.PendingOrder,
+		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
 	}, nil
 }
 
@@ -1801,91 +1947,133 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 			c <- cdl
 		}
 	}()
-
 	return c, nil
-
 }
 
-type myPendingOrderResolver VegaResolverRoot
-
-func (r *myPendingOrderResolver) Type(ctx context.Context, obj *types.PendingOrder) (*OrderType, error) {
-	if obj != nil {
-		ot := OrderType(obj.Type.String())
-		return &ot, nil
+func isStreamClosed(err error, log *logging.Logger) bool {
+	if err == io.EOF {
+		log.Error("stream closed by server", logging.Error(err))
+		return true
 	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) Price(ctx context.Context, obj *types.PendingOrder) (*string, error) {
-	if obj != nil {
-		str := fmt.Sprintf("%v", obj.Price)
-		return &str, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) TimeInForce(ctx context.Context, obj *types.PendingOrder) (*OrderTimeInForce, error) {
-	if obj != nil {
-		ot := OrderTimeInForce(obj.TimeInForce.String())
-		return &ot, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) Side(ctx context.Context, obj *types.PendingOrder) (*Side, error) {
-	if obj != nil {
-		s := Side(obj.Side.String())
-		return &s, nil
-	}
-	return nil, ErrNilPendingOrder
-}
-
-func (r *myPendingOrderResolver) Market(ctx context.Context, pord *types.PendingOrder) (*Market, error) {
-	if pord == nil {
-		return nil, errors.New("invalid pending order")
-	}
-
-	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
-	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		log.Error("stream closed", logging.Error(err))
+		return true
+	}
+	return false
+}
+
+func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
+	stream, err := r.tradingDataClient.ObserveGovernance(ctx, nil)
+	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	return MarketFromProto(res.Market)
+	output := make(chan *types.GovernanceData)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
+			output <- data
+		}
+	}()
+	return output, nil
 }
 
-func (r *myPendingOrderResolver) Party(ctx context.Context, pendingOrder *types.PendingOrder) (*types.Party, error) {
-	if pendingOrder == nil {
-		return nil, nil
-	}
-	if len(pendingOrder.PartyID) == 0 {
-		return nil, errors.New("invalid party")
-	}
-	req := protoapi.PartyByIDRequest{PartyID: pendingOrder.PartyID}
-	res, err := r.tradingDataClient.PartyByID(ctx, &req)
+func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, partyID string) (<-chan *types.GovernanceData, error) {
+	stream, err := r.tradingDataClient.ObservePartyProposals(ctx, &protoapi.ObservePartyProposalsRequest{
+		PartyID: partyID,
+	})
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	return res.Party, nil
+	output := make(chan *types.GovernanceData)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
+			output <- data
+		}
+	}()
+	return output, nil
 }
 
-func (r *myPendingOrderResolver) Size(ctx context.Context, obj *types.PendingOrder) (*string, error) {
-	if obj != nil {
-		str := fmt.Sprintf("%v", obj.Size)
-		return &str, nil
+func (r *mySubscriptionResolver) Proposals(ctx context.Context, partyID *string) (<-chan *types.GovernanceData, error) {
+	if partyID != nil && len(*partyID) > 0 {
+		return r.subscribePartyProposals(ctx, *partyID)
 	}
-	return nil, ErrNilPendingOrder
-}
-func (r *myPendingOrderResolver) Status(ctx context.Context, obj *types.PendingOrder) (*OrderStatus, error) {
-	if obj != nil {
-		os := OrderStatus(obj.Status.String())
-		return &os, nil
-	}
-	return nil, ErrNilPendingOrder
+	return r.subscribeAllProposals(ctx)
 }
 
-// END: Subscription Resolver
+func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, proposalID string) (<-chan *ProposalVote, error) {
+	output := make(chan *ProposalVote)
+	stream, err := r.tradingDataClient.ObserveProposalVotes(ctx, &protoapi.ObserveProposalVotesRequest{
+		ProposalID: proposalID,
+	})
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				break
+			}
+			party, err := getParty(ctx, r.log, r.tradingDataClient, data.PartyID)
+			if err != nil {
+				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
+				break
+			}
+			output <- ProposalVoteFromProto(data, party)
+		}
+	}()
+	return output, nil
+}
+
+func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyID string) (<-chan *ProposalVote, error) {
+	output := make(chan *ProposalVote)
+	stream, err := r.tradingDataClient.ObservePartyVotes(ctx, &protoapi.ObservePartyVotesRequest{
+		PartyID: partyID,
+	})
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(output)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				break
+			}
+			party, err := getParty(ctx, r.log, r.tradingDataClient, data.PartyID)
+			if err != nil {
+				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
+				break
+			}
+			output <- ProposalVoteFromProto(data, party)
+		}
+	}()
+	return output, nil
+}
+
+func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error) {
+
+	if proposalID != nil && len(*proposalID) == 0 {
+		return r.subscribeProposalVotes(ctx, *proposalID)
+	} else if partyID != nil && len(*partyID) == 0 {
+		return r.subscribePartyVotes(ctx, *partyID)
+	}
+	return nil, ErrInvalidVotesSubscription
+}
 
 // START: Account Resolver
 

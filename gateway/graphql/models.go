@@ -255,55 +255,34 @@ type NewMarketInput struct {
 type PreparedAmendOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
-	// The pending order
-	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type PreparedCancelOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
-	// The pending order
-	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type PreparedProposal struct {
 	// Raw transaction data to sign & submit
 	Blob string `json:"blob"`
 	// The pending proposal
-	PendingProposal *Proposal `json:"pendingProposal"`
+	PendingProposal *proto.GovernanceData `json:"pendingProposal"`
 }
 
 type PreparedSubmitOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
-	// The pending order
-	PendingOrder *proto.PendingOrder `json:"pendingOrder"`
 }
 
 type PreparedVote struct {
 	// Raw, serialised vote to be signed
 	Blob string `json:"blob"`
 	// The vote serialised in the blob field
-	Vote *Vote `json:"vote"`
-}
-
-type Proposal struct {
-	// Proposal id that is filled by VEGA once proposal reaches the network
-	ID *string `json:"id"`
-	// A UUID reference to aid tracking proposals on VEGA
-	Reference string `json:"reference"`
-	// Party that prepared the proposal
-	Party *proto.Party `json:"party"`
-	// State of the proposal
-	State ProposalState `json:"state"`
-	// time at which the proposal has reached the network
-	Timestamp string `json:"timestamp"`
-	// Terms of the proposal
-	Terms *ProposalTerms `json:"terms"`
+	Vote *ProposalVote `json:"vote"`
 }
 
 type ProposalTerms struct {
-	// Timestamp when voting is closes for this proposal
+	// Timestamp when voting closes for this proposal
 	ClosingTimestamp string `json:"closingTimestamp"`
 	// Timestamp when this proposal is executed (if passed)
 	EnactmentTimestamp string `json:"enactmentTimestamp"`
@@ -324,6 +303,13 @@ type ProposalTermsInput struct {
 	UpdateMarket  *UpdateMarketInput  `json:"updateMarket"`
 	NewMarket     *NewMarketInput     `json:"newMarket"`
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+}
+
+type ProposalVote struct {
+	// Cast vote
+	Vote *Vote `json:"vote"`
+	// Proposal casting the vote on
+	ProposalID string `json:"proposalID"`
 }
 
 type ScalingFactors struct {
@@ -452,11 +438,9 @@ type UpdateNetworkInput struct {
 
 type Vote struct {
 	// The vote value cast
-	Value VoteValue `json:"Value"`
+	Value VoteValue `json:"value"`
 	// The party casting the vote
-	Party *proto.Party `json:"Party"`
-	// Proposal ID -> proposal casting the vote on
-	ProposalID string `json:"ProposalID"`
+	Party *proto.Party `json:"party"`
 }
 
 // The various account types we have (used by collateral)
@@ -734,6 +718,8 @@ const (
 	ProposalStateOpen ProposalState = "Open"
 	// Proposal has gained enough support to be executed
 	ProposalStatePassed ProposalState = "Passed"
+	// Proposal didn't get enough votes
+	ProposalStateDeclined ProposalState = "Declined"
 	// Proposal has could not gain enough support to be executed
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
@@ -744,13 +730,14 @@ var AllProposalState = []ProposalState{
 	ProposalStateFailed,
 	ProposalStateOpen,
 	ProposalStatePassed,
+	ProposalStateDeclined,
 	ProposalStateRejected,
 	ProposalStateEnacted,
 }
 
 func (e ProposalState) IsValid() bool {
 	switch e {
-	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateRejected, ProposalStateEnacted:
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted:
 		return true
 	}
 	return false

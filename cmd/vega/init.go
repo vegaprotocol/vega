@@ -46,7 +46,7 @@ func (ic *initCommand) Init(c *Cli) {
 
 	fs := ic.cmd.Flags()
 	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	fs.StringVarP(&ic.nodeWalletPassphrase, "nodewallet-passphrase", "n", "", "The passphrase used to encrypt the vega nodewallet")
+	fs.StringVarP(&ic.nodeWalletPassphrase, "nodewallet-passphrase", "n", "", "The path to a file containing the passphrase used to encrypt the vega nodewallet")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
 	fs.BoolVarP(&ic.genDevNodeWallet, "gen-dev-nodewallet", "g", false, "Generate dev wallet for all vega supported chains (not for production)")
 }

@@ -59,12 +59,12 @@ Vega is initialised with a set of default configuration with the command `vega i
 Vega require a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
 The nodewallet can be accessed using the nodewallet subcommand, this nodewallet is initialized / accessed using a passphrase that needs to be specified when initializing vega:
 ```shell
-vega init --nodewallet-passphrase="somesecurepassphrase"
+vega init --nodewallet-passphrase="path/to/passphrase/file"
 ```
 
 The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
 ```
-vega init --nodewallet-passphrase="somesecurepassphrase" --gen-dev-nodewallet
+vega init --nodewallet-passphrase="path/to/passphrase/file" --gen-dev-nodewallet
 ```
 
 ## Vega NodeWallet

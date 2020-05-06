@@ -14,7 +14,7 @@ import (
 )
 
 type governanceTst struct {
-	*plugins.Proposals
+	*plugins.Governance
 	ctrl  *gomock.Controller
 	pBuf  *mocks.MockPropBuffer
 	vBuf  *mocks.MockVoteBuffer
@@ -30,14 +30,14 @@ func getTestGovernance(t *testing.T) *governanceTst {
 	pBuf := mocks.NewMockPropBuffer(ctrl)
 	ctx, cfunc := context.WithCancel(context.Background())
 	return &governanceTst{
-		Proposals: plugins.NewProposals(pBuf, vBuf),
-		ctrl:      ctrl,
-		pBuf:      pBuf,
-		vBuf:      vBuf,
-		pCh:       make(chan []types.Proposal),
-		vCh:       make(chan []types.Vote),
-		ctx:       ctx,
-		cfunc:     cfunc,
+		Governance: plugins.NewGovernance(pBuf, vBuf),
+		ctrl:       ctrl,
+		pBuf:       pBuf,
+		vBuf:       vBuf,
+		pCh:        make(chan []types.Proposal),
+		vCh:        make(chan []types.Vote),
+		ctx:        ctx,
+		cfunc:      cfunc,
 	}
 }
 
@@ -59,6 +59,242 @@ func TestProposalWithVotes(t *testing.T) {
 	t.Run("new proposal, changing votes - success", testNewProposalChangingVoteSuccess)
 }
 
+func TestProposals(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	party := "prop-party"
+	proposals := []types.Proposal{{
+		ID:        "prop-1",
+		Reference: "prop-ref1",
+		PartyID:   party,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        "prop-2",
+		Reference: "prop-ref2",
+		PartyID:   party,
+		State:     types.Proposal_FAILED,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewAsset{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        "prop-3",
+		Reference: "prop-ref2", // colliding reference
+		PartyID:   party,
+		State:     types.Proposal_REJECTED,
+		Terms: &types.ProposalTerms{Change: &types.ProposalTerms_UpdateMarket{
+			UpdateMarket: &types.UpdateMarket{},
+		}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        "prop-4",
+		Reference: "prop-ref4",
+		PartyID:   party,
+		State:     types.Proposal_PASSED,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}, {
+		ID:        "prop-5",
+		Reference: "prop-ref5",
+		PartyID:   party,
+		State:     types.Proposal_ENACTED,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
+
+	plugin.pCh <- proposals
+
+	t.Run("proposals by party", func(t *testing.T) {
+		loaded := plugin.GetProposalsByParty(party, nil)
+		assert.Len(t, loaded, len(proposals))
+
+		selector := types.Proposal_REJECTED
+		loaded = plugin.GetProposalsByParty(party, &selector)
+		assert.Len(t, loaded, 1)
+		assert.Equal(t, proposals[2], *loaded[0].Proposal)
+		assert.Len(t, loaded[0].Yes, 0)
+		assert.Len(t, loaded[0].No, 0)
+
+		loaded = plugin.GetProposalsByParty("not-a-party", nil)
+		assert.Len(t, loaded, 0)
+	})
+
+	t.Run("proposal by id", func(t *testing.T) {
+		loaded, err := plugin.GetProposalByID(proposals[0].ID)
+		assert.NoError(t, err)
+		assert.NotNil(t, loaded)
+		assert.Equal(t, proposals[0], *loaded.Proposal)
+
+		loaded, err = plugin.GetProposalByID("not-an-id")
+		assert.Error(t, err)
+		assert.Equal(t, err, plugins.ErrProposalNotFound)
+		assert.Nil(t, loaded)
+	})
+
+	t.Run("proposal by reference", func(t *testing.T) {
+		ambiguousRef := proposals[1].Reference
+		loaded, err := plugin.GetProposalByReference(ambiguousRef)
+		assert.NoError(t, err)
+		assert.NotNil(t, loaded)
+		assert.Equal(t, ambiguousRef, loaded.Proposal.Reference,
+			"valid but random proposal selected if reference is ambiguous")
+
+		loaded, err = plugin.GetProposalByReference("not-a-ref")
+		assert.Error(t, err)
+		assert.Equal(t, err, plugins.ErrProposalNotFound)
+		assert.Nil(t, loaded)
+	})
+	t.Run("new market proposals", func(t *testing.T) {
+		loaded := plugin.GetNewMarketProposals(nil)
+		assert.Len(t, loaded, 1)
+		assert.NotNil(t, loaded[0])
+		assert.NotNil(t, loaded[0].Proposal)
+	})
+	t.Run("new asset proposals", func(t *testing.T) {
+		loaded := plugin.GetNewAssetProposals(nil)
+		assert.Len(t, loaded, 1)
+		assert.NotNil(t, loaded[0])
+		assert.NotNil(t, loaded[0].Proposal)
+	})
+	t.Run("update market proposals", func(t *testing.T) {
+		validMarket := "" //TODO: replace this with a valid market once supported
+		loaded := plugin.GetUpdateMarketProposals(validMarket, nil)
+		assert.Len(t, loaded, 1)
+		assert.NotNil(t, loaded[0])
+		assert.NotNil(t, loaded[0].Proposal)
+	})
+	t.Run("network parameters proposals", func(t *testing.T) {
+		loaded := plugin.GetNetworkParametersProposals(nil)
+		assert.Len(t, loaded, 2)
+		assert.NotNil(t, loaded[0])
+		assert.NotNil(t, loaded[0].Proposal)
+		assert.NotNil(t, loaded[1])
+		assert.NotNil(t, loaded[1].Proposal)
+	})
+
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
+func TestVotes(t *testing.T) {
+	plugin := getTestGovernance(t)
+	defer plugin.Finish()
+	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
+	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
+	plugin.Start(plugin.ctx)
+
+	party1 := "party1"
+	wait4Party1Votes, party1VotesSub := plugin.SubscribePartyVotes(party1)
+
+	proposal1ID := "prop-1"
+	votes1 := []types.Vote{{
+		PartyID:    party1,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    party1,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_NO,
+	}}
+	plugin.vCh <- votes1
+	<-wait4Party1Votes
+
+	t.Run("dangling votes must not appear in governance data", func(t *testing.T) {
+		loaded := plugin.GetProposals(nil)
+		assert.Empty(t, loaded)
+	})
+
+	t.Run("dangling votes by party", func(t *testing.T) {
+		loaded := plugin.GetVotesByParty(party1)
+		assert.Len(t, loaded, 2)
+		assert.Equal(t, party1, loaded[0].PartyID)
+		assert.Equal(t, votes1[0], *loaded[0])
+		assert.Equal(t, votes1[1], *loaded[1])
+	})
+
+	plugin.pCh <- []types.Proposal{{
+		ID:        proposal1ID,
+		PartyID:   party1,
+		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
+		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
+	}}
+	wait4Proposals, propSub := plugin.SubscribeAll()
+	<-wait4Proposals
+	plugin.UnsubscribeAll(propSub)
+
+	t.Run("no dangling votes since proposal shows up", func(t *testing.T) {
+		props := plugin.GetProposals(nil)
+		assert.Len(t, props, 1)
+		assert.NotNil(t, props[0])
+		assert.Empty(t, props[0].Yes, "previous vote is ignored")
+		assert.Len(t, props[0].No, 1, "overriding vote is counted")
+
+		votes := plugin.GetVotesByParty(party1)
+		assert.Len(t, votes, 2, "despite only 1 one on proposal, total votes cast is 2")
+	})
+
+	proposal2ID := "prop-2"
+	party2 := "party2"
+	plugin.vCh <- []types.Vote{{
+		PartyID:    party2,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_YES,
+	}, {
+		PartyID:    party1,
+		ProposalID: proposal2ID,
+		Value:      types.Vote_NO,
+	}}
+	<-wait4Party1Votes
+	plugin.UnsubscribePartyVotes(party1, party1VotesSub)
+
+	t.Run("regular + dangling votes", func(t *testing.T) {
+		votes := plugin.GetVotesByParty(party1)
+		assert.Len(t, votes, 3, "track all votes, even dangling and overriden ones")
+
+		prop, err := plugin.GetProposalByID(proposal2ID)
+		assert.Error(t, err, "dangling vote should not create proposals")
+		assert.Nil(t, prop)
+
+		prop, err = plugin.GetProposalByID(proposal1ID)
+		assert.NoError(t, err)
+		assert.NotNil(t, prop)
+		assert.Len(t, prop.Yes, 1)
+		assert.Equal(t, prop.Yes[0].PartyID, party2)
+		assert.Len(t, prop.No, 1)
+		assert.Equal(t, prop.No[0].PartyID, party1)
+	})
+
+	party3 := "party3"
+	wait4Party3Votes, party3VotesSub := plugin.SubscribePartyVotes(party3)
+	plugin.vCh <- []types.Vote{{
+		PartyID:    party3,
+		ProposalID: proposal1ID,
+		Value:      types.Vote_YES,
+	}}
+	<-wait4Party3Votes
+	plugin.UnsubscribePartyVotes(party3, party3VotesSub)
+
+	t.Run("normal boring vote", func(t *testing.T) {
+		loaded := plugin.GetVotesByParty(party3)
+		assert.Len(t, loaded, 1)
+		assert.Equal(t, party3, loaded[0].PartyID)
+
+		prop, err := plugin.GetProposalByID(proposal1ID)
+		assert.NoError(t, err)
+		assert.NotNil(t, prop)
+		assert.Len(t, prop.Yes, 2)
+	})
+	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.vBuf.EXPECT().Unsubscribe(1).Times(1)
+	plugin.Stop()
+}
+
 func testNewProposalChangingVoteSuccess(t *testing.T) {
 	plugin := getTestGovernance(t)
 	defer plugin.Finish()
@@ -67,6 +303,7 @@ func testNewProposalChangingVoteSuccess(t *testing.T) {
 		Reference: "prop-ref",
 		PartyID:   "prop-party-ID",
 		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
 	vote := types.Vote{
@@ -118,6 +355,7 @@ func testNewProposalFirstVoteSuccess(t *testing.T) {
 		Reference: "prop-ref",
 		PartyID:   "prop-party-ID",
 		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewAsset{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
 	vote := types.Vote{
@@ -163,6 +401,7 @@ func testNewProposalThenVoteSuccess(t *testing.T) {
 		Reference: "prop-ref",
 		PartyID:   "prop-party-ID",
 		State:     types.Proposal_OPEN,
+		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
 	vote := types.Vote{
@@ -194,12 +433,13 @@ func testNewProposalThenVoteSuccess(t *testing.T) {
 	assert.Equal(t, proposal, *pRef.Proposal)
 
 	// proposal is open, should get it from the open proposals
-	open := plugin.GetOpenProposals()
+	state := types.Proposal_OPEN
+	open := plugin.GetProposals(&state)
 	assert.NotEmpty(t, open)
 	assert.Equal(t, 1, len(open))
 	assert.Equal(t, proposal, *open[0].Proposal)
 
-	all := plugin.GetProposals()
+	all := plugin.GetProposals(nil)
 	assert.NotEmpty(t, all)
 	assert.Equal(t, proposal, *all[0].Proposal)
 }

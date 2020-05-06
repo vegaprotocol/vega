@@ -131,8 +131,8 @@ type NodeCommand struct {
 	assets *assets.Service
 
 	// plugins
-	settlePlugin   *plugins.Positions
-	proposalPlugin *plugins.Proposals
+	settlePlugin     *plugins.Positions
+	governancePlugin *plugins.Governance
 }
 
 // Init initialises the node command.
@@ -159,7 +159,7 @@ func (l *NodeCommand) Init(c *Cli) {
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
-	flagSet.StringVarP(&l.nodeWalletPassphrase, "nodewallet-passphrase", "p", "", "The pass to a file containg the passphrase used to unlock the vega nodewallet, if not provided, prompt a password input")
+	flagSet.StringVarP(&l.nodeWalletPassphrase, "nodewallet-passphrase", "p", "", "The path to a file containg the passphrase used to unlock the vega nodewallet, if not provided, prompt a password input")
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")

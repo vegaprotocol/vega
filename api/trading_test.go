@@ -216,7 +216,7 @@ func getTestGRPCServer(
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
 	// stub...
-	governancePlugin := plugins.NewProposals(nil, nil)
+	governancePlugin := plugins.NewGovernance(nil, nil)
 
 	governanceService := governance.NewService(logger, conf.Governance, governancePlugin)
 
