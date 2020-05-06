@@ -10,7 +10,7 @@ schema {
 type Mutation {
 
   """
-  Send a submit order request to be prepared, and returns a pending order + blob of the transaction to submit.
+  Send a submit order request to be prepared, and returns a blob of the transaction to submit.
   The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
   """
   prepareOrderSubmit(
@@ -20,7 +20,7 @@ type Mutation {
     partyId: String!
     "Price of the asset"
     price: String
-    "Size ofthe order"
+    "Size of the order"
     size: String!
     "Side of the order (Buy or Sell)"
     side: Side!
@@ -30,6 +30,8 @@ type Mutation {
     expiration: String
     "type of the order"
     type: OrderType!
+    "client reference for the order"
+    reference: String
   ): PreparedSubmitOrder!
 
   """
@@ -237,63 +239,20 @@ type MarketData {
 type PreparedSubmitOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type PreparedCancelOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type PreparedAmendOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type TransactionSubmitted {
   success: Boolean!
-}
-
-"An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted."
-type PendingOrder {
-
-  "The id of the Order, can be null if the request was SubmitOrder"
-  id: String
-
-  "A UUID reference for the caller to aid in tracking operations on VEGA"
-  reference: String!
-
-  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
-  price: String
-
-  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
-  timeInForce: OrderTimeInForce
-
-  "Whether the order is to buy or sell"
-  side: Side
-
-  """
-  The market the order is trading on (probably stored internally as a hash of the market details)
-  could be nil if the submit order failed and no order is created.
-  """
-  market: Market
-
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
-  size: String
-
-  "The trader who place the order (probably stored internally as the trader's public key)"
-  party: Party
-
-  "The status of an order, for example 'Active'"
-  status: OrderStatus
-
-  "The type of the order"
-  type: OrderType
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."

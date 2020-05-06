@@ -91,7 +91,7 @@ type BlockchainClient interface {
 	SubmitTransaction(ctx context.Context, tx *types.SignedBundle) (bool, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
+	CreateOrder(ctx context.Context, order *types.Order) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)

@@ -472,10 +472,10 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	amendedOrder := &types.OrderAmendment{
 		OrderID:     orderBuy.Id,
 		PartyID:     party1,
-		Price:       200,
+		Price:       &types.Price{Value: 200},
 		SizeDelta:   -50,
 		TimeInForce: types.Order_GTT,
-		ExpiresAt:   orderBuy.ExpiresAt,
+		ExpiresAt:   &types.Timestamp{Value: orderBuy.ExpiresAt},
 	}
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {

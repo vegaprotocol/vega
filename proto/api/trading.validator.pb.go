@@ -53,27 +53,12 @@ func (this *NotifyTraderAccountResponse) Validate() error {
 	return nil
 }
 func (this *PrepareSubmitOrderResponse) Validate() error {
-	if this.PendingOrder != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
-		}
-	}
 	return nil
 }
 func (this *PrepareCancelOrderResponse) Validate() error {
-	if this.PendingOrder != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
-		}
-	}
 	return nil
 }
 func (this *PrepareAmendOrderResponse) Validate() error {
-	if this.PendingOrder != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingOrder); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PendingOrder", err)
-		}
-	}
 	return nil
 }
 func (this *SubmitOrderRequest) Validate() error {

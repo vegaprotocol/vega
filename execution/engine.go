@@ -386,10 +386,10 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			logging.String("order-id", orderAmendment.GetOrderID()),
 			logging.String("party-id", orderAmendment.GetPartyID()),
 			logging.String("market-id", orderAmendment.GetMarketID()),
-			logging.Uint64("price", orderAmendment.GetPrice()),
+			logging.Uint64("price", orderAmendment.GetPrice().Value),
 			logging.Int64("sizeDelta", orderAmendment.GetSizeDelta()),
 			logging.String("tif", orderAmendment.GetTimeInForce().String()),
-			logging.Int64("expires-at", orderAmendment.GetExpiresAt()),
+			logging.Int64("expires-at", orderAmendment.GetExpiresAt().Value),
 		)
 	}
 
