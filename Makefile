@@ -1,28 +1,4 @@
-APPS := dummyriskmodel vega vegaccount vegastream
-
-ifeq ($(CI),)
-	# Not in CI
-	VERSION := dev-$(USER)
-	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
-else
-	# In CI
-	ifneq ($(DRONE),)
-		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
-
-		ifneq ($(DRONE_TAG),)
-			VERSION := $(DRONE_TAG)
-		else
-			# No tag, so make one
-			VERSION := $(shell git describe --tags 2>/dev/null)
-		endif
-		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
-
-	else
-		# In an unknown CI
-		VERSION := unknown-CI
-		VERSION_HASH := unknown-CI
-	endif
-endif
+# Makefile
 
 .PHONY: all
 all: build
@@ -91,60 +67,17 @@ deps: ## Get the dependencies
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
 	@modvendor -copy="**/*.proto"
 
-.PHONY: build
-build: build-linux-amd64 ## install the binaries (for linux/amd64) in cmd/{progname}/
-
-.PHONY: build-%
-build-%: ## Build the binaries for a particular OS+ARCH combination in cmd/{progname}/
-	@v="${VERSION}" vh="${VERSION_HASH}" gcflags="" suffix="" ; \
-	if test -n "$$DEBUGVEGA" ; then \
-		gcflags="all=-N -l" ; \
-		suffix="-dbg" ; \
-		v="debug-$$v" ; \
-	fi ; \
-	goos="$$(echo "$*" | cut -f1 -d-)" ; \
-	goarch="$$(echo "$*" | cut -f2 -d-)" ; \
-	if echo "$$goarch" | grep -q '^arm[5-7]$$' ; then \
-		goarch=arm ; goarm="$$(echo "$$goarch" | cut -b4)" ; \
-	fi ; \
-	ldflags="-X main.Version=$$v -X main.VersionHash=$$vh" ; \
-	echo "Version: $$v ($$vh)" ; \
-	for app in $(APPS) ; do \
-		o="./cmd/$$app/$$app-$$goos-$$goarch$$goarm$$suffix" ; \
-		echo "Building $$o" ; \
-		env CGO_ENABLED=1 "GOARCH=$$goarch" "GOARM=$$goarm" "GOOS=$$goos" \
-			go build -v -ldflags "$$ldflags" -gcflags "$$gcflags" -o "$$o" "./cmd/$$app" \
-			|| exit 1 ; \
-	done
-
-.PHONY: buildall
-buildall: ## Build the binaries for all OS+ARCH combinations
-	@go tool dist list | tr / " " | while read -r os arch ; do \
-		if test "$$arch" = arm ; then \
-			for v in 5 6 7 ; do \
-				target="build-$${os}-$${arch}$${v}" ; \
-				echo -n "$$target " ; \
-				make "$$target" 1>"$$target.log" 2>&1 || echo -n "failed" ; \
-				echo ; \
-			done ; \
-		else \
-			target="build-$${os}-$${arch}" ; \
-			echo -n "$$target " ; \
-			make "build-$${os}-$${arch}" 1>"$$target.log" 2>&1 || echo -n "failed" ; \
-			echo ; \
-		fi ; \
-	done
-
 .PHONY: gofmtsimplify
 gofmtsimplify:
 	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
 
 .PHONY: install
+install: SHELL:=/bin/bash
 install: ## install the binaries in GOPATH/bin
-	@cat .asciiart.txt
-	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@for app in $(APPS) ; do \
-		env CGO_ENABLED=1 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
+	@source ./script/build.sh && set_version && \
+	echo "Version: $$version ($$version_hash)" && \
+	for app in "$${apps[@]}" ; do \
+		env CGO_ENABLED=1 go install -v -ldflags "-X main.Version=$$version -X main.VersionHash=$$version_hash" "./cmd/$$app" || exit 1 ; \
 	done
 
 .PHONY: gqlgen

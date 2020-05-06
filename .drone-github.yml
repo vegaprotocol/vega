@@ -27,28 +27,23 @@ steps:
       - name: gopkg
         path: /go/pkg
     environment:
-      CGO_ENABLED: "1"
       GO111MODULE: "on"
       GOARCH: amd64
       GOCACHE: /go/cache
       GOOS: linux
-      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
-        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
       GITHUB_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
       # The following git+ssh config enables accessing private github repos.
       - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-      - eval "$$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
+      - mkdir -p -m 0700 ~/.ssh
       - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
-      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
-          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
-      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
-      - make build
+      - ./script/build.sh -t linux/amd64
     depends_on:
       - fetch
     when:
@@ -110,6 +105,7 @@ steps:
   #   commands:
   #     # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
   #     - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
+  #     - ln -fs cmd/vega/vega-linux-amd64 cmd/vega/vega
   #     - (
   #         /usr/local/bin/systemtests.sh -v all ;
   #         echo "$$?" >"$$codefile"
@@ -163,28 +159,23 @@ steps:
       - name: gopkg
         path: /go/pkg
     environment:
-      CGO_ENABLED: "1"
       GO111MODULE: "on"
       GOARCH: amd64
       GOCACHE: /go/cache
       GOOS: linux
-      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
-        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
       GITHUB_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
       # The following git+ssh config enables accessing private github repos.
       - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-      - eval "$$(ssh-agent -s)" ; mkdir -p -m 0700 ~/.ssh
+      - mkdir -p -m 0700 ~/.ssh
       - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
-      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
-          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
-      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
-      - make build-linux-amd64
+      - ./script/build.sh -t linux/amd64
     depends_on:
       - fetch
     when:
@@ -262,9 +253,9 @@ steps:
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
-          f="cmd/$$app/$$app" ;
+          f="cmd/$$app/$$app-linux-amd64" ;
           if ! test -f "$$f" ; then echo "Failed to find: $$f" ; exit 1 ; fi ;
-          cp -a "$$f" . || exit 1 ;
+          cp -a "$$f" "./$$app" || exit 1 ;
         done'
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
@@ -280,6 +271,54 @@ steps:
         - refs/heads/master
         - refs/heads/develop
         - refs/tags/*
+
+  - name: build-multiarch
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo-1.11.x:latest
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GO111MODULE: "on"
+      GOCACHE: /go/cache
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - mkdir -p -m 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - make deps
+      - ./script/build.sh -T
+    depends_on:
+      - build-branch
+    when:
+      # event: tag
+      ref:
+        - refs/heads/1595-build-vega-binaries-for-multiple-platforms
+
+  # http://plugins.drone.io/drone-plugins/drone-github-release/
+  - name: publish_artefacts
+    image: plugins/github-release
+    pull: always
+    settings:
+      api_token:
+        from_secret: GITHUB_API_TOKEN
+      files:
+        - cmd/dummriskmodel/dummriskmodel-*
+        - cmd/vega/vega-*
+        - cmd/vegaccount/vegaccount-*
+        - cmd/vegastream/vegastream-*
+    when:
+      event: tag
+    depends_on:
+      - build-multiarch
 
 volumes:
   - name: dockersock
