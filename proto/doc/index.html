@@ -711,15 +711,15 @@
                 </li>
 
                 <li>
-                  <a href="#vega.PendingOrder"><span class="badge">M</span>PendingOrder</a>
-                </li>
-
-                <li>
                   <a href="#vega.Position"><span class="badge">M</span>Position</a>
                 </li>
 
                 <li>
                   <a href="#vega.PositionTrade"><span class="badge">M</span>PositionTrade</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Price"><span class="badge">M</span>Price</a>
                 </li>
 
                 <li>
@@ -748,6 +748,10 @@
 
                 <li>
                   <a href="#vega.Statistics"><span class="badge">M</span>Statistics</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Timestamp"><span class="badge">M</span>Timestamp</a>
                 </li>
 
                 <li>
@@ -2780,13 +2784,6 @@
                   <td><p> </p></td>
                 </tr>
 
-                <tr>
-                  <td>pendingOrder</td>
-                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -2807,13 +2804,6 @@
                 <tr>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>pendingOrder</td>
-                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2950,8 +2940,8 @@
                 </tr>
 
                 <tr>
-                  <td>pendingOrder</td>
-                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td>submitID</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -6010,7 +6000,7 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>price</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#vega.Price">Price</a></td>
                   <td></td>
                   <td><p>these can be amended </p></td>
                 </tr>
@@ -6024,7 +6014,7 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>expiresAt</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#vega.Timestamp">Timestamp</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -6069,17 +6059,6 @@ after each successful amend </p></td>
                     <ul>
 
                       <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>price</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
 
                     </ul>
                   </td>
@@ -6472,93 +6451,6 @@ after each successful amend </p></td>
 
 
 
-        <h3 id="vega.PendingOrder">PendingOrder</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>reference</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>price</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>timeInForce</td>
-                  <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>side</td>
-                  <td><a href="#vega.Side">Side</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>marketID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>size</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>status</td>
-                  <td><a href="#vega.Order.Status">Order.Status</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>type</td>
-                  <td><a href="#vega.Order.Type">Order.Type</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.Position">Position</h3>
         <p></p>
 
@@ -6637,6 +6529,30 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>price</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Price">Price</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -7102,6 +7018,30 @@ after each successful amend </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Timestamp">Timestamp</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -7614,26 +7554,32 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>GTC</td>
+                <td>TIF_UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, can be valid for an amend</p></td>
+              </tr>
+
+              <tr>
+                <td>GTC</td>
+                <td>1</td>
                 <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
                 <td>GTT</td>
-                <td>1</td>
+                <td>2</td>
                 <td><p>good til time</p></td>
               </tr>
 
               <tr>
                 <td>IOC</td>
-                <td>2</td>
+                <td>3</td>
                 <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
                 <td>FOK</td>
-                <td>3</td>
+                <td>4</td>
                 <td><p>fill or kill</p></td>
               </tr>
 

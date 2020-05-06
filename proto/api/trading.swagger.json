@@ -959,13 +959,14 @@
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
+        "TIF_UNSPECIFIED",
         "GTC",
         "GTT",
         "IOC",
         "FOK"
       ],
-      "default": "GTC",
-      "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "default": "TIF_UNSPECIFIED",
+      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
       "title": "Order Time in Force"
     },
     "ProposalState": {
@@ -1235,9 +1236,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1247,9 +1245,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1286,8 +1281,8 @@
           "type": "string",
           "format": "byte"
         },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
+        "submitID": {
+          "type": "string"
         }
       }
     },
@@ -1974,8 +1969,7 @@
           "type": "string"
         },
         "price": {
-          "type": "string",
-          "format": "uint64",
+          "$ref": "#/definitions/vegaPrice",
           "title": "these can be amended"
         },
         "sizeDelta": {
@@ -1983,8 +1977,7 @@
           "format": "int64"
         },
         "expiresAt": {
-          "type": "string",
-          "format": "int64"
+          "$ref": "#/definitions/vegaTimestamp"
         },
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
@@ -2087,43 +2080,6 @@
         }
       }
     },
-    "vegaPendingOrder": {
-      "type": "object",
-      "properties": {
-        "reference": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "timeInForce": {
-          "$ref": "#/definitions/OrderTimeInForce"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
-        },
-        "marketID": {
-          "type": "string"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "partyID": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/OrderStatus"
-        },
-        "id": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
-        }
-      }
-    },
     "vegaPosition": {
       "type": "object",
       "properties": {
@@ -2146,6 +2102,15 @@
           "format": "int64"
         },
         "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaPrice": {
+      "type": "object",
+      "properties": {
+        "value": {
           "type": "string",
           "format": "uint64"
         }
@@ -2435,6 +2400,15 @@
         "uptime": {
           "type": "string",
           "title": "ISO 8601 datetime, nanosecond precision"
+        }
+      }
+    },
+    "vegaTimestamp": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

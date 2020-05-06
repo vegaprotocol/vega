@@ -150,9 +150,9 @@
     - [OrderConfirmation](#vega.OrderConfirmation)
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
-    - [PendingOrder](#vega.PendingOrder)
     - [Position](#vega.Position)
     - [PositionTrade](#vega.PositionTrade)
+    - [Price](#vega.Price)
     - [PriceLevel](#vega.PriceLevel)
     - [RiskFactor](#vega.RiskFactor)
     - [RiskResult](#vega.RiskResult)
@@ -160,6 +160,7 @@
     - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
     - [SignedBundle](#vega.SignedBundle)
     - [Statistics](#vega.Statistics)
+    - [Timestamp](#vega.Timestamp)
     - [Trade](#vega.Trade)
     - [TradeSet](#vega.TradeSet)
     - [Transfer](#vega.Transfer)
@@ -964,7 +965,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blob | [bytes](#bytes) |  |  |
-| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
 
 
 
@@ -980,7 +980,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blob | [bytes](#bytes) |  |  |
-| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
 
 
 
@@ -1029,7 +1028,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blob | [bytes](#bytes) |  |  |
-| pendingOrder | [vega.PendingOrder](#vega.PendingOrder) |  |  |
+| submitID | [string](#string) |  |  |
 
 
 
@@ -2191,9 +2190,9 @@ Proposal can enter Failed state from any other state.
 | orderID | [string](#string) |  | required to find the order, not being updated |
 | partyID | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  | these can be amended |
+| price | [Price](#vega.Price) |  | these can be amended |
 | sizeDelta | [int64](#int64) |  |  |
-| expiresAt | [int64](#int64) |  |  |
+| expiresAt | [Timestamp](#vega.Timestamp) |  |  |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 
 
@@ -2289,30 +2288,6 @@ Proposal can enter Failed state from any other state.
 
 
 
-<a name="vega.PendingOrder"></a>
-
-### PendingOrder
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| reference | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| side | [Side](#vega.Side) |  |  |
-| marketID | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
-| partyID | [string](#string) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  |  |
-| id | [string](#string) |  |  |
-| type | [Order.Type](#vega.Order.Type) |  |  |
-
-
-
-
-
-
 <a name="vega.Position"></a>
 
 ### Position
@@ -2343,6 +2318,21 @@ Proposal can enter Failed state from any other state.
 | ----- | ---- | ----- | ----------- |
 | volume | [int64](#int64) |  |  |
 | price | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.Price"></a>
+
+### Price
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [uint64](#uint64) |  |  |
 
 
 
@@ -2490,6 +2480,21 @@ Proposal can enter Failed state from any other state.
 | chainVersion | [string](#string) |  |  |
 | blockDuration | [uint64](#uint64) |  | nanoseconds |
 | uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+
+
+
+
+
+
+<a name="vega.Timestamp"></a>
+
+### Timestamp
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [int64](#int64) |  |  |
 
 
 
@@ -2693,10 +2698,11 @@ Order Time in Force
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| GTC | 0 | good til cancelled |
-| GTT | 1 | good til time |
-| IOC | 2 | immediate or cancel |
-| FOK | 3 | fill or kill |
+| TIF_UNSPECIFIED | 0 | Default value, can be valid for an amend |
+| GTC | 1 | good til cancelled |
+| GTT | 2 | good til time |
+| IOC | 3 | immediate or cancel |
+| FOK | 4 | fill or kill |
 
 
 
