@@ -65,6 +65,7 @@ deps: ## Get the dependencies
 	@go mod download
 	@go mod vendor
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
+	@mkdir -p "$$GOPATH/pkg/mod/@indirect"
 	@modvendor -copy="**/*.proto"
 
 .PHONY: build

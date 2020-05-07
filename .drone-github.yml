@@ -42,7 +42,6 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - make deps
       - ./script/build.sh -t linux/amd64
     depends_on:
       - fetch
@@ -175,7 +174,6 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - make deps
       - ./script/build.sh -t linux/amd64
     depends_on:
       - fetch
@@ -295,7 +293,6 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - make deps
       - ./script/build.sh -T
     depends_on:
       - test-PR

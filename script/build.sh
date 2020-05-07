@@ -155,48 +155,13 @@ run() {
 			GOOS="$goos"
 
 		log="/tmp/go.log"
-		echo "$target: go mod download ... "
-		go mod download 1>"$log" 2>&1
+		echo "$target: make deps ... "
+		make deps 1>"$log" 2>&1
 		code="$?"
 		if test "$code" = 0 ; then
-			echo "$target: go mod download OK"
+			echo "$target: make deps OK"
 		else
-			echo "$target: go mod download failed ($code)"
-			failed=$((failed+1))
-			echo
-			echo "=== BEGIN logs ==="
-			cat "$log"
-			echo "=== END logs ==="
-			rm "$log"
-			continue
-		fi
-
-		echo "$target: go mod vendor ... "
-		go mod vendor 1>"$log" 2>&1
-		code="$?"
-		if test "$code" = 0 ; then
-			echo "$target: go mod vendor OK"
-		else
-			echo "$target: go mod vendor failed ($code)"
-			failed=$((failed+1))
-			echo
-			echo "=== BEGIN logs ==="
-			cat "$log"
-			echo "=== END logs ==="
-			rm "$log"
-			continue
-		fi
-
-		grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$1"/src";}' >>vendor/modules.txt
-		mkdir -p "$GOPATH/pkg/mod/@indirect"
-
-		echo "$target: modvendor ... "
-		modvendor -copy="**/*.proto" 1>"$log" 2>&1
-		code="$?"
-		if test "$code" = 0 ; then
-			echo "$target: modvendor OK"
-		else
-			echo "$target: modvendor failed ($code)"
+			echo "$target: make deps failed ($code)"
 			failed=$((failed+1))
 			echo
 			echo "=== BEGIN logs ==="
