@@ -1,5 +1,4 @@
 # Vega specific entries
-build-*.log
 cmd/*/*-dbg
 cmd/dummyriskmodel/dummyriskmodel*
 cmd/vegaccount/vegaccount*
@@ -10,14 +9,13 @@ data/
 .envrc
 .idea/
 *.iws
-log/capistrano.log
 .mypy_cache
 proto/*-re
 .testCoverage.html
 .testCoverage.txt
 *.tmp
 tmp/
-vega-*.log
+*.log
 vendor/
 .vscode/
 proto/**.orig
