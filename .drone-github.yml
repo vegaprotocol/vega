@@ -77,7 +77,7 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      echo OK
+      - echo OK
       # - make retest
       # # More small checks. Run all, instead of exitng after first failure.
       # - failed=""
