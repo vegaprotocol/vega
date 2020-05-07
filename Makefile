@@ -208,7 +208,10 @@ staticcheck: ## Run statick analysis checks
 
 .PHONY: clean
 clean: ## Remove previous build
-	@for app in $(APPS) ; do rm -f "$$app" build-*.log "cmd/$$app/$$app" "cmd/$$app/$$app"-* ; done
+	@rm -f cmd/*/*.log
+	for app in $(APPS) ; do \
+		rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app"-* ; \
+	done
 
 .PHONY: help
 help: ## Display this help screen
