@@ -1,7 +1,14 @@
 #!/bin/bash
 
+# Get a list of apps to build by looking at the directories in cmd.
 mapfile -t apps < <(find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##')
-alltargets=("linux/amd64" "linux/386" "darwin/amd64")
+
+# Set a list of all targets.
+alltargets=( \
+	"linux/386" "linux/amd64" "linux/arm64" \
+	"linux/mips" "linux/mipsle" "linux/mips64" "linux/mips64le" \
+	"darwin/amd64" \
+)
 
 help() {
 	echo "Command line arguments:"
@@ -76,46 +83,155 @@ run() {
 
 	failed=0
 	for target in "${targets[@]}" ; do
-		goos="$(echo "$target" | cut -f1 -d/)"
+		cc=""
+		cgo_enabled=1
+		cgo_flags=""
+		cgo_ldflags=""
+		cgo_cxxflags=""
+		cxx=""
+		goarm=""
 		goarch="$(echo "$target" | cut -f2 -d/)"
+		goos="$(echo "$target" | cut -f1 -d/)"
+		skip=no
+		case "$target" in
+		darwin/*)
+			cc=o64-clang
+			cxx=o64-clang++
+			;;
+		linux/386)
+			:
+			;;
+		linux/amd64)
+			:
+			;;
+		linux/arm64)
+			cc=aarch64-linux-gnu-gcc-9
+			cxx=aarch64-linux-gnu-g++-9
+			;;
+		linux/mips)
+			cc=mips-linux-gnu-gcc-9
+			cxx=mips-linux-gnu-g++-9
+			;;
+		linux/mipsle)
+			cc=mipsel-linux-gnu-gcc-9
+			cxx=mipsel-linux-gnu-g++-9
+			;;
+		linux/mips64)
+			cc=mips64-linux-gnuabi64-gcc-9
+			cxx=mips64-linux-gnuabi64-g++-9
+			;;
+		linux/mips64le)
+			cc=mips64el-linux-gnuabi64-gcc-9
+			cxx=mips64el-linux-gnuabi64-g++-9
+			;;
+		windows/*)
+			o="$o.exe"
+			cc=x86_64-w64-mingw32-gcc-posix
+			cxx=x86_64-w64-mingw32-g++-posix
+			# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
+			win32_winnt="-D_WIN32_WINNT=0x0A00" # Windows 10
+			cgo_flags="$win32_winnt"
+			cgo_cxxflags="$win32_winnt"
+			;;
+		*)
+			echo "$target: Building this os+arch combination is TBD"
+			skip=yes
+			;;
+		esac
+
+		if test "$skip" == yes ; then
+			continue
+		fi
+
+		export \
+			CC="$cc" \
+			CGO_ENABLED="$cgo_enabled" \
+			CGO_CFLAGS="$cgo_flags" \
+			CGO_LDFLAGS="$cgo_ldflags"
+			CGO_CXXFLAGS="$cgo_cxxflags" \
+			CXX="$cxx" \
+			GOARCH="$goarch" \
+			GOARM="$goarm" \
+			GOOS="$goos" \
+
+		log="/tmp/go.log"
+		echo "$target: go mod download ... "
+		go mod download 1>"$log" 2>&1
+		code="$?"
+		if test "$code" = 0 ; then
+			echo "$target: go mod download OK"
+		else
+			echo "$target: go mod download failed ($code)"
+			failed=$((failed+1))
+			echo
+			echo "=== BEGIN logs ==="
+			cat "$log"
+			echo "=== END logs ==="
+			rm "$log"
+			continue
+		fi
+
+		echo "$target: go mod vendor ... "
+		go mod vendor 1>"$log" 2>&1
+		code="$?"
+		if test "$code" = 0 ; then
+			echo "$target: go mod vendor OK"
+		else
+			echo "$target: go mod vendor failed ($code)"
+			failed=$((failed+1))
+			echo
+			echo "=== BEGIN logs ==="
+			cat "$log"
+			echo "=== END logs ==="
+			rm "$log"
+			continue
+		fi
+
+		grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$1"/src";}' >>vendor/modules.txt
+		mkdir -p "$GOPATH/pkg/mod/@indirect"
+
+		echo "$target: modvendor ... "
+		modvendor -copy="**/*.proto" 1>"$log" 2>&1
+		code="$?"
+		if test "$code" = 0 ; then
+			echo "$target: modvendor OK"
+		else
+			echo "$target: modvendor failed ($code)"
+			failed=$((failed+1))
+			echo
+			echo "=== BEGIN logs ==="
+			cat "$log"
+			echo "=== END logs ==="
+			rm "$log"
+			continue
+		fi
+
+		echo "$target: go get ... "
+		go get -v -ldflags "$ldflags" . 1>"$log" 2>&1
+		code="$?"
+		if test "$code" = 0 ; then
+			echo "$target: go get OK"
+		else
+			echo "$target: go get failed ($code)"
+			failed=$((failed+1))
+			echo
+			echo "=== BEGIN logs ==="
+			cat "$log"
+			echo "=== END logs ==="
+			rm "$log"
+			continue
+		fi
+
 		for app in "${apps[@]}" ; do
-			o="cmd/$app/$app-$goos-$goarch$suffix" ; \
+			o="cmd/$app/$app-$goos-$goarch$suffix"
 			log="$o.log"
-			echo -n "Building $o ... "
-			case "$target" in
-			darwin/*)
-				env \
-					CC=o64-clang CXX=o64-clang++ \
-					GOOS="$goos" GOARCH="$goarch" \
-					CGO_ENABLED=1 \
-					go build -v \
-					-ldflags "$ldflags" \
-					-gcflags "$gcflags" \
-					-o "$o" "./cmd/$app" \
-					1>"$log" 2>&1
-				code="$?"
-				;;
-			linux/*)
-				env \
-					GOOS="$goos" GOARCH="$goarch" \
-					CGO_ENABLED=1 \
-					go build -v \
-					-ldflags "$ldflags" \
-					-gcflags "$gcflags" \
-					-o "$o" "./cmd/$app" \
-					1>"$log" 2>&1
-				code="$?"
-				;;
-			*)
-				echo "TBD" | tee "$log"
-				code=1
-				;;
-			esac
+			echo "$target: go build $o ... "
+			go build -v -ldflags "$ldflags" -gcflags "$gcflags" -o "$o" "./cmd/$app" 1>"$log" 2>&1
+			code="$?"
 			if test "$code" = 0 ; then
-				echo "OK"
+				echo "$target: go build $o OK"
 			else
-				echo "Exit code $code" >>"$log"
-				echo "failed"
+				echo "$target: go build $o failed ($code)"
 				failed=$((failed+1))
 				echo
 				echo "=== BEGIN logs for $o ==="
