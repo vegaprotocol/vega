@@ -67,6 +67,12 @@ deps: ## Get the dependencies
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
 	@modvendor -copy="**/*.proto"
 
+.PHONY: build
+build: SHELL:=/bin/bash
+build: ## install the binaries in cmd/{progname}/
+	@d="" ; test -n "$$DEBUGVEGA" && d="-d" ; \
+	./script/build $d -t linux/amd64
+
 .PHONY: gofmtsimplify
 gofmtsimplify:
 	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
