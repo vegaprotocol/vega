@@ -147,12 +147,12 @@ run() {
 			CC="$cc" \
 			CGO_ENABLED="$cgo_enabled" \
 			CGO_CFLAGS="$cgo_flags" \
-			CGO_LDFLAGS="$cgo_ldflags"
+			CGO_LDFLAGS="$cgo_ldflags" \
 			CGO_CXXFLAGS="$cgo_cxxflags" \
 			CXX="$cxx" \
 			GOARCH="$goarch" \
 			GOARM="$goarm" \
-			GOOS="$goos" \
+			GOOS="$goos"
 
 		log="/tmp/go.log"
 		echo "$target: go mod download ... "
@@ -226,10 +226,12 @@ run() {
 			o="cmd/$app/$app-$goos-$goarch$suffix"
 			log="$o.log"
 			echo "$target: go build $o ... "
+			rm -f "$o" "$log"
 			go build -v -ldflags "$ldflags" -gcflags "$gcflags" -o "$o" "./cmd/$app" 1>"$log" 2>&1
 			code="$?"
 			if test "$code" = 0 ; then
 				echo "$target: go build $o OK"
+				rm "$log"
 			else
 				echo "$target: go build $o failed ($code)"
 				failed=$((failed+1))
@@ -238,7 +240,6 @@ run() {
 				cat "$log"
 				echo "=== END logs for $o ==="
 			fi
-			rm "$log"
 		done
 	done
 	return "$failed"
