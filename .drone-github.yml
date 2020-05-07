@@ -297,11 +297,13 @@ steps:
       - make deps
       - ./script/build.sh -T
     depends_on:
-      - build-branch
+      - test-PR
     when:
-      # event: tag
-      ref:
-        - refs/heads/1595-build-vega-binaries-for-multiple-platforms
+      event: pull_request
+    # depends_on:
+    #   - build-branch
+    # when:
+    #   event: tag
 
   # http://plugins.drone.io/drone-plugins/drone-github-release/
   - name: publish_artefacts
