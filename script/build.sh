@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apps=($(find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##'))
+mapfile -t apps < <(find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##')
 alltargets=("linux/amd64" "linux/386" "darwin/amd64")
 
 help() {
@@ -47,7 +47,7 @@ parse_args() {
 			version="debug-$version"
 			;;
 		t)
-			targets=($(echo "$OPTARG" | tr ' ,' '\n'))
+			mapfile -t targets < <(echo "$OPTARG" | tr ' ,' '\n')
 			;;
 		T)
 			targets=("${alltargets[@]}")
