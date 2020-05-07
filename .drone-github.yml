@@ -104,7 +104,7 @@ steps:
     commands:
       # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
       - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
-      - ln -fs cmd/vega/vega-linux-amd64 cmd/vega/vega
+      - ln -fs vega-linux-amd64 cmd/vega/vega
       - (
           /usr/local/bin/systemtests.sh -v all ;
           echo "$$?" >"$$codefile"
