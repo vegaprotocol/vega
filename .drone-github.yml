@@ -306,7 +306,7 @@ steps:
       api_token:
         from_secret: GITHUB_API_TOKEN
       files:
-        - cmd/dummriskmodel/dummriskmodel-*
+        - cmd/dummyriskmodel/dummyriskmodel-*
         - cmd/vega/vega-*
         - cmd/vegaccount/vegaccount-*
         - cmd/vegastream/vegastream-*
