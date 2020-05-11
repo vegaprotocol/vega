@@ -16,7 +16,8 @@ type ServerConfig struct {
 // GraphqlServiceConfig represents the configuration of the gateway
 type GraphqlServiceConfig struct {
 	ServerConfig
-	Enabled bool
+	Enabled         bool
+	ComplexityLimit int
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service
@@ -48,7 +49,8 @@ func NewDefaultConfig() Config {
 				IP:   "0.0.0.0",
 				Port: 3004,
 			},
-			Enabled: true,
+			Enabled:         true,
+			ComplexityLimit: 5,
 		},
 		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{
