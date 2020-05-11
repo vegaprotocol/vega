@@ -142,6 +142,7 @@ func (g *GraphServer) Start() {
 	}
 	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
+		handler.ComplexityLimit(g.GraphQL.ComplexityLimit),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
