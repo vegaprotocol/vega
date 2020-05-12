@@ -521,8 +521,8 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 		return nil, ErrParticipationStake
 	}
 	result := &ProposalTerms{
-		ClosingTimestamp:      timestampToString(terms.ClosingTimestamp),
-		EnactmentTimestamp:    timestampToString(terms.EnactmentTimestamp),
+		ClosingDatetime:       timestampToString(terms.ClosingTimestamp),
+		EnactmentDatetime:     timestampToString(terms.EnactmentTimestamp),
 		MinParticipationStake: int(terms.MinParticipationStake),
 	}
 	if terms.GetUpdateMarket() != nil {
@@ -698,11 +698,11 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 
 // IntoProto ...
 func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
-	closing, err := parseTimestamp(p.ClosingTimestamp)
+	closing, err := parseTimestamp(p.ClosingDatetime)
 	if err != nil {
 		return nil, err
 	}
-	enactment, err := parseTimestamp(p.EnactmentTimestamp)
+	enactment, err := parseTimestamp(p.EnactmentDatetime)
 	if err != nil {
 		return nil, err
 	}
