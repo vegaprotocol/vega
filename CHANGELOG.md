@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.18.0
+
+*2020-05-12*
+
+From this release forward, compiled binaries for multiple platforms will be attached to the release on GitHub.
+
+### Features
+
+- [#1636](https://github.com/vegaprotocol/vega/pull/1636)
+    Add a default GraphQL query complexity limit of 5. Currently configured to 17 on testnet to support Console.
+- [#1656](https://github.com/vegaprotocol/vega/pull/1656)
+    Add GraphQL queries for governance proposals
+- [#1596](https://github.com/vegaprotocol/vega/pull/1596)
+    Add builds for multiple architectures to GitHub releases
+
+### Improvements
+- [#1630](https://github.com/vegaprotocol/vega/pull/1630)
+    Fix amends triggering multiple updates to the same order
+- [#1564](https://github.com/vegaprotocol/vega/pull/1564)
+    Hex encode keys
+
 ## 0.17.0
 
 *2020-04-21*
