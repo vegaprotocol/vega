@@ -1264,6 +1264,7 @@ type ProposalTerms {
   change: ProposalChange
 }
 
+# there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 "Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
 input ProposalTermsInput {
   "ISO-8601 time and date when voting closes for this proposal."
@@ -1272,10 +1273,7 @@ input ProposalTermsInput {
   enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
-  "Actual change being introduced by the proposal"
-
-  # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
-
+  
   "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
   "Optional field to define new market change. If this is set along with another change, proposal will not be accepted."
