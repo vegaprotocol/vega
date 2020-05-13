@@ -65,7 +65,7 @@ sequenceDiagram
 ```
 
 ### Clients can sign their own transactions
-The functionality provided by the wallet service can be integrated in to your GoLang client. `vega` uses Ed25519 - visit the [wallet](../wallet/README.md) folder to find out more.
+The functionality provided by the wallet service can be integrated in to your Golang client. `vega` uses Ed25519 - visit the [wallet](../wallet/README.md) folder to find out more.
 
 ```mermaid
 sequenceDiagram
