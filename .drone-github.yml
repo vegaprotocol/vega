@@ -55,7 +55,7 @@ steps:
     environment: {}
     commands:
       # Make sure the mdspell command matches the one in Makefile.
-      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '!CHANGELOG*' '*.md' 'docs/**/*.md'
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' '!CHANGELOG*' 'docs/**/*.md'
     depends_on:
       - build-PR
     when:
