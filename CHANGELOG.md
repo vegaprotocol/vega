@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.1
+
+*2020-05-13*
+
+### Improvements
+- [#1649](https://github.com/vegaprotocol/vega/pull/1649)
+    Fix github artefact upload CI config
+
 ## 0.18.0
 
 *2020-05-12*
