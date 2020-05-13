@@ -2563,6 +2563,10 @@
         },
         "proposalID": {
           "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

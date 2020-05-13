@@ -1775,6 +1775,7 @@ TODO
 | partyID | [string](#string) |  |  |
 | value | [Vote.Value](#vega.Vote.Value) |  |  |
 | proposalID | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
 
 
 
