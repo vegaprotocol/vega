@@ -251,20 +251,20 @@ type ComplexityRoot struct {
 	}
 
 	Proposal struct {
+		Datetime  func(childComplexity int) int
 		ID        func(childComplexity int) int
 		NoVotes   func(childComplexity int) int
 		Party     func(childComplexity int) int
 		Reference func(childComplexity int) int
 		State     func(childComplexity int) int
 		Terms     func(childComplexity int) int
-		Timestamp func(childComplexity int) int
 		YesVotes  func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
 		Change                func(childComplexity int) int
-		ClosingTimestamp      func(childComplexity int) int
-		EnactmentTimestamp    func(childComplexity int) int
+		ClosingDatetime       func(childComplexity int) int
+		EnactmentDatetime     func(childComplexity int) int
 		MinParticipationStake func(childComplexity int) int
 	}
 
@@ -492,7 +492,7 @@ type ProposalResolver interface {
 	Reference(ctx context.Context, obj *proto.GovernanceData) (string, error)
 	Party(ctx context.Context, obj *proto.GovernanceData) (*proto.Party, error)
 	State(ctx context.Context, obj *proto.GovernanceData) (ProposalState, error)
-	Timestamp(ctx context.Context, obj *proto.GovernanceData) (string, error)
+	Datetime(ctx context.Context, obj *proto.GovernanceData) (string, error)
 	Terms(ctx context.Context, obj *proto.GovernanceData) (*ProposalTerms, error)
 	YesVotes(ctx context.Context, obj *proto.GovernanceData) ([]*Vote, error)
 	NoVotes(ctx context.Context, obj *proto.GovernanceData) ([]*Vote, error)
@@ -1452,6 +1452,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceLevel.Volume(childComplexity), true
 
+	case "Proposal.datetime":
+		if e.complexity.Proposal.Datetime == nil {
+			break
+		}
+
+		return e.complexity.Proposal.Datetime(childComplexity), true
+
 	case "Proposal.id":
 		if e.complexity.Proposal.ID == nil {
 			break
@@ -1494,13 +1501,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.Terms(childComplexity), true
 
-	case "Proposal.timestamp":
-		if e.complexity.Proposal.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.Proposal.Timestamp(childComplexity), true
-
 	case "Proposal.yesVotes":
 		if e.complexity.Proposal.YesVotes == nil {
 			break
@@ -1515,19 +1515,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.Change(childComplexity), true
 
-	case "ProposalTerms.closingTimestamp":
-		if e.complexity.ProposalTerms.ClosingTimestamp == nil {
+	case "ProposalTerms.closingDatetime":
+		if e.complexity.ProposalTerms.ClosingDatetime == nil {
 			break
 		}
 
-		return e.complexity.ProposalTerms.ClosingTimestamp(childComplexity), true
+		return e.complexity.ProposalTerms.ClosingDatetime(childComplexity), true
 
-	case "ProposalTerms.enactmentTimestamp":
-		if e.complexity.ProposalTerms.EnactmentTimestamp == nil {
+	case "ProposalTerms.enactmentDatetime":
+		if e.complexity.ProposalTerms.EnactmentDatetime == nil {
 			break
 		}
 
-		return e.complexity.ProposalTerms.EnactmentTimestamp(childComplexity), true
+		return e.complexity.ProposalTerms.EnactmentDatetime(childComplexity), true
 
 	case "ProposalTerms.minParticipationStake":
 		if e.complexity.ProposalTerms.MinParticipationStake == nil {
@@ -3572,27 +3572,31 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Timestamp when voting closes for this proposal"
-  closingTimestamp: String!
-  "Timestamp when this proposal is executed (if passed)"
-  enactmentTimestamp: String!
+  "ISO-8601 time and date when voting closes for this proposal."
+  closingDatetime: String!
+  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
   change: ProposalChange
 }
 
+# there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
+"Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
 input ProposalTermsInput {
-  "Timestamp when voting is closes for this proposal"
-  closingTimestamp: String!
-  "Timestamp when this proposal is executed (if passed)"
-  enactmentTimestamp: String!
+  "ISO-8601 time and date when voting closes for this proposal."
+  closingDatetime: String!
+  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
-  "Actual change being introduced by the proposal"
-
+  
+  "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
+  "Optional field to define new market change. If this is set along with another change, proposal will not be accepted."
   newMarket: NewMarketInput
+  "Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted."
   updateNetwork: UpdateNetworkInput
 }
 
@@ -3627,8 +3631,8 @@ type Proposal {
   party: Party!
   "State of the proposal"
   state: ProposalState!
-  "time at which the proposal has reached the network"
-  timestamp: String!
+  "ISO-8601 time and date when the proposal reached Vega network"
+  datetime: String!
   "Terms of the proposal"
   terms: ProposalTerms!
 
@@ -9070,7 +9074,7 @@ func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.C
 	return ec.marshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
+func (ec *executionContext) _Proposal_datetime(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9089,7 +9093,7 @@ func (ec *executionContext) _Proposal_timestamp(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Proposal().Timestamp(rctx, obj)
+		return ec.resolvers.Proposal().Datetime(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9212,7 +9216,7 @@ func (ec *executionContext) _Proposal_noVotes(ctx context.Context, field graphql
 	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalTerms_closingTimestamp(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9231,7 +9235,7 @@ func (ec *executionContext) _ProposalTerms_closingTimestamp(ctx context.Context,
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ClosingTimestamp, nil
+		return obj.ClosingDatetime, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9249,7 +9253,7 @@ func (ec *executionContext) _ProposalTerms_closingTimestamp(ctx context.Context,
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalTerms_enactmentTimestamp(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -9268,7 +9272,7 @@ func (ec *executionContext) _ProposalTerms_enactmentTimestamp(ctx context.Contex
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EnactmentTimestamp, nil
+		return obj.EnactmentDatetime, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14132,15 +14136,15 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
-		case "closingTimestamp":
+		case "closingDatetime":
 			var err error
-			it.ClosingTimestamp, err = ec.unmarshalNString2string(ctx, v)
+			it.ClosingDatetime, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "enactmentTimestamp":
+		case "enactmentDatetime":
 			var err error
-			it.EnactmentTimestamp, err = ec.unmarshalNString2string(ctx, v)
+			it.EnactmentDatetime, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16173,7 +16177,7 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 				}
 				return res
 			})
-		case "timestamp":
+		case "datetime":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -16181,7 +16185,7 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Proposal_timestamp(ctx, field, obj)
+				res = ec._Proposal_datetime(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -16245,13 +16249,13 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ProposalTerms")
-		case "closingTimestamp":
-			out.Values[i] = ec._ProposalTerms_closingTimestamp(ctx, field, obj)
+		case "closingDatetime":
+			out.Values[i] = ec._ProposalTerms_closingDatetime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "enactmentTimestamp":
-			out.Values[i] = ec._ProposalTerms_enactmentTimestamp(ctx, field, obj)
+		case "enactmentDatetime":
+			out.Values[i] = ec._ProposalTerms_enactmentDatetime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

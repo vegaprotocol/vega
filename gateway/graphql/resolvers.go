@@ -841,7 +841,7 @@ func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceDa
 	return ProposalStateFromProto(data.Proposal.State)
 }
 
-func (r *myProposalResolver) Timestamp(ctx context.Context, data *types.GovernanceData) (string, error) {
+func (r *myProposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
 	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
 		return "", ErrInvalidProposal
 	}

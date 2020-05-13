@@ -72,7 +72,7 @@ deps: ## Get the dependencies
 build: SHELL:=/bin/bash
 build: ## install the binaries in cmd/{progname}/
 	@d="" ; test -n "$$DEBUGVEGA" && d="-d" ; \
-	./script/build $d -t linux/amd64
+	./script/build.sh $d -t linux/amd64
 
 .PHONY: gofmtsimplify
 gofmtsimplify:

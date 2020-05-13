@@ -1254,27 +1254,31 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Timestamp when voting closes for this proposal"
-  closingTimestamp: String!
-  "Timestamp when this proposal is executed (if passed)"
-  enactmentTimestamp: String!
+  "ISO-8601 time and date when voting closes for this proposal."
+  closingDatetime: String!
+  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
   "Actual change being introduced by the proposal"
   change: ProposalChange
 }
 
+# there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
+"Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
 input ProposalTermsInput {
-  "Timestamp when voting is closes for this proposal"
-  closingTimestamp: String!
-  "Timestamp when this proposal is executed (if passed)"
-  enactmentTimestamp: String!
+  "ISO-8601 time and date when voting closes for this proposal."
+  closingDatetime: String!
+  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
-  "Actual change being introduced by the proposal"
-
+  
+  "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
+  "Optional field to define new market change. If this is set along with another change, proposal will not be accepted."
   newMarket: NewMarketInput
+  "Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted."
   updateNetwork: UpdateNetworkInput
 }
 
@@ -1309,8 +1313,8 @@ type Proposal {
   party: Party!
   "State of the proposal"
   state: ProposalState!
-  "time at which the proposal has reached the network"
-  timestamp: String!
+  "ISO-8601 time and date when the proposal reached Vega network"
+  datetime: String!
   "Terms of the proposal"
   terms: ProposalTerms!
 
