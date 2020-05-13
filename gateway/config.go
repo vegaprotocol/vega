@@ -49,8 +49,7 @@ func NewDefaultConfig() Config {
 				IP:   "0.0.0.0",
 				Port: 3004,
 			},
-			Enabled:         true,
-			ComplexityLimit: 38,
+			Enabled: true,
 		},
 		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{
