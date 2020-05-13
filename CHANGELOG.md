@@ -6,7 +6,7 @@
 
 ### Improvements
 - [#1649](https://github.com/vegaprotocol/vega/pull/1649)
-    Fix github artefact upload CI config
+    Fix github artefact upload CI configuration
 
 ## 0.18.0
 
