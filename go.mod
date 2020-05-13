@@ -1,5 +1,7 @@
 module code.vegaprotocol.io/vega
 
+go 1.13
+
 require (
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.10.2
@@ -7,8 +9,9 @@ require (
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/cenkalti/backoff/v4 v4.0.0
 	github.com/cucumber/godog v0.8.1
-	github.com/dgraph-io/badger/v2 v2.0.1-0.20191216081458-1b0c0742acd3
+	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
+	github.com/ethereum/go-ethereum v1.9.12
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
@@ -34,7 +37,7 @@ require (
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	google.golang.org/grpc v1.25.1
 )
 

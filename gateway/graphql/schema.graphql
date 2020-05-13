@@ -10,7 +10,7 @@ schema {
 type Mutation {
 
   """
-  Send a submit order request to be prepared, and returns a pending order + blob of the transaction to submit.
+  Send a submit order request to be prepared, and returns a blob of the transaction to submit.
   The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
   """
   prepareOrderSubmit(
@@ -20,7 +20,7 @@ type Mutation {
     partyId: String!
     "Price of the asset"
     price: String
-    "Size ofthe order"
+    "Size of the order"
     size: String!
     "Side of the order (Buy or Sell)"
     side: Side!
@@ -30,6 +30,8 @@ type Mutation {
     expiration: String
     "type of the order"
     type: OrderType!
+    "client reference for the order"
+    reference: String
   ): PreparedSubmitOrder!
 
   """
@@ -160,7 +162,7 @@ type Subscription {
     type: AccountType
   ): Account!
 
-  "subscribe to the mark price changes"
+  "Subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: String
@@ -173,6 +175,20 @@ type Subscription {
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketID: String
   ): MarginLevels!
+
+  "Subscribe to proposals. Leave out all arguments to receive all proposals"
+  proposals(
+    "Optional party id whose proposals are to be streamed"
+    partyID: String
+  ): Proposal!
+
+  "Subscribe to votes, either by proposal id or pary id"
+  votes(
+    "Optional proposal id which votes are to be streamed"
+    proposalID: String
+    "Optional party id whose votes are to be streamed"
+    partyID: String
+  ): ProposalVote!
 }
 
 "Margins for a given a trader"
@@ -223,63 +239,20 @@ type MarketData {
 type PreparedSubmitOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type PreparedCancelOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type PreparedAmendOrder {
   "blob: the raw transaction to sign & submit"
   blob: String!
-  "The pending order"
-  pendingOrder: PendingOrder!
 }
 
 type TransactionSubmitted {
   success: Boolean!
-}
-
-"An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted."
-type PendingOrder {
-
-  "The id of the Order, can be null if the request was SubmitOrder"
-  id: String
-
-  "A UUID reference for the caller to aid in tracking operations on VEGA"
-  reference: String!
-
-  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
-  price: String
-
-  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
-  timeInForce: OrderTimeInForce
-
-  "Whether the order is to buy or sell"
-  side: Side
-
-  """
-  The market the order is trading on (probably stored internally as a hash of the market details)
-  could be nil if the submit order failed and no order is created.
-  """
-  market: Market
-
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
-  size: String
-
-  "The trader who place the order (probably stored internally as the trader's public key)"
-  party: Party
-
-  "The status of an order, for example 'Active'"
-  status: OrderStatus
-
-  "The type of the order"
-  type: OrderType
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."
@@ -316,13 +289,68 @@ type Query {
   orderByID(
     "ID for an order"
     orderID: String!
+
+    "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    version: Int
   ): Order!
+
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersions(
+    "ID for an order"
+    orderID: String!
+
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
   orderByReferenceID(
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
+
+  "All governance proposals in the VEGA network"
+  proposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "A governance proposal located by either its id or reference. If both are set, id is used."
+  proposal(
+    "Optionally, locate proposal by its id"
+    id: String
+    "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
+    reference: String
+  ): Proposal!
+
+  "Governance proposals that aim creating new markets"
+  newMarketProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim updating existing markets"
+  updateMarketProposals(
+    "Optionally, select proposals for a specific market. Leave out for all"
+    marketId: String
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim updating Vega network parameters"
+  networkParametersProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim creating new assets in Vega"
+  newAssetProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
 }
 
 "Statistics about the node"
@@ -743,6 +771,13 @@ type Party {
     "market id off the margin to get, nil if all markets"
     marketId: String,
   ): [MarginLevels!]
+
+  proposals(
+    "Select only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal]
+
+  votes: [ProposalVote]
 }
 
 """
@@ -1219,7 +1254,7 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "Timestamp when voting is closes for this proposal"
+  "Timestamp when voting closes for this proposal"
   closingTimestamp: String!
   "Timestamp when this proposal is executed (if passed)"
   enactmentTimestamp: String!
@@ -1257,26 +1292,32 @@ enum ProposalState {
   Open
   "Proposal has gained enough support to be executed"
   Passed
+  "Proposal didn't get enough votes"
+  Declined
   "Proposal has could not gain enough support to be executed"
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
 }
 
-
 type Proposal {
   "Proposal id that is filled by VEGA once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
-  "An id of the party that prepared the proposal"
-  partyId: String!
+  "Party that prepared the proposal"
+  party: Party!
   "State of the proposal"
   state: ProposalState!
   "time at which the proposal has reached the network"
   timestamp: String!
   "Terms of the proposal"
   terms: ProposalTerms!
+
+  "Yes votes cast for this proposal"
+  yesVotes: [Vote]
+  "No votes cast for this proposal"
+  noVotes: [Vote]
 }
 
 type PreparedProposal {
@@ -1295,18 +1336,23 @@ enum VoteValue {
 
 type Vote {
   "The vote value cast"
-  Value: VoteValue!
+  value: VoteValue!
 
   "The party casting the vote"
-  PartyID: String!
+  party: Party!
+}
 
-  "Proposal ID -> proposal casting the vote on"
-  ProposalID: ID!
+type ProposalVote {
+  "Cast vote"
+  vote: Vote!
+
+  "Proposal casting the vote on"
+  proposalID: ID!
 }
 
 type PreparedVote {
   "Raw, serialised vote to be signed"
   blob: String!
   "The vote serialised in the blob field"
-  vote: Vote!
+  vote: ProposalVote!
 }

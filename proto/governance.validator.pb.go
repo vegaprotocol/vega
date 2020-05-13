@@ -45,6 +45,17 @@ func (this *UpdateNetwork) Validate() error {
 	}
 	return nil
 }
+func (this *NewAsset) Validate() error {
+	if nil == this.Changes {
+		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
+	}
+	if this.Changes != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Changes); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
+		}
+	}
+	return nil
+}
 func (this *ProposalTerms) Validate() error {
 	if !(this.ClosingTimestamp > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("ClosingTimestamp", fmt.Errorf(`value '%v' must be greater than '0'`, this.ClosingTimestamp))
@@ -76,9 +87,16 @@ func (this *ProposalTerms) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetChange().(*ProposalTerms_NewAsset); ok {
+		if oneOfNester.NewAsset != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.NewAsset); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("NewAsset", err)
+			}
+		}
+	}
 	return nil
 }
-func (this *ProposalVote) Validate() error {
+func (this *GovernanceData) Validate() error {
 	if this.Proposal != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)

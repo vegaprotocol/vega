@@ -4,7 +4,7 @@ This document serves to outline the coding style standard we aim to follow throu
 
 ## Starting point
 
-As a starting point, we should follow [the official golang `CodeReviewComments` document](https://github.com/golang/go/wiki/CodeReviewComments). The basics are:
+As a starting point, we should follow [the official Golang `CodeReviewComments` document](https://github.com/golang/go/wiki/CodeReviewComments). The basics are:
 
 * names are `camelCased` or `CamelCased`, for functions, types, and constants alike.
 * Avoid stutter (`markets.NewMarket` should be `markets.New()` etc...)
@@ -13,7 +13,7 @@ As a starting point, we should follow [the official golang `CodeReviewComments` 
 
 ## Superset
 
-As a basis, we're using the golang `CodeReviewComments`. We're adding a few things to that that either have proven to be issues in our codebase, or things that are considered _good practice_, and we therefore want to enforce.
+As a basis, we're using the Golang `CodeReviewComments`. We're adding a few things to that that either have proven to be issues in our codebase, or things that are considered _good practice_, and we therefore want to enforce.
 
 1. Use directional channels whenever possible. The gRPC streams are used to subscribe to updates to specific bits of data. Internally, these subscriptions take the shape of channels. Because streams are read-only, the channels created and passed around are, by definition read-only. The return types should reflect this:
 
@@ -70,7 +70,7 @@ func NewFooEngine(fooBuf FooBuffer) *fooEngine {
 
 ## Protobuf
 
-In addition to the golang code review standards, we want to be consistent:
+In addition to the Golang code review standards, we want to be consistent:
 
 * Avoid nested types as much as possible. Enums are the notable exception here.
 * Fields that are ID's should be named `ID` or `FooID` (ID is CAPS).

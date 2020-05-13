@@ -516,6 +516,52 @@
         ]
       }
     },
+    "/orders/{orderID}/versions": {
+      "get": {
+        "summary": "Get all versions of the order by its orderID",
+        "operationId": "OrderVersionsByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrderVersionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.skip",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders/{reference}": {
       "get": {
         "summary": "Get an Order by Pending Order reference (UUID)",
@@ -913,13 +959,14 @@
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
+        "TIF_UNSPECIFIED",
         "GTC",
         "GTT",
         "IOC",
         "FOK"
       ],
-      "default": "GTC",
-      "description": "- GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "default": "TIF_UNSPECIFIED",
+      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
       "title": "Order Time in Force"
     },
     "ProposalState": {
@@ -962,13 +1009,32 @@
         }
       }
     },
-    "apiGetProposalsResponse": {
+    "apiGetGovernanceDataResponse": {
       "type": "object",
       "properties": {
-        "proposals": {
+        "data": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaProposalVote"
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalResponse": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
+    "apiGetVotesResponse": {
+      "type": "object",
+      "properties": {
+        "votes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
           }
         }
       }
@@ -1062,6 +1128,14 @@
             "$ref": "#/definitions/vegaMarket"
           },
           "title": "a list of Markets"
+        }
+      }
+    },
+    "apiOptionalProposalState": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/ProposalState"
         }
       }
     },
@@ -1189,9 +1263,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1201,9 +1272,6 @@
         "blob": {
           "type": "string",
           "format": "byte"
-        },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
         }
       }
     },
@@ -1240,8 +1308,8 @@
           "type": "string",
           "format": "byte"
         },
-        "pendingOrder": {
-          "$ref": "#/definitions/vegaPendingOrder"
+        "submitID": {
+          "type": "string"
         }
       }
     },
@@ -1426,6 +1494,35 @@
       ],
       "default": "ALL"
     },
+    "vegaAssetSource": {
+      "type": "object",
+      "properties": {
+        "builtinAsset": {
+          "$ref": "#/definitions/vegaBuiltinAsset"
+        },
+        "erc20": {
+          "$ref": "#/definitions/vegaERC20"
+        }
+      }
+    },
+    "vegaBuiltinAsset": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -1490,6 +1587,14 @@
         }
       }
     },
+    "vegaERC20": {
+      "type": "object",
+      "properties": {
+        "contractAddress": {
+          "type": "string"
+        }
+      }
+    },
     "vegaEthereumEvent": {
       "type": "object",
       "properties": {
@@ -1533,6 +1638,26 @@
         },
         "ethereumEvent": {
           "$ref": "#/definitions/vegaEthereumEvent"
+        }
+      }
+    },
+    "vegaGovernanceData": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "yes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
+        },
+        "no": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          }
         }
       }
     },
@@ -1798,6 +1923,15 @@
         }
       }
     },
+    "vegaNewAsset": {
+      "type": "object",
+      "properties": {
+        "changes": {
+          "$ref": "#/definitions/vegaAssetSource"
+        }
+      },
+      "title": "To be implemented"
+    },
     "vegaNewMarket": {
       "type": "object",
       "properties": {
@@ -1882,8 +2016,7 @@
           "type": "string"
         },
         "price": {
-          "type": "string",
-          "format": "uint64",
+          "$ref": "#/definitions/vegaPrice",
           "title": "these can be amended"
         },
         "sizeDelta": {
@@ -1891,8 +2024,7 @@
           "format": "int64"
         },
         "expiresAt": {
-          "type": "string",
-          "format": "int64"
+          "$ref": "#/definitions/vegaTimestamp"
         },
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
@@ -1995,43 +2127,6 @@
         }
       }
     },
-    "vegaPendingOrder": {
-      "type": "object",
-      "properties": {
-        "reference": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "timeInForce": {
-          "$ref": "#/definitions/OrderTimeInForce"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
-        },
-        "marketID": {
-          "type": "string"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "partyID": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/OrderStatus"
-        },
-        "id": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
-        }
-      }
-    },
     "vegaPosition": {
       "type": "object",
       "properties": {
@@ -2054,6 +2149,15 @@
           "format": "int64"
         },
         "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaPrice": {
+      "type": "object",
+      "properties": {
+        "value": {
           "type": "string",
           "format": "uint64"
         }
@@ -2109,15 +2213,21 @@
       "properties": {
         "closingTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Timestamp (Unix time in seconds) when voting closes for this proposal"
         },
         "enactmentTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed)"
         },
         "minParticipationStake": {
           "type": "string",
           "format": "uint64"
+        },
+        "validationTimestamp": {
+          "type": "string",
+          "format": "int64"
         },
         "updateMarket": {
           "$ref": "#/definitions/vegaUpdateMarket"
@@ -2127,26 +2237,9 @@
         },
         "updateNetwork": {
           "$ref": "#/definitions/vegaUpdateNetwork"
-        }
-      }
-    },
-    "vegaProposalVote": {
-      "type": "object",
-      "properties": {
-        "proposal": {
-          "$ref": "#/definitions/vegaProposal"
         },
-        "yes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
-        },
-        "no": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          }
+        "newAsset": {
+          "$ref": "#/definitions/vegaNewAsset"
         }
       }
     },
@@ -2336,6 +2429,15 @@
         "uptime": {
           "type": "string",
           "title": "ISO 8601 datetime, nanosecond precision"
+        }
+      }
+    },
+    "vegaTimestamp": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -2529,6 +2631,18 @@
       },
       "title": "Stream result of vegaCandle"
     },
+    "vegaGovernanceData": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaGovernanceData"
+    },
     "vegaMarginLevels": {
       "type": "object",
       "properties": {
@@ -2577,18 +2691,6 @@
       },
       "title": "Stream result of vegaPosition"
     },
-    "vegaProposalVote": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaProposalVote"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaProposalVote"
-    },
     "vegaTransferResponse": {
       "type": "object",
       "properties": {
@@ -2600,6 +2702,18 @@
         }
       },
       "title": "Stream result of vegaTransferResponse"
+    },
+    "vegaVote": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaVote"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaVote"
     }
   }
 }

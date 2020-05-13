@@ -8,28 +8,27 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/noop"
 	"code.vegaprotocol.io/vega/blockchain/tm"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/stats"
 )
 
 var (
 	ErrInvalidChainProvider = errors.New("invalid chain provider")
 )
 
-type ExecutionEngine interface {
-	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
-	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
-	Withdraw(w *types.Withdraw) error
-	SubmitProposal(proposal *types.Proposal) error
-	VoteOnProposal(vote *types.Vote) error
-	Generate() error
-}
-
 type TimeService interface {
 	SetTimeNow(time.Time)
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
+}
+
+type ABCIEngine interface {
+	Processor
+	Commit() error
+	Begin() error
+}
+
+type Commander interface {
+	SetChain(*Client)
 }
 
 type chainImpl interface {
@@ -40,19 +39,19 @@ type Blockchain struct {
 	log        *logging.Logger
 	clt        *Client
 	chain      chainImpl
-	execEngine ExecutionEngine
+	abciEngine ABCIEngine
 	time       TimeService
-	processor  *Processor
-	service    *abciService
-	stats      *Stats
+	processor  *codec
+	stats      *stats.Blockchain
 }
 
 func New(
 	log *logging.Logger,
 	cfg Config,
-	execEngine ExecutionEngine,
+	abciEngine ABCIEngine,
 	time TimeService,
-	stats *Stats,
+	stats *stats.Blockchain,
+	commander Commander,
 	cancel func(),
 ) (*Blockchain, error) {
 	// setup logger
@@ -65,17 +64,17 @@ func New(
 		err   error
 	)
 
-	service := newService(log, cfg, stats, execEngine, time)
-	proc := NewProcessor(log, cfg, service)
+	proc := NewCodec(log, cfg, abciEngine)
+	// proc := NewProcessor(log, cfg, service)
 
 	switch strings.ToLower(cfg.ChainProvider) {
 	case "tendermint":
-		chain, err = tm.New(log, cfg.Tendermint, stats, proc, service, time, cancel)
+		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel)
 		if err == nil {
 			clt, err = tm.NewClient(cfg.Tendermint)
 		}
 	case "noop":
-		noopchain := noop.New(log, cfg.Noop, stats, time, proc, service)
+		noopchain := noop.New(log, cfg.Noop, stats, time, proc, abciEngine)
 		chain = noopchain
 		clt = noopchain
 	default:
@@ -84,18 +83,19 @@ func New(
 	if err != nil {
 		return nil, err
 	}
+	client := newClient(clt)
+	commander.SetChain(client)
 
 	log.Info("vega blockchain initialised", logging.String("chain-provider", cfg.ChainProvider))
 
 	return &Blockchain{
 		log:        log,
-		clt:        newClient(clt),
+		clt:        client,
 		chain:      chain,
-		execEngine: execEngine,
+		abciEngine: abciEngine,
 		time:       time,
 		processor:  proc,
 		stats:      stats,
-		service:    service,
 	}, nil
 }
 
@@ -110,7 +110,6 @@ func (b *Blockchain) ReloadConf(cfg Config) {
 		b.log.SetLevel(cfg.Level.Get())
 	}
 	b.processor.ReloadConf(cfg)
-	b.service.ReloadConf(cfg)
 	if chain, ok := b.chain.(*tm.TMChain); ok {
 		chain.ReloadConf(cfg.Tendermint)
 	}

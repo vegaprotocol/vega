@@ -66,6 +66,19 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	return c.sendTx(ctx, bundleBytes, CommandKindSigned)
 }
 
+// SubmitNodeRegistration - Add command-specific public func for unsigned command
+func (c *Client) SubmitNodeRegistration(ctx context.Context, reg *types.NodeRegistration) (bool, error) {
+	bytes, err := proto.Marshal(reg)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("node registration was empty")
+	}
+
+	return c.sendCommand(ctx, bytes, RegisterNodeCommand)
+}
+
 // CancelOrder will send a cancel order transaction to the blockchain
 func (c *Client) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
 	return c.sendCancellationCommand(ctx, order, CancelOrderCommand)
@@ -88,25 +101,11 @@ func (c *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) 
 }
 
 // CreateOrder will send a submit order transaction to the blockchain
-func (c *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
+func (c *Client) CreateOrder(ctx context.Context, order *types.Order) error {
 	order.Reference = uuid.NewV4().String()
 	_, err := c.sendOrderCommand(ctx, order, SubmitOrderCommand)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.PendingOrder{
-		Reference:   order.Reference,
-		Price:       order.Price,
-		TimeInForce: order.TimeInForce,
-		Side:        order.Side,
-		MarketID:    order.MarketID,
-		Size:        order.Size,
-		PartyID:     order.PartyID,
-		Status:      order.Status,
-		Type:        order.Type,
-	}, nil
+	return err
 }
 
 // GetGenesisTime will retrieve the genesis time from the blockchain
@@ -218,11 +217,4 @@ func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (su
 
 func (c *Client) sendTx(ctx context.Context, bytes []byte, cmdKind CommandKind) (bool, error) {
 	return c.clt.SendTransaction(ctx, append([]byte{byte(cmdKind)}, bytes...))
-}
-
-func txEncode(input []byte, cmd Command) (proto []byte, err error) {
-	prefix := uuid.NewV4().String()
-	prefixBytes := []byte(prefix)
-	commandInput := append([]byte{byte(cmd)}, input...)
-	return append(prefixBytes, commandInput...), nil
 }

@@ -19,6 +19,7 @@ type Collateral interface {
 	IncrementBalance(id string, amount uint64) error
 	DecrementBalance(id string, amount uint64) error
 	GetAccountByID(id string) (*types.Account, error)
+	GetPartyTokenAccount(string) (*types.Account, error)
 }
 
 // Party holds the list of parties in the system
@@ -174,5 +175,15 @@ func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount ui
 			return err
 		}
 	}
+
+	tknAcc, err := p.collateral.GetPartyTokenAccount(notify.TraderID)
+	if err != nil {
+		return err
+	}
+	if err := p.collateral.IncrementBalance(tknAcc.Id, notify.Amount); err != nil {
+		p.log.Error("unable to top-up token account", logging.Error(err))
+		return err
+	}
+
 	return nil
 }

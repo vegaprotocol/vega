@@ -3,17 +3,21 @@
 # global dictionary is at the start, file overrides afterwards
 # one word per line, to define a file override use ' - filename'
 # where filename is relative to this configuration file
+api
 barnabee
 blockchain
 Ed25519
+Enums
 github
 GitLab
-GoLang
+Golang
 GraphQL
 gRPC
 Ilya
+init
 MacOSX
-Golang
+nodewallet
+proto
 protobuf
 protobufs
 struct
@@ -22,13 +26,9 @@ Suzdalnitski
 syslog
 tamlyn10
 Tendermint
+testnet
 traderbot
+unexported
 vega
 whitepaper
 xor
-golang
-github
-unexported
-Enums
-proto
-api

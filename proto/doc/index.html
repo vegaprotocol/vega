@@ -203,6 +203,10 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetGovernanceDataResponse"><span class="badge">M</span>GetGovernanceDataResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -211,7 +215,27 @@
                 </li>
 
                 <li>
-                  <a href="#api.GetProposalsResponse"><span class="badge">M</span>GetProposalsResponse</a>
+                  <a href="#api.GetProposalResponse"><span class="badge">M</span>GetProposalResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetProposalsByPartyRequest"><span class="badge">M</span>GetProposalsByPartyRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetProposalsByStateRequest"><span class="badge">M</span>GetProposalsByStateRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetUpdateMarketProposalsRequest"><span class="badge">M</span>GetUpdateMarketProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetVotesByPartyRequest"><span class="badge">M</span>GetVotesByPartyRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetVotesResponse"><span class="badge">M</span>GetVotesResponse</a>
                 </li>
 
                 <li>
@@ -280,6 +304,22 @@
 
                 <li>
                   <a href="#api.MarketsResponse"><span class="badge">M</span>MarketsResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObservePartyProposalsRequest"><span class="badge">M</span>ObservePartyProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObservePartyVotesRequest"><span class="badge">M</span>ObservePartyVotesRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObserveProposalVotesRequest"><span class="badge">M</span>ObserveProposalVotesRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.OptionalProposalState"><span class="badge">M</span>OptionalProposalState</a>
                 </li>
 
                 <li>
@@ -474,11 +514,50 @@
 
 
           <li>
+            <a href="#proto%2fassets.proto">proto/assets.proto</a>
+            <ul>
+
+                <li>
+                  <a href="#vega.Asset"><span class="badge">M</span>Asset</a>
+                </li>
+
+                <li>
+                  <a href="#vega.AssetSource"><span class="badge">M</span>AssetSource</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BuiltinAsset"><span class="badge">M</span>BuiltinAsset</a>
+                </li>
+
+                <li>
+                  <a href="#vega.DevAssets"><span class="badge">M</span>DevAssets</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ERC20"><span class="badge">M</span>ERC20</a>
+                </li>
+
+
+
+
+            </ul>
+          </li>
+
+
+          <li>
             <a href="#proto%2fgovernance.proto">proto/governance.proto</a>
             <ul>
 
                 <li>
+                  <a href="#vega.GovernanceData"><span class="badge">M</span>GovernanceData</a>
+                </li>
+
+                <li>
                   <a href="#vega.NetworkConfiguration"><span class="badge">M</span>NetworkConfiguration</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NewAsset"><span class="badge">M</span>NewAsset</a>
                 </li>
 
                 <li>
@@ -491,10 +570,6 @@
 
                 <li>
                   <a href="#vega.ProposalTerms"><span class="badge">M</span>ProposalTerms</a>
-                </li>
-
-                <li>
-                  <a href="#vega.ProposalVote"><span class="badge">M</span>ProposalVote</a>
                 </li>
 
                 <li>
@@ -640,6 +715,14 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NodeRegistration"><span class="badge">M</span>NodeRegistration</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NodeVote"><span class="badge">M</span>NodeVote</a>
+                </li>
+
+                <li>
                   <a href="#vega.Order"><span class="badge">M</span>Order</a>
                 </li>
 
@@ -668,15 +751,15 @@
                 </li>
 
                 <li>
-                  <a href="#vega.PendingOrder"><span class="badge">M</span>PendingOrder</a>
-                </li>
-
-                <li>
                   <a href="#vega.Position"><span class="badge">M</span>Position</a>
                 </li>
 
                 <li>
                   <a href="#vega.PositionTrade"><span class="badge">M</span>PositionTrade</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Price"><span class="badge">M</span>Price</a>
                 </li>
 
                 <li>
@@ -705,6 +788,10 @@
 
                 <li>
                   <a href="#vega.Statistics"><span class="badge">M</span>Statistics</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Timestamp"><span class="badge">M</span>Timestamp</a>
                 </li>
 
                 <li>
@@ -1044,6 +1131,30 @@
 
 
 
+        <h3 id="api.GetGovernanceDataResponse">GetGovernanceDataResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.GetProposalByIDRequest">GetProposalByIDRequest</h3>
         <p></p>
 
@@ -1055,7 +1166,7 @@
             <tbody>
 
                 <tr>
-                  <td>ID</td>
+                  <td>proposalID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -1078,7 +1189,7 @@
               <tbody>
 
                 <tr>
-                  <td>ID</td>
+                  <td>proposalID</td>
                   <td>
                     <ul>
 
@@ -1146,7 +1257,7 @@
 
 
 
-        <h3 id="api.GetProposalsResponse">GetProposalsResponse</h3>
+        <h3 id="api.GetProposalResponse">GetProposalResponse</h3>
         <p></p>
 
 
@@ -1157,8 +1268,223 @@
             <tbody>
 
                 <tr>
-                  <td>proposals</td>
-                  <td><a href="#vega.ProposalVote">vega.ProposalVote</a></td>
+                  <td>proposal</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>state</td>
+                  <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.GetProposalsByStateRequest">GetProposalsByStateRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>state</td>
+                  <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetUpdateMarketProposalsRequest">GetUpdateMarketProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>state</td>
+                  <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.GetVotesByPartyRequest">GetVotesByPartyRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.GetVotesResponse">GetVotesResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>votes</td>
+                  <td><a href="#vega.Vote">vega.Vote</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -1807,6 +2133,183 @@
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
                   <td><p>a list of Markets </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.ObservePartyVotesRequest">ObservePartyVotesRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.ObserveProposalVotesRequest">ObserveProposalVotesRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>proposalID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>proposalID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.OptionalProposalState">OptionalProposalState</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -2737,13 +3240,6 @@
                   <td><p> </p></td>
                 </tr>
 
-                <tr>
-                  <td>pendingOrder</td>
-                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -2764,13 +3260,6 @@
                 <tr>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>pendingOrder</td>
-                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2907,8 +3396,8 @@
                 </tr>
 
                 <tr>
-                  <td>pendingOrder</td>
-                  <td><a href="#vega.PendingOrder">vega.PendingOrder</a></td>
+                  <td>submitID</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -3631,37 +4120,93 @@
 
               <tr>
                 <td>GetProposals</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.GetProposalsResponse">GetProposalsResponse</a></td>
-                <td><p>Get all proposals</p></td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for all proposals</p></td>
               </tr>
 
               <tr>
-                <td>GetOpenProposals</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#api.GetProposalsResponse">GetProposalsResponse</a></td>
-                <td><p>Get all OPEN proposals</p></td>
+                <td>GetProposalsByParty</td>
+                <td><a href="#api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for proposals by party authoring them</p></td>
+              </tr>
+
+              <tr>
+                <td>GetVotesByParty</td>
+                <td><a href="#api.GetVotesByPartyRequest">GetVotesByPartyRequest</a></td>
+                <td><a href="#api.GetVotesResponse">GetVotesResponse</a></td>
+                <td><p>Get votes by party casting them</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNewMarketProposals</td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for proposals that aim creating new markets</p></td>
+              </tr>
+
+              <tr>
+                <td>GetUpdateMarketProposals</td>
+                <td><a href="#api.GetUpdateMarketProposalsRequest">GetUpdateMarketProposalsRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for proposals that aim updating markets</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNetworkParametersProposals</td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for proposals that aim updating Vega network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNewAssetProposals</td>
+                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
+                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for proposals aiming to create new assets</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalByID</td>
                 <td><a href="#api.GetProposalByIDRequest">GetProposalByIDRequest</a></td>
-                <td><a href="#vega.ProposalVote">.vega.ProposalVote</a></td>
-                <td><p>Get a proposal by ID</p></td>
+                <td><a href="#api.GetProposalResponse">GetProposalResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for a proposal located by ID</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalByReference</td>
                 <td><a href="#api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</a></td>
-                <td><a href="#vega.ProposalVote">.vega.ProposalVote</a></td>
-                <td><p>Get a proposal by reference</p></td>
+                <td><a href="#api.GetProposalResponse">GetProposalResponse</a></td>
+                <td><p>Get governance data (proposals and votes) for a proposal located by reference</p></td>
               </tr>
 
               <tr>
-                <td>ObserveProposals</td>
+                <td>ObserveGovernance</td>
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#vega.ProposalVote">.vega.ProposalVote</a> stream</td>
-                <td><p>Subscribe to a stream of updates to proposal data</p></td>
+                <td><a href="#vega.GovernanceData">.vega.GovernanceData</a> stream</td>
+                <td><p>Subscribe to a stream of all governance updates</p></td>
+              </tr>
+
+              <tr>
+                <td>ObservePartyProposals</td>
+                <td><a href="#api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</a></td>
+                <td><a href="#vega.GovernanceData">.vega.GovernanceData</a> stream</td>
+                <td><p>Subscribe to a stream of proposal updates</p></td>
+              </tr>
+
+              <tr>
+                <td>ObservePartyVotes</td>
+                <td><a href="#api.ObservePartyVotesRequest">ObservePartyVotesRequest</a></td>
+                <td><a href="#vega.Vote">.vega.Vote</a> stream</td>
+                <td><p>Subscribe to a stream of votes cast by a specific party</p></td>
+              </tr>
+
+              <tr>
+                <td>ObserveProposalVotes</td>
+                <td><a href="#api.ObserveProposalVotesRequest">ObserveProposalVotesRequest</a></td>
+                <td><a href="#vega.Vote">.vega.Vote</a> stream</td>
+                <td><p>Subscribe to a stream of proposal votes</p></td>
               </tr>
 
               <tr>
@@ -3748,9 +4293,251 @@
 
 
       <div class="file-heading">
+        <h2 id="proto/assets.proto">proto/assets.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+
+        <h3 id="vega.Asset">Asset</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>symbol</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>totalSupply</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>this may very much likely be a big.Int </p></td>
+                </tr>
+
+                <tr>
+                  <td>decimals</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>builtinAsset</td>
+                  <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.ERC20">ERC20</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.AssetSource">AssetSource</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>builtinAsset</td>
+                  <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.ERC20">ERC20</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BuiltinAsset">BuiltinAsset</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>symbol</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>totalSupply</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>decimals</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.DevAssets">DevAssets</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>sources</td>
+                  <td><a href="#vega.AssetSource">AssetSource</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ERC20">ERC20</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>contractAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <div class="file-heading">
         <h2 id="proto/governance.proto">proto/governance.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
+
+
+        <h3 id="vega.GovernanceData">GovernanceData</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>proposal</td>
+                  <td><a href="#vega.Proposal">Proposal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>yes</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>no</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
 
 
         <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
@@ -3800,6 +4587,57 @@
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.NewAsset">NewAsset</h3>
+        <p>To be implemented</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>changes</td>
+                  <td><a href="#vega.AssetSource">AssetSource</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>changes</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -3978,19 +4816,26 @@
                   <td>closingTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp (Unix time in seconds) when voting closes for this proposal </p></td>
                 </tr>
 
                 <tr>
                   <td>enactmentTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp (Unix time in seconds) when proposal gets enacted (if passed) </p></td>
                 </tr>
 
                 <tr>
                   <td>minParticipationStake</td>
                   <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>validationTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4012,6 +4857,13 @@
                 <tr>
                   <td>updateNetwork</td>
                   <td><a href="#vega.UpdateNetwork">UpdateNetwork</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>newAsset</td>
+                  <td><a href="#vega.NewAsset">NewAsset</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4067,44 +4919,6 @@
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="vega.ProposalVote">ProposalVote</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>proposal</td>
-                  <td><a href="#vega.Proposal">Proposal</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>yes</td>
-                  <td><a href="#vega.Vote">Vote</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>no</td>
-                  <td><a href="#vega.Vote">Vote</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 
@@ -5415,6 +6229,126 @@
 
 
 
+        <h3 id="vega.NodeRegistration">NodeRegistration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.NodeVote">NodeVote</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>reference</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
         <h3 id="vega.Order">Order</h3>
         <p></p>
 
@@ -5578,7 +6512,7 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>price</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#vega.Price">Price</a></td>
                   <td></td>
                   <td><p>these can be amended </p></td>
                 </tr>
@@ -5592,7 +6526,7 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>expiresAt</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#vega.Timestamp">Timestamp</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5637,17 +6571,6 @@ after each successful amend </p></td>
                     <ul>
 
                       <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>price</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
 
                     </ul>
                   </td>
@@ -6040,93 +6963,6 @@ after each successful amend </p></td>
 
 
 
-        <h3 id="vega.PendingOrder">PendingOrder</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>reference</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>price</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>timeInForce</td>
-                  <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>side</td>
-                  <td><a href="#vega.Side">Side</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>marketID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>size</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>status</td>
-                  <td><a href="#vega.Order.Status">Order.Status</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>type</td>
-                  <td><a href="#vega.Order.Type">Order.Type</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.Position">Position</h3>
         <p></p>
 
@@ -6205,6 +7041,30 @@ after each successful amend </p></td>
 
                 <tr>
                   <td>price</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Price">Price</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -6670,6 +7530,30 @@ after each successful amend </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Timestamp">Timestamp</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -7182,26 +8066,32 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>GTC</td>
+                <td>TIF_UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, can be valid for an amend</p></td>
+              </tr>
+
+              <tr>
+                <td>GTC</td>
+                <td>1</td>
                 <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
                 <td>GTT</td>
-                <td>1</td>
+                <td>2</td>
                 <td><p>good til time</p></td>
               </tr>
 
               <tr>
                 <td>IOC</td>
-                <td>2</td>
+                <td>3</td>
                 <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
                 <td>FOK</td>
-                <td>3</td>
+                <td>4</td>
                 <td><p>fill or kill</p></td>
               </tr>
 

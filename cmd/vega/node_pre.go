@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
@@ -19,10 +20,12 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
@@ -30,9 +33,13 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
+	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/cenkalti/backoff/v4"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -81,6 +88,18 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.StoresEnabled = false
 	}
 
+	// if theses is not specified, we then trigger a prompt
+	// for the user to type his password
+	var nodeWalletPassphrase string
+	if len(l.nodeWalletPassphrase) <= 0 {
+		nodeWalletPassphrase, err = getTerminalPassphrase()
+	} else {
+		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
+	}
+	if err != nil {
+		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
+	}
+
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -99,6 +118,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
+
+	// this doesn't fail
+	l.timeService = vegatime.New(l.conf.Time)
 
 	if err = l.loadMarketsConfig(); err != nil {
 		return err
@@ -125,6 +147,69 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		l.Log.Info("node setted up without badger store support")
 	} else {
 		l.Log.Info("node setted up with badger store support")
+	}
+
+	// instanciate the ETHClient
+	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	if err != nil {
+		return err
+	}
+
+	// nodewallet
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase, ethclt)
+	if err != nil {
+		return err
+	}
+
+	// ensure all require wallet are available
+	err = l.nodeWallet.EnsureRequireWallets()
+	if err != nil {
+		return err
+	}
+
+	// initialize the assets service now
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove that once we have infrastructure to use token through governance
+	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range assetSrcs {
+		v := v
+		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
+		if err != nil {
+			return fmt.Errorf("error instanciating asset %v\n", err)
+		}
+
+		asset, err := l.assets.Get(aid)
+		if err != nil {
+			return fmt.Errorf("unable to get asset %v\n", err)
+		}
+
+		// just a simple backoff here
+		err = backoff.Retry(
+			func() error {
+				err := asset.Validate()
+				if !asset.IsValid() {
+					return err
+				}
+				return nil
+			},
+			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to instanciate new asset %v", err)
+		}
+		if err := l.assets.Enable(aid); err != nil {
+			return fmt.Errorf("unable to enable asset: %v", err)
+		}
+		l.Log.Info("new asset added successfully",
+			logging.String("asset", asset.String()))
 	}
 
 	return nil
@@ -239,8 +324,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 			l.cancel()
 		}
 	}()
-	// this doesn't fail
-	l.timeService = vegatime.New(l.conf.Time)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -262,17 +345,20 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.voteBuf,
 		l.mktscfg,
 	)
+	// we cannot pass the Chain dependency here (that's set by the blockchain)
+	commander := nodewallet.NewCommander(l.ctx, nil)
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
 	l.settlePlugin.Start(l.ctx) // open channel from the start
-	l.proposalPlugin = plugins.NewProposals(l.proposalBuf, l.voteBuf)
-	l.proposalPlugin.Start(l.ctx)
+	l.governancePlugin = plugins.NewGovernance(l.proposalBuf, l.voteBuf)
+	l.governancePlugin.Start(l.ctx)
 
 	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.executionEngine, l.timeService, l.stats.Blockchain, l.cancel)
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)
 	if err != nil {
 		return errors.Wrap(err, "unable to start the blockchain")
 	}
@@ -306,7 +392,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
 
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.proposalPlugin)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.governancePlugin)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
@@ -326,4 +412,23 @@ func (l *NodeCommand) SetUlimits() error {
 		Max: l.conf.UlimitNOFile,
 		Cur: l.conf.UlimitNOFile,
 	})
+}
+
+func getTerminalPassphrase() (string, error) {
+	fmt.Printf("please enter nodewallet passphrase:")
+	password, err := terminal.ReadPassword(0)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("")
+	return string(password), nil
+}
+
+func getFilePassphrase(path string) (string, error) {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
 }

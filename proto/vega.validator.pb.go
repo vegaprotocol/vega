@@ -17,6 +17,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *Price) Validate() error {
+	return nil
+}
+func (this *Timestamp) Validate() error {
+	return nil
+}
 func (this *Amount) Validate() error {
 	return nil
 }
@@ -109,9 +115,6 @@ func (this *PositionTrade) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
-func (this *PendingOrder) Validate() error {
-	return nil
-}
 func (this *NotifyTraderAccount) Validate() error {
 	return nil
 }
@@ -125,8 +128,15 @@ func (this *OrderAmendment) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if !(this.Price > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Price", fmt.Errorf(`value '%v' must be greater than '0'`, this.Price))
+	if this.Price != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Price); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Price", err)
+		}
+	}
+	if this.ExpiresAt != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.ExpiresAt); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", err)
+		}
 	}
 	return nil
 }
@@ -160,6 +170,15 @@ func (this *OrderCancellation) Validate() error {
 	}
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	return nil
+}
+func (this *NodeRegistration) Validate() error {
+	return nil
+}
+func (this *NodeVote) Validate() error {
+	if this.Reference == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
 	}
 	return nil
 }

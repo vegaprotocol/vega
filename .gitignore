@@ -1,22 +1,21 @@
 # Vega specific entries
 cmd/*/*-dbg
-cmd/dummyriskmodel/dummyriskmodel
-cmd/vegaccount/vegaccount
-cmd/vegastream/vegastream
-cmd/vega/vega
+cmd/dummyriskmodel/dummyriskmodel*
+cmd/vegaccount/vegaccount*
+cmd/vegastream/vegastream*
+cmd/vega/vega*
 data/
 .DS_Store
 .envrc
 .idea/
 *.iws
-log/capistrano.log
 .mypy_cache
 proto/*-re
 .testCoverage.html
 .testCoverage.txt
 *.tmp
 tmp/
-vega-*.log
+*.log
 vendor/
 .vscode/
 proto/**.orig

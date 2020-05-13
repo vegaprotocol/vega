@@ -28,15 +28,20 @@ var (
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
 	// ErrNonGTTOrderWithExpiry signals that a non GTT order what set with an expiracy
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
+	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiracy
+	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 	// ErrInvalidAmendmentSizeDelta ...
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
 	// ErrInvalidAmendOrderTIF ...
 	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
-
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 	// ErrEmptySubmitTransactionRequest empty transaction
 	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
+	// ErrNoParamsInAmendRequest no amended fields have been provided
+	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
+	// ErrNoTimeInForce no value has been set for the time in force
+	ErrNoTimeInForce = errors.New("no value has been set for the time in force")
 )
 
 // TimeService ...
@@ -116,34 +121,28 @@ func (s *Svc) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle)
 	return s.blockchain.SubmitTransaction(ctx, bundle)
 }
 
-func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error) {
+func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error {
 	if submission == nil {
-		return nil, ErrEmptyPrepareRequest
+		return ErrEmptyPrepareRequest
 	}
 	if err := s.validateOrderSubmission(submission); err != nil {
-		return nil, err
+		return err
 	}
 	if submission.Reference == "" {
 		submission.Reference = uuid.NewV4().String()
 	}
-	return &types.PendingOrder{
-		Reference:   submission.Reference,
-		Price:       submission.Price,
-		TimeInForce: submission.TimeInForce,
-		Side:        submission.Side,
-		MarketID:    submission.MarketID,
-		Size:        submission.Size,
-		PartyID:     submission.PartyID,
-		Id:          submission.Id,
-		Type:        submission.Type,
-		Status:      types.Order_Active,
-	}, nil
+	return nil
 }
 
 func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	if err := sub.Validate(); err != nil {
 		return errors.Wrap(err, "order validation failed")
 	}
+
+	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
+		return ErrNoTimeInForce
+	}
+
 	if sub.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
 		if err != nil {
@@ -170,90 +169,55 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	return nil
 }
 
-func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error) {
+func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancellation) error {
 	if order == nil {
-		return nil, ErrEmptyPrepareRequest
+		return ErrEmptyPrepareRequest
 	}
 	if err := order.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order cancellation invalid")
+		return errors.Wrap(err, "order cancellation invalid")
 	}
-	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
-	if err != nil {
-		return nil, err
-	}
-	if o.Status == types.Order_Cancelled {
-		return nil, errors.New("order has already been cancelled")
-	}
-	if o.Remaining == 0 {
-		return nil, errors.New("order has been fully filled")
-	}
-	if o.PartyID != order.PartyID {
-		return nil, errors.New("party mis-match cannot cancel order")
-	}
-	return &types.PendingOrder{
-		Reference:   o.Reference,
-		Price:       o.Price,
-		TimeInForce: o.TimeInForce,
-		Side:        o.Side,
-		MarketID:    o.MarketID,
-		Size:        o.Size,
-		PartyID:     o.PartyID,
-		Status:      types.Order_Cancelled,
-		Id:          o.Id,
-	}, nil
+	return nil
 }
 
-func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
+func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error {
 	if amendment == nil {
-		return nil, ErrEmptyPrepareRequest
+		return ErrEmptyPrepareRequest
 	}
 	if err := amendment.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order amendment validation failed")
-	}
-	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
-	if err != nil {
-		return nil, err
+		return errors.Wrap(err, "order amendment validation failed")
 	}
 
-	if o.Status != types.Order_Active {
-		return nil, errors.New("order is not active")
+	// Check we have at least one field to update
+	if amendment.Price == nil &&
+		amendment.SizeDelta == 0 &&
+		amendment.ExpiresAt == nil &&
+		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED {
+		return ErrNoParamsInAmendRequest
+	}
+
+	// Only update ExpiresAt when TIF is related
+	if amendment.ExpiresAt != nil && amendment.ExpiresAt.Value > 0 {
+		if amendment.TimeInForce != types.Order_GTT &&
+			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
+			// We cannot change the expire time for this order type
+			return ErrNonGTTOrderWithExpiry
+		}
 	}
 
 	// if order is GTT convert datetime to blockchain ts
 	if amendment.TimeInForce == types.Order_GTT {
-		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
+		if amendment.ExpiresAt == nil {
+			s.log.Error("unable to set trade type to GTT when no expiry given")
+			return ErrGTTOrderWithNoExpiry
+		}
+
+		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt.Value)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
-			return nil, err
+			return err
 		}
-	} else if amendment.TimeInForce == types.Order_GTC {
-		// this is cool, but we need to ensure and expiry is not set
-		if amendment.ExpiresAt != 0 {
-			return nil, ErrNonGTTOrderWithExpiry
-		}
-	} else {
-		// IOC and FOK are not acceptable for amend order
-		return nil, ErrInvalidAmendOrderTIF
 	}
-
-	// if size changes, make sure it does not get negative
-	newSize := int64(o.Size) + amendment.SizeDelta
-	if newSize <= 0 {
-		return nil, ErrInvalidAmendmentSizeDelta
-	}
-
-	return &types.PendingOrder{
-		Reference:   o.Reference,
-		Price:       amendment.Price,
-		TimeInForce: amendment.TimeInForce,
-		Side:        o.Side,
-		MarketID:    o.MarketID,
-		Size:        uint64(newSize),
-		PartyID:     o.PartyID,
-		Status:      types.Order_Active,
-		Id:          o.Id,
-	}, nil
+	return nil
 }
 
 func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {

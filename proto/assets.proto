@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/proto";
+
+message Asset {
+  string ID = 1;
+  string name = 2;
+  string symbol = 3;
+  // this may very much likely be a big.Int
+  string totalSupply = 4;
+  uint64 decimals = 5;
+  oneof source {
+    BuiltinAsset builtinAsset = 101;
+    ERC20 erc20 = 102;
+  }
+}
+
+message AssetSource {
+  oneof source {
+    BuiltinAsset builtinAsset = 1;
+    ERC20 erc20 = 2;
+  }
+}
+
+message BuiltinAsset {
+  string name = 2;
+  string symbol = 3;
+  string totalSupply = 4;
+  uint64 decimals = 5;
+}
+
+message ERC20 {
+  string contractAddress = 1;
+}
+
+message DevAssets {
+  repeated AssetSource sources = 1;
+}

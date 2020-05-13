@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -434,7 +435,9 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
 	for _, v := range execsetup.accounts.data {
-		cumul += uint64(v.Balance)
+		if v.Asset != collateral.TokenAsset {
+			cumul += uint64(v.Balance)
+		}
 	}
 
 	if amount != cumul {
@@ -762,11 +765,17 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			return err
 		}
 
+		value := u64val(row, 2)
+		var price *proto.Price
+		if value != 0 {
+			price = &proto.Price{Value: value}
+		}
+
 		amend := proto.OrderAmendment{
 			OrderID:     o.Id,
 			PartyID:     o.PartyID,
 			MarketID:    o.MarketID,
-			Price:       u64val(row, 2),
+			Price:       price,
 			SizeDelta:   i64val(row, 3),
 			TimeInForce: tif,
 		}
@@ -919,4 +928,37 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 
 	return mkt
 
+}
+
+func executedTrades(trades *gherkin.DataTable) error {
+	var err error
+	for i, row := range trades.Rows {
+		if i > 0 {
+			trader := val(row, 0)
+			price := u64val(row, 1)
+			size := u64val(row, 2)
+			counterparty := val(row, 3)
+			var found bool = false
+			for _, v := range execsetup.trades.data {
+				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				err = fmt.Errorf("expected trade is missing: %v, %v, %v, %v", trader, price, size, counterparty)
+				break
+			}
+		}
+	}
+
+	return err
+}
+
+func dumpOrders() error {
+	for n, o := range execsetup.orders.data {
+		fmt.Printf("order %s: %v\n", n, o)
+	}
+	return nil
 }

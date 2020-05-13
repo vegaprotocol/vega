@@ -386,10 +386,10 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			logging.String("order-id", orderAmendment.GetOrderID()),
 			logging.String("party-id", orderAmendment.GetPartyID()),
 			logging.String("market-id", orderAmendment.GetMarketID()),
-			logging.Uint64("price", orderAmendment.GetPrice()),
+			logging.Uint64("price", orderAmendment.GetPrice().Value),
 			logging.Int64("sizeDelta", orderAmendment.GetSizeDelta()),
 			logging.String("tif", orderAmendment.GetTimeInForce().String()),
-			logging.Int64("expires-at", orderAmendment.GetExpiresAt()),
+			logging.Int64("expires-at", orderAmendment.GetExpiresAt().Value),
 		)
 	}
 
@@ -600,10 +600,26 @@ func (e *Engine) Generate() error {
 	return nil
 }
 
+// SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
 func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
-	return errors.New("not implemented")
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Submitting proposal",
+			logging.String("proposal-id", proposal.ID),
+			logging.String("proposal-reference", proposal.Reference),
+			logging.String("proposal-party", proposal.PartyID),
+			logging.String("proposal-terms", proposal.Terms.String()))
+	}
+	e.idgen.SetProposalID(proposal)
+	return e.governance.AddProposal(*proposal)
 }
 
+// VoteOnProposal sends proposal vote to governance engine
 func (e *Engine) VoteOnProposal(vote *types.Vote) error {
-	return errors.New("not implemented")
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Voting on proposal",
+			logging.String("proposal-id", vote.ProposalID),
+			logging.String("vote-party", vote.PartyID),
+			logging.String("vote-value", vote.Value.String()))
+	}
+	return e.governance.AddVote(*vote)
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
 )
 
@@ -53,6 +54,8 @@ var (
 	ErrInvalidDecimalPlaces = errors.New("invalid decimal places value")
 	// ErrInvalidChange ...
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
+	// ErrInvalidProposalState ...
+	ErrInvalidProposalState = errors.New("invalid proposal state")
 )
 
 // IntoProto ...
@@ -728,4 +731,75 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	}
 
 	return result, nil
+}
+
+// ToOptionalProposalState ...
+func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalState, error) {
+	if s != nil {
+		value, err := s.IntoProtoValue()
+		if err != nil {
+			return nil, err
+		}
+		return &protoapi.OptionalProposalState{
+			Value: value,
+		}, nil
+	}
+	return nil, nil
+}
+
+// IntoProtoValue ...
+func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
+	switch s {
+	case ProposalStateFailed:
+		return types.Proposal_FAILED, nil
+	case ProposalStateOpen:
+		return types.Proposal_OPEN, nil
+	case ProposalStatePassed:
+		return types.Proposal_PASSED, nil
+	case ProposalStateDeclined:
+		return types.Proposal_DECLINED, nil
+	case ProposalStateRejected:
+		return types.Proposal_REJECTED, nil
+	case ProposalStateEnacted:
+		return types.Proposal_ENACTED, nil
+	}
+	return types.Proposal_State(-1), ErrInvalidProposalState
+}
+
+// ProposalStateFromProto ...
+func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
+	switch state {
+	case types.Proposal_FAILED:
+		return ProposalStateFailed, nil
+	case types.Proposal_OPEN:
+		return ProposalStateOpen, nil
+	case types.Proposal_PASSED:
+		return ProposalStatePassed, nil
+	case types.Proposal_DECLINED:
+		return ProposalStateDeclined, nil
+	case types.Proposal_REJECTED:
+		return ProposalStateRejected, nil
+	case types.Proposal_ENACTED:
+		return ProposalStateEnacted, nil
+	}
+	return ProposalState(""), ErrInvalidProposalState
+}
+
+// VoteValueFromProto ...
+func VoteValueFromProto(v types.Vote_Value) VoteValue {
+	if v == types.Vote_YES {
+		return VoteValueYes
+	}
+	return VoteValueNo
+}
+
+// ProposalVoteFromProto ...
+func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
+	return &ProposalVote{
+		Vote: &Vote{
+			Party: caster,
+			Value: VoteValueFromProto(v.Value),
+		},
+		ProposalID: v.ProposalID,
+	}
 }

@@ -9,10 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 
@@ -24,9 +26,11 @@ import (
 type initCommand struct {
 	command
 
-	rootPath string
-	force    bool
-	Log      *logging.Logger
+	rootPath             string
+	force                bool
+	nodeWalletPassphrase string
+	genDevNodeWallet     bool
+	Log                  *logging.Logger
 }
 
 func (ic *initCommand) Init(c *Cli) {
@@ -36,18 +40,35 @@ func (ic *initCommand) Init(c *Cli) {
 		Short: "Initialize a vega node",
 		Long:  "Generate the minimal configuration required for a vega node to start",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunInit(ic.rootPath, ic.force, ic.Log)
+			return RunInit(ic.rootPath, ic.force, ic.Log, ic.nodeWalletPassphrase, ic.genDevNodeWallet)
 		},
 	}
 
 	fs := ic.cmd.Flags()
 	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	fs.StringVarP(&ic.nodeWalletPassphrase, "nodewallet-passphrase", "n", "", "The path to a file containing the passphrase used to encrypt the vega nodewallet")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
-
+	fs.BoolVarP(&ic.genDevNodeWallet, "gen-dev-nodewallet", "g", false, "Generate dev wallet for all vega supported chains (not for production)")
 }
 
 // RunInit initialises vega config files - config.toml and markets/*.json.
-func RunInit(rootPath string, force bool, logger *logging.Logger) error {
+func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphraseInput string, genDevNodeWallet bool) error {
+
+	// if theses is not specified, we then trigger a prompt
+	// for the user to type his password
+	var (
+		nodeWalletPassphrase string
+		err                  error
+	)
+	if len(nodeWalletPassphraseInput) <= 0 {
+		nodeWalletPassphrase, err = getTerminalPassphrase()
+	} else {
+		nodeWalletPassphrase, err = getFilePassphrase(nodeWalletPassphraseInput)
+	}
+	if err != nil {
+		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
+	}
+
 	rootPathExists, err := fsutil.PathExists(rootPath)
 	if err != nil {
 		if _, ok := err.(*fsutil.PathNotFound); !ok {
@@ -124,9 +145,33 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 		return err
 	}
 
+	// init the nodewallet
+	if err := nodeWalletInit(cfg, nodeWalletPassphrase, genDevNodeWallet); err != nil {
+		return err
+	}
+
+	// init the devAssets
+	if err := assets.GenDevAssetSourcesPath(rootPath); err != nil {
+		return err
+	}
+
 	logger.Info("configuration generated successfully", logging.String("path", rootPath))
 
 	return nil
+}
+
+func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
+	if genDevNodeWallet {
+		return nodewallet.DevInit(
+			cfg.NodeWallet.StorePath,
+			cfg.NodeWallet.DevWalletsPath,
+			nodeWalletPassphrase,
+		)
+	}
+	return nodewallet.Init(
+		cfg.NodeWallet.StorePath,
+		nodeWalletPassphrase,
+	)
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
@@ -151,7 +196,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			id:                    "VHSRA2G5MDFKREFJ5TOAGHZBBDGCYS67",
 			decimalPlaces:         5,
 			baseName:              "ETH",
-			quoteName:             "USD",
+			quoteName:             "VUSD",
 			settlementAsset:       "VUSD",
 			maturity:              time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice:      1410000,
@@ -163,7 +208,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			id:                    "LBXRA65PN4FN5HBWRI2YBCOYDG2PBGYU",
 			decimalPlaces:         5,
 			baseName:              "GBP",
-			quoteName:             "USD",
+			quoteName:             "VUSD",
 			settlementAsset:       "VUSD",
 			maturity:              time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
 			initialMarkPrice:      130000,

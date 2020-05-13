@@ -27,29 +27,22 @@ steps:
       - name: gopkg
         path: /go/pkg
     environment:
-      CGO_ENABLED: "0"
       GO111MODULE: "on"
       GOARCH: amd64
       GOCACHE: /go/cache
       GOOS: linux
-      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
-        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
       GITHUB_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
       # The following git+ssh config enables accessing private github repos.
       - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-      - eval "$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
+      - mkdir -p -m 0700 ~/.ssh
       - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
-      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
-          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
-      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - make deps
-      - make build
-      - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ./script/build.sh -t linux/amd64
     depends_on:
       - fetch
     when:
@@ -61,6 +54,7 @@ steps:
     pull: always
     environment: {}
     commands:
+      # Make sure the mdspell command matches the one in Makefile.
       - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
     depends_on:
       - build-PR
@@ -85,18 +79,11 @@ steps:
       - make retest
       # More small checks. Run all, instead of exitng after first failure.
       - failed=""
-      - for target in codeowners_check print_check proto_check vet race ; do
+      - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
           echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
       - /usr/local/bin/check-rest-endpoints.py
           --bindings gateway/rest/grpc-rest-bindings.yml
           --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-      - /usr/local/bin/diff_bot.py
-          --github-token "$$GITHUB_API_TOKEN"
-          --file1 "github:vegaprotocol:0:vega:$${DRONE_TARGET_BRANCH}:gateway/graphql/schema.graphql"
-          --file2 "github:vegaprotocol:0:vega:$${DRONE_SOURCE_BRANCH}:gateway/graphql/schema.graphql"
-          --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
-          print_diff slack_notify || failed="$$failed diff_bot"
       - /usr/local/bin/multilint || failed="$$failed multilint"
       - make staticcheck || true  # Ignore failures until they're all fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
@@ -106,43 +93,90 @@ steps:
       event:
         - pull_request
 
-  # ====== Pipeline for main branches and tags ======
+  - name: systemtests-PR
+    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:latest
+    pull: always
+    environment:
+      GITHUB_API_TOKEN:
+        from_secret: GITHUB_API_TOKEN
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
+    commands:
+      # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
+      - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
+      - ln -fs vega-linux-amd64 cmd/vega/vega
+      - (
+          /usr/local/bin/systemtests.sh -v all ;
+          echo "$$?" >"$$codefile"
+        ) 2>&1 | tee "$$logfile"
+      - test "$$(cat "$$codefile")" = 0 && exit 0
+      # system-tests failed
+      - msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)"
+      # Failure is fatal only while attempting to merge to master.
+      - if test "$$DRONE_TARGET_BRANCH" = master ; then
+          exitcode=1 ;
+          msg="$$msgprefix *pipeline failed* :cry:" ;
+        else
+          exitcode=0 ;
+          msg="$$msgprefix (pipeline continues)" ;
+        fi
+      # Notify Slack
+      - msg="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$msg")"
+      - 'curl -s -XPOST
+          -d "{\"channel\": \"#tradingcore-notify\", \"icon_emoji\": \":robot:\", \"text\": $$msg, \"username\": \"nagbot\" }"
+          "$$SLACK_HOOK_URL"'
+      # Make Github PR comment
+      - commentfile="$$(mktemp)"
+      - (
+          echo "system-tests failed." ;
+          echo ;
+          echo "\`\`\`" ;
+          grep --text -A1000 "=== Test summary ===" "$$logfile" || echo "No test summary found" ;
+          echo "\`\`\`"
+        ) >"$$commentfile"
+      - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$(cat "$$commentfile")")"
+      - 'curl -s -XPOST
+          -H "Accept: application/vnd.github.v3+json"
+          -H "Authorization: token $$GITHUB_API_TOKEN"
+          -d "{\"body\": $$body}"
+          "https://api.github.com/repos/vegaprotocol/vega/issues/$$DRONE_PULL_REQUEST/comments"'
+      - exit "$$exitcode"
+    depends_on:
+      - test-PR
+    when:
+      event:
+        - pull_request
+
+  # ====== Pipeline for main branches (master, develop) and tags ======
 
   - name: build-branch
     image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    pull: always
     volumes:
       - name: gocache
         path: /go/cache
       - name: gopkg
         path: /go/pkg
     environment:
-      CGO_ENABLED: "0"
       GO111MODULE: "on"
       GOARCH: amd64
       GOCACHE: /go/cache
       GOOS: linux
-      GITHUB_DEPLOY_SSH_KNOWN_HOSTS:
-        from_secret: GITHUB_DEPLOY_SSH_KNOWN_HOSTS
       GITHUB_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
       # The following git+ssh config enables accessing private github repos.
       - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
-      - eval "$(ssh-agent -s)" ; mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
+      - mkdir -p -m 0700 ~/.ssh
       - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
           echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
-      - if ! echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" | grep -q "^github.com" ; then
-          echo "Need env var GITHUB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
-      - echo "$${GITHUB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-      - unset GITHUB_DEPLOY_SSH_KNOWN_HOSTS GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - make deps
-      - make build
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ./script/build.sh -t linux/amd64
     depends_on:
       - fetch
     when:
-      event:
-        - push
       ref:
         - refs/heads/master
         - refs/heads/develop
@@ -177,11 +211,11 @@ steps:
     commands:
       - /usr/local/bin/diff_bot.py
           --github-token "$$GITHUB_API_TOKEN"
-          --file1 "github:vegaprotocol:0:console:develop:packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql"
+          --file1 "github:vegaprotocol:0:console:develop:src/api/vega-graphql/vega-schema/schema.graphql"
           --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
           --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev"
-          slack_notify create_mr
+          --slack-recipient "#uidev-notify"
+          slack_notify
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires vars:
@@ -189,7 +223,8 @@ steps:
       # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
       # - SLACK_HOOK_URL
-      - /usr/local/bin/deploy-trading-core.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      - cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega
+      - /usr/local/bin/deploy-trading-core.sh devnet vega
       # Set up wallets, keypairs and free money.
       - /usr/local/bin/init-wallets-tokenbalances.py
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
@@ -217,17 +252,17 @@ steps:
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
-          f="cmd/$$app/$$app" ;
+          f="cmd/$$app/$$app-linux-amd64" ;
           if ! test -f "$$f" ; then echo "Failed to find: $$f" ; exit 1 ; fi ;
-          cp -a "$$f" . || exit 1 ;
+          cp -a "$$f" "./$$app" || exit 1 ;
         done'
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
-      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag" -f Dockerfile.quick . || exit 0
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag" -f Dockerfile.quick .
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
-      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag" || exit 0
-      - for app in $$apps ; do rm -f "./$app"; done
+      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag"
+      - for app in $$apps ; do rm -f "./$$app"; done
     depends_on:
       - build-branch
     when:
@@ -235,6 +270,51 @@ steps:
         - refs/heads/master
         - refs/heads/develop
         - refs/tags/*
+
+  - name: build-multiarch
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:latest
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GO111MODULE: "on"
+      GOCACHE: /go/cache
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - mkdir -p -m 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ./script/build.sh -T
+    depends_on:
+      - build-branch
+    when:
+      event: tag
+
+  # http://plugins.drone.io/drone-plugins/drone-github-release/
+  - name: publish_artefacts
+    image: plugins/github-release
+    pull: always
+    settings:
+      api_token:
+        from_secret: GITHUB_API_TOKEN
+      files:
+        - cmd/dummyriskmodel/dummyriskmodel-*
+        - cmd/vega/vega-*
+        - cmd/vegaccount/vegaccount-*
+        - cmd/vegastream/vegastream-*
+    when:
+      event: tag
+    depends_on:
+      - build-multiarch
 
 volumes:
   - name: dockersock

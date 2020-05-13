@@ -28,6 +28,14 @@ enum Interval {
   I1D = 5;
 }
 
+message Price {
+  uint64 value = 1;
+}
+
+message Timestamp {
+  int64 value = 1;
+}
+
 message Amount {
   string value = 1;
 }
@@ -57,18 +65,20 @@ message Order {
 
   // Order Time in Force
   enum TimeInForce {
-
+    // Default value, can be valid for an amend
+    TIF_UNSPECIFIED = 0;
+    
     // good til cancelled
-    GTC = 0;
+    GTC = 1;
 
     // good til time
-    GTT = 1;
+    GTT = 2;
 
     // immediate or cancel
-    IOC = 2;
+    IOC = 3;
 
     // fill or kill
-    FOK = 3;
+    FOK = 4;
   }
 
   // Order Type
@@ -111,7 +121,7 @@ message Order {
   string reference = 13;
   OrderError reason = 14;
   int64 updatedAt = 15;
-  
+
   // Versioning support for amends, orders start at version 1 and increment
   // after each successful amend
   uint64 version = 16;
@@ -269,19 +279,6 @@ enum ChainStatus {
     CONNECTED = 2;
 }
 
-message PendingOrder {
-  string reference = 1;
-  uint64 price = 2;
-  Order.TimeInForce timeInForce = 3;
-  Side side = 4;
-  string marketID = 5;
-  uint64 size = 6;
-  string partyID = 7;
-  Order.Status status = 8;
-  string id = 9;
-  Order.Type type = 10;
-}
-
 message NotifyTraderAccount {
   string traderID = 1;
   uint64 amount = 2;
@@ -300,9 +297,9 @@ message OrderAmendment {
   string marketID = 3;
 
   // these can be amended
-  uint64 price = 4 [(validator.field) = {int_gt: 0}];
+  Price price = 4;
   int64 sizeDelta = 5;
-  int64 expiresAt = 6;
+  Timestamp expiresAt = 6;
   Order.TimeInForce timeInForce = 7;
 }
 
@@ -323,6 +320,15 @@ message OrderCancellation {
   string orderID = 1 [(validator.field) = {string_not_empty: true}];
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
+}
+
+message NodeRegistration {
+  bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+}
+
+message NodeVote {
+  bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
 
 enum AccountType {

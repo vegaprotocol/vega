@@ -1,28 +1,4 @@
-APPS := dummyriskmodel vega vegaccount vegastream
-
-ifeq ($(CI),)
-	# Not in CI
-	VERSION := dev-$(USER)
-	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
-else
-	# In CI
-	ifneq ($(DRONE),)
-		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
-
-		ifneq ($(DRONE_TAG),)
-			VERSION := $(DRONE_TAG)
-		else
-			# No tag, so make one
-			VERSION := $(shell git describe --tags 2>/dev/null)
-		endif
-		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
-
-	else
-		# In an unknown CI
-		VERSION := unknown-CI
-		VERSION_HASH := unknown-CI
-	endif
-endif
+# Makefile
 
 .PHONY: all
 all: build
@@ -89,36 +65,26 @@ deps: ## Get the dependencies
 	@go mod download
 	@go mod vendor
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
+	@mkdir -p "$$GOPATH/pkg/mod/@indirect"
 	@modvendor -copy="**/*.proto"
 
 .PHONY: build
+build: SHELL:=/bin/bash
 build: ## install the binaries in cmd/{progname}/
-	@v="${VERSION}" vh="${VERSION_HASH}" gcflags="" suffix="" ; \
-	if test -n "$$DEBUGVEGA" ; then \
-		gcflags="all=-N -l" ; \
-		suffix="-dbg" ; \
-		v="debug-$$v" ; \
-	fi ; \
-	ldflags="-X main.Version=$$v -X main.VersionHash=$$vh" ; \
-	echo "Version: $$v ($$vh)" ; \
-	for app in $(APPS) ; do \
-		env CGO_ENABLED=0 go build -v \
-			-ldflags "$$ldflags" \
-			-gcflags "$$gcflags" \
-			-o "./cmd/$$app/$$app$$suffix" "./cmd/$$app" \
-			|| exit 1 ; \
-	done
+	@d="" ; test -n "$$DEBUGVEGA" && d="-d" ; \
+	./script/build.sh $d -t linux/amd64
 
 .PHONY: gofmtsimplify
 gofmtsimplify:
 	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
 
 .PHONY: install
+install: SHELL:=/bin/bash
 install: ## install the binaries in GOPATH/bin
-	@cat .asciiart.txt
-	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@for app in $(APPS) ; do \
-		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
+	@source ./script/build.sh && set_version && \
+	echo "Version: $$version ($$version_hash)" && \
+	for app in "$${apps[@]}" ; do \
+		env CGO_ENABLED=1 go install -v -ldflags "-X main.Version=$$version -X main.VersionHash=$$version_hash" "./cmd/$$app" || exit 1 ; \
 	done
 
 .PHONY: gqlgen
@@ -242,7 +208,10 @@ staticcheck: ## Run statick analysis checks
 
 .PHONY: clean
 clean: ## Remove previous build
-	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done
+	@rm -f cmd/*/*.log
+	for app in $(APPS) ; do \
+		rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app"-* ; \
+	done
 
 .PHONY: help
 help: ## Display this help screen
