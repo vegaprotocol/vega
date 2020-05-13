@@ -304,7 +304,7 @@ steps:
     image: plugins/github-release
     pull: always
     settings:
-      api_token:
+      api_key:
         from_secret: GITHUB_API_TOKEN
       files:
         - cmd/dummyriskmodel/dummyriskmodel-*
