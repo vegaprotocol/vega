@@ -797,8 +797,9 @@ func VoteValueFromProto(v types.Vote_Value) VoteValue {
 func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 	return &ProposalVote{
 		Vote: &Vote{
-			Party: caster,
-			Value: VoteValueFromProto(v.Value),
+			Party:    caster,
+			Value:    VoteValueFromProto(v.Value),
+			Datetime: timestampToString(v.Timestamp),
 		},
 		ProposalID: v.ProposalID,
 	}
