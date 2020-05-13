@@ -1,5 +1,3 @@
-// +build !race
-
 package broker_test
 
 import (
@@ -113,18 +111,23 @@ func testSkipOptional(t *testing.T) {
 	// ensure all 3 events are being sent (wait for routine to spawn)
 	wg := sync.WaitGroup{}
 	wg.Add(len(events))
-	sub.EXPECT().Closed().Times(len(events)).Return(closedCh).Do(func() {
-		wg.Done()
-	})
+	sub.EXPECT().Closed().Times(len(events)).Return(closedCh)
 	sub.EXPECT().Skip().Times(len(events)).Return(skipCh)
 	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(events)).Return(cCh)
+	sub.EXPECT().C().Times(len(events)).Return(cCh).Do(func() {
+		// Done call each time we tried sending an event
+		wg.Done()
+	})
 
 	// send events
 	for _, e := range events {
 		broker.Send(e)
 	}
 	wg.Wait()
+	// we've tried to send 3 events, subscriber could only accept one. Check state of all the things
+	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
+	// because there's a loop calling functions that are returning the channels we're closing here
+	broker.Unsubscribe(k1)
 	close(closedCh)
 	close(skipCh)
 	assert.Equal(t, events[0], <-cCh)
@@ -167,6 +170,7 @@ func testSubscriberSkip(t *testing.T) {
 			// skip the first one
 			skip = false
 			ch := make(chan struct{})
+			// return closed channel, so this subscriber is marked to skip events
 			close(ch)
 			return ch
 		}
