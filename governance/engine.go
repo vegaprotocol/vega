@@ -42,22 +42,17 @@ type VoteBuf interface {
 	Add(types.Vote)
 }
 
-type network struct {
-	minClose, maxClose, minEnact, maxEnact int64
-	participation                          uint64
-}
-
 type Engine struct {
 	Config
-	accs         Accounts
-	buf          Buffer
-	vbuf         VoteBuf
-	log          *logging.Logger
-	mu           sync.Mutex
-	currentTime  time.Time
-	proposals    map[string]*proposalVote
-	proposalRefs map[string]*proposalVote
-	net          network
+	accs          Accounts
+	buf           Buffer
+	vbuf          VoteBuf
+	log           *logging.Logger
+	mu            sync.Mutex
+	currentTime   time.Time
+	proposals     map[string]*proposalVote
+	proposalRefs  map[string]*proposalVote
+	networkParams *networkParameters
 }
 
 type proposalVote struct {
@@ -67,28 +62,20 @@ type proposalVote struct {
 }
 
 func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
-	// ensure params are set
-	cfg.initParams()
 	return &Engine{
-		Config:       cfg,
-		accs:         accs,
-		buf:          buf,
-		vbuf:         vbuf,
-		log:          log,
-		currentTime:  now,
-		proposals:    map[string]*proposalVote{},
-		proposalRefs: map[string]*proposalVote{},
-		net: network{
-			minClose:      cfg.params.DefaultMinClose,
-			maxClose:      cfg.params.DefaultMaxClose,
-			minEnact:      cfg.params.DefaultMinEnact,
-			maxEnact:      cfg.params.DefaultMaxEnact,
-			participation: cfg.params.DefaultMinParticipation,
-		},
+		Config:        cfg,
+		accs:          accs,
+		buf:           buf,
+		vbuf:          vbuf,
+		log:           log,
+		currentTime:   now,
+		proposals:     map[string]*proposalVote{},
+		proposalRefs:  map[string]*proposalVote{},
+		networkParams: readNetworkParameters(cfg),
 	}
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration of the governance engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -99,13 +86,15 @@ func (e *Engine) ReloadConf(cfg Config) {
 		e.log.SetLevel(cfg.Level.Get())
 	}
 
+	params := readNetworkParameters(cfg)
+
 	e.mu.Lock()
-	cfg.params = e.Config.params
 	e.Config = cfg
+	e.networkParams = params
 	e.mu.Unlock()
 }
 
-// OnChainUpdate - update curtime, expire proposals
+// OnChainTimeUpdate - update curtime, expire proposals
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t
 	now := t.Unix()
@@ -158,13 +147,16 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 		return ErrProposalInsufficientTokens
 	}
 
-	minClose, maxClose := e.currentTime.Add(time.Duration(e.net.minClose)*time.Second),
-		e.currentTime.Add(time.Duration(e.net.maxClose)*time.Second)
+	minClose := e.currentTime.Add(time.Duration(e.networkParams.minCloseInSeconds) * time.Second)
+	maxClose := e.currentTime.Add(time.Duration(e.networkParams.maxCloseInSeconds) * time.Second)
+
 	if p.Terms.ClosingTimestamp < minClose.Unix() || p.Terms.ClosingTimestamp > maxClose.Unix() {
 		return ErrProposalCloseTimeInvalid
 	}
 
-	minEnact, maxEnact := p.Terms.ClosingTimestamp, p.Terms.ClosingTimestamp+e.net.maxEnact
+	minEnact := e.currentTime.Add(time.Duration(e.networkParams.minEnactInSeconds) * time.Second)
+	maxEnact := e.currentTime.Add(time.Duration(e.networkParams.maxEnactInSeconds) * time.Second)
+
 	if p.Terms.EnactmentTimestamp < minEnact || p.Terms.EnactmentTimestamp > maxEnact {
 		return ErrProposalEnactTimeInvalid
 	}
