@@ -157,7 +157,7 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 	minEnact := e.currentTime.Add(time.Duration(e.networkParams.minEnactInSeconds) * time.Second)
 	maxEnact := e.currentTime.Add(time.Duration(e.networkParams.maxEnactInSeconds) * time.Second)
 
-	if p.Terms.EnactmentTimestamp < minEnact || p.Terms.EnactmentTimestamp > maxEnact {
+	if p.Terms.EnactmentTimestamp < minEnact.Unix() || p.Terms.EnactmentTimestamp > maxEnact.Unix() {
 		return ErrProposalEnactTimeInvalid
 	}
 

@@ -44,8 +44,8 @@ func readNetworkParameters(cfg Config) *networkParameters {
 		result.minParticipationStake = cfg.DefaultMinParticipationStake
 	}
 
-	result.maxCloseInSeconds = max(result.maxCloseInSeconds, result.minCloseInSeconds) // max close must be >= min close
-	result.minEnactInSeconds = max(result.minEnactInSeconds, result.minCloseInSeconds) // min enact must be >= min close
-	result.maxEnactInSeconds = max(result.maxEnactInSeconds, result.minEnactInSeconds) // max enact must be >= min enact
+	result.maxCloseInSeconds = max(result.maxCloseInSeconds, result.minCloseInSeconds) // maxClose must be >= minClose
+	result.minEnactInSeconds = max(result.minEnactInSeconds, result.minCloseInSeconds) // minEnact must be >= minClose
+	result.maxEnactInSeconds = max(result.maxEnactInSeconds, result.minEnactInSeconds) // maxEnact must be >= minEnact
 	return result
 }
