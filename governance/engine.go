@@ -15,8 +15,10 @@ var (
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
 	// Validation errors
 
-	ErrProposalCloseTimeInvalid   = errors.New("proposal closes too soon or too late")
-	ErrProposalEnactTimeInvalid   = errors.New("proposal enactment times too soon or late")
+	ErrProposalCloseTimeTooSoon   = errors.New("proposal closes too soon")
+	ErrProposalCloseTimeTooLate   = errors.New("proposal closes too late")
+	ErrProposalEnactTimeTooSoon   = errors.New("proposal enactment times too soon")
+	ErrProposalEnactTimeTooLate   = errors.New("proposal enactment times too late")
 	ErrProposalInsufficientTokens = errors.New("proposal requires more tokens than party has")
 
 	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
@@ -146,19 +148,17 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 	if tok.Balance < 1 {
 		return ErrProposalInsufficientTokens
 	}
-
-	minClose := e.currentTime.Add(time.Duration(e.networkParams.minCloseInSeconds) * time.Second)
-	maxClose := e.currentTime.Add(time.Duration(e.networkParams.maxCloseInSeconds) * time.Second)
-
-	if p.Terms.ClosingTimestamp < minClose.Unix() || p.Terms.ClosingTimestamp > maxClose.Unix() {
-		return ErrProposalCloseTimeInvalid
+	if p.Terms.ClosingTimestamp < e.currentTime.Add(e.networkParams.minClose).Unix() {
+		return ErrProposalCloseTimeTooSoon
 	}
-
-	minEnact := e.currentTime.Add(time.Duration(e.networkParams.minEnactInSeconds) * time.Second)
-	maxEnact := e.currentTime.Add(time.Duration(e.networkParams.maxEnactInSeconds) * time.Second)
-
-	if p.Terms.EnactmentTimestamp < minEnact.Unix() || p.Terms.EnactmentTimestamp > maxEnact.Unix() {
-		return ErrProposalEnactTimeInvalid
+	if p.Terms.ClosingTimestamp > e.currentTime.Add(e.networkParams.maxClose).Unix() {
+		return ErrProposalCloseTimeTooLate
+	}
+	if p.Terms.EnactmentTimestamp < e.currentTime.Add(e.networkParams.minEnact).Unix() {
+		return ErrProposalEnactTimeTooSoon
+	}
+	if p.Terms.EnactmentTimestamp > e.currentTime.Add(e.networkParams.maxEnact).Unix() {
+		return ErrProposalEnactTimeTooLate
 	}
 
 	return nil

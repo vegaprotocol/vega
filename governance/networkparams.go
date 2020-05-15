@@ -1,51 +1,53 @@
 package governance
 
-// default network parameters values
-const (
-	minCloseSeconds      = 48 * 3600       // 2 days
-	maxCloseSeconds      = 365 * 24 * 3600 // 1 year
-	minEnactSeconds      = 48 * 3600       // 2 days (must be >= minCloseSeconds)
-	maxEnactSeconds      = 365 * 24 * 3600 // 1 year
-	participationPercent = 1               // percentage!
-)
+import "time"
 
 type networkParameters struct {
-	minCloseInSeconds     int64
-	maxCloseInSeconds     int64
-	minEnactInSeconds     int64
-	maxEnactInSeconds     int64
+	minClose              time.Duration
+	maxClose              time.Duration
+	minEnact              time.Duration
+	maxEnact              time.Duration
 	minParticipationStake uint64
 }
 
-func max(left, right int64) int64 {
-	if left > right {
-		return left
+func defaultNetworkParameters() *networkParameters {
+
+	const day = 24 * time.Hour // day here is 24 hours
+	const year = 365 * day     // year here is 365 days (ignoring leap years)
+
+	return &networkParameters{
+		minClose:              2 * day,
+		maxClose:              year,
+		minEnact:              2 * day, // must be >= minClose
+		maxEnact:              year,
+		minParticipationStake: 1, // percent
 	}
-	return right
 }
 
 func readNetworkParameters(cfg Config) *networkParameters {
-	result := &networkParameters{
-		minCloseInSeconds:     minCloseSeconds,
-		maxCloseInSeconds:     maxCloseSeconds,
-		minEnactInSeconds:     minEnactSeconds,
-		maxEnactInSeconds:     maxEnactSeconds,
-		minParticipationStake: participationPercent,
-	}
+	result := defaultNetworkParameters()
+
 	if cfg.CloseParameters != nil {
-		result.minCloseInSeconds = cfg.CloseParameters.DefaultMinSeconds
-		result.maxCloseInSeconds = cfg.CloseParameters.DefaultMaxSeconds
+		result.minClose = time.Duration(cfg.CloseParameters.DefaultMinSeconds) * time.Second
+		result.maxClose = time.Duration(cfg.CloseParameters.DefaultMaxSeconds) * time.Second
 	}
 	if cfg.EnactParameters != nil {
-		result.minEnactInSeconds = cfg.EnactParameters.DefaultMinSeconds
-		result.minEnactInSeconds = cfg.EnactParameters.DefaultMaxSeconds
+		result.minEnact = time.Duration(cfg.EnactParameters.DefaultMinSeconds) * time.Second
+		result.maxEnact = time.Duration(cfg.EnactParameters.DefaultMaxSeconds) * time.Second
 	}
 	if cfg.DefaultMinParticipationStake != 0 { // accepting proposals with no participation makes little sense
 		result.minParticipationStake = cfg.DefaultMinParticipationStake
 	}
 
-	result.maxCloseInSeconds = max(result.maxCloseInSeconds, result.minCloseInSeconds) // maxClose must be >= minClose
-	result.minEnactInSeconds = max(result.minEnactInSeconds, result.minCloseInSeconds) // minEnact must be >= minClose
-	result.maxEnactInSeconds = max(result.maxEnactInSeconds, result.minEnactInSeconds) // maxEnact must be >= minEnact
+	result.maxClose = max(result.maxClose, result.minClose) // maxClose must be >= minClose
+	result.minEnact = max(result.minEnact, result.minClose) // minEnact must be >= minClose
+	result.maxEnact = max(result.maxEnact, result.minEnact) // maxEnact must be >= minEnact
 	return result
+}
+
+func max(left, right time.Duration) time.Duration {
+	if left > right {
+		return left
+	}
+	return right
 }
