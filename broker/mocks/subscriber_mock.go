@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	broker "code.vegaprotocol.io/vega/broker"
+	events "code.vegaprotocol.io/vega/events"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,10 +35,10 @@ func (m *MockSubscriber) EXPECT() *MockSubscriberMockRecorder {
 }
 
 // C mocks base method
-func (m *MockSubscriber) C() chan<- interface{} {
+func (m *MockSubscriber) C() chan<- broker.BaseEvent {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "C")
-	ret0, _ := ret[0].(chan<- interface{})
+	ret0, _ := ret[0].(chan<- broker.BaseEvent)
 	return ret0
 }
 
@@ -61,7 +63,7 @@ func (mr *MockSubscriberMockRecorder) Closed() *gomock.Call {
 }
 
 // Push mocks base method
-func (m *MockSubscriber) Push(arg0 interface{}) {
+func (m *MockSubscriber) Push(arg0 broker.BaseEvent) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Push", arg0)
 }
@@ -84,4 +86,18 @@ func (m *MockSubscriber) Skip() <-chan struct{} {
 func (mr *MockSubscriberMockRecorder) Skip() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Skip", reflect.TypeOf((*MockSubscriber)(nil).Skip))
+}
+
+// Types mocks base method
+func (m *MockSubscriber) Types() []events.Type {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Types")
+	ret0, _ := ret[0].([]events.Type)
+	return ret0
+}
+
+// Types indicates an expected call of Types
+func (mr *MockSubscriberMockRecorder) Types() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Types", reflect.TypeOf((*MockSubscriber)(nil).Types))
 }
