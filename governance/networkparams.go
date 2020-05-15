@@ -17,9 +17,9 @@ func defaultNetworkParameters() *networkParameters {
 
 	return &networkParameters{
 		minClose:              2 * day,
-		maxClose:              year,
+		maxClose:              1 * year,
 		minEnact:              2 * day, // must be >= minClose
-		maxEnact:              year,
+		maxEnact:              1 * year,
 		minParticipationStake: 1, // percent
 	}
 }
