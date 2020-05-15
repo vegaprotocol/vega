@@ -39,7 +39,6 @@ func TestTimeUpdate(t *testing.T) {
 
 func testSubmitValidProposalSuccess(t *testing.T) {
 	eng := getTestEngine(t)
-
 	defer eng.ctrl.Finish()
 	partyID := "party1"
 	now := time.Now()
@@ -55,8 +54,8 @@ func testSubmitValidProposalSuccess(t *testing.T) {
 		PartyID:   partyID,
 		State:     types.Proposal_OPEN,
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp:      now.Add(48 * time.Hour).Unix(),
-			EnactmentTimestamp:    now.Add(48 * time.Hour).Unix(),
+			ClosingTimestamp:      now.Add(100 * time.Hour).Unix(),
+			EnactmentTimestamp:    now.Add(240 * time.Hour).Unix(),
 			MinParticipationStake: 55,
 		},
 	}
