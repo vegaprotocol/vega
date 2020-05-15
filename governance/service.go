@@ -47,14 +47,6 @@ type Plugin interface {
 	GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData
 }
 
-type networkParameters struct {
-	minCloseInSeconds     int64
-	maxCloseInSeconds     int64
-	minEnactInSeconds     int64
-	maxEnactInSeconds     int64
-	minParticipationStake uint64
-}
-
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
@@ -62,26 +54,19 @@ type Svc struct {
 	mu     sync.Mutex
 	plugin Plugin
 
-	parameters networkParameters
+	parameters *networkParameters
 }
 
 // NewService creates new governance service instance
 func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	cfg.initParams() // ensures params are set
 
 	return &Svc{
-		Config: cfg,
-		log:    log,
-		plugin: plugin,
-		parameters: networkParameters{
-			minCloseInSeconds:     cfg.params.DefaultMinClose,
-			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
-			minEnactInSeconds:     cfg.params.DefaultMinEnact,
-			maxEnactInSeconds:     cfg.params.DefaultMaxEnact,
-			minParticipationStake: cfg.params.DefaultMinParticipation,
-		},
+		Config:     cfg,
+		log:        log,
+		plugin:     plugin,
+		parameters: readNetworkParameters(cfg),
 	}
 }
 
@@ -96,9 +81,11 @@ func (s *Svc) ReloadConf(cfg Config) {
 		s.log.SetLevel(cfg.Level.Get())
 	}
 
+	parameters := readNetworkParameters(cfg)
+
 	s.mu.Lock()
-	cfg.params = s.Config.params
 	s.Config = cfg
+	s.parameters = parameters
 	s.mu.Unlock()
 }
 

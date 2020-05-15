@@ -5,49 +5,43 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-const (
-	namedLogger = "governance"
+const namedLogger = "governance"
 
-	// default param values - constant, and not part of the config itself
-	minClose             = 48 * 3600       // 2 days
-	maxClose             = 365 * 24 * 3600 // 1 year
-	minEnact             = 0               // 0 -> >= close value, this has no real use
-	maxEnact             = 365 * 24 * 3600 // actually same as minEnact, but there is an upper limt
-	participationPercent = 1               // percentage!
-)
-
-type params struct {
-	DefaultMinClose, DefaultMaxClose, DefaultMinEnact, DefaultMaxEnact int64
-	DefaultMinParticipation                                            uint64
+type closeParams struct {
+	DefaultMinSeconds int64
+	DefaultMaxSeconds int64
+}
+type enactParams struct {
+	DefaultMinSeconds int64
+	DefaultMaxSeconds int64
 }
 
 // Config represents governance specific configuration
 type Config struct {
 	// logging level
-	Level  encoding.LogLevel
-	params params // not exported because it's not part of the serialised config
+	Level encoding.LogLevel
+
+	// this split allows partially setting network parameters
+	CloseParameters              *closeParams
+	EnactParameters              *enactParams
+	DefaultMinParticipationStake uint64
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
 func NewDefaultConfig() Config {
+	defaults := defaultNetworkParameters()
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
-		params: params{
-			DefaultMinClose:         minClose,
-			DefaultMaxClose:         maxClose,
-			DefaultMinEnact:         minEnact,
-			DefaultMaxEnact:         maxEnact,
-			DefaultMinParticipation: participationPercent,
-		},
-	}
-}
 
-func (c *Config) initParams() {
-	c.params = params{
-		DefaultMinClose:         minClose,
-		DefaultMaxClose:         maxClose,
-		DefaultMinEnact:         minEnact,
-		DefaultMaxEnact:         maxEnact,
-		DefaultMinParticipation: participationPercent,
+		CloseParameters: &closeParams{
+			// time.Duration is in nanoseconds hence conversion
+			DefaultMinSeconds: int64(defaults.minClose.Seconds()),
+			DefaultMaxSeconds: int64(defaults.maxClose.Seconds()),
+		},
+		EnactParameters: &enactParams{
+			DefaultMinSeconds: int64(defaults.minEnact.Seconds()),
+			DefaultMaxSeconds: int64(defaults.maxEnact.Seconds()),
+		},
+		DefaultMinParticipationStake: defaults.minParticipationStake,
 	}
 }
