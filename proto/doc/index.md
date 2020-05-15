@@ -94,6 +94,16 @@
 
 
 
+- [proto/chain_events.proto](#proto/chain_events.proto)
+    - [AssetList](#vega.AssetList)
+    - [ChainEvent](#vega.ChainEvent)
+    - [Deposit](#vega.Deposit)
+    - [Withdrawal](#vega.Withdrawal)
+
+
+
+
+
 - [proto/governance.proto](#proto/governance.proto)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
@@ -1475,6 +1485,94 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contractAddress | [string](#string) |  |  |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="proto/chain_events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/chain_events.proto
+
+
+
+<a name="vega.AssetList"></a>
+
+### AssetList
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.ChainEvent"></a>
+
+### ChainEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txHash | [string](#string) |  |  |
+| index | [uint64](#uint64) |  |  |
+| block | [uint64](#uint64) |  |  |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
+| erc20 | [ERC20](#vega.ERC20) |  | ERC1155 erc1155 = 103; Ether ether = 104; |
+| deposit | [Deposit](#vega.Deposit) |  |  |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
+| assetList | [AssetList](#vega.AssetList) |  | AssetDelist assetDelist = 1004; DepositMinimumSet depositMinimumSet = 1005; |
+
+
+
+
+
+
+<a name="vega.Deposit"></a>
+
+### Deposit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  |  |
+| sourcePartyID | [string](#string) |  |  |
+| targetPartyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.Withdrawal"></a>
+
+### Withdrawal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  |  |
+| sourcePartyId | [string](#string) |  |  |
+| targetPartyId | [string](#string) |  |  |
+| referenceNonce | [string](#string) |  |  |
 
 
 

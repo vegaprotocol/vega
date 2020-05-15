@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "code.vegaprotocol.io/vega/proto/api";
 
 import "proto/vega.proto";
+import "proto/chain_events.proto";
 import "proto/markets.proto";
 import "proto/governance.proto";
 
@@ -39,6 +40,16 @@ service trading {
 
   // Prepare a vote to be put on the chain (via SubmitTransaction)
   rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
+
+  // chain events
+  rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
+}
+
+message PropagateChainEventRequest {
+  vega.ChainEvent evt = 1;
+}
+
+message PropagateChainEventResponse {
 }
 
 message SubmitTransactionRequest {

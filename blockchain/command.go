@@ -33,6 +33,8 @@ const (
 	NodeVoteCommand Command = 0x48
 	// NodeVoteCommand...
 	NodeSignatureCommand Command = 0x49
+	// ChainEvent
+	ChainEventCommand Command = 0x50
 )
 
 var commandName = map[Command]string{
@@ -46,6 +48,7 @@ var commandName = map[Command]string{
 	RegisterNodeCommand:        "Register new Node",
 	NodeVoteCommand:            "Node Vote",
 	NodeSignatureCommand:       "Node Signature",
+	ChainEventCommand:          "Node Signature",
 }
 
 var commandKindName = map[CommandKind]string{

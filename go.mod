@@ -14,7 +14,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.12
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.2.0
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.4.0
 	github.com/google/btree v1.0.0
 	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
@@ -40,6 +40,7 @@ require (
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	google.golang.org/grpc v1.25.1
+	google.golang.org/protobuf v1.22.0
 )
 
 replace (

@@ -13,7 +13,7 @@ var (
 )
 
 // NodeSigsBuf...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_sigs_buf_mock.go -package mocks code.vegaprotocol.io/vega/plugins PropBuffer
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_sigs_buf_mock.go -package mocks code.vegaprotocol.io/vega/plugins NodeSigsBuf
 type NodeSigsBuf interface {
 	Subscribe() (<-chan [][]types.NodeSignature, int)
 	Unsubscribe(int)

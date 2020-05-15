@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/proto";
+
+import "proto/assets.proto";
+
+message AssetList {
+  string vegaAssetID = 1;
+}
+
+message Deposit {
+  string vegaAssetID = 1;
+  string sourcePartyID = 2;
+  string targetPartyID = 3;
+}
+
+message Withdrawal {
+  string vegaAssetID = 1;
+  string sourcePartyId = 2;
+  string targetPartyId = 3;
+  string referenceNonce = 4;
+}
+
+message ChainEvent {
+  string txHash = 1;
+  uint64 index = 2;
+  uint64 block = 3;
+
+  oneof eventSource {
+    vega.BuiltinAsset builtinAsset = 101;
+    vega.ERC20 erc20 = 102;
+    // ERC1155 erc1155 = 103;
+    // Ether ether = 104;
+  }
+  oneof eventType {
+    Deposit deposit = 1001;
+    Withdrawal withdrawal = 1002;
+    AssetList assetList = 1003;
+    // AssetDelist assetDelist = 1004;
+    // DepositMinimumSet depositMinimumSet = 1005;
+  }
+}
