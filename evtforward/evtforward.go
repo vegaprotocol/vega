@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
-	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -189,8 +189,6 @@ func (n *EvtForwarder) onTick(t time.Time) {
 		if evt.ts.Add(n.cfg.RetryRate.Duration).Before(t) {
 			// set next retry
 			n.evts[k] = tsEvt{ts: t, evt: evt.evt}
-
-			key := string(n.hash([]byte(evt.evt.String())))
 			if n.isSender(evt.evt) {
 				// we are selected to send the event, let's do it.
 				err := n.send(evt.evt)
