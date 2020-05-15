@@ -1202,6 +1202,41 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		return ret, err
 	}
 
+	// Update potential new position after the amend
+	pos, err := m.position.AmendOrder(existingOrder, amendedOrder)
+	if err != nil {
+		// adding order to the buffer first
+		amendedOrder.Status = types.Order_Rejected
+		amendedOrder.Reason = types.OrderError_INTERNAL_ERROR
+		m.orderBuf.Add(*amendedOrder)
+
+		m.log.Error("Unable to register potential trader position",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+		return nil, ErrMarginCheckFailed
+	}
+
+	// Perform check and allocate margin
+	if err = m.checkMarginForOrder(pos, amendedOrder); err != nil {
+		// Undo the position registering
+		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+		if err1 != nil {
+			m.log.Error("Unable to unregister potential trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err1))
+		}
+
+		// adding order to the buffer first
+		amendedOrder.Status = types.Order_Rejected
+		amendedOrder.Reason = types.OrderError_MARGIN_CHECK_FAILED
+		m.orderBuf.Add(*amendedOrder)
+
+		m.log.Error("Unable to check/add margin for trader",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+		return nil, ErrMarginCheckFailed
+	}
+
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
@@ -1215,34 +1250,17 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
-		if sizeDecrease && amendedOrder.Remaining < existingOrder.Remaining {
-			// reduce the position with the difference
-			diffRemaining := existingOrder.Remaining - amendedOrder.Remaining
-			o := types.Order{
-				PartyID:   existingOrder.PartyID,
-				Side:      existingOrder.Side,
-				Remaining: diffRemaining,
-			}
-			_, err = m.position.UnregisterOrder(&o)
-			if err != nil {
-				m.log.Error("Failure unregistering order in positions engine (cancel)",
-					logging.Order(o),
-					logging.Error(err))
-
-				return nil, err
-			}
+		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
+			m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
 		}
-
 		ret, err := m.orderAmendInPlace(amendedOrder)
 		if err == nil {
 			m.orderBuf.Add(*amendedOrder)
 		}
 		return ret, err
 	}
-
 	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
 	return nil, types.ErrEditNotAllowed
-
 }
 
 func (m *Market) validateOrderAmendment(
@@ -1354,12 +1372,7 @@ func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirm
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
-	_, err := m.position.RegisterOrder(amendOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	err = m.matching.AmendOrder(amendOrder)
+	err := m.matching.AmendOrder(amendOrder)
 	if err != nil {
 		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*amendOrder, "new-order"),
