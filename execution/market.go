@@ -1221,15 +1221,10 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {
-			m.log.Error("Unable to unregister potential trader position",
+			m.log.Error("Unable to unregister potential amended trader position",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err1))
 		}
-
-		// adding order to the buffer first
-		amendedOrder.Status = types.Order_Rejected
-		amendedOrder.Reason = types.OrderError_MARGIN_CHECK_FAILED
-		m.orderBuf.Add(*amendedOrder)
 
 		m.log.Error("Unable to check/add margin for trader",
 			logging.String("market-id", m.GetID()),
