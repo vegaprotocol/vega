@@ -37,6 +37,7 @@ var (
 	ErrRegisterNodePubKeyDoesNotMatch               = errors.New("node register key does not match")
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
 	ErrUnknownSignatureKind                         = errors.New("unknown signature kind")
+	ErrUnsupportedEventType                         = errors.New("unsupported event type")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -95,6 +96,7 @@ type Wallet interface {
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
 	Get(assetID string) (assets.Asset, error)
+	Enable(assetID string) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
@@ -121,6 +123,14 @@ type VoteBuf interface {
 type NodeSigsBuf interface {
 	Add([]types.NodeSignature)
 	Flush()
+}
+
+// EvtForward...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forward_mock.go -package mocks code.vegaprotocol.io/vega/processor EvtForward
+type EvtForward interface {
+	AddNodePubKey(key []byte)
+	Forward(evt *types.ChainEvent) error
+	Ack(evt *types.ChainEvent) bool
 }
 
 const (
@@ -163,10 +173,11 @@ type Processor struct {
 	nodeSigBuf  NodeSigsBuf
 
 	notary *notary.Notary
+	evtfwd EvtForward
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine, proposalBuf ProposalBuf, voteBuf VoteBuf, notry *notary.Notary, nodeSigsBuf NodeSigsBuf) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, gov GovernanceEngine, proposalBuf ProposalBuf, voteBuf VoteBuf, notry *notary.Notary, nodeSigsBuf NodeSigsBuf, evtfwd EvtForward) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -189,6 +200,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		idgen:             NewIDGen(),
 		notary:            notry,
 		nodeSigBuf:        nodeSigsBuf,
+		evtfwd:            evtfwd,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -393,6 +405,15 @@ func (p *Processor) getNodeSignature(payload []byte) (*types.NodeSignature, erro
 	return nodeSignature, nil
 }
 
+func (p *Processor) getChainEvent(payload []byte) (*types.ChainEvent, error) {
+	ce := &types.ChainEvent{}
+	err := proto.Unmarshal(payload, ce)
+	if err != nil {
+		return nil, err
+	}
+	return ce, nil
+}
+
 // ValidateSigned - validates a signed transaction. This sits here because it's actual data processing
 // related. We need to unmarshal the payload to validate the partyID
 func (p *Processor) ValidateSigned(key, data, sig []byte, cmd blockchain.Command) error {
@@ -467,6 +488,12 @@ func (p *Processor) ValidateSigned(key, data, sig []byte, cmd blockchain.Command
 		return nil
 	case blockchain.NodeSignatureCommand:
 		_, err := p.getNodeSignature(data)
+		if err != nil {
+			return err
+		}
+		return nil
+	case blockchain.ChainEventCommand:
+		_, err := p.getChainEvent(data)
 		if err != nil {
 			return err
 		}
@@ -552,8 +579,13 @@ func (p *Processor) Process(key, data, sig []byte, cmd blockchain.Command) error
 		if err != nil {
 			return err
 		}
-
 		return p.registerNodeSignature(key, ns)
+	case blockchain.ChainEventCommand:
+		ce, err := p.getChainEvent(data)
+		if err != nil {
+			return err
+		}
+		return p.handleChainEvent(ce)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
@@ -561,7 +593,34 @@ func (p *Processor) Process(key, data, sig []byte, cmd blockchain.Command) error
 	return nil
 }
 
+func (p *Processor) handleChainEvent(ce *types.ChainEvent) error {
+	if !p.evtfwd.Ack(ce) {
+		p.log.Warn("received duplicated acknowledged event",
+			logging.String("chain-event", ce.String()))
+		return nil
+	}
+
+	// now process the actual event
+	switch evtty := ce.EventType.(type) {
+	case *types.ChainEvent_Deposit:
+		return ErrUnsupportedEventType
+	case *types.ChainEvent_Withdrawal:
+		return ErrUnsupportedEventType
+	case *types.ChainEvent_AssetList:
+		// unable the asset in the assets manager thingy and the colateral
+		if err := p.assets.Enable(evtty.AssetList.VegaAssetID); err != nil {
+			p.log.Error("unable to enable asset", logging.String("asset-id", evtty.AssetList.VegaAssetID))
+		}
+
+	}
+
+	return nil
+}
+
 func (p *Processor) registerNodeSignature(nodePubKey []byte, ns *types.NodeSignature) (err error) {
+	// todo(JEREMY): verify the signature is valid
+	// for the givent request
+
 	sigs, ok, err := p.notary.AddSig(ns.ID, ns.Kind, nodePubKey, ns.Sig)
 	if err != nil {
 		return err
@@ -892,7 +951,7 @@ func (p *Processor) assetEnactFirstStep(proposal *types.Proposal) error {
 		Sig:  sig,
 		Kind: types.NodeSignatureKind_ASSET_NEW,
 	}
-	if err := p.cmd.Command(vegaKey, blockchain.NodeVoteCommand, ns); err != nil {
+	if err := p.cmd.Command(vegaKey, blockchain.NodeSignatureCommand, ns); err != nil {
 		p.log.Error("unable to send command", logging.Error(err))
 		// @TODO keep in memory, retry later?
 		return err

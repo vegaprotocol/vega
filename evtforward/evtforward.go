@@ -17,7 +17,7 @@ import (
 
 var (
 	ErrEvtAlreadyExist   = errors.New("event already exist")
-	ErrMissingVegaWallet = errors.New("missing vega wallet§")
+	ErrMissingVegaWallet = errors.New("missing vega wallet")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
@@ -62,7 +62,7 @@ type nodeHash struct {
 	hash uint64
 }
 
-func New(log *logging.Logger, cfg Config, cmd Commander, self []byte, time TimeService, nwallet NodeWallet) (*EvtForwarder, error) {
+func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, nwallet NodeWallet) (*EvtForwarder, error) {
 	now, err := time.GetTimeNow()
 	if err != nil {
 		return nil, err
@@ -78,13 +78,13 @@ func New(log *logging.Logger, cfg Config, cmd Commander, self []byte, time TimeS
 		log:         log,
 		cmd:         cmd,
 		nodes:       []nodeHash{},
-		self:        string(self),
+		self:        string(wallet.PubKeyOrAddress()),
 		currentTime: now,
 		wallet:      wallet,
 		ackedEvts:   map[string]*types.ChainEvent{},
 		evts:        map[string]tsEvt{},
 	}
-	evtf.AddNodePubKey(self)
+	evtf.AddNodePubKey(wallet.PubKeyOrAddress())
 	time.NotifyOnTick(evtf.onTick)
 	return evtf, nil
 }

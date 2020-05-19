@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/processor/mocks"
 	types "code.vegaprotocol.io/vega/proto"
@@ -32,6 +33,9 @@ type procTest struct {
 	gov         *mocks.MockGovernanceEngine
 	proposalBuf *mocks.MockProposalBuf
 	voteBuf     *mocks.MockVoteBuf
+	evtfwd      *mocks.MockEvtForward
+	nodeSigBuf  *mocks.MockNodeSigsBuf
+	notary      *notary.Notary
 }
 
 type stubWallet struct {
@@ -53,12 +57,15 @@ func getTestProcessor(t *testing.T) *procTest {
 	gov := mocks.NewMockGovernanceEngine(ctrl)
 	proposalBuf := mocks.NewMockProposalBuf(ctrl)
 	voteBuf := mocks.NewMockVoteBuf(ctrl)
+	nodeSigsBuf := mocks.NewMockNodeSigsBuf(ctrl)
+	evtfwd := mocks.NewMockEvtForward(ctrl)
+	notary := notary.New(log, notary.NewDefaultConfig())
 
 	var cb func(time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
 		cb = c
 	})
-	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, gov, proposalBuf, voteBuf)
+	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, gov, proposalBuf, voteBuf, notary, nodeSigsBuf, evtfwd)
 	return &procTest{
 		Processor:   proc,
 		eng:         eng,
@@ -72,6 +79,8 @@ func getTestProcessor(t *testing.T) *procTest {
 		gov:         gov,
 		proposalBuf: proposalBuf,
 		voteBuf:     voteBuf,
+		evtfwd:      evtfwd,
+		nodeSigBuf:  nodeSigsBuf,
 	}
 }
 
@@ -189,13 +198,13 @@ func testOnTickPending(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 		ch <- struct{}{}
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.ProposeCommand))
 	// Register a node, so the proposal is still pending
 	reg := &types.NodeRegistration{
 		PubKey: wal.key,
 	}
 	payload, err = proto.Marshal(reg)
-	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.RegisterNodeCommand))
 
 	// next time tick, proposal is pending but not past validation time
 	tick := time.NewTicker(50 * time.Millisecond)
@@ -273,7 +282,7 @@ func testOnTickSubmit(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.ProposeCommand))
 
 	ch := make(chan struct{}, 1)
 	proc.gov.EXPECT().
@@ -363,7 +372,7 @@ func testOnTickSubmitRetry(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.ProposeCommand))
 
 	// vote := &types.NodeVote{
 	// 	PubKey:    string(wal.PubKeyOrAddress()),
@@ -473,7 +482,7 @@ func testOnTickWithNodes(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.ProposeCommand))
 
 	// This node has received the proposal and validated it. We want to vote for it
 	// first process the RegisterNodeCommand transaction
@@ -483,7 +492,7 @@ func testOnTickWithNodes(t *testing.T) {
 	}
 	payload, err = proto.Marshal(reg)
 	assert.NoError(t, err)
-	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.RegisterNodeCommand))
 
 	// Now this node can vote has to vote on the proposal
 	vote := &types.NodeVote{
@@ -491,7 +500,7 @@ func testOnTickWithNodes(t *testing.T) {
 		Reference: data.Reference,
 	}
 	payload, err = proto.Marshal(vote)
-	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.NodeVoteCommand))
 
 	i := 0
 	returns := []error{
@@ -573,7 +582,7 @@ func testOnTickReject(t *testing.T) {
 	}
 	reg, err := proto.Marshal(nr)
 	assert.NoError(t, err)
-	assert.NoError(t, proc.Process(reg, blockchain.RegisterNodeCommand))
+	assert.NoError(t, proc.Process(reg, nil, nil, blockchain.RegisterNodeCommand))
 
 	closeTS := time.Now().Add(120 * time.Hour)
 	validTS := time.Now().Add(24 * time.Hour)
@@ -608,7 +617,7 @@ func testOnTickReject(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 		ch <- struct{}{}
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.ProposeCommand))
 
 	// We expect SubmitProposal to NOT be called (other node did NOT validate
 	proc.gov.EXPECT().AddProposal(gomock.Any()).Times(0).Return(nil)
@@ -724,13 +733,15 @@ func testValidateSignedInvalidPayload(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	party := []byte("party-id")
+	sig := []byte("sig")
 	cmd := blockchain.VoteCommand
 	// wrong type for this command
 	payload, err := proto.Marshal(&types.Proposal{
 		PartyID: hex.EncodeToString(party),
 	})
+
 	assert.NoError(t, err)
-	err = proc.ValidateSigned(party, payload, cmd)
+	err = proc.ValidateSigned(party, payload, sig, cmd)
 	assert.Error(t, err)
 }
 
@@ -738,11 +749,12 @@ func testValidateSignedInvalidCommand(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	var b byte // nil value
-	assert.Error(t, proc.ValidateSigned([]byte("party"), []byte("foobar"), blockchain.Command(b)))
+	assert.Error(t, proc.ValidateSigned([]byte("party"), []byte("foobar"), []byte("sig"), blockchain.Command(b)))
 }
 
 func testValidateCommandsFail(t *testing.T) {
 	key := []byte("party-id")
+	sig := []byte("sig")
 	party := hex.EncodeToString([]byte("another-party"))
 	data := map[blockchain.Command]proto.Message{
 		blockchain.SubmitOrderCommand: &types.OrderSubmission{
@@ -777,7 +789,7 @@ func testValidateCommandsFail(t *testing.T) {
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
 		assert.NoError(t, err)
-		err = proc.ValidateSigned(key, payload, cmd)
+		err = proc.ValidateSigned(key, payload, sig, cmd)
 		assert.Error(t, err)
 		expErr, ok := expError[cmd]
 		assert.True(t, ok)
@@ -787,6 +799,7 @@ func testValidateCommandsFail(t *testing.T) {
 
 func testValidateCommandsSuccess(t *testing.T) {
 	key := []byte("party-id")
+	sig := []byte("sig")
 	party := hex.EncodeToString(key)
 	data := map[blockchain.Command]proto.Message{
 		blockchain.SubmitOrderCommand: &types.OrderSubmission{
@@ -813,7 +826,7 @@ func testValidateCommandsSuccess(t *testing.T) {
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
 		assert.NoError(t, err)
-		assert.NoError(t, proc.ValidateSigned(key, payload, cmd), "Failed to validate %v command payload", cmd)
+		assert.NoError(t, proc.ValidateSigned(key, payload, sig, cmd), "Failed to validate %v command payload", cmd)
 	}
 }
 
@@ -821,6 +834,7 @@ func testSubmitOrderValidationSuccess(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	party := []byte("party-id")
+	sig := []byte("sig")
 	// bare bones
 	sub := &types.OrderSubmission{
 		MarketID: "market-id",
@@ -830,7 +844,7 @@ func testSubmitOrderValidationSuccess(t *testing.T) {
 	}
 	payload, err := proto.Marshal(sub)
 	assert.NoError(t, err)
-	assert.NoError(t, proc.ValidateSigned(party, payload, blockchain.SubmitOrderCommand))
+	assert.NoError(t, proc.ValidateSigned(party, payload, sig, blockchain.SubmitOrderCommand))
 }
 
 func testSubmitOrderValidationFail(t *testing.T) {
@@ -846,7 +860,7 @@ func testSubmitOrderValidationFail(t *testing.T) {
 	}
 	payload, err := proto.Marshal(sub)
 	assert.NoError(t, err)
-	err = proc.ValidateSigned(party, payload, blockchain.SubmitOrderCommand)
+	err = proc.ValidateSigned(party, payload, []byte("sig"), blockchain.SubmitOrderCommand)
 	assert.Error(t, err)
 	assert.Equal(t, err, processor.ErrOrderSubmissionPartyAndPubKeyDoesNotMatch)
 }
@@ -905,7 +919,7 @@ func testProcessCommandSuccess(t *testing.T) {
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
 		assert.NoError(t, err)
-		assert.NoError(t, proc.Process(payload, cmd), "Failed to process %v command payload", cmd)
+		assert.NoError(t, proc.Process(payload, nil, nil, cmd), "Failed to process %v command payload", cmd)
 	}
 }
 
@@ -971,7 +985,7 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 		// notify the call happend
 		ch <- struct{}{}
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(payload, nil, nil, blockchain.ProposeCommand))
 
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -130,6 +131,7 @@ type NodeCommand struct {
 	governance      *governance.Engine
 	processor       *processor.Processor
 	notary          *notary.Notary
+	evtfwd          *evtforward.EvtForwarder
 
 	mktscfg []proto.Market
 
