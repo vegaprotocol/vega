@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -46,6 +47,7 @@ type GRPCServer struct {
 	riskService             *risk.Svc
 	governanceService       *governance.Svc
 	nodeSigsService         *notary.Svc
+	evtfwd                  *evtforward.EvtForwarder
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -74,6 +76,7 @@ func NewGRPCServer(
 	riskService *risk.Svc,
 	governanceService *governance.Svc,
 	nodeSigsService *notary.Svc,
+	evtfwd *evtforward.EvtForwarder,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -97,6 +100,7 @@ func NewGRPCServer(
 		riskService:             riskService,
 		governanceService:       governanceService,
 		nodeSigsService:         nodeSigsService,
+		evtfwd:                  evtfwd,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -189,6 +193,7 @@ func (g *GRPCServer) Start() {
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
 		governanceService: g.governanceService,
+		evtfwd:            g.evtfwd,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc

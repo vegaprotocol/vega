@@ -206,6 +206,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.riskService,
 		l.governanceService,
 		l.nodeSigsService,
+		l.evtfwd,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

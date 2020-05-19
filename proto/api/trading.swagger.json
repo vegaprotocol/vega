@@ -1314,6 +1314,9 @@
         }
       }
     },
+    "apiPropagateChainEventResponse": {
+      "type": "object"
+    },
     "apiSubmitOrderRequest": {
       "type": "object",
       "properties": {
@@ -1483,6 +1486,14 @@
       ],
       "default": "ALL"
     },
+    "vegaAssetList": {
+      "type": "object",
+      "properties": {
+        "vegaAssetID": {
+          "type": "string"
+        }
+      }
+    },
     "vegaAssetSource": {
       "type": "object",
       "properties": {
@@ -1549,6 +1560,37 @@
         }
       }
     },
+    "vegaChainEvent": {
+      "type": "object",
+      "properties": {
+        "txHash": {
+          "type": "string"
+        },
+        "index": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "block": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "builtinAsset": {
+          "$ref": "#/definitions/vegaBuiltinAsset"
+        },
+        "erc20": {
+          "$ref": "#/definitions/vegaERC20"
+        },
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit"
+        },
+        "withdrawal": {
+          "$ref": "#/definitions/vegaWithdrawal"
+        },
+        "assetList": {
+          "$ref": "#/definitions/vegaAssetList"
+        }
+      }
+    },
     "vegaChainStatus": {
       "type": "string",
       "enum": [
@@ -1564,6 +1606,20 @@
         "tickSize": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "vegaDeposit": {
+      "type": "object",
+      "properties": {
+        "vegaAssetID": {
+          "type": "string"
+        },
+        "sourcePartyID": {
+          "type": "string"
+        },
+        "targetPartyID": {
+          "type": "string"
         }
       }
     },
@@ -2608,6 +2664,23 @@
           "format": "uint64"
         },
         "asset": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaWithdrawal": {
+      "type": "object",
+      "properties": {
+        "vegaAssetID": {
+          "type": "string"
+        },
+        "sourcePartyId": {
+          "type": "string"
+        },
+        "targetPartyId": {
+          "type": "string"
+        },
+        "referenceNonce": {
           "type": "string"
         }
       }

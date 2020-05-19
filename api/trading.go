@@ -40,12 +40,19 @@ type GovernanceService interface {
 	PrepareVote(vote *types.Vote) (*types.Vote, error)
 }
 
+// EvtForwarder
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
+type EvtForwarder interface {
+	Forward(e *types.ChainEvent) error
+}
+
 type tradingService struct {
 	log               *logging.Logger
 	tradeOrderService TradeOrderService
 	accountService    AccountService
 	marketService     MarketService
 	governanceService GovernanceService
+	evtfwd            EvtForwarder
 	statusChecker     *monitoring.Status
 
 	mu sync.Mutex
@@ -217,6 +224,23 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 		Blob: raw,
 		Vote: vote,
 	}, nil
+}
+
+func (s *tradingService) PropagateChainEvent(
+	ctx context.Context, req *protoapi.PropagateChainEventRequest,
+) (*protoapi.PropagateChainEventResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PropagateChainEvent", startTime)
+	if req == nil || req.Evt == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	err := s.evtfwd.Forward(req.Evt)
+	if err != nil {
+		s.log.Error("unable to forward event", logging.Error(err))
+	}
+
+	return &protoapi.PropagateChainEventResponse{}, err
 }
 
 func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {

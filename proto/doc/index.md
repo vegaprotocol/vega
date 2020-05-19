@@ -62,6 +62,8 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
+    - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
+    - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
@@ -1111,6 +1113,31 @@
 
 
 
+<a name="api.PropagateChainEventRequest"></a>
+
+### PropagateChainEventRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| evt | [vega.ChainEvent](#vega.ChainEvent) |  |  |
+
+
+
+
+
+
+<a name="api.PropagateChainEventResponse"></a>
+
+### PropagateChainEventResponse
+
+
+
+
+
+
+
 <a name="api.SubmitOrderRequest"></a>
 
 ### SubmitOrderRequest
@@ -1345,6 +1372,7 @@
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
+| PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | chain events |
 
 
 <a name="api.trading_data"></a>
