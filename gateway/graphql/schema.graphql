@@ -354,6 +354,11 @@ type Query {
   proposalByID(
     id: String!
   ): Proposal!
+
+  "An aggregate of signaures created by the validators on the network"
+  getNodeSignaturesAggregate(
+    resourceId: String!
+  ): [String!]
 }
 
 "Statistics about the node"

@@ -92,6 +92,7 @@ type TradingDataClient interface {
 	GetOpenProposals(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
 	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*types.ProposalVote, error)
+	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -355,6 +356,23 @@ func (r *myQueryResolver) ProposalByID(ctx context.Context, id string) (*Proposa
 		return nil, err
 	}
 	return r.convertProposal(ctx, vote.Proposal)
+}
+
+func (r *myQueryResolver) GetNodeSignaturesAggregate(ctx context.Context, resourceId string) ([]string, error) {
+	req := &protoapi.GetNodeSignaturesAggregateRequest{
+		ID: resourceId,
+	}
+	res, err := r.tradingDataClient.GetNodeSignaturesAggregate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]string, 0, len(res.Signatures))
+	for _, v := range res.Signatures {
+		// convert signatures to base64
+		out = append(out, base64.StdEncoding.EncodeToString(v.Sig))
+	}
+	return out, nil
 }
 
 func (r *myQueryResolver) convertProposal(ctx context.Context, proposal *types.Proposal) (*Proposal, error) {

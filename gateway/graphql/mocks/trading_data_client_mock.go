@@ -97,6 +97,26 @@ func (mr *MockTradingDataClientMockRecorder) CandlesSubscribe(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandlesSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).CandlesSubscribe), varargs...)
 }
 
+// GetNodeSignaturesAggregate mocks base method
+func (m *MockTradingDataClient) GetNodeSignaturesAggregate(arg0 context.Context, arg1 *api.GetNodeSignaturesAggregateRequest, arg2 ...grpc.CallOption) (*api.GetNodeSignaturesAggregateResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNodeSignaturesAggregate", varargs...)
+	ret0, _ := ret[0].(*api.GetNodeSignaturesAggregateResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodeSignaturesAggregate indicates an expected call of GetNodeSignaturesAggregate
+func (mr *MockTradingDataClientMockRecorder) GetNodeSignaturesAggregate(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeSignaturesAggregate", reflect.TypeOf((*MockTradingDataClient)(nil).GetNodeSignaturesAggregate), varargs...)
+}
+
 // GetOpenProposals mocks base method
 func (m *MockTradingDataClient) GetOpenProposals(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.GetProposalsResponse, error) {
 	m.ctrl.T.Helper()
