@@ -610,7 +610,7 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 			logging.String("proposal-terms", proposal.Terms.String()))
 	}
 
-	if now, err := e.time.GetTimeNow(); err != nil {
+	if now, err := e.time.GetTimeNow(); err == nil {
 		proposal.Timestamp = now.UnixNano()
 	}
 
@@ -626,7 +626,7 @@ func (e *Engine) VoteOnProposal(vote *types.Vote) error {
 			logging.String("vote-party", vote.PartyID),
 			logging.String("vote-value", vote.Value.String()))
 	}
-	if now, err := e.time.GetTimeNow(); err != nil {
+	if now, err := e.time.GetTimeNow(); err == nil {
 		vote.Timestamp = now.UnixNano()
 	}
 	return e.governance.AddVote(*vote)
