@@ -54,11 +54,11 @@ type Svc struct {
 	mu     sync.Mutex
 	plugin Plugin
 
-	parameters *networkParameters
+	parameters NetworkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
+func NewService(log *logging.Logger, cfg Config, params *NetworkParameters, plugin Plugin) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -66,7 +66,7 @@ func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 		Config:     cfg,
 		log:        log,
 		plugin:     plugin,
-		parameters: readNetworkParameters(cfg),
+		parameters: *params,
 	}
 }
 
@@ -81,11 +81,8 @@ func (s *Svc) ReloadConf(cfg Config) {
 		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	parameters := readNetworkParameters(cfg)
-
 	s.mu.Lock()
 	s.Config = cfg
-	s.parameters = parameters
 	s.mu.Unlock()
 }
 

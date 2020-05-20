@@ -54,7 +54,7 @@ type Engine struct {
 	currentTime   time.Time
 	proposals     map[string]*proposalVote
 	proposalRefs  map[string]*proposalVote
-	networkParams *networkParameters
+	networkParams *NetworkParameters
 }
 
 type proposalVote struct {
@@ -63,7 +63,7 @@ type proposalVote struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
 	return &Engine{
 		Config:        cfg,
 		accs:          accs,
@@ -73,7 +73,7 @@ func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf 
 		currentTime:   now,
 		proposals:     map[string]*proposalVote{},
 		proposalRefs:  map[string]*proposalVote{},
-		networkParams: readNetworkParameters(cfg),
+		networkParams: params,
 	}
 }
 
@@ -88,11 +88,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 		e.log.SetLevel(cfg.Level.Get())
 	}
 
-	params := readNetworkParameters(cfg)
-
 	e.mu.Lock()
 	e.Config = cfg
-	e.networkParams = params
 	e.mu.Unlock()
 }
 

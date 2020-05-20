@@ -132,6 +132,8 @@ type Engine struct {
 	governance *governance.Engine
 	idgen      *IDgenerator
 
+	NetworkParameters *governance.NetworkParameters
+
 	orderBuf        OrderBuf
 	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
@@ -186,30 +188,32 @@ func NewEngine(
 		return nil
 	}
 
-	gengine := governance.NewEngine(log, executionConfig.Governance, cengine, proposalBuf, voteBuf, now)
+	networkParameters := governance.DefaultNetworkParameters()
+	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
 
 	e := &Engine{
-		log:             log,
-		Config:          executionConfig,
-		markets:         map[string]*Market{},
-		candleBuf:       candleBuf,
-		orderBuf:        orderBuf,
-		tradeBuf:        tradeBuf,
-		marketBuf:       marketBuf,
-		partyBuf:        partyBuf,
-		time:            time,
-		collateral:      cengine,
-		governance:      gengine,
-		party:           NewParty(log, cengine, pmkts, partyBuf),
-		accountBuf:      accountBuf,
-		transferBuf:     transferBuf,
-		marketDataBuf:   marketDataBuf,
-		marginLevelsBuf: marginLevelsBuf,
-		settleBuf:       settleBuf,
-		lossSocBuf:      lossSocBuf,
-		proposalBuf:     proposalBuf,
-		voteBuf:         voteBuf,
-		idgen:           NewIDGen(),
+		log:               log,
+		Config:            executionConfig,
+		markets:           map[string]*Market{},
+		candleBuf:         candleBuf,
+		orderBuf:          orderBuf,
+		tradeBuf:          tradeBuf,
+		marketBuf:         marketBuf,
+		partyBuf:          partyBuf,
+		time:              time,
+		collateral:        cengine,
+		governance:        gengine,
+		NetworkParameters: networkParameters,
+		party:             NewParty(log, cengine, pmkts, partyBuf),
+		accountBuf:        accountBuf,
+		transferBuf:       transferBuf,
+		marketDataBuf:     marketDataBuf,
+		marginLevelsBuf:   marginLevelsBuf,
+		settleBuf:         settleBuf,
+		lossSocBuf:        lossSocBuf,
+		proposalBuf:       proposalBuf,
+		voteBuf:           voteBuf,
+		idgen:             NewIDGen(),
 	}
 
 	// Add initial markets and flush to stores (if they're configured)
