@@ -30,8 +30,10 @@ type Topology struct {
 	log *logging.Logger
 	clt BlockchainClient
 	// tendermint validator pubkey to vega pubkey
-	validators   map[string]string
-	tmValidators []*tmtypes.Validator
+	validators map[string]string
+	// just pubkeys of vega node for easy lookup
+	vegaValidatorRefs map[string]struct{}
+	tmValidators      []*tmtypes.Validator
 
 	selfTM *tmtypes.Validator
 
@@ -49,6 +51,17 @@ func NewTopology(log *logging.Logger, clt BlockchainClient) *Topology {
 
 	go t.handleGenesisValidators()
 	return t
+}
+
+func (t *Topology) Len() int {
+	return len(t.vegaValidatorRefs)
+}
+
+// Exists check if a vega public key is part of the validator set
+func (t *Topology) Exists(key []byte) bool {
+	pubKey := hex.EncodeToString(PubKey)
+	_, ok := p.nodes[pubKey]
+	return ok
 }
 
 func (t *Topology) SetChain(clt BlockchainClient) {

@@ -99,6 +99,8 @@ type ValidatorTopology interface {
 	AddNodeRegistration(nr *types.NodeRegistration) error
 	SelfTMPubKey() []byte
 	Ready() bool
+	Exists(key []byte) bool
+	Len() int
 }
 
 const (
@@ -127,7 +129,6 @@ type Processor struct {
 	time              TimeService
 	wallet            Wallet
 	assets            Assets
-	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
 	pendingValidation []*types.Proposal
 	cmd               Commander
@@ -150,7 +151,6 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		time:              ts,
 		wallet:            wallet,
 		assets:            assets,
-		nodes:             map[string]struct{}{},
 		nodeProposals:     map[string]*nodeProposal{},
 		pendingValidation: []*types.Proposal{},
 		cmd:               cmd,
@@ -495,15 +495,15 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		pubKey := hex.EncodeToString(vote.PubKey)
-		if _, ok := p.nodes[pubKey]; !ok {
+
+		if !p.top.Exists(vote.PubKey) {
 			return ErrUnknownNodeKey
 		}
 		prop, ok := p.nodeProposals[vote.Reference]
 		if !ok {
 			return ErrUnknownProposal
 		}
-		prop.votes[pubKey] = struct{}{}
+		prop.votes[hex.EncodeToString(vote.PubKey)] = struct{}{}
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -717,13 +717,13 @@ func (p *Processor) onTick(t time.Time) {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote agregated, and own vote sent
 		state := atomic.LoadUint32(&prop.validState)
-		if prop.validTime.Before(t) || (len(prop.votes) == len(p.nodes) && state == voteSentAssetProposal) {
+		if prop.validTime.Before(t) || (len(prop.votes) == p.top.Len() && state == voteSentAssetProposal) {
 			// if not all nodes have approved, just remove
-			if len(prop.votes) < len(p.nodes) {
+			if len(prop.votes) < p.top.Len() {
 				p.log.Warn("proposal was not accepted by all nodes",
 					logging.String("proposal", prop.Proposal.String()),
 					logging.Int("vote-count", len(prop.votes)),
-					logging.Int("node-count", len(p.nodes)),
+					logging.Int("node-count", p.top.Len()),
 				)
 			} else if err := p.exec.SubmitProposal(prop.Proposal); err != nil {
 				p.log.Error("Failed to submit node-approved proposal",
