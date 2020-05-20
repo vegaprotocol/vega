@@ -74,7 +74,6 @@ In addition to the Golang code review standards, we want to be consistent:
 
 * Avoid nested types as much as possible. Enums are the notable exception here.
 * Fields that are ID's should be named `ID` or `FooID` (ID is CAPS).
-* Messages used in the API use the suffix `Request` and `Response`.
 * API Request/Response types, and the service definitions belong in the `proto/api` directory (and the `api` package)
 * Message types representing a unit of data, currently used in the core (e.g. `Order`, `Market`, `Transfer`, ...) are defined in the `proto/vega.proto` file. These types are imported under the alias `types`.
 * Wherever possible, add validator tags to the proto definitions.
@@ -122,22 +121,6 @@ const (
     Something_Disabled Something_Status = 0
     Something_Enabled  Something_Status = 1
 )
-```
-
-To add an RPC call to get this _"something"_ from the system, add a call to the `trading_data` service in `proto/api/trading.proto`:
-
-```proto
-service trading_data {
-    rpc GetSomethingsByMarketID(GetSomethingsByMarketIDRequest) returns (GetSomethingsByMarketIDResponse);
-}
-
-message GetSomethingsByMarketIDRequest {
-    string marketID = 1 [(validator.field) = {string_not_empty : true}];
-}
-
-message GetSomethingsByMarketIDResponse {
-    repeated vega.Something something = 1;
-}
 ```
 
 ### By popular demand:
