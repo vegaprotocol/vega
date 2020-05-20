@@ -845,7 +845,7 @@ func (r *myProposalResolver) Datetime(ctx context.Context, data *types.Governanc
 	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
 		return "", ErrInvalidProposal
 	}
-	return timestampToString(data.Proposal.Timestamp), nil
+	return timestampToDatetimeString(data.Proposal.Timestamp), nil
 }
 
 func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*ProposalTerms, error) {
