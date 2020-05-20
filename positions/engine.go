@@ -147,6 +147,29 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 	return
 }
 
+// AmendOrder unregisters the original order and then registers the newly amended order
+// this method is a quicker way of handling seperate unregsiter+register pairs
+func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
+	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
+
+	pos, found := e.positions[originalOrder.PartyID]
+	if !found {
+		// If we can't find the original, we can't amend it
+		err = ErrPositionNotFound
+		return
+	}
+	if originalOrder.Side == types.Side_Buy {
+		pos.buy -= int64(originalOrder.Remaining)
+		pos.buy += int64(newOrder.Remaining)
+	} else {
+		pos.sell -= int64(originalOrder.Remaining)
+		pos.sell += int64(newOrder.Remaining)
+	}
+
+	timer.EngineTimeCounterAdd()
+	return
+}
+
 // UpdateNetwork - functionally the same as the Update func, except for ignoring the network
 // party in the trade (whether it be buyer or seller). This could be incorporated into the Update
 // function, but we know when we're adding network trades, and having this check every time is

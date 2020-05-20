@@ -156,18 +156,21 @@ func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
 	if order.MarketID != b.marketID {
-		b.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("order-book", b.marketID))
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Market ID mismatch",
+				logging.Order(*order),
+				logging.String("order-book", b.marketID))
+		}
 		return nil, types.OrderError_INVALID_MARKET_ID
 	}
 
 	// Validate Order ID must be present
 	if err := validateOrderID(order.Id); err != nil {
-		b.log.Error("Order ID missing or invalid",
-			logging.Order(*order),
-			logging.String("order-book", b.marketID))
-
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Order ID missing or invalid",
+				logging.Order(*order),
+				logging.String("order-book", b.marketID))
+		}
 		return nil, err
 	}
 
@@ -188,30 +191,33 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 // AmendOrder amend an order which is an active order on the book
 func (b *OrderBook) AmendOrder(order *types.Order) error {
 	if err := b.validateOrder(order); err != nil {
-		b.log.Error("Order validation failure",
-			logging.Order(*order),
-			logging.Error(err),
-			logging.String("order-book", b.marketID))
-
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Order validation failure",
+				logging.Order(*order),
+				logging.Error(err),
+				logging.String("order-book", b.marketID))
+		}
 		return err
 	}
 
 	if order.Side == types.Side_Buy {
 		if err := b.buy.amendOrder(order); err != nil {
-			b.log.Error("Failed to amend (buy side)",
-				logging.Order(*order),
-				logging.Error(err),
-				logging.String("order-book", b.marketID))
-
+			if b.log.GetLevel() == logging.DebugLevel {
+				b.log.Debug("Failed to amend (buy side)",
+					logging.Order(*order),
+					logging.Error(err),
+					logging.String("order-book", b.marketID))
+			}
 			return err
 		}
 	} else {
 		if err := b.sell.amendOrder(order); err != nil {
-			b.log.Error("Failed to amend (sell side)",
-				logging.Order(*order),
-				logging.Error(err),
-				logging.String("order-book", b.marketID))
-
+			if b.log.GetLevel() == logging.DebugLevel {
+				b.log.Debug("Failed to amend (sell side)",
+					logging.Order(*order),
+					logging.Error(err),
+					logging.String("order-book", b.marketID))
+			}
 			return err
 		}
 	}
@@ -323,11 +329,12 @@ func (b *OrderBook) DeleteOrder(
 	order *types.Order) (*types.Order, error) {
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
 	if err != nil {
-		b.log.Error("Failed to remove order",
-			logging.Order(*order),
-			logging.Error(err),
-			logging.String("order-book", b.marketID))
-
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Failed to remove order",
+				logging.Order(*order),
+				logging.Error(err),
+				logging.String("order-book", b.marketID))
+		}
 		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
@@ -370,8 +377,10 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
 func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 	if err := validateOrderID(orderID); err != nil {
-		b.log.Error("Order ID missing or invalid",
-			logging.String("order-id", orderID))
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Order ID missing or invalid",
+				logging.String("order-id", orderID))
+		}
 		return nil, err
 	}
 	order, exists := b.ordersByID[orderID]
@@ -399,12 +408,13 @@ func (b *OrderBook) RemoveDistressedOrders(
 		for _, o := range orders {
 			confirm, err := b.CancelOrder(o)
 			if err != nil {
-				b.log.Error(
-					"Failed to cancel a given order for party",
-					logging.Order(*o),
-					logging.String("party", party.Party()),
-					logging.Error(err),
-				)
+				if b.log.GetLevel() == logging.DebugLevel {
+					b.log.Debug(
+						"Failed to cancel a given order for party",
+						logging.Order(*o),
+						logging.String("party", party.Party()),
+						logging.Error(err))
+				}
 				// let's see whether we need to handle this further down
 				continue
 			}
