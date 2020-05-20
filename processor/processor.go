@@ -94,6 +94,13 @@ type Commander interface {
 	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+type ValidatorTopology interface {
+	AddNodeRegistration(nr *types.NodeRegistration) error
+	SelfTMPubKey() []byte
+	Ready() bool
+}
+
 const (
 	notValidAssetProposal uint32 = iota
 	validAssetProposal
@@ -126,10 +133,11 @@ type Processor struct {
 	cmd               Commander
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
+	top               ValidatorTopology
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -146,6 +154,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		nodeProposals:     map[string]*nodeProposal{},
 		pendingValidation: []*types.Proposal{},
 		cmd:               cmd,
+		top:               top,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -165,18 +174,25 @@ func (p *Processor) Begin() error {
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
 	}
-	if !p.hasRegistered {
-		w, ok := p.wallet.Get(nodewallet.Vega)
-		if !ok {
-			return ErrNoVegaWalletFound
+	if !p.top.Ready() {
+		if !p.hasRegistered {
+			// get our tendermint pubkey
+			tmPubKey := p.top.SelfTMPubKey()
+			if tmPubKey != nil {
+				w, ok := p.wallet.Get(nodewallet.Vega)
+				if !ok {
+					return ErrNoVegaWalletFound
+				}
+				payload := &types.NodeRegistration{
+					TmPubKey: tmPubKey,
+					PubKey:   w.PubKeyOrAddress(),
+				}
+				if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
+					return err
+				}
+				p.hasRegistered = true
+			}
 		}
-		payload := &types.NodeRegistration{
-			PubKey: w.PubKeyOrAddress(),
-		}
-		if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
-			return err
-		}
-		p.hasRegistered = true
 	}
 
 	if p.log.GetLevel() == logging.DebugLevel {
@@ -468,7 +484,12 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
+		err = p.top.AddNodeRegistration(node)
+		if err != nil {
+			p.log.Error("unable to register node",
+				logging.Error(err))
+		}
+		// p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
 	case blockchain.NodeVoteCommand:
 		vote, err := p.getNodeVote(data)
 		if err != nil {
