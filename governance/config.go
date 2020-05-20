@@ -11,11 +11,6 @@ const namedLogger = "governance"
 type Config struct {
 	// logging level
 	Level encoding.LogLevel
-
-	// this split allows partially setting network parameters
-	//CloseParameters              *closeParams
-	//EnactParameters              *enactParams
-	//DefaultMinParticipationStake uint64
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
