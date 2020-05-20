@@ -37,6 +37,9 @@ type Topology struct {
 
 	selfTM *tmtypes.Validator
 
+	// don't recalculate readyness all the time
+	ready bool
+
 	mu sync.Mutex
 }
 
@@ -59,8 +62,7 @@ func (t *Topology) Len() int {
 
 // Exists check if a vega public key is part of the validator set
 func (t *Topology) Exists(key []byte) bool {
-	pubKey := hex.EncodeToString(PubKey)
-	_, ok := p.nodes[pubKey]
+	_, ok := t.vegaValidatorRefs[hex.EncodeToString(key)]
 	return ok
 }
 
@@ -82,15 +84,20 @@ func (t *Topology) SelfTMPubKey() []byte {
 func (t *Topology) Ready() bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if len(t.tmValidators) <= 0 {
-		return false
-	}
-	for _, v := range t.tmValidators {
-		if _, ok := t.validators[string(v.PubKey.Bytes())]; !ok {
+
+	if !t.ready {
+		if len(t.tmValidators) <= 0 {
 			return false
 		}
+		for _, v := range t.tmValidators {
+			if _, ok := t.validators[string(v.PubKey.Bytes())]; !ok {
+				return false
+			}
+		}
+		t.ready = true
 	}
-	return true
+
+	return t.ready
 }
 
 func (t *Topology) AddNodeRegistration(nr *types.NodeRegistration) error {

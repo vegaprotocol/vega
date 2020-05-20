@@ -123,6 +123,7 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
+	isValidator       bool
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
@@ -138,7 +139,7 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, isValidator bool) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -175,7 +176,7 @@ func (p *Processor) Begin() error {
 		return err
 	}
 	if !p.top.Ready() {
-		if !p.hasRegistered {
+		if !p.hasRegistered && p.isValidator {
 			// get our tendermint pubkey
 			tmPubKey := p.top.SelfTMPubKey()
 			if tmPubKey != nil {
@@ -496,6 +497,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 			return err
 		}
 
+		// if not a validator reject the vote
 		if !p.top.Exists(vote.PubKey) {
 			return ErrUnknownNodeKey
 		}
@@ -741,19 +743,22 @@ func (p *Processor) onTick(t time.Time) {
 		// or check if the proposal if valid,
 		// if it is, we will send our own message through the network.
 		if state == validAssetProposal {
-			key, ok := p.wallet.Get(nodewallet.Vega)
-			if !ok {
-				p.log.Error("no vega wallet found")
-				continue
-			}
-			nv := &types.NodeVote{
-				PubKey:    key.PubKeyOrAddress(),
-				Reference: prop.Reference,
-			}
-			if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
-				p.log.Error("unable tosend command", logging.Error(err))
-				// @TODO keep in memory, retry later?
-				continue
+			// if not a validator no need to send the vote
+			if p.isValidator {
+				key, ok := p.wallet.Get(nodewallet.Vega)
+				if !ok {
+					p.log.Error("no vega wallet found")
+					continue
+				}
+				nv := &types.NodeVote{
+					PubKey:    key.PubKeyOrAddress(),
+					Reference: prop.Reference,
+				}
+				if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
+					p.log.Error("unable tosend command", logging.Error(err))
+					// @TODO keep in memory, retry later?
+					continue
+				}
 			}
 			atomic.StoreUint32(&prop.validState, voteSentAssetProposal)
 			// cancelling this but it should already be exited if th proposal
