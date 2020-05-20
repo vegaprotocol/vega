@@ -610,10 +610,12 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 			logging.String("proposal-terms", proposal.Terms.String()))
 	}
 
-	if now, err := e.time.GetTimeNow(); err == nil {
-		proposal.Timestamp = now.UnixNano()
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "Failed to submit a proposal")
 	}
 
+	proposal.Timestamp = now.UnixNano()
 	e.idgen.SetProposalID(proposal)
 	return e.governance.AddProposal(*proposal)
 }
@@ -626,8 +628,10 @@ func (e *Engine) VoteOnProposal(vote *types.Vote) error {
 			logging.String("vote-party", vote.PartyID),
 			logging.String("vote-value", vote.Value.String()))
 	}
-	if now, err := e.time.GetTimeNow(); err == nil {
-		vote.Timestamp = now.UnixNano()
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "Failed to vote on a proposal")
 	}
+	vote.Timestamp = now.UnixNano()
 	return e.governance.AddVote(*vote)
 }
