@@ -128,7 +128,7 @@ func customErrorFromStatus(err error) error {
 	return err
 }
 
-func timestampToString(timestampInSeconds int64) string {
+func timestampToDatetimeString(timestampInSeconds int64) string {
 	return vegatime.Format(vegatime.Unix(timestampInSeconds, 0))
 }
 
