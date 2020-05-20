@@ -54,7 +54,7 @@ type Engine struct {
 	currentTime   time.Time
 	proposals     map[string]*proposalVote
 	proposalRefs  map[string]*proposalVote
-	networkParams *NetworkParameters
+	networkParams NetworkParameters
 }
 
 type proposalVote struct {
@@ -73,7 +73,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		currentTime:   now,
 		proposals:     map[string]*proposalVote{},
 		proposalRefs:  map[string]*proposalVote{},
-		networkParams: params,
+		networkParams: *params,
 	}
 }
 

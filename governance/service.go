@@ -53,20 +53,17 @@ type Svc struct {
 	log    *logging.Logger
 	mu     sync.Mutex
 	plugin Plugin
-
-	parameters NetworkParameters
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, params *NetworkParameters, plugin Plugin) *Svc {
+func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	return &Svc{
-		Config:     cfg,
-		log:        log,
-		plugin:     plugin,
-		parameters: *params,
+		Config: cfg,
+		log:    log,
+		plugin: plugin,
 	}
 }
 
@@ -301,9 +298,7 @@ func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
 	return vote, nil
 }
 
-// validateTerms performs sanity checks:
-// - network time restrictions parameters (voting duration, enactment date time);
-// - network minimum participation requirement parameter.
+// validateTerms performs trivial sanity check
 func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	if err := terms.Validate(); err != nil {
 		return ErrInvalidProposalTerms
