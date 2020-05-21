@@ -521,8 +521,8 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 		return nil, ErrParticipationStake
 	}
 	result := &ProposalTerms{
-		ClosingDatetime:       timestampToString(terms.ClosingTimestamp),
-		EnactmentDatetime:     timestampToString(terms.EnactmentTimestamp),
+		ClosingDatetime:       timestampToDatetime(terms.ClosingTimestamp),
+		EnactmentDatetime:     timestampToDatetime(terms.EnactmentTimestamp),
 		MinParticipationStake: int(terms.MinParticipationStake),
 	}
 	if terms.GetUpdateMarket() != nil {
@@ -797,8 +797,9 @@ func VoteValueFromProto(v types.Vote_Value) VoteValue {
 func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 	return &ProposalVote{
 		Vote: &Vote{
-			Party: caster,
-			Value: VoteValueFromProto(v.Value),
+			Party:    caster,
+			Value:    VoteValueFromProto(v.Value),
+			Datetime: timestampToDatetime(v.Timestamp),
 		},
 		ProposalID: v.ProposalID,
 	}

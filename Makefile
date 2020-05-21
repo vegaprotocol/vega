@@ -89,7 +89,7 @@ install: ## install the binaries in GOPATH/bin
 
 .PHONY: gqlgen
 gqlgen: ## run gqlgen
-	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
+	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen --config gqlgen.yml
 
 .PHONY: gqlgen_check
 gqlgen_check: ## GraphQL: Check committed files match just-generated files

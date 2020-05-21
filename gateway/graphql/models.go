@@ -444,6 +444,8 @@ type Vote struct {
 	Value VoteValue `json:"value"`
 	// The party casting the vote
 	Party *proto.Party `json:"party"`
+	// ISO-8601 time and date when the vote reached Vega network
+	Datetime string `json:"datetime"`
 }
 
 // The various account types we have (used by collateral)
