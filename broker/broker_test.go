@@ -129,7 +129,7 @@ func testSkipOptional(t *testing.T) {
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan broker.BaseEvent, 1)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
 	sub.EXPECT().Types().Times(2).Return(nil)
 	k1 := tstBroker.Subscribe(sub, false)
 	assert.NotZero(t, k1)

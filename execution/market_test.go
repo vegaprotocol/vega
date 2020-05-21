@@ -27,14 +27,15 @@ type testMarket struct {
 	ctrl       *gomock.Controller
 	accountBuf *collateralmocks.MockAccountBuffer
 
-	collateraEngine       *collateral.Engine
-	partyEngine           *execution.Party
-	candleStore           *mocks.MockCandleBuf
-	orderStore            *mocks.MockOrderBuf
-	partyStore            *mocks.MockPartyBuf
-	tradeStore            *mocks.MockTradeBuf
-	transferResponseStore *mocks.MockTransferBuf
-	settleBuf             *mocks.MockSettlementBuf
+	collateraEngine *collateral.Engine
+	partyEngine     *execution.Party
+	candleStore     *mocks.MockCandleBuf
+	orderStore      *mocks.MockOrderBuf
+	partyStore      *mocks.MockPartyBuf
+	tradeStore      *mocks.MockTradeBuf
+	settleBuf       *mocks.MockSettlementBuf
+
+	broker *mocks.MockBroker
 
 	now time.Time
 }
@@ -51,8 +52,8 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	orderStore := mocks.NewMockOrderBuf(ctrl)
 	partyStore := mocks.NewMockPartyBuf(ctrl)
 	tradeStore := mocks.NewMockTradeBuf(ctrl)
-	transferResponseStore := mocks.NewMockTransferBuf(ctrl)
 	settleBuf := mocks.NewMockSettlementBuf(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	settleBuf.EXPECT().Flush().AnyTimes()
 	marginLevelsBuf := buffer.NewMarginLevels()
@@ -70,7 +71,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
-		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, settleBuf, now, execution.NewIDGen())
+		partyStore, tradeStore, marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -81,19 +82,19 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	_, _ = collateralEngine.CreateMarketAccounts(mktEngine.GetID(), asset, 0)
 
 	return &testMarket{
-		market:                mktEngine,
-		log:                   log,
-		ctrl:                  ctrl,
-		accountBuf:            accountBuf,
-		collateraEngine:       collateralEngine,
-		partyEngine:           partyEngine,
-		candleStore:           candleStore,
-		orderStore:            orderStore,
-		partyStore:            partyStore,
-		tradeStore:            tradeStore,
-		transferResponseStore: transferResponseStore,
-		settleBuf:             settleBuf,
-		now:                   now,
+		market:          mktEngine,
+		log:             log,
+		ctrl:            ctrl,
+		accountBuf:      accountBuf,
+		collateraEngine: collateralEngine,
+		partyEngine:     partyEngine,
+		candleStore:     candleStore,
+		orderStore:      orderStore,
+		partyStore:      partyStore,
+		tradeStore:      tradeStore,
+		settleBuf:       settleBuf,
+		broker:          broker,
+		now:             now,
 	}
 }
 
@@ -158,7 +159,8 @@ func addAccount(market *testMarket, party string) {
 	})
 	market.partyStore.EXPECT().Add(gomock.Any()).Times(1)
 	market.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party})
-	market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -175,7 +177,8 @@ func TestMarketClosing(t *testing.T) {
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	// check account gets updated
@@ -252,7 +255,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
@@ -335,7 +339,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -393,7 +398,8 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -445,7 +451,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// })
 	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("ACCOUNT: %v\n", acc)

@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
@@ -246,7 +247,7 @@ func (l *NodeCommand) setupBuffers() {
 	l.orderBuf = buffer.NewOrder(l.orderStore)
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
+	l.transferBuf = buffer.NewTransferResponseSub(l.ctx, l.transferResponseStore)
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
@@ -325,6 +326,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
+	broker := broker.New(l.ctx)
+	_ = broker.Subscribe(l.transferBuf, true)
+
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
@@ -336,7 +340,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.marketBuf,
 		l.partyBuf,
 		l.accountBuf,
-		l.transferBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
 		l.settleBuf,
@@ -344,6 +347,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.proposalBuf,
 		l.voteBuf,
 		l.mktscfg,
+		broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
