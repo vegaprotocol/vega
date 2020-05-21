@@ -12,9 +12,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const invalidProposalTerms = "invalid proposal terms"
+
 var (
 	// ErrInvalidProposalTerms is returned if basic validation has failed
-	ErrInvalidProposalTerms = errors.New("invalid proposal terms")
+	ErrInvalidProposalTerms = errors.New(invalidProposalTerms)
 
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
@@ -301,7 +303,7 @@ func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
 // validateTerms performs trivial sanity check
 func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	if err := terms.Validate(); err != nil {
-		return ErrInvalidProposalTerms
+		return errors.Wrap(err, invalidProposalTerms)
 	}
 
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
