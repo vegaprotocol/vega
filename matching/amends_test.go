@@ -37,7 +37,7 @@ func TestOrderBookAmends_simpleAmend(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, int(book.getVolumeAtLevel(100, types.Side_Buy)))
 }
@@ -71,7 +71,7 @@ func TestOrderBookAmends_invalidPartyID(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_Buy))
 }
@@ -105,7 +105,7 @@ func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_Buy))
 }
@@ -139,7 +139,7 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_Buy))
 }
@@ -173,7 +173,7 @@ func TestOrderBookAmends_reduceToZero(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_Buy))
 }
@@ -222,7 +222,7 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
 	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.Side_Buy))
 }
@@ -271,7 +271,7 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err = book.AmendOrder(&amend)
+	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
 	assert.Equal(t, uint64(3), book.getVolumeAtLevel(100, types.Side_Buy))
 }
@@ -291,6 +291,6 @@ func TestOrderBookAmends_noOrderToAmend(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Type:        types.Order_LIMIT,
 	}
-	err := book.AmendOrder(&amend)
-	assert.Error(t, types.ErrInvalidPersistence, err)
+	err := book.AmendOrder(nil, &amend)
+	assert.Error(t, types.ErrOrderNotFound, err)
 }

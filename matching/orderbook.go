@@ -190,6 +190,10 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 
 // AmendOrder amend an order which is an active order on the book
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
+	if originalOrder == nil {
+		return types.ErrOrderNotFound
+	}
+
 	if err := b.validateOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Order validation failure",
