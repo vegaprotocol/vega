@@ -230,7 +230,9 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
 		originalOrder.TimeInForce != amendedOrder.TimeInForce {
 		b.removePendingGttOrder(*originalOrder)
-		b.insertExpiringOrder(*amendedOrder)
+		if amendedOrder.TimeInForce == types.Order_GTT {
+			b.insertExpiringOrder(*amendedOrder)
+		}
 	}
 	return nil
 }
