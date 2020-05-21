@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -86,10 +87,11 @@ type NodeCommand struct {
 
 	broker *broker.Broker
 
+	transferSub *subscribers.TransferResponse
+
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
 	partyBuf        *buffer.Party
-	transferBuf     *buffer.TransferResponse
 	marketBuf       *buffer.Market
 	accountBuf      *buffer.Account
 	candleBuf       *buffer.Candle

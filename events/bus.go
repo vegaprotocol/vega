@@ -36,6 +36,14 @@ const (
 	// other event types that DO have corresponding event types
 	TimeUpdate
 	TransferResponses
+	PositionResolution
+	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
+)
+
+var (
+	marketEvents = []Type{
+		PositionResolution,
+	}
 )
 
 // New is a generic constructor - based on the type of v, the specific event will be returned
@@ -93,4 +101,8 @@ func (b Base) Context() context.Context {
 // Type returns the event type
 func (b Base) Type() Type {
 	return b.et
+}
+
+func MarketEvents() []Type {
+	return marketEvents
 }

@@ -296,7 +296,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				// @TODO pass in correct context
 				evt := events.NewTransferResponse(context.Background(), transfers)
 				m.broker.Send(evt)
-				// m.transferBuf.Add(transfers)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
@@ -319,7 +318,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				} else {
 					evt := events.NewTransferResponse(context.Background(), clearMarketTransfers)
 					m.broker.Send(evt)
-					// m.transferBuf.Add(clearMarketTransfers)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
@@ -557,7 +555,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			if err == nil && len(transfers) > 0 {
 				evt := events.NewTransferResponse(context.Background(), transfers)
 				m.broker.Send(evt)
-				// m.transferBuf.Add(transfers)
 			}
 			if len(closed) > 0 {
 				err = m.resolveClosedOutTraders(closed, order)
@@ -676,7 +673,6 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		if len(movements.Transfers) > 0 {
 			evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
 			m.broker.Send(evt)
-			// m.transferBuf.Add([]*types.TransferResponse{movements})
 		}
 		return nil
 	}
@@ -790,7 +786,6 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	if len(movements.Transfers) > 0 {
 		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
 		m.broker.Send(evt)
-		// m.transferBuf.Add([]*types.TransferResponse{movements})
 	}
 	// get the updated positions
 	evt := m.position.Positions()
@@ -812,7 +807,6 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// send transfer to buffer
 	m.broker.Send(events.NewTransferResponse(context.Background(), responses))
 	// m.broker.Send(evt)
-	// m.transferBuf.Add(responses)
 	return err
 }
 
@@ -954,7 +948,6 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		}
 		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{transfer})
 		m.broker.Send(evt)
-		// m.transferBuf.Add([]*types.TransferResponse{transfer})
 
 		if closePos != nil {
 			// if closePose is not nil then we return an error as well, it means the trader did not have enough
@@ -1044,7 +1037,6 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	// sending response to buffer
 	evt := events.NewTransferResponse(context.Background(), response)
 	m.broker.Send(evt)
-	// m.transferBuf.Add(response)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts

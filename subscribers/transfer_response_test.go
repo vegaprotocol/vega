@@ -1,4 +1,4 @@
-package buffer_test
+package subscribers_test
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
-	"code.vegaprotocol.io/vega/buffer/mocks"
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/subscribers/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,7 @@ type trStub struct {
 }
 
 type trTst struct {
-	*buffer.TransferResponse
+	*subscribers.TransferResponse
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -35,7 +35,7 @@ func getTestSub(t *testing.T) *trTst {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	store := mocks.NewMockTransferResponseStore(ctrl)
-	tr := buffer.NewTransferResponseSub(ctx, store)
+	tr := subscribers.NewTransferResponse(ctx, store)
 	return &trTst{
 		TransferResponse: tr,
 		ctrl:             ctrl,

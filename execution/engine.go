@@ -73,13 +73,6 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// TransferBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TransferBuf
-type TransferBuf interface {
-	Add([]*types.TransferResponse)
-	Flush() error
-}
-
 // AccountBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
 type AccountBuf interface {

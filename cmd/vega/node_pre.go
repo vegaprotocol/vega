@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -143,6 +144,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 	l.setupBuffers()
+	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
 		l.Log.Info("node setted up without badger store support")
@@ -243,11 +245,14 @@ func (l *NodeCommand) loadMarketsConfig() error {
 	return nil
 }
 
+func (l *NodeCommand) setupSubscibers() {
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
+}
+
 func (l *NodeCommand) setupBuffers() {
 	l.orderBuf = buffer.NewOrder(l.orderStore)
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.transferBuf = buffer.NewTransferResponseSub(l.ctx, l.transferResponseStore)
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
@@ -327,7 +332,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}()
 
 	broker := broker.New(l.ctx)
-	_ = broker.Subscribe(l.transferBuf, true)
+	_ = broker.Subscribe(l.transferSub, true)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(

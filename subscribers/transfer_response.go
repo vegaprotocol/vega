@@ -1,4 +1,4 @@
-package buffer
+package subscribers
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 
 // TransferResponseStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/buffer TransferResponseStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/subscribers TransferResponseStore
 type TransferResponseStore interface {
 	SaveBatch([]*types.TransferResponse) error
 }
@@ -33,7 +33,7 @@ type TransferResponse struct {
 	trs     []*types.TransferResponse
 }
 
-func NewTransferResponseSub(ctx context.Context, store TransferResponseStore) *TransferResponse {
+func NewTransferResponse(ctx context.Context, store TransferResponseStore) *TransferResponse {
 	s := &TransferResponse{
 		ctx:     ctx,
 		ch:      make(chan events.Event),
@@ -44,14 +44,6 @@ func NewTransferResponseSub(ctx context.Context, store TransferResponseStore) *T
 	}
 	go s.loop()
 	return s
-}
-
-// NewTransferResponse instantiate a new buffer
-func NewTransferResponse(store TransferResponseStore) *TransferResponse {
-	return &TransferResponse{
-		store: store,
-		trs:   []*types.TransferResponse{},
-	}
 }
 
 func (t *TransferResponse) Pause() {
@@ -100,13 +92,7 @@ func (t *TransferResponse) Types() []events.Type {
 	}
 }
 
-// Add adds a slice of transfer responses to the buffer
-func (t *TransferResponse) Add(trs []*types.TransferResponse) {
-	t.trs = append(t.trs, trs...)
-}
-
-// Flush will save all the buffered element into the stores
-func (t *TransferResponse) Flush() error {
+func (t *TransferResponse) flush() error {
 	trs := t.trs
 	t.trs = []*types.TransferResponse{}
 	if len(trs) == 0 {
@@ -119,8 +105,8 @@ func (t *TransferResponse) Flush() error {
 func (t *TransferResponse) Push(e events.Event) {
 	switch te := e.(type) {
 	case TimeEvent:
-		_ = t.Flush()
+		_ = t.flush()
 	case TransferResponseEvent:
-		t.Add(te.TransferResponses())
+		t.trs = append(t.trs, te.TransferResponses()...)
 	}
 }
