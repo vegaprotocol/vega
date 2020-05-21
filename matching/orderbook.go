@@ -189,37 +189,44 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 }
 
 // AmendOrder amend an order which is an active order on the book
-func (b *OrderBook) AmendOrder(order *types.Order) error {
-	if err := b.validateOrder(order); err != nil {
+func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
+	if err := b.validateOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Order validation failure",
-				logging.Order(*order),
+				logging.Order(*amendedOrder),
 				logging.Error(err),
 				logging.String("order-book", b.marketID))
 		}
 		return err
 	}
 
-	if order.Side == types.Side_Buy {
-		if err := b.buy.amendOrder(order); err != nil {
+	if amendedOrder.Side == types.Side_Buy {
+		if err := b.buy.amendOrder(amendedOrder); err != nil {
 			if b.log.GetLevel() == logging.DebugLevel {
 				b.log.Debug("Failed to amend (buy side)",
-					logging.Order(*order),
+					logging.Order(*amendedOrder),
 					logging.Error(err),
 					logging.String("order-book", b.marketID))
 			}
 			return err
 		}
 	} else {
-		if err := b.sell.amendOrder(order); err != nil {
+		if err := b.sell.amendOrder(amendedOrder); err != nil {
 			if b.log.GetLevel() == logging.DebugLevel {
 				b.log.Debug("Failed to amend (sell side)",
-					logging.Order(*order),
+					logging.Order(*amendedOrder),
 					logging.Error(err),
 					logging.String("order-book", b.marketID))
 			}
 			return err
 		}
+	}
+
+	// If we have changed the ExpiresAt or TIF then update Expiry table
+	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
+		originalOrder.TimeInForce != amendedOrder.TimeInForce {
+		b.removePendingGttOrder(*originalOrder)
+		b.insertExpiringOrder(*amendedOrder)
 	}
 	return nil
 }
