@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	broker "code.vegaprotocol.io/vega/broker"
 	events "code.vegaprotocol.io/vega/events"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +34,10 @@ func (m *MockSubscriber) EXPECT() *MockSubscriberMockRecorder {
 }
 
 // C mocks base method
-func (m *MockSubscriber) C() chan<- broker.BaseEvent {
+func (m *MockSubscriber) C() chan<- events.Event {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "C")
-	ret0, _ := ret[0].(chan<- broker.BaseEvent)
+	ret0, _ := ret[0].(chan<- events.Event)
 	return ret0
 }
 
@@ -63,7 +62,7 @@ func (mr *MockSubscriberMockRecorder) Closed() *gomock.Call {
 }
 
 // Push mocks base method
-func (m *MockSubscriber) Push(arg0 broker.BaseEvent) {
+func (m *MockSubscriber) Push(arg0 events.Event) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Push", arg0)
 }

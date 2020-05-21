@@ -11,19 +11,11 @@ import (
 // a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/vega/broker Subscriber
 type Subscriber interface {
-	Push(val BaseEvent)
+	Push(val events.Event)
 	Skip() <-chan struct{}
 	Closed() <-chan struct{}
-	C() chan<- BaseEvent
+	C() chan<- events.Event
 	Types() []events.Type
-}
-
-// BaseEvent is the common interface the broker needs to send the event to the subscribers
-type BaseEvent interface {
-	Type() events.Type
-	// make sure the event has the data needed
-	TraceID() string
-	Context() context.Context
 }
 
 type subscription struct {
@@ -53,7 +45,7 @@ func New(ctx context.Context) *Broker {
 }
 
 // Send sends an event to all subscribers
-func (b *Broker) Send(event BaseEvent) {
+func (b *Broker) Send(event events.Event) {
 	b.mu.Lock()
 	// push the event out in a routine
 	// unlock the mutex once done

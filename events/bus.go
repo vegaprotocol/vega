@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -22,11 +24,18 @@ type Base struct {
 	et      Type
 }
 
+type Event interface {
+	Type() Type
+	Context() context.Context
+	TraceID() string
+}
+
 const (
 	// All event type -> used by subscrubers to just receive all events, has no actual corresponding event payload
 	All Type = iota
 	// other event types that DO have corresponding event types
 	TimeUpdate
+	TransferResponses
 )
 
 // New is a generic constructor - based on the type of v, the specific event will be returned
@@ -37,6 +46,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case time.Time:
 		e := NewTime(ctx, tv)
+		return e, nil
+	case []*types.TransferResponse:
+		e := NewTransferResponse(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
