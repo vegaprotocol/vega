@@ -385,8 +385,9 @@ type ComplexityRoot struct {
 	}
 
 	Vote struct {
-		Party func(childComplexity int) int
-		Value func(childComplexity int) int
+		Datetime func(childComplexity int) int
+		Party    func(childComplexity int) int
+		Value    func(childComplexity int) int
 	}
 }
 
@@ -2211,6 +2212,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateNetwork.MinParticipationStake(childComplexity), true
 
+	case "Vote.datetime":
+		if e.complexity.Vote.Datetime == nil {
+			break
+		}
+
+		return e.complexity.Vote.Datetime(childComplexity), true
+
 	case "Vote.party":
 		if e.complexity.Vote.Party == nil {
 			break
@@ -3652,6 +3660,9 @@ type Vote {
 
   "The party casting the vote"
   party: Party!
+
+  "ISO-8601 time and date when the vote reached Vega network"
+  datetime: String!
 }
 
 type ProposalVote {
@@ -12041,6 +12052,43 @@ func (ec *executionContext) _Vote_party(ctx context.Context, field graphql.Colle
 	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Vote_datetime(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Vote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Datetime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16541,6 +16589,11 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "party":
 			out.Values[i] = ec._Vote_party(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "datetime":
+			out.Values[i] = ec._Vote_datetime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

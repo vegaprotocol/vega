@@ -563,7 +563,7 @@ func (e *Engine) Generate() error {
 	// Accounts
 	err := e.accountBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush accounts buffer")
+		return errors.Wrap(err, "failed to flush accounts buffer")
 	}
 
 	// margins levels
@@ -571,23 +571,23 @@ func (e *Engine) Generate() error {
 	// Orders
 	err = e.orderBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush orders buffer")
+		return errors.Wrap(err, "failed to flush orders buffer")
 	}
 
 	// Trades - flush after orders so the traders reference an existing order
 	err = e.tradeBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush trades buffer")
+		return errors.Wrap(err, "failed to flush trades buffer")
 	}
 	// Transfers
 	err = e.transferBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush transfers buffer")
+		return errors.Wrap(err, "failed to flush transfers buffer")
 	}
 	// Markets
 	err = e.marketBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush markets buffer")
+		return errors.Wrap(err, "failed to flush markets buffer")
 	}
 	// Market data is added to buffer on Generate
 	for _, v := range e.markets {
@@ -609,6 +609,13 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 			logging.String("proposal-party", proposal.PartyID),
 			logging.String("proposal-terms", proposal.Terms.String()))
 	}
+
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "failed to submit a proposal")
+	}
+
+	proposal.Timestamp = now.UnixNano()
 	e.idgen.SetProposalID(proposal)
 	return e.governance.AddProposal(*proposal)
 }
@@ -621,5 +628,10 @@ func (e *Engine) VoteOnProposal(vote *types.Vote) error {
 			logging.String("vote-party", vote.PartyID),
 			logging.String("vote-value", vote.Value.String()))
 	}
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "failed to vote on a proposal")
+	}
+	vote.Timestamp = now.UnixNano()
 	return e.governance.AddVote(*vote)
 }
