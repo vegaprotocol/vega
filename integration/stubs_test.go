@@ -11,6 +11,66 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+type brokerStub struct {
+	mu   sync.Mutex
+	err  error
+	data map[events.Type][]events.Event
+}
+
+func NewBrokerStub() *brokerStub {
+	return &brokerStub{
+		data: map[events.Type][]events.Event{},
+	}
+}
+
+func (b *brokerStub) Send(e events.Event) {
+	b.mu.Lock()
+	if _, ok := b.data[e.Type()]; !ok {
+		b.data[e.Type()] = []events.Event{}
+	}
+	b.data[e.Type()] = append(b.data[e.Type()], e)
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) GetBatch(t events.Type) []events.Event {
+	b.mu.Lock()
+	r := b.data[t]
+	b.mu.Unlock()
+	return r
+}
+
+// utility func:
+func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
+	batch := b.GetBatch(events.TransferResponses)
+	if len(batch) == 0 {
+		return nil
+	}
+	b.mu.Lock()
+	ret := make([]events.TransferResponse, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.TransferResponse:
+			ret = append(ret, *et)
+		case events.TransferResponse:
+			ret = append(ret, et)
+		}
+	}
+	b.mu.Unlock()
+	return ret
+}
+
+func (b *brokerStub) ResetType(t events.Type) {
+	b.mu.Lock()
+	b.data[t] = []events.Event{}
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) Reset() {
+	b.mu.Lock()
+	b.data = map[events.Type][]events.Event{}
+	b.mu.Unlock()
+}
+
 type marginsStub struct {
 	data map[string]map[string]proto.MarginLevels
 	mu   sync.Mutex

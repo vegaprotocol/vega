@@ -79,11 +79,11 @@ type Market struct {
 	orderBuf        OrderBuf
 	partyBuf        PartyBuf
 	tradeBuf        TradeBuf
-	transferBuf     TransferBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
 
+	broker Broker
 	closed bool
 }
 
@@ -125,10 +125,10 @@ func NewMarket(
 	orderBuf OrderBuf,
 	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
-	transferBuf TransferBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
 	now time.Time,
+	broker Broker,
 	idgen *IDgenerator,
 ) (*Market, error) {
 
@@ -187,9 +187,9 @@ func NewMarket(
 		partyBuf:           partyBuf,
 		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
-		transferBuf:        transferBuf,
 		marginLevelsBuf:    marginLevelsBuf,
 		settleBuf:          settlementBuf,
+		broker:             broker,
 	}
 	return market, nil
 }
@@ -293,7 +293,9 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				m.transferBuf.Add(transfers)
+				// @TODO pass in correct context
+				evt := events.NewTransferResponse(context.Background(), transfers)
+				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
@@ -314,7 +316,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					m.transferBuf.Add(clearMarketTransfers)
+					evt := events.NewTransferResponse(context.Background(), clearMarketTransfers)
+					m.broker.Send(evt)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
@@ -523,8 +526,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 
 		// now let's get the transfers for MTM settlement
-		events := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleMTM(m.markPrice, events)
+		evts := m.position.UpdateMarkPrice(m.markPrice)
+		settle := m.settlement.SettleMTM(m.markPrice, evts)
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
@@ -550,7 +553,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				}
 			}
 			if err == nil && len(transfers) > 0 {
-				m.transferBuf.Add(transfers)
+				evt := events.NewTransferResponse(context.Background(), transfers)
+				m.broker.Send(evt)
 			}
 			if len(closed) > 0 {
 				err = m.resolveClosedOutTraders(closed, order)
@@ -667,7 +671,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			return err
 		}
 		if len(movements.Transfers) > 0 {
-			m.transferBuf.Add([]*types.TransferResponse{movements})
+			evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
+			m.broker.Send(evt)
 		}
 		return nil
 	}
@@ -779,7 +784,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		return err
 	}
 	if len(movements.Transfers) > 0 {
-		m.transferBuf.Add([]*types.TransferResponse{movements})
+		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
+		m.broker.Send(evt)
 	}
 	// get the updated positions
 	evt := m.position.Positions()
@@ -799,7 +805,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 	}
 	// send transfer to buffer
-	m.transferBuf.Add(responses)
+	m.broker.Send(events.NewTransferResponse(context.Background(), responses))
+	// m.broker.Send(evt)
 	return err
 }
 
@@ -939,7 +946,8 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferBuf.Add([]*types.TransferResponse{transfer})
+		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{transfer})
+		m.broker.Send(evt)
 
 		if closePos != nil {
 			// if closePose is not nil then we return an error as well, it means the trader did not have enough
@@ -1027,7 +1035,8 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		)
 	}
 	// sending response to buffer
-	m.transferBuf.Add(response)
+	evt := events.NewTransferResponse(context.Background(), response)
+	m.broker.Send(evt)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts

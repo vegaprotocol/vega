@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/broker/mocks"
+	"code.vegaprotocol.io/vega/events"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,12 @@ type brokerTst struct {
 	ctrl  *gomock.Controller
 }
 
+type evt struct {
+	t   events.Type
+	ctx context.Context
+	id  string
+}
+
 func getBroker(t *testing.T) *brokerTst {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
@@ -27,6 +34,18 @@ func getBroker(t *testing.T) *brokerTst {
 		cfunc:  cfunc,
 		ctx:    ctx,
 		ctrl:   ctrl,
+	}
+}
+
+func (b brokerTst) randomEvt() *evt {
+	idString := "generic-id"
+	if ctxV, ok := b.ctx.Value("traceID").(string); ok {
+		idString = ctxV
+	}
+	return &evt{
+		t:   events.All,
+		ctx: b.ctx,
+		id:  idString,
 	}
 }
 
@@ -45,6 +64,7 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Skip optional subscribers", testSkipOptional)
 	t.Run("Stop sending if context is cancelled", testStopCtx)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
+	t.Run("Send only to typed subscriber", testEventTypeSubscription)
 }
 
 func testSubUnsubSuccess(t *testing.T) {
@@ -52,6 +72,9 @@ func testSubUnsubSuccess(t *testing.T) {
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	reqSub := mocks.NewMockSubscriber(broker.ctrl)
+	// subscribe + unsubscribe -> 2 calls
+	sub.EXPECT().Types().Times(2).Return(nil)
+	reqSub.EXPECT().Types().Times(2).Return(nil)
 	k1 := broker.Subscribe(sub, false)   // not required
 	k2 := broker.Subscribe(reqSub, true) // required
 	assert.NotZero(t, k1)
@@ -60,13 +83,14 @@ func testSubUnsubSuccess(t *testing.T) {
 	broker.Unsubscribe(k1)
 	broker.Unsubscribe(k2)
 	// no calls to subs expected once they are unsubscribed
-	broker.Send(interface{}(nil))
+	broker.Send(broker.randomEvt())
 }
 
 func testSubReuseKey(t *testing.T) {
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
+	sub.EXPECT().Types().Times(4).Return(nil)
 	k1 := broker.Subscribe(sub, false)
 	assert.NotZero(t, k1)
 	broker.Unsubscribe(k1)
@@ -81,6 +105,8 @@ func testAutoUnsubscribe(t *testing.T) {
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
+	// sub, auto-unsub, sub again
+	sub.EXPECT().Types().Times(3).Return(nil)
 	k1 := broker.Subscribe(sub, true)
 	assert.NotZero(t, k1)
 	// set up sub to be closed
@@ -93,21 +119,26 @@ func testAutoUnsubscribe(t *testing.T) {
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	// send an event, the subscriber should be marked as closed, and automatically unsubscribed
-	broker.Send(interface{}(nil))
+	broker.Send(broker.randomEvt())
 	// now try and subscribe again, the key should be reused
 	k2 := broker.Subscribe(sub, false)
 	assert.Equal(t, k1, k2)
 }
 
 func testSkipOptional(t *testing.T) {
-	broker := getBroker(t)
-	defer broker.Finish()
-	sub := mocks.NewMockSubscriber(broker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan interface{}, 1)
-	k1 := broker.Subscribe(sub, false)
+	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
+	sub.EXPECT().Types().Times(2).Return(nil)
+	k1 := tstBroker.Subscribe(sub, false)
 	assert.NotZero(t, k1)
 
-	events := []interface{}{1, 2, 3}
+	events := []*evt{
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+	}
 	// ensure all 3 events are being sent (wait for routine to spawn)
 	wg := sync.WaitGroup{}
 	wg.Add(len(events))
@@ -121,13 +152,13 @@ func testSkipOptional(t *testing.T) {
 
 	// send events
 	for _, e := range events {
-		broker.Send(e)
+		tstBroker.Send(e)
 	}
 	wg.Wait()
 	// we've tried to send 3 events, subscriber could only accept one. Check state of all the things
 	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
 	// because there's a loop calling functions that are returning the channels we're closing here
-	broker.Unsubscribe(k1)
+	tstBroker.Unsubscribe(k1)
 	close(closedCh)
 	close(skipCh)
 	assert.Equal(t, events[0], <-cCh)
@@ -145,9 +176,10 @@ func testStopCtx(t *testing.T) {
 	sub.EXPECT().Skip().AnyTimes().Return(ch)
 	// no calls sub are expected, we cancelled the context
 	broker.cfunc()
+	sub.EXPECT().Types().Times(2).Return(nil)
 	k1 := broker.Subscribe(sub, true) // required sub
 	assert.NotZero(t, k1)
-	broker.Send(interface{}(nil))
+	broker.Send(broker.randomEvt())
 	// calling unsubscribe acquires lock, so we can ensure the Send call has returned
 	broker.Unsubscribe(k1)
 	close(ch)
@@ -159,7 +191,10 @@ func testSubscriberSkip(t *testing.T) {
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	skipCh, closeCh := make(chan struct{}), make(chan struct{})
 	skip := true
-	events := []interface{}{1, 2}
+	events := []*evt{
+		broker.randomEvt(),
+		broker.randomEvt(),
+	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(events))
 	sub.EXPECT().Closed().AnyTimes().Return(closeCh).Do(func() {
@@ -178,6 +213,7 @@ func testSubscriberSkip(t *testing.T) {
 	})
 	// we expect this call once, and only for the SECOND call
 	sub.EXPECT().Push(events[1]).Times(1)
+	sub.EXPECT().Types().Times(2).Return(nil)
 	k1 := broker.Subscribe(sub, true) // required sub
 	assert.NotZero(t, k1)
 	for _, e := range events {
@@ -188,4 +224,69 @@ func testSubscriberSkip(t *testing.T) {
 	broker.Unsubscribe(k1)
 	close(skipCh)
 	close(closeCh)
+}
+
+// test making sure that events are sent only to subs that are interested in it
+func testEventTypeSubscription(t *testing.T) {
+	broker := getBroker(t)
+	defer broker.Finish()
+	sub := mocks.NewMockSubscriber(broker.ctrl)
+	allSub := mocks.NewMockSubscriber(broker.ctrl)
+	diffSub := mocks.NewMockSubscriber(broker.ctrl)
+	skipCh, closeCh := make(chan struct{}), make(chan struct{})
+	event := broker.randomEvt()
+	event.t = events.TimeUpdate
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	// Closed check
+	sub.EXPECT().Closed().AnyTimes().Return(closeCh)
+	diffSub.EXPECT().Closed().AnyTimes().Return(closeCh) // can use the same channels, we're not closing them anyway
+	allSub.EXPECT().Closed().AnyTimes().Return(closeCh)
+	// skip check
+	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	allSub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	diffSub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	// actually push the event - diffSub expects nothing
+	sub.EXPECT().Push(gomock.Any()).Times(1).Do(func(_ interface{}) {
+		wg.Done()
+	})
+	allSub.EXPECT().Push(gomock.Any()).Times(1).Do(func(_ interface{}) {
+		wg.Done()
+	})
+	// the event types this subscriber is interested in
+	sub.EXPECT().Types().Times(2).Return([]events.Type{events.TimeUpdate})
+	allSub.EXPECT().Types().Times(2).Return(nil) // subscribed to ALL events
+	// fake type:
+	different := events.Type(int(events.All) + int(events.TimeUpdate) + 1) // this value cannot exist as an events.Type value
+	diffSub.EXPECT().Types().Times(2).Return([]events.Type{different})
+	// subscribe the subscriberjk
+	k1 := broker.Subscribe(sub, true)     // required sub
+	k2 := broker.Subscribe(diffSub, true) // required sub, but won't be used anyway
+	k3 := broker.Subscribe(allSub, true)
+	assert.NotZero(t, k1)
+	assert.NotZero(t, k2)
+	assert.NotZero(t, k3)
+	assert.NotEqual(t, k1, k2)
+	// send the correct event
+	broker.Send(event)
+	// ensure the event was delivered
+	wg.Wait()
+	// unsubscribe the subscriber, now we're done
+	broker.Unsubscribe(k1)
+	broker.Unsubscribe(k2)
+	broker.Unsubscribe(k3)
+	close(skipCh)
+	close(closeCh)
+}
+
+func (e evt) Type() events.Type {
+	return e.t
+}
+
+func (e evt) Context() context.Context {
+	return e.ctx
+}
+
+func (e evt) TraceID() string {
+	return e.id
 }

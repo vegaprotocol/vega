@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
@@ -30,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -83,10 +85,14 @@ type NodeCommand struct {
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
+	broker *broker.Broker
+
+	transferSub    *subscribers.TransferResponse
+	marketEventSub *subscribers.MarketEvent
+
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
 	partyBuf        *buffer.Party
-	transferBuf     *buffer.TransferResponse
 	marketBuf       *buffer.Market
 	accountBuf      *buffer.Account
 	candleBuf       *buffer.Candle
