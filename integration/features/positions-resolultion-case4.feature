@@ -6,7 +6,7 @@ Feature: Position resolution case 4
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | ETH      | BTC       | BTC   |   9400000 | simple     |          0 |        0 |  0 | 0.016 |   2.0 |              3 |              2 |           1.5 |              42 |
 
-  Scenario: case 4 positions resolution
+  Scenario: case 4 positions rresolution
 # setup accounts
     Given the following traders:
       | name             |        amount |

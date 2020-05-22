@@ -1,4 +1,4 @@
-Feature: Position esolution case 2
+Feature: Position resolution case 2
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
