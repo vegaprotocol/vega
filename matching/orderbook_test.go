@@ -913,7 +913,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 	}
 
-	err = book.AmendOrder(editedOrder)
+	err = book.AmendOrder(newOrder, editedOrder)
 	if err != nil {
 		t.Log(err)
 	}
@@ -956,7 +956,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		Remaining:   200,
 		TimeInForce: types.Order_GTC,
 	}
-	err = book.AmendOrder(editedOrder)
+	err = book.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_INVALID_REMAINING_SIZE {
 		t.Log(err)
 	}
@@ -997,7 +997,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 	}
 
-	err = book.AmendOrder(editedOrder)
+	err = book.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_NOT_FOUND {
 		fmt.Println(err)
 	}
@@ -1045,7 +1045,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 	}
 
-	err = book.AmendOrder(editedOrder)
+	err = book.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_AMEND_FAILURE {
 		t.Log(err)
 	}
@@ -1096,7 +1096,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		CreatedAt:   5,
 	}
 
-	err = book.AmendOrder(editedOrder)
+	err = book.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_OUT_OF_SEQUENCE {
 		t.Log(err)
 	}
@@ -1147,7 +1147,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		CreatedAt:   10,
 	}
 
-	err = book.AmendOrder(editedOrder)
+	err = book.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_AMEND_FAILURE {
 		t.Log(err)
 	}

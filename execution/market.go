@@ -1224,7 +1224,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// If nothing changed, amend in place to update updatedAt and version number
 	if !priceShift && !sizeIncrease && !sizeDecrease && !expiryChange && !timeInForceChange {
-		ret, err := m.orderAmendInPlace(amendedOrder)
+		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.orderBuf.Add(*amendedOrder)
 		}
@@ -1284,7 +1284,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			}
 			return nil, ErrInvalidAmendRemainQuantity
 		}
-		ret, err := m.orderAmendInPlace(amendedOrder)
+		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.orderBuf.Add(*amendedOrder)
 		}
@@ -1406,11 +1406,11 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 	return
 }
 
-func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
-	err := m.matching.AmendOrder(amendOrder)
+	err := m.matching.AmendOrder(originalOrder, amendOrder)
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Failure after amend order from matching engine (amend-in-place)",
