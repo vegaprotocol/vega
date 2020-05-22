@@ -17,7 +17,9 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var tmTestPubKey = &testPubKey{bytes: []byte("test-pub-key")}
+func tmTestPubKey() *testPubKey {
+	return &testPubKey{bytes: []byte("test-pub-key")}
+}
 
 type testTop struct {
 	*validators.Topology
@@ -37,20 +39,18 @@ func getTestTop(t *testing.T) testTop {
 			return &tmctypes.ResultStatus{
 				ValidatorInfo: tmctypes.ValidatorInfo{
 					Address: cmn.HexBytes([]byte("addresstm")),
-					PubKey:  tmTestPubKey,
+					PubKey:  tmTestPubKey(),
 				},
 			}, nil
 		},
 	)
-validator:
-	&testPubKey{bytes: []byte("test-pub-key")}
 	bc.EXPECT().GenesisValidators().Times(1).DoAndReturn(
 		func() ([]*tmtypes.Validator, error) {
 			defer func() { ch <- struct{}{} }()
 			return []*tmtypes.Validator{
 				&tmtypes.Validator{
 					Address: cmn.HexBytes([]byte("addresstm")),
-					PubKey:  validator,
+					PubKey:  tmTestPubKey(),
 				},
 			}, nil
 		},
@@ -78,7 +78,7 @@ func testAddNodeRegistrationSuccess(t *testing.T) {
 	top := getTestTop(t)
 	defer top.ctrl.Finish()
 	nr := types.NodeRegistration{
-		ChainPubKey: tmTestPubKey.bytes,
+		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
 	err := top.AddNodeRegistration(&nr)
@@ -92,7 +92,7 @@ func testReady(t *testing.T) {
 	assert.False(t, top.Ready())
 
 	nr := types.NodeRegistration{
-		ChainPubKey: tmTestPubKey.bytes,
+		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
 	err := top.AddNodeRegistration(&nr)
@@ -105,14 +105,14 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 	top := getTestTop(t)
 	defer top.ctrl.Finish()
 	nr := types.NodeRegistration{
-		ChainPubKey: tmTestPubKey.bytes,
+		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
 	err := top.AddNodeRegistration(&nr)
 	assert.NoError(t, err)
 
 	nr = types.NodeRegistration{
-		ChainPubKey: tmTestPubKey.bytes,
+		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key-2"),
 	}
 	err = top.AddNodeRegistration(&nr)
@@ -127,7 +127,7 @@ func testGetLen(t *testing.T) {
 	assert.Equal(t, 0, top.Len())
 
 	nr := types.NodeRegistration{
-		ChainPubKey: tmTestPubKey.bytes,
+		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
 	err := top.AddNodeRegistration(&nr)
@@ -151,7 +151,7 @@ func testExists(t *testing.T) {
 	assert.False(t, top.Exists([]byte("vega-key")))
 
 	nr := types.NodeRegistration{
-		ChainPubKey: tmTestPubKey.bytes,
+		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
 	err := top.AddNodeRegistration(&nr)
