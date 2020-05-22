@@ -87,7 +87,8 @@ type NodeCommand struct {
 
 	broker *broker.Broker
 
-	transferSub *subscribers.TransferResponse
+	transferSub    *subscribers.TransferResponse
+	marketEventSub *subscribers.MarketEvent
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade

@@ -54,7 +54,7 @@ func TestTypes(t *testing.T) {
 	assert.Contains(t, types, events.TransferResponses)
 }
 
-func TestPush(t *testing.T) {
+func TestPushME(t *testing.T) {
 	t.Run("Push several transfer batches, then push time event", testPushSeveralSuccess)
 }
 

@@ -44,6 +44,14 @@ var (
 	marketEvents = []Type{
 		PositionResolution,
 	}
+
+	eventStrings = map[Type]string{
+		All:                "ALL",
+		TimeUpdate:         "TimeUpdate",
+		TransferResponses:  "TransferResponses",
+		PositionResolution: "PositionResolution",
+		MarketEvent:        "MarketEvent",
+	}
 )
 
 // New is a generic constructor - based on the type of v, the specific event will be returned
@@ -105,4 +113,13 @@ func (b Base) Type() Type {
 
 func MarketEvents() []Type {
 	return marketEvents
+}
+
+// String get string representation of event type
+func (t Type) String() string {
+	s, ok := eventStrings[t]
+	if !ok {
+		return "UNKNOWN EVENT"
+	}
+	return s
 }

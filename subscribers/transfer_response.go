@@ -61,6 +61,8 @@ func (t *TransferResponse) Resume() {
 }
 
 func (t *TransferResponse) loop() {
+	// at least we can use pause to close the skip channel
+	defer t.Pause()
 	for {
 		select {
 		case <-t.ctx.Done():
