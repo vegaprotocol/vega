@@ -25,47 +25,27 @@ type TransferResponseEvent interface {
 // TransferResponse is a buffer for all transfer responses
 // produced during a block by vega
 type TransferResponse struct {
-	ctx     context.Context
-	ch      chan events.Event
-	sCh     chan struct{}
-	running bool
-	store   TransferResponseStore
-	trs     []*types.TransferResponse
+	*Base
+	store TransferResponseStore
+	trs   []*types.TransferResponse
 }
 
 func NewTransferResponse(ctx context.Context, store TransferResponseStore) *TransferResponse {
 	s := &TransferResponse{
-		ctx:     ctx,
-		ch:      make(chan events.Event),
-		sCh:     make(chan struct{}),
-		running: true,
-		store:   store,
-		trs:     []*types.TransferResponse{},
+		Base:  newBase(ctx, 0),
+		store: store,
+		trs:   []*types.TransferResponse{},
 	}
+	s.running = true
 	go s.loop()
 	return s
 }
 
-func (t *TransferResponse) Pause() {
-	if t.running {
-		t.running = false
-		close(t.sCh)
-	}
-}
-
-func (t *TransferResponse) Resume() {
-	if !t.running {
-		t.running = true
-		t.sCh = make(chan struct{})
-	}
-}
-
 func (t *TransferResponse) loop() {
-	// at least we can use pause to close the skip channel
-	defer t.Pause()
 	for {
 		select {
 		case <-t.ctx.Done():
+			t.Halt() // cleanup what we can
 			return
 		case e := <-t.ch:
 			if t.running {
@@ -73,18 +53,6 @@ func (t *TransferResponse) loop() {
 			}
 		}
 	}
-}
-
-func (t *TransferResponse) Skip() <-chan struct{} {
-	return t.sCh
-}
-
-func (t *TransferResponse) Closed() <-chan struct{} {
-	return t.ctx.Done()
-}
-
-func (t *TransferResponse) C() chan<- events.Event {
-	return t.ch
 }
 
 func (t *TransferResponse) Types() []events.Type {
