@@ -131,6 +131,10 @@ func (t *Topology) AddNodeRegistration(nr *types.NodeRegistration) error {
 }
 
 func (t *Topology) handleGenesisValidators() {
+	if err := t.loadBlockchainInfos(); err == nil {
+		return
+	}
+
 	tk := time.NewTicker(500 * time.Millisecond)
 	defer tk.Stop()
 	for _ = range tk.C {
