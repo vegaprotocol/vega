@@ -490,14 +490,6 @@
                   <a href="#api.VegaTimeResponse"><span class="badge">M</span>VegaTimeResponse</a>
                 </li>
 
-                <li>
-                  <a href="#api.WithdrawRequest"><span class="badge">M</span>WithdrawRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.WithdrawResponse"><span class="badge">M</span>WithdrawResponse</a>
-                </li>
-
 
 
 
@@ -816,10 +808,6 @@
 
                 <li>
                   <a href="#vega.TransferResponse"><span class="badge">M</span>TransferResponse</a>
-                </li>
-
-                <li>
-                  <a href="#vega.Withdraw"><span class="badge">M</span>Withdraw</a>
                 </li>
 
 
@@ -3834,54 +3822,6 @@
 
 
 
-        <h3 id="api.WithdrawRequest">WithdrawRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>withdraw</td>
-                  <td><a href="#vega.Withdraw">vega.Withdraw</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.WithdrawResponse">WithdrawResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>success</td>
-                  <td><a href="#bool">bool</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
 
 
 
@@ -3915,13 +3855,6 @@
                 <td><a href="#api.AmendOrderRequest">AmendOrderRequest</a></td>
                 <td><a href="#api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</a></td>
                 <td><p>Amend an Order</p></td>
-              </tr>
-
-              <tr>
-                <td>Withdraw</td>
-                <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
-                <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
-                <td><p>Request withdrawal</p></td>
               </tr>
 
               <tr>
@@ -7844,44 +7777,6 @@ after each successful amend </p></td>
                   <td>balances</td>
                   <td><a href="#vega.TransferBalance">TransferBalance</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="vega.Withdraw">Withdraw</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>amount</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>asset</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
                   <td><p> </p></td>
                 </tr>
 
