@@ -17,8 +17,8 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-func tmTestPubKey() *testPubKey {
-	return &testPubKey{bytes: []byte("test-pub-key")}
+func tmTestPubKey() testPubKey {
+	return testPubKey{bytes: []byte("test-pub-key")}
 }
 
 type testTop struct {
@@ -27,12 +27,11 @@ type testTop struct {
 	bc   *mocks.MockBlockchainClient
 }
 
-func getTestTop(t *testing.T) testTop {
+func getTestTop(t *testing.T) *testTop {
 	ctrl := gomock.NewController(t)
 	bc := mocks.NewMockBlockchainClient(ctrl)
-	top := validators.NewTopology(logging.NewTestLogger(), bc)
 
-	ch := make(chan struct{}, 1)
+	ch := make(chan struct{}, 2)
 	bc.EXPECT().GetStatus(gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context) (*tmctypes.ResultStatus, error) {
 			defer func() { ch <- struct{}{} }()
@@ -56,9 +55,12 @@ func getTestTop(t *testing.T) testTop {
 		},
 	)
 
+	top := validators.NewTopology(logging.NewTestLogger(), bc)
+
+	_ = <-ch
 	_ = <-ch
 
-	return testTop{
+	return &testTop{
 		Topology: top,
 		ctrl:     ctrl,
 		bc:       bc,
@@ -166,8 +168,8 @@ type testPubKey struct {
 	bytes []byte
 }
 
-func (t *testPubKey) Address() crypto.Address { return t.addr }
+func (t testPubKey) Address() crypto.Address { return t.addr }
 
-func (t *testPubKey) Bytes() []byte                           { return t.bytes }
-func (t *testPubKey) VerifyBytes(msg []byte, sig []byte) bool { return true }
-func (t *testPubKey) Equals(crypto.PubKey) bool               { return false }
+func (t testPubKey) Bytes() []byte                           { return t.bytes }
+func (t testPubKey) VerifyBytes(msg []byte, sig []byte) bool { return true }
+func (t testPubKey) Equals(crypto.PubKey) bool               { return false }
