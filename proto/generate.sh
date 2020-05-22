@@ -24,8 +24,8 @@ done
 
 # Generate proto/doc/
 
-# Comment out NotifyTraderAccount (#726)
-patch -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
+# Comment things before generating docs (#726, #1674)
+patch -p0 <proto/comment_undocumented.patch >/dev/null
 
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
@@ -63,8 +63,8 @@ do
 		"$protofile"
 done
 
-# Un-comment NotifyTraderAccount (#726)
-patch --reverse -p0 <proto/comment_NotifyTraderAccount.patch >/dev/null
+# Uncomment things after generating docs
+patch --reverse -p0 <proto/comment_undocumented.patch >/dev/null
 find proto -name '*.proto.orig' -exec rm '{}' ';'
 
 # Generate *.validator.pb.go, *.pb.gw.go
@@ -87,3 +87,5 @@ do
 	sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
 		&& ./script/fix_imports.sh "$pbfile"
 done
+
+chmod 0644 proto/*.go proto/api/*.go

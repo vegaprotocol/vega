@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
@@ -456,7 +458,13 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), proto.AccountType_value[val(row, 3)])
 
 		var ledgerEntry *proto.LedgerEntry
-		for _, v := range execsetup.transfers.data {
+		transferEvents := execsetup.broker.GetTransferResponses()
+		data := make([]*types.TransferResponse, 0, len(transferEvents))
+		for _, e := range transferEvents {
+			data = append(data, e.TransferResponses()...)
+		}
+
+		for _, v := range data {
 			for _, _v := range v.GetTransfers() {
 				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
 					if _v.Amount != u64val(row, 5) {
@@ -479,7 +487,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 	}
 
-	execsetup.transfers.Flush()
+	execsetup.broker.ResetType(events.TransferResponses)
 	return nil
 }
 
@@ -818,9 +826,12 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 }
 
 func dumpTransfers() error {
-	for _, _v := range execsetup.transfers.data {
-		for _, v := range _v.GetTransfers() {
-			fmt.Printf("transfer: %v\n", *v)
+	transferEvents := execsetup.broker.GetTransferResponses()
+	for _, e := range transferEvents {
+		for _, t := range e.TransferResponses() {
+			for _, v := range t.GetTransfers() {
+				fmt.Printf("transfer: %v\n", *v)
+			}
 		}
 	}
 	return nil

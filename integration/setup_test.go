@@ -55,7 +55,6 @@ type marketTestSetup struct {
 	orders          *orderStub
 	trades          *tradeStub
 	parties         *mocks.MockPartyBuf
-	transfer        *mocks.MockTransferBuf
 	accounts        *accStub
 	marginLevelsBuf *marginsStub
 	settle          *SettleStub
@@ -69,7 +68,8 @@ type marketTestSetup struct {
 	traderAccs map[string]map[proto.AccountType]*proto.Account
 
 	// we need to call this engine directly
-	colE *collateral.Engine
+	colE   *collateral.Engine
+	broker *brokerStub
 }
 
 func getMarketTestSetup(market *proto.Market) *marketTestSetup {
@@ -86,15 +86,13 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
+	broker := NewBrokerStub()
 
 	// this can happen any number of times, just set the mock up to accept all of them
 	// Over time, these mocks will be replaced with stubs that store all elements to a map
 	parties.EXPECT().Add(gomock.Any()).AnyTimes()
 	accounts := NewAccountStub()
-	transfer := mocks.NewMockTransferBuf(ctrl)
 	// again: allow all calls, replace with stub over time
-	transfer.EXPECT().Add(gomock.Any()).AnyTimes()
-	transfer.EXPECT().Flush().AnyTimes()
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
 		collateral.NewDefaultConfig(),
@@ -112,7 +110,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		orders:          orders,
 		trades:          trades,
 		parties:         parties,
-		transfer:        transfer,
 		accounts:        accounts,
 		marginLevelsBuf: marginLevelsBuf,
 		settle:          NewSettlementStub(),
@@ -120,6 +117,7 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		accountIDs:      map[string]struct{}{},
 		traderAccs:      map[string]map[proto.AccountType]*proto.Account{},
 		colE:            colE,
+		broker:          broker,
 	}
 
 	return setup
@@ -136,7 +134,6 @@ type executionTestSetup struct {
 	orders          *orderStub
 	trades          *tradeStub
 	parties         *mocks.MockPartyBuf
-	transfers       *transferStub
 	markets         *mocks.MockMarketBuf
 	timesvc         *timeStub
 	marketdata      *mocks.MockMarketDataBuf
@@ -147,6 +144,8 @@ type executionTestSetup struct {
 	lossSoc         *buffer.LossSocialization
 
 	positionPlugin *plugins.Positions
+
+	broker *brokerStub
 
 	// save trader accounts state
 	accs map[string][]account
@@ -183,7 +182,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.trades = NewTradeStub()
 	execsetup.settle = buffer.NewSettlement()
 	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
-	execsetup.transfers = NewTransferStub()
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
@@ -193,6 +191,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.lossSoc = buffer.NewLossSocialization()
 	execsetup.proposal = NewProposalStub()
 	execsetup.votes = NewVoteStub()
+	execsetup.broker = NewBrokerStub()
 
 	execsetup.marketdata.EXPECT().Flush().AnyTimes()
 	execsetup.marketdata.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -203,7 +202,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)
