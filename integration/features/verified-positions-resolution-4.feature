@@ -71,8 +71,10 @@ Feature: Position resolution case 4
 # now we check what's left in the orderbook
 # we expect 50 orders to be left there on the sell side
 # we buy a first time 50 to consume the book
-# then try to buy 1 again -> result in no trades, book empty
+# then try to buy 1 again -> result in no trades -> sell side empty.
+# Try to sell one for low price -> no trades -> buy side empty -> order book empty. 
    Then traders place following orders:
-      | trader          | id        | type | volume | price | resulting trades | type  | tif |
-      | buySideProvider | ETH/DEC19 | buy  |     50 |   350 |                1 | LIMIT | GTC |
-      | buySideProvider | ETH/DEC19 | buy  |      1 |   350 |                0 | LIMIT | FOK |
+      | trader          | id        | type   | volume | price | resulting trades | type  | tif |
+      | buySideProvider | ETH/DEC19 | buy    |     50 |   350 |                1 | LIMIT | FOK |
+      | buySideProvider | ETH/DEC19 | buy    |      1 |   350 |                0 | LIMIT | FOK |
+      | sellSideProvider | ETH/DEC19 | sell  |      1 |   1   |                0 | LIMIT | FOK |

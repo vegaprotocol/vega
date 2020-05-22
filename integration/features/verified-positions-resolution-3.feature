@@ -40,7 +40,7 @@ Feature: Position resolution case 3
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader          | id        | type | volume | price | resulting trades | type  | tif | reference      |
-      | buySideProvider | ETH/DEC19 | buy  |    400 |    40 |                0 | LIMIT | GTC | buy-provider-2 |
+      | buySideProvider | ETH/DEC19 | buy  |    300 |    40 |                0 | LIMIT | GTC | buy-provider-2 |
 
 # check the trader accounts
     Then I expect the trader to have a margin:
@@ -65,3 +65,14 @@ Feature: Position resolution case 3
 
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance is "3300" for the market "ETH/DEC19"
+
+# now we check what's left in the orderbook
+# we expect 10 orders at price of 40 to be left there on the buy side
+# we sell a first time 10 to consume the book
+# then try to sell 1 again with low price -> result in no trades -> buy side empty
+# We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
+   Then traders place following orders:
+      | trader           | id          | type  | volume | price | resulting trades  | type  | tif |
+      | sellSideProvider | ETH/DEC19   | sell  |     10 |   40  |                1  | LIMIT | FOK |
+      | sellSideProvider | ETH/DEC19   | sell  |     1  |    1  |                0  | LIMIT | FOK |
+      | buySideProvider  | ETH/DEC19   | buy   |     1  | 1000  |                0  | LIMIT | FOK |
