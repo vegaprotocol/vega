@@ -74,4 +74,20 @@ type proposalVote struct {
 }
 ```
 
-This is the governance domain object representing a proposal. In the world of gRPC, a proposal and a vote are distinct messages. As far as governance is concerned, a proposal has a one-to-many relation with votes. We store both the yes and no votes in a map[string]*types.Vote. The reasoning behind using a map as opposed to a slice is so we can delete previous votes cast by a party, and only count the last vote. This prevents abuse where a single party can spam-vote _"yes"_ on a proposal and have their tokens counted multiple times.
+This is the governance domain object representing a proposal. In the world of gRPC, a proposal and a vote are distinct messages. As far as governance is concerned, a proposal has a one-to-many relation with votes. We store both the yes and no votes in a `map[string]*types.Vote`. The reasoning behind using a map as opposed to a slice is so we can delete previous votes cast by a party, and only count the last vote. This prevents abuse where a single party can spam-vote _"yes"_ on a proposal and have their tokens counted multiple times.
+
+## Modifying governance parameters for testing
+
+In order to allow testing of Governance, the following environment variables can be specified in order to compile a binary with custom parameters.
+
+Specify some/all of the following variables. The values for Close and Enact are standard Golang [time.Duration](https://golang.org/pkg/time/#ParseDuration).
+
+```bash
+env \
+	VEGA_GOVERNANCE_MIN_CLOSE=3s \
+	VEGA_GOVERNANCE_MAX_CLOSE=10m \
+	VEGA_GOVERNANCE_MIN_ENACT=1h \
+	VEGA_GOVERNANCE_MAX_ENACT=99d \
+	VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=55 \
+	make install
+```

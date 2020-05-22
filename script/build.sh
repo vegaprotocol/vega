@@ -30,14 +30,30 @@ help() {
 }
 
 set_version() {
-	if test -n "${DRONE:-}" ; then
-		# In Drone CI
-		version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
-		version_hash="$(echo "${CI_COMMIT_SHA:-nohash}" | cut -b1-8)"
-		return
+	version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
+	version_hash="$(echo "${CI_COMMIT_SHA:-$(git rev-parse HEAD)}" | cut -b1-8)"
+}
+
+set_ldflags() {
+	ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
+
+	# The following ldflags are for running system-tests only - to shorten
+	# durations to seconds/minutes instead of hours/days.
+	if test -n "$VEGA_GOVERNANCE_MIN_CLOSE" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MinClose=$VEGA_GOVERNANCE_MIN_CLOSE"
 	fi
-	version="dev-${USER:-unknownuser}"
-	version_hash="$(git rev-parse HEAD | cut -b1-8)"
+	if test -n "$VEGA_GOVERNANCE_MAX_CLOSE" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MaxClose=$VEGA_GOVERNANCE_MAX_CLOSE"
+	fi
+	if test -n "$VEGA_GOVERNANCE_MIN_ENACT" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MinEnact=$VEGA_GOVERNANCE_MIN_ENACT"
+	fi
+	if test -n "$VEGA_GOVERNANCE_MAX_ENACT" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MaxEnact=$VEGA_GOVERNANCE_MAX_ENACT"
+	fi
+	if test -n "$VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MinParticipationStake=$VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE"
+	fi
 }
 
 parse_args() {
@@ -69,7 +85,7 @@ parse_args() {
 			;;
 		esac
 	done
-	ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
+	set_ldflags
 	if test -z "${targets[*]}" ; then
 		help
 	else
@@ -172,7 +188,7 @@ run() {
 		fi
 
 		echo "$target: go get ... "
-		go get -v -ldflags "$ldflags" . 1>"$log" 2>&1
+		go get -v . 1>"$log" 2>&1
 		code="$?"
 		if test "$code" = 0 ; then
 			echo "$target: go get OK"
