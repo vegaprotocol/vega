@@ -82,8 +82,6 @@
     - [TradesStream](#api.TradesStream)
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
-    - [WithdrawRequest](#api.WithdrawRequest)
-    - [WithdrawResponse](#api.WithdrawResponse)
 
 
 
@@ -177,7 +175,6 @@
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
-    - [Withdraw](#vega.Withdraw)
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
@@ -1412,36 +1409,6 @@
 
 
 
-<a name="api.WithdrawRequest"></a>
-
-### WithdrawRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  |  |
-
-
-
-
-
-
-<a name="api.WithdrawResponse"></a>
-
-### WithdrawResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| success | [bool](#bool) |  |  |
-
-
-
-
-
-
 
 
 
@@ -1458,7 +1425,6 @@
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
-| Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
@@ -2776,23 +2742,6 @@ Proposal can enter Failed state from any other state.
 | ----- | ---- | ----- | ----------- |
 | transfers | [LedgerEntry](#vega.LedgerEntry) | repeated |  |
 | balances | [TransferBalance](#vega.TransferBalance) | repeated |  |
-
-
-
-
-
-
-<a name="vega.Withdraw"></a>
-
-### Withdraw
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| amount | [uint64](#uint64) |  |  |
-| asset | [string](#string) |  |  |
 
 
 
