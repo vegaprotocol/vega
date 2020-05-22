@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Time event indicating a change in block time (ie time update)
 type Time struct {
 	*Base
 	blockTime time.Time

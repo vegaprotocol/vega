@@ -30,6 +30,8 @@ type Broker struct {
 	mu    sync.Mutex
 	tSubs map[events.Type]map[int]*subscription
 	// these fields ensure a unique ID for all subscribers, regardless of what event types they subscribe to
+	// once the broker context is cancelled, this map will be used to notify all subscribers, who can then
+	// close their internal channels. We can then cleanly shut down (not having unclosed channels)
 	subs map[int]subscription
 	keys []int
 }
