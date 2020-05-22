@@ -3472,7 +3472,6 @@ input DiscreteTradingInput {
 
 "Input variation of market details same to those defined in Market type"
 input MarketInput {
-  id: String!
   name: String!
   tradableInstrument: TradableInstrumentInput!
   continuousTradingMode: ContinuousTradingInput
@@ -13393,12 +13392,6 @@ func (ec *executionContext) unmarshalInputMarketInput(ctx context.Context, obj i
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
