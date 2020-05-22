@@ -42,13 +42,15 @@ func getTestTop(t *testing.T) testTop {
 			}, nil
 		},
 	)
+validator:
+	&testPubKey{bytes: []byte("test-pub-key")}
 	bc.EXPECT().GenesisValidators().Times(1).DoAndReturn(
 		func() ([]*tmtypes.Validator, error) {
 			defer func() { ch <- struct{}{} }()
 			return []*tmtypes.Validator{
 				&tmtypes.Validator{
 					Address: cmn.HexBytes([]byte("addresstm")),
-					PubKey:  tmTestPubKey,
+					PubKey:  validator,
 				},
 			}, nil
 		},
