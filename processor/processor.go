@@ -94,10 +94,10 @@ type Commander interface {
 	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
 	AddNodeRegistration(nr *types.NodeRegistration) error
-	SelfTMPubKey() []byte
+	SelfChainPubKey() []byte
 	Ready() bool
 	Exists(key []byte) bool
 	Len() int
@@ -156,6 +156,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		pendingValidation: []*types.Proposal{},
 		cmd:               cmd,
 		top:               top,
+		isValidator:       isValidator,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -175,24 +176,22 @@ func (p *Processor) Begin() error {
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
 	}
-	if !p.top.Ready() {
-		if !p.hasRegistered && p.isValidator {
-			// get our tendermint pubkey
-			tmPubKey := p.top.SelfTMPubKey()
-			if tmPubKey != nil {
-				w, ok := p.wallet.Get(nodewallet.Vega)
-				if !ok {
-					return ErrNoVegaWalletFound
-				}
-				payload := &types.NodeRegistration{
-					TmPubKey: tmPubKey,
-					PubKey:   w.PubKeyOrAddress(),
-				}
-				if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
-					return err
-				}
-				p.hasRegistered = true
+	if !p.hasRegistered && p.isValidator && !p.top.Ready() {
+		// get our tendermint pubkey
+		chainPubKey := p.top.SelfChainPubKey()
+		if chainPubKey != nil {
+			w, ok := p.wallet.Get(nodewallet.Vega)
+			if !ok {
+				return ErrNoVegaWalletFound
 			}
+			payload := &types.NodeRegistration{
+				ChainPubKey: chainPubKey,
+				PubKey:      w.PubKeyOrAddress(),
+			}
+			if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
+				return err
+			}
+			p.hasRegistered = true
 		}
 	}
 
@@ -487,7 +486,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		}
 		err = p.top.AddNodeRegistration(node)
 		if err != nil {
-			p.log.Error("unable to register node",
+			p.log.Warn("unable to register node",
 				logging.Error(err))
 		}
 		// p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
@@ -501,6 +500,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if !p.top.Exists(vote.PubKey) {
 			return ErrUnknownNodeKey
 		}
+
 		prop, ok := p.nodeProposals[vote.Reference]
 		if !ok {
 			return ErrUnknownProposal

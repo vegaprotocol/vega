@@ -14,12 +14,13 @@ import (
 )
 
 var (
-	ErrVegaNodeAlreadyRegisterForTM = errors.New("a vega node is already registrered with the tendermint node")
-	ErrTMAlreadyRegisterForVega     = errors.New("a TM node is already registered with the vega node")
-	ErrInvalidTMPubKey              = errors.New("invalid tendermint public key")
-	ErrClientNotInitialized         = errors.New("blockchain client not initiazlized")
+	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registrered with the blockchain node")
+	ErrChainAlreadyRegisterForVega     = errors.New("a blockchain node is already registered with the vega node")
+	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
+	ErrClientNotInitialized            = errors.New("blockchain client not initialised")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/validators BlockchainClient
 type BlockchainClient interface {
 	GetStatus(ctx context.Context) (*tmctypes.ResultStatus, error)
 	Validators() ([]*tmtypes.Validator, error)
@@ -33,9 +34,9 @@ type Topology struct {
 	validators map[string]string
 	// just pubkeys of vega node for easy lookup
 	vegaValidatorRefs map[string]struct{}
-	tmValidators      []*tmtypes.Validator
+	chainValidators   []*tmtypes.Validator
 
-	selfTM *tmtypes.Validator
+	selfChain *tmtypes.Validator
 
 	// don't recalculate readyness all the time
 	ready bool
@@ -46,10 +47,11 @@ type Topology struct {
 func NewTopology(log *logging.Logger, clt BlockchainClient) *Topology {
 
 	t := &Topology{
-		log:          log,
-		clt:          clt,
-		validators:   map[string]string{},
-		tmValidators: []*tmtypes.Validator{},
+		log:               log,
+		clt:               clt,
+		validators:        map[string]string{},
+		chainValidators:   []*tmtypes.Validator{},
+		vegaValidatorRefs: map[string]struct{}{},
 	}
 
 	go t.handleGenesisValidators()
@@ -62,7 +64,7 @@ func (t *Topology) Len() int {
 
 // Exists check if a vega public key is part of the validator set
 func (t *Topology) Exists(key []byte) bool {
-	_, ok := t.vegaValidatorRefs[hex.EncodeToString(key)]
+	_, ok := t.vegaValidatorRefs[string(key)]
 	return ok
 }
 
@@ -72,11 +74,11 @@ func (t *Topology) SetChain(clt BlockchainClient) {
 	t.clt = clt
 }
 
-func (t *Topology) SelfTMPubKey() []byte {
+func (t *Topology) SelfChainPubKey() []byte {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if t.selfTM != nil {
-		return t.selfTM.PubKey.Bytes()
+	if t.selfChain != nil {
+		return t.selfChain.PubKey.Bytes()
 	}
 	return nil
 }
@@ -85,64 +87,66 @@ func (t *Topology) Ready() bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if !t.ready {
-		if len(t.tmValidators) <= 0 {
-			return false
-		}
-		for _, v := range t.tmValidators {
-			if _, ok := t.validators[string(v.PubKey.Bytes())]; !ok {
-				return false
-			}
-		}
-		t.ready = true
+	if t.ready {
+		return true
 	}
 
+	if len(t.chainValidators) <= 0 {
+		return false
+	}
+	for _, v := range t.chainValidators {
+		if _, ok := t.validators[string(v.PubKey.Bytes())]; !ok {
+			return false
+		}
+	}
+	t.ready = true
 	return t.ready
 }
 
 func (t *Topology) AddNodeRegistration(nr *types.NodeRegistration) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if _, ok := t.validators[string(nr.TmPubKey)]; ok {
-		return ErrVegaNodeAlreadyRegisterForTM
+	if _, ok := t.validators[string(nr.ChainPubKey)]; ok {
+		return ErrVegaNodeAlreadyRegisterForChain
 	}
 	// check if this tm pubkey exists in the network
 	var ok bool
-	for _, v := range t.tmValidators {
-		if string(v.PubKey.Bytes()) == string(nr.TmPubKey) {
+	for _, v := range t.chainValidators {
+		if string(v.PubKey.Bytes()) == string(nr.ChainPubKey) {
 			ok = true
+			break
 		}
 	}
 	if !ok {
-		return ErrInvalidTMPubKey
+		return ErrInvalidChainPubKey
 	}
 
 	// then add it to the topology
-	t.validators[string(nr.TmPubKey)] = string(nr.PubKey)
+	t.validators[string(nr.ChainPubKey)] = string(nr.PubKey)
+	t.vegaValidatorRefs[string(nr.PubKey)] = struct{}{}
 	t.log.Info("new node registration successful",
 		logging.String("node-key", hex.EncodeToString(nr.PubKey)),
-		logging.String("tm-key", hex.EncodeToString(nr.TmPubKey)))
+		logging.String("tm-key", hex.EncodeToString(nr.ChainPubKey)))
 	return nil
 }
 
 func (t *Topology) handleGenesisValidators() {
 	tk := time.NewTicker(500 * time.Millisecond)
-	for {
-		select {
-		case <-tk.C:
-			// try to get the validators
-			err := t.loadBlockchainInfos()
-			if err == nil {
-				t.log.Info("validator list loaded successfully from tendermint", logging.String("self-tm", hex.EncodeToString(t.selfTM.PubKey.Bytes())))
-				t.mu.Lock()
-				for _, v := range t.tmValidators {
-					t.log.Info("tendermint validator", logging.String("infos", hex.EncodeToString(v.PubKey.Bytes())))
-				}
-				t.mu.Unlock()
-				return
+	defer tk.Stop()
+	for _ = range tk.C {
+		// try to get the validators
+		err := t.loadBlockchainInfos()
+		if err == nil {
+			t.log.Info("validator list loaded successfully from tendermint", logging.String("self-tm", hex.EncodeToString(t.selfChain.PubKey.Bytes())))
+			t.mu.Lock()
+			for _, v := range t.chainValidators {
+				t.log.Info("tendermint validator", logging.String("infos", hex.EncodeToString(v.PubKey.Bytes())))
 			}
-			t.log.Info("unable to load validators list", logging.Error(err))
+			t.mu.Unlock()
+			return
 		}
+
+		t.log.Debug("unable to load validators list", logging.Error(err))
 	}
 }
 
@@ -159,12 +163,12 @@ func (t *Topology) loadBlockchainInfos() error {
 	}
 
 	// no error set the validators stuff
-	t.selfTM = &tmtypes.Validator{
+	t.selfChain = &tmtypes.Validator{
 		Address:     status.ValidatorInfo.Address,
 		PubKey:      status.ValidatorInfo.PubKey,
 		VotingPower: status.ValidatorInfo.VotingPower,
 	}
 
-	t.tmValidators, err = t.clt.GenesisValidators()
+	t.chainValidators, err = t.clt.GenesisValidators()
 	return err
 }
