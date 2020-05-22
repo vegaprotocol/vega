@@ -91,3 +91,9 @@ env \
 	VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=55 \
 	make install
 ```
+
+If the log level for the Execution engine (not the Governance engine) is Debug, then this message will appear:
+
+```
+governance/engine.go:68 Governance parameters {"MinClose": "3s", "MaxClose": "10m0s", "MinEnact": "1h0m0s", "MaxEnact": "99d0h0m0s", "MinParticipationStake": 55}
+```
