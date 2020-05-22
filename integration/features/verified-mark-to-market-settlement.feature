@@ -1,5 +1,5 @@
 Feature: MTM settlement tests
-
+# Reference spreadsheet: https://drive.google.com/open?id=1ZCj7WWvP236wiJDgiGD_f9Xsun9o8PsW
   Background:
     Given the executon engine have these markets:
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
@@ -11,10 +11,12 @@ Feature: MTM settlement tests
       | name             |    amount |
       | trader1          |     10000 |
       | trader2          |     10000 |
+      | trader3          |     10000 |
     Then I Expect the traders to have new general account:
       | name             | asset |
       | trader1          | BTC   |
       | trader2          | BTC   |
+      | trader3          | BTC   |
 
     And the mark price for the market "ETH/DEC19" is "100"
 
@@ -37,16 +39,32 @@ Feature: MTM settlement tests
       | from   | to      | fromType   | toType | id        | amount | asset |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    200 | BTC   |
 
+# place trade for 1@111 to set new mark price
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | GTC |
+
+    And the mark price for the market "ETH/DEC19" is "111"
+
+# MTM win transfers: 200+30=230 as per spreadsheet
+    Then the following transfers happened:
+      | from   | to      | fromType   | toType | id        | amount | asset |
+      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    30 | BTC   |
+
+
   Scenario: case 2 - LONG - MORE LONG - muliple trades
 # setup accounts
     Given the following traders:
       | name             |    amount |
       | trader1          |     10000 |
       | trader2          |     10000 |
+      | trader3          |     10000 |
     Then I Expect the traders to have new general account:
       | name             | asset |
       | trader1          | BTC   |
       | trader2          | BTC   |
+      | trader3          | BTC   |
 
     And the mark price for the market "ETH/DEC19" is "100"
 
@@ -63,7 +81,7 @@ Feature: MTM settlement tests
       | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | LIMIT | GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
-
+  
 # place trade 2 for 2@113
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
@@ -78,16 +96,31 @@ Feature: MTM settlement tests
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    200 | BTC   |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |     90 | BTC   |
 
+# place trade for 1@111 to set new mark price
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | GTC |
+
+    And the mark price for the market "ETH/DEC19" is "111"
+
+# MTM win transfers: 200+90-64=226 as per spreadsheet
+    Then the following transfers happened:
+      | from    | to     | fromType   | toType     | id        | amount | asset |
+      | trader1 | market | GENERAL    | SETTLEMENT | ETH/DEC19 |     64 | BTC   |
+
   Scenario: case 3 - LONG - LESS LONG - one trade
 # setup accounts
     Given the following traders:
       | name             |    amount |
       | trader1          |     10000 |
       | trader2          |     10000 |
+      | trader3          |     10000 |
     Then I Expect the traders to have new general account:
       | name             | asset |
       | trader1          | BTC   |
       | trader2          | BTC   |
+      | trader3          | BTC   |
 
     And the mark price for the market "ETH/DEC19" is "100"
 
@@ -110,16 +143,32 @@ Feature: MTM settlement tests
       | from   | to      | fromType   | toType | id        | amount | asset |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    200 | BTC   |
 
+# place trade for 1@111 to set new mark price
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | GTC |
+
+    And the mark price for the market "ETH/DEC19" is "111"
+
+# MTM win transfers: 200+15=215 as per spreadsheet
+    Then the following transfers happened:
+      | from   | to      | fromType   | toType | id        | amount | asset |
+      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    15 | BTC   |
+
+
   Scenario: case 4 - LONG - LESS LONG - multiple trades
 # setup accounts
     Given the following traders:
       | name             |    amount |
       | trader1          |     10000 |
       | trader2          |     10000 |
+      | trader3          |     10000 |
     Then I Expect the traders to have new general account:
       | name             | asset |
       | trader1          | BTC   |
       | trader2          | BTC   |
+      | trader3          | BTC   |
 
     And the mark price for the market "ETH/DEC19" is "100"
 
@@ -150,6 +199,19 @@ Feature: MTM settlement tests
       | from   | to      | fromType   | toType | id        | amount | asset |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    200 | BTC   |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |     30 | BTC   |
+
+# place trade for 1@111 to set new mark price
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | GTC |
+
+    And the mark price for the market "ETH/DEC19" is "111"
+
+# MTM win transfers: 200+30-16=214 as per spreadsheet
+    Then the following transfers happened:
+      | from   | to      | fromType   | toType     | id        | amount | asset |
+      | trader1 | market | GENERAL    | SETTLEMENT | ETH/DEC19 |     16 | BTC   |
 
   Scenario: case 5 - LONG - ZERO - one trade
 # setup accounts
@@ -262,10 +324,12 @@ Feature: MTM settlement tests
       | name             |    amount |
       | trader1          |     10000 |
       | trader2          |     10000 |
+      | trader3          |     10000 |
     Then I Expect the traders to have new general account:
       | name             | asset |
       | trader1          | BTC   |
       | trader2          | BTC   |
+      | trader3          | BTC   |
 
     And the mark price for the market "ETH/DEC19" is "100"
 
@@ -297,16 +361,31 @@ Feature: MTM settlement tests
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    200 | BTC   |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    100 | BTC   |
 
+  # place trade for 1@111 to set new mark price
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | GTC |
+
+    And the mark price for the market "ETH/DEC19" is "111"
+
+# MTM win transfers: 200+100+15=315 as per spreadsheet
+    Then the following transfers happened:
+      | from   | to      | fromType   | toType | id        | amount | asset |
+      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    15  | BTC   |
+
   Scenario: case 8 - LONG - SAME AMOUNT - multiple trades
 # setup accounts
     Given the following traders:
       | name             |    amount |
       | trader1          |     10000 |
       | trader2          |     10000 |
+      | trader3          |     10000 |
     Then I Expect the traders to have new general account:
       | name             | asset |
       | trader1          | BTC   |
       | trader2          | BTC   |
+      | trader3          | BTC   |
 
     And the mark price for the market "ETH/DEC19" is "100"
 
@@ -337,3 +416,16 @@ Feature: MTM settlement tests
       | from   | to      | fromType   | toType | id        | amount | asset |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    200 | BTC   |
       | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 |    120 | BTC   |
+  
+# place trade for 1@111 to set new mark price
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | GTC |
+
+    And the mark price for the market "ETH/DEC19" is "111"
+
+# MTM win transfers: 200+120-60=260 as per spreadsheet
+    Then the following transfers happened:
+      | from   | to      | fromType   | toType     | id        | amount | asset |
+      | trader1 | market | GENERAL    | SETTLEMENT | ETH/DEC19 |     60 | BTC   |
