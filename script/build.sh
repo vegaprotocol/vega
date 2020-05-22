@@ -219,5 +219,5 @@ if echo "$0" | grep -q '/build.sh$' ; then
 	if test "$failed" -gt 0 ; then
 		echo "Build failed for $failed apps."
 	fi
-	exit "$?"
+	exit "$failed"
 fi
