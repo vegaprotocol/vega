@@ -1369,7 +1369,7 @@ func (h *tradingDataService) GetProposals(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
 	if in.State != nil {
@@ -1388,7 +1388,7 @@ func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetProposalsByParty", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
 	if in.State != nil {
@@ -1407,7 +1407,7 @@ func (h *tradingDataService) GetVotesByParty(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetVotesByParty", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	return &protoapi.GetVotesResponse{
 		Votes: h.governanceService.GetVotesByParty(in.PartyID),
@@ -1422,7 +1422,7 @@ func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetNewMarketProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 
 	var inState *types.Proposal_State
@@ -1442,7 +1442,7 @@ func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetUpdateMarketProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 
 	var inState *types.Proposal_State
@@ -1462,7 +1462,7 @@ func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetNetworkParametersProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
 	if in.State != nil {
@@ -1481,7 +1481,7 @@ func (h *tradingDataService) GetNewAssetProposals(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetNewAssetProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
 	if in.State != nil {
@@ -1500,11 +1500,11 @@ func (h *tradingDataService) GetProposalByID(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByID", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	proposal, err := h.governanceService.GetProposalByID(in.ProposalID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMissingProposalID, err)
 	}
 	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
 }
@@ -1517,11 +1517,11 @@ func (h *tradingDataService) GetProposalByReference(_ context.Context,
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByReference", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
 	}
 	proposal, err := h.governanceService.GetProposalByReference(in.Reference)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMissingProposalReference, err)
 	}
 	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
 }
