@@ -64,6 +64,13 @@ type proposalVote struct {
 }
 
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
+	log.Debug("Governance parameters",
+		logging.String("MinClose", params.minClose.String()),
+		logging.String("MaxClose", params.maxClose.String()),
+		logging.String("MinEnact", params.minEnact.String()),
+		logging.String("MaxEnact", params.maxEnact.String()),
+		logging.Uint64("MinParticipationStake", params.minParticipationStake),
+	)
 	return &Engine{
 		Config:        cfg,
 		accs:          accs,
