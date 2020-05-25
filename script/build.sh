@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get a list of apps to build by looking at the directories in cmd.
 mapfile -t apps < <(find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##')
@@ -13,10 +13,11 @@ alltargets=( \
 help() {
 	echo "Command line arguments:"
 	echo
-	echo "  -d       Build debug binaries"
-	echo "  -T       Build all available GOOS+GOARCH combinations (see below)"
-	echo "  -t list  Build specified GOOS+GOARCH combinations"
-	echo "  -h       Show this help"
+	echo "  -d         Build debug binaries"
+	echo "  -T         Build all available GOOS+GOARCH combinations (see below)"
+	echo "  -t list    Build specified GOOS+GOARCH combinations"
+	echo "  -s suffix  Add arbitrary suffix to compiled binary names"
+	echo "  -h         Show this help"
 	echo
 	echo "Apps to be built:"
 	for app in "${apps[@]}" ; do
@@ -59,15 +60,19 @@ set_ldflags() {
 parse_args() {
 	# set defaults
 	gcflags=""
+	dbgsuffix=""
 	suffix=""
 	targets=()
 
-	while getopts 'dTt:h' flag; do
+	while getopts 'ds:Tt:h' flag; do
 		case "$flag" in
 		d)
 			gcflags="all=-N -l"
-			suffix="-dbg"
+			dbgsuffix="-dbg"
 			version="debug-$version"
+			;;
+		s)
+			suffix="$OPTARG"
 			;;
 		t)
 			mapfile -t targets < <(echo "$OPTARG" | tr ' ,' '\n')
@@ -93,6 +98,23 @@ parse_args() {
 	fi
 }
 
+can_build() {
+	local canbuild target
+	canbuild=0
+	target="$1" ; shift
+	for compiler in "$@" ; do
+		if test -z "$compiler" ; then
+			continue
+		fi
+
+		if ! which command -v "$compiler" 1>/dev/null ; then
+			echo "$target: Cannot build. Need $compiler"
+			canbuild=1
+		fi
+	done
+	return "$canbuild"
+}
+
 run() {
 	set_version
 	parse_args "$@"
@@ -108,6 +130,7 @@ run() {
 		goarm=""
 		goarch="$(echo "$target" | cut -f2 -d/)"
 		goos="$(echo "$target" | cut -f1 -d/)"
+		typesuffix=""
 		skip=no
 		case "$target" in
 		darwin/*)
@@ -141,7 +164,7 @@ run() {
 			cxx=mips64el-linux-gnuabi64-g++-9
 			;;
 		windows/*)
-			o="$o.exe"
+			typesuffix=".exe"
 			cc=x86_64-w64-mingw32-gcc-posix
 			cxx=x86_64-w64-mingw32-g++-posix
 			# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
@@ -158,6 +181,8 @@ run() {
 		if test "$skip" == yes ; then
 			continue
 		fi
+
+		can_build "$target" "$cc" "$cxx" || continue
 
 		export \
 			CC="$cc" \
@@ -204,7 +229,7 @@ run() {
 		fi
 
 		for app in "${apps[@]}" ; do
-			o="cmd/$app/$app-$goos-$goarch$suffix"
+			o="cmd/$app/$app-$goos-$goarch$dbgsuffix$suffix$typesuffix"
 			log="$o.log"
 			echo "$target: go build $o ... "
 			rm -f "$o" "$log"
