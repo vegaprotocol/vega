@@ -182,9 +182,7 @@ run() {
 			continue
 		fi
 
-		if !can_build "$target" "$cc" "$cxx" ; then
-			continue
-		fi
+		can_build "$target" "$cc" "$cxx" || continue
 
 		export \
 			CC="$cc" \
