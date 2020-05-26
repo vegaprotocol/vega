@@ -2,15 +2,25 @@
 
 ## 0.19.0
 
-*2020-05-XX*
+*2020-05-26*
+
+This release fixes a handful of bugs, primarily around order amends and new market governance proposals.
 
 ### Features
 
-- TBC
+- [#1658](https://github.com/vegaprotocol/vega/pull/1658) Add timestamps to proposal API responses
+- [#1656](https://github.com/vegaprotocol/vega/pull/1656) Add margin checks to amends
 
 ### Improvements
 
-- TBC
+- [#1662](https://github.com/vegaprotocol/vega/pull/1662) Start moving to event-based architecture internally
+- [#1684](https://github.com/vegaprotocol/vega/pull/1684) Fix order expiry handling when `expiresAt` is amended
+- [#1686](https://github.com/vegaprotocol/vega/pull/1686) Fix participation stake to have a maximum of 100%
+- [#1607](https://github.com/vegaprotocol/vega/pull/1607) Update `gqlgen` dependency to 0.11.3
+- [#1711](https://github.com/vegaprotocol/vega/pull/1711) Remove ID from market proposal input
+- [#1712](https://github.com/vegaprotocol/vega/pull/1712) `prepareProposal` no longer returns an ID on market proposals
+- [#1707](https://github.com/vegaprotocol/vega/pull/1707) Allow overriding default governance parameters via `ldflags`.
+- [#1715](https://github.com/vegaprotocol/vega/pull/1715) Compile testing binary with short-lived governance periods
 
 ## 0.18.1
 
