@@ -345,6 +345,7 @@ message OrderCancellation {
 
 message NodeRegistration {
   bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  bytes chainPubKey = 2 [(validator.field) = {string_not_empty: true}];
 }
 
 message NodeVote {

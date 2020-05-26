@@ -94,6 +94,15 @@ type Commander interface {
 	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
+type ValidatorTopology interface {
+	AddNodeRegistration(nr *types.NodeRegistration) error
+	SelfChainPubKey() []byte
+	Ready() bool
+	Exists(key []byte) bool
+	Len() int
+}
+
 const (
 	notValidAssetProposal uint32 = iota
 	validAssetProposal
@@ -114,22 +123,23 @@ type nodeProposal struct {
 type Processor struct {
 	log *logging.Logger
 	Config
+	isValidator       bool
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
 	time              TimeService
 	wallet            Wallet
 	assets            Assets
-	nodes             map[string]struct{} // all other nodes in the network
 	nodeProposals     map[string]*nodeProposal
 	pendingValidation []*types.Proposal
 	cmd               Commander
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
+	top               ValidatorTopology
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, isValidator bool) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -142,10 +152,11 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		time:              ts,
 		wallet:            wallet,
 		assets:            assets,
-		nodes:             map[string]struct{}{},
 		nodeProposals:     map[string]*nodeProposal{},
 		pendingValidation: []*types.Proposal{},
 		cmd:               cmd,
+		top:               top,
+		isValidator:       isValidator,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p
@@ -165,18 +176,23 @@ func (p *Processor) Begin() error {
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
 	}
-	if !p.hasRegistered {
-		w, ok := p.wallet.Get(nodewallet.Vega)
-		if !ok {
-			return ErrNoVegaWalletFound
+	if !p.hasRegistered && p.isValidator && !p.top.Ready() {
+		// get our tendermint pubkey
+		chainPubKey := p.top.SelfChainPubKey()
+		if chainPubKey != nil {
+			w, ok := p.wallet.Get(nodewallet.Vega)
+			if !ok {
+				return ErrNoVegaWalletFound
+			}
+			payload := &types.NodeRegistration{
+				ChainPubKey: chainPubKey,
+				PubKey:      w.PubKeyOrAddress(),
+			}
+			if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
+				return err
+			}
+			p.hasRegistered = true
 		}
-		payload := &types.NodeRegistration{
-			PubKey: w.PubKeyOrAddress(),
-		}
-		if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
-			return err
-		}
-		p.hasRegistered = true
 	}
 
 	if p.log.GetLevel() == logging.DebugLevel {
@@ -468,21 +484,28 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
+		err = p.top.AddNodeRegistration(node)
+		if err != nil {
+			p.log.Warn("unable to register node",
+				logging.Error(err))
+		}
+		// p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
 	case blockchain.NodeVoteCommand:
 		vote, err := p.getNodeVote(data)
 		if err != nil {
 			return err
 		}
-		pubKey := hex.EncodeToString(vote.PubKey)
-		if _, ok := p.nodes[pubKey]; !ok {
+
+		// if not a validator reject the vote
+		if !p.top.Exists(vote.PubKey) {
 			return ErrUnknownNodeKey
 		}
+
 		prop, ok := p.nodeProposals[vote.Reference]
 		if !ok {
 			return ErrUnknownProposal
 		}
-		prop.votes[pubKey] = struct{}{}
+		prop.votes[hex.EncodeToString(vote.PubKey)] = struct{}{}
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -696,13 +719,13 @@ func (p *Processor) onTick(t time.Time) {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote agregated, and own vote sent
 		state := atomic.LoadUint32(&prop.validState)
-		if prop.validTime.Before(t) || (len(prop.votes) == len(p.nodes) && state == voteSentAssetProposal) {
+		if prop.validTime.Before(t) || (len(prop.votes) == p.top.Len() && state == voteSentAssetProposal) {
 			// if not all nodes have approved, just remove
-			if len(prop.votes) < len(p.nodes) {
+			if len(prop.votes) < p.top.Len() {
 				p.log.Warn("proposal was not accepted by all nodes",
 					logging.String("proposal", prop.Proposal.String()),
 					logging.Int("vote-count", len(prop.votes)),
-					logging.Int("node-count", len(p.nodes)),
+					logging.Int("node-count", p.top.Len()),
 				)
 			} else if err := p.exec.SubmitProposal(prop.Proposal); err != nil {
 				p.log.Error("Failed to submit node-approved proposal",
@@ -720,19 +743,22 @@ func (p *Processor) onTick(t time.Time) {
 		// or check if the proposal if valid,
 		// if it is, we will send our own message through the network.
 		if state == validAssetProposal {
-			key, ok := p.wallet.Get(nodewallet.Vega)
-			if !ok {
-				p.log.Error("no vega wallet found")
-				continue
-			}
-			nv := &types.NodeVote{
-				PubKey:    key.PubKeyOrAddress(),
-				Reference: prop.Reference,
-			}
-			if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
-				p.log.Error("unable tosend command", logging.Error(err))
-				// @TODO keep in memory, retry later?
-				continue
+			// if not a validator no need to send the vote
+			if p.isValidator {
+				key, ok := p.wallet.Get(nodewallet.Vega)
+				if !ok {
+					p.log.Error("no vega wallet found")
+					continue
+				}
+				nv := &types.NodeVote{
+					PubKey:    key.PubKeyOrAddress(),
+					Reference: prop.Reference,
+				}
+				if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
+					p.log.Error("unable tosend command", logging.Error(err))
+					// @TODO keep in memory, retry later?
+					continue
+				}
 			}
 			atomic.StoreUint32(&prop.validState, voteSentAssetProposal)
 			// cancelling this but it should already be exited if th proposal

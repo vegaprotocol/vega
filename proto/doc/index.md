@@ -2313,6 +2313,7 @@ nothing, currently
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | pubKey | [bytes](#bytes) |  |  |
+| chainPubKey | [bytes](#bytes) |  |  |
 
 
 

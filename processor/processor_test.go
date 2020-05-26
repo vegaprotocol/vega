@@ -29,6 +29,7 @@ type procTest struct {
 	cmd    *mocks.MockCommander
 	wallet *mocks.MockWallet
 	assets *mocks.MockAssets
+	top    *mocks.MockValidatorTopology
 }
 
 type stubWallet struct {
@@ -47,12 +48,14 @@ func getTestProcessor(t *testing.T) *procTest {
 	cmd := mocks.NewMockCommander(ctrl)
 	wallet := mocks.NewMockWallet(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
+	top := mocks.NewMockValidatorTopology(ctrl)
 
+	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
 		cb = c
 	})
-	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets)
+	proc := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, true)
 	return &procTest{
 		Processor: proc,
 		eng:       eng,
@@ -63,6 +66,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		cmd:       cmd,
 		wallet:    wallet,
 		assets:    assets,
+		top:       top,
 	}
 }
 
@@ -117,6 +121,12 @@ func testOnTickPending(t *testing.T) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	next := now.Add(time.Second) // 1 second later
+
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().Len().AnyTimes().Return(1)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	proc.top.EXPECT().AddNodeRegistration(gomock.Any()).AnyTimes().Return(nil)
+
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	// Begin was never called, so we expect nodewallet to be involved
@@ -209,6 +219,13 @@ func testOnTickSubmit(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
+
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	proc.top.EXPECT().Len().AnyTimes().Return(1)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	proc.top.EXPECT().AddNodeRegistration(gomock.Any()).AnyTimes().Return(nil)
+
 	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
@@ -252,12 +269,12 @@ func testOnTickSubmit(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
-	// vote := &types.NodeVote{
-	// 	PubKey:    string(wal.PubKeyOrAddress()),
-	// 	Reference: data.Reference,
-	// }
-	// payload, err = proto.Marshal(vote)
-	// assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+	vote := &types.NodeVote{
+		PubKey:    wal.PubKeyOrAddress(),
+		Reference: data.Reference,
+	}
+	payload, err = proto.Marshal(vote)
+	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
 
 	ch := make(chan struct{}, 1)
 	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil).Do(func(sp *types.Proposal) {
@@ -295,6 +312,13 @@ func testOnTickSubmitRetry(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
+
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	proc.top.EXPECT().Len().AnyTimes().Return(1)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	proc.top.EXPECT().AddNodeRegistration(gomock.Any()).AnyTimes().Return(nil)
+
 	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
@@ -340,12 +364,12 @@ func testOnTickSubmitRetry(t *testing.T) {
 	})
 	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
 
-	// vote := &types.NodeVote{
-	// 	PubKey:    string(wal.PubKeyOrAddress()),
-	// 	Reference: data.Reference,
-	// }
-	// payload, err = proto.Marshal(vote)
-	// assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+	vote := &types.NodeVote{
+		PubKey:    wal.PubKeyOrAddress(),
+		Reference: data.Reference,
+	}
+	payload, err = proto.Marshal(vote)
+	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
 
 	i := 0
 	returns := []error{
@@ -400,6 +424,12 @@ func testOnTickWithNodes(t *testing.T) {
 	}
 	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
+
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	proc.top.EXPECT().Len().AnyTimes().Return(1)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	proc.top.EXPECT().AddNodeRegistration(gomock.Any()).AnyTimes().Return(nil)
 
 	wal := getTestStubWallet()
 	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
@@ -515,6 +545,12 @@ func testOnTickReject(t *testing.T) {
 	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	proc.top.EXPECT().Len().AnyTimes().Return(1)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	proc.top.EXPECT().AddNodeRegistration(gomock.Any()).AnyTimes().Return(nil)
+
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
@@ -596,6 +632,9 @@ func testBeginCommitSuccess(t *testing.T) {
 	totBatches := uint64(1)
 	now := time.Now()
 	prev := now.Add(-time.Second)
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
@@ -632,6 +671,8 @@ func testBeginRegisterError(t *testing.T) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	expErr := errors.New("test error")
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	wal := getTestStubWallet()
@@ -651,6 +692,8 @@ func testBeginNodeWalletError(t *testing.T) {
 
 	now := time.Now()
 	prev := now.Add(-time.Second)
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(nil, false)
@@ -665,6 +708,8 @@ func testBeginCallsCommanderOnce(t *testing.T) {
 
 	now := time.Now()
 	prev := now.Add(-time.Second)
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(getTestStubWallet(), true)
@@ -880,6 +925,10 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 		valid: true,
 		err:   nil,
 	}
+
+	proc.top.EXPECT().Ready().AnyTimes().Return(false)
+	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	proc.top.EXPECT().Len().AnyTimes().Return(1)
 	proc.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).Return(assetID, nil)
 	proc.assets.EXPECT().Get(gomock.Any()).Times(1).Return(asset, nil)
 	proc.wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
