@@ -976,7 +976,29 @@
         }
       }
     },
-    "apiGetGovernanceDataResponse": {
+    "apiGetNetworkParametersProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetNewAssetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetNewMarketProposalsResponse": {
       "type": "object",
       "properties": {
         "data": {
@@ -995,15 +1017,48 @@
         }
       }
     },
-    "apiGetProposalResponse": {
+    "apiGetProposalByReferenceResponse": {
       "type": "object",
       "properties": {
-        "proposal": {
+        "data": {
           "$ref": "#/definitions/vegaGovernanceData"
         }
       }
     },
-    "apiGetVotesResponse": {
+    "apiGetProposalsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetUpdateMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetVotesByPartyResponse": {
       "type": "object",
       "properties": {
         "votes": {
