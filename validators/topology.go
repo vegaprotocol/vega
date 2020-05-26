@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registrered with the blockchain node")
+	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registered with the blockchain node")
 	ErrChainAlreadyRegisterForVega     = errors.New("a blockchain node is already registered with the vega node")
 	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
 	ErrClientNotInitialized            = errors.New("blockchain client not initialised")
