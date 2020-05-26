@@ -420,6 +420,7 @@ func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancel
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
+
 	conf, err := mkt.CancelOrder(order)
 	if err != nil {
 		return nil, err
