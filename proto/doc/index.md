@@ -144,7 +144,11 @@
     - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
+    - [FOKOptions](#vega.FOKOptions)
     - [FinancialAmount](#vega.FinancialAmount)
+    - [GTCOptions](#vega.GTCOptions)
+    - [GTTOptions](#vega.GTTOptions)
+    - [IOCOptions](#vega.IOCOptions)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
@@ -2158,6 +2162,16 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.FOKOptions"></a>
+
+### FOKOptions
+nothing, currently
+
+
+
+
+
+
 <a name="vega.FinancialAmount"></a>
 
 ### FinancialAmount
@@ -2168,6 +2182,41 @@ Proposal can enter Failed state from any other state.
 | ----- | ---- | ----- | ----------- |
 | amount | [int64](#int64) |  |  |
 | asset | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.GTCOptions"></a>
+
+### GTCOptions
+nothing, currently
+
+
+
+
+
+
+<a name="vega.GTTOptions"></a>
+
+### GTTOptions
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| expiresAt | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.IOCOptions"></a>
+
+### IOCOptions
+nothing, currently
 
 
 
@@ -2401,9 +2450,12 @@ Proposal can enter Failed state from any other state.
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  |  |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | reference | [string](#string) |  |  |
+| gtcOptions | [GTCOptions](#vega.GTCOptions) |  |  |
+| gttOptions | [GTTOptions](#vega.GTTOptions) |  |  |
+| iocOptions | [IOCOptions](#vega.IOCOptions) |  |  |
+| focOptions | [FOKOptions](#vega.FOKOptions) |  |  |
 
 
 
