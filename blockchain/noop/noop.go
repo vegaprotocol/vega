@@ -8,6 +8,7 @@ import (
 
 	"github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type Stats interface {
@@ -153,4 +154,12 @@ func (n *NOOPChain) Health() (*tmctypes.ResultHealth, error) {
 func (n *NOOPChain) SendTransaction(ctx context.Context, tx []byte) (bool, error) {
 	n.txs <- tx
 	return true, nil
+}
+
+func (c *NOOPChain) Validators() ([]*tmtypes.Validator, error) {
+	return nil, nil
+}
+
+func (c *NOOPChain) GenesisValidators() ([]*tmtypes.Validator, error) {
+	return nil, nil
 }

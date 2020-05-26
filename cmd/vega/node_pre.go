@@ -34,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -358,7 +359,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets)
+	l.topology = validators.NewTopology(l.Log, nil)
+
+	// TODO(jeremy): for now we assume a node started without the stores support
+	// is a validator, this will need to be changed later on.
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, !l.noStores)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
@@ -378,6 +383,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// get the chain client as well.
 	l.blockchainClient = l.blockchain.Client()
+	l.topology.SetChain(l.blockchain.Client())
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {

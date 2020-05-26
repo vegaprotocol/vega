@@ -2264,6 +2264,7 @@ Proposal can enter Failed state from any other state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | pubKey | [bytes](#bytes) |  |  |
+| chainPubKey | [bytes](#bytes) |  |  |
 
 
 

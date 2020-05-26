@@ -34,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/spf13/cobra"
@@ -134,7 +135,8 @@ type NodeCommand struct {
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
 
-	assets *assets.Service
+	assets   *assets.Service
+	topology *validators.Topology
 
 	// plugins
 	settlePlugin     *plugins.Positions
