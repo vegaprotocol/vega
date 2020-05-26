@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.0
+
+*2020-05-XX*
+
+### Features
+
+- TBC
+
+### Improvements
+
+- TBC
+
 ## 0.18.1
 
 *2020-05-13*
