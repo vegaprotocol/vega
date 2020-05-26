@@ -10,9 +10,10 @@ This release fixes a handful of bugs, primarily around order amends and new mark
 
 - [#1658](https://github.com/vegaprotocol/vega/pull/1658) Add timestamps to proposal API responses
 - [#1656](https://github.com/vegaprotocol/vega/pull/1656) Add margin checks to amends
+- [#1679](https://github.com/vegaprotocol/vega/pull/1679) Add topology package to map Validator nodes to Vega keypairs
 
 ### Improvements
-
+- [#1718](https://github.com/vegaprotocol/vega/pull/1718) Fix a case where a party can cancel another party's orders
 - [#1662](https://github.com/vegaprotocol/vega/pull/1662) Start moving to event-based architecture internally
 - [#1684](https://github.com/vegaprotocol/vega/pull/1684) Fix order expiry handling when `expiresAt` is amended
 - [#1686](https://github.com/vegaprotocol/vega/pull/1686) Fix participation stake to have a maximum of 100%
