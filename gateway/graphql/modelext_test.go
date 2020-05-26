@@ -459,7 +459,6 @@ func TestModelConverters(t *testing.T) {
 	t.Run("MarketInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.MarketInput{
-			ID:   "abcdefg",
 			Name: "test-market",
 			TradableInstrument: &gql.TradableInstrumentInput{
 				Instrument: &gql.InstrumentInput{
@@ -525,7 +524,6 @@ func TestModelConverters(t *testing.T) {
 	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.MarketInput{
-			ID:   "abcdefg",
 			Name: "test-market",
 			TradableInstrument: &gql.TradableInstrumentInput{
 				Instrument: &gql.InstrumentInput{
