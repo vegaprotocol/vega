@@ -12,6 +12,7 @@
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
     - [GetGovernanceDataResponse](#api.GetGovernanceDataResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
+    - [GetProposalByIDResponse](#api.GetProposalByIDResponse)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
     - [GetProposalResponse](#api.GetProposalResponse)
     - [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest)
@@ -321,6 +322,21 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | proposalID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalByIDResponse"></a>
+
+### GetProposalByIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
 
 
 
@@ -1467,7 +1483,7 @@
 | GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
 | GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
 | GetNewAssetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
-| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by ID |
+| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalByIDResponse](#api.GetProposalByIDResponse) | Get governance data (proposals and votes) for a proposal located by ID |
 | GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by reference |
 | ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |

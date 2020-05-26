@@ -204,7 +204,7 @@ service trading_data {
   rpc GetNewAssetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
 
   // Get governance data (proposals and votes) for a proposal located by ID
-  rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
+  rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalByIDResponse);
 
   // Get governance data (proposals and votes) for a proposal located by reference
   rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalResponse);
@@ -293,6 +293,10 @@ message GetUpdateMarketProposalsRequest {
 
 message GetProposalByIDRequest {
   string proposalID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message GetProposalByIDResponse {
+  vega.GovernanceData data = 1;
 }
 
 message GetProposalByReferenceRequest {

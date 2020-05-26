@@ -102,7 +102,7 @@ type TradingDataClient interface {
 	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
 	GetNewAssetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
+	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByIDResponse, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
 
 	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingData_ObserveGovernanceClient, error)
@@ -354,7 +354,7 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
-		return resp.Proposal, nil
+		return resp.Data, nil
 	} else if reference != nil {
 		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
 			Reference: *reference,

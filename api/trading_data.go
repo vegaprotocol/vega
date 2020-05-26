@@ -1494,7 +1494,7 @@ func (h *tradingDataService) GetNewAssetProposals(_ context.Context,
 
 func (h *tradingDataService) GetProposalByID(_ context.Context,
 	in *protoapi.GetProposalByIDRequest,
-) (*protoapi.GetProposalResponse, error) {
+) (*protoapi.GetProposalByIDResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByID", startTime)
@@ -1506,7 +1506,7 @@ func (h *tradingDataService) GetProposalByID(_ context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
+	return &protoapi.GetProposalByIDResponse{Data: proposal}, nil
 }
 
 func (h *tradingDataService) GetProposalByReference(_ context.Context,

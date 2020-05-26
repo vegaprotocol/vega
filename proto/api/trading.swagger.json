@@ -987,6 +987,14 @@
         }
       }
     },
+    "apiGetProposalByIDResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
     "apiGetProposalResponse": {
       "type": "object",
       "properties": {
