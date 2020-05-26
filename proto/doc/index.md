@@ -2165,7 +2165,7 @@ Proposal can enter Failed state from any other state.
 <a name="vega.FOKOptions"></a>
 
 ### FOKOptions
-nothing, currently
+There are currently no TIF=FOK options.
 
 
 
@@ -2191,7 +2191,7 @@ nothing, currently
 <a name="vega.GTCOptions"></a>
 
 ### GTCOptions
-nothing, currently
+There are currently no TIF=GTC options.
 
 
 
@@ -2206,7 +2206,7 @@ nothing, currently
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| expiresAt | [int64](#int64) |  |  |
+| expiresAt | [int64](#int64) |  | the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 
 
 
@@ -2216,7 +2216,7 @@ nothing, currently
 <a name="vega.IOCOptions"></a>
 
 ### IOCOptions
-nothing, currently
+There are currently no TIF=ION options.
 
 
 

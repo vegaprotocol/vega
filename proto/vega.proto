@@ -322,19 +322,20 @@ message OrderSubmission {
 }
 
 message GTCOptions {
-  // nothing, currently
+  // There are currently no TIF=GTC options.
 }
 
 message GTTOptions {
+  // the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 expiresAt = 1 [(validator.field) = {int_gt: 0}];
 }
 
 message IOCOptions {
-  // nothing, currently
+  // There are currently no TIF=ION options.
 }
 
 message FOKOptions {
-  // nothing, currently
+  // There are currently no TIF=FOK options.
 }
 
 message OrderCancellation {

@@ -2125,6 +2125,7 @@ func (m *GTCOptions) XXX_DiscardUnknown() {
 var xxx_messageInfo_GTCOptions proto.InternalMessageInfo
 
 type GTTOptions struct {
+	// the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	ExpiresAt            int64    `protobuf:"varint,1,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

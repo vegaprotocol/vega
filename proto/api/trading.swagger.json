@@ -1602,7 +1602,8 @@
       "properties": {
         "expiresAt": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
         }
       }
     },
