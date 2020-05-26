@@ -1967,7 +1967,7 @@ func isStreamClosed(err error, log *logging.Logger) bool {
 }
 
 func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
-	stream, err := r.tradingDataClient.ObserveGovernance(ctx, nil)
+	stream, err := r.tradingDataClient.ObserveGovernance(ctx, &empty.Empty{})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
