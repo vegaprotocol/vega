@@ -421,8 +421,6 @@ func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancel
 		return nil, types.ErrInvalidMarketID
 	}
 
-	// Check cancel is from the same user as the original order
-
 	conf, err := mkt.CancelOrder(order)
 	if err != nil {
 		return nil, err
