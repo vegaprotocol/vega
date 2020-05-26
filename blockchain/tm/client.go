@@ -9,6 +9,7 @@ import (
 
 	"github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -72,4 +73,38 @@ func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 // Health returns the result of the health endpoint of the chain
 func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 	return c.tmclt.Health()
+}
+
+func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+	res, err := c.tmclt.Validators(nil)
+	if err != nil {
+		return nil, err
+	}
+	return res.Validators, nil
+}
+
+func (c *Client) Genesis() (*tmtypes.GenesisDoc, error) {
+	res, err := c.tmclt.Genesis()
+	if err != nil {
+		return nil, err
+	}
+	return res.Genesis, nil
+}
+
+func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
+	gen, err := c.Genesis()
+	if err != nil {
+		return nil, err
+	}
+
+	validators := make([]*tmtypes.Validator, 0, len(gen.Validators))
+	for _, v := range gen.Validators {
+		validators = append(validators, &tmtypes.Validator{
+			Address:     v.Address,
+			PubKey:      v.PubKey,
+			VotingPower: v.Power,
+		})
+	}
+
+	return validators, nil
 }

@@ -12,6 +12,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type chainClientImpl interface {
@@ -21,6 +22,8 @@ type chainClientImpl interface {
 	GetUnconfirmedTxCount(context.Context) (int, error)
 	Health() (*tmctypes.ResultHealth, error)
 	SendTransaction(context.Context, []byte) (bool, error)
+	GenesisValidators() ([]*tmtypes.Validator, error)
+	Validators() ([]*tmtypes.Validator, error)
 }
 
 // Client abstract all communication to the blockchain
@@ -131,6 +134,13 @@ func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 // Health returns the result of the health endpoint of the chain
 func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 	return c.clt.Health()
+}
+
+func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
+	return c.clt.GenesisValidators()
+}
+func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+	return c.clt.Validators()
 }
 
 func (c *Client) sendOrderCommand(ctx context.Context, order *types.Order, cmd Command) (success bool, err error) {

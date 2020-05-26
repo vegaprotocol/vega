@@ -814,42 +814,46 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 type myProposalResolver VegaResolverRoot
 
 func (r *myProposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return &data.Proposal.ID, nil
 }
 
 func (r *myProposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
 	return data.Proposal.Reference, nil
 }
 
 func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceData) (*types.Party, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
 }
 
 func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
 	return ProposalStateFromProto(data.Proposal.State)
 }
 
 func (r *myProposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
+	}
+	if data.Proposal.Timestamp == 0 {
+		// no timestamp for prepared proposals
+		return "", nil
 	}
 	return timestampToDatetime(data.Proposal.Timestamp), nil
 }
 
 func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*ProposalTerms, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return ProposalTermsFromProto(data.Proposal.Terms)
@@ -871,14 +875,14 @@ func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vot
 }
 
 func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return r.convertVotes(ctx, data.Yes)
 }
 
 func (r *myProposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
-	if data == nil || data.Proposal == nil || len(data.Proposal.ID) == 0 {
+	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return r.convertVotes(ctx, data.No)
@@ -1963,7 +1967,7 @@ func isStreamClosed(err error, log *logging.Logger) bool {
 }
 
 func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
-	stream, err := r.tradingDataClient.ObserveGovernance(ctx, nil)
+	stream, err := r.tradingDataClient.ObserveGovernance(ctx, &empty.Empty{})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}

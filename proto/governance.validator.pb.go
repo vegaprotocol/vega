@@ -66,6 +66,9 @@ func (this *ProposalTerms) Validate() error {
 	if !(this.MinParticipationStake > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))
 	}
+	if !(this.MinParticipationStake < 101) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be less than '101'`, this.MinParticipationStake))
+	}
 	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateMarket); ok {
 		if oneOfNester.UpdateMarket != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateMarket); err != nil {
