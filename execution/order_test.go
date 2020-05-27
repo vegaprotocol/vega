@@ -20,6 +20,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).Times(11)
 
 	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Status:      types.Order_Active,
 		Id:          "someid",
@@ -123,6 +124,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
 		Side:        types.Side_Buy,
@@ -194,6 +196,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
 		Side:        types.Side_Buy,

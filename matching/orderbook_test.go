@@ -62,6 +62,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Buy,
@@ -71,6 +72,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Buy,
@@ -80,6 +82,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Buy,
@@ -89,6 +92,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "d",
 			Side:        types.Side_Buy,
@@ -116,6 +120,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Sell,
@@ -125,6 +130,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Sell,
@@ -134,6 +140,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Sell,
@@ -143,6 +150,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "d",
 			Side:        types.Side_Sell,
@@ -170,6 +178,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Buy,
@@ -180,6 +189,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Buy,
@@ -218,6 +228,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Sell,
@@ -228,6 +239,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Sell,
@@ -266,6 +278,7 @@ func getClosePNLBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Buy,
@@ -276,6 +289,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Buy,
@@ -286,6 +300,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
 			Side:        types.Side_Buy,
@@ -322,6 +337,7 @@ func getClosePNLSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Sell,
@@ -332,6 +348,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Sell,
@@ -342,6 +359,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
 			Side:        types.Side_Sell,
@@ -380,6 +398,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	currentTimestamp := getCurrentUtcTimestampNano()
 
 	order1 := types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -391,6 +410,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Id:          "v0000000000000-0000001",
 	}
 	order2 := types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -420,6 +440,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	someTimeLater := currentTimestamp + (1000 * 1000)
 
 	order1 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -435,6 +456,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order2 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -450,6 +472,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order3 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -465,6 +488,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order4 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -479,6 +503,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order5 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -494,6 +519,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order6 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -508,6 +534,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order7 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -523,6 +550,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order8 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -538,6 +566,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order9 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -552,6 +581,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order10 := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_Sell,
@@ -581,6 +611,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	timeStampOrder := types.Order{
+		Type:      types.Order_LIMIT,
 		Id:        "timestamporderID",
 		MarketID:  market,
 		PartyID:   "A",
@@ -594,6 +625,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	book.CancelOrder(&timeStampOrder)
 
 	invalidTimestampOrdertypes := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_Sell,
@@ -608,6 +640,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_OUT_OF_SEQUENCE, err)
 
 	invalidRemainginSizeOrdertypes := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_Sell,
@@ -628,6 +661,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_Sell,
@@ -654,6 +688,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    "invalid",
 		PartyID:     "A",
 		Side:        types.Side_Sell,
@@ -686,6 +721,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	// Arrange
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_Sell,
@@ -727,6 +763,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	// Arrange
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_Buy,
@@ -767,6 +804,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_Buy,
@@ -808,6 +846,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
+		Type:     types.Order_LIMIT,
 		MarketID: market,
 		Id:       fmt.Sprintf("V%010d-%010d", 1, 1),
 		PartyID:  "A",
@@ -837,6 +876,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
+		Type:     types.Order_LIMIT,
 		MarketID: market,
 		Id:       "id",
 		PartyID:  "A",
@@ -882,6 +922,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -903,6 +944,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -927,6 +969,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -948,6 +991,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Sell,
@@ -970,6 +1014,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -987,6 +1032,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	fmt.Printf("confirmation : %+v", confirmation)
 
 	editedOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -1014,6 +1060,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -1035,6 +1082,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -1063,6 +1111,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -1085,6 +1134,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -1114,6 +1164,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -1136,6 +1187,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_Buy,
@@ -1172,6 +1224,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_Sell,
@@ -1182,6 +1235,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_Sell,
@@ -1193,6 +1247,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
 			Side:        types.Side_Buy,
@@ -1203,6 +1258,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "D",
 			Side:        types.Side_Buy,
@@ -1218,6 +1274,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "E",
 			Side:        types.Side_Sell,
@@ -1229,6 +1286,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "F",
 			Side:        types.Side_Buy,
@@ -1255,6 +1313,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "M",
 				Side:        types.Side_Buy,
@@ -1276,6 +1335,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "A",
 					Side:        types.Side_Sell,
@@ -1290,6 +1350,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "N",
 				Side:        types.Side_Buy,
@@ -1319,6 +1380,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "B",
 					Side:        types.Side_Sell,
@@ -1329,6 +1391,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   0,
 				},
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "E",
 					Side:        types.Side_Sell,
@@ -1343,6 +1406,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
+				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "O",
 				Side:        types.Side_Sell,
@@ -1380,6 +1444,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "F",
 					Side:        types.Side_Buy,
@@ -1390,6 +1455,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   1,
 				},
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "C",
 					Side:        types.Side_Buy,
@@ -1400,6 +1466,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   0,
 				},
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "D",
 					Side:        types.Side_Buy,
@@ -1414,6 +1481,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
+				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "X",
 				Side:        types.Side_Sell,
@@ -1435,6 +1503,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "D",
 					Side:        types.Side_Buy,
@@ -1506,6 +1575,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
 	newOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "100000",
 		Side:        types.Side_Sell,
@@ -1528,6 +1598,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	iocOrder := &types.Order{
+		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "100001",
 		Side:        types.Side_Buy,

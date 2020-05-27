@@ -2079,7 +2079,8 @@
         "MISSING_GENERAL_ACCOUNT",
         "INTERNAL_ERROR",
         "INVALID_SIZE",
-        "INVALID_PERSISTENCE"
+        "INVALID_PERSISTENCE",
+        "INVALID_TYPE"
       ],
       "default": "NONE"
     },
@@ -2124,12 +2125,13 @@
     "vegaOrderType": {
       "type": "string",
       "enum": [
+        "TYPE_UNSPECIFIED",
         "LIMIT",
         "MARKET",
         "NETWORK"
       ],
-      "default": "LIMIT",
-      "description": "- LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
+      "default": "TYPE_UNSPECIFIED",
+      "description": "- TYPE_UNSPECIFIED: Default value, always invalid\n - LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
       "title": "Order Type"
     },
     "vegaParty": {

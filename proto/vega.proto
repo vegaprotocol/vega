@@ -83,14 +83,17 @@ message Order {
 
   // Order Type
   enum Type {
+    // Default value, always invalid
+    TYPE_UNSPECIFIED = 0;
+
     // used for Limit orders
-    LIMIT   = 0;
+    LIMIT = 1;
 
     // used for Market orders
-    MARKET  = 1;
+    MARKET = 2;
 
     // used for orders where the initiating party is the network (used for distressed traders)
-    NETWORK = 2;
+    NETWORK = 3;
   }
 
   enum Status {
@@ -157,6 +160,9 @@ enum OrderError {
   INTERNAL_ERROR = 16;
   INVALID_SIZE = 17;
   INVALID_PERSISTENCE = 18;
+  INVALID_TYPE = 19;
+
+  // Note: If adding an enum value, add a matching entry in proto/errors.go.
 }
 
 message Trade {

@@ -2978,9 +2978,10 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LIMIT | 0 | used for Limit orders |
-| MARKET | 1 | used for Market orders |
-| NETWORK | 2 | used for orders where the initiating party is the network (used for distressed traders) |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| LIMIT | 1 | used for Limit orders |
+| MARKET | 2 | used for Market orders |
+| NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 
@@ -3010,6 +3011,7 @@ Order Type
 | INTERNAL_ERROR | 16 |  |
 | INVALID_SIZE | 17 |  |
 | INVALID_PERSISTENCE | 18 |  |
+| INVALID_TYPE | 19 |  |
 
 
 

@@ -8281,20 +8281,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>LIMIT</td>
+                <td>TYPE_UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>LIMIT</td>
+                <td>1</td>
                 <td><p>used for Limit orders</p></td>
               </tr>
 
               <tr>
                 <td>MARKET</td>
-                <td>1</td>
+                <td>2</td>
                 <td><p>used for Market orders</p></td>
               </tr>
 
               <tr>
                 <td>NETWORK</td>
-                <td>2</td>
+                <td>3</td>
                 <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
               </tr>
 
@@ -8420,6 +8426,12 @@ after each successful amend </p></td>
               <tr>
                 <td>INVALID_PERSISTENCE</td>
                 <td>18</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>INVALID_TYPE</td>
+                <td>19</td>
                 <td><p></p></td>
               </tr>
 

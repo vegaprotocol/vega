@@ -47,6 +47,7 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 
 	req := &protoapi.SubmitOrderRequest{
 		Submission: &types.OrderSubmission{
+			Type:     types.Order_LIMIT,
 			MarketID: "nonexistantmarket",
 		},
 	}

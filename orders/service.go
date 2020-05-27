@@ -42,6 +42,8 @@ var (
 	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
 	// ErrNoTimeInForce no value has been set for the time in force
 	ErrNoTimeInForce = errors.New("no value has been set for the time in force")
+	// ErrNoType no value has been set for the type
+	ErrNoType = errors.New("no value has been set for the type")
 )
 
 // TimeService ...
@@ -137,6 +139,10 @@ func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSub
 func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	if err := sub.Validate(); err != nil {
 		return errors.Wrap(err, "order validation failed")
+	}
+
+	if sub.Type == types.Order_TYPE_UNSPECIFIED {
+		return ErrNoType
 	}
 
 	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
