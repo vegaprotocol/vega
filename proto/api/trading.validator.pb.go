@@ -88,15 +88,15 @@ func (this *AmendOrderRequest) Validate() error {
 func (this *OptionalProposalState) Validate() error {
 	return nil
 }
-func (this *GetProposalsByStateRequest) Validate() error {
-	if this.State != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
+func (this *GetProposalsRequest) Validate() error {
+	if this.SelectInState != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SelectInState); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SelectInState", err)
 		}
 	}
 	return nil
 }
-func (this *GetGovernanceDataResponse) Validate() error {
+func (this *GetProposalsResponse) Validate() error {
 	for _, item := range this.Data {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
@@ -106,31 +106,23 @@ func (this *GetGovernanceDataResponse) Validate() error {
 	}
 	return nil
 }
-func (this *GetProposalResponse) Validate() error {
-	if this.Proposal != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
-		}
-	}
-	return nil
-}
-func (this *GetVotesResponse) Validate() error {
-	for _, item := range this.Votes {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Votes", err)
-			}
-		}
-	}
-	return nil
-}
 func (this *GetProposalsByPartyRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if this.State != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
+	if this.SelectInState != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SelectInState); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SelectInState", err)
+		}
+	}
+	return nil
+}
+func (this *GetProposalsByPartyResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
 		}
 	}
 	return nil
@@ -141,13 +133,87 @@ func (this *GetVotesByPartyRequest) Validate() error {
 	}
 	return nil
 }
+func (this *GetVotesByPartyResponse) Validate() error {
+	for _, item := range this.Votes {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Votes", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *GetNewMarketProposalsRequest) Validate() error {
+	if this.SelectInState != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SelectInState); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SelectInState", err)
+		}
+	}
+	return nil
+}
+func (this *GetNewMarketProposalsResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *GetUpdateMarketProposalsRequest) Validate() error {
 	if this.MarketID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
 	}
-	if this.State != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.State); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("State", err)
+	if this.SelectInState != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SelectInState); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SelectInState", err)
+		}
+	}
+	return nil
+}
+func (this *GetUpdateMarketProposalsResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *GetNetworkParametersProposalsRequest) Validate() error {
+	if this.SelectInState != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SelectInState); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SelectInState", err)
+		}
+	}
+	return nil
+}
+func (this *GetNetworkParametersProposalsResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *GetNewAssetProposalsRequest) Validate() error {
+	if this.SelectInState != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SelectInState); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SelectInState", err)
+		}
+	}
+	return nil
+}
+func (this *GetNewAssetProposalsResponse) Validate() error {
+	for _, item := range this.Data {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+			}
 		}
 	}
 	return nil
@@ -158,9 +224,25 @@ func (this *GetProposalByIDRequest) Validate() error {
 	}
 	return nil
 }
+func (this *GetProposalByIDResponse) Validate() error {
+	if this.Data != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Data); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+		}
+	}
+	return nil
+}
 func (this *GetProposalByReferenceRequest) Validate() error {
 	if this.Reference == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
+	}
+	return nil
+}
+func (this *GetProposalByReferenceResponse) Validate() error {
+	if this.Data != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Data); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Data", err)
+		}
 	}
 	return nil
 }

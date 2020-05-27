@@ -976,7 +976,7 @@
         }
       }
     },
-    "apiGetGovernanceDataResponse": {
+    "apiGetNetworkParametersProposalsResponse": {
       "type": "object",
       "properties": {
         "data": {
@@ -987,15 +987,78 @@
         }
       }
     },
-    "apiGetProposalResponse": {
+    "apiGetNewAssetProposalsResponse": {
       "type": "object",
       "properties": {
-        "proposal": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetNewMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalByIDResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
           "$ref": "#/definitions/vegaGovernanceData"
         }
       }
     },
-    "apiGetVotesResponse": {
+    "apiGetProposalByReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
+    "apiGetProposalsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetUpdateMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetVotesByPartyResponse": {
       "type": "object",
       "properties": {
         "votes": {
