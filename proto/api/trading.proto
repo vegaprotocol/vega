@@ -183,31 +183,31 @@ service trading_data {
   // Governance
 
   // Get governance data (proposals and votes) for all proposals
-  rpc GetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+  rpc GetProposals(GetProposalsRequest) returns (GetProposalsResponse);
 
   // Get governance data (proposals and votes) for proposals by party authoring them
-  rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetGovernanceDataResponse);
+  rpc GetProposalsByParty(GetProposalsByPartyRequest) returns (GetProposalsByPartyResponse);
 
   // Get votes by party casting them
-  rpc GetVotesByParty(GetVotesByPartyRequest) returns (GetVotesResponse);
+  rpc GetVotesByParty(GetVotesByPartyRequest) returns (GetVotesByPartyResponse);
 
   // Get governance data (proposals and votes) for proposals that aim creating new markets
-  rpc GetNewMarketProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+  rpc GetNewMarketProposals(GetNewMarketProposalsRequest) returns (GetNewMarketProposalsResponse);
 
   // Get governance data (proposals and votes) for proposals that aim updating markets
-  rpc GetUpdateMarketProposals(GetUpdateMarketProposalsRequest) returns (GetGovernanceDataResponse);
+  rpc GetUpdateMarketProposals(GetUpdateMarketProposalsRequest) returns (GetUpdateMarketProposalsResponse);
 
   // Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
-  rpc GetNetworkParametersProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+  rpc GetNetworkParametersProposals(GetNetworkParametersProposalsRequest) returns (GetNetworkParametersProposalsResponse);
   
   // Get governance data (proposals and votes) for proposals aiming to create new assets
-  rpc GetNewAssetProposals(GetProposalsByStateRequest) returns (GetGovernanceDataResponse);
+  rpc GetNewAssetProposals(GetNewAssetProposalsRequest) returns (GetNewAssetProposalsResponse);
 
   // Get governance data (proposals and votes) for a proposal located by ID
-  rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalResponse);
+  rpc GetProposalByID(GetProposalByIDRequest) returns (GetProposalByIDResponse);
 
   // Get governance data (proposals and votes) for a proposal located by reference
-  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalResponse);
+  rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalByReferenceResponse);
 
   // Subscribe to a stream of all governance updates
   rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
@@ -261,43 +261,89 @@ message OptionalProposalState {
   vega.Proposal.State value = 1;
 }
 
-message GetProposalsByStateRequest {
-  OptionalProposalState state = 1;
+
+message GetProposalsRequest {
+  OptionalProposalState selectInState = 1;
 }
 
-message GetGovernanceDataResponse {
+message GetProposalsResponse {
   repeated vega.GovernanceData data = 1;
 }
 
-message GetProposalResponse {
-  vega.GovernanceData proposal = 1;
-}
-
-message GetVotesResponse {
-  repeated vega.Vote votes = 1;
-}
 
 message GetProposalsByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
-  OptionalProposalState state = 2;
+  OptionalProposalState selectInState = 2;
 }
+
+message GetProposalsByPartyResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
 
 message GetVotesByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+message GetVotesByPartyResponse {
+  repeated vega.Vote votes = 1;
+}
+
+
+message GetNewMarketProposalsRequest {
+  OptionalProposalState selectInState = 1;
+}
+
+message GetNewMarketProposalsResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
+
 message GetUpdateMarketProposalsRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
-  OptionalProposalState state = 2;
+  OptionalProposalState selectInState = 2;
 }
+
+message GetUpdateMarketProposalsResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
+
+message GetNetworkParametersProposalsRequest {
+  OptionalProposalState selectInState = 1;
+}
+
+message GetNetworkParametersProposalsResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
+
+message GetNewAssetProposalsRequest {
+  OptionalProposalState selectInState = 1;
+}
+
+message GetNewAssetProposalsResponse {
+  repeated vega.GovernanceData data = 1;
+}
+
 
 message GetProposalByIDRequest {
   string proposalID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+message GetProposalByIDResponse {
+  vega.GovernanceData data = 1;
+}
+
+
 message GetProposalByReferenceRequest {
   string Reference = 1 [(validator.field) = {string_not_empty : true}];
 }
+
+message GetProposalByReferenceResponse {
+  vega.GovernanceData data = 1;
+}
+
 
 message ObservePartyProposalsRequest {
   string partyID = 1  [(validator.field) = {string_not_empty : true }];

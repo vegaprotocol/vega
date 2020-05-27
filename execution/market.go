@@ -1077,6 +1077,17 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 		return nil, err
 	}
 
+	// Only allow the original order creator to cancel their order
+	if order.PartyID != oc.PartyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Party ID mismatch",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {

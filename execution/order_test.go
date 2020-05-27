@@ -180,3 +180,43 @@ func TestAmendCancelResubmit(t *testing.T) {
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
+
+func TestCancelWithWrongPartyID(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1)
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		TimeInForce: types.Order_GTC,
+		Id:          "someid",
+		Side:        types.Side_Buy,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	// Submit the original order
+	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Now attempt to cancel it with the wrong partyID
+	cancelOrder := &types.OrderCancellation{
+		OrderID:  confirmation.GetOrder().Id,
+		MarketID: confirmation.GetOrder().MarketID,
+		PartyID:  party2,
+	}
+	cancelconf, err := tm.market.CancelOrder(cancelOrder)
+	assert.Nil(t, cancelconf)
+	assert.Error(t, err, types.ErrInvalidPartyID)
+}
