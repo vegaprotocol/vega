@@ -160,6 +160,7 @@ enum OrderError {
   INTERNAL_ERROR = 16;
   INVALID_SIZE = 17;
   INVALID_PERSISTENCE = 18;
+  INVALID_TYPE = 19;
 
   // Note: If adding an enum value, add a matching entry in proto/errors.go.
 }

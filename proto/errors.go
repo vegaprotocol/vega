@@ -15,6 +15,7 @@ var (
 	ErrInvalidPartyID            = OrderError_INVALID_PARTY_ID
 	ErrInvalidSize               = OrderError_INVALID_SIZE
 	ErrInvalidPersistence        = OrderError_INVALID_PERSISTENCE
+	ErrInvalidType               = OrderError_INVALID_TYPE
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -62,6 +63,8 @@ func (err OrderError) Error() string {
 		return "OrderError: Invalid Size"
 	case OrderError_INVALID_PERSISTENCE:
 		return "OrderError: Invalid Persistence"
+	case OrderError_INVALID_TYPE:
+		return "OrderError: Invalid Type"
 	default:
 		return "invalid OrderError"
 	}

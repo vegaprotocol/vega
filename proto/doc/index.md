@@ -3011,6 +3011,7 @@ Order Type
 | INTERNAL_ERROR | 16 |  |
 | INVALID_SIZE | 17 |  |
 | INVALID_PERSISTENCE | 18 |  |
+| INVALID_TYPE | 19 |  |
 
 
 

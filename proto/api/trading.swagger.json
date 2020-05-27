@@ -2079,7 +2079,8 @@
         "MISSING_GENERAL_ACCOUNT",
         "INTERNAL_ERROR",
         "INVALID_SIZE",
-        "INVALID_PERSISTENCE"
+        "INVALID_PERSISTENCE",
+        "INVALID_TYPE"
       ],
       "default": "NONE"
     },

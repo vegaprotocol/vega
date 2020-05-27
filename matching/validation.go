@@ -17,6 +17,8 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 			logging.String("order-book", b.marketID),
 			logging.Order(*orderMessage))
 		err = types.ErrInvalidMarketID
+	} else if orderMessage.Type == types.Order_TYPE_UNSPECIFIED {
+		err = types.ErrInvalidType
 	} else if orderMessage.CreatedAt < b.latestTimestamp {
 		err = types.ErrOrderOutOfSequence
 	} else if orderMessage.Remaining > 0 && orderMessage.Remaining != orderMessage.Size {
