@@ -23,6 +23,7 @@ func TestVersioning(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
 		Side:        types.Side_Buy,
@@ -154,7 +155,8 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Version, uint64(8))
 	})
 	cancelled, err := tm.market.CancelOrderByID(orderID)
-	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
 	assert.NoError(t, err)
-	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
+	if assert.NotNil(t, cancelled, "cancelled freshly submitted order") {
+		assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
+	}
 }

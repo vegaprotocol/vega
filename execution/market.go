@@ -1077,6 +1077,17 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 		return nil, err
 	}
 
+	// Only allow the original order creator to cancel their order
+	if order.PartyID != oc.PartyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Party ID mismatch",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -1175,6 +1186,17 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		return &types.OrderConfirmation{
 			Order: confirm.Order,
 		}, nil
+	}
+
+	// if expiration has changed and is before the original creation time, reject this amend
+	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < existingOrder.CreatedAt {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Amended expiry before original creation time",
+				logging.Int64("original order created at ts:", existingOrder.CreatedAt),
+				logging.Int64("amended expiry ts:", amendedOrder.ExpiresAt),
+				logging.Order(*existingOrder))
+		}
+		return nil, types.ErrInvalidExpirationDatetime
 	}
 
 	// if expiration has changed and is not 0, and is before currentTime
@@ -1344,6 +1366,7 @@ func (m *Market) applyOrderAmendment(
 
 	// initialize order with the existing order data
 	order = &types.Order{
+		Type:        existingOrder.Type,
 		Id:          existingOrder.Id,
 		MarketID:    existingOrder.MarketID,
 		PartyID:     existingOrder.PartyID,

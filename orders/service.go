@@ -42,6 +42,8 @@ var (
 	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
 	// ErrNoTimeInForce no value has been set for the time in force
 	ErrNoTimeInForce = errors.New("no value has been set for the time in force")
+	// ErrNoType no value has been set for the type
+	ErrNoType = errors.New("no value has been set for the type")
 )
 
 // TimeService ...
@@ -139,6 +141,10 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return errors.Wrap(err, "order validation failed")
 	}
 
+	if sub.Type == types.Order_TYPE_UNSPECIFIED {
+		return ErrNoType
+	}
+
 	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoTimeInForce
 	}
@@ -209,12 +215,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 		if amendment.ExpiresAt == nil {
 			s.log.Error("unable to set trade type to GTT when no expiry given")
 			return ErrGTTOrderWithNoExpiry
-		}
-
-		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt.Value)
-		if err != nil {
-			s.log.Error("unable to get expiration time", logging.Error(err))
-			return err
 		}
 	}
 	return nil

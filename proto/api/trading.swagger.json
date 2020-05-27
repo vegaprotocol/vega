@@ -976,7 +976,7 @@
         }
       }
     },
-    "apiGetGovernanceDataResponse": {
+    "apiGetNetworkParametersProposalsResponse": {
       "type": "object",
       "properties": {
         "data": {
@@ -987,15 +987,78 @@
         }
       }
     },
-    "apiGetProposalResponse": {
+    "apiGetNewAssetProposalsResponse": {
       "type": "object",
       "properties": {
-        "proposal": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetNewMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalByIDResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
           "$ref": "#/definitions/vegaGovernanceData"
         }
       }
     },
-    "apiGetVotesResponse": {
+    "apiGetProposalByReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
+    "apiGetProposalsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetUpdateMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          }
+        }
+      }
+    },
+    "apiGetVotesByPartyResponse": {
       "type": "object",
       "properties": {
         "votes": {
@@ -2035,7 +2098,8 @@
         "MISSING_GENERAL_ACCOUNT",
         "INTERNAL_ERROR",
         "INVALID_SIZE",
-        "INVALID_PERSISTENCE"
+        "INVALID_PERSISTENCE",
+        "INVALID_TYPE"
       ],
       "default": "NONE"
     },
@@ -2088,12 +2152,13 @@
     "vegaOrderType": {
       "type": "string",
       "enum": [
+        "TYPE_UNSPECIFIED",
         "LIMIT",
         "MARKET",
         "NETWORK"
       ],
-      "default": "LIMIT",
-      "description": "- LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
+      "default": "TYPE_UNSPECIFIED",
+      "description": "- TYPE_UNSPECIFIED: Default value, always invalid\n - LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
       "title": "Order Type"
     },
     "vegaParty": {

@@ -95,15 +95,15 @@ type TradingDataClient interface {
 	// margins
 	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 	// governance
-	GetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetVotesByParty(ctx context.Context, in *protoapi.GetVotesByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesResponse, error)
-	GetNewMarketProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetNewAssetProposals(ctx context.Context, in *protoapi.GetProposalsByStateRequest, opts ...grpc.CallOption) (*protoapi.GetGovernanceDataResponse, error)
-	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
-	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalResponse, error)
+	GetProposals(ctx context.Context, in *protoapi.GetProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
+	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetProposalsByPartyResponse, error)
+	GetVotesByParty(ctx context.Context, in *protoapi.GetVotesByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesByPartyResponse, error)
+	GetNewMarketProposals(ctx context.Context, in *protoapi.GetNewMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetNewMarketProposalsResponse, error)
+	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetUpdateMarketProposalsResponse, error)
+	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetNetworkParametersProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetNetworkParametersProposalsResponse, error)
+	GetNewAssetProposals(ctx context.Context, in *protoapi.GetNewAssetProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetNewAssetProposalsResponse, error)
+	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByIDResponse, error)
+	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByReferenceResponse, error)
 
 	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingData_ObserveGovernanceClient, error)
 	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyProposalsClient, error)
@@ -337,8 +337,8 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsByStateRequest{
-		State: filter,
+	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsRequest{
+		SelectInState: filter,
 	})
 	if err != nil {
 		return nil, err
@@ -354,7 +354,7 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
-		return resp.Proposal, nil
+		return resp.Data, nil
 	} else if reference != nil {
 		resp, err := r.tradingDataClient.GetProposalByReference(ctx, &protoapi.GetProposalByReferenceRequest{
 			Reference: *reference,
@@ -362,7 +362,7 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
-		return resp.Proposal, nil
+		return resp.Data, nil
 	}
 
 	return nil, ErrMissingIDOrReference
@@ -373,8 +373,8 @@ func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *Propo
 	if err != nil {
 		return nil, err
 	}
-	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetProposalsByStateRequest{
-		State: filter,
+	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetNewMarketProposalsRequest{
+		SelectInState: filter,
 	})
 	if err != nil {
 		return nil, err
@@ -392,8 +392,8 @@ func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *s
 		market = *marketID
 	}
 	resp, err := r.tradingDataClient.GetUpdateMarketProposals(ctx, &protoapi.GetUpdateMarketProposalsRequest{
-		MarketID: market,
-		State:    filter,
+		MarketID:      market,
+		SelectInState: filter,
 	})
 	if err != nil {
 		return nil, err
@@ -406,8 +406,8 @@ func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inStat
 	if err != nil {
 		return nil, err
 	}
-	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetProposalsByStateRequest{
-		State: filter,
+	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetNetworkParametersProposalsRequest{
+		SelectInState: filter,
 	})
 	if err != nil {
 		return nil, err
@@ -420,8 +420,8 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 	if err != nil {
 		return nil, err
 	}
-	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetProposalsByStateRequest{
-		State: filter,
+	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetNewAssetProposalsRequest{
+		SelectInState: filter,
 	})
 	if err != nil {
 		return nil, err
@@ -779,8 +779,8 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 		return nil, err
 	}
 	resp, err := r.tradingDataClient.GetProposalsByParty(ctx, &protoapi.GetProposalsByPartyRequest{
-		PartyID: party.Id,
-		State:   filter,
+		PartyID:       party.Id,
+		SelectInState: filter,
 	})
 	if err != nil {
 		return nil, err
