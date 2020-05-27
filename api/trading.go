@@ -178,12 +178,11 @@ func (s *tradingService) PrepareProposal(
 	defer metrics.APIRequestAndTimeGRPC("PrepareProposal", startTime)
 
 	if err := req.Validate(); err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
-	proposal, err := s.governanceService.PrepareProposal(ctx,
-		req.PartyID, req.Reference, req.Proposal)
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyID, req.Reference, req.Proposal)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
+		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	raw, err := proto.Marshal(proposal) // marshal whole proposal
 	if err != nil {
@@ -201,12 +200,14 @@ func (s *tradingService) PrepareProposal(
 func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareVoteRequest) (*protoapi.PrepareVoteResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareVote", startTime)
+
 	if err := req.Validate(); err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+
 	vote, err := s.governanceService.PrepareVote(req.Vote)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	raw, err := proto.Marshal(vote)
 	if err != nil {
