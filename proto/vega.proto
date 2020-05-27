@@ -83,14 +83,17 @@ message Order {
 
   // Order Type
   enum Type {
+    // Default value, always invalid
+    TYPE_UNSPECIFIED = 0;
+
     // used for Limit orders
-    LIMIT   = 0;
+    LIMIT = 1;
 
     // used for Market orders
-    MARKET  = 1;
+    MARKET = 2;
 
     // used for orders where the initiating party is the network (used for distressed traders)
-    NETWORK = 2;
+    NETWORK = 3;
   }
 
   enum Status {
