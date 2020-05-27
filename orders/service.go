@@ -210,12 +210,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 			s.log.Error("unable to set trade type to GTT when no expiry given")
 			return ErrGTTOrderWithNoExpiry
 		}
-
-		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt.Value)
-		if err != nil {
-			s.log.Error("unable to get expiration time", logging.Error(err))
-			return err
-		}
 	}
 	return nil
 }
