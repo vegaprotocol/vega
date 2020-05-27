@@ -1188,6 +1188,17 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		}, nil
 	}
 
+	// if expiration has changed and is before the original creation time, reject this amend
+	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < existingOrder.CreatedAt {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Amended expiry before original creation time",
+				logging.Int64("original order created at ts:", existingOrder.CreatedAt),
+				logging.Int64("amended expiry ts:", amendedOrder.ExpiresAt),
+				logging.Order(*existingOrder))
+		}
+		return nil, types.ErrInvalidExpirationDatetime
+	}
+
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
