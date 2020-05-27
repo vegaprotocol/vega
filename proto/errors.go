@@ -54,8 +54,14 @@ func (err OrderError) Error() string {
 		return "OrderError: Market Closed"
 	case OrderError_MARGIN_CHECK_FAILED:
 		return "OrderError: Margin Check Failed"
+	case OrderError_MISSING_GENERAL_ACCOUNT:
+		return "OrderError: Missing General Account"
 	case OrderError_INTERNAL_ERROR:
 		return "OrderError: Internal Error"
+	case OrderError_INVALID_SIZE:
+		return "OrderError: Invalid Size"
+	case OrderError_INVALID_PERSISTENCE:
+		return "OrderError: Invalid Persistence"
 	default:
 		return "invalid OrderError"
 	}
