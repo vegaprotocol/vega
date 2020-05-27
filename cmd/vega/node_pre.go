@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -420,15 +419,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	return
-}
-
-// SetUlimits sets limits (within OS-specified limits):
-// * nofile - max number of open files - for badger LSM tree
-func (l *NodeCommand) SetUlimits() error {
-	return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
-		Max: l.conf.UlimitNOFile,
-		Cur: l.conf.UlimitNOFile,
-	})
 }
 
 func getTerminalPassphrase() (string, error) {
