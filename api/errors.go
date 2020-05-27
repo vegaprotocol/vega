@@ -107,6 +107,10 @@ var (
 	// ErrPrepareProposal is returned when preparation of a governance proposal fails for some reason.
 	ErrPrepareProposal = errors.New("failed to prepare a proposal")
 	ErrPrepareVote     = errors.New("failed to prepare vote")
+	// ErrMissingProposalID returned if proposal with this id is missing
+	ErrMissingProposalID = errors.New("missing proposal id")
+	// ErrMissingProposalReference returned if proposal with this reference is not found
+	ErrMissingProposalReference = errors.New("failed to find proposal with the reference")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

@@ -286,7 +286,7 @@ func TestPrepareProposal(t *testing.T) {
 			},
 		},
 	})
-	assert.Contains(t, err.Error(), "Internal error")
+	assert.Contains(t, err.Error(), "InvalidArgument")
 	assert.Nil(t, proposal)
 
 	g.Stop()
