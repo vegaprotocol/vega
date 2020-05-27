@@ -42,6 +42,11 @@ func (a *ExpiringOrders) RemoveOrder(order types.Order) bool {
 		for i := 0; i < len(oat.orders); i++ {
 			if oat.orders[i].Id == order.Id {
 				oat.orders = oat.orders[:i+copy(oat.orders[i:], oat.orders[i+1:])]
+
+				// if the slice is empty, remove the parent container
+				if len(oat.orders) == 0 {
+					a.orders.Delete(item)
+				}
 				return true
 			}
 		}

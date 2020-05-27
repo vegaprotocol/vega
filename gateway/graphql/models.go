@@ -233,7 +233,6 @@ type Market struct {
 
 // Input variation of market details same to those defined in Market type
 type MarketInput struct {
-	ID                    string                   `json:"id"`
 	Name                  string                   `json:"name"`
 	TradableInstrument    *TradableInstrumentInput `json:"tradableInstrument"`
 	ContinuousTradingMode *ContinuousTradingInput  `json:"continuousTradingMode"`
@@ -282,26 +281,29 @@ type PreparedVote struct {
 }
 
 type ProposalTerms struct {
-	// Timestamp when voting closes for this proposal
-	ClosingTimestamp string `json:"closingTimestamp"`
-	// Timestamp when this proposal is executed (if passed)
-	EnactmentTimestamp string `json:"enactmentTimestamp"`
+	// ISO-8601 time and date when voting closes for this proposal.
+	ClosingDatetime string `json:"closingDatetime"`
+	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+	EnactmentDatetime string `json:"enactmentDatetime"`
 	// Minimum participation stake required for this proposal to pass
 	MinParticipationStake int `json:"minParticipationStake"`
 	// Actual change being introduced by the proposal
 	Change ProposalChange `json:"change"`
 }
 
+// Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
 type ProposalTermsInput struct {
-	// Timestamp when voting is closes for this proposal
-	ClosingTimestamp string `json:"closingTimestamp"`
-	// Timestamp when this proposal is executed (if passed)
-	EnactmentTimestamp string `json:"enactmentTimestamp"`
+	// ISO-8601 time and date when voting closes for this proposal.
+	ClosingDatetime string `json:"closingDatetime"`
+	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+	EnactmentDatetime string `json:"enactmentDatetime"`
 	// Minimum participation stake required for this proposal to pass
 	MinParticipationStake int `json:"minParticipationStake"`
-	// Actual change being introduced by the proposal
-	UpdateMarket  *UpdateMarketInput  `json:"updateMarket"`
-	NewMarket     *NewMarketInput     `json:"newMarket"`
+	// Optional field to define update market change. If this is set along with another change, proposal will not be accepted.
+	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
+	// Optional field to define new market change. If this is set along with another change, proposal will not be accepted.
+	NewMarket *NewMarketInput `json:"newMarket"`
+	// Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted.
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
 }
 
@@ -441,6 +443,8 @@ type Vote struct {
 	Value VoteValue `json:"value"`
 	// The party casting the vote
 	Party *proto.Party `json:"party"`
+	// ISO-8601 time and date when the vote reached Vega network
+	Datetime string `json:"datetime"`
 }
 
 // The various account types we have (used by collateral)

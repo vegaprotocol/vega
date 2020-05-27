@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get a list of apps to build by looking at the directories in cmd.
 mapfile -t apps < <(find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##')
@@ -13,10 +13,11 @@ alltargets=( \
 help() {
 	echo "Command line arguments:"
 	echo
-	echo "  -d       Build debug binaries"
-	echo "  -T       Build all available GOOS+GOARCH combinations (see below)"
-	echo "  -t list  Build specified GOOS+GOARCH combinations"
-	echo "  -h       Show this help"
+	echo "  -d         Build debug binaries"
+	echo "  -T         Build all available GOOS+GOARCH combinations (see below)"
+	echo "  -t list    Build specified GOOS+GOARCH combinations"
+	echo "  -s suffix  Add arbitrary suffix to compiled binary names"
+	echo "  -h         Show this help"
 	echo
 	echo "Apps to be built:"
 	for app in "${apps[@]}" ; do
@@ -30,28 +31,48 @@ help() {
 }
 
 set_version() {
-	if test -n "${DRONE:-}" ; then
-		# In Drone CI
-		version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
-		version_hash="$(echo "${CI_COMMIT_SHA:-nohash}" | cut -b1-8)"
-		return
+	version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
+	version_hash="$(echo "${CI_COMMIT_SHA:-$(git rev-parse HEAD)}" | cut -b1-8)"
+}
+
+set_ldflags() {
+	ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
+
+	# The following ldflags are for running system-tests only - to shorten
+	# durations to seconds/minutes instead of hours/days.
+	if test -n "$VEGA_GOVERNANCE_MIN_CLOSE" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MinClose=$VEGA_GOVERNANCE_MIN_CLOSE"
 	fi
-	version="dev-${USER:-unknownuser}"
-	version_hash="$(git rev-parse HEAD | cut -b1-8)"
+	if test -n "$VEGA_GOVERNANCE_MAX_CLOSE" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MaxClose=$VEGA_GOVERNANCE_MAX_CLOSE"
+	fi
+	if test -n "$VEGA_GOVERNANCE_MIN_ENACT" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MinEnact=$VEGA_GOVERNANCE_MIN_ENACT"
+	fi
+	if test -n "$VEGA_GOVERNANCE_MAX_ENACT" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MaxEnact=$VEGA_GOVERNANCE_MAX_ENACT"
+	fi
+	if test -n "$VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE" ; then
+		ldflags="$ldflags -X code.vegaprotocol.io/vega/governance.MinParticipationStake=$VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE"
+	fi
 }
 
 parse_args() {
 	# set defaults
 	gcflags=""
+	dbgsuffix=""
 	suffix=""
 	targets=()
 
-	while getopts 'dTt:h' flag; do
+	while getopts 'ds:Tt:h' flag; do
 		case "$flag" in
 		d)
 			gcflags="all=-N -l"
-			suffix="-dbg"
+			dbgsuffix="-dbg"
 			version="debug-$version"
+			;;
+		s)
+			suffix="$OPTARG"
 			;;
 		t)
 			mapfile -t targets < <(echo "$OPTARG" | tr ' ,' '\n')
@@ -69,12 +90,29 @@ parse_args() {
 			;;
 		esac
 	done
-	ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
+	set_ldflags
 	if test -z "${targets[*]}" ; then
 		help
 	else
 		echo "Version: $version ($version_hash)"
 	fi
+}
+
+can_build() {
+	local canbuild target
+	canbuild=0
+	target="$1" ; shift
+	for compiler in "$@" ; do
+		if test -z "$compiler" ; then
+			continue
+		fi
+
+		if ! which command -v "$compiler" 1>/dev/null ; then
+			echo "$target: Cannot build. Need $compiler"
+			canbuild=1
+		fi
+	done
+	return "$canbuild"
 }
 
 run() {
@@ -92,6 +130,7 @@ run() {
 		goarm=""
 		goarch="$(echo "$target" | cut -f2 -d/)"
 		goos="$(echo "$target" | cut -f1 -d/)"
+		typesuffix=""
 		skip=no
 		case "$target" in
 		darwin/*)
@@ -125,7 +164,7 @@ run() {
 			cxx=mips64el-linux-gnuabi64-g++-9
 			;;
 		windows/*)
-			o="$o.exe"
+			typesuffix=".exe"
 			cc=x86_64-w64-mingw32-gcc-posix
 			cxx=x86_64-w64-mingw32-g++-posix
 			# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
@@ -142,6 +181,8 @@ run() {
 		if test "$skip" == yes ; then
 			continue
 		fi
+
+		can_build "$target" "$cc" "$cxx" || continue
 
 		export \
 			CC="$cc" \
@@ -172,7 +213,7 @@ run() {
 		fi
 
 		echo "$target: go get ... "
-		go get -v -ldflags "$ldflags" . 1>"$log" 2>&1
+		go get -v . 1>"$log" 2>&1
 		code="$?"
 		if test "$code" = 0 ; then
 			echo "$target: go get OK"
@@ -188,7 +229,7 @@ run() {
 		fi
 
 		for app in "${apps[@]}" ; do
-			o="cmd/$app/$app-$goos-$goarch$suffix"
+			o="cmd/$app/$app-$goos-$goarch$dbgsuffix$suffix$typesuffix"
 			log="$o.log"
 			echo "$target: go build $o ... "
 			rm -f "$o" "$log"
@@ -219,5 +260,5 @@ if echo "$0" | grep -q '/build.sh$' ; then
 	if test "$failed" -gt 0 ; then
 		echo "Build failed for $failed apps."
 	fi
-	exit "$?"
+	exit "$failed"
 fi

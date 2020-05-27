@@ -521,8 +521,8 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 		return nil, ErrParticipationStake
 	}
 	result := &ProposalTerms{
-		ClosingTimestamp:      timestampToString(terms.ClosingTimestamp),
-		EnactmentTimestamp:    timestampToString(terms.EnactmentTimestamp),
+		ClosingDatetime:       timestampToDatetime(terms.ClosingTimestamp),
+		EnactmentDatetime:     timestampToDatetime(terms.EnactmentTimestamp),
 		MinParticipationStake: int(terms.MinParticipationStake),
 	}
 	if terms.GetUpdateMarket() != nil {
@@ -684,7 +684,6 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 		return nil, ErrInvalidDecimalPlaces
 	}
 	result := &types.Market{
-		Id:                 m.ID,
 		Name:               m.Name,
 		TradableInstrument: ti,
 		DecimalPlaces:      uint64(m.DecimalPlaces),
@@ -698,11 +697,11 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 
 // IntoProto ...
 func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
-	closing, err := parseTimestamp(p.ClosingTimestamp)
+	closing, err := parseTimestamp(p.ClosingDatetime)
 	if err != nil {
 		return nil, err
 	}
-	enactment, err := parseTimestamp(p.EnactmentTimestamp)
+	enactment, err := parseTimestamp(p.EnactmentDatetime)
 	if err != nil {
 		return nil, err
 	}
@@ -797,8 +796,9 @@ func VoteValueFromProto(v types.Vote_Value) VoteValue {
 func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 	return &ProposalVote{
 		Vote: &Vote{
-			Party: caster,
-			Value: VoteValueFromProto(v.Value),
+			Party:    caster,
+			Value:    VoteValueFromProto(v.Value),
+			Datetime: timestampToDatetime(v.Timestamp),
 		},
 		ProposalID: v.ProposalID,
 	}

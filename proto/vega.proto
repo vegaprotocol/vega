@@ -67,7 +67,7 @@ message Order {
   enum TimeInForce {
     // Default value, can be valid for an amend
     TIF_UNSPECIFIED = 0;
-    
+
     // good til cancelled
     GTC = 1;
 
@@ -324,6 +324,7 @@ message OrderCancellation {
 
 message NodeRegistration {
   bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  bytes chainPubKey = 2 [(validator.field) = {string_not_empty: true}];
 }
 
 message NodeVote {

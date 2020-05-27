@@ -42,7 +42,16 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      # Build normal executable
       - ./script/build.sh -t linux/amd64
+      # Build executable for sytstem-tests, with custom Governance parameters. 8760h is 24*365 hours.
+      - env
+          VEGA_GOVERNANCE_MIN_CLOSE=5s
+          VEGA_GOVERNANCE_MAX_CLOSE=8760h
+          VEGA_GOVERNANCE_MIN_ENACT=5s
+          VEGA_GOVERNANCE_MAX_ENACT=8760h
+          VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=1
+          ./script/build.sh -t linux/amd64 -s "-systemtests"
     depends_on:
       - fetch
     when:
@@ -104,9 +113,9 @@ steps:
     commands:
       # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
       - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
-      - ln -fs vega-linux-amd64 cmd/vega/vega
+      # Run system-tests, using previously built executable with custom Governance parameters.
       - (
-          /usr/local/bin/systemtests.sh -v all ;
+          /usr/local/bin/systemtests.sh -x "$$PWD/cmd/vega/vega-linux-amd64-systemtests" -v all ;
           echo "$$?" >"$$codefile"
         ) 2>&1 | tee "$$logfile"
       - test "$$(cat "$$codefile")" = 0 && exit 0
@@ -202,20 +211,11 @@ steps:
         from_secret: DEVNET_WALLET_PASSPHRASE
       DEVNET_WALLET_SERVER:
         from_secret: DEVNET_WALLET_SERVER
-      GITHUB_API_TOKEN:
-        from_secret: GITHUB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
-      - /usr/local/bin/diff_bot.py
-          --github-token "$$GITHUB_API_TOKEN"
-          --file1 "github:vegaprotocol:0:console:develop:src/api/vega-graphql/vega-schema/schema.graphql"
-          --file2 "github:vegaprotocol:0:vega:develop:gateway/graphql/schema.graphql"
-          --slack-hookurl "$${SLACK_HOOK_URL}"
-          --slack-recipient "#uidev-notify"
-          slack_notify
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires vars:

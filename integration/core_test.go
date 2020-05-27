@@ -138,10 +138,10 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.orders,
 		mktsetup.parties,
 		mktsetup.trades,
-		mktsetup.transfer,
 		mktsetup.marginLevelsBuf,
 		NewSettlementStub(),
 		time.Now(),
+		mktsetup.broker,
 		execution.NewIDGen(),
 	)
 	if err != nil {

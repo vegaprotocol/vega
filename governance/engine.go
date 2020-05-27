@@ -15,8 +15,10 @@ var (
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
 	// Validation errors
 
-	ErrProposalCloseTimeInvalid   = errors.New("proposal closes too soon or too late")
-	ErrProposalEnactTimeInvalid   = errors.New("proposal enactment times too soon or late")
+	ErrProposalCloseTimeTooSoon   = errors.New("proposal closes too soon")
+	ErrProposalCloseTimeTooLate   = errors.New("proposal closes too late")
+	ErrProposalEnactTimeTooSoon   = errors.New("proposal enactment times too soon")
+	ErrProposalEnactTimeTooLate   = errors.New("proposal enactment times too late")
 	ErrProposalInsufficientTokens = errors.New("proposal requires more tokens than party has")
 
 	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
@@ -42,22 +44,17 @@ type VoteBuf interface {
 	Add(types.Vote)
 }
 
-type network struct {
-	minClose, maxClose, minEnact, maxEnact int64
-	participation                          uint64
-}
-
 type Engine struct {
 	Config
-	accs         Accounts
-	buf          Buffer
-	vbuf         VoteBuf
-	log          *logging.Logger
-	mu           sync.Mutex
-	currentTime  time.Time
-	proposals    map[string]*proposalVote
-	proposalRefs map[string]*proposalVote
-	net          network
+	accs          Accounts
+	buf           Buffer
+	vbuf          VoteBuf
+	log           *logging.Logger
+	mu            sync.Mutex
+	currentTime   time.Time
+	proposals     map[string]*proposalVote
+	proposalRefs  map[string]*proposalVote
+	networkParams NetworkParameters
 }
 
 type proposalVote struct {
@@ -66,29 +63,28 @@ type proposalVote struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
-	// ensure params are set
-	cfg.initParams()
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
+	log.Debug("Governance parameters",
+		logging.String("MinClose", params.minClose.String()),
+		logging.String("MaxClose", params.maxClose.String()),
+		logging.String("MinEnact", params.minEnact.String()),
+		logging.String("MaxEnact", params.maxEnact.String()),
+		logging.Uint64("MinParticipationStake", params.minParticipationStake),
+	)
 	return &Engine{
-		Config:       cfg,
-		accs:         accs,
-		buf:          buf,
-		vbuf:         vbuf,
-		log:          log,
-		currentTime:  now,
-		proposals:    map[string]*proposalVote{},
-		proposalRefs: map[string]*proposalVote{},
-		net: network{
-			minClose:      cfg.params.DefaultMinClose,
-			maxClose:      cfg.params.DefaultMaxClose,
-			minEnact:      cfg.params.DefaultMinEnact,
-			maxEnact:      cfg.params.DefaultMaxEnact,
-			participation: cfg.params.DefaultMinParticipation,
-		},
+		Config:        cfg,
+		accs:          accs,
+		buf:           buf,
+		vbuf:          vbuf,
+		log:           log,
+		currentTime:   now,
+		proposals:     map[string]*proposalVote{},
+		proposalRefs:  map[string]*proposalVote{},
+		networkParams: *params,
 	}
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration of the governance engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -100,12 +96,11 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.mu.Lock()
-	cfg.params = e.Config.params
 	e.Config = cfg
 	e.mu.Unlock()
 }
 
-// OnChainUpdate - update curtime, expire proposals
+// OnChainTimeUpdate - update curtime, expire proposals
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t
 	now := t.Unix()
@@ -157,16 +152,17 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 	if tok.Balance < 1 {
 		return ErrProposalInsufficientTokens
 	}
-
-	minClose, maxClose := e.currentTime.Add(time.Duration(e.net.minClose)*time.Second),
-		e.currentTime.Add(time.Duration(e.net.maxClose)*time.Second)
-	if p.Terms.ClosingTimestamp < minClose.Unix() || p.Terms.ClosingTimestamp > maxClose.Unix() {
-		return ErrProposalCloseTimeInvalid
+	if p.Terms.ClosingTimestamp < e.currentTime.Add(e.networkParams.minClose).Unix() {
+		return ErrProposalCloseTimeTooSoon
 	}
-
-	minEnact, maxEnact := p.Terms.ClosingTimestamp, p.Terms.ClosingTimestamp+e.net.maxEnact
-	if p.Terms.EnactmentTimestamp < minEnact || p.Terms.EnactmentTimestamp > maxEnact {
-		return ErrProposalEnactTimeInvalid
+	if p.Terms.ClosingTimestamp > e.currentTime.Add(e.networkParams.maxClose).Unix() {
+		return ErrProposalCloseTimeTooLate
+	}
+	if p.Terms.EnactmentTimestamp < e.currentTime.Add(e.networkParams.minEnact).Unix() {
+		return ErrProposalEnactTimeTooSoon
+	}
+	if p.Terms.EnactmentTimestamp > e.currentTime.Add(e.networkParams.maxEnact).Unix() {
+		return ErrProposalEnactTimeTooLate
 	}
 
 	return nil

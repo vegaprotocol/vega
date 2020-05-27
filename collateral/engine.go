@@ -19,7 +19,7 @@ const (
 	systemOwner = "*"
 	noMarket    = "!"
 
-	TokenAsset = "_t0k3n_"
+	TokenAsset = "VOTE"
 )
 
 var (

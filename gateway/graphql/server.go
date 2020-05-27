@@ -140,9 +140,7 @@ func (g *GraphServer) Start() {
 		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
 		handlr.Handle("/", corz.Handler(handler.Playground("VEGA", "/query")))
 	}
-	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(handler.GraphQL(
-		NewExecutableSchema(config),
-		handler.ComplexityLimit(g.GraphQL.ComplexityLimit),
+	options := []handler.Option{
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
@@ -150,7 +148,13 @@ func (g *GraphServer) Start() {
 				logging.String("error", fmt.Sprintf("%s", err)))
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
-		})),
+		}),
+	}
+	if g.GraphQL.ComplexityLimit > 0 {
+		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
+	}
+	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(
+		handler.GraphQL(NewExecutableSchema(config), options...),
 	)))
 
 	g.srv = &http.Server{

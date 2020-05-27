@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
@@ -72,13 +73,6 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// TransferBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TransferBuf
-type TransferBuf interface {
-	Add([]*types.TransferResponse)
-	Flush() error
-}
-
 // AccountBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
 type AccountBuf interface {
@@ -121,6 +115,11 @@ type VoteBuf interface {
 	Flush()
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
+type Broker interface {
+	Send(event events.Event)
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -138,7 +137,6 @@ type Engine struct {
 	marketBuf       MarketBuf
 	partyBuf        PartyBuf
 	accountBuf      AccountBuf
-	transferBuf     TransferBuf
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
@@ -146,7 +144,8 @@ type Engine struct {
 	proposalBuf     ProposalBuf
 	voteBuf         VoteBuf
 
-	time TimeService
+	broker Broker
+	time   TimeService
 }
 
 // NewEngine takes stores and engines and returns
@@ -161,7 +160,6 @@ func NewEngine(
 	marketBuf MarketBuf,
 	partyBuf PartyBuf,
 	accountBuf AccountBuf,
-	transferBuf TransferBuf,
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
@@ -169,6 +167,7 @@ func NewEngine(
 	proposalBuf ProposalBuf,
 	voteBuf VoteBuf,
 	pmkts []types.Market,
+	broker Broker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -186,7 +185,8 @@ func NewEngine(
 		return nil
 	}
 
-	gengine := governance.NewEngine(log, executionConfig.Governance, cengine, proposalBuf, voteBuf, now)
+	networkParameters := governance.DefaultNetworkParameters() //TODO: store the parameters so proposals can update them
+	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
 
 	e := &Engine{
 		log:             log,
@@ -202,7 +202,6 @@ func NewEngine(
 		governance:      gengine,
 		party:           NewParty(log, cengine, pmkts, partyBuf),
 		accountBuf:      accountBuf,
-		transferBuf:     transferBuf,
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
@@ -210,6 +209,7 @@ func NewEngine(
 		proposalBuf:     proposalBuf,
 		voteBuf:         voteBuf,
 		idgen:           NewIDGen(),
+		broker:          broker,
 	}
 
 	// Add initial markets and flush to stores (if they're configured)
@@ -302,10 +302,10 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.orderBuf,
 		e.partyBuf,
 		e.tradeBuf,
-		e.transferBuf,
 		e.marginLevelsBuf,
 		e.settleBuf,
 		now,
+		e.broker,
 		e.idgen,
 	)
 	if err != nil {
@@ -420,6 +420,7 @@ func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancel
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
+
 	conf, err := mkt.CancelOrder(order)
 	if err != nil {
 		return nil, err
@@ -563,7 +564,7 @@ func (e *Engine) Generate() error {
 	// Accounts
 	err := e.accountBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush accounts buffer")
+		return errors.Wrap(err, "failed to flush accounts buffer")
 	}
 
 	// margins levels
@@ -571,23 +572,24 @@ func (e *Engine) Generate() error {
 	// Orders
 	err = e.orderBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush orders buffer")
+		return errors.Wrap(err, "failed to flush orders buffer")
 	}
 
 	// Trades - flush after orders so the traders reference an existing order
 	err = e.tradeBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush trades buffer")
+		return errors.Wrap(err, "failed to flush trades buffer")
 	}
 	// Transfers
-	err = e.transferBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "Failed to flush transfers buffer")
-	}
+	// @TODO this event will be generated with a block context that has the trace ID
+	// this will have the effect of flushing the transfer response buffer
+	now, _ := e.time.GetTimeNow()
+	evt := events.NewTime(context.Background(), now)
+	e.broker.Send(evt)
 	// Markets
 	err = e.marketBuf.Flush()
 	if err != nil {
-		return errors.Wrap(err, "Failed to flush markets buffer")
+		return errors.Wrap(err, "failed to flush markets buffer")
 	}
 	// Market data is added to buffer on Generate
 	for _, v := range e.markets {
@@ -609,6 +611,13 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 			logging.String("proposal-party", proposal.PartyID),
 			logging.String("proposal-terms", proposal.Terms.String()))
 	}
+
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "failed to submit a proposal")
+	}
+
+	proposal.Timestamp = now.UnixNano()
 	e.idgen.SetProposalID(proposal)
 	return e.governance.AddProposal(*proposal)
 }
@@ -621,5 +630,10 @@ func (e *Engine) VoteOnProposal(vote *types.Vote) error {
 			logging.String("vote-party", vote.PartyID),
 			logging.String("vote-value", vote.Value.String()))
 	}
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		return errors.Wrap(err, "failed to vote on a proposal")
+	}
+	vote.Timestamp = now.UnixNano()
 	return e.governance.AddVote(*vote)
 }

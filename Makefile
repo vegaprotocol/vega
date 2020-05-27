@@ -69,7 +69,6 @@ deps: ## Get the dependencies
 	@modvendor -copy="**/*.proto"
 
 .PHONY: build
-build: SHELL:=/bin/bash
 build: ## install the binaries in cmd/{progname}/
 	@d="" ; test -n "$$DEBUGVEGA" && d="-d" ; \
 	./script/build.sh $d -t linux/amd64
@@ -81,15 +80,15 @@ gofmtsimplify:
 .PHONY: install
 install: SHELL:=/bin/bash
 install: ## install the binaries in GOPATH/bin
-	@source ./script/build.sh && set_version && \
+	@source ./script/build.sh && set_version && set_ldflags && \
 	echo "Version: $$version ($$version_hash)" && \
 	for app in "$${apps[@]}" ; do \
-		env CGO_ENABLED=1 go install -v -ldflags "-X main.Version=$$version -X main.VersionHash=$$version_hash" "./cmd/$$app" || exit 1 ; \
+		env CGO_ENABLED=1 go install -v -ldflags "$$ldflags" "./cmd/$$app" || exit 1 ; \
 	done
 
 .PHONY: gqlgen
 gqlgen: ## run gqlgen
-	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
+	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen --config gqlgen.yml
 
 .PHONY: gqlgen_check
 gqlgen_check: ## GraphQL: Check committed files match just-generated files
@@ -151,28 +150,34 @@ print_check: ## Check for fmt.Print functions in Go code
 	if test "$$count" -gt 0 ; then exit 1 ; fi
 
 .PHONY: docker
+docker: SHELL:=/bin/bash
 docker: ## Make docker container image from scratch
-	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
-	@docker build \
+	@source ./script/build.sh && \
+	if ! test -f "$(HOME)/.ssh/id_rsa" ; then \
+		exit 1 ; \
+	fi ; \
+	docker build \
 		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
-		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$(VERSION)" \
+		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$$version" \
 		.
 
 .PHONY: docker_quick
+docker_quick: SHELL:=/bin/bash
 docker_quick: build ## Make docker container image using pre-existing binaries
-	@for app in $(APPS) ; do \
+	@source ./script/build.sh && \
+	for app in "$${apps[@]}" ; do \
 		f="cmd/$$app/$$app" ; \
 		if ! test -f "$$f" ; then \
 			echo "Failed to find: $$f" ; \
 			exit 1 ; \
 		fi ; \
 		cp -a "$$f" . || exit 1 ; \
-	done
-	@docker build \
-		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$(VERSION)" \
+	done && \
+	docker build \
+		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$$version" \
 		-f Dockerfile.quick \
-		.
-	@for app in $(APPS) ; do \
+		. && \
+	for app in "$${apps[@]}" ; do \
 		rm -rf "./$$app" ; \
 	done
 
@@ -207,9 +212,11 @@ staticcheck: ## Run statick analysis checks
 	count="$$(wc -l <"$$f")" && rm -f "$$f" && if test "$$count" -gt 0 ; then exit 1 ; fi
 
 .PHONY: clean
+clean: SHELL:=/bin/bash
 clean: ## Remove previous build
-	@rm -f cmd/*/*.log
-	for app in $(APPS) ; do \
+	@source ./script/build.sh && \
+	rm -f cmd/*/*.log && \
+	for app in "$${apps[@]}" ; do \
 		rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app"-* ; \
 	done
 

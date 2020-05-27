@@ -27,14 +27,15 @@ type testMarket struct {
 	ctrl       *gomock.Controller
 	accountBuf *collateralmocks.MockAccountBuffer
 
-	collateraEngine       *collateral.Engine
-	partyEngine           *execution.Party
-	candleStore           *mocks.MockCandleBuf
-	orderStore            *mocks.MockOrderBuf
-	partyStore            *mocks.MockPartyBuf
-	tradeStore            *mocks.MockTradeBuf
-	transferResponseStore *mocks.MockTransferBuf
-	settleBuf             *mocks.MockSettlementBuf
+	collateraEngine *collateral.Engine
+	partyEngine     *execution.Party
+	candleStore     *mocks.MockCandleBuf
+	orderStore      *mocks.MockOrderBuf
+	partyStore      *mocks.MockPartyBuf
+	tradeStore      *mocks.MockTradeBuf
+	settleBuf       *mocks.MockSettlementBuf
+
+	broker *mocks.MockBroker
 
 	now time.Time
 }
@@ -51,8 +52,8 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	orderStore := mocks.NewMockOrderBuf(ctrl)
 	partyStore := mocks.NewMockPartyBuf(ctrl)
 	tradeStore := mocks.NewMockTradeBuf(ctrl)
-	transferResponseStore := mocks.NewMockTransferBuf(ctrl)
 	settleBuf := mocks.NewMockSettlementBuf(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	settleBuf.EXPECT().Flush().AnyTimes()
 	marginLevelsBuf := buffer.NewMarginLevels()
@@ -70,7 +71,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
-		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, settleBuf, now, execution.NewIDGen())
+		partyStore, tradeStore, marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -81,19 +82,19 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	_, _ = collateralEngine.CreateMarketAccounts(mktEngine.GetID(), asset, 0)
 
 	return &testMarket{
-		market:                mktEngine,
-		log:                   log,
-		ctrl:                  ctrl,
-		accountBuf:            accountBuf,
-		collateraEngine:       collateralEngine,
-		partyEngine:           partyEngine,
-		candleStore:           candleStore,
-		orderStore:            orderStore,
-		partyStore:            partyStore,
-		tradeStore:            tradeStore,
-		transferResponseStore: transferResponseStore,
-		settleBuf:             settleBuf,
-		now:                   now,
+		market:          mktEngine,
+		log:             log,
+		ctrl:            ctrl,
+		accountBuf:      accountBuf,
+		collateraEngine: collateralEngine,
+		partyEngine:     partyEngine,
+		candleStore:     candleStore,
+		orderStore:      orderStore,
+		partyStore:      partyStore,
+		tradeStore:      tradeStore,
+		settleBuf:       settleBuf,
+		broker:          broker,
+		now:             now,
 	}
 }
 
@@ -158,7 +159,8 @@ func addAccount(market *testMarket, party string) {
 	})
 	market.partyStore.EXPECT().Add(gomock.Any()).Times(1)
 	market.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party})
-	market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -175,7 +177,8 @@ func TestMarketClosing(t *testing.T) {
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	// check account gets updated
@@ -252,7 +255,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
@@ -335,7 +339,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -393,7 +398,8 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -445,7 +451,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// })
 	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("ACCOUNT: %v\n", acc)
@@ -612,106 +619,4 @@ func TestMarketCancelOrder(t *testing.T) {
 	cancelled, err = tm.market.CancelOrderByID("an id that does not exist")
 	assert.Nil(t, cancelled, "cancelling non-exitant order should not work")
 	assert.Error(t, err, "it should be an error to cancel an order that does not exist")
-}
-
-func TestOrderBufferOutputCount(t *testing.T) {
-	party1 := "party1"
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt)
-
-	addAccount(tm, party1)
-	tm.orderStore.EXPECT().Add(gomock.Any()).Times(11)
-
-	orderBuy := &types.Order{
-		TimeInForce: types.Order_GTC,
-		Status:      types.Order_Active,
-		Id:          "someid",
-		Side:        types.Side_Buy,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
-		Size:        100,
-		Price:       100,
-		Remaining:   100,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   0,
-		Reference:   "party1-buy-order",
-	}
-	orderAmend := *orderBuy
-
-	// Create an order (generates one order message)
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
-	assert.NotNil(t, confirmation)
-	assert.NoError(t, err)
-
-	// Cancel it (generates one order message)
-	cancelled, err := tm.market.CancelOrderByID(confirmation.Order.Id)
-	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
-	assert.NoError(t, err)
-	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
-
-	// Create a new order (generates one order message)
-	orderAmend.Id = "amendingorder"
-	orderAmend.Reference = "amendingorderreference"
-	confirmation, err = tm.market.SubmitOrder(&orderAmend)
-	assert.NotNil(t, confirmation)
-	assert.NoError(t, err)
-
-	amend := &types.OrderAmendment{
-		MarketID: tm.market.GetID(),
-		PartyID:  party1,
-		OrderID:  orderAmend.Id,
-	}
-
-	// Amend price down (generates one order message)
-	amend.Price = &types.Price{Value: orderBuy.Price - 1}
-	amendConf, err := tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	// Amend price up (generates one order message)
-	amend.Price = &types.Price{Value: orderBuy.Price + 1}
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	// Amend size down (generates one order message)
-	amend.Price = nil
-	amend.SizeDelta = -1
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	// Amend size up (generates one order message)
-	amend.SizeDelta = +1
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	// Amend TIF -> GTT (generates one order message)
-	amend.SizeDelta = 0
-	amend.TimeInForce = types.Order_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	// Amend TIF -> GTC (generates one order message)
-	amend.TimeInForce = types.Order_GTC
-	amend.ExpiresAt = nil
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	// Amend ExpiresAt (generates two order messages)
-	amend.TimeInForce = types.Order_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
-
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 200000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
-	assert.NotNil(t, amendConf)
-	assert.NoError(t, err)
 }

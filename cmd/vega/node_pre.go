@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
@@ -30,8 +31,10 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -142,6 +145,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 	l.setupBuffers()
+	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
 		l.Log.Info("node setted up without badger store support")
@@ -242,11 +246,15 @@ func (l *NodeCommand) loadMarketsConfig() error {
 	return nil
 }
 
+func (l *NodeCommand) setupSubscibers() {
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
+}
+
 func (l *NodeCommand) setupBuffers() {
 	l.orderBuf = buffer.NewOrder(l.orderStore)
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
@@ -325,6 +333,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
+	broker := broker.New(l.ctx)
+	_ = broker.Subscribe(l.transferSub, true)
+	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
+
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
@@ -336,7 +348,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.marketBuf,
 		l.partyBuf,
 		l.accountBuf,
-		l.transferBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
 		l.settleBuf,
@@ -344,10 +355,15 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.proposalBuf,
 		l.voteBuf,
 		l.mktscfg,
+		broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets)
+	l.topology = validators.NewTopology(l.Log, nil)
+
+	// TODO(jeremy): for now we assume a node started without the stores support
+	// is a validator, this will need to be changed later on.
+	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, !l.noStores)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
@@ -367,6 +383,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// get the chain client as well.
 	l.blockchainClient = l.blockchain.Client()
+	l.topology.SetChain(l.blockchain.Client())
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {

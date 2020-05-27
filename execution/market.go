@@ -43,6 +43,8 @@ var (
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
 	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
 	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
+	// ErrInvalidAmendRemainQuantity signals incorrect remaining qty for a reduce by amend
+	ErrInvalidAmendRemainQuantity = errors.New("incorrect remaining qty for a reduce by amend")
 
 	networkPartyID = "network"
 )
@@ -77,11 +79,11 @@ type Market struct {
 	orderBuf        OrderBuf
 	partyBuf        PartyBuf
 	tradeBuf        TradeBuf
-	transferBuf     TransferBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
 
+	broker Broker
 	closed bool
 }
 
@@ -123,10 +125,10 @@ func NewMarket(
 	orderBuf OrderBuf,
 	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
-	transferBuf TransferBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
 	now time.Time,
+	broker Broker,
 	idgen *IDgenerator,
 ) (*Market, error) {
 
@@ -185,11 +187,10 @@ func NewMarket(
 		partyBuf:           partyBuf,
 		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
-		transferBuf:        transferBuf,
 		marginLevelsBuf:    marginLevelsBuf,
 		settleBuf:          settlementBuf,
+		broker:             broker,
 	}
-
 	return market, nil
 }
 
@@ -255,13 +256,17 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	// TODO(): handle market start time
 
-	m.log.Debug("Calculating risk factors (if required)",
-		logging.String("market-id", m.mkt.Id))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Calculating risk factors (if required)",
+			logging.String("market-id", m.mkt.Id))
+	}
 
 	m.risk.CalculateFactors(t)
 
-	m.log.Debug("Calculated risk factors and updated positions (maybe)",
-		logging.String("market-id", m.mkt.Id))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Calculated risk factors and updated positions (maybe)",
+			logging.String("market-id", m.mkt.Id))
+	}
 
 	err := m.candleBuf.Flush(m.mkt.Id, t)
 	if err != nil {
@@ -288,15 +293,18 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				m.transferBuf.Add(transfers)
+				// @TODO pass in correct context
+				evt := events.NewTransferResponse(context.Background(), transfers)
+				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
-						m.log.Debug(
-							"Got transfers on market close",
-							logging.String("transfer", fmt.Sprintf("%v", *v)),
-							logging.String("market-id", m.GetID()),
-						)
+						if m.log.GetLevel() == logging.DebugLevel {
+							m.log.Debug(
+								"Got transfers on market close",
+								logging.String("transfer", fmt.Sprintf("%v", *v)),
+								logging.String("market-id", m.GetID()))
+						}
 					}
 				}
 
@@ -308,19 +316,20 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					m.transferBuf.Add(clearMarketTransfers)
+					evt := events.NewTransferResponse(context.Background(), clearMarketTransfers)
+					m.broker.Send(evt)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
-							m.log.Debug(
-								"Market cleared with success",
-								logging.String("transfer", fmt.Sprintf("%v", *v)),
-								logging.String("market-id", m.GetID()),
-							)
+							if m.log.GetLevel() == logging.DebugLevel {
+								m.log.Debug(
+									"Market cleared with success",
+									logging.String("transfer", fmt.Sprintf("%v", *v)),
+									logging.String("market-id", m.GetID()))
+							}
 						}
 					}
 				}
-
 			}
 		}
 	}
@@ -358,9 +367,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		order.Reason = types.OrderError_INVALID_MARKET_ID
 		m.orderBuf.Add(*order)
 
-		m.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("market", m.mkt.Id))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Market ID mismatch",
+				logging.Order(*order),
+				logging.String("market", m.mkt.Id))
+		}
 
 		return nil, types.ErrInvalidMarketID
 	}
@@ -402,9 +413,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		order.Reason = types.OrderError_INTERNAL_ERROR
 		m.orderBuf.Add(*order)
 
-		m.log.Error("Unable to register potential trader position",
-			logging.String("market-id", m.GetID()),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to register potential trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 		return nil, ErrMarginCheckFailed
 	}
 
@@ -445,9 +458,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			order.Reason = types.OrderError_INTERNAL_ERROR
 		}
 		m.orderBuf.Add(*order)
-		m.log.Error("Failure after submitting order to matching engine",
-			logging.Order(*order),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after submitting order to matching engine",
+				logging.Order(*order),
+				logging.Error(err))
+		}
 
 		return nil, err
 	}
@@ -511,8 +526,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 
 		// now let's get the transfers for MTM settlement
-		events := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleMTM(m.markPrice, events)
+		evts := m.position.UpdateMarkPrice(m.markPrice)
+		settle := m.settlement.SettleMTM(m.markPrice, evts)
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
@@ -528,16 +543,18 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				)
 				for _, tr := range transfers {
 					for _, v := range tr.GetTransfers() {
-						m.log.Debug(
-							"Ensured margin on order with success",
-							logging.String("transfer", fmt.Sprintf("%v", *v)),
-							logging.String("market-id", m.GetID()),
-						)
+						if m.log.GetLevel() == logging.DebugLevel {
+							m.log.Debug(
+								"Ensured margin on order with success",
+								logging.String("transfer", fmt.Sprintf("%v", *v)),
+								logging.String("market-id", m.GetID()))
+						}
 					}
 				}
 			}
 			if err == nil && len(transfers) > 0 {
-				m.transferBuf.Add(transfers)
+				evt := events.NewTransferResponse(context.Background(), transfers)
+				m.broker.Send(evt)
 			}
 			if len(closed) > 0 {
 				err = m.resolveClosedOutTraders(closed, order)
@@ -567,9 +584,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
-		m.log.Warn("closing out trader",
-			logging.String("party-id", v.Party()),
-			logging.String("market-id", m.GetID()))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("closing out trader",
+				logging.String("party-id", v.Party()),
+				logging.String("market-id", m.GetID()))
+		}
 		distressedPos = append(distressedPos, v)
 	}
 	// cancel pending orders for traders
@@ -608,10 +627,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			for _, v := range okPos {
-				m.log.Debug("previously distressed party have now an acceptable margin",
-					logging.String("market-id", mktID),
-					logging.String("party-id", v.Party()),
-				)
+				if m.log.GetLevel() == logging.DebugLevel {
+					m.log.Debug("previously distressed party have now an acceptable margin",
+						logging.String("market-id", mktID),
+						logging.String("party-id", v.Party()))
+				}
 			}
 		}
 	}
@@ -651,7 +671,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			return err
 		}
 		if len(movements.Transfers) > 0 {
-			m.transferBuf.Add([]*types.TransferResponse{movements})
+			evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
+			m.broker.Send(evt)
 		}
 		return nil
 	}
@@ -679,10 +700,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&no)
 	if err != nil {
-		m.log.Error("Failure after submitting order to matching engine",
-			logging.Order(no),
-			logging.Error(err))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after submitting order to matching engine",
+				logging.Order(no),
+				logging.Error(err))
+		}
 		return err
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
@@ -762,7 +784,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		return err
 	}
 	if len(movements.Transfers) > 0 {
-		m.transferBuf.Add([]*types.TransferResponse{movements})
+		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
+		m.broker.Send(evt)
 	}
 	// get the updated positions
 	evt := m.position.Positions()
@@ -782,7 +805,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 	}
 	// send transfer to buffer
-	m.transferBuf.Add(responses)
+	m.broker.Send(events.NewTransferResponse(context.Background(), responses))
+	// m.broker.Send(evt)
 	return err
 }
 
@@ -877,10 +901,11 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		marginLevels.PartyID = trader.Party()
 		m.marginLevelsBuf.Add(marginLevels)
 
-		m.log.Warn("trader closed-out with success",
-			logging.String("party-id", trader.Party()),
-			logging.String("market-id", m.GetID()))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("trader closed-out with success",
+				logging.String("party-id", trader.Party()),
+				logging.String("market-id", m.GetID()))
+		}
 	}
 	return nil
 }
@@ -901,11 +926,13 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
 	if err != nil {
-		m.log.Error("unable to top up margin on new order",
-			logging.String("party-id", order.PartyID),
-			logging.String("market-id", order.MarketID),
-			logging.Error(err),
-		)
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("unable to top up margin on new order",
+				logging.String("party-id", order.PartyID),
+				logging.String("market-id", order.MarketID),
+				logging.Error(err),
+			)
+		}
 		return ErrMarginCheckInsufficient
 	} else if riskUpdate == nil {
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -919,15 +946,18 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferBuf.Add([]*types.TransferResponse{transfer})
+		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{transfer})
+		m.broker.Send(evt)
 
 		if closePos != nil {
 			// if closePose is not nil then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
 
-			m.log.Error("party did not have enough collateral to reach the InitialMargin",
-				logging.Order(*order),
-				logging.String("market-id", m.GetID()))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("party did not have enough collateral to reach the InitialMargin",
+					logging.Order(*order),
+					logging.String("market-id", m.GetID()))
+			}
 
 			return ErrMarginCheckInsufficient
 		}
@@ -943,7 +973,6 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -1006,7 +1035,8 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		)
 	}
 	// sending response to buffer
-	m.transferBuf.Add(response)
+	evt := events.NewTransferResponse(context.Background(), response)
+	m.broker.Send(evt)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
@@ -1033,11 +1063,12 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 
 	// Validate Market
 	if oc.MarketID != m.mkt.Id {
-		m.log.Error("Market ID mismatch",
-			logging.String("party-id", oc.PartyID),
-			logging.String("order-id", oc.OrderID),
-			logging.String("market", m.mkt.Id))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Market ID mismatch",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id))
+		}
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -1046,13 +1077,26 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 		return nil, err
 	}
 
+	// Only allow the original order creator to cancel their order
+	if order.PartyID != oc.PartyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Party ID mismatch",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
-		m.log.Error("Failure after cancel order from matching engine",
-			logging.String("party-id", oc.PartyID),
-			logging.String("order-id", oc.OrderID),
-			logging.String("market", m.mkt.Id))
-		logging.Error(err)
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after cancel order from matching engine",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id),
+				logging.Error(err))
+		}
 		return nil, err
 	}
 
@@ -1097,21 +1141,24 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// order book in the matching engine for this market
 	existingOrder, err := m.matching.GetOrderByID(orderAmendment.OrderID)
 	if err != nil {
-		m.log.Error("Invalid order ID",
-			logging.String("id", orderAmendment.GetOrderID()),
-			logging.String("party", orderAmendment.GetPartyID()),
-			logging.String("market", orderAmendment.GetMarketID()),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Invalid order ID",
+				logging.String("id", orderAmendment.GetOrderID()),
+				logging.String("party", orderAmendment.GetPartyID()),
+				logging.String("market", orderAmendment.GetMarketID()),
+				logging.Error(err))
+		}
 
 		return nil, types.ErrInvalidOrderID
 	}
 
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
-		m.log.Error("Market ID mismatch",
-			logging.String("market-id", m.mkt.Id),
-			logging.Order(*existingOrder))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Market ID mismatch",
+				logging.String("market-id", m.mkt.Id),
+				logging.Order(*existingOrder))
+		}
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -1146,11 +1193,13 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
 		cancellation, err := m.matching.CancelOrder(amendedOrder)
 		if cancellation == nil || err != nil {
-			m.log.Error("Failure after cancel order from matching engine",
-				logging.String("party-id", amendedOrder.PartyID),
-				logging.String("order-id", amendedOrder.Id),
-				logging.String("market", m.mkt.Id))
-			logging.Error(err)
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failure to cancel order from matching engine",
+					logging.String("party-id", amendedOrder.PartyID),
+					logging.String("order-id", amendedOrder.Id),
+					logging.String("market", m.mkt.Id),
+					logging.Error(err))
+			}
 			return nil, err
 		}
 
@@ -1195,11 +1244,45 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// If nothing changed, amend in place to update updatedAt and version number
 	if !priceShift && !sizeIncrease && !sizeDecrease && !expiryChange && !timeInForceChange {
-		ret, err := m.orderAmendInPlace(amendedOrder)
+		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.orderBuf.Add(*amendedOrder)
 		}
 		return ret, err
+	}
+
+	// Update potential new position after the amend
+	pos, err := m.position.AmendOrder(existingOrder, amendedOrder)
+	if err != nil {
+		// adding order to the buffer first
+		amendedOrder.Status = types.Order_Rejected
+		amendedOrder.Reason = types.OrderError_INTERNAL_ERROR
+		m.orderBuf.Add(*amendedOrder)
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to amend potential trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		return nil, ErrMarginCheckFailed
+	}
+
+	// Perform check and allocate margin
+	if err = m.checkMarginForOrder(pos, amendedOrder); err != nil {
+		// Undo the position registering
+		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+		if err1 != nil {
+			m.log.Error("Unable to unregister potential amended trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err1))
+		}
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to check/add margin for trader",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		return nil, ErrMarginCheckFailed
 	}
 
 	// if increase in size or change in price
@@ -1215,34 +1298,23 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
-		if sizeDecrease && amendedOrder.Remaining < existingOrder.Remaining {
-			// reduce the position with the difference
-			diffRemaining := existingOrder.Remaining - amendedOrder.Remaining
-			o := types.Order{
-				PartyID:   existingOrder.PartyID,
-				Side:      existingOrder.Side,
-				Remaining: diffRemaining,
+		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Order amendment not allowed when reducing to a larger amount", logging.Order(*existingOrder))
 			}
-			_, err = m.position.UnregisterOrder(&o)
-			if err != nil {
-				m.log.Error("Failure unregistering order in positions engine (cancel)",
-					logging.Order(o),
-					logging.Error(err))
-
-				return nil, err
-			}
+			return nil, ErrInvalidAmendRemainQuantity
 		}
-
-		ret, err := m.orderAmendInPlace(amendedOrder)
+		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.orderBuf.Add(*amendedOrder)
 		}
 		return ret, err
 	}
 
-	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Order amendment not allowed", logging.Order(*existingOrder))
+	}
 	return nil, types.ErrEditNotAllowed
-
 }
 
 func (m *Market) validateOrderAmendment(
@@ -1330,15 +1402,19 @@ func (m *Market) applyOrderAmendment(
 func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
 
-	m.log.Debug("Cancel/replace order")
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Cancel/replace order")
+	}
 
 	cancellation, err := m.matching.CancelOrder(existingOrder)
 	if cancellation == nil {
 		if err != nil {
-			m.log.Error("Failed to cancel order from matching engine during CancelReplace",
-				logging.OrderWithTag(*existingOrder, "existing-order"),
-				logging.OrderWithTag(*newOrder, "new-order"),
-				logging.Error(err))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failed to cancel order from matching engine during CancelReplace",
+					logging.OrderWithTag(*existingOrder, "existing-order"),
+					logging.OrderWithTag(*newOrder, "new-order"),
+					logging.Error(err))
+			}
 		} else {
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
@@ -1350,20 +1426,17 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 	return
 }
 
-func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
-	_, err := m.position.RegisterOrder(amendOrder)
+	err := m.matching.AmendOrder(originalOrder, amendOrder)
 	if err != nil {
-		return nil, err
-	}
-
-	err = m.matching.AmendOrder(amendOrder)
-	if err != nil {
-		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
-			logging.OrderWithTag(*amendOrder, "new-order"),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after amend order from matching engine (amend-in-place)",
+				logging.OrderWithTag(*amendOrder, "new-order"),
+				logging.Error(err))
+		}
 		return nil, err
 	}
 	return &types.OrderConfirmation{
@@ -1384,12 +1457,13 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, 
 			order := order
 			_, err = m.position.UnregisterOrder(&order)
 			if err != nil {
-				m.log.Error("Failure unregistering order in positions engine (cancel)",
-					logging.Order(order),
-					logging.Error(err))
+				if m.log.GetLevel() == logging.DebugLevel {
+					m.log.Debug("Failure unregistering order in positions engine (cancel)",
+						logging.Order(order),
+						logging.Error(err))
+				}
 			}
 		}
-
 	}
 
 	timer.EngineTimeCounterAdd()

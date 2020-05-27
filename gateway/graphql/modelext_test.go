@@ -459,7 +459,6 @@ func TestModelConverters(t *testing.T) {
 	t.Run("MarketInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.MarketInput{
-			ID:   "abcdefg",
 			Name: "test-market",
 			TradableInstrument: &gql.TradableInstrumentInput{
 				Instrument: &gql.InstrumentInput{
@@ -512,8 +511,8 @@ func TestModelConverters(t *testing.T) {
 	t.Run("ProposalTermsInput.IntoProto nil change", func(t *testing.T) {
 
 		proposal := &gql.ProposalTermsInput{
-			ClosingTimestamp:      "2020-09-30T07:28:06+00:00",
-			EnactmentTimestamp:    "2020-10-30T07:28:06+00:00",
+			ClosingDatetime:       "2020-09-30T07:28:06+00:00",
+			EnactmentDatetime:     "2020-10-30T07:28:06+00:00",
 			MinParticipationStake: 10,
 		}
 		proposalProto, err := proposal.IntoProto()
@@ -525,7 +524,6 @@ func TestModelConverters(t *testing.T) {
 	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.MarketInput{
-			ID:   "abcdefg",
 			Name: "test-market",
 			TradableInstrument: &gql.TradableInstrumentInput{
 				Instrument: &gql.InstrumentInput{
@@ -576,8 +574,8 @@ func TestModelConverters(t *testing.T) {
 		assert.Nil(t, err)
 
 		proposal := &gql.ProposalTermsInput{
-			ClosingTimestamp:      "2020-09-30T07:28:06+00:00",
-			EnactmentTimestamp:    "2020-10-30T07:28:06+00:00",
+			ClosingDatetime:       "2020-09-30T07:28:06+00:00",
+			EnactmentDatetime:     "2020-10-30T07:28:06+00:00",
 			MinParticipationStake: 10,
 			NewMarket: &gql.NewMarketInput{
 				Market: &mkt,
