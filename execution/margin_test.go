@@ -23,6 +23,7 @@ func TestMargins(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
 		Side:        types.Side_Buy,
@@ -36,8 +37,12 @@ func TestMargins(t *testing.T) {
 	}
 	// Create an order to amend
 	confirmation, err := tm.market.SubmitOrder(orderBuy)
-	assert.NotNil(t, confirmation)
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		t.Fatalf("Error: %v", err)
+	}
+	if !assert.NotNil(t, confirmation) {
+		t.Fatal("SubmitOrder confirmation was nil, but no error.")
+	}
 
 	orderID := confirmation.GetOrder().Id
 
