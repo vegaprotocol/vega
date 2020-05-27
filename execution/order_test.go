@@ -220,3 +220,57 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
+
+func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		TimeInForce: types.Order_GTC,
+		Id:          "someid",
+		Side:        types.Side_Buy,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       10,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+		Type:        types.Order_LIMIT,
+	}
+	// Submit the original order
+	buyConfirmation, err := tm.market.SubmitOrder(orderBuy)
+	assert.NotNil(t, buyConfirmation)
+	assert.NoError(t, err)
+
+	orderSell := &types.Order{
+		TimeInForce: types.Order_IOC,
+		Id:          "someid",
+		Side:        types.Side_Sell,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        50,
+		Price:       10,
+		Remaining:   50,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-sell-order",
+		Type:        types.Order_MARKET,
+	}
+	// Submit an opposite order to partially fill
+	sellConfirmation, err := tm.market.SubmitOrder(orderSell)
+	assert.NotNil(t, sellConfirmation)
+	assert.NoError(t, err)
+
+	// Validate that the mark price has been updated
+	assert.EqualValues(t, tm.market.GetMarketData().MarkPrice, 10)
+}
