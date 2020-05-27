@@ -35,6 +35,7 @@ var (
 	ErrAssetProposalReferenceDuplicate              = errors.New("duplicate asset proposal for reference")
 	ErrRegisterNodePubKeyDoesNotMatch               = errors.New("node register key does not match")
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
+	ErrVegaWalletRequired                           = errors.New("vega wallet required")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -129,6 +130,7 @@ type Processor struct {
 	exec              ExecutionEngine
 	time              TimeService
 	wallet            Wallet
+	vegaWallet        nodewallet.Wallet
 	assets            Assets
 	nodeProposals     map[string]*nodeProposal
 	pendingValidation []*types.Proposal
@@ -139,10 +141,15 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, isValidator bool) *Processor {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+
+	vegaWallet, ok := wallet.Get(nodewallet.Vega)
+	if !ok {
+		return nil, ErrVegaWalletRequired
+	}
 
 	p := &Processor{
 		log:               log,
@@ -157,9 +164,10 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		cmd:               cmd,
 		top:               top,
 		isValidator:       isValidator,
+		vegaWallet:        vegaWallet,
 	}
 	ts.NotifyOnTick(p.onTick)
-	return p
+	return p, nil
 }
 
 // Begin update timestamps
@@ -180,15 +188,11 @@ func (p *Processor) Begin() error {
 		// get our tendermint pubkey
 		chainPubKey := p.top.SelfChainPubKey()
 		if chainPubKey != nil {
-			w, ok := p.wallet.Get(nodewallet.Vega)
-			if !ok {
-				return ErrNoVegaWalletFound
-			}
 			payload := &types.NodeRegistration{
 				ChainPubKey: chainPubKey,
-				PubKey:      w.PubKeyOrAddress(),
+				PubKey:      p.vegaWallet.PubKeyOrAddress(),
 			}
-			if err := p.cmd.Command(w, blockchain.RegisterNodeCommand, payload); err != nil {
+			if err := p.cmd.Command(p.vegaWallet, blockchain.RegisterNodeCommand, payload); err != nil {
 				return err
 			}
 			p.hasRegistered = true
@@ -745,16 +749,11 @@ func (p *Processor) onTick(t time.Time) {
 		if state == validAssetProposal {
 			// if not a validator no need to send the vote
 			if p.isValidator {
-				key, ok := p.wallet.Get(nodewallet.Vega)
-				if !ok {
-					p.log.Error("no vega wallet found")
-					continue
-				}
 				nv := &types.NodeVote{
-					PubKey:    key.PubKeyOrAddress(),
+					PubKey:    p.vegaWallet.PubKeyOrAddress(),
 					Reference: prop.Reference,
 				}
-				if err := p.cmd.Command(key, blockchain.NodeVoteCommand, nv); err != nil {
+				if err := p.cmd.Command(p.vegaWallet, blockchain.NodeVoteCommand, nv); err != nil {
 					p.log.Error("unable tosend command", logging.Error(err))
 					// @TODO keep in memory, retry later?
 					continue
