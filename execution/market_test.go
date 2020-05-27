@@ -510,9 +510,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		}
 	})
 	_, err = tm.market.AmendOrder(amendedOrder)
-	assert.Nil(t, err)
-	if err != nil {
-		t.Fail()
+	if !assert.Nil(t, err) {
+		t.Fatalf("Error: %v", err)
 	}
 }
 
