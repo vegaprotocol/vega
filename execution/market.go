@@ -1355,6 +1355,7 @@ func (m *Market) applyOrderAmendment(
 
 	// initialize order with the existing order data
 	order = &types.Order{
+		Type:        existingOrder.Type,
 		Id:          existingOrder.Id,
 		MarketID:    existingOrder.MarketID,
 		PartyID:     existingOrder.PartyID,
