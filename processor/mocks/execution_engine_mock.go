@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -92,18 +93,18 @@ func (mr *MockExecutionEngineMockRecorder) NotifyTraderAccount(arg0 interface{})
 }
 
 // SubmitOrder mocks base method
-func (m *MockExecutionEngine) SubmitOrder(arg0 *proto.Order) (*proto.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *proto.Order) (*proto.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitOrder", arg0)
+	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1)
 	ret0, _ := ret[0].(*proto.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitOrder indicates an expected call of SubmitOrder
-func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1)
 }
 
 // SubmitProposal mocks base method

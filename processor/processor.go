@@ -47,7 +47,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
-	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
@@ -439,7 +439,7 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 
 // Process performs validation and then sends the command and data to
 // the underlying blockchain service handlers e.g. submit order, etc.
-func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
+func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Command) error {
 	// first is that a signed or unsigned command?
 	switch cmd {
 	case blockchain.SubmitOrderCommand:
@@ -447,7 +447,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		err = p.submitOrder(order)
+		err = p.submitOrder(ctx, order)
 	case blockchain.CancelOrderCommand:
 		order, err := p.getOrderCancellation(data)
 		if err != nil {
@@ -578,7 +578,7 @@ func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration
 	return cmd, nil
 }
 
-func (p *Processor) submitOrder(o *types.Order) error {
+func (p *Processor) submitOrder(ctx context.Context, o *types.Order) error {
 	p.stat.IncTotalCreateOrder()
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Processor received a SUBMIT ORDER request", logging.Order(*o))
@@ -587,7 +587,7 @@ func (p *Processor) submitOrder(o *types.Order) error {
 	o.CreatedAt = p.currentTimestamp.UnixNano()
 
 	// Submit the create order request to the execution engine
-	conf, err := p.exec.SubmitOrder(o)
+	conf, err := p.exec.SubmitOrder(ctx, o)
 	if conf != nil {
 
 		if p.log.GetLevel() == logging.DebugLevel {

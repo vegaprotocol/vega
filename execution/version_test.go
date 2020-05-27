@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -36,7 +37,7 @@ func TestVersioning(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Create an order and check version is set to 1
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 	assert.EqualValues(t, confirmation.GetOrder().Version, uint64(1))

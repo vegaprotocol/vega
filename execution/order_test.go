@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -37,7 +38,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	orderAmend := *orderBuy
 
 	// Create an order (generates one order message)
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -50,7 +51,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	// Create a new order (generates one order message)
 	orderAmend.Id = "amendingorder"
 	orderAmend.Reference = "amendingorderreference"
-	confirmation, err = tm.market.SubmitOrder(&orderAmend)
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), &orderAmend)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -137,7 +138,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Submit the original order
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -209,7 +210,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Submit the original order
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 

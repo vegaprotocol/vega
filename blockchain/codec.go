@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -16,7 +17,7 @@ var (
 )
 
 type Processor interface {
-	Process(payload []byte, cmd Command) error
+	Process(ctx context.Context, payload []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error
 }
 
@@ -82,6 +83,8 @@ func (c *codec) Process(payload []byte) error {
 	}
 	c.seenPayloads[*payloadHash] = struct{}{}
 
+	// get the block context, add transaction hash as trace ID
+	ctx := context.WithValue(context.Background(), "traceID", string(*payloadHash))
 	var (
 		data []byte
 		cmd  Command
@@ -108,7 +111,7 @@ func (c *codec) Process(payload []byte) error {
 		return err
 	}
 	// Actually process the transaction
-	if err := c.p.Process(data, cmd); err != nil {
+	if err := c.p.Process(ctx, data, cmd); err != nil {
 		return err
 	}
 	return nil

@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -271,7 +272,7 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			TimeInForce: proto.Order_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		result, err := core.SubmitOrder(&order)
+		result, err := core.SubmitOrder(context.TODO(), &order)
 		if err != nil {
 			return err
 		}

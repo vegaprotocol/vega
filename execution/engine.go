@@ -336,7 +336,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -364,7 +364,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 
-	conf, err := mkt.SubmitOrder(order)
+	conf, err := mkt.SubmitOrder(ctx, order)
 	if err != nil {
 		timer.EngineTimeCounterAdd()
 		return nil, err

@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -36,7 +37,7 @@ func TestMargins(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Create an order to amend
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	if !assert.NoError(t, err) {
 		t.Fatalf("Error: %v", err)
 	}

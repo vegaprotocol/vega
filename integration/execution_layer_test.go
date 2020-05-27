@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -237,7 +238,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		result, err := execsetup.engine.SubmitOrder(&order)
+		result, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
 		if err != nil {
 			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
 		}
@@ -278,7 +279,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		if _, err := execsetup.engine.SubmitOrder(&order); err == nil {
+		if _, err := execsetup.engine.SubmitOrder(context.TODO(), &order); err == nil {
 			return fmt.Errorf("expected trader %s to not exist", order.PartyID)
 		}
 	}
@@ -314,7 +315,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		result, err := execsetup.engine.SubmitOrder(&order)
+		result, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
 		if err != nil {
 			return err
 		}
@@ -544,7 +545,7 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			TimeInForce: proto.Order_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(&order)
+		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 6), err)
 		}
@@ -608,7 +609,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			TimeInForce: proto.Order_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(&order)
+		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
 		}

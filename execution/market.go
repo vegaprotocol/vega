@@ -345,7 +345,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 }
 
 // SubmitOrder submits the given order
-func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
