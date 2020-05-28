@@ -404,7 +404,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
@@ -413,7 +413,7 @@ func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancel
 		return nil, types.ErrInvalidMarketID
 	}
 
-	conf, err := mkt.CancelOrder(order)
+	conf, err := mkt.CancelOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}

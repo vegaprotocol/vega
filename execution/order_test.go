@@ -220,7 +220,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		MarketID: confirmation.GetOrder().MarketID,
 		PartyID:  party2,
 	}
-	cancelconf, err := tm.market.CancelOrder(cancelOrder)
+	cancelconf, err := tm.market.CancelOrder(context.TODO(), cancelOrder)
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }

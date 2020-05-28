@@ -343,7 +343,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(&cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.TODO(), &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -368,7 +368,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(&cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.TODO(), &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -393,7 +393,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			MarketID: o.MarketID,
 		}
 
-		_, err = execsetup.engine.CancelOrder(&cancel)
+		_, err = execsetup.engine.CancelOrder(context.TODO(), &cancel)
 		if err != nil {
 			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
 		}

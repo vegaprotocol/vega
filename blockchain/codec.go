@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -84,7 +85,7 @@ func (c *codec) Process(payload []byte) error {
 	c.seenPayloads[*payloadHash] = struct{}{}
 
 	// get the block context, add transaction hash as trace ID
-	ctx := context.WithValue(context.Background(), "traceID", string(*payloadHash))
+	ctx := context.WithValue(context.Background(), events.TraceIDKey, string(*payloadHash))
 	var (
 		data []byte
 		cmd  Command

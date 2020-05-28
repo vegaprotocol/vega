@@ -48,7 +48,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
@@ -453,7 +453,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 		if err != nil {
 			return err
 		}
-		return p.cancelOrder(order)
+		return p.cancelOrder(ctx, order)
 	case blockchain.AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
@@ -614,14 +614,14 @@ func (p *Processor) submitOrder(ctx context.Context, o *types.Order) error {
 	return err
 }
 
-func (p *Processor) cancelOrder(order *types.OrderCancellation) error {
+func (p *Processor) cancelOrder(ctx context.Context, order *types.OrderCancellation) error {
 	p.stat.IncTotalCancelOrder()
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderID))
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := p.exec.CancelOrder(order)
+	msg, err := p.exec.CancelOrder(ctx, order)
 	if err != nil {
 		p.log.Error("error on cancelling order",
 			logging.String("order-id", order.OrderID),

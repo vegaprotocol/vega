@@ -869,7 +869,7 @@ func testProcessCommandSuccess(t *testing.T) {
 
 	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
+	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
 	proc.eng.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)

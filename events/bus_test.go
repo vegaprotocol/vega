@@ -11,7 +11,7 @@ import (
 )
 
 func getCtx() context.Context {
-	ctx := context.WithValue(context.Background(), "traceID", "test-trace-id")
+	ctx := context.WithValue(context.Background(), events.TraceIDKey, "test-trace-id")
 	return ctx
 }
 
@@ -22,7 +22,7 @@ func TestTimeEvent(t *testing.T) {
 	assert.Equal(t, e.Time(), now)
 	assert.Equal(t, events.TimeUpdate, e.Type())
 	assert.NotEmpty(t, e.TraceID())
-	tID := e.Context().Value("traceID")
+	tID := e.Context().Value(events.TraceIDKey)
 	assert.NotNil(t, tID)
 	trace, ok := tID.(string)
 	assert.True(t, ok)
@@ -55,8 +55,8 @@ func TestInvalidEvent(t *testing.T) {
 
 func TestInvalidTraceIDType(t *testing.T) {
 	tIDInt := 123
-	ctx := context.WithValue(context.Background(), "traceID", tIDInt) // int instead of string
+	ctx := context.WithValue(context.Background(), events.TraceIDKey, tIDInt) // int instead of string
 	e := events.NewTime(ctx, time.Now())
 	assert.NotEqual(t, e.TraceID(), tIDInt)
-	assert.NotEqual(t, ctx.Value("traceID"), e.Context().Value("traceID"))
+	assert.NotEqual(t, ctx.Value(events.TraceIDKey), e.Context().Value(events.TraceIDKey))
 }

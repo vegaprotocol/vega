@@ -16,6 +16,12 @@ var (
 
 type Type int
 
+type hashT string
+
+const (
+	TraceIDKey hashT = "traceID"
+)
+
 // Base common denominator all event-bus events share
 type Base struct {
 	ctx     context.Context
@@ -76,14 +82,14 @@ func newBase(ctx context.Context, t Type) *Base {
 		ctx: ctx,
 		et:  t,
 	}
-	tID := ctx.Value("traceID")
+	tID := ctx.Value(TraceIDKey)
 	if tID == nil {
 		b.traceID = uuid.NewV4().String()
-		ctx = context.WithValue(ctx, "traceID", b.traceID)
+		ctx = context.WithValue(ctx, TraceIDKey, b.traceID)
 		b.ctx = ctx
 	} else if s, ok := tID.(string); !ok {
 		b.traceID = uuid.NewV4().String()
-		ctx = context.WithValue(ctx, "traceID", b.traceID)
+		ctx = context.WithValue(ctx, TraceIDKey, b.traceID)
 		b.ctx = ctx
 	} else {
 		b.traceID = s

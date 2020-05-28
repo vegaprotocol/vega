@@ -299,7 +299,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				// @TODO pass in correct context
+				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
+				// I'd say next block
 				evt := events.NewTransferResponse(context.Background(), transfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
@@ -428,7 +429,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(pos, order); err != nil {
+	if err = m.checkMarginForOrder(ctx, pos, order); err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -536,7 +537,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		settle := m.settlement.SettleMTM(m.markPrice, evts)
 
 		// Only process collateral and risk once per order, not for every trade
-		margins := m.collateralAndRisk(settle)
+		margins := m.collateralAndRisk(ctx, settle)
 		if len(margins) > 0 {
 
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
@@ -559,11 +560,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				}
 			}
 			if err == nil && len(transfers) > 0 {
-				evt := events.NewTransferResponse(context.Background(), transfers)
+				evt := events.NewTransferResponse(ctx, transfers)
 				m.broker.Send(evt)
 			}
 			if len(closed) > 0 {
-				err = m.resolveClosedOutTraders(closed, order)
+				err = m.resolveClosedOutTraders(ctx, closed, order)
 				if err != nil {
 					m.log.Error("unable to close out traders",
 						logging.String("market-id", m.GetID()),
@@ -581,7 +582,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
-func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o *types.Order) error {
+func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) error {
 	if len(distressedMarginEvts) == 0 {
 		return nil
 	}
@@ -677,7 +678,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			return err
 		}
 		if len(movements.Transfers) > 0 {
-			evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
+			evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
 			m.broker.Send(evt)
 		}
 		return nil
@@ -790,7 +791,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		return err
 	}
 	if len(movements.Transfers) > 0 {
-		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{movements})
+		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
 		m.broker.Send(evt)
 	}
 	// get the updated positions
@@ -811,8 +812,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 	}
 	// send transfer to buffer
-	m.broker.Send(events.NewTransferResponse(context.Background(), responses))
-	// m.broker.Send(evt)
+	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	return err
 }
 
@@ -916,7 +916,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -952,7 +952,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		evt := events.NewTransferResponse(context.Background(), []*types.TransferResponse{transfer})
+		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
 		m.broker.Send(evt)
 
 		if closePos != nil {
@@ -1021,7 +1021,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
+func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
 	asset, _ := m.mkt.GetAsset()
 	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
@@ -1041,7 +1041,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		)
 	}
 	// sending response to buffer
-	evt := events.NewTransferResponse(context.Background(), response)
+	evt := events.NewTransferResponse(ctx, response)
 	m.broker.Send(evt)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
@@ -1059,7 +1059,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 }
 
 // CancelOrder cancels the given order
-func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1120,6 +1120,7 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 }
 
 // CancelOrderByID locates order by its Id and cancels it
+// @TODO This function should not exist. Needs to be removed
 func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
 	order, err := m.matching.GetOrderByID(orderID)
 	if err != nil {
@@ -1130,7 +1131,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 		PartyID:  order.PartyID,
 		MarketID: order.MarketID,
 	}
-	return m.CancelOrder(&cancellation)
+	return m.CancelOrder(context.Background(), &cancellation)
 }
 
 // AmendOrder amend an existing order from the order book
@@ -1195,7 +1196,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			MarketID: existingOrder.MarketID,
 		}
 
-		confirm, err := m.CancelOrder(&orderCancel)
+		confirm, err := m.CancelOrder(context.TODO(), &orderCancel)
 		if err != nil {
 			return nil, err
 		}
@@ -1297,7 +1298,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(pos, amendedOrder); err != nil {
+	if err = m.checkMarginForOrder(context.Background(), pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {
