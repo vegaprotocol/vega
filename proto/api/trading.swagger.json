@@ -2444,6 +2444,9 @@
         "uptime": {
           "type": "string",
           "title": "ISO 8601 datetime, nanosecond precision"
+        },
+        "chainID": {
+          "type": "string"
         }
       }
     },
