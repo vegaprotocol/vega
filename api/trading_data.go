@@ -93,6 +93,7 @@ type BlockchainClient interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	CreateOrder(ctx context.Context, order *types.Order) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
+	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
@@ -460,7 +461,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 	}
 
 	// Call tendermint via rpc client
-	backlogLength, numPeers, gt, err := h.getTendermintStats(ctx)
+	backlogLength, numPeers, gt, chainID, err := h.getTendermintStats(ctx)
 	if err != nil {
 		return nil, err // getTendermintStats already returns an API error
 	}
@@ -508,6 +509,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		CandleSubscriptions:      uint32(h.CandleService.GetCandleSubscribersCount()),
 		AccountSubscriptions:     uint32(h.AccountsService.GetAccountSubscribersCount()),
 		MarketDataSubscriptions:  uint32(h.MarketService.GetMarketDataSubscribersCount()),
+		ChainID:                  chainID,
 	}, nil
 }
 
@@ -1260,10 +1262,10 @@ func validateParty(ctx context.Context, partyID string, partyService PartyServic
 }
 
 func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLength int,
-	numPeers int, genesis *time.Time, err error) {
+	numPeers int, genesis *time.Time, chainID string, err error) {
 
 	if h.Stats == nil || h.Stats.Blockchain == nil {
-		return 0, 0, nil, apiError(codes.Internal, ErrChainNotConnected)
+		return 0, 0, nil, "", apiError(codes.Internal, ErrChainNotConnected)
 	}
 
 	refused := "connection refused"
@@ -1272,30 +1274,35 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 	backlogLength, err = h.Client.GetUnconfirmedTxCount(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return 0, 0, nil, nil
+			return 0, 0, nil, "", nil
 		}
-		return 0, 0, nil, apiError(codes.Internal, ErrBlockchainBacklogLength, err)
+		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
 	// Net info provides peer stats etc (block chain network info) == number of peers
 	netInfo, err := h.Client.GetNetworkInfo(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return backlogLength, 0, nil, nil
+			return backlogLength, 0, nil, "", nil
 		}
-		return backlogLength, 0, nil, apiError(codes.Internal, ErrBlockchainNetworkInfo, err)
+		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainNetworkInfo, err)
 	}
 
 	// Genesis retrieves the current genesis date/time for the blockchain
 	genesisTime, err := h.Client.GetGenesisTime(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return backlogLength, 0, nil, nil
+			return backlogLength, 0, nil, "", nil
 		}
-		return backlogLength, 0, nil, apiError(codes.Internal, ErrBlockchainGenesisTime, err)
+		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainGenesisTime, err)
 	}
 
-	return backlogLength, netInfo.NPeers, &genesisTime, nil
+	chainId, err := h.Client.GetChainID(ctx)
+	if err != nil {
+		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainChainID, err)
+	}
+
+	return backlogLength, netInfo.NPeers, &genesisTime, chainId, nil
 }
 
 func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*types.Order, error) {

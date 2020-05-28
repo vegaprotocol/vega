@@ -51,6 +51,15 @@ func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 	return res.Genesis.GenesisTime.UTC(), nil
 }
 
+// GetChainID will retrieve the chainID from the blockchain
+func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
+	res, err := c.tmclt.Genesis()
+	if err != nil {
+		return "", err
+	}
+	return res.Genesis.ChainID, nil
+}
+
 // GetStatus returns the current status of the chain
 func (c *Client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
 	return c.tmclt.Status()

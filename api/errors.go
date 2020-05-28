@@ -103,6 +103,7 @@ var (
 	ErrBlockchainBacklogLength = errors.New("failed to get backlog length from blockchain")
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
+	ErrBlockchainChainID       = errors.New("failed to get chain ID from blockchain")
 	// Governance...
 	// ErrPrepareProposal is returned when preparation of a governance proposal fails for some reason.
 	ErrPrepareProposal = errors.New("failed to prepare a proposal")
