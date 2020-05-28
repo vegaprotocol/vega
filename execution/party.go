@@ -59,6 +59,7 @@ func (p *Party) GetByMarket(mktID string) []string {
 
 // GetByMarketAndID searches for a party that exists in the system for the given market.
 func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error) {
+
 	if _, ok := p.partyByMarket[marketID][partyID]; ok {
 		return &types.Party{Id: partyID}, nil
 	}
@@ -128,9 +129,19 @@ func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 
 func (p *Party) addMarket(market types.Market) {
 	p.mu.Lock()
+
 	if _, found := p.partyByMarket[market.Id]; !found {
+		var parties map[string]struct{}
+		for _, parties = range p.partyByMarket {
+			break
+		}
+		if parties == nil {
+			parties = map[string]struct{}{}
+		}
+
 		p.markets = append(p.markets, market)
-		p.partyByMarket[market.Id] = map[string]struct{}{}
+		p.partyByMarket[market.Id] = parties
+
 	}
 	p.mu.Unlock()
 }
