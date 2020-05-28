@@ -64,3 +64,41 @@ func TestMargins(t *testing.T) {
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }
+
+func TestClosedOutTrader(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	party3 := "party3"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+	price := uint64(100)
+	size := uint64(100)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	addAccount(tm, party3)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_GTC,
+		Id:          "someid",
+		Side:        types.Side_Buy,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        size,
+		Price:       price,
+		Remaining:   size,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	if !assert.NoError(t, err) {
+		t.Fatalf("Error: %v", err)
+	}
+	if !assert.NotNil(t, confirmation) {
+		t.Fatal("SubmitOrder confirmation was nil, but no error.")
+	}
+}
