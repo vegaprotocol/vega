@@ -54,14 +54,14 @@ func TestMargins(t *testing.T) {
 		PartyID:   party1,
 		SizeDelta: int64(10000),
 	}
-	amendment, err := tm.market.AmendOrder(amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend price and size up to breach margin
 	amend.SizeDelta = 1000000000
 	amend.Price = &types.Price{Value: 1000000000}
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }

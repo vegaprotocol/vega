@@ -35,18 +35,18 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockExecutionEngine) AmendOrder(arg0 *proto.OrderAmendment) (*proto.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*proto.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendOrder", arg0)
+	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
 	ret0, _ := ret[0].(*proto.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AmendOrder indicates an expected call of AmendOrder
-func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0, arg1)
 }
 
 // CancelOrder mocks base method

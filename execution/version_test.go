@@ -58,7 +58,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Size, size)
 		assert.EqualValues(t, order.Version, uint64(2))
 	})
-	amendment, err := tm.market.AmendOrder(amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -70,7 +70,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Size, size)
 		assert.EqualValues(t, order.Version, uint64(3))
 	})
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Remaining, size+1)
 		assert.EqualValues(t, order.Version, uint64(4))
 	})
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -98,7 +98,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Remaining, size-1)
 		assert.EqualValues(t, order.Version, uint64(5))
 	})
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -114,7 +114,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.TimeInForce, types.Order_GTT)
 		assert.EqualValues(t, order.Version, uint64(6))
 	})
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -128,7 +128,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.TimeInForce, types.Order_GTT)
 		assert.EqualValues(t, order.Version, uint64(7))
 	})
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -143,7 +143,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.TimeInForce, types.Order_GTC)
 		assert.EqualValues(t, order.Version, uint64(8))
 	})
-	amendment, err = tm.market.AmendOrder(amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 

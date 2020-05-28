@@ -380,7 +380,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Amend order", logging.OrderAmendment(orderAmendment))
 	}
@@ -392,7 +392,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(orderAmendment)
+	conf, err := mkt.AmendOrder(ctx, orderAmendment)
 	if err != nil {
 		return nil, err
 	}

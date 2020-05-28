@@ -510,7 +510,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 			assert.EqualValues(t, orderBuy.Version+1, order.Version, "storing amended version")
 		}
 	})
-	_, err = tm.market.AmendOrder(amendedOrder)
+	_, err = tm.market.AmendOrder(context.TODO(), amendedOrder)
 	if !assert.Nil(t, err) {
 		t.Fatalf("Error: %v", err)
 	}

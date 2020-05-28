@@ -49,7 +49,7 @@ type TimeService interface {
 type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
-	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
 	Generate() error
@@ -459,7 +459,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 		if err != nil {
 			return err
 		}
-		return p.amendOrder(order)
+		return p.amendOrder(ctx, order)
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
@@ -636,7 +636,7 @@ func (p *Processor) cancelOrder(ctx context.Context, order *types.OrderCancellat
 	return nil
 }
 
-func (p *Processor) amendOrder(order *types.OrderAmendment) error {
+func (p *Processor) amendOrder(ctx context.Context, order *types.OrderAmendment) error {
 	p.stat.IncTotalAmendOrder()
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Blockchain service received a AMEND ORDER request",
@@ -644,7 +644,7 @@ func (p *Processor) amendOrder(order *types.OrderAmendment) error {
 	}
 
 	// Submit the Amendment new order request to the Vega trading core
-	_, err := p.exec.AmendOrder(order)
+	_, err := p.exec.AmendOrder(ctx, order)
 	if err != nil {
 		p.log.Error("Error amending order",
 			logging.String("order", order.String()),

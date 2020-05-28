@@ -789,7 +789,7 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			TimeInForce: tif,
 		}
 
-		_, err = execsetup.engine.AmendOrder(&amend)
+		_, err = execsetup.engine.AmendOrder(context.TODO(), &amend)
 		if err != nil && success {
 			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyID, o.Reference, err)
 		}

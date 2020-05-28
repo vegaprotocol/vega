@@ -63,26 +63,26 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	// Amend price down (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price - 1}
-	amendConf, err := tm.market.AmendOrder(amend)
+	amendConf, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend price up (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price + 1}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size down (generates one order message)
 	amend.Price = nil
 	amend.SizeDelta = -1
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size up (generates one order message)
 	amend.SizeDelta = +1
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -90,26 +90,26 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	amend.SizeDelta = 0
 	amend.TimeInForce = types.Order_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend TIF -> GTC (generates one order message)
 	amend.TimeInForce = types.Order_GTC
 	amend.ExpiresAt = nil
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend ExpiresAt (generates two order messages)
 	amend.TimeInForce = types.Order_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 200000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 }
@@ -159,7 +159,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		MarketID: confirmation.GetOrder().GetMarketID(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(amend)
+	amended, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -179,7 +179,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		Price:     &types.Price{Value: 101},
 		SizeDelta: 1,
 	}
-	amended, err = tm.market.AmendOrder(amend)
+	amended, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
@@ -253,7 +253,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Type:        types.Order_LIMIT,
 	}
 	// Submit the original order
-	buyConfirmation, err := tm.market.SubmitOrder(orderBuy)
+	buyConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, buyConfirmation)
 	assert.NoError(t, err)
 
@@ -271,7 +271,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Type:        types.Order_MARKET,
 	}
 	// Submit an opposite order to partially fill
-	sellConfirmation, err := tm.market.SubmitOrder(orderSell)
+	sellConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderSell)
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 

@@ -1135,7 +1135,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1196,7 +1196,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			MarketID: existingOrder.MarketID,
 		}
 
-		confirm, err := m.CancelOrder(context.TODO(), &orderCancel)
+		confirm, err := m.CancelOrder(ctx, &orderCancel)
 		if err != nil {
 			return nil, err
 		}
@@ -1298,7 +1298,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(context.Background(), pos, amendedOrder); err != nil {
+	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {
