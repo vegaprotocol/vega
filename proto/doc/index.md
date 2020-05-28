@@ -2762,7 +2762,7 @@ Proposal can enter Failed state from any other state.
 | chainVersion | [string](#string) |  |  |
 | blockDuration | [uint64](#uint64) |  | nanoseconds |
 | uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
-| chainID | [string](#string) |  |  |
+| chainID | [string](#string) |  | Unique ID of the blockchain |
 
 
 

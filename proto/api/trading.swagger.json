@@ -2446,7 +2446,8 @@
           "title": "ISO 8601 datetime, nanosecond precision"
         },
         "chainID": {
-          "type": "string"
+          "type": "string",
+          "title": "Unique ID of the blockchain"
         }
       }
     },

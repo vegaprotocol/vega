@@ -1486,7 +1486,8 @@ type Statistics struct {
 	// nanoseconds
 	BlockDuration uint64 `protobuf:"varint,31,opt,name=blockDuration,proto3" json:"blockDuration,omitempty"`
 	// ISO 8601 datetime, nanosecond precision
-	Uptime               string   `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
+	Uptime string `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
+	// Unique ID of the blockchain
 	ChainID              string   `protobuf:"bytes,33,opt,name=chainID,proto3" json:"chainID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

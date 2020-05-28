@@ -112,12 +112,12 @@ func (c *Client) CreateOrder(ctx context.Context, order *types.Order) error {
 	return err
 }
 
-// GetGenesisTime will retrieve the genesis time from the blockchain
+// GetGenesisTime retrieves the genesis time from the blockchain
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	return c.clt.GetGenesisTime(ctx)
 }
 
-// GetChainID will retrieve the chainID from the blockchain
+// GetChainID retrieves the chainID from the blockchain
 func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
 	return c.clt.GetChainID(ctx)
 }
