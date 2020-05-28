@@ -50,11 +50,11 @@ type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
-	Withdraw(*types.Withdraw) error
+	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
+	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
-	SubmitProposal(proposal *types.Proposal) error
-	VoteOnProposal(vote *types.Vote) error
+	SubmitProposal(ctx context.Context, proposal *types.Proposal) error
+	VoteOnProposal(ctx context.Context, vote *types.Vote) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -112,6 +112,7 @@ const (
 
 type nodeProposal struct {
 	*types.Proposal
+	ctx       context.Context
 	votes     map[string]struct{}
 	validTime time.Time
 	assetID   string
@@ -465,7 +466,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 		if err != nil {
 			return err
 		}
-		return p.exec.Withdraw(withdraw)
+		return p.exec.Withdraw(ctx, withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
@@ -474,15 +475,15 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 		// proposal is a new asset proposal?
 
 		if na := proposal.Terms.GetNewAsset(); na != nil {
-			return p.startAssetNodeProposal(proposal)
+			return p.startAssetNodeProposal(ctx, proposal)
 		}
-		return p.exec.SubmitProposal(proposal)
+		return p.exec.SubmitProposal(ctx, proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		return p.exec.VoteOnProposal(vote)
+		return p.exec.VoteOnProposal(ctx, vote)
 	case blockchain.RegisterNodeCommand:
 		node, err := p.getNodeRegistration(data)
 		if err != nil {
@@ -515,7 +516,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 		if err != nil {
 			return err
 		}
-		return p.exec.NotifyTraderAccount(notify)
+		return p.exec.NotifyTraderAccount(ctx, notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
@@ -523,7 +524,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 	return nil
 }
 
-func (p *Processor) startAssetNodeProposal(proposal *types.Proposal) error {
+func (p *Processor) startAssetNodeProposal(ctx context.Context, proposal *types.Proposal) error {
 	asset := proposal.Terms.GetNewAsset()
 	if asset == nil {
 		p.log.Error("not an asset proposal", logging.String("ref", proposal.Reference))
@@ -544,10 +545,11 @@ func (p *Processor) startAssetNodeProposal(proposal *types.Proposal) error {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	// @TODO check valid timestamps
 	np := &nodeProposal{
 		Proposal:   proposal,
+		ctx:        ctx,
 		votes:      map[string]struct{}{},
 		validTime:  time.Unix(proposal.Terms.ValidationTimestamp, 0),
 		validState: notValidAssetProposal,
@@ -731,7 +733,7 @@ func (p *Processor) onTick(t time.Time) {
 					logging.Int("vote-count", len(prop.votes)),
 					logging.Int("node-count", p.top.Len()),
 				)
-			} else if err := p.exec.SubmitProposal(prop.Proposal); err != nil {
+			} else if err := p.exec.SubmitProposal(prop.ctx, prop.Proposal); err != nil {
 				p.log.Error("Failed to submit node-approved proposal",
 					logging.String("proposal", prop.Proposal.String()),
 				)

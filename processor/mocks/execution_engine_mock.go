@@ -79,17 +79,17 @@ func (mr *MockExecutionEngineMockRecorder) Generate() *gomock.Call {
 }
 
 // NotifyTraderAccount mocks base method
-func (m *MockExecutionEngine) NotifyTraderAccount(arg0 *proto.NotifyTraderAccount) error {
+func (m *MockExecutionEngine) NotifyTraderAccount(arg0 context.Context, arg1 *proto.NotifyTraderAccount) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyTraderAccount", arg0)
+	ret := m.ctrl.Call(m, "NotifyTraderAccount", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NotifyTraderAccount indicates an expected call of NotifyTraderAccount
-func (mr *MockExecutionEngineMockRecorder) NotifyTraderAccount(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) NotifyTraderAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockExecutionEngine)(nil).NotifyTraderAccount), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockExecutionEngine)(nil).NotifyTraderAccount), arg0, arg1)
 }
 
 // SubmitOrder mocks base method
@@ -108,43 +108,43 @@ func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1 interface{}) *
 }
 
 // SubmitProposal mocks base method
-func (m *MockExecutionEngine) SubmitProposal(arg0 *proto.Proposal) error {
+func (m *MockExecutionEngine) SubmitProposal(arg0 context.Context, arg1 *proto.Proposal) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitProposal", arg0)
+	ret := m.ctrl.Call(m, "SubmitProposal", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitProposal indicates an expected call of SubmitProposal
-func (mr *MockExecutionEngineMockRecorder) SubmitProposal(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitProposal(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitProposal), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitProposal), arg0, arg1)
 }
 
 // VoteOnProposal mocks base method
-func (m *MockExecutionEngine) VoteOnProposal(arg0 *proto.Vote) error {
+func (m *MockExecutionEngine) VoteOnProposal(arg0 context.Context, arg1 *proto.Vote) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VoteOnProposal", arg0)
+	ret := m.ctrl.Call(m, "VoteOnProposal", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // VoteOnProposal indicates an expected call of VoteOnProposal
-func (mr *MockExecutionEngineMockRecorder) VoteOnProposal(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) VoteOnProposal(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteOnProposal", reflect.TypeOf((*MockExecutionEngine)(nil).VoteOnProposal), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteOnProposal", reflect.TypeOf((*MockExecutionEngine)(nil).VoteOnProposal), arg0, arg1)
 }
 
 // Withdraw mocks base method
-func (m *MockExecutionEngine) Withdraw(arg0 *proto.Withdraw) error {
+func (m *MockExecutionEngine) Withdraw(arg0 context.Context, arg1 *proto.Withdraw) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Withdraw", arg0)
+	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Withdraw indicates an expected call of Withdraw
-func (mr *MockExecutionEngineMockRecorder) Withdraw(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) Withdraw(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockExecutionEngine)(nil).Withdraw), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockExecutionEngine)(nil).Withdraw), arg0, arg1)
 }

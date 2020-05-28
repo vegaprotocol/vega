@@ -277,7 +277,7 @@ func testOnTickSubmit(t *testing.T) {
 	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.NodeVoteCommand))
 
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil).Do(func(sp *types.Proposal) {
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, sp *types.Proposal) {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 		ch <- struct{}{}
@@ -375,7 +375,7 @@ func testOnTickSubmitRetry(t *testing.T) {
 		nil,
 	}
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(_ context.Context, sp *types.Proposal) error {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 		ret := returns[i]
@@ -493,7 +493,7 @@ func testOnTickWithNodes(t *testing.T) {
 		nil,
 	}
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(_ context.Context, sp *types.Proposal) error {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 		ret := returns[i]
@@ -601,7 +601,7 @@ func testOnTickReject(t *testing.T) {
 	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 
 	// We expect SubmitProposal to NOT be called (other node did NOT validate
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(0).Return(nil)
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(0).Return(nil)
 
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()
@@ -867,13 +867,13 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().Withdraw(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
-	proc.eng.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.eng.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().VoteOnProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)

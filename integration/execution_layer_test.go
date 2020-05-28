@@ -70,7 +70,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			Amount:   u64val(row, 1),
 		}
 
-		err := execsetup.engine.NotifyTraderAccount(&notif)
+		err := execsetup.engine.NotifyTraderAccount(context.TODO(), &notif)
 		if err != nil {
 			return err
 		}
@@ -170,7 +170,7 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 		Amount:   amount,
 	}
 
-	err := execsetup.engine.NotifyTraderAccount(&notif)
+	err := execsetup.engine.NotifyTraderAccount(context.TODO(), &notif)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 		Asset:   asset,
 	}
 
-	err := execsetup.engine.Withdraw(&notif)
+	err := execsetup.engine.Withdraw(context.TODO(), &notif)
 	if err != nil {
 		return err
 	}

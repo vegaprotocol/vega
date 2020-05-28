@@ -255,7 +255,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
-func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
+func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notify)
 }
 
@@ -265,7 +265,7 @@ func (e *Engine) CreateGeneralAccounts(partyID string) error {
 	return err
 }
 
-func (e *Engine) Withdraw(w *types.Withdraw) error {
+func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
 	if err != nil {
 		e.log.Error("An error occurred during withdrawal",
@@ -596,7 +596,7 @@ func (e *Engine) Generate() error {
 }
 
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
-func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
+func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submitting proposal",
 			logging.String("proposal-id", proposal.ID),
@@ -616,7 +616,7 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 }
 
 // VoteOnProposal sends proposal vote to governance engine
-func (e *Engine) VoteOnProposal(vote *types.Vote) error {
+func (e *Engine) VoteOnProposal(ctx context.Context, vote *types.Vote) error {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Voting on proposal",
 			logging.String("proposal-id", vote.ProposalID),
