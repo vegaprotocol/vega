@@ -3,7 +3,6 @@ package execution
 import (
 	"errors"
 	"sort"
-	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -26,9 +25,7 @@ type Collateral interface {
 
 // PartyEngine holds the list of parties in the system
 type PartyEngine struct {
-	log *logging.Logger
-	mu  sync.Mutex
-
+	log        *logging.Logger
 	collateral Collateral
 	buf        PartyBuf
 
