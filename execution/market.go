@@ -309,7 +309,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				}
 
 				asset, _ := m.mkt.GetAsset()
-				//parties := m.partyEngine.GetByMarket(m.GetID())
 				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, m.partyEngine.Parties)
 				if err != nil {
 					m.log.Error("Clear market error",
