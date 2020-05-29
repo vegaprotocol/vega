@@ -50,7 +50,7 @@ type marketTestSetup struct {
 	market          *proto.Market
 	ctrl            *gomock.Controller
 	core            *execution.Market
-	party           *execution.Party
+	party           *execution.PartyEngine
 	candles         *mocks.MockCandleBuf
 	orders          *orderStub
 	trades          *tradeStub

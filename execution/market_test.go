@@ -28,7 +28,7 @@ type testMarket struct {
 	accountBuf *collateralmocks.MockAccountBuffer
 
 	collateraEngine *collateral.Engine
-	partyEngine     *execution.Party
+	partyEngine     *execution.PartyEngine
 	candleStore     *mocks.MockCandleBuf
 	orderStore      *mocks.MockOrderBuf
 	partyStore      *mocks.MockPartyBuf
@@ -65,7 +65,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.Nil(t, err)
 	mkts := getMarkets(closingAt)
-	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)
+	partyEngine := execution.NewPartyEngine(log, collateralEngine, mkts, partyStore)
 
 	candleStore.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	mktEngine, err := execution.NewMarket(
@@ -376,7 +376,9 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		fmt.Printf("Account: %v\n", acc)
 	})
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
-	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(&types.NotifyTraderAccount{TraderID: party1}, 0)
+	added, err := tm.partyEngine.Add(party1)
+	assert.NoError(t, err)
+	assert.True(t, added)
 
 	// submit orders
 	// party1 buys
@@ -416,7 +418,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		}
 	})
 
-	_, err := tm.market.SubmitOrder(orderBuy)
+	_, err = tm.market.SubmitOrder(orderBuy)
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "margin check failed")
 }
