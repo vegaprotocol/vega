@@ -17,8 +17,6 @@ import (
 
 func TestNewParty(t *testing.T) {
 	now := time.Now()
-	trader1 := "v@d3R"
-	trader2 := "B0b@f3tt"
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	partyBuf := mocks.NewMockPartyBuf(ctrl)
@@ -31,55 +29,48 @@ func TestNewParty(t *testing.T) {
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
-	testMarketID := testMarket[0].Id
 
 	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
 	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
 
-	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
+	party := execution.NewPartyEngine(log, collateralEngine, nil, partyBuf)
 	assert.NotNil(t, party)
-	party = execution.NewParty(log, collateralEngine, testMarket, partyBuf)
+	party = execution.NewPartyEngine(log, collateralEngine, testMarket, partyBuf)
 	assert.NotNil(t, party)
 
-	res := party.GetByMarket("invalid")
-	assert.Equal(t, 0, len(res))
-	res = party.GetByMarket(testMarketID)
-	assert.Equal(t, 0, len(res))
-
-	notify1 := proto.NotifyTraderAccount{
-		TraderID: trader1,
-		Amount:   9876,
-	}
+	assert.Len(t, party.Parties, 0)
+	notify1 := proto.NotifyTraderAccount{TraderID: "v@d3R"}
 	err = party.NotifyTraderAccount(&notify1)
+	assert.Len(t, party.Parties, 1)
 	assert.NoError(t, err)
+
+	foundParty, err := party.Find(notify1.TraderID)
+	assert.NoError(t, err)
+	assert.NotNil(t, foundParty)
+	assert.Equal(t, notify1.TraderID, foundParty.Id)
+
+	notify1.Amount = 9876
 	err = party.NotifyTraderAccount(&notify1)
 	assert.NoError(t, err)
 
 	notify2 := proto.NotifyTraderAccount{
-		TraderID: trader2,
+		TraderID: "B0b@f3tt",
 		Amount:   1234,
 	}
-
-	res = party.GetByMarket(testMarketID)
-	assert.Equal(t, 1, len(res))
-
-	err = party.NotifyTraderAccountWithTopUpAmount(&notify2, uint64(4567))
+	err = party.NotifyTraderAccount(&notify2)
 	assert.NoError(t, err)
 
-	res = party.GetByMarket(testMarketID)
-	assert.Equal(t, 2, len(res))
-
-	foundParty, err := party.GetByMarketAndID(testMarketID, trader1)
+	foundParty, err = party.Find(notify2.TraderID)
 	assert.NoError(t, err)
 	assert.NotNil(t, foundParty)
-	assert.Equal(t, trader1, foundParty.Id)
+	assert.Equal(t, notify2.TraderID, foundParty.Id)
 
-	noParty, err := party.GetByMarketAndID(testMarketID, "L@nd099")
+	noParty, err := party.Find("L@nd099")
 	assert.Error(t, err)
 	assert.Nil(t, noParty)
 	assert.Equal(t, err, execution.ErrPartyDoesNotExist)
 
-	err = party.NotifyTraderAccountWithTopUpAmount(&notify2, 0)
+	err = party.NotifyTraderAccount(&notify2)
 	assert.NoError(t, err)
 
 	notify1.Amount = 0
@@ -105,40 +96,37 @@ func TestNewAccount(t *testing.T) {
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
 	assert.NoError(t, err)
 
-	testMarket := getMarkets(now.AddDate(0, 0, 7))
-	testMarketID := testMarket[0].Id
+	markets := getMarkets(now.AddDate(0, 0, 7))
 
 	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
 	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
 
-	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
-	assert.NotNil(t, party)
-	party = execution.NewParty(log, collateralEngine, testMarket, partyBuf)
-	assert.NotNil(t, party)
-
-	res := party.GetByMarket("invalid")
-	assert.Equal(t, 0, len(res))
-	res = party.GetByMarket(testMarketID)
-	assert.Equal(t, 0, len(res))
+	engine := execution.NewPartyEngine(log, collateralEngine, markets, partyBuf)
+	assert.NotNil(t, engine)
 
 	trader := "Finn the human"
-	accs, err := party.MakeGeneralAccounts(trader)
+	count, err := engine.MakeGeneralAccounts(trader)
 	assert.NoError(t, err)
-	assert.Len(t, accs, 1)
+	assert.Equal(t, len(markets), count)
+	assert.Len(t, engine.Parties, 0, "creating general accounts does not register party")
 
-	accs, err = party.MakeGeneralAccounts(trader)
+	added, err := engine.Add(trader)
 	assert.NoError(t, err)
-	assert.Len(t, accs, 1)
+	assert.True(t, added)
+	assert.Len(t, engine.Parties, 1, "adding party registers it with engine")
+	assert.Equal(t, trader, engine.Parties[0])
 
-	foundParty, err := party.GetByMarketAndID(testMarketID, trader)
+	foundParty, err := engine.Find(trader)
 	assert.NoError(t, err)
 	assert.NotNil(t, foundParty)
 	assert.Equal(t, trader, foundParty.Id)
 
-	for accName, _ := range accs {
-		acc, err := collateralEngine.GetAccountByID(accName)
-		assert.NoError(t, err)
-		assert.NotNil(t, acc)
-		assert.Zero(t, acc.GetBalance())
-	}
+	asset, err := markets[0].GetAsset()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, asset)
+
+	acc, err := collateralEngine.GetPartyGeneralAccount(trader, asset)
+	assert.NoError(t, err)
+	assert.NotNil(t, acc)
+	assert.Zero(t, acc.GetBalance())
 }
