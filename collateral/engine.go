@@ -33,6 +33,7 @@ var (
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
 	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
+	ErrPartyHasNoGeneralAccount                = errors.New("party has no general account for the asset")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
 )
 
@@ -1096,7 +1097,18 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	return &acccpy, nil
 }
 
-// GetPartyTokenBalance - get the token account for a given user
+// GetPartyGeneralAccount returns party general account for a given market and asset
+func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
+	acc, ok := e.accs[generalID]
+	if !ok {
+		return nil, ErrPartyHasNoGeneralAccount
+	}
+	cpy := *acc
+	return &cpy, nil
+}
+
+// GetPartyTokenAccount - get the token account for a given user
 func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
 	tID := e.accountID(noMarket, id, TokenAsset, types.AccountType_GENERAL)
 	acc, ok := e.accs[tID]
