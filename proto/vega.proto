@@ -277,6 +277,9 @@ message Statistics {
 
   // ISO 8601 datetime, nanosecond precision
   string uptime = 32;
+
+  // Unique ID of the blockchain
+  string chainID = 33;
 }
 
 enum ChainStatus {

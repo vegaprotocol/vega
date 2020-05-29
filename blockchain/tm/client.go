@@ -42,13 +42,22 @@ func (c *Client) SendTransaction(ctx context.Context, bytes []byte) (bool, error
 	return true, nil
 }
 
-// GetGenesisTime will retrieve the genesis time from the blockchain
+// GetGenesisTime retrieves the genesis time from the blockchain
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := c.tmclt.Genesis()
 	if err != nil {
 		return vegatime.Now(), err
 	}
 	return res.Genesis.GenesisTime.UTC(), nil
+}
+
+// GetChainID retrieves the chainID from the blockchain
+func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
+	res, err := c.tmclt.Genesis()
+	if err != nil {
+		return "", err
+	}
+	return res.Genesis.ChainID, nil
 }
 
 // GetStatus returns the current status of the chain

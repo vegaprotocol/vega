@@ -2814,6 +2814,7 @@ There are currently no TIF=ION options.
 | chainVersion | [string](#string) |  |  |
 | blockDuration | [uint64](#uint64) |  | nanoseconds |
 | uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+| chainID | [string](#string) |  | Unique ID of the blockchain |
 
 
 
