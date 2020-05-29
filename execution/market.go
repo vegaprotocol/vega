@@ -73,7 +73,7 @@ type Market struct {
 
 	// deps engines
 	collateral  *collateral.Engine
-	partyEngine *Party
+	partyEngine *PartyEngine
 
 	// buffers
 	orderBuf        OrderBuf
@@ -119,7 +119,7 @@ func NewMarket(
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
 	collateralEngine *collateral.Engine,
-	partyEngine *Party,
+	partyEngine *PartyEngine,
 	mkt *types.Market,
 	candleBuf CandleBuf,
 	orderBuf OrderBuf,
@@ -309,8 +309,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				}
 
 				asset, _ := m.mkt.GetAsset()
-				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
+				//parties := m.partyEngine.GetByMarket(m.GetID())
+				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, m.partyEngine.Parties)
 				if err != nil {
 					m.log.Error("Clear market error",
 						logging.String("market-id", m.GetID()),
@@ -378,7 +378,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	// Verify and add new parties
 	// party, _ := m.parties.GetByID(order.PartyID)
-	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
+	party, _ := m.partyEngine.Find(order.PartyID)
 	if party == nil {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected

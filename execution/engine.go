@@ -126,7 +126,7 @@ type Engine struct {
 	log *logging.Logger
 
 	markets    map[string]*Market
-	party      *Party
+	party      *PartyEngine
 	collateral *collateral.Engine
 	governance *governance.Engine
 	idgen      *IDgenerator
@@ -200,7 +200,7 @@ func NewEngine(
 		time:            time,
 		collateral:      cengine,
 		governance:      gengine,
-		party:           NewParty(log, cengine, pmkts, partyBuf),
+		party:           NewPartyEngine(log, cengine, pmkts, partyBuf),
 		accountBuf:      accountBuf,
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
@@ -257,12 +257,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 // NotifyTraderAccount notify the engine to create a new account for a party
 func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notify)
-}
-
-// CreateGeneralAccounts creates new general accounts for a party
-func (e *Engine) CreateGeneralAccounts(partyID string) error {
-	_, err := e.party.MakeGeneralAccounts(partyID)
-	return err
 }
 
 func (e *Engine) Withdraw(w *types.Withdraw) error {
