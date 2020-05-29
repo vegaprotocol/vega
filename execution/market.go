@@ -301,7 +301,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			} else {
 				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
 				// I'd say next block
-				evt := events.NewTransferResponse(context.Background(), transfers)
+				evt := events.NewTransferResponse(context.TODO(), transfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
@@ -323,7 +323,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					evt := events.NewTransferResponse(context.Background(), clearMarketTransfers)
+					evt := events.NewTransferResponse(context.TODO(), clearMarketTransfers)
 					m.broker.Send(evt)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
@@ -1046,7 +1046,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(context.Background(), evts, m.markPrice)
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
 	if len(riskUpdates) == 0 {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
@@ -1131,7 +1131,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 		PartyID:  order.PartyID,
 		MarketID: order.MarketID,
 	}
-	return m.CancelOrder(context.Background(), &cancellation)
+	return m.CancelOrder(context.TODO(), &cancellation)
 }
 
 // AmendOrder amend an existing order from the order book
