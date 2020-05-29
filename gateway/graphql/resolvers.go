@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/grpc"
 
 	"code.vegaprotocol.io/vega/gateway"
@@ -1461,7 +1462,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		order.ExpiresAt = &wrappers.Int64Value{Value: expiresAt.UnixNano()}
 	}
 	if reference != nil {
 		order.Reference = *reference

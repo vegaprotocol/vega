@@ -723,23 +723,7 @@
                 </li>
 
                 <li>
-                  <a href="#vega.FOKOptions"><span class="badge">M</span>FOKOptions</a>
-                </li>
-
-                <li>
                   <a href="#vega.FinancialAmount"><span class="badge">M</span>FinancialAmount</a>
-                </li>
-
-                <li>
-                  <a href="#vega.GTCOptions"><span class="badge">M</span>GTCOptions</a>
-                </li>
-
-                <li>
-                  <a href="#vega.GTTOptions"><span class="badge">M</span>GTTOptions</a>
-                </li>
-
-                <li>
-                  <a href="#vega.IOCOptions"><span class="badge">M</span>IOCOptions</a>
                 </li>
 
                 <li>
@@ -6165,13 +6149,6 @@
 
 
 
-        <h3 id="vega.FOKOptions">FOKOptions</h3>
-        <p>There are currently no TIF=FOK options.</p>
-
-
-
-
-
         <h3 id="vega.FinancialAmount">FinancialAmount</h3>
         <p></p>
 
@@ -6198,71 +6175,6 @@
 
             </tbody>
           </table>
-
-
-
-
-
-        <h3 id="vega.GTCOptions">GTCOptions</h3>
-        <p>There are currently no TIF=GTC options.</p>
-
-
-
-
-
-        <h3 id="vega.GTTOptions">GTTOptions</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>expiresAt</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>the time at which the order expires. nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>expiresAt</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
-        <h3 id="vega.IOCOptions">IOCOptions</h3>
-        <p>There are currently no TIF=ION options.</p>
 
 
 
@@ -7092,6 +7004,13 @@ after each successful amend </p></td>
                 </tr>
 
                 <tr>
+                  <td>expiresAt</td>
+                  <td><a href="#google.protobuf.Int64Value">google.protobuf.Int64Value</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
                   <td>type</td>
                   <td><a href="#vega.Order.Type">Order.Type</a></td>
                   <td></td>
@@ -7101,34 +7020,6 @@ after each successful amend </p></td>
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>gtcOptions</td>
-                  <td><a href="#vega.GTCOptions">GTCOptions</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>gttOptions</td>
-                  <td><a href="#vega.GTTOptions">GTTOptions</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>iocOptions</td>
-                  <td><a href="#vega.IOCOptions">IOCOptions</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>focOptions</td>
-                  <td><a href="#vega.FOKOptions">FOKOptions</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>

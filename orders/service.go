@@ -5,19 +5,21 @@ import (
 	"sync/atomic"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"github.com/golang/protobuf/ptypes/wrappers"
+	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
-
-	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
 	// ErrInvalidExpirationDTFmt signals that the time format was invalid
 	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
+	// ErrMissingExpirationDT signals that the time format was nil/missing
+	ErrMissingExpirationDT = errors.New("missing expiration datetime")
 	// ErrInvalidExpirationDT signals that the time format was invalid
 	ErrInvalidExpirationDT = errors.New("invalid expiration datetime (cannot be in the past)")
 	// ErrInvalidTimeInForceForMarketOrder signals that the time in force used with a market order is not accepted
@@ -157,7 +159,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		}
 	}
 
-	if sub.TimeInForce != types.Order_GTT && sub.ExpiresAt != 0 {
+	if sub.TimeInForce != types.Order_GTT && sub.ExpiresAt != nil {
 		return ErrNonGTTOrderWithExpiry
 	}
 
@@ -220,8 +222,11 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	return nil
 }
 
-func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
-	exp := vegatime.UnixNano(expiresAt)
+func (s *Svc) validateOrderExpirationTS(expiresAt *wrappers.Int64Value) (time.Time, error) {
+	if expiresAt == nil {
+		return time.Time{}, ErrMissingExpirationDT
+	}
+	exp := vegatime.UnixNano(expiresAt.Value)
 
 	now, err := s.timeService.GetTimeNow()
 	if err != nil {

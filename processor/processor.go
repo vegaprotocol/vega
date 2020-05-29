@@ -288,6 +288,11 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		return nil, err
 	}
 
+	var expiresAt int64
+	if orderSubmission.ExpiresAt != nil {
+		expiresAt = orderSubmission.ExpiresAt.Value
+	}
+
 	order := types.Order{
 		Id:          orderSubmission.Id,
 		MarketID:    orderSubmission.MarketID,
@@ -297,7 +302,7 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		Side:        orderSubmission.Side,
 		TimeInForce: orderSubmission.TimeInForce,
 		Type:        orderSubmission.Type,
-		ExpiresAt:   orderSubmission.ExpiresAt,
+		ExpiresAt:   expiresAt,
 		Reference:   orderSubmission.Reference,
 		Status:      types.Order_Active,
 		CreatedAt:   0,

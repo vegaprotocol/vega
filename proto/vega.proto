@@ -4,6 +4,7 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "google/protobuf/wrappers.proto";
 
 enum Side { Buy = 0; Sell = 1; }
 
@@ -320,31 +321,9 @@ message OrderSubmission {
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
+  google.protobuf.Int64Value expiresAt = 8;
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
   string reference = 10;
-  oneof tifOptions {
-    GTCOptions gtcOptions = 100;
-    GTTOptions gttOptions = 101;
-    IOCOptions iocOptions = 102;
-    FOKOptions focOptions = 103;
-  }
-}
-
-message GTCOptions {
-  // There are currently no TIF=GTC options.
-}
-
-message GTTOptions {
-  // the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-  int64 expiresAt = 1 [(validator.field) = {int_gt: 0}];
-}
-
-message IOCOptions {
-  // There are currently no TIF=ION options.
-}
-
-message FOKOptions {
-  // There are currently no TIF=FOK options.
 }
 
 message OrderCancellation {

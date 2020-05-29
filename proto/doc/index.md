@@ -153,11 +153,7 @@
     - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
-    - [FOKOptions](#vega.FOKOptions)
     - [FinancialAmount](#vega.FinancialAmount)
-    - [GTCOptions](#vega.GTCOptions)
-    - [GTTOptions](#vega.GTTOptions)
-    - [IOCOptions](#vega.IOCOptions)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
@@ -2306,16 +2302,6 @@ Proposal can enter Failed state from any other state.
 
 
 
-<a name="vega.FOKOptions"></a>
-
-### FOKOptions
-There are currently no TIF=FOK options.
-
-
-
-
-
-
 <a name="vega.FinancialAmount"></a>
 
 ### FinancialAmount
@@ -2326,41 +2312,6 @@ There are currently no TIF=FOK options.
 | ----- | ---- | ----- | ----------- |
 | amount | [int64](#int64) |  |  |
 | asset | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.GTCOptions"></a>
-
-### GTCOptions
-There are currently no TIF=GTC options.
-
-
-
-
-
-
-<a name="vega.GTTOptions"></a>
-
-### GTTOptions
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| expiresAt | [int64](#int64) |  | the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
-
-
-
-
-
-
-<a name="vega.IOCOptions"></a>
-
-### IOCOptions
-There are currently no TIF=ION options.
 
 
 
@@ -2595,12 +2546,9 @@ There are currently no TIF=ION options.
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  |  |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| expiresAt | [google.protobuf.Int64Value](#google.protobuf.Int64Value) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | reference | [string](#string) |  |  |
-| gtcOptions | [GTCOptions](#vega.GTCOptions) |  |  |
-| gttOptions | [GTTOptions](#vega.GTTOptions) |  |  |
-| iocOptions | [IOCOptions](#vega.IOCOptions) |  |  |
-| focOptions | [FOKOptions](#vega.FOKOptions) |  |  |
 
 
 

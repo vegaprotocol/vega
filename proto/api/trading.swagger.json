@@ -1640,9 +1640,6 @@
         }
       }
     },
-    "vegaFOKOptions": {
-      "type": "object"
-    },
     "vegaFuture": {
       "type": "object",
       "properties": {
@@ -1654,19 +1651,6 @@
         },
         "ethereumEvent": {
           "$ref": "#/definitions/vegaEthereumEvent"
-        }
-      }
-    },
-    "vegaGTCOptions": {
-      "type": "object"
-    },
-    "vegaGTTOptions": {
-      "type": "object",
-      "properties": {
-        "expiresAt": {
-          "type": "string",
-          "format": "int64",
-          "description": "the time at which the order expires. nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
         }
       }
     },
@@ -1689,9 +1673,6 @@
           }
         }
       }
-    },
-    "vegaIOCOptions": {
-      "type": "object"
     },
     "vegaInstrument": {
       "type": "object",
@@ -2129,23 +2110,15 @@
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
+        "expiresAt": {
+          "type": "string",
+          "format": "int64"
+        },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
         },
         "reference": {
           "type": "string"
-        },
-        "gtcOptions": {
-          "$ref": "#/definitions/vegaGTCOptions"
-        },
-        "gttOptions": {
-          "$ref": "#/definitions/vegaGTTOptions"
-        },
-        "iocOptions": {
-          "$ref": "#/definitions/vegaIOCOptions"
-        },
-        "focOptions": {
-          "$ref": "#/definitions/vegaFOKOptions"
         }
       }
     },

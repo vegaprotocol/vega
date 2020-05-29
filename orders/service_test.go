@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/ptypes/wrappers"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -97,7 +98,7 @@ func testPrepareOrderSuccess(t *testing.T) {
 	order := orderSubmission
 	// set a specific reference
 	order.Reference = "test-reference"
-	order.ExpiresAt = expires.UnixNano()
+	order.ExpiresAt = &wrappers.Int64Value{Value: expires.UnixNano()}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -114,7 +115,7 @@ func testPrepareOrderRefSuccess(t *testing.T) {
 	expires := now.Add(time.Hour * 2)
 	order := orderSubmission
 	// DO NOT set a specific reference
-	order.ExpiresAt = expires.UnixNano()
+	order.ExpiresAt = &wrappers.Int64Value{Value: expires.UnixNano()}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -131,7 +132,7 @@ func testOrderSuccess(t *testing.T) {
 	// expires 2 hours from now
 	expires := now.Add(time.Hour * 2)
 	order := orderSubmission
-	order.ExpiresAt = expires.UnixNano()
+	order.ExpiresAt = &wrappers.Int64Value{Value: expires.UnixNano()}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -144,13 +145,18 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	order := orderSubmission
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
-	order.ExpiresAt = 12346
+	order.ExpiresAt = &wrappers.Int64Value{Value: 123456}
 	order.TimeInForce = types.Order_GTC
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 
-	// ensure it works with a 0 expiry
-	order.ExpiresAt = 0
+	// ensure it still throws an error with a zero expiry
+	order.ExpiresAt = &wrappers.Int64Value{}
+	err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
+	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
+
+	// ensure it works with a nil expiry
+	order.ExpiresAt = nil
 	err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
 }

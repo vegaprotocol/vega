@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -156,52 +157,14 @@ func (this *OrderSubmission) Validate() error {
 	if _, ok := Order_TimeInForce_name[int32(this.TimeInForce)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("TimeInForce", fmt.Errorf(`value '%v' must be a valid Order_TimeInForce field`, this.TimeInForce))
 	}
+	if this.ExpiresAt != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.ExpiresAt); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", err)
+		}
+	}
 	if _, ok := Order_Type_name[int32(this.Type)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Type", fmt.Errorf(`value '%v' must be a valid Order_Type field`, this.Type))
 	}
-	if oneOfNester, ok := this.GetTifOptions().(*OrderSubmission_GtcOptions); ok {
-		if oneOfNester.GtcOptions != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.GtcOptions); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("GtcOptions", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetTifOptions().(*OrderSubmission_GttOptions); ok {
-		if oneOfNester.GttOptions != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.GttOptions); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("GttOptions", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetTifOptions().(*OrderSubmission_IocOptions); ok {
-		if oneOfNester.IocOptions != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.IocOptions); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("IocOptions", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetTifOptions().(*OrderSubmission_FocOptions); ok {
-		if oneOfNester.FocOptions != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.FocOptions); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("FocOptions", err)
-			}
-		}
-	}
-	return nil
-}
-func (this *GTCOptions) Validate() error {
-	return nil
-}
-func (this *GTTOptions) Validate() error {
-	if !(this.ExpiresAt > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", fmt.Errorf(`value '%v' must be greater than '0'`, this.ExpiresAt))
-	}
-	return nil
-}
-func (this *IOCOptions) Validate() error {
-	return nil
-}
-func (this *FOKOptions) Validate() error {
 	return nil
 }
 func (this *OrderCancellation) Validate() error {
