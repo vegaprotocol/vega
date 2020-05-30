@@ -78,11 +78,11 @@ func (p *PartyEngine) Find(partyID string) (*types.Party, error) {
 }
 
 func (p *PartyEngine) addMarket(market types.Market) {
-	if _, found := p.markets[market.Id]; !found {
-		p.markets[market.Id] = market
-	} else if p.log.GetLevel() == logging.DebugLevel {
-		p.log.Debug("attempted to overwrite market", logging.Market(market))
+	if _, found := p.markets[market.Id]; found {
+		p.log.Debug("overwriting market in party engine", logging.Market(market))
+		// it will be OK to overwrite market on update market proposal enactment
 	}
+	p.markets[market.Id] = market
 }
 
 // makeGeneralAccounts creates general accounts on every market for the given party id
