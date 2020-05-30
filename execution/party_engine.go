@@ -58,7 +58,7 @@ func (p *PartyEngine) Add(partyID string) (bool, error) {
 		return false, ErrInvalidPartyId
 	}
 	if !p.partyExists(partyID) {
-		if _, err := p.MakeGeneralAccounts(partyID); err != nil {
+		if _, err := p.makeGeneralAccounts(partyID); err != nil {
 			return false, err
 		}
 		p.buf.Add(types.Party{Id: partyID})
@@ -85,8 +85,8 @@ func (p *PartyEngine) addMarket(market types.Market) {
 	}
 }
 
-// MakeGeneralAccounts creates general accounts on every market for the given party id
-func (p *PartyEngine) MakeGeneralAccounts(partyID string) (int, error) {
+// makeGeneralAccounts creates general accounts on every market for the given party id
+func (p *PartyEngine) makeGeneralAccounts(partyID string) (int, error) {
 	added := map[string]struct{}{}
 	for _, market := range p.markets {
 		asset, err := market.GetAsset()
@@ -140,10 +140,12 @@ func (p *PartyEngine) creditTokenAccount(partyID string, amount uint64) error {
 	return nil
 }
 
+// DefaultCredit is arbitrary selected value to credit newly created accounts by default
+const DefaultCredit = 1000000000 // 10000.00000
+
 // NotifyTraderAccount will create a new party in the system
 // and top-up its general account with the default amount
 func (p *PartyEngine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
-	const defaultCredit = 1000000000 // 10000.00000 - arbitrary selected value
 
 	if notify == nil {
 		return ErrNotifyPartyIdMissing
@@ -153,7 +155,7 @@ func (p *PartyEngine) NotifyTraderAccount(notify *types.NotifyTraderAccount) err
 	}
 	credit := notify.Amount
 	if credit == 0 {
-		credit = defaultCredit
+		credit = DefaultCredit
 	}
 	if err := p.creditGeneralAccounts(notify.TraderID, credit); err != nil {
 		return nil
