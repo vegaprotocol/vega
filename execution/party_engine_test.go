@@ -44,6 +44,14 @@ func TestNewParty(t *testing.T) {
 	assert.Len(t, party.Parties, 1)
 	assert.NoError(t, err)
 
+	asset, err := testMarket[0].GetAsset()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, asset)
+	acc, err := collateralEngine.GetPartyGeneralAccount(notify1.TraderID, asset)
+	assert.NoError(t, err)
+	assert.NotNil(t, acc)
+	assert.Equal(t, uint64(execution.DefaultCredit), acc.GetBalance())
+
 	foundParty, err := party.Find(notify1.TraderID)
 	assert.NoError(t, err)
 	assert.NotNil(t, foundParty)
@@ -53,12 +61,22 @@ func TestNewParty(t *testing.T) {
 	err = party.NotifyTraderAccount(&notify1)
 	assert.NoError(t, err)
 
+	acc, err = collateralEngine.GetPartyGeneralAccount(notify1.TraderID, asset)
+	assert.NoError(t, err)
+	assert.NotNil(t, acc)
+	assert.Equal(t, uint64(execution.DefaultCredit+9876), acc.GetBalance())
+
 	notify2 := proto.NotifyTraderAccount{
 		TraderID: "B0b@f3tt",
 		Amount:   1234,
 	}
 	err = party.NotifyTraderAccount(&notify2)
 	assert.NoError(t, err)
+
+	acc, err = collateralEngine.GetPartyGeneralAccount(notify2.TraderID, asset)
+	assert.NoError(t, err)
+	assert.NotNil(t, acc)
+	assert.Equal(t, uint64(1234), acc.GetBalance())
 
 	foundParty, err = party.Find(notify2.TraderID)
 	assert.NoError(t, err)
@@ -105,10 +123,7 @@ func TestNewAccount(t *testing.T) {
 	assert.NotNil(t, engine)
 
 	trader := "Finn the human"
-	count, err := engine.MakeGeneralAccounts(trader)
-	assert.NoError(t, err)
-	assert.Equal(t, len(markets), count)
-	assert.Len(t, engine.Parties, 0, "creating general accounts does not register party")
+	assert.Empty(t, engine.Parties)
 
 	added, err := engine.Add(trader)
 	assert.NoError(t, err)
