@@ -128,11 +128,15 @@ func customErrorFromStatus(err error) error {
 	return err
 }
 
-func timestampToDatetime(timestampInSeconds int64) string {
+func secondsTSToDatetime(timestampInSeconds int64) string {
 	return vegatime.Format(vegatime.Unix(timestampInSeconds, 0))
 }
 
-func parseTimestamp(timestamp string) (int64, error) {
+func nanoTSToDatetime(timestampInNanoSeconds int64) string {
+	return vegatime.Format(vegatime.UnixNano(timestampInNanoSeconds))
+}
+
+func datetimeToSecondsTS(timestamp string) (int64, error) {
 	converted, err := vegatime.Parse(timestamp)
 	if err != nil {
 		return 0, err
