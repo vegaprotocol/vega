@@ -131,6 +131,7 @@ func NewMarket(
 	broker Broker,
 	idgen *IDgenerator,
 ) (*Market, error) {
+
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate a new market")
