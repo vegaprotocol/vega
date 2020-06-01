@@ -849,7 +849,7 @@ func (r *myProposalResolver) Datetime(ctx context.Context, data *types.Governanc
 		// no timestamp for prepared proposals
 		return "", nil
 	}
-	return timestampToDatetime(data.Proposal.Timestamp), nil
+	return nanoTSToDatetime(data.Proposal.Timestamp), nil
 }
 
 func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*ProposalTerms, error) {

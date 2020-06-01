@@ -2,6 +2,7 @@ package gql
 
 import (
 	"testing"
+	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -90,4 +91,28 @@ func TestParseSide(t *testing.T) {
 	unknown := Side("好到时候")
 	_, err = parseSide(&unknown)
 	assert.Error(t, err)
+}
+
+func TestSecondsTSToDatetime(t *testing.T) {
+	aTime := "2020-05-30T00:00:00Z"
+	testTime, err := time.Parse(time.RFC3339Nano, aTime)
+	assert.NoError(t, err)
+
+	stringified := secondsTSToDatetime(testTime.Unix())
+	assert.EqualValues(t, aTime, stringified)
+
+	badValue := secondsTSToDatetime(testTime.UnixNano())
+	assert.NotEqual(t, aTime, badValue)
+}
+
+func TestNanoTSToDatetime(t *testing.T) {
+	aTime := "2020-05-30T00:00:00Z"
+	testTime, err := time.Parse(time.RFC3339Nano, aTime)
+	assert.NoError(t, err)
+
+	stringified := nanoTSToDatetime(testTime.UnixNano())
+	assert.EqualValues(t, aTime, stringified)
+
+	badValue := nanoTSToDatetime(testTime.Unix())
+	assert.NotEqual(t, aTime, badValue)
 }

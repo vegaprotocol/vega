@@ -1201,6 +1201,8 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
+		// Update the exiting message in place before we cancel it
+		m.orderAmendInPlace(existingOrder, amendedOrder)
 		cancellation, err := m.matching.CancelOrder(amendedOrder)
 		if cancellation == nil || err != nil {
 			if m.log.GetLevel() == logging.DebugLevel {
