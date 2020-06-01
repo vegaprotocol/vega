@@ -70,7 +70,7 @@ func (p *PartyEngine) Add(partyID string) (bool, error) {
 }
 
 // Find looks up existing party by ID
-func (p *PartyEngine) Find(partyID string) (*types.Party, error) {
+func (p *PartyEngine) GetByID(partyID string) (*types.Party, error) {
 	if p.partyExists(partyID) {
 		return &types.Party{Id: partyID}, nil
 	}

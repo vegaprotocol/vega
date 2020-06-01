@@ -52,7 +52,7 @@ func TestNewParty(t *testing.T) {
 	assert.NotNil(t, acc)
 	assert.Equal(t, uint64(execution.DefaultCredit), acc.GetBalance())
 
-	foundParty, err := party.Find(notify1.TraderID)
+	foundParty, err := party.GetByID(notify1.TraderID)
 	assert.NoError(t, err)
 	assert.NotNil(t, foundParty)
 	assert.Equal(t, notify1.TraderID, foundParty.Id)
@@ -78,12 +78,12 @@ func TestNewParty(t *testing.T) {
 	assert.NotNil(t, acc)
 	assert.Equal(t, uint64(1234), acc.GetBalance())
 
-	foundParty, err = party.Find(notify2.TraderID)
+	foundParty, err = party.GetByID(notify2.TraderID)
 	assert.NoError(t, err)
 	assert.NotNil(t, foundParty)
 	assert.Equal(t, notify2.TraderID, foundParty.Id)
 
-	noParty, err := party.Find("L@nd099")
+	noParty, err := party.GetByID("L@nd099")
 	assert.Error(t, err)
 	assert.Nil(t, noParty)
 	assert.Equal(t, err, execution.ErrPartyDoesNotExist)
@@ -131,7 +131,7 @@ func TestNewAccount(t *testing.T) {
 	assert.Len(t, engine.Parties, 1, "adding party registers it with engine")
 	assert.Equal(t, trader, engine.Parties[0])
 
-	foundParty, err := engine.Find(trader)
+	foundParty, err := engine.GetByID(trader)
 	assert.NoError(t, err)
 	assert.NotNil(t, foundParty)
 	assert.Equal(t, trader, foundParty.Id)

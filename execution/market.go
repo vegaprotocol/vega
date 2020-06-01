@@ -376,8 +376,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	// party, _ := m.parties.GetByID(order.PartyID)
-	party, _ := m.partyEngine.Find(order.PartyID)
+	party, _ := m.partyEngine.GetByID(order.PartyID)
 	if party == nil {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
