@@ -683,7 +683,12 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 	if m.DecimalPlaces < 0 {
 		return nil, ErrInvalidDecimalPlaces
 	}
+	var id string
+	if m.ID != nil {
+		id = *m.ID
+	}
 	result := &types.Market{
+		Id:                 id,
 		Name:               m.Name,
 		TradableInstrument: ti,
 		DecimalPlaces:      uint64(m.DecimalPlaces),

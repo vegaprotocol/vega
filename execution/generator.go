@@ -11,6 +11,7 @@ type IDgenerator struct {
 	batches   uint64
 	orders    uint64
 	proposals uint64
+	markets   uint64
 }
 
 // NewIDGen returns an IDgenerator, and is used to abstract this type.
@@ -33,4 +34,10 @@ func (i *IDgenerator) SetID(o *types.Order) {
 func (i *IDgenerator) SetProposalID(p *types.Proposal) {
 	i.proposals++
 	p.ID = fmt.Sprintf("P%010d-%010d", i.batches, i.proposals)
+}
+
+// SetMarketID sets market ID and incrememts total market count
+func (i *IDgenerator) SetMarketID(market *types.Market) {
+	i.markets++
+	market.Id = fmt.Sprintf("M%010d-%010d", i.batches, i.markets)
 }
