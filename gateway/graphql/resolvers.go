@@ -1566,7 +1566,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 		return nil, err
 	}
 	return &PreparedVote{
-		Blob: string(resp.Blob),
+		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 		Vote: &ProposalVote{
 			Vote: &Vote{
 				Party: party,
