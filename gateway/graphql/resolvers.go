@@ -867,8 +867,9 @@ func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vot
 			return nil, err
 		}
 		result[i] = &Vote{
-			Value: VoteValueFromProto(v.Value),
-			Party: voter,
+			Value:    VoteValueFromProto(v.Value),
+			Party:    voter,
+			Datetime: nanoTSToDatetime(v.Timestamp),
 		}
 	}
 	return result, nil
