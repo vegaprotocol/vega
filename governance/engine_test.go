@@ -211,11 +211,6 @@ func testProposalAccepted(t *testing.T) {
 			MinParticipationStake: 55,
 		},
 	}
-	// we will call this getPartyTokenAccount 3 times (1 for creating proposal, 1 for vote, 1 checking vote)
-	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(3).Return(&acc, nil)
-	// call this once -> party is voting no, we just want % of yes votes vs total
-	eng.accs.EXPECT().GetPartyTokenAccount(partyID2).Times(1).Return(&acc2, nil)
-	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(totalTokens)
 	calls := 0
 	states := []types.Proposal_State{
 		types.Proposal_OPEN,
@@ -225,6 +220,7 @@ func testProposalAccepted(t *testing.T) {
 		assert.Equal(t, states[calls], p.State)
 		calls++
 	})
+	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(1).Return(&acc, nil) // only stake holders can propose
 	err := eng.AddProposal(prop)
 	assert.NoError(t, err)
 	vote := types.Vote{
@@ -233,10 +229,17 @@ func testProposalAccepted(t *testing.T) {
 		ProposalID: prop.ID,
 	}
 	eng.vbuf.EXPECT().Add(gomock.Any()).Times(2)
+	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(1).Return(&acc, nil) // only stake holders can vote
 	assert.NoError(t, eng.AddVote(vote))
+
 	vote.PartyID = partyID2
 	vote.Value = types.Vote_NO
+	eng.accs.EXPECT().GetPartyTokenAccount(partyID2).Times(1).Return(&acc2, nil) // only stake holders can vote
 	assert.NoError(t, eng.AddVote(vote))
+
+	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(totalTokens)
+	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(1).Return(&acc, nil)   // to count votes
+	eng.accs.EXPECT().GetPartyTokenAccount(partyID2).Times(1).Return(&acc2, nil) // to count votes
 	// simulate block time update triggering end of proposal vote
 	accepted := eng.OnChainTimeUpdate(closeTime.Add(time.Hour))
 	assert.NotEmpty(t, accepted)
