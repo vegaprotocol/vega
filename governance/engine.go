@@ -104,12 +104,14 @@ func (e *Engine) ReloadConf(cfg Config) {
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t
 	now := t.Unix()
-	allTokens := e.accs.GetTotalTokens()
+
+	totalStake := e.accs.GetTotalTokens()
+	counter := newStakeCounter(e.log, e.accs)
 
 	var toBeEnacted []*types.Proposal
 	for k, p := range e.proposals {
 		if p.Terms.ClosingTimestamp < now {
-			e.processClosed(p, allTokens)
+			e.closeProposal(p, counter, totalStake)
 		}
 		if p.State == types.Proposal_PASSED && p.Terms.EnactmentTimestamp < now {
 			delete(e.proposals, k)
@@ -207,36 +209,60 @@ func (e *Engine) validateVote(v types.Vote) (*governanceData, error) {
 	return p, nil
 }
 
-func (e *Engine) calculateVotes(votes map[string]*types.Vote) uint64 {
-	var tally uint64
-	for _, v := range votes {
-		account, err := e.accs.GetPartyTokenAccount(v.PartyID)
-		if err != nil {
-			e.log.Error(
-				"Failed to get account for party",
-				logging.String("party-id", v.PartyID),
-				logging.Error(err),
-			)
-			continue // skipping party with no valid token account as there is no much to do on tick
-		}
-		tally += account.Balance
-	}
-	return tally
-}
-
-func (e *Engine) processClosed(data *governanceData, allTokens uint64) {
+func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, totalStake uint64) {
 	proposal := data.Proposal
 
-	totalYES := e.calculateVotes(data.yes)
-	totalNO := e.calculateVotes(data.no)
+	yes := counter.countVotes(data.yes)
+	no := counter.countVotes(data.no)
 
 	proposal.State = types.Proposal_DECLINED
-	if totalYES > totalNO {
-		participationStake := float64(totalYES + totalNO)
-		minParticipationStake := float64(proposal.Terms.MinParticipationStake*allTokens) / 100
+	if yes > no {
+		participationStake := float64(yes + no)
+		minParticipationStake := float64(proposal.Terms.MinParticipationStake*totalStake) / 100
 		if participationStake >= minParticipationStake {
 			proposal.State = types.Proposal_PASSED
 		}
 	}
 	e.buf.Add(*proposal)
+}
+
+// stakeCounter caches token balance per party and counts votes
+// reads from accounts on every miss and does not have expiration policy
+type stakeCounter struct {
+	log      *logging.Logger
+	accounts Accounts
+	balances map[string]uint64
+}
+
+func newStakeCounter(log *logging.Logger, accounts Accounts) *stakeCounter {
+	return &stakeCounter{
+		log:      log,
+		accounts: accounts,
+		balances: map[string]uint64{},
+	}
+}
+func (s *stakeCounter) countVotes(votes map[string]*types.Vote) uint64 {
+	var tally uint64
+	for _, v := range votes {
+		tally += s.getTokens(v.PartyID)
+	}
+	return tally
+}
+
+func (s *stakeCounter) getTokens(partyID string) uint64 {
+	if balance, found := s.balances[partyID]; found {
+		return balance
+	}
+	account, err := s.accounts.GetPartyTokenAccount(partyID)
+	if err != nil {
+		s.log.Error(
+			"Failed to get account for party",
+			logging.String("party-id", partyID),
+			logging.Error(err),
+		)
+		// not much we can do with the error as there is nowhere to buble up the error on tick
+		return 0
+	}
+	s.balances[partyID] = account.Balance
+	return account.Balance
 }
