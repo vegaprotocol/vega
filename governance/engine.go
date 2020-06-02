@@ -114,6 +114,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 			e.closeProposal(p, counter, totalStake)
 		}
 		if p.State == types.Proposal_PASSED && p.Terms.EnactmentTimestamp < now {
+			toBeEnacted = append(toBeEnacted, p.Proposal)
 			delete(e.proposals, k)
 			delete(e.proposalRefs, p.Reference)
 		}
