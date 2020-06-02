@@ -52,12 +52,12 @@ type Engine struct {
 	log           *logging.Logger
 	mu            sync.Mutex
 	currentTime   time.Time
-	proposals     map[string]*proposalVote
-	proposalRefs  map[string]*proposalVote
+	proposals     map[string]*governanceData
+	proposalRefs  map[string]*governanceData
 	networkParams NetworkParameters
 }
 
-type proposalVote struct {
+type governanceData struct {
 	*types.Proposal
 	yes map[string]*types.Vote
 	no  map[string]*types.Vote
@@ -78,8 +78,8 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		vbuf:          vbuf,
 		log:           log,
 		currentTime:   now,
-		proposals:     map[string]*proposalVote{},
-		proposalRefs:  map[string]*proposalVote{},
+		proposals:     map[string]*governanceData{},
+		proposalRefs:  map[string]*governanceData{},
 		networkParams: *params,
 	}
 }
@@ -104,16 +104,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t
 	now := t.Unix()
-	expired := []*proposalVote{}
+	allTokens := e.accs.GetTotalTokens()
+
+	var toBeEnacted []*types.Proposal
 	for k, p := range e.proposals {
-		// only if we're passed the valid unitl, letting in the last of the votes
 		if p.Terms.ClosingTimestamp < now {
-			expired = append(expired, p)
+			e.processClosed(p, allTokens)
+		}
+		if p.State == types.Proposal_PASSED && p.Terms.EnactmentTimestamp < now {
 			delete(e.proposals, k)
-			delete(e.proposalRefs, p.Reference) // remove from ref map, Foo
+			delete(e.proposalRefs, p.Reference)
 		}
 	}
-	return e.processProposals(expired)
+	return toBeEnacted
 }
 
 func (e *Engine) AddProposal(p types.Proposal) error {
@@ -132,7 +135,7 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 		delete(e.proposals, p.ID)
 		delete(e.proposalRefs, p.Reference)
 	} else {
-		pv := proposalVote{
+		pv := governanceData{
 			Proposal: &p,
 			yes:      map[string]*types.Vote{},
 			no:       map[string]*types.Vote{},
@@ -186,7 +189,7 @@ func (e *Engine) AddVote(v types.Vote) error {
 	return nil
 }
 
-func (e *Engine) validateVote(v types.Vote) (*proposalVote, error) {
+func (e *Engine) validateVote(v types.Vote) (*governanceData, error) {
 	tacc, err := e.accs.GetPartyTokenAccount(v.PartyID)
 	if err != nil {
 		return nil, err
@@ -204,40 +207,35 @@ func (e *Engine) validateVote(v types.Vote) (*proposalVote, error) {
 	return p, nil
 }
 
-func (e *Engine) processProposals(proposals []*proposalVote) []*types.Proposal {
-	// we're calculating based off of percentages
-	allTokens := e.accs.GetTotalTokens()
-	// 1 % of tokens represented here
-	tokPercent := float64(allTokens) / 100.0
-	accepted := make([]*types.Proposal, 0, len(proposals))
-	buf := map[string]*types.Account{}
-	var err error
-	for _, pw := range proposals {
-		p := pw.Proposal
-		var totalYES uint64
-		for _, v := range pw.yes {
-			tok, ok := buf[v.PartyID]
-			if !ok {
-				tok, err = e.accs.GetPartyTokenAccount(v.PartyID)
-				if err != nil {
-					e.log.Error(
-						"Failed to get account for party",
-						logging.String("party-id", v.PartyID),
-						logging.Error(err),
-					)
-					break
-				}
-			}
-			totalYES += tok.Balance
+func (e *Engine) calculateVotes(votes map[string]*types.Vote) uint64 {
+	var tally uint64
+	for _, v := range votes {
+		account, err := e.accs.GetPartyTokenAccount(v.PartyID)
+		if err != nil {
+			e.log.Error(
+				"Failed to get account for party",
+				logging.String("party-id", v.PartyID),
+				logging.Error(err),
+			)
+			continue // skipping party with no valid token account as there is no much to do on tick
 		}
-		p.State = types.Proposal_DECLINED
-		// participation stake used as a percentage required to approve the proposal
-		reqTokens := tokPercent * float64(p.Terms.MinParticipationStake)
-		if reqTokens <= float64(totalYES) {
-			p.State = types.Proposal_PASSED
-			accepted = append(accepted, p)
-		}
-		e.buf.Add(*p)
+		tally += account.Balance
 	}
-	return accepted
+	return tally
+}
+
+func (e *Engine) processClosed(data *governanceData, allTokens uint64) {
+	proposal := data.Proposal
+
+	totalYES := e.calculateVotes(data.yes)
+	totalNO := e.calculateVotes(data.no)
+
+	proposal.State = types.Proposal_DECLINED
+	if totalYES > totalNO {
+		participation := 100 * (totalYES + totalNO) / allTokens // percentage
+		if participation > proposal.Terms.MinParticipationStake {
+			proposal.State = types.Proposal_PASSED
+		}
+	}
+	e.buf.Add(*proposal)
 }
