@@ -382,14 +382,22 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
+		var price uint64 = 0
+		var expiresAt int64 = 0
+		if orderAmendment.Price != nil {
+			price = orderAmendment.Price.Value
+		}
+		if orderAmendment.ExpiresAt != nil {
+			expiresAt = orderAmendment.ExpiresAt.Value
+		}
 		e.log.Debug("Amend order",
 			logging.String("order-id", orderAmendment.GetOrderID()),
 			logging.String("party-id", orderAmendment.GetPartyID()),
 			logging.String("market-id", orderAmendment.GetMarketID()),
-			logging.Uint64("price", orderAmendment.GetPrice().Value),
+			logging.Uint64("price", price),
 			logging.Int64("sizeDelta", orderAmendment.GetSizeDelta()),
 			logging.String("tif", orderAmendment.GetTimeInForce().String()),
-			logging.Int64("expires-at", orderAmendment.GetExpiresAt().Value),
+			logging.Int64("expires-at", expiresAt),
 		)
 	}
 
