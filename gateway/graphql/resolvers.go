@@ -867,8 +867,9 @@ func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vot
 			return nil, err
 		}
 		result[i] = &Vote{
-			Value: VoteValueFromProto(v.Value),
-			Party: voter,
+			Value:    VoteValueFromProto(v.Value),
+			Party:    voter,
+			Datetime: nanoTSToDatetime(v.Timestamp),
 		}
 	}
 	return result, nil
@@ -1566,7 +1567,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 		return nil, err
 	}
 	return &PreparedVote{
-		Blob: string(resp.Blob),
+		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 		Vote: &ProposalVote{
 			Vote: &Vote{
 				Party: party,

@@ -489,6 +489,7 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
 		}
+		newMarket.Changes.Id = proposal.ID // reusing proposal ID for market ID
 		if err := e.SubmitMarket(newMarket.Changes); err != nil {
 			return err
 		}
