@@ -233,7 +233,6 @@ type Market struct {
 
 // Input variation of market details same to those defined in Market type
 type MarketInput struct {
-	ID                    *string                  `json:"id"`
 	Name                  string                   `json:"name"`
 	TradableInstrument    *TradableInstrumentInput `json:"tradableInstrument"`
 	ContinuousTradingMode *ContinuousTradingInput  `json:"continuousTradingMode"`
