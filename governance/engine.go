@@ -232,8 +232,9 @@ func (e *Engine) processClosed(data *governanceData, allTokens uint64) {
 
 	proposal.State = types.Proposal_DECLINED
 	if totalYES > totalNO {
-		participation := 100 * (totalYES + totalNO) / allTokens // percentage
-		if participation > proposal.Terms.MinParticipationStake {
+		participationStake := float64(totalYES + totalNO)
+		minParticipationStake := float64(proposal.Terms.MinParticipationStake*allTokens) / 100
+		if participationStake >= minParticipationStake {
 			proposal.State = types.Proposal_PASSED
 		}
 	}
