@@ -45,6 +45,8 @@ var (
 	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
 	// ErrInvalidAmendRemainQuantity signals incorrect remaining qty for a reduce by amend
 	ErrInvalidAmendRemainQuantity = errors.New("incorrect remaining qty for a reduce by amend")
+	// ErrEmptyMarketID is returned if processed market has an empty id
+	ErrEmptyMarketID = errors.New("invalid market id (empty)")
 
 	networkPartyID = "network"
 )
@@ -131,6 +133,10 @@ func NewMarket(
 	broker Broker,
 	idgen *IDgenerator,
 ) (*Market, error) {
+
+	if len(mkt.Id) == 0 {
+		return nil, ErrEmptyMarketID
+	}
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
 	if err != nil {
