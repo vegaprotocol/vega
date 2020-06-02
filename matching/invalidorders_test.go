@@ -62,7 +62,7 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 		Type:        types.Order_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
-	assert.Equal(t, types.ErrInvalidSize, err)
+	assert.Equal(t, types.ErrInvalidRemainingSize, err)
 	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
 }
 
