@@ -19,9 +19,7 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 		err = types.ErrInvalidMarketID
 	} else if orderMessage.Type == types.Order_TYPE_UNSPECIFIED {
 		err = types.ErrInvalidType
-	} else if orderMessage.CreatedAt < b.latestTimestamp {
-		err = types.ErrOrderOutOfSequence
-	} else if orderMessage.Remaining > 0 && orderMessage.Remaining != orderMessage.Size {
+	} else if orderMessage.Remaining == 0 {
 		err = types.ErrInvalidRemainingSize
 	} else if orderMessage.TimeInForce == types.Order_GTT && orderMessage.ExpiresAt == 0 {
 		// if order is GTT, validate timestamp and convert to block number

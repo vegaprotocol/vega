@@ -329,3 +329,66 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	assert.EqualValues(t, amended.Order.ExpiresAt, 10000000010)
 	assert.EqualValues(t, amended.Order.UpdatedAt, 10000000100)
 }
+
+func TestAmendPartialFillCancelReplace(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		TimeInForce: types.Order_GTC,
+		Side:        types.Side_Buy,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        20,
+		Price:       5,
+		Remaining:   20,
+		Reference:   "party1-buy-order",
+		Type:        types.Order_LIMIT,
+	}
+	// Place an order
+	buyConfirmation, err := tm.market.SubmitOrder(orderBuy)
+	assert.NotNil(t, buyConfirmation)
+	assert.NoError(t, err)
+
+	orderSell := &types.Order{
+		TimeInForce: types.Order_IOC,
+		Side:        types.Side_Sell,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        10,
+		Price:       5,
+		Remaining:   10,
+		Reference:   "party2-sell-order",
+		Type:        types.Order_MARKET,
+	}
+	// Partially fill the original order
+	sellConfirmation, err := tm.market.SubmitOrder(orderSell)
+	assert.NotNil(t, sellConfirmation)
+	assert.NoError(t, err)
+
+	amend := &types.OrderAmendment{
+		OrderID:  buyConfirmation.GetOrder().GetId(),
+		PartyID:  party1,
+		MarketID: tm.market.GetID(),
+		Price:    &types.Price{Value: 20},
+	}
+	amended, err := tm.market.AmendOrder(amend)
+	assert.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Check the values are correct
+	assert.EqualValues(t, amended.Order.Price, 20)
+	assert.EqualValues(t, amended.Order.Remaining, 10)
+	assert.EqualValues(t, amended.Order.Size, 20)
+}

@@ -194,6 +194,11 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
+	// If the creation date for the 2 orders is different, something went wrong
+	if originalOrder.CreatedAt != amendedOrder.CreatedAt {
+		return types.ErrOrderOutOfSequence
+	}
+
 	if err := b.validateOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Order validation failure",
