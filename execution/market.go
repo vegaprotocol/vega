@@ -1158,6 +1158,16 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		return nil, types.ErrInvalidOrderID
 	}
 
+	// We can only amend this order if we created it
+	if existingOrder.PartyID != orderAmendment.PartyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Invalid party ID",
+				logging.String("original party id:", existingOrder.PartyID),
+				logging.String("amend party id:", orderAmendment.PartyID))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
 		if m.log.GetLevel() == logging.DebugLevel {
