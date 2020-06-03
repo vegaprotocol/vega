@@ -329,3 +329,44 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	assert.EqualValues(t, amended.Order.ExpiresAt, 10000000010)
 	assert.EqualValues(t, amended.Order.UpdatedAt, 10000000100)
 }
+
+func TestAmendWrongPartyID(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_GTC,
+		Side:        types.Side_Buy,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	// Submit the original order
+	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Send an aend but use the wrong partyID
+	amend := &types.OrderAmendment{
+		OrderID:  confirmation.GetOrder().GetId(),
+		PartyID:  party2,
+		MarketID: confirmation.GetOrder().GetMarketID(),
+		Price:    &types.Price{Value: 101},
+	}
+	amended, err := tm.market.AmendOrder(amend)
+	assert.Nil(t, amended)
+	assert.Error(t, err, types.ErrInvalidPartyID)
+}
