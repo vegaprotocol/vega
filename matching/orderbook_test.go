@@ -618,28 +618,14 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		CreatedAt: 10,
 		Side:      types.Side_Buy,
 		Size:      1,
+		Remaining: 1,
 	}
 	_, err := book.SubmitOrder(&timeStampOrder)
 	assert.NoError(t, err)
 	// cancel order again, just so we set the timestamp as expected
 	book.CancelOrder(&timeStampOrder)
 
-	invalidTimestampOrdertypes := &types.Order{
-		Type:        types.Order_LIMIT,
-		MarketID:    market,
-		PartyID:     "A",
-		Side:        types.Side_Sell,
-		Price:       100,
-		Size:        100,
-		Remaining:   100,
-		TimeInForce: types.Order_GTC,
-		CreatedAt:   0,
-		Id:          "id-number-one",
-	}
-	_, err = book.SubmitOrder(invalidTimestampOrdertypes)
-	assert.Equal(t, types.OrderError_ORDER_OUT_OF_SEQUENCE, err)
-
-	invalidRemainginSizeOrdertypes := &types.Order{
+	invalidRemainingSizeOrdertypes := &types.Order{
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -651,7 +637,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		CreatedAt:   10,
 		Id:          "id-number-one",
 	}
-	_, err = book.SubmitOrder(invalidRemainginSizeOrdertypes)
+	_, err = book.SubmitOrder(invalidRemainingSizeOrdertypes)
 	assert.Equal(t, types.OrderError_INVALID_REMAINING_SIZE, err)
 }
 
@@ -846,11 +832,12 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
-		Type:     types.Order_LIMIT,
-		MarketID: market,
-		Id:       fmt.Sprintf("V%010d-%010d", 1, 1),
-		PartyID:  "A",
-		Size:     100,
+		Type:      types.Order_LIMIT,
+		MarketID:  market,
+		Id:        fmt.Sprintf("V%010d-%010d", 1, 1),
+		PartyID:   "A",
+		Size:      100,
+		Remaining: 100,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -876,11 +863,12 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
-		Type:     types.Order_LIMIT,
-		MarketID: market,
-		Id:       "id",
-		PartyID:  "A",
-		Size:     100,
+		Type:      types.Order_LIMIT,
+		MarketID:  market,
+		Id:        "id",
+		PartyID:   "A",
+		Size:      100,
+		Remaining: 100,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -993,6 +981,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	editedOrder := &types.Order{
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
+		PartyID:     "A",
 		Id:          "123456",
 		Side:        types.Side_Sell,
 		Price:       100,
