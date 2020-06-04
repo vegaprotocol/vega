@@ -107,8 +107,9 @@ func testPrepareProposalNormal(t *testing.T) {
 
 	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds: 100 * 24 * 60 * 60,
-			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
+			MinCloseInSeconds:     100 * 24 * 60 * 60,
+			MaxCloseInSeconds:     1000 * 24 * 60 * 60,
+			MinParticipationStake: 0.01,
 		},
 	}
 	terms := types.ProposalTerms{
