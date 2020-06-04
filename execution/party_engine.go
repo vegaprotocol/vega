@@ -151,6 +151,7 @@ func (p *PartyEngine) NotifyTraderAccount(notify *types.NotifyTraderAccount) err
 		return ErrNotifyPartyIdMissing
 	}
 	if _, err := p.Add(notify.TraderID); err != nil {
+		p.log.Error("unable to create new party", logging.Error(err))
 		return err
 	}
 	credit := notify.Amount
@@ -158,9 +159,11 @@ func (p *PartyEngine) NotifyTraderAccount(notify *types.NotifyTraderAccount) err
 		credit = DefaultCredit
 	}
 	if err := p.creditGeneralAccounts(notify.TraderID, credit); err != nil {
+		p.log.Error("unable to credit general account of newly created party", logging.Error(err))
 		return nil
 	}
 	if err := p.creditTokenAccount(notify.TraderID, credit); err != nil {
+		p.log.Error("unable to credit token account of newly created party", logging.Error(err))
 		return err
 	}
 	return nil
