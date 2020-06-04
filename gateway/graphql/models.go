@@ -287,6 +287,8 @@ type ProposalTerms struct {
 	EnactmentDatetime string `json:"enactmentDatetime"`
 	// Minimum participation stake required for this proposal to pass
 	MinParticipationStake int `json:"minParticipationStake"`
+	// Minimum required majority stake required for this proposal to pass. Value from 0.5 to 1
+	MinRequiredMajority float64 `json:"minRequiredMajority"`
 	// Actual change being introduced by the proposal
 	Change ProposalChange `json:"change"`
 }
@@ -299,6 +301,8 @@ type ProposalTermsInput struct {
 	EnactmentDatetime string `json:"enactmentDatetime"`
 	// Minimum participation stake required for this proposal to pass
 	MinParticipationStake int `json:"minParticipationStake"`
+	// Minimum required majority stake required for this proposal to pass. Value from 0.5 to 1
+	MinRequiredMajority float64 `json:"minRequiredMajority"`
 	// Optional field to define update market change. If this is set along with another change, proposal will not be accepted.
 	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
 	// Optional field to define new market change. If this is set along with another change, proposal will not be accepted.
@@ -413,6 +417,9 @@ type UpdateNetwork struct {
 	// Network parameter that restricts the minimum participation stake
 	// required for a proposal to pass.
 	MinParticipationStake *int `json:"minParticipationStake"`
+	// Network parameter that restricts the minimum required majority stake
+	// required for a proposal to pass. Value from 0.5 to 1
+	MinRequiredMajority float64 `json:"minRequiredMajority"`
 }
 
 func (UpdateNetwork) IsProposalChange() {}
@@ -436,6 +443,9 @@ type UpdateNetworkInput struct {
 	// Network parameter that restricts the minimum participation stake
 	// required for a proposal to pass.
 	MinParticipationStake *int `json:"minParticipationStake"`
+	// Network parameter that restricts the minimum required majority stake
+	// required for a proposal to pass. Value from 0.5 to 1
+	MinRequiredMajority float64 `json:"minRequiredMajority"`
 }
 
 type Vote struct {

@@ -16,6 +16,8 @@ message NetworkConfiguration {
   int64 maxEnactInSeconds  = 4;
 
   uint64 minParticipationStake = 5;
+
+  float minRequiredMajority = 6 [(validator.field) = {float_gte: 0.5, float_lte: 1}];
 }
 
 message UpdateMarket {
@@ -39,7 +41,8 @@ message ProposalTerms {
   // Timestamp (Unix time in seconds) when proposal gets enacted (if passed)
   int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
   uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0, int_lt: 101}];
-  int64 validationTimestamp    = 4;
+  float minRequiredMajority    = 4 [(validator.field) = {float_gte: 0.5, float_lte: 1}];
+  int64 validationTimestamp    = 5;
   oneof change {
     UpdateMarket  updateMarket  = 101;
     NewMarket     newMarket     = 102;

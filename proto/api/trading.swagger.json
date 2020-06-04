@@ -1933,6 +1933,10 @@
         "minParticipationStake": {
           "type": "string",
           "format": "uint64"
+        },
+        "minRequiredMajority": {
+          "type": "number",
+          "format": "float"
         }
       }
     },
@@ -2239,6 +2243,10 @@
         "minParticipationStake": {
           "type": "string",
           "format": "uint64"
+        },
+        "minRequiredMajority": {
+          "type": "number",
+          "format": "float"
         },
         "validationTimestamp": {
           "type": "string",
