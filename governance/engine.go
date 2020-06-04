@@ -219,7 +219,7 @@ func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, tota
 	proposal.State = types.Proposal_DECLINED
 	if yes > no {
 		participationStake := float64(yes + no)
-		minParticipationStake := float64(proposal.Terms.MinParticipationStake*totalStake) / 100
+		minParticipationStake := float64(proposal.Terms.MinParticipationStake) * float64(totalStake)
 		if participationStake >= minParticipationStake {
 			proposal.State = types.Proposal_PASSED
 		}

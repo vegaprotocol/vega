@@ -1770,7 +1770,7 @@
 | maxCloseInSeconds | [int64](#int64) |  |  |
 | minEnactInSeconds | [int64](#int64) |  |  |
 | maxEnactInSeconds | [int64](#int64) |  |  |
-| minParticipationStake | [uint64](#uint64) |  |  |
+| minParticipationStake | [float](#float) |  |  |
 
 
 
@@ -1837,7 +1837,7 @@ To be implemented
 | ----- | ---- | ----- | ----------- |
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
-| minParticipationStake | [uint64](#uint64) |  |  |
+| minParticipationStake | [float](#float) |  |  |
 | validationTimestamp | [int64](#int64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |

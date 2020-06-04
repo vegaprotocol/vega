@@ -4765,13 +4765,86 @@
 
                 <tr>
                   <td>minParticipationStake</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#float">float</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>minCloseInSeconds</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>maxCloseInSeconds</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minEnactInSeconds</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>maxEnactInSeconds</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minParticipationStake</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gte: 0</li>
+
+                      <li>float_lte: 1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -5013,7 +5086,7 @@
 
                 <tr>
                   <td>minParticipationStake</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#float">float</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5096,9 +5169,9 @@
                   <td>
                     <ul>
 
-                      <li>int_gt: 0</li>
+                      <li>float_gte: 0</li>
 
-                      <li>int_lt: 101</li>
+                      <li>float_lte: 1</li>
 
                     </ul>
                   </td>

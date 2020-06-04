@@ -57,7 +57,7 @@ func testSubmitValidProposalSuccess(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:      now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:    now.Add(48 * time.Hour).Unix(),
-			MinParticipationStake: 55,
+			MinParticipationStake: 0.55,
 		},
 	}
 	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(1).Return(&acc, nil)
@@ -85,7 +85,7 @@ func testSubmitValidProposalDuplicate(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:      now.Add(100 * time.Hour).Unix(),
 			EnactmentTimestamp:    now.Add(240 * time.Hour).Unix(),
-			MinParticipationStake: 55,
+			MinParticipationStake: 0.55,
 		},
 	}
 	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(1).Return(&acc, nil)
@@ -122,7 +122,7 @@ func testSubmitInvalidProposal(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:      now.Add(100 * time.Hour).Unix(),
 			EnactmentTimestamp:    now.Add(240 * time.Hour).Unix(),
-			MinParticipationStake: 55,
+			MinParticipationStake: 0.55,
 		},
 	}
 	eng.accs.EXPECT().GetPartyTokenAccount(partyID).Times(1).Return(nil, accErr)
@@ -159,7 +159,7 @@ func testSubmitValidVoteSuccess(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:      now.Add(100 * time.Hour).Unix(),
 			EnactmentTimestamp:    now.Add(240 * time.Hour).Unix(),
-			MinParticipationStake: 55,
+			MinParticipationStake: 0.55,
 		},
 	}
 	// we will call this getPartyTokenAccount twice
@@ -208,7 +208,7 @@ func testProposalAccepted(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:      closeTime.Unix(),
 			EnactmentTimestamp:    closeTime.Unix(),
-			MinParticipationStake: 55,
+			MinParticipationStake: 0.55,
 		},
 	}
 	calls := 0

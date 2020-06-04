@@ -18,6 +18,24 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *NetworkConfiguration) Validate() error {
+	if !(this.MinCloseInSeconds > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinCloseInSeconds", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinCloseInSeconds))
+	}
+	if !(this.MaxCloseInSeconds > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MaxCloseInSeconds", fmt.Errorf(`value '%v' must be greater than '0'`, this.MaxCloseInSeconds))
+	}
+	if !(this.MinEnactInSeconds > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinEnactInSeconds", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinEnactInSeconds))
+	}
+	if !(this.MaxEnactInSeconds > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MaxEnactInSeconds", fmt.Errorf(`value '%v' must be greater than '0'`, this.MaxEnactInSeconds))
+	}
+	if !(this.MinParticipationStake >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.MinParticipationStake))
+	}
+	if !(this.MinParticipationStake <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinParticipationStake))
+	}
 	return nil
 }
 func (this *UpdateMarket) Validate() error {
@@ -63,11 +81,11 @@ func (this *ProposalTerms) Validate() error {
 	if !(this.EnactmentTimestamp > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("EnactmentTimestamp", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactmentTimestamp))
 	}
-	if !(this.MinParticipationStake > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than '0'`, this.MinParticipationStake))
+	if !(this.MinParticipationStake >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.MinParticipationStake))
 	}
-	if !(this.MinParticipationStake < 101) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be less than '101'`, this.MinParticipationStake))
+	if !(this.MinParticipationStake <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinParticipationStake))
 	}
 	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateMarket); ok {
 		if oneOfNester.UpdateMarket != nil {

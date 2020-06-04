@@ -285,8 +285,8 @@ type ProposalTerms struct {
 	ClosingDatetime string `json:"closingDatetime"`
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Minimum participation stake required for this proposal to pass
-	MinParticipationStake int `json:"minParticipationStake"`
+	// Minimum participation stake required for this proposal to pass. Value from 0 and 1.
+	MinParticipationStake float64 `json:"minParticipationStake"`
 	// Actual change being introduced by the proposal
 	Change ProposalChange `json:"change"`
 }
@@ -297,8 +297,8 @@ type ProposalTermsInput struct {
 	ClosingDatetime string `json:"closingDatetime"`
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Minimum participation stake required for this proposal to pass
-	MinParticipationStake int `json:"minParticipationStake"`
+	// Minimum participation stake required for this proposal to pass. Value from 0 and 1.
+	MinParticipationStake float64 `json:"minParticipationStake"`
 	// Optional field to define update market change. If this is set along with another change, proposal will not be accepted.
 	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
 	// Optional field to define new market change. If this is set along with another change, proposal will not be accepted.
@@ -411,8 +411,8 @@ type UpdateNetwork struct {
 	// Value represents duration in seconds.
 	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
 	// Network parameter that restricts the minimum participation stake
-	// required for a proposal to pass.
-	MinParticipationStake *int `json:"minParticipationStake"`
+	// required for a proposal to pass. Value from 0 and 1.
+	MinParticipationStake *float64 `json:"minParticipationStake"`
 }
 
 func (UpdateNetwork) IsProposalChange() {}
@@ -434,8 +434,8 @@ type UpdateNetworkInput struct {
 	// Value represents duration in seconds.
 	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
 	// Network parameter that restricts the minimum participation stake
-	// required for a proposal to pass.
-	MinParticipationStake *int `json:"minParticipationStake"`
+	// required for a proposal to pass. Value from 0 and 1.
+	MinParticipationStake *float64 `json:"minParticipationStake"`
 }
 
 type Vote struct {

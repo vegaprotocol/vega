@@ -3527,9 +3527,9 @@ type UpdateNetwork {
 
   """
   Network parameter that restricts the minimum participation stake
-  required for a proposal to pass.
+  required for a proposal to pass. Value from 0 and 1.
   """
-  minParticipationStake: Int
+  minParticipationStake: Float
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -3559,9 +3559,9 @@ input UpdateNetworkInput {
 
   """
   Network parameter that restricts the minimum participation stake
-  required for a proposal to pass.
+  required for a proposal to pass. Value from 0 and 1.
   """
-  minParticipationStake: Int
+  minParticipationStake: Float
 }
 
 
@@ -3573,8 +3573,8 @@ type ProposalTerms {
   closingDatetime: String!
   "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass"
-  minParticipationStake: Int!
+  "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
+  minParticipationStake: Float!
   "Actual change being introduced by the proposal"
   change: ProposalChange
 }
@@ -3586,8 +3586,8 @@ input ProposalTermsInput {
   closingDatetime: String!
   "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass"
-  minParticipationStake: Int!
+  "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
+  minParticipationStake: Float!
   
   "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
@@ -8951,9 +8951,9 @@ func (ec *executionContext) _ProposalTerms_minParticipationStake(ctx context.Con
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
@@ -11978,9 +11978,9 @@ func (ec *executionContext) _UpdateNetwork_minParticipationStake(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*float64)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Vote_value(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
@@ -13466,7 +13466,7 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 			}
 		case "minParticipationStake":
 			var err error
-			it.MinParticipationStake, err = ec.unmarshalNInt2int(ctx, v)
+			it.MinParticipationStake, err = ec.unmarshalNFloat2float64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13652,7 +13652,7 @@ func (ec *executionContext) unmarshalInputUpdateNetworkInput(ctx context.Context
 			}
 		case "minParticipationStake":
 			var err error
-			it.MinParticipationStake, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.MinParticipationStake, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -17944,6 +17944,29 @@ func (ec *executionContext) unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotoco
 	}
 	res, err := ec.unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
+}
+
+func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	return graphql.MarshalFloat(v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFloat2float64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOFloat2float64(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {

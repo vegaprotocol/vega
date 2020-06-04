@@ -1931,8 +1931,8 @@
           "format": "int64"
         },
         "minParticipationStake": {
-          "type": "string",
-          "format": "uint64"
+          "type": "number",
+          "format": "float"
         }
       }
     },
@@ -2237,8 +2237,8 @@
           "title": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed)"
         },
         "minParticipationStake": {
-          "type": "string",
-          "format": "uint64"
+          "type": "number",
+          "format": "float"
         },
         "validationTimestamp": {
           "type": "string",

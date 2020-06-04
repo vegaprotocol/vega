@@ -1211,9 +1211,9 @@ type UpdateNetwork {
 
   """
   Network parameter that restricts the minimum participation stake
-  required for a proposal to pass.
+  required for a proposal to pass. Value from 0 and 1.
   """
-  minParticipationStake: Int
+  minParticipationStake: Float
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -1243,9 +1243,9 @@ input UpdateNetworkInput {
 
   """
   Network parameter that restricts the minimum participation stake
-  required for a proposal to pass.
+  required for a proposal to pass. Value from 0 and 1.
   """
-  minParticipationStake: Int
+  minParticipationStake: Float
 }
 
 
@@ -1257,8 +1257,8 @@ type ProposalTerms {
   closingDatetime: String!
   "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass"
-  minParticipationStake: Int!
+  "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
+  minParticipationStake: Float!
   "Actual change being introduced by the proposal"
   change: ProposalChange
 }
@@ -1270,8 +1270,8 @@ input ProposalTermsInput {
   closingDatetime: String!
   "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass"
-  minParticipationStake: Int!
+  "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
+  minParticipationStake: Float!
   
   "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
