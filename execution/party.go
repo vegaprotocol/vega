@@ -129,8 +129,17 @@ func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 func (p *Party) addMarket(market types.Market) {
 	p.mu.Lock()
 	if _, found := p.partyByMarket[market.Id]; !found {
+		var parties map[string]struct{}
+		for _, parties = range p.partyByMarket {
+			// select first available market
+			break
+		}
+		if parties == nil {
+			parties = map[string]struct{}{}
+		}
+
 		p.markets = append(p.markets, market)
-		p.partyByMarket[market.Id] = map[string]struct{}{}
+		p.partyByMarket[market.Id] = parties
 	}
 	p.mu.Unlock()
 }
