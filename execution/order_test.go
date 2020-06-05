@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -37,7 +38,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	orderAmend := *orderBuy
 
 	// Create an order (generates one order message)
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -50,7 +51,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	// Create a new order (generates one order message)
 	orderAmend.Id = "amendingorder"
 	orderAmend.Reference = "amendingorderreference"
-	confirmation, err = tm.market.SubmitOrder(&orderAmend)
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), &orderAmend)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -62,26 +63,26 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	// Amend price down (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price - 1}
-	amendConf, err := tm.market.AmendOrder(amend)
+	amendConf, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend price up (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price + 1}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size down (generates one order message)
 	amend.Price = nil
 	amend.SizeDelta = -1
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size up (generates one order message)
 	amend.SizeDelta = +1
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -89,26 +90,26 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	amend.SizeDelta = 0
 	amend.TimeInForce = types.Order_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend TIF -> GTC (generates one order message)
 	amend.TimeInForce = types.Order_GTC
 	amend.ExpiresAt = nil
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend ExpiresAt (generates two order messages)
 	amend.TimeInForce = types.Order_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 200000000000}
-	amendConf, err = tm.market.AmendOrder(amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 }
@@ -137,7 +138,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Submit the original order
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -158,7 +159,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		MarketID: confirmation.GetOrder().GetMarketID(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(amend)
+	amended, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -178,7 +179,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		Price:     &types.Price{Value: 101},
 		SizeDelta: 1,
 	}
-	amended, err = tm.market.AmendOrder(amend)
+	amended, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
@@ -209,7 +210,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Submit the original order
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -219,7 +220,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		MarketID: confirmation.GetOrder().MarketID,
 		PartyID:  party2,
 	}
-	cancelconf, err := tm.market.CancelOrder(cancelOrder)
+	cancelconf, err := tm.market.CancelOrder(context.TODO(), cancelOrder)
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -252,7 +253,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Type:        types.Order_LIMIT,
 	}
 	// Submit the original order
-	buyConfirmation, err := tm.market.SubmitOrder(orderBuy)
+	buyConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, buyConfirmation)
 	assert.NoError(t, err)
 
@@ -270,7 +271,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Type:        types.Order_MARKET,
 	}
 	// Submit an opposite order to partially fill
-	sellConfirmation, err := tm.market.SubmitOrder(orderSell)
+	sellConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderSell)
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 
@@ -304,7 +305,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		Type:        types.Order_LIMIT,
 	}
 	// Submit the original order
-	buyConfirmation, err := tm.market.SubmitOrder(orderBuy)
+	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, buyConfirmation)
 	assert.NoError(t, err)
 
@@ -318,7 +319,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		ExpiresAt:   &types.Timestamp{Value: 10000000010},
 		TimeInForce: types.Order_GTT,
 	}
-	amended, err := tm.market.AmendOrder(amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -357,7 +358,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Type:        types.Order_LIMIT,
 	}
 	// Place an order
-	buyConfirmation, err := tm.market.SubmitOrder(orderBuy)
+	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, buyConfirmation)
 	assert.NoError(t, err)
 
@@ -373,7 +374,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Type:        types.Order_MARKET,
 	}
 	// Partially fill the original order
-	sellConfirmation, err := tm.market.SubmitOrder(orderSell)
+	sellConfirmation, err := tm.market.SubmitOrder(context.Background(), orderSell)
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 
@@ -383,7 +384,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		MarketID: tm.market.GetID(),
 		Price:    &types.Price{Value: 20},
 	}
-	amended, err := tm.market.AmendOrder(amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -418,7 +419,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Submit the original order
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -429,7 +430,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 		MarketID: confirmation.GetOrder().GetMarketID(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	assert.Nil(t, amended)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }

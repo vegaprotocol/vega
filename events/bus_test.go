@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func getCtx() context.Context {
-	ctx := context.WithValue(context.Background(), "traceID", "test-trace-id")
-	return ctx
+	return contextutil.WithTraceID(context.Background(), "test-trace-id")
 }
 
 func TestTimeEvent(t *testing.T) {
@@ -22,10 +22,8 @@ func TestTimeEvent(t *testing.T) {
 	assert.Equal(t, e.Time(), now)
 	assert.Equal(t, events.TimeUpdate, e.Type())
 	assert.NotEmpty(t, e.TraceID())
-	tID := e.Context().Value("traceID")
-	assert.NotNil(t, tID)
-	trace, ok := tID.(string)
-	assert.True(t, ok)
+	_, trace := contextutil.TraceIDFromContext(e.Context())
+	assert.NotNil(t, trace)
 	assert.Equal(t, trace, e.TraceID())
 	assert.Zero(t, e.Sequence())
 }
@@ -51,12 +49,4 @@ func TestInvalidEvent(t *testing.T) {
 	_, err := events.New(context.Background(), events.TimeUpdate)
 	assert.Error(t, err)
 	assert.Equal(t, events.ErrUnsuportedEvent, err)
-}
-
-func TestInvalidTraceIDType(t *testing.T) {
-	tIDInt := 123
-	ctx := context.WithValue(context.Background(), "traceID", tIDInt) // int instead of string
-	e := events.NewTime(ctx, time.Now())
-	assert.NotEqual(t, e.TraceID(), tIDInt)
-	assert.NotEqual(t, ctx.Value("traceID"), e.Context().Value("traceID"))
 }
