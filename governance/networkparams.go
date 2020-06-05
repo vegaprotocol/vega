@@ -30,8 +30,8 @@ const (
 	defaultMinEnact = 2 * day // must be >= minClose
 	// defaultMaxEnact is the hardcoded maximum enactment offset duration
 	defaultMaxEnact = 1 * year
-	// defaultMinParticipationStake is hardcoded minimum participation stake percent
-	defaultMinParticipationStake = 1
+	// defaultMinParticipationStake is hardcoded minimum participation stake fraction (from `0` to `1`)
+	defaultMinParticipationStake = 0.01
 )
 
 // NetworkParameters stores governance network parameters
@@ -40,7 +40,7 @@ type NetworkParameters struct {
 	maxClose              time.Duration
 	minEnact              time.Duration
 	maxEnact              time.Duration
-	minParticipationStake uint64
+	minParticipationStake float32
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
@@ -56,35 +56,39 @@ func DefaultNetworkParameters() *NetworkParameters {
 	if len(MinClose) > 0 {
 		result.minClose, err = time.ParseDuration(MinClose)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration: %s", MinClose))
+			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MinClose, err.Error()))
 		}
 	}
 	if len(MaxClose) > 0 {
 		result.maxClose, err = time.ParseDuration(MaxClose)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration: %s", MaxClose))
+			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxClose, err.Error()))
 		}
 	}
 	if len(MinEnact) > 0 {
 		result.minEnact, err = time.ParseDuration(MinEnact)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration: %s", MinEnact))
+			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MinEnact, err.Error()))
 		}
 	}
 	if len(MaxEnact) > 0 {
 		result.maxEnact, err = time.ParseDuration(MaxEnact)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration: %s", MaxEnact))
+			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxEnact, err.Error()))
 		}
 	}
 	if len(MinParticipationStake) > 0 {
-		result.minParticipationStake, err = strconv.ParseUint(MinParticipationStake, 10, 64)
+		stakeValue, err := strconv.ParseFloat(MinParticipationStake, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time integer: %s", MinParticipationStake))
+			panic(fmt.Sprintf("Failed to parse float value, %s: %s", stakeValue, err.Error()))
 		}
-		if result.minParticipationStake > 100 {
-			panic(fmt.Sprintf("Invalid MinParticipationStake (over 100): %d", result.minParticipationStake))
+		if stakeValue < 0 {
+			panic(fmt.Sprintf("Invalid MinParticipationStake (negative): %d", stakeValue))
 		}
+		if stakeValue > 100 {
+			panic(fmt.Sprintf("Invalid MinParticipationStake (over 100): %d", stakeValue))
+		}
+		result.minParticipationStake = float32(stakeValue)
 	}
 
 	result.maxClose = max(result.maxClose, result.minClose) // maxClose must be >= minClose
