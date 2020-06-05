@@ -354,6 +354,8 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		// adding rejected order to the buf
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_INVALID_MARKET_ID
+		evt := events.NewOrderEvent(ctx, order)
+		e.broker.Send(evt)
 		e.orderBuf.Add(*order)
 
 		timer.EngineTimeCounterAdd()
@@ -530,6 +532,8 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	}
 	for _, order := range expiringOrders {
 		order := order
+		evt := events.NewOrderEvent(context.Background(), &order)
+		e.broker.Send(evt)
 		e.orderBuf.Add(order)
 		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
 	}
