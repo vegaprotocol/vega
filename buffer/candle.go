@@ -11,12 +11,12 @@ import (
 
 // Currently we support 6 interval durations for trading candles on VEGA, as follows:
 var supportedIntervals = [6]types.Interval{
-	types.Interval_I1M,  // 1 minute
-	types.Interval_I5M,  // 5 minutes
-	types.Interval_I15M, // 15 minutes
-	types.Interval_I1H,  // 1 hour
-	types.Interval_I6H,  // 6 hours
-	types.Interval_I1D,  // 1 day
+	types.Interval_INTERVAL_I1M,  // 1 minute
+	types.Interval_INTERVAL_I5M,  // 5 minutes
+	types.Interval_INTERVAL_I15M, // 15 minutes
+	types.Interval_INTERVAL_I1H,  // 1 hour
+	types.Interval_INTERVAL_I6H,  // 6 hours
+	types.Interval_INTERVAL_I1D,  // 1 day
 }
 
 // CandleStore ...
@@ -100,7 +100,7 @@ func (c *Candle) AddTrade(trade types.Trade) error {
 			mktBuf[bufkey] = candl
 		} else {
 			// if doesn't exist create new candle under this buffer key
-			mktBuf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, candl.Interval)
+			mktBuf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, interval)
 		}
 		c.lastTrade[trade.MarketID] = trade
 		c.mu.Unlock()

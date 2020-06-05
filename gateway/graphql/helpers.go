@@ -22,21 +22,21 @@ func safeStringUint64(input string) (uint64, error) {
 func convertInterval(interval Interval) (types.Interval, error) {
 	switch interval {
 	case IntervalI15m:
-		return types.Interval_I15M, nil
+		return types.Interval_INTERVAL_I15M, nil
 	case IntervalI1d:
-		return types.Interval_I1D, nil
+		return types.Interval_INTERVAL_I1D, nil
 	case IntervalI1h:
-		return types.Interval_I1H, nil
+		return types.Interval_INTERVAL_I1H, nil
 	case IntervalI1m:
-		return types.Interval_I1M, nil
+		return types.Interval_INTERVAL_I1M, nil
 	case IntervalI5m:
-		return types.Interval_I5M, nil
+		return types.Interval_INTERVAL_I5M, nil
 	case IntervalI6h:
-		return types.Interval_I6H, nil
+		return types.Interval_INTERVAL_I6H, nil
 	default:
 		err := fmt.Errorf("invalid interval when subscribing to candles, falling back to default: I15M, (%v)", interval)
 
-		return types.Interval_I15M, err
+		return types.Interval_INTERVAL_I15M, err
 	}
 }
 
