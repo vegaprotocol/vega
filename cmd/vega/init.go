@@ -210,7 +210,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			baseName:              "GBP",
 			quoteName:             "VUSD",
 			settlementAsset:       "VUSD",
-			maturity:              time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
+			maturity:              time.Date(2020, 10, 30, 22, 59, 59, 0, time.UTC),
 			initialMarkPrice:      130000,
 			settlementValue:       126000,
 			riskAversionParameter: 0.01,
