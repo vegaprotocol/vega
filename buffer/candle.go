@@ -100,7 +100,7 @@ func (c *Candle) AddTrade(trade types.Trade) error {
 			mktBuf[bufkey] = candl
 		} else {
 			// if doesn't exist create new candle under this buffer key
-			mktBuf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, candl.Interval)
+			mktBuf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, interval)
 		}
 		c.lastTrade[trade.MarketID] = trade
 		c.mu.Unlock()
