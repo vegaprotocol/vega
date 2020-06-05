@@ -2931,12 +2931,13 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| I1M | 0 | 1 minute |
-| I5M | 1 | 5 minutes |
-| I15M | 2 | 15 minutes |
-| I1H | 3 | 1 hour |
-| I6H | 4 | 6 hours |
-| I1D | 5 | 1 day |
+| INTERVAL_UNSPECIFIED | 0 | Default value, always invalid |
+| I1M | 1 | 1 minute |
+| I5M | 2 | 5 minutes |
+| I15M | 3 | 15 minutes |
+| I1H | 4 | 1 hour |
+| I6H | 5 | 6 hours |
+| I1D | 6 | 1 day |
 
 
 

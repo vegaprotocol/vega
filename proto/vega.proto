@@ -18,23 +18,26 @@ enum Side {
 
 enum Interval {
 
+  // Default value, always invalid
+  INTERVAL_UNSPECIFIED = 0;
+
   // 1 minute
-  I1M = 0;
+  I1M = 1;
 
   // 5 minutes
-  I5M = 1;
+  I5M = 2;
 
   // 15 minutes
-  I15M = 2;
+  I15M = 3;
 
   // 1 hour
-  I1H = 3;
+  I1H = 4;
 
   // 6 hours
-  I6H = 4;
+  I6H = 5;
 
   // 1 day
-  I1D = 5;
+  I1D = 6;
 }
 
 message Price {
