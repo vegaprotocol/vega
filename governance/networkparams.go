@@ -80,13 +80,13 @@ func DefaultNetworkParameters() *NetworkParameters {
 	if len(MinParticipationStake) > 0 {
 		stakeValue, err := strconv.ParseFloat(MinParticipationStake, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse float value, %s: %s", stakeValue, err.Error()))
+			panic(fmt.Sprintf("Failed to parse float value, %s: %s", MinParticipationStake, err.Error()))
 		}
 		if stakeValue < 0 {
-			panic(fmt.Sprintf("Invalid MinParticipationStake (negative): %d", stakeValue))
+			panic(fmt.Sprintf("Invalid MinParticipationStake (negative): %s", MinParticipationStake))
 		}
 		if stakeValue > 100 {
-			panic(fmt.Sprintf("Invalid MinParticipationStake (over 100): %d", stakeValue))
+			panic(fmt.Sprintf("Invalid MinParticipationStake (over 100): %s", MinParticipationStake))
 		}
 		result.minParticipationStake = float32(stakeValue)
 	}
