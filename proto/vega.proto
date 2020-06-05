@@ -5,7 +5,16 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-enum Side { Buy = 0; Sell = 1; }
+enum Side {
+  // Default value, always invalid
+  SIDE_UNSPECIFIED = 0;
+
+  // Buy
+  Buy = 1;
+
+  // Sell
+  Sell = 2;
+}
 
 enum Interval {
 

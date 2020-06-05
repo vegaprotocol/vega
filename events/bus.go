@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/contextutil"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -72,23 +72,12 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 
 // A base event holds no data, so the constructor will not be called directly
 func newBase(ctx context.Context, t Type) *Base {
-	b := Base{
-		ctx: ctx,
-		et:  t,
+	ctx, tID := contextutil.TraceIDFromContext(ctx)
+	return &Base{
+		ctx:     ctx,
+		traceID: tID,
+		et:      t,
 	}
-	tID := ctx.Value("traceID")
-	if tID == nil {
-		b.traceID = uuid.NewV4().String()
-		ctx = context.WithValue(ctx, "traceID", b.traceID)
-		b.ctx = ctx
-	} else if s, ok := tID.(string); !ok {
-		b.traceID = uuid.NewV4().String()
-		ctx = context.WithValue(ctx, "traceID", b.traceID)
-		b.ctx = ctx
-	} else {
-		b.traceID = s
-	}
-	return &b
 }
 
 // TraceID returns the... traceID obviously

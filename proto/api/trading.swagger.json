@@ -2278,10 +2278,12 @@
     "vegaSide": {
       "type": "string",
       "enum": [
+        "SIDE_UNSPECIFIED",
         "Buy",
         "Sell"
       ],
-      "default": "Buy"
+      "default": "SIDE_UNSPECIFIED",
+      "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - Buy: Buy\n - Sell: Sell"
     },
     "vegaSignedBundle": {
       "type": "object",

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"go.uber.org/zap"
@@ -191,4 +192,14 @@ func OrderAmendment(oa *types.OrderAmendment) zap.Field {
 // of the actual log call for this level
 func Reflect(key string, val interface{}) zap.Field {
 	return zap.Reflect(key, val)
+}
+
+// TraceID logs the event traceID
+func TraceID(e events.Event) zap.Field {
+	return zap.String("trace-id", e.TraceID())
+}
+
+// EventType logs the event type as a string
+func EventType(e events.Event) zap.Field {
+	return zap.String("event-type", e.Type().String())
 }

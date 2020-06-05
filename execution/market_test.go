@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -262,12 +263,12 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
-	_, err := tm.market.SubmitOrder(orderBuy)
+	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
 	}
-	_, err = tm.market.SubmitOrder(orderSell)
+	_, err = tm.market.SubmitOrder(context.TODO(), orderSell)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -356,7 +357,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 		}
 	})
 
-	_, err := tm.market.SubmitOrder(orderBuy)
+	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -416,7 +417,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		}
 	})
 
-	_, err := tm.market.SubmitOrder(orderBuy)
+	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "margin check failed")
 }
@@ -472,7 +473,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	})
 
 	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1) // storing original version
-	_, err := tm.market.SubmitOrder(orderBuy)
+	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -509,7 +510,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 			assert.EqualValues(t, orderBuy.Version+1, order.Version, "storing amended version")
 		}
 	})
-	_, err = tm.market.AmendOrder(amendedOrder)
+	_, err = tm.market.AmendOrder(context.TODO(), amendedOrder)
 	if !assert.Nil(t, err) {
 		t.Fatalf("Error: %v", err)
 	}
@@ -608,7 +609,7 @@ func TestMarketCancelOrder(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order",
 	}
-	confirmation, err := tm.market.SubmitOrder(orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 

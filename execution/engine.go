@@ -255,7 +255,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
-func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
+func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notify)
 }
 
@@ -265,7 +265,7 @@ func (e *Engine) CreateGeneralAccounts(partyID string) error {
 	return err
 }
 
-func (e *Engine) Withdraw(w *types.Withdraw) error {
+func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
 	if err != nil {
 		e.log.Error("An error occurred during withdrawal",
@@ -336,7 +336,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -364,7 +364,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 
-	conf, err := mkt.SubmitOrder(order)
+	conf, err := mkt.SubmitOrder(ctx, order)
 	if err != nil {
 		timer.EngineTimeCounterAdd()
 		return nil, err
@@ -380,7 +380,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Amend order", logging.OrderAmendment(orderAmendment))
 	}
@@ -392,7 +392,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(orderAmendment)
+	conf, err := mkt.AmendOrder(ctx, orderAmendment)
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +404,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
@@ -413,7 +413,7 @@ func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancel
 		return nil, types.ErrInvalidMarketID
 	}
 
-	conf, err := mkt.CancelOrder(order)
+	conf, err := mkt.CancelOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +596,7 @@ func (e *Engine) Generate() error {
 }
 
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
-func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
+func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submitting proposal",
 			logging.String("proposal-id", proposal.ID),
@@ -616,7 +616,7 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 }
 
 // VoteOnProposal sends proposal vote to governance engine
-func (e *Engine) VoteOnProposal(vote *types.Vote) error {
+func (e *Engine) VoteOnProposal(ctx context.Context, vote *types.Vote) error {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Voting on proposal",
 			logging.String("proposal-id", vote.ProposalID),
