@@ -1,6 +1,7 @@
 package processor_test
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
@@ -181,14 +182,14 @@ func testOnTickPending(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 		ch <- struct{}{}
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 	// Register a node, so the proposal is still pending
 	wal := getTestStubWallet()
 	reg := &types.NodeRegistration{
 		PubKey: wal.key,
 	}
 	payload, err = proto.Marshal(reg)
-	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.RegisterNodeCommand))
 
 	// next time tick, proposal is pending but not past validation time
 	tick := time.NewTicker(50 * time.Millisecond)
@@ -266,17 +267,17 @@ func testOnTickSubmit(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 	wal := getTestStubWallet()
 	vote := &types.NodeVote{
 		PubKey:    wal.PubKeyOrAddress(),
 		Reference: data.Reference,
 	}
 	payload, err = proto.Marshal(vote)
-	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.NodeVoteCommand))
 
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil).Do(func(sp *types.Proposal) {
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, sp *types.Proposal) {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 		ch <- struct{}{}
@@ -358,7 +359,7 @@ func testOnTickSubmitRetry(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 
 	wal := getTestStubWallet()
 	vote := &types.NodeVote{
@@ -366,7 +367,7 @@ func testOnTickSubmitRetry(t *testing.T) {
 		Reference: data.Reference,
 	}
 	payload, err = proto.Marshal(vote)
-	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.NodeVoteCommand))
 
 	i := 0
 	returns := []error{
@@ -374,7 +375,7 @@ func testOnTickSubmitRetry(t *testing.T) {
 		nil,
 	}
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(_ context.Context, sp *types.Proposal) error {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 		ret := returns[i]
@@ -465,7 +466,7 @@ func testOnTickWithNodes(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, data.Reference, nv.Reference)
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 
 	// This node has received the proposal and validated it. We want to vote for it
 	// first process the RegisterNodeCommand transaction
@@ -476,7 +477,7 @@ func testOnTickWithNodes(t *testing.T) {
 	}
 	payload, err = proto.Marshal(reg)
 	assert.NoError(t, err)
-	assert.NoError(t, proc.Process(payload, blockchain.RegisterNodeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.RegisterNodeCommand))
 
 	// Now this node can vote has to vote on the proposal
 	vote := &types.NodeVote{
@@ -484,7 +485,7 @@ func testOnTickWithNodes(t *testing.T) {
 		Reference: data.Reference,
 	}
 	payload, err = proto.Marshal(vote)
-	assert.NoError(t, proc.Process(payload, blockchain.NodeVoteCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.NodeVoteCommand))
 
 	i := 0
 	returns := []error{
@@ -492,7 +493,7 @@ func testOnTickWithNodes(t *testing.T) {
 		nil,
 	}
 	ch := make(chan struct{}, 1)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(2).DoAndReturn(func(sp *types.Proposal) error {
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(_ context.Context, sp *types.Proposal) error {
 		assert.Equal(t, data.Reference, sp.Reference)
 		assert.Equal(t, data.PartyID, sp.PartyID)
 		ret := returns[i]
@@ -563,7 +564,7 @@ func testOnTickReject(t *testing.T) {
 	}
 	reg, err := proto.Marshal(nr)
 	assert.NoError(t, err)
-	assert.NoError(t, proc.Process(reg, blockchain.RegisterNodeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), reg, blockchain.RegisterNodeCommand))
 
 	closeTS := time.Now().Add(120 * time.Hour)
 	validTS := time.Now().Add(24 * time.Hour)
@@ -597,10 +598,10 @@ func testOnTickReject(t *testing.T) {
 		assert.Equal(t, data.Reference, nv.Reference)
 		ch <- struct{}{}
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 
 	// We expect SubmitProposal to NOT be called (other node did NOT validate
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(0).Return(nil)
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(0).Return(nil)
 
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()
@@ -866,18 +867,18 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().SubmitOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
-	proc.eng.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.eng.EXPECT().VoteOnProposal(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().Withdraw(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
+	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().VoteOnProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
 		assert.NoError(t, err)
-		assert.NoError(t, proc.Process(payload, cmd), "Failed to process %v command payload", cmd)
+		assert.NoError(t, proc.Process(context.TODO(), payload, cmd), "Failed to process %v command payload", cmd)
 	}
 }
 
@@ -940,7 +941,7 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 		// notify the call happend
 		ch <- struct{}{}
 	})
-	assert.NoError(t, proc.Process(payload, blockchain.ProposeCommand))
+	assert.NoError(t, proc.Process(context.TODO(), payload, blockchain.ProposeCommand))
 
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()

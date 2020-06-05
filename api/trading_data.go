@@ -294,6 +294,10 @@ func (h *tradingDataService) Candles(ctx context.Context,
 		return nil, err
 	}
 
+	if request.Interval == types.Interval_INTERVAL_UNSPECIFIED {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
 	c, err := h.CandleService.GetCandles(ctx, request.MarketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandles, err)

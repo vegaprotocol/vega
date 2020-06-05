@@ -126,11 +126,24 @@ func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	return p.notifyTraderAccount(notify, notify.Amount)
 }
 
+// returns parties from an existing market (if any)
+// @TODO: untie parties from the markets
+func (p *Party) getParties() map[string]struct{} {
+	var result map[string]struct{}
+	for _, result = range p.partyByMarket {
+		break // select existing market (if any) parties
+	}
+	if result == nil {
+		result = map[string]struct{}{}
+	}
+	return result
+}
+
 func (p *Party) addMarket(market types.Market) {
 	p.mu.Lock()
 	if _, found := p.partyByMarket[market.Id]; !found {
 		p.markets = append(p.markets, market)
-		p.partyByMarket[market.Id] = map[string]struct{}{}
+		p.partyByMarket[market.Id] = p.getParties()
 	}
 	p.mu.Unlock()
 }

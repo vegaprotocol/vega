@@ -2311,7 +2311,7 @@ func (m *CandlesSubscribeRequest) GetInterval() proto1.Interval {
 	if m != nil {
 		return m.Interval
 	}
-	return proto1.Interval_I1M
+	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
 type MarketDepthSubscribeRequest struct {
@@ -2837,7 +2837,7 @@ func (m *CandlesRequest) GetInterval() proto1.Interval {
 	if m != nil {
 		return m.Interval
 	}
-	return proto1.Interval_I1M
+	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
 type CandlesResponse struct {

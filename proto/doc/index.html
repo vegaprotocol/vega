@@ -8176,38 +8176,44 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>I1M</td>
+                <td>INTERVAL_UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>INTERVAL_I1M</td>
+                <td>60</td>
                 <td><p>1 minute</p></td>
               </tr>
 
               <tr>
-                <td>I5M</td>
-                <td>1</td>
+                <td>INTERVAL_I5M</td>
+                <td>300</td>
                 <td><p>5 minutes</p></td>
               </tr>
 
               <tr>
-                <td>I15M</td>
-                <td>2</td>
+                <td>INTERVAL_I15M</td>
+                <td>900</td>
                 <td><p>15 minutes</p></td>
               </tr>
 
               <tr>
-                <td>I1H</td>
-                <td>3</td>
+                <td>INTERVAL_I1H</td>
+                <td>3600</td>
                 <td><p>1 hour</p></td>
               </tr>
 
               <tr>
-                <td>I6H</td>
-                <td>4</td>
+                <td>INTERVAL_I6H</td>
+                <td>21600</td>
                 <td><p>6 hours</p></td>
               </tr>
 
               <tr>
-                <td>I1D</td>
-                <td>5</td>
+                <td>INTERVAL_I1D</td>
+                <td>86400</td>
                 <td><p>1 day</p></td>
               </tr>
 
@@ -8483,15 +8489,21 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>Buy</td>
+                <td>SIDE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>Buy</td>
+                <td>1</td>
+                <td><p>Buy</p></td>
               </tr>
 
               <tr>
                 <td>Sell</td>
-                <td>1</td>
-                <td><p></p></td>
+                <td>2</td>
+                <td><p>Sell</p></td>
               </tr>
 
           </tbody>
