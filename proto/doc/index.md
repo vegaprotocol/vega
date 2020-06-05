@@ -1766,11 +1766,11 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  |  |
-| maxCloseInSeconds | [int64](#int64) |  |  |
-| minEnactInSeconds | [int64](#int64) |  |  |
-| maxEnactInSeconds | [int64](#int64) |  |  |
-| minParticipationStake | [float](#float) |  |  |
+| minCloseInSeconds | [int64](#int64) |  | Contrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
+| maxCloseInSeconds | [int64](#int64) |  | Contrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
+| minEnactInSeconds | [int64](#int64) |  | Contrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
+| maxEnactInSeconds | [int64](#int64) |  | Contrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
+| minParticipationStake | [float](#float) |  | Contrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
 
 
 
@@ -1837,7 +1837,7 @@ To be implemented
 | ----- | ---- | ----- | ----------- |
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
-| minParticipationStake | [float](#float) |  |  |
+| minParticipationStake | [float](#float) |  | Minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
 | validationTimestamp | [int64](#int64) |  |  |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |

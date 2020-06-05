@@ -97,10 +97,15 @@ func (Vote_Value) EnumDescriptor() ([]byte, []int) {
 }
 
 type NetworkConfiguration struct {
-	MinCloseInSeconds     int64    `protobuf:"varint,1,opt,name=minCloseInSeconds,proto3" json:"minCloseInSeconds,omitempty"`
-	MaxCloseInSeconds     int64    `protobuf:"varint,2,opt,name=maxCloseInSeconds,proto3" json:"maxCloseInSeconds,omitempty"`
-	MinEnactInSeconds     int64    `protobuf:"varint,3,opt,name=minEnactInSeconds,proto3" json:"minEnactInSeconds,omitempty"`
-	MaxEnactInSeconds     int64    `protobuf:"varint,4,opt,name=maxEnactInSeconds,proto3" json:"maxEnactInSeconds,omitempty"`
+	// Contrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
+	MinCloseInSeconds int64 `protobuf:"varint,1,opt,name=minCloseInSeconds,proto3" json:"minCloseInSeconds,omitempty"`
+	// Contrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
+	MaxCloseInSeconds int64 `protobuf:"varint,2,opt,name=maxCloseInSeconds,proto3" json:"maxCloseInSeconds,omitempty"`
+	// Contrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+	MinEnactInSeconds int64 `protobuf:"varint,3,opt,name=minEnactInSeconds,proto3" json:"minEnactInSeconds,omitempty"`
+	// Contrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+	MaxEnactInSeconds int64 `protobuf:"varint,4,opt,name=maxEnactInSeconds,proto3" json:"maxEnactInSeconds,omitempty"`
+	// Contrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
 	MinParticipationStake float32  `protobuf:"fixed32,5,opt,name=minParticipationStake,proto3" json:"minParticipationStake,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
 	XXX_unrecognized      []byte   `json:"-"`
@@ -320,9 +325,12 @@ type ProposalTerms struct {
 	// Timestamp (Unix time in seconds) when voting closes for this proposal
 	ClosingTimestamp int64 `protobuf:"varint,1,opt,name=closingTimestamp,proto3" json:"closingTimestamp,omitempty"`
 	// Timestamp (Unix time in seconds) when proposal gets enacted (if passed)
-	EnactmentTimestamp    int64   `protobuf:"varint,2,opt,name=enactmentTimestamp,proto3" json:"enactmentTimestamp,omitempty"`
+	EnactmentTimestamp int64 `protobuf:"varint,2,opt,name=enactmentTimestamp,proto3" json:"enactmentTimestamp,omitempty"`
+	// Minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
 	MinParticipationStake float32 `protobuf:"fixed32,3,opt,name=minParticipationStake,proto3" json:"minParticipationStake,omitempty"`
 	ValidationTimestamp   int64   `protobuf:"varint,4,opt,name=validationTimestamp,proto3" json:"validationTimestamp,omitempty"`
+	// Actual changes being proposed
+	//
 	// Types that are valid to be assigned to Change:
 	//	*ProposalTerms_UpdateMarket
 	//	*ProposalTerms_NewMarket
