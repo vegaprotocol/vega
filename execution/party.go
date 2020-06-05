@@ -126,6 +126,8 @@ func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
 	return p.notifyTraderAccount(notify, notify.Amount)
 }
 
+// returns parties from an existing market (if any)
+// @TODO: untie parties from the markets
 func (p *Party) getParties() map[string]struct{} {
 	var result map[string]struct{}
 	for _, result = range p.partyByMarket {
