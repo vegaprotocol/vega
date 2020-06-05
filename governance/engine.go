@@ -15,11 +15,13 @@ var (
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
 	// Validation errors
 
-	ErrProposalCloseTimeTooSoon   = errors.New("proposal closes too soon")
-	ErrProposalCloseTimeTooLate   = errors.New("proposal closes too late")
-	ErrProposalEnactTimeTooSoon   = errors.New("proposal enactment times too soon")
-	ErrProposalEnactTimeTooLate   = errors.New("proposal enactment times too late")
-	ErrProposalInsufficientTokens = errors.New("proposal requires more tokens than party has")
+	ErrProposalCloseTimeTooSoon            = errors.New("proposal closes too soon")
+	ErrProposalCloseTimeTooLate            = errors.New("proposal closes too late")
+	ErrProposalEnactTimeTooSoon            = errors.New("proposal enactment time is too soon")
+	ErrProposalEnactTimeTooLate            = errors.New("proposal enactment time is too late")
+	ErrProposalInsufficientTokens          = errors.New("party requires more tokens to submit a proposal")
+	ErrProposalMinPaticipationStakeTooLow  = errors.New("proposal minimum participation stake is too low")
+	ErrProposalMinPaticipationStakeInvalid = errors.New("proposal minimum participation stake is out of bounds [0..1]")
 
 	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
 	ErrVotePeriodExpired       = errors.New("proposal voting has been closed")
@@ -69,7 +71,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		logging.String("MaxClose", params.maxClose.String()),
 		logging.String("MinEnact", params.minEnact.String()),
 		logging.String("MaxEnact", params.maxEnact.String()),
-		logging.Uint64("MinParticipationStake", params.minParticipationStake),
+		logging.Float32("MinParticipationStake", params.minParticipationStake),
 	)
 	return &Engine{
 		Config:        cfg,
@@ -150,6 +152,7 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 	return err
 }
 
+// validates proposals read from the chain
 func (e *Engine) validateProposal(p types.Proposal) error {
 	tok, err := e.accs.GetPartyTokenAccount(p.PartyID)
 	if err != nil {
@@ -169,6 +172,12 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 	}
 	if p.Terms.EnactmentTimestamp > e.currentTime.Add(e.networkParams.maxEnact).Unix() {
 		return ErrProposalEnactTimeTooLate
+	}
+
+	if p.Terms.MinParticipationStake > 1 || p.Terms.MinParticipationStake < 0 {
+		return ErrProposalMinPaticipationStakeInvalid
+	} else if p.Terms.MinParticipationStake < e.networkParams.minParticipationStake {
+		return ErrProposalMinPaticipationStakeTooLow
 	}
 
 	return nil
