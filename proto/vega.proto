@@ -22,22 +22,22 @@ enum Interval {
   INTERVAL_UNSPECIFIED = 0;
 
   // 1 minute
-  I1M = 1;
+  INTERVAL_I1M = 60;
 
   // 5 minutes
-  I5M = 2;
+  INTERVAL_I5M = 300;
 
   // 15 minutes
-  I15M = 3;
+  INTERVAL_I15M = 900;
 
   // 1 hour
-  I1H = 4;
+  INTERVAL_I1H = 3600;
 
   // 6 hours
-  I6H = 5;
+  INTERVAL_I6H = 21600;
 
   // 1 day
-  I1D = 6;
+  INTERVAL_I1D = 86400;
 }
 
 message Price {

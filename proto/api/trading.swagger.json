@@ -186,18 +186,18 @@
           },
           {
             "name": "interval",
-            "description": " - INTERVAL_UNSPECIFIED: Default value, always invalid\n - I1M: 1 minute\n - I5M: 5 minutes\n - I15M: 15 minutes\n - I1H: 1 hour\n - I6H: 6 hours\n - I1D: 1 day",
+            "description": " - INTERVAL_UNSPECIFIED: Default value, always invalid\n - INTERVAL_I1M: 1 minute\n - INTERVAL_I5M: 5 minutes\n - INTERVAL_I15M: 15 minutes\n - INTERVAL_I1H: 1 hour\n - INTERVAL_I6H: 6 hours\n - INTERVAL_I1D: 1 day",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
               "INTERVAL_UNSPECIFIED",
-              "I1M",
-              "I5M",
-              "I15M",
-              "I1H",
-              "I6H",
-              "I1D"
+              "INTERVAL_I1M",
+              "INTERVAL_I5M",
+              "INTERVAL_I15M",
+              "INTERVAL_I1H",
+              "INTERVAL_I6H",
+              "INTERVAL_I1D"
             ],
             "default": "INTERVAL_UNSPECIFIED"
           }
@@ -1720,15 +1720,15 @@
       "type": "string",
       "enum": [
         "INTERVAL_UNSPECIFIED",
-        "I1M",
-        "I5M",
-        "I15M",
-        "I1H",
-        "I6H",
-        "I1D"
+        "INTERVAL_I1M",
+        "INTERVAL_I5M",
+        "INTERVAL_I15M",
+        "INTERVAL_I1H",
+        "INTERVAL_I6H",
+        "INTERVAL_I1D"
       ],
       "default": "INTERVAL_UNSPECIFIED",
-      "title": "- INTERVAL_UNSPECIFIED: Default value, always invalid\n - I1M: 1 minute\n - I5M: 5 minutes\n - I15M: 15 minutes\n - I1H: 1 hour\n - I6H: 6 hours\n - I1D: 1 day"
+      "title": "- INTERVAL_UNSPECIFIED: Default value, always invalid\n - INTERVAL_I1M: 1 minute\n - INTERVAL_I5M: 5 minutes\n - INTERVAL_I15M: 15 minutes\n - INTERVAL_I1H: 1 hour\n - INTERVAL_I6H: 6 hours\n - INTERVAL_I1D: 1 day"
     },
     "vegaLedgerEntry": {
       "type": "object",

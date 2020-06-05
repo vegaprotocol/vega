@@ -331,17 +331,17 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {
-	case types.Interval_I1M:
+	case types.Interval_INTERVAL_I1M:
 		fallthrough
-	case types.Interval_I5M:
+	case types.Interval_INTERVAL_I5M:
 		fallthrough
-	case types.Interval_I15M:
+	case types.Interval_INTERVAL_I15M:
 		fallthrough
-	case types.Interval_I1H:
+	case types.Interval_INTERVAL_I1H:
 		fallthrough
-	case types.Interval_I6H:
+	case types.Interval_INTERVAL_I6H:
 		fallthrough
-	case types.Interval_I1D:
+	case types.Interval_INTERVAL_I1D:
 		return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
 	default:
 		return nil
