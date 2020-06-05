@@ -300,7 +300,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				)
 			} else {
 				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
-				// I'd say next block
+				// this will be next block
 				evt := events.NewTransferResponse(context.TODO(), transfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
