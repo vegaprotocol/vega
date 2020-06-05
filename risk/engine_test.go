@@ -293,7 +293,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 			Remaining:   uint64(v.volume),
 			TimeInForce: types.Order_GTT,
 			Type:        types.Order_LIMIT,
-			Status:      types.Order_Active,
+			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
 		}
 		_, err := book.SubmitOrder(o)
@@ -398,7 +398,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 			Remaining:   uint64(v.volume),
 			TimeInForce: types.Order_GTT,
 			Type:        types.Order_LIMIT,
-			Status:      types.Order_Active,
+			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
 		}
 		_, err := book.SubmitOrder(o)

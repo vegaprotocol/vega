@@ -361,7 +361,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	if m.closed {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_MARKET_CLOSED
 		m.orderBuf.Add(*order)
 		return nil, ErrMarketClosed
@@ -370,7 +370,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// Validate market
 	if order.MarketID != m.mkt.Id {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_INVALID_MARKET_ID
 		m.orderBuf.Add(*order)
 
@@ -388,7 +388,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_INVALID_PARTY_ID
 		m.orderBuf.Add(*order)
 
@@ -406,7 +406,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			logging.String("asset", asset),
 		)
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_MISSING_GENERAL_ACCOUNT
 		m.orderBuf.Add(*order)
 		return nil, ErrMissingGeneralAccountForParty
@@ -416,7 +416,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_INTERNAL_ERROR
 		m.orderBuf.Add(*order)
 
@@ -438,7 +438,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		}
 
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
 		m.orderBuf.Add(*order)
 
@@ -457,7 +457,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
 		} else {
@@ -478,7 +478,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// or if the order was stopped because of a wash trade
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC || order.Status == types.Order_Stopped) &&
+	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC || order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0 {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
@@ -690,7 +690,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	no := types.Order{
 		MarketID:    m.GetID(),
 		Remaining:   size,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		PartyID:     networkPartyID,  // network is not a party as such
 		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
@@ -823,7 +823,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	marketID := m.GetID()
 	order := types.Order{
 		MarketID:    marketID,
-		Status:      types.Order_Filled,
+		Status:      types.Order_STATUS_FILLED,
 		PartyID:     networkPartyID,
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
@@ -852,7 +852,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		order.Size = tSize
 		order.Remaining = 0
 		order.Side = nSide
-		order.Status = types.Order_Active // ensure the status is always active
+		order.Status = types.Order_STATUS_ACTIVE // ensure the status is always active
 		m.idgen.SetID(&order)
 
 		// this is the party order
@@ -860,7 +860,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			MarketID:    marketID,
 			Size:        tSize,
 			Remaining:   0,
-			Status:      types.Order_Filled,
+			Status:      types.Order_STATUS_FILLED,
 			PartyID:     trader.Party(),
 			Side:        tSide,             // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price, // average price
@@ -1235,7 +1235,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 		// Update the order in our stores (will be marked as cancelled)
 		// set the proper status
-		cancellation.Order.Status = types.Order_Expired
+		cancellation.Order.Status = types.Order_STATUS_EXPIRED
 		m.orderBuf.Add(*cancellation.Order)
 		_, err = m.position.UnregisterOrder(cancellation.Order)
 		if err != nil {
@@ -1285,7 +1285,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	pos, err := m.position.AmendOrder(existingOrder, amendedOrder)
 	if err != nil {
 		// adding order to the buffer first
-		amendedOrder.Status = types.Order_Rejected
+		amendedOrder.Status = types.Order_STATUS_REJECTED
 		amendedOrder.Reason = types.OrderError_INTERNAL_ERROR
 		m.orderBuf.Add(*amendedOrder)
 

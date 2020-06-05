@@ -24,6 +24,7 @@ func TestVersioning(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",

@@ -226,6 +226,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -266,6 +267,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -302,6 +304,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -630,7 +633,7 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 
 		for _, v := range execsetup.orders.data {
 			if v.PartyID == val(row, 0) && v.MarketID == val(row, 1) &&
-				v.Status == proto.Order_Rejected && v.Reason.String() == val(row, 2) {
+				v.Status == proto.Order_STATUS_REJECTED && v.Reason.String() == val(row, 2) {
 				ordCnt -= 1
 			}
 		}

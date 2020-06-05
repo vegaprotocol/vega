@@ -352,7 +352,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		e.idgen.SetID(order)
 
 		// adding rejected order to the buf
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_INVALID_MARKET_ID
 		e.orderBuf.Add(*order)
 
@@ -360,7 +360,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, types.ErrInvalidMarketID
 	}
 
-	if order.Status == types.Order_Active {
+	if order.Status == types.Order_STATUS_ACTIVE {
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 
@@ -370,7 +370,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	if conf.Order.Status == types.Order_Filled {
+	if conf.Order.Status == types.Order_STATUS_FILLED {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 
@@ -397,7 +397,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, err
 	}
 	// order was active, not anymore -> decrement gauge
-	if conf.Order.Status != types.Order_Active {
+	if conf.Order.Status != types.Order_STATUS_ACTIVE {
 		metrics.OrderGaugeAdd(-1, orderAmendment.MarketID)
 	}
 	return conf, nil
@@ -417,7 +417,7 @@ func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation
 	if err != nil {
 		return nil, err
 	}
-	if conf.Order.Status == types.Order_Cancelled {
+	if conf.Order.Status == types.Order_STATUS_CANCELLED {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 	return conf, nil
@@ -436,7 +436,7 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	if err != nil {
 		return nil, err
 	}
-	if conf.Order.Status == types.Order_Cancelled {
+	if conf.Order.Status == types.Order_STATUS_CANCELLED {
 		metrics.OrderGaugeAdd(-1, marketID)
 	}
 	return conf, nil

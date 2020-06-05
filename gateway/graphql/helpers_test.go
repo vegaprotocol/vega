@@ -42,15 +42,15 @@ func TestParseOrderStatus(t *testing.T) {
 	active := OrderStatusActive
 	status, err := parseOrderStatus(&active)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_Active, status)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, status)
 	expired := OrderStatusExpired
 	status, err = parseOrderStatus(&expired)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_Expired, status)
+	assert.Equal(t, types.Order_STATUS_EXPIRED, status)
 	cancelled := OrderStatusCancelled
 	status, err = parseOrderStatus(&cancelled)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_Cancelled, status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, status)
 	unknown := OrderStatus("好候")
 	_, err = parseOrderStatus(&unknown)
 	assert.Error(t, err)

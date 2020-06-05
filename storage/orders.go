@@ -128,7 +128,7 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip,
 	var filter *orderFilter
 	if open {
 		openOnly := func(order *types.Order) bool {
-			return order.Status != types.Order_Active
+			return order.Status != types.Order_STATUS_ACTIVE
 		}
 		filter = &openOnly
 	}
@@ -184,7 +184,7 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
 	var filter *orderFilter
 	if open {
 		openOnly := func(order *types.Order) bool {
-			return order.Status != types.Order_Active
+			return order.Status != types.Order_STATUS_ACTIVE
 		}
 		filter = &openOnly
 	}

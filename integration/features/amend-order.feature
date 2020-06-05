@@ -123,8 +123,8 @@ Feature: Amend orders
 
 # check the order status, it should be cancelled
     Then verify the status of the order reference:
-      | trader | reference   | status    |
-      | myboi  | myboi-ref-1 | Cancelled |
+      | trader | reference   | status           |
+      | myboi  | myboi-ref-1 | STATUS_CANCELLED |
 
   Scenario: Amend to invalid tif is rejected
 # setup accounts

@@ -23,7 +23,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_Buy,
 		PartyID:     party1,
@@ -125,6 +125,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
@@ -197,6 +198,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
@@ -240,6 +242,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
 		Side:        types.Side_Buy,
@@ -258,6 +261,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_IOC,
 		Id:          "someid",
 		Side:        types.Side_Sell,
@@ -293,6 +297,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
 		Side:        types.Side_Buy,
@@ -325,7 +330,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 
 	// Validate that the mark price has been updated
 	assert.EqualValues(t, amended.Order.TimeInForce, types.Order_GTT)
-	assert.EqualValues(t, amended.Order.Status, types.Order_Expired)
+	assert.EqualValues(t, amended.Order.Status, types.Order_STATUS_EXPIRED)
 	assert.EqualValues(t, amended.Order.CreatedAt, 10000000000)
 	assert.EqualValues(t, amended.Order.ExpiresAt, 10000000010)
 	assert.EqualValues(t, amended.Order.UpdatedAt, 10000000100)
@@ -347,6 +352,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_GTC,
 		Side:        types.Side_Buy,
 		PartyID:     party1,
@@ -363,6 +369,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_IOC,
 		Side:        types.Side_Sell,
 		PartyID:     party2,
@@ -407,6 +414,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Side:        types.Side_Buy,

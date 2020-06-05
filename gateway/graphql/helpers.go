@@ -71,17 +71,17 @@ func parseOrderType(ty OrderType) (types.Order_Type, error) {
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
 	case OrderStatusActive:
-		return types.Order_Active, nil
+		return types.Order_STATUS_ACTIVE, nil
 	case OrderStatusExpired:
-		return types.Order_Expired, nil
+		return types.Order_STATUS_EXPIRED, nil
 	case OrderStatusCancelled:
-		return types.Order_Cancelled, nil
+		return types.Order_STATUS_CANCELLED, nil
 	case OrderStatusFilled:
-		return types.Order_Filled, nil
+		return types.Order_STATUS_FILLED, nil
 	case OrderStatusRejected:
-		return types.Order_Rejected, nil
+		return types.Order_STATUS_REJECTED, nil
 	default:
-		return types.Order_Active, fmt.Errorf("unknown status: %s", orderStatus.String())
+		return types.Order_STATUS_ACTIVE, fmt.Errorf("unknown status: %s", orderStatus.String())
 	}
 }
 

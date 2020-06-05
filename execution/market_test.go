@@ -222,7 +222,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTT,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_Buy,
 		PartyID:     party1,
@@ -237,7 +237,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	orderSell := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTT,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_Sell,
 		PartyID:     party2,
@@ -322,7 +322,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTT,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_Buy,
 		PartyID:     party1,
@@ -385,7 +385,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTT,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_Buy,
 		PartyID:     party1,
@@ -437,7 +437,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTT,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_Buy,
 		PartyID:     party1,
@@ -597,7 +597,7 @@ func TestMarketCancelOrder(t *testing.T) {
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTT,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_Buy,
 		PartyID:     party1,
