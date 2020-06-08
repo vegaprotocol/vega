@@ -599,6 +599,11 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			continue
 		}
 
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+
 		order := proto.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -608,11 +613,11 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_TYPE_LIMIT,
+			Type:        oty,
 			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
+		_, err = execsetup.engine.SubmitOrder(context.TODO(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
 		}

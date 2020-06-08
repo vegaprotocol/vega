@@ -47,6 +47,8 @@ var (
 	ErrInvalidAmendRemainQuantity = errors.New("incorrect remaining qty for a reduce by amend")
 	// ErrEmptyMarketID is returned if processed market has an empty id
 	ErrEmptyMarketID = errors.New("invalid market id (empty)")
+	// ErrInvalidOrderType is returned if processed order has an invalid order type
+	ErrInvalidOrderType = errors.New("invalid order type")
 
 	networkPartyID = "network"
 )
@@ -362,6 +364,14 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMarketClosed
+	}
+
+	if order.Type == types.Order_NETWORK {
+		// adding order to the buffer first
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_INVALID_TYPE
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidOrderType
 	}
 
 	// Validate market

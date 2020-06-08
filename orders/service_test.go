@@ -58,6 +58,7 @@ func TestPrepareCancelOrder(t *testing.T) {
 func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - successful", testOrderSuccess)
 	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
+	t.Run("Create order - error use network order type", testCreateOrderFailNetworkOrderType)
 }
 
 func TestGetByOrderID(t *testing.T) {
@@ -153,6 +154,22 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	order.ExpiresAt = 0
 	err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
+}
+
+func testCreateOrderFailNetworkOrderType(t *testing.T) {
+	// now
+	now := vegatime.Now()
+	// expires 2 hours from now
+	expires := now.Add(time.Hour * 2)
+	order := orderSubmission
+	order.ExpiresAt = expires.UnixNano()
+	order.Type = types.Order_NETWORK
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
+	assert.EqualError(t, err, orders.ErrUnAuthorizedOrderType.Error())
 }
 
 func testPrepareCancelOrderSuccess(t *testing.T) {
