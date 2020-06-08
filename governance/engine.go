@@ -238,8 +238,8 @@ func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, tota
 	no := counter.countVotes(data.no)
 	totalVotes := float64(yes + no)
 
-	// yes          >= (yes + no) * required majority ratio
-	if float64(yes) >= totalVotes*float64(data.Terms.MinRequiredMajorityStake) &&
+	// yes          > (yes + no)* required majority ratio
+	if float64(yes) > totalVotes*float64(data.Terms.MinRequiredMajorityStake) &&
 		//(yes+no) >= (yes + no + novote) * participation ratio
 		totalVotes >= float64(totalStake)*float64(data.Terms.MinParticipationStake) {
 		data.State = types.Proposal_PASSED
