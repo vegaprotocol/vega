@@ -510,14 +510,15 @@ func TestModelConverters(t *testing.T) {
 	t.Run("ProposalTermsInput.IntoProto nil change", func(t *testing.T) {
 
 		proposal := &gql.ProposalTermsInput{
-			ClosingDatetime:       "2020-09-30T07:28:06+00:00",
-			EnactmentDatetime:     "2020-10-30T07:28:06+00:00",
-			MinParticipationStake: 0.1,
+			ClosingDatetime:          "2020-09-30T07:28:06+00:00",
+			EnactmentDatetime:        "2020-10-30T07:28:06+00:00",
+			MinParticipationStake:    0.1,
+			MinRequiredMajorityStake: 0.55,
 		}
 		proposalProto, err := proposal.IntoProto()
 		assert.Nil(t, proposalProto)
 		assert.Error(t, err)
-		assert.Equal(t, gql.ErrInvalidChange, err)
+		assert.EqualError(t, gql.ErrInvalidChange, err.Error())
 	})
 
 	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
@@ -573,9 +574,10 @@ func TestModelConverters(t *testing.T) {
 		assert.Nil(t, err)
 
 		proposal := &gql.ProposalTermsInput{
-			ClosingDatetime:       "2020-09-30T07:28:06+00:00",
-			EnactmentDatetime:     "2020-10-30T07:28:06+00:00",
-			MinParticipationStake: 0.1,
+			ClosingDatetime:          "2020-09-30T07:28:06+00:00",
+			EnactmentDatetime:        "2020-10-30T07:28:06+00:00",
+			MinParticipationStake:    0.1,
+			MinRequiredMajorityStake: 0.55,
 			NewMarket: &gql.NewMarketInput{
 				Market: &mkt,
 			},

@@ -1518,15 +1518,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 
 func (r *myMutationResolver) PrepareProposal(
 	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
-
-	if proposalTerms.MinParticipationStake < 0 || proposalTerms.MinParticipationStake > 1 {
-		return nil, errors.New("minParticipationStake is out of bounds [0..1]")
-	}
-
-	if proposalTerms.MinRequiredMajorityStake < 0.5 || proposalTerms.MinRequiredMajorityStake > 1 {
-		return nil, errors.New("minRequiredMajorityStake is out of bounds [0.5..1]")
-	}
-
 	var ref string
 	if reference != nil {
 		ref = *reference

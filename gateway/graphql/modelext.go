@@ -53,6 +53,12 @@ var (
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
 	// ErrInvalidProposalState ...
 	ErrInvalidProposalState = errors.New("invalid proposal state")
+	// ErrParticipationStake ...
+	ErrParticipationStake = errors.New("minimum participation stake contains too large value")
+	// ErrMinParticipationStakeInvalid ...
+	ErrMinParticipationStakeInvalid = errors.New("proposal minimum participation stake is out of bounds [0..1]")
+	// ErrMinRequiredMajorityStakeInvalid ...
+	ErrMinRequiredMajorityStakeInvalid = errors.New("proposal minimum required majority stake is out of bounds [0.5..1]")
 )
 
 // IntoProto ...
@@ -699,6 +705,14 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	enactment, err := datetimeToSecondsTS(p.EnactmentDatetime)
 	if err != nil {
 		return nil, err
+	}
+
+	if p.MinParticipationStake < 0 || p.MinParticipationStake > 1 {
+		return nil, ErrMinParticipationStakeInvalid
+	}
+
+	if p.MinRequiredMajorityStake < 0.5 || p.MinRequiredMajorityStake > 1 {
+		return nil, ErrMinRequiredMajorityStakeInvalid
 	}
 
 	result := &types.ProposalTerms{
