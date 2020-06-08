@@ -1766,11 +1766,11 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  | Contrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| maxCloseInSeconds | [int64](#int64) |  | Contrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| minEnactInSeconds | [int64](#int64) |  | Contrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| maxEnactInSeconds | [int64](#int64) |  | Contrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| minParticipationStake | [float](#float) |  | Contrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
+| minCloseInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
+| maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
+| minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
+| maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
+| minParticipationStake | [float](#float) |  | Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
 
 
 

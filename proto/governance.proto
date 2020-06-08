@@ -9,17 +9,17 @@ import "proto/markets.proto";
 import "proto/assets.proto";
 
 message NetworkConfiguration {
-  // Contrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
+  // Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
   int64 minCloseInSeconds = 1;
-  // Contrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
+  // Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
   int64 maxCloseInSeconds = 2;
 
-  // Contrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+  // Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
   int64 minEnactInSeconds  = 3;
-  // Contrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+  // Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
   int64 maxEnactInSeconds  = 4;
 
-  // Contrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
+  // Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
   float minParticipationStake = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
 }
 

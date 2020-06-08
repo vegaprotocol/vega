@@ -97,15 +97,15 @@ func (Vote_Value) EnumDescriptor() ([]byte, []int) {
 }
 
 type NetworkConfiguration struct {
-	// Contrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
+	// Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
 	MinCloseInSeconds int64 `protobuf:"varint,1,opt,name=minCloseInSeconds,proto3" json:"minCloseInSeconds,omitempty"`
-	// Contrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
+	// Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
 	MaxCloseInSeconds int64 `protobuf:"varint,2,opt,name=maxCloseInSeconds,proto3" json:"maxCloseInSeconds,omitempty"`
-	// Contrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+	// Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
 	MinEnactInSeconds int64 `protobuf:"varint,3,opt,name=minEnactInSeconds,proto3" json:"minEnactInSeconds,omitempty"`
-	// Contrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+	// Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
 	MaxEnactInSeconds int64 `protobuf:"varint,4,opt,name=maxEnactInSeconds,proto3" json:"maxEnactInSeconds,omitempty"`
-	// Contrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
+	// Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
 	MinParticipationStake float32  `protobuf:"fixed32,5,opt,name=minParticipationStake,proto3" json:"minParticipationStake,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
 	XXX_unrecognized      []byte   `json:"-"`
