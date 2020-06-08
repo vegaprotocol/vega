@@ -4770,6 +4770,13 @@
                   <td><p>Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
                 </tr>
 
+                <tr>
+                  <td>minRequiredMajorityStake</td>
+                  <td><a href="#float">float</a></td>
+                  <td></td>
+                  <td><p>Constrains minimum required majority stake necessary for a proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -4792,6 +4799,19 @@
                     <ul>
 
                       <li>float_gte: 0</li>
+
+                      <li>float_lte: 1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minRequiredMajorityStake</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gte: 0.5</li>
 
                       <li>float_lte: 1</li>
 
@@ -5048,10 +5068,17 @@
                 </tr>
 
                 <tr>
+                  <td>minRequiredMajorityStake</td>
+                  <td><a href="#float">float</a></td>
+                  <td></td>
+                  <td><p>Minimum required majority stake necessary for a proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
+                </tr>
+
+                <tr>
                   <td>validationTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>TODO: this should be moved into <tt>NewAsset</tt> definition </p></td>
                 </tr>
 
                 <tr>
@@ -5126,6 +5153,19 @@
                     <ul>
 
                       <li>float_gte: 0</li>
+
+                      <li>float_lte: 1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minRequiredMajorityStake</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gte: 0.5</li>
 
                       <li>float_lte: 1</li>
 

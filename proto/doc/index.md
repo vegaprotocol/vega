@@ -1771,6 +1771,7 @@
 | minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
 | maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
 | minParticipationStake | [float](#float) |  | Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
+| minRequiredMajorityStake | [float](#float) |  | Constrains minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`. |
 
 
 
@@ -1838,7 +1839,8 @@ To be implemented
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
 | minParticipationStake | [float](#float) |  | Minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
-| validationTimestamp | [int64](#int64) |  |  |
+| minRequiredMajorityStake | [float](#float) |  | Minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`. |
+| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |

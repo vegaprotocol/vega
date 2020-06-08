@@ -15,16 +15,17 @@ var (
 	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
 	// Validation errors
 
-	ErrProposalCloseTimeTooSoon            = errors.New("proposal closes too soon")
-	ErrProposalCloseTimeTooLate            = errors.New("proposal closes too late")
-	ErrProposalEnactTimeTooSoon            = errors.New("proposal enactment time is too soon")
-	ErrProposalEnactTimeTooLate            = errors.New("proposal enactment time is too late")
-	ErrProposalInsufficientTokens          = errors.New("party requires more tokens to submit a proposal")
-	ErrProposalMinPaticipationStakeTooLow  = errors.New("proposal minimum participation stake is too low")
-	ErrProposalMinPaticipationStakeInvalid = errors.New("proposal minimum participation stake is out of bounds [0..1]")
-
-	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
-	ErrVotePeriodExpired       = errors.New("proposal voting has been closed")
+	ErrProposalCloseTimeTooSoon                = errors.New("proposal closes too soon")
+	ErrProposalCloseTimeTooLate                = errors.New("proposal closes too late")
+	ErrProposalEnactTimeTooSoon                = errors.New("proposal enactment time is too soon")
+	ErrProposalEnactTimeTooLate                = errors.New("proposal enactment time is too late")
+	ErrProposalInsufficientTokens              = errors.New("party requires more tokens to submit a proposal")
+	ErrProposalMinPaticipationStakeTooLow      = errors.New("proposal minimum participation stake is too low")
+	ErrProposalMinPaticipationStakeInvalid     = errors.New("proposal minimum participation stake is out of bounds [0..1]")
+	ErrProposalMinRequiredMajorityStakeTooLow  = errors.New("proposal minimum required majority stake is too low")
+	ErrProposalMinRequiredMajorityStakeInvalid = errors.New("proposal minimum required majority stake is out of bounds [0.5..1]")
+	ErrVoterInsufficientTokens                 = errors.New("vote requires more tokens than party has")
+	ErrProposalNotOpen                         = errors.New("proposal is not open for voting")
 )
 
 // Accounts ...
@@ -65,6 +66,7 @@ type governanceData struct {
 	no  map[string]*types.Vote
 }
 
+// NewEngine creates new governance engine instance
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
 	log.Debug("Governance parameters",
 		logging.String("MinClose", params.minClose.String()),
@@ -72,6 +74,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		logging.String("MinEnact", params.minEnact.String()),
 		logging.String("MaxEnact", params.maxEnact.String()),
 		logging.Float32("MinParticipationStake", params.minParticipationStake),
+		logging.Float32("MinRequiredMajority", params.minRequiredMajorityStake),
 	)
 	return &Engine{
 		Config:        cfg,
@@ -180,6 +183,12 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 		return ErrProposalMinPaticipationStakeTooLow
 	}
 
+	if p.Terms.MinRequiredMajorityStake > 1 || p.Terms.MinRequiredMajorityStake < 0.5 {
+		return ErrProposalMinRequiredMajorityStakeInvalid
+	} else if p.Terms.MinParticipationStake < e.networkParams.minParticipationStake {
+		return ErrProposalMinRequiredMajorityStakeTooLow
+	}
+
 	return nil
 }
 
@@ -213,27 +222,35 @@ func (e *Engine) validateVote(v types.Vote) (*governanceData, error) {
 	if !ok {
 		return nil, ErrProposalNotFound
 	}
-	if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
-		return nil, ErrVotePeriodExpired
+	if p.State != types.Proposal_OPEN {
+		return nil, ErrProposalNotOpen
 	}
 	return p, nil
 }
 
 func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, totalStake uint64) {
-	proposal := data.Proposal
+	data.State = types.Proposal_DECLINED // declined unless passed
 
 	yes := counter.countVotes(data.yes)
 	no := counter.countVotes(data.no)
+	totalVotes := float64(yes + no)
 
-	proposal.State = types.Proposal_DECLINED
-	if yes > no {
-		participationStake := float64(yes + no)
-		minParticipationStake := float64(proposal.Terms.MinParticipationStake) * float64(totalStake)
-		if participationStake >= minParticipationStake {
-			proposal.State = types.Proposal_PASSED
-		}
+	// yes          >= (yes + no) * required majority ratio
+	if float64(yes) >= totalVotes*float64(data.Terms.MinRequiredMajorityStake) &&
+		//(yes+no) >= (yes + no + novote) * participation ratio
+		totalVotes >= float64(totalStake)*float64(data.Terms.MinParticipationStake) {
+		data.State = types.Proposal_PASSED
+	} else {
+		e.log.Info(
+			"Declined proposal",
+			logging.String("proposal-id", data.ID),
+			logging.Uint64("yes-votes-stake", yes),
+			logging.Float64("min-yes-required", totalVotes*float64(data.Terms.MinRequiredMajorityStake)),
+			logging.Float64("total-votes-stake", totalVotes),
+			logging.Float64("min-total-votes-required", float64(totalStake)*float64(data.Terms.MinParticipationStake)),
+		)
 	}
-	e.buf.Add(*proposal)
+	e.buf.Add(*data.Proposal)
 }
 
 // stakeCounter caches token balance per party and counts votes

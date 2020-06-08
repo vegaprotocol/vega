@@ -24,6 +24,12 @@ func (this *NetworkConfiguration) Validate() error {
 	if !(this.MinParticipationStake <= 1) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinParticipationStake))
 	}
+	if !(this.MinRequiredMajorityStake >= 0.5) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredMajorityStake", fmt.Errorf(`value '%v' must be greater than or equal to '0.5'`, this.MinRequiredMajorityStake))
+	}
+	if !(this.MinRequiredMajorityStake <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredMajorityStake", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinRequiredMajorityStake))
+	}
 	return nil
 }
 func (this *UpdateMarket) Validate() error {
@@ -74,6 +80,12 @@ func (this *ProposalTerms) Validate() error {
 	}
 	if !(this.MinParticipationStake <= 1) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinParticipationStake", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinParticipationStake))
+	}
+	if !(this.MinRequiredMajorityStake >= 0.5) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredMajorityStake", fmt.Errorf(`value '%v' must be greater than or equal to '0.5'`, this.MinRequiredMajorityStake))
+	}
+	if !(this.MinRequiredMajorityStake <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredMajorityStake", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinRequiredMajorityStake))
 	}
 	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateMarket); ok {
 		if oneOfNester.UpdateMarket != nil {

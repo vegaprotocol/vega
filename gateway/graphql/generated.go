@@ -262,10 +262,11 @@ type ComplexityRoot struct {
 	}
 
 	ProposalTerms struct {
-		Change                func(childComplexity int) int
-		ClosingDatetime       func(childComplexity int) int
-		EnactmentDatetime     func(childComplexity int) int
-		MinParticipationStake func(childComplexity int) int
+		Change                   func(childComplexity int) int
+		ClosingDatetime          func(childComplexity int) int
+		EnactmentDatetime        func(childComplexity int) int
+		MinParticipationStake    func(childComplexity int) int
+		MinRequiredMajorityStake func(childComplexity int) int
 	}
 
 	ProposalVote struct {
@@ -377,11 +378,12 @@ type ComplexityRoot struct {
 	}
 
 	UpdateNetwork struct {
-		MaxCloseInSeconds     func(childComplexity int) int
-		MaxEnactInSeconds     func(childComplexity int) int
-		MinCloseInSeconds     func(childComplexity int) int
-		MinEnactInSeconds     func(childComplexity int) int
-		MinParticipationStake func(childComplexity int) int
+		MaxCloseInSeconds        func(childComplexity int) int
+		MaxEnactInSeconds        func(childComplexity int) int
+		MinCloseInSeconds        func(childComplexity int) int
+		MinEnactInSeconds        func(childComplexity int) int
+		MinParticipationStake    func(childComplexity int) int
+		MinRequiredMajorityStake func(childComplexity int) int
 	}
 
 	Vote struct {
@@ -1537,6 +1539,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.MinParticipationStake(childComplexity), true
 
+	case "ProposalTerms.minRequiredMajorityStake":
+		if e.complexity.ProposalTerms.MinRequiredMajorityStake == nil {
+			break
+		}
+
+		return e.complexity.ProposalTerms.MinRequiredMajorityStake(childComplexity), true
+
 	case "ProposalVote.proposalID":
 		if e.complexity.ProposalVote.ProposalID == nil {
 			break
@@ -2211,6 +2220,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateNetwork.MinParticipationStake(childComplexity), true
+
+	case "UpdateNetwork.minRequiredMajorityStake":
+		if e.complexity.UpdateNetwork.MinRequiredMajorityStake == nil {
+			break
+		}
+
+		return e.complexity.UpdateNetwork.MinRequiredMajorityStake(childComplexity), true
 
 	case "Vote.datetime":
 		if e.complexity.Vote.Datetime == nil {
@@ -3530,6 +3546,12 @@ type UpdateNetwork {
   required for a proposal to pass. Value from 0 and 1.
   """
   minParticipationStake: Float
+
+  """
+  Network parameter that restricts the minimum required majority stake
+  needed for a proposal to pass. Value from 0.5 to 1.
+  """
+  minRequiredMajorityStake: Float
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -3562,6 +3584,12 @@ input UpdateNetworkInput {
   required for a proposal to pass. Value from 0 and 1.
   """
   minParticipationStake: Float
+
+  """
+  Network parameter that restricts the minimum required majority stake
+  needed for a proposal to pass. Value from 0.5 to 1.
+  """
+  minRequiredMajorityStake: Float
 }
 
 
@@ -3575,6 +3603,8 @@ type ProposalTerms {
   enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
   minParticipationStake: Float!
+  "Minimum required majority stake needed for a proposal to pass. Value from 0.5 to 1."
+  minRequiredMajorityStake: Float!
   "Actual change being introduced by the proposal"
   change: ProposalChange
 }
@@ -3588,6 +3618,8 @@ input ProposalTermsInput {
   enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
   minParticipationStake: Float!
+  "Minimum required majority stake needed for a proposal to pass. Value from 0.5 to 1."
+  minRequiredMajorityStake: Float!
   
   "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
@@ -8956,6 +8988,40 @@ func (ec *executionContext) _ProposalTerms_minParticipationStake(ctx context.Con
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ProposalTerms_minRequiredMajorityStake(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProposalTerms",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinRequiredMajorityStake, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -11983,6 +12049,37 @@ func (ec *executionContext) _UpdateNetwork_minParticipationStake(ctx context.Con
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _UpdateNetwork_minRequiredMajorityStake(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "UpdateNetwork",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinRequiredMajorityStake, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Vote_value(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -13470,6 +13567,12 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "minRequiredMajorityStake":
+			var err error
+			it.MinRequiredMajorityStake, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "updateMarket":
 			var err error
 			it.UpdateMarket, err = ec.unmarshalOUpdateMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx, v)
@@ -13653,6 +13756,12 @@ func (ec *executionContext) unmarshalInputUpdateNetworkInput(ctx context.Context
 		case "minParticipationStake":
 			var err error
 			it.MinParticipationStake, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "minRequiredMajorityStake":
+			var err error
+			it.MinRequiredMajorityStake, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15580,6 +15689,11 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "minRequiredMajorityStake":
+			out.Values[i] = ec._ProposalTerms_minRequiredMajorityStake(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "change":
 			out.Values[i] = ec._ProposalTerms_change(ctx, field, obj)
 		default:
@@ -16550,6 +16664,8 @@ func (ec *executionContext) _UpdateNetwork(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._UpdateNetwork_maxEnactInSeconds(ctx, field, obj)
 		case "minParticipationStake":
 			out.Values[i] = ec._UpdateNetwork_minParticipationStake(ctx, field, obj)
+		case "minRequiredMajorityStake":
+			out.Values[i] = ec._UpdateNetwork_minRequiredMajorityStake(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

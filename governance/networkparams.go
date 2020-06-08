@@ -13,11 +13,12 @@ const (
 
 // These Governance parameters are fixed, unless overridden by ldflags for test purposes.
 var (
-	MinClose              = ""
-	MaxClose              = ""
-	MinEnact              = ""
-	MaxEnact              = ""
-	MinParticipationStake = ""
+	MinClose                 = ""
+	MaxClose                 = ""
+	MinEnact                 = ""
+	MaxEnact                 = ""
+	MinParticipationStake    = ""
+	MinRequiredMajorityStake = ""
 )
 
 const (
@@ -32,26 +33,30 @@ const (
 	defaultMaxEnact = 1 * year
 	// defaultMinParticipationStake is hardcoded minimum participation stake fraction (from `0` to `1`)
 	defaultMinParticipationStake = 0.01
+	// defaultMinRequiredMajority is hardcoded equired majority stake fraction (from `0.5` to `1`)
+	defaultMinRequiredMajorityStake = 0.5
 )
 
 // NetworkParameters stores governance network parameters
 type NetworkParameters struct {
-	minClose              time.Duration
-	maxClose              time.Duration
-	minEnact              time.Duration
-	maxEnact              time.Duration
-	minParticipationStake float32
+	minClose                 time.Duration
+	maxClose                 time.Duration
+	minEnact                 time.Duration
+	maxEnact                 time.Duration
+	minParticipationStake    float32
+	minRequiredMajorityStake float32
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
 func DefaultNetworkParameters() *NetworkParameters {
 	var err error
 	result := &NetworkParameters{
-		minClose:              defaultMinClose,
-		maxClose:              defaultMaxClose,
-		minEnact:              defaultMinEnact,
-		maxEnact:              defaultMaxEnact,
-		minParticipationStake: defaultMinParticipationStake,
+		minClose:                 defaultMinClose,
+		maxClose:                 defaultMaxClose,
+		minEnact:                 defaultMinEnact,
+		maxEnact:                 defaultMaxEnact,
+		minParticipationStake:    defaultMinParticipationStake,
+		minRequiredMajorityStake: defaultMinRequiredMajorityStake,
 	}
 	if len(MinClose) > 0 {
 		result.minClose, err = time.ParseDuration(MinClose)
@@ -89,6 +94,19 @@ func DefaultNetworkParameters() *NetworkParameters {
 			panic(fmt.Sprintf("Invalid MinParticipationStake (over 1): %s", MinParticipationStake))
 		}
 		result.minParticipationStake = float32(stakeValue)
+	}
+	if len(MinRequiredMajorityStake) > 0 {
+		stakeValue, err := strconv.ParseFloat(MinRequiredMajorityStake, 32)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to parse float value, %s: %s", MinRequiredMajorityStake, err.Error()))
+		}
+		if stakeValue < 0.5 {
+			panic(fmt.Sprintf("Invalid MinRequiredMajorityStake (less than 0.5): %s", MinRequiredMajorityStake))
+		}
+		if stakeValue > 1 {
+			panic(fmt.Sprintf("Invalid MinRequiredMajorityStake (over 1): %s", MinRequiredMajorityStake))
+		}
+		result.minRequiredMajorityStake = float32(stakeValue)
 	}
 
 	result.maxClose = max(result.maxClose, result.minClose) // maxClose must be >= minClose

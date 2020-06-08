@@ -15,12 +15,15 @@ message NetworkConfiguration {
   int64 maxCloseInSeconds = 2;
 
   // Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
-  int64 minEnactInSeconds  = 3;
+  int64 minEnactInSeconds = 3;
   // Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
-  int64 maxEnactInSeconds  = 4;
+  int64 maxEnactInSeconds = 4;
 
   // Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
   float minParticipationStake = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
+
+  // Constrains minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`.
+  float minRequiredMajorityStake = 6 [(validator.field) = {float_gte: 0.5, float_lte: 1}];
 }
 
 message UpdateMarket {
@@ -40,12 +43,15 @@ message NewAsset {
 
 message ProposalTerms {
   // Timestamp (Unix time in seconds) when voting closes for this proposal
-  int64 closingTimestamp       = 1 [(validator.field) = {int_gt: 0}];
+  int64 closingTimestamp         = 1 [(validator.field) = {int_gt: 0}];
   // Timestamp (Unix time in seconds) when proposal gets enacted (if passed)
-  int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
+  int64 enactmentTimestamp       = 2 [(validator.field) = {int_gt: 0}];
   // Minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`.
-  float minParticipationStake  = 3 [(validator.field) = {float_gte: 0, float_lte: 1}];
-  int64 validationTimestamp    = 4;
+  float minParticipationStake    = 3 [(validator.field) = {float_gte: 0, float_lte: 1}];
+  // Minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`.
+  float minRequiredMajorityStake = 4 [(validator.field) = {float_gte: 0.5, float_lte: 1}];
+
+  int64 validationTimestamp = 5; //TODO: this should be moved into `NewAsset` definition
 
   // Actual changes being proposed
   oneof change {

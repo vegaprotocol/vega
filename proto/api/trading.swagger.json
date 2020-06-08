@@ -1940,6 +1940,11 @@
           "type": "number",
           "format": "float",
           "description": "Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`."
+        },
+        "minRequiredMajorityStake": {
+          "type": "number",
+          "format": "float",
+          "description": "Constrains minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`."
         }
       }
     },
@@ -2247,6 +2252,11 @@
           "type": "number",
           "format": "float",
           "description": "Minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`."
+        },
+        "minRequiredMajorityStake": {
+          "type": "number",
+          "format": "float",
+          "description": "Minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`."
         },
         "validationTimestamp": {
           "type": "string",
