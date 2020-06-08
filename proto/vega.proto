@@ -181,9 +181,12 @@ enum OrderError {
 message Trade {
 
   enum Type {
-    DEFAULT = 0;
-    NETWORK_CLOSE_OUT_GOOD = 1;
-    NETWORK_CLOSE_OUT_BAD = 2;
+    // Default value, always invalid
+    TYPE_UNSPECIFIED = 0;
+
+    TYPE_DEFAULT = 1;
+    TYPE_NETWORK_CLOSE_OUT_GOOD = 2;
+    TYPE_NETWORK_CLOSE_OUT_BAD = 3;
   }
 
   string id = 1;

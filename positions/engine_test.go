@@ -26,6 +26,7 @@ func testUpdatePositionRegular(t *testing.T) {
 	seller := "seller_id"
 	size := int64(10)
 	trade := proto.Trade{
+		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketID:  "market_id",
 		Price:     10000,
@@ -56,6 +57,7 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 	seller := "seller_id"
 	size := int64(10)
 	trade := proto.Trade{
+		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketID:  "market_id",
 		Price:     10000,
@@ -81,6 +83,7 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 	seller := "network"
 	size := int64(10)
 	trade := proto.Trade{
+		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketID:  "market_id",
 		Price:     10000,

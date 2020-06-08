@@ -55,6 +55,7 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 	}{
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id",
 				MarketID:  "market_id",
 				Price:     100,
@@ -70,6 +71,7 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 		},
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id",
 				MarketID:  "market_id",
 				Price:     100,
@@ -115,6 +117,7 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 	}{
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
 				MarketID:  "market_id",
 				Price:     100,
@@ -131,6 +134,7 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
 				MarketID:  "market_id",
 				Price:     100,
@@ -176,6 +180,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	}{
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
 				MarketID:  "market_id",
 				Price:     100,
@@ -192,6 +197,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
 				MarketID:  "market_id",
 				Price:     100,
@@ -236,6 +242,7 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	}{
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
 				MarketID:  "market_id",
 				Price:     100,
@@ -252,6 +259,7 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
 				MarketID:  "market_id",
 				Price:     100,
@@ -295,6 +303,7 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 		expectedSizeTraderB int64
 	}{
 		trade: types.Trade{
+			Type:      types.Trade_TYPE_DEFAULT,
 			Id:        "trade_i1",
 			MarketID:  "market_id",
 			Price:     100,
@@ -345,6 +354,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 		// first trade between A and B, open a new position
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
 				MarketID:  "market_id",
 				Price:     100,
@@ -363,6 +373,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 		// second trade between A and C, open C close A
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
 				MarketID:  "market_id",
 				Price:     100,
@@ -381,6 +392,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 		// last trade between A and B again, re-open A, decrease B
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id3",
 				MarketID:  "market_id",
 				Price:     100,
@@ -431,6 +443,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	}{
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
 				MarketID:  "market_id",
 				Price:     100,
@@ -447,6 +460,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 		// trader A trade with himsef, no positions changes
 		{
 			trade: types.Trade{
+				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
 				MarketID:  "market_id",
 				Price:     100,
@@ -615,6 +629,7 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	// add a trade for a size of 3,
 	// potential buy should be 7, size 3
 	trade := types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_i1",
 		MarketID:  "market_id",
 		Price:     100,
@@ -708,6 +723,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	// add a trade for a size of 3,
 	// potential buy should be 7, size 3
 	trade := types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_i1",
 		MarketID:  "market_id",
 		Price:     100,

@@ -207,6 +207,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	trade1 := &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-1",
 		Price:     100,
 		Size:      100,
@@ -220,6 +221,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	trade2 := &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-2",
 		Price:     100,
 		Size:      100,
@@ -233,6 +235,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	trade3 := &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-3",
 		Price:     100,
 		Size:      100,
@@ -246,6 +249,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	trade4 := &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-4",
 		Price:     100,
 		Size:      100,
@@ -259,6 +263,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	trade5 := &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-5",
 		Price:     100,
 		Size:      100,
@@ -272,6 +277,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	trade6 := &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-6",
 		Price:     100,
 		Size:      100,

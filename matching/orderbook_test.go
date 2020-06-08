@@ -924,6 +924,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 
 func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 	// run asserts for protocol trade data
+	assert.Equal(t, expectedTrade.Type, trade.Type, "invalid trade type")
 	assert.Equal(t, int(expectedTrade.Price), int(trade.Price), "invalid trade price")
 	assert.Equal(t, int(expectedTrade.Size), int(trade.Size), "invalid trade size")
 	assert.Equal(t, expectedTrade.Buyer, trade.Buyer, "invalid trade buyer")
@@ -1372,6 +1373,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     101,
 					Size:      100,
@@ -1411,6 +1413,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     101,
 					Size:      100,
@@ -1419,6 +1422,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Aggressor: types.Side_SIDE_BUY,
 				},
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     101,
 					Size:      100,
@@ -1470,6 +1474,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     99,
 					Size:      100,
@@ -1478,6 +1483,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Aggressor: types.Side_SIDE_SELL,
 				},
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     98,
 					Size:      100,
@@ -1486,6 +1492,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Aggressor: types.Side_SIDE_SELL,
 				},
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     98,
 					Size:      50,
@@ -1549,6 +1556,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
+					Type:      types.Trade_TYPE_DEFAULT,
 					MarketID:  market,
 					Price:     98,
 					Size:      50,

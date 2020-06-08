@@ -146,6 +146,7 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	}
 
 	return &types.Trade{
+		Type:      types.Trade_TYPE_DEFAULT,
 		MarketID:  agg.MarketID,
 		Price:     pass.Price,
 		Size:      size,

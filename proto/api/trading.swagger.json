@@ -2530,11 +2530,13 @@
     "vegaTradeType": {
       "type": "string",
       "enum": [
-        "DEFAULT",
-        "NETWORK_CLOSE_OUT_GOOD",
-        "NETWORK_CLOSE_OUT_BAD"
+        "TYPE_UNSPECIFIED",
+        "TYPE_DEFAULT",
+        "TYPE_NETWORK_CLOSE_OUT_GOOD",
+        "TYPE_NETWORK_CLOSE_OUT_BAD"
       ],
-      "default": "DEFAULT"
+      "default": "TYPE_UNSPECIFIED",
+      "title": "- TYPE_UNSPECIFIED: Default value, always invalid"
     },
     "vegaTransferBalance": {
       "type": "object",

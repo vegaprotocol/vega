@@ -3038,9 +3038,10 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DEFAULT | 0 |  |
-| NETWORK_CLOSE_OUT_GOOD | 1 |  |
-| NETWORK_CLOSE_OUT_BAD | 2 |  |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| TYPE_DEFAULT | 1 |  |
+| TYPE_NETWORK_CLOSE_OUT_GOOD | 2 |  |
+| TYPE_NETWORK_CLOSE_OUT_BAD | 3 |  |
 
 
 

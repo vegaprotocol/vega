@@ -751,7 +751,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// setup the type of the trade to network
 			// this trade did happen with a GOOD trader to
 			// 0 out the BAD trader position
-			trade.Type = types.Trade_NETWORK_CLOSE_OUT_GOOD
+			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
 			m.tradeBuf.Add(*trade)
 
@@ -899,7 +899,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			Buyer:     buyOrder.PartyID,
 			Seller:    sellOrder.PartyID,
 			Timestamp: partyOrder.CreatedAt,
-			Type:      types.Trade_NETWORK_CLOSE_OUT_BAD,
+			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
 		m.tradeBuf.Add(trade)
 
