@@ -1,7 +1,6 @@
 package gql
 
 import (
-	"math"
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -516,9 +515,9 @@ func (a AccountType) IntoProto() types.AccountType {
 // ProposalTermsFromProto ...
 func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) {
 	result := &ProposalTerms{
-		ClosingDatetime:       secondsTSToDatetime(terms.ClosingTimestamp),
-		EnactmentDatetime:     secondsTSToDatetime(terms.EnactmentTimestamp),
-		MinParticipationStake: float64(terms.MinParticipationStake),
+		ClosingDatetime:          secondsTSToDatetime(terms.ClosingTimestamp),
+		EnactmentDatetime:        secondsTSToDatetime(terms.EnactmentTimestamp),
+		MinParticipationStake:    float64(terms.MinParticipationStake),
 		MinRequiredMajorityStake: float64(terms.MinRequiredMajorityStake),
 	}
 	if terms.GetUpdateMarket() != nil {
@@ -703,10 +702,10 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	}
 
 	result := &types.ProposalTerms{
-		ClosingTimestamp:      closing,
-		EnactmentTimestamp:    enactment,
-		MinParticipationStake: float32(p.MinParticipationStake), // downcasting value from 0 to 1
-		MinRequiredMajorityStake: float32(p.MinRequiredMajorityStake) // downcasting value from 0.5 to 1
+		ClosingTimestamp:         closing,
+		EnactmentTimestamp:       enactment,
+		MinParticipationStake:    float32(p.MinParticipationStake),    // downcasting value from 0 to 1
+		MinRequiredMajorityStake: float32(p.MinRequiredMajorityStake), // downcasting value from 0.5 to 1
 	}
 	if p.UpdateMarket != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}
