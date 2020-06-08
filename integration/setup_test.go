@@ -52,7 +52,6 @@ type marketTestSetup struct {
 	core            *execution.Market
 	party           *execution.Party
 	candles         *mocks.MockCandleBuf
-	orders          *orderStub
 	trades          *tradeStub
 	parties         *mocks.MockPartyBuf
 	accounts        *accStub
@@ -80,7 +79,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	ctrl := gomock.NewController(&reporter)
 	candles := mocks.NewMockCandleBuf(ctrl)
-	orders := NewOrderStub()
 	trades := NewTradeStub()
 	parties := mocks.NewMockPartyBuf(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
@@ -107,7 +105,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		market:          market,
 		ctrl:            ctrl,
 		candles:         candles,
-		orders:          orders,
 		trades:          trades,
 		parties:         parties,
 		accounts:        accounts,
@@ -131,7 +128,6 @@ type executionTestSetup struct {
 	ctrl            *gomock.Controller
 	accounts        *accStub
 	candles         *mocks.MockCandleBuf
-	orders          *orderStub
 	trades          *tradeStub
 	parties         *mocks.MockPartyBuf
 	markets         *mocks.MockMarketBuf
@@ -178,7 +174,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.log = logging.NewTestLogger()
 	execsetup.accounts = NewAccountStub()
 	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
-	execsetup.orders = NewOrderStub()
 	execsetup.trades = NewTradeStub()
 	execsetup.settle = buffer.NewSettlement()
 	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
@@ -202,7 +197,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)

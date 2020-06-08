@@ -131,7 +131,6 @@ type Engine struct {
 	governance *governance.Engine
 	idgen      *IDgenerator
 
-	orderBuf        OrderBuf
 	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marketBuf       MarketBuf
@@ -154,7 +153,6 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	time TimeService,
-	orderBuf OrderBuf,
 	tradeBuf TradeBuf,
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
@@ -193,7 +191,6 @@ func NewEngine(
 		Config:          executionConfig,
 		markets:         map[string]*Market{},
 		candleBuf:       candleBuf,
-		orderBuf:        orderBuf,
 		tradeBuf:        tradeBuf,
 		marketBuf:       marketBuf,
 		partyBuf:        partyBuf,
@@ -299,7 +296,6 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.party,
 		marketConfig,
 		e.candleBuf,
-		e.orderBuf,
 		e.partyBuf,
 		e.tradeBuf,
 		e.marginLevelsBuf,
@@ -356,7 +352,6 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Reason = types.OrderError_INVALID_MARKET_ID
 		evt := events.NewOrderEvent(ctx, order)
 		e.broker.Send(evt)
-		e.orderBuf.Add(*order)
 
 		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
@@ -534,7 +529,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 		order := order
 		evt := events.NewOrderEvent(context.Background(), &order)
 		e.broker.Send(evt)
-		e.orderBuf.Add(order)
 		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
 	}
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -566,11 +560,6 @@ func (e *Engine) Generate() error {
 
 	// margins levels
 	e.marginLevelsBuf.Flush()
-	// Orders
-	err = e.orderBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "failed to flush orders buffer")
-	}
 
 	// Trades - flush after orders so the traders reference an existing order
 	err = e.tradeBuf.Flush()

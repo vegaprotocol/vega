@@ -136,7 +136,6 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.party, // party-engine here!
 		mkt,
 		mktsetup.candles,
-		mktsetup.orders,
 		mktsetup.parties,
 		mktsetup.trades,
 		mktsetup.marginLevelsBuf,
