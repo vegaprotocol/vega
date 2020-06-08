@@ -34,7 +34,7 @@ Feature: Test trader accounts
     And "trader1" general accounts balance is "1"
     Then traders place following failing orders:
       | trader  | id        | type | volume | price | error               | type  |
-      | trader1 | ETH/DEC19 | sell |      1 |  1000 | margin check failed | LIMIT |
+      | trader1 | ETH/DEC19 | sell |      1 |  1000 | margin check failed | TYPE_LIMIT |
     Then the following orders are rejected:
       | trader  | id        | reason                          |
       | trader1 | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

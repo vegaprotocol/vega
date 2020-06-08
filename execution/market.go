@@ -366,10 +366,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, ErrMarketClosed
 	}
 
-	if order.Type == types.Order_NETWORK {
+	if order.Type == types.Order_TYPE_NETWORK {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INVALID_TYPE
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrInvalidOrderType
 	}

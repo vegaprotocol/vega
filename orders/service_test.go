@@ -163,7 +163,7 @@ func testCreateOrderFailNetworkOrderType(t *testing.T) {
 	expires := now.Add(time.Hour * 2)
 	order := orderSubmission
 	order.ExpiresAt = expires.UnixNano()
-	order.Type = types.Order_NETWORK
+	order.Type = types.Order_TYPE_NETWORK
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 

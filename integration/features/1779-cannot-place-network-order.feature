@@ -16,4 +16,4 @@ Feature: Cannot place an network order
     And "trader1" general accounts balance is "1"
     Then traders place following failing orders:
       | trader  | id        | type | volume | price | error              | type    |
-      | trader1 | ETH/DEC19 | sell |      1 |  1000 | invalid order type | NETWORK |
+      | trader1 | ETH/DEC19 | sell |      1 |  1000 | invalid order type | TYPE_NETWORK |

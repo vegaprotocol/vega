@@ -179,7 +179,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 {
 		return ErrInvalidPriceForLimitOrder
 	}
-	if sub.Type == types.Order_NETWORK {
+	if sub.Type == types.Order_TYPE_NETWORK {
 		return ErrUnAuthorizedOrderType
 	}
 
