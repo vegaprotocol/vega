@@ -720,7 +720,7 @@ func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
 	case AccountTypeSettlement:
 		return types.AccountType_ACCOUNT_TYPE_SETTLEMENT, nil
 	default:
-		return types.AccountType_ACCOUNT_TYPE_ALL, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
+		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
 	}
 }
 
@@ -732,7 +732,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	var (
 		mktid = ""
 		asst  = ""
-		accTy = types.AccountType_ACCOUNT_TYPE_ALL
+		accTy = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 		err   error
 	)
 
@@ -1554,13 +1554,13 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}
 	req := &protoapi.PrepareVoteRequest{
 		Vote: &types.Vote{
-			Value:      types.Vote_NO,
+			Value:      types.Vote_VALUE_NO,
 			PartyID:    partyID,
 			ProposalID: proposalID,
 		},
 	}
 	if value == VoteValueYes {
-		req.Vote.Value = types.Vote_YES
+		req.Vote.Value = types.Vote_VALUE_YES
 	}
 	resp, err := r.tradingClient.PrepareVote(ctx, req)
 	if err != nil {

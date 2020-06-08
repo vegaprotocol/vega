@@ -942,23 +942,26 @@
     "ProposalState": {
       "type": "string",
       "enum": [
-        "FAILED",
-        "OPEN",
-        "PASSED",
-        "REJECTED",
-        "DECLINED",
-        "ENACTED"
+        "STATE_UNSPECIFIED",
+        "STATE_FAILED",
+        "STATE_OPEN",
+        "STATE_PASSED",
+        "STATE_REJECTED",
+        "STATE_DECLINED",
+        "STATE_ENACTED"
       ],
-      "default": "FAILED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal could not be enacted after being accepted by the network\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals)\n - DECLINED: Proposal didn't get enough votes\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+      "default": "STATE_UNSPECIFIED",
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal could not be enacted after being accepted by the network.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals).\n - STATE_DECLINED: Proposal didn't get enough votes.\n - STATE_ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
     "VoteValue": {
       "type": "string",
       "enum": [
-        "NO",
-        "YES"
+        "VALUE_UNSPECIFIED",
+        "VALUE_NO",
+        "VALUE_YES"
       ],
-      "default": "NO"
+      "default": "VALUE_UNSPECIFIED",
+      "description": " - VALUE_UNSPECIFIED: Default value, always invalid.\n - VALUE_NO: A vote against the proposal.\n - VALUE_YES: A vote in favour of the proposal."
     },
     "apiAmendOrderRequest": {
       "type": "object",

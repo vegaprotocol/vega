@@ -51,7 +51,7 @@ func testPrepareVoteSuccess(t *testing.T) {
 	vote := types.Vote{
 		PartyID:    "party-1",
 		ProposalID: "prop-1",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}
 	v, err := svc.PrepareVote(&vote)
 	assert.NoError(t, err)
@@ -67,11 +67,11 @@ func testPrepareVoteFail(t *testing.T) {
 	data := map[string]types.Vote{
 		"Missing PartyID": {
 			ProposalID: "prop1",
-			Value:      types.Vote_NO,
+			Value:      types.Vote_VALUE_NO,
 		},
 		"Missing ProposalID": {
 			PartyID: "Party1",
-			Value:   types.Vote_YES,
+			Value:   types.Vote_VALUE_YES,
 		},
 		"Invalid vote value": {
 			ProposalID: "prop1",
@@ -127,7 +127,7 @@ func testPrepareProposalNormal(t *testing.T) {
 	assert.NotNil(t, proposal)
 	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
 	assert.EqualValues(t, testAuthor, proposal.PartyID)
-	assert.EqualValues(t, types.Proposal_OPEN, proposal.State)
+	assert.EqualValues(t, types.Proposal_STATE_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
 

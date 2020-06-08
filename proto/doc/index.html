@@ -5274,38 +5274,44 @@
           <tbody>
 
               <tr>
-                <td>FAILED</td>
+                <td>STATE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Proposal could not be enacted after being accepted by the network</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>OPEN</td>
+                <td>STATE_FAILED</td>
                 <td>1</td>
+                <td><p>Proposal could not be enacted after being accepted by the network.</p></td>
+              </tr>
+
+              <tr>
+                <td>STATE_OPEN</td>
+                <td>2</td>
                 <td><p>Proposal is open for voting.</p></td>
               </tr>
 
               <tr>
-                <td>PASSED</td>
-                <td>2</td>
+                <td>STATE_PASSED</td>
+                <td>3</td>
                 <td><p>Proposal has gained enough support to be executed.</p></td>
               </tr>
 
               <tr>
-                <td>REJECTED</td>
-                <td>3</td>
-                <td><p>Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals)</p></td>
-              </tr>
-
-              <tr>
-                <td>DECLINED</td>
+                <td>STATE_REJECTED</td>
                 <td>4</td>
-                <td><p>Proposal didn&#39;t get enough votes</p></td>
+                <td><p>Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals).</p></td>
               </tr>
 
               <tr>
-                <td>ENACTED</td>
+                <td>STATE_DECLINED</td>
                 <td>5</td>
+                <td><p>Proposal didn&#39;t get enough votes.</p></td>
+              </tr>
+
+              <tr>
+                <td>STATE_ENACTED</td>
+                <td>6</td>
                 <td><p>Proposal has been executed and the changes under this proposal have now been applied.</p></td>
               </tr>
 
@@ -5321,15 +5327,21 @@
           <tbody>
 
               <tr>
-                <td>NO</td>
+                <td>VALUE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>YES</td>
+                <td>VALUE_NO</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>A vote against the proposal.</p></td>
+              </tr>
+
+              <tr>
+                <td>VALUE_YES</td>
+                <td>2</td>
+                <td><p>A vote in favour of the proposal.</p></td>
               </tr>
 
           </tbody>

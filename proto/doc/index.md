@@ -1907,12 +1907,13 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
-| OPEN | 1 | Proposal is open for voting. |
-| PASSED | 2 | Proposal has gained enough support to be executed. |
-| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
-| DECLINED | 4 | Proposal didn&#39;t get enough votes |
-| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
+| STATE_UNSPECIFIED | 0 | Default value, always invalid. |
+| STATE_FAILED | 1 | Proposal could not be enacted after being accepted by the network. |
+| STATE_OPEN | 2 | Proposal is open for voting. |
+| STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
+| STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals). |
+| STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes. |
+| STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 
 
@@ -1923,8 +1924,9 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NO | 0 |  |
-| YES | 1 |  |
+| VALUE_UNSPECIFIED | 0 | Default value, always invalid. |
+| VALUE_NO | 1 | A vote against the proposal. |
+| VALUE_YES | 2 | A vote in favour of the proposal. |
 
 
 

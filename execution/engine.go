@@ -458,7 +458,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	acceptedProposals := e.governance.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
 		if err := e.enactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_FAILED
+			proposal.State = types.Proposal_STATE_FAILED
 			e.log.Error("unable to enact proposal",
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
@@ -488,7 +488,7 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if err := e.SubmitMarket(newMarket.Changes); err != nil {
 			return err
 		}
-		proposal.State = types.Proposal_ENACTED
+		proposal.State = types.Proposal_STATE_ENACTED
 		return nil
 	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
 

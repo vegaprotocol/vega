@@ -388,17 +388,17 @@ type proposalVotes map[types.Vote_Value]map[string]types.Vote
 
 func newVotes() *proposalVotes {
 	return &proposalVotes{
-		types.Vote_YES: map[string]types.Vote{},
-		types.Vote_NO:  map[string]types.Vote{},
+		types.Vote_VALUE_YES: map[string]types.Vote{},
+		types.Vote_VALUE_NO:  map[string]types.Vote{},
 	}
 }
 
 // since proposalVotes can hold one of two values,
 // the function will only attempt removing opposite value
 func (v *proposalVotes) removeOld(partyID string, newValue types.Vote_Value) {
-	opposite := types.Vote_NO
+	opposite := types.Vote_VALUE_NO
 	if newValue == opposite {
-		opposite = types.Vote_YES
+		opposite = types.Vote_VALUE_YES
 	}
 	delete((*v)[opposite], partyID)
 }
@@ -425,7 +425,7 @@ func makeGovernanceData(proposal *types.Proposal, v *proposalVotes) *types.Gover
 	copy := *proposal
 	return &types.GovernanceData{
 		Proposal: &copy,
-		Yes:      v.getVotes(proposal.ID, types.Vote_YES),
-		No:       v.getVotes(proposal.ID, types.Vote_NO),
+		Yes:      v.getVotes(proposal.ID, types.Vote_VALUE_YES),
+		No:       v.getVotes(proposal.ID, types.Vote_VALUE_NO),
 	}
 }

@@ -538,7 +538,7 @@ func (m *OptionalProposalState) GetValue() proto1.Proposal_State {
 	if m != nil {
 		return m.Value
 	}
-	return proto1.Proposal_FAILED
+	return proto1.Proposal_STATE_UNSPECIFIED
 }
 
 type GetProposalsRequest struct {

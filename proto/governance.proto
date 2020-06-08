@@ -63,23 +63,26 @@ message Proposal {
   // Rejected
   // Proposal can enter Failed state from any other state.
   enum State {
-    // Proposal could not be enacted after being accepted by the network
-    FAILED    = 0;
+    // Default value, always invalid.
+    STATE_UNSPECIFIED = 0;
+
+    // Proposal could not be enacted after being accepted by the network.
+    STATE_FAILED = 1;
 
     // Proposal is open for voting.
-    OPEN      = 1;
+    STATE_OPEN = 2;
 
     // Proposal has gained enough support to be executed.
-    PASSED    = 2;
+    STATE_PASSED = 3;
 
-    // Proposal wasn't accepted (validation failed, author not allowed to submit proposals)
-    REJECTED  = 3;
+    // Proposal wasn't accepted (validation failed, author not allowed to submit proposals).
+    STATE_REJECTED = 4;
 
-    // Proposal didn't get enough votes
-    DECLINED  = 4;
+    // Proposal didn't get enough votes.
+    STATE_DECLINED = 5;
 
     // Proposal has been executed and the changes under this proposal have now been applied.
-    ENACTED   = 5;
+    STATE_ENACTED = 6;
   }
 
   string        ID        = 1;
@@ -91,9 +94,16 @@ message Proposal {
 }
 
 message Vote {
+
   enum Value {
-      NO  = 0;
-      YES = 1;
+    // Default value, always invalid.
+    VALUE_UNSPECIFIED = 0;
+
+    // A vote against the proposal.
+    VALUE_NO  = 1;
+
+    // A vote in favour of the proposal.
+    VALUE_YES = 2;
   }
 
   string partyID    = 1 [(validator.field) = {string_not_empty : true}];
