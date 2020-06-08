@@ -248,7 +248,7 @@ func (l *NodeCommand) loadMarketsConfig() error {
 func (l *NodeCommand) setupSubscibers() {
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.log, l.orderStore)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore)
 }
 
 func (l *NodeCommand) setupBuffers() {
