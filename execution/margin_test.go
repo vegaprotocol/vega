@@ -20,7 +20,7 @@ func TestMargins(t *testing.T) {
 	size := uint64(100)
 
 	addAccount(tm, party1)
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{

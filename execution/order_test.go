@@ -18,7 +18,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt)
 
 	addAccount(tm, party1)
-	tm.orderStore.EXPECT().Add(gomock.Any()).Times(11)
+	tm.broker.EXPECT().Send(gomock.Any()).MinTimes(11)
 
 	orderBuy := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -121,7 +121,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt)
 
 	addAccount(tm, party1)
-	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
@@ -146,13 +146,6 @@ func TestAmendCancelResubmit(t *testing.T) {
 	orderID := confirmation.GetOrder().Id
 
 	// Amend the price to force a cancel+resubmit to the order book
-	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
-		// Validate that the orderID is the same as before
-		assert.EqualValues(t, order.Id, orderID)
-		assert.EqualValues(t, order.Price, uint64(101))
-		assert.EqualValues(t, order.Remaining, uint64(100))
-		assert.EqualValues(t, order.Version, uint64(2))
-	})
 
 	amend := &types.OrderAmendment{
 		OrderID:  orderID,
@@ -163,15 +156,6 @@ func TestAmendCancelResubmit(t *testing.T) {
 	amended, err := tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
-
-	// Amend the quantity to force a cancel_resubmit to the order book
-	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
-		// Validate that the orderID is the same as before
-		assert.EqualValues(t, order.Id, orderID)
-		assert.EqualValues(t, order.Version, uint64(3))
-		assert.EqualValues(t, order.Price, uint64(101))
-		assert.EqualValues(t, order.Remaining, uint64(101))
-	})
 
 	amend = &types.OrderAmendment{
 		OrderID:   orderID,
@@ -194,7 +178,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
-	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
@@ -236,7 +220,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
@@ -290,7 +274,6 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt)
 
 	addAccount(tm, party1)
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
@@ -345,7 +328,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
@@ -410,7 +393,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
