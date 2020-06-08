@@ -662,7 +662,6 @@
             "type": "string",
             "enum": [
               "ACCOUNT_TYPE_UNSPECIFIED",
-              "ACCOUNT_TYPE_ALL",
               "ACCOUNT_TYPE_INSURANCE",
               "ACCOUNT_TYPE_SETTLEMENT",
               "ACCOUNT_TYPE_MARGIN",
@@ -1506,7 +1505,6 @@
       "type": "string",
       "enum": [
         "ACCOUNT_TYPE_UNSPECIFIED",
-        "ACCOUNT_TYPE_ALL",
         "ACCOUNT_TYPE_INSURANCE",
         "ACCOUNT_TYPE_SETTLEMENT",
         "ACCOUNT_TYPE_MARGIN",

@@ -50,13 +50,13 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 
 	all := append(firstMarket, secondMarket...)
 
-	svc.storage.EXPECT().GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_ALL).Times(1).Return(all, nil)
-	accs, err := svc.GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_ALL)
+	svc.storage.EXPECT().GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(all, nil)
+	accs, err := svc.GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.NoError(t, err)
 	assert.Equal(t, all, accs)
 	// now see if we get the expected accounts (only BTC accounts) if we get trader balance for a market
-	svc.storage.EXPECT().GetPartyAccounts(owner, market1, "", types.AccountType_ACCOUNT_TYPE_ALL).Times(1).Return(firstMarket[:2], nil)
-	accs, err = svc.GetPartyAccounts(owner, market1, "", types.AccountType_ACCOUNT_TYPE_ALL)
+	svc.storage.EXPECT().GetPartyAccounts(owner, market1, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(firstMarket[:2], nil)
+	accs, err = svc.GetPartyAccounts(owner, market1, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.NoError(t, err)
 	assert.Equal(t, len(firstMarket), len(accs))
 	for i := range accs {
@@ -70,23 +70,23 @@ func testGetTraderAccountsErr(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	owner := "test"
-	svc.storage.EXPECT().GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_ALL).Times(1).Return(nil, storage.ErrOwnerNotFound)
-	accs, err := svc.GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_ALL)
+	svc.storage.EXPECT().GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(nil, storage.ErrOwnerNotFound)
+	accs, err := svc.GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Error(t, err)
 	assert.Nil(t, accs)
 	assert.Equal(t, storage.ErrOwnerNotFound, err)
 
 	// accounts not set up, so we can test the errors for trader market balance here, too
 	market := "BTC/DEC19"
-	svc.storage.EXPECT().GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_ALL).Times(1).Return(nil, storage.ErrOwnerNotFound)
-	accs, err = svc.GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_ALL)
+	svc.storage.EXPECT().GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(nil, storage.ErrOwnerNotFound)
+	accs, err = svc.GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, accs)
 	assert.Error(t, err)
 
 	// check we're returning the correct error
 	assert.Equal(t, storage.ErrOwnerNotFound, err)
-	svc.storage.EXPECT().GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_ALL).Times(1).Return(nil, storage.ErrMarketNotFound)
-	accs, err = svc.GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_ALL)
+	svc.storage.EXPECT().GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(nil, storage.ErrMarketNotFound)
+	accs, err = svc.GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, accs)
 	assert.Equal(t, storage.ErrMarketNotFound, err)
 }

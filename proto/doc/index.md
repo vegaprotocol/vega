@@ -2906,11 +2906,10 @@ Proposal can enter Failed state from any other state.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
-| ACCOUNT_TYPE_ALL | 1 |  |
-| ACCOUNT_TYPE_INSURANCE | 2 |  |
-| ACCOUNT_TYPE_SETTLEMENT | 3 |  |
-| ACCOUNT_TYPE_MARGIN | 4 |  |
-| ACCOUNT_TYPE_GENERAL | 5 |  |
+| ACCOUNT_TYPE_INSURANCE | 1 |  |
+| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
+| ACCOUNT_TYPE_MARGIN | 3 |  |
+| ACCOUNT_TYPE_GENERAL | 4 |  |
 
 
 
