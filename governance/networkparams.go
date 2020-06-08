@@ -85,8 +85,8 @@ func DefaultNetworkParameters() *NetworkParameters {
 		if stakeValue < 0 {
 			panic(fmt.Sprintf("Invalid MinParticipationStake (negative): %s", MinParticipationStake))
 		}
-		if stakeValue > 100 {
-			panic(fmt.Sprintf("Invalid MinParticipationStake (over 100): %s", MinParticipationStake))
+		if stakeValue > 1 {
+			panic(fmt.Sprintf("Invalid MinParticipationStake (over 1): %s", MinParticipationStake))
 		}
 		result.minParticipationStake = float32(stakeValue)
 	}
