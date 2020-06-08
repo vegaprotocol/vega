@@ -362,7 +362,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if m.closed {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_MARKET_CLOSED
+		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
 		m.orderBuf.Add(*order)
 		return nil, ErrMarketClosed
 	}
@@ -371,7 +371,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.MarketID != m.mkt.Id {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INVALID_MARKET_ID
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
 		m.orderBuf.Add(*order)
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -389,7 +389,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if party == nil {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INVALID_PARTY_ID
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_PARTY_ID
 		m.orderBuf.Add(*order)
 
 		// trader should be created before even trying to post order
@@ -407,7 +407,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		)
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_MISSING_GENERAL_ACCOUNT
+		order.Reason = types.OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT
 		m.orderBuf.Add(*order)
 		return nil, ErrMissingGeneralAccountForParty
 	}
@@ -417,7 +417,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if err != nil {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INTERNAL_ERROR
+		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		m.orderBuf.Add(*order)
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -439,7 +439,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
+		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
 		m.orderBuf.Add(*order)
 
 		m.log.Error("Unable to check/add margin for trader",
@@ -462,7 +462,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			order.Reason = oerr
 		} else {
 			// should not happend but still...
-			order.Reason = types.OrderError_INTERNAL_ERROR
+			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.orderBuf.Add(*order)
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -1286,7 +1286,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	if err != nil {
 		// adding order to the buffer first
 		amendedOrder.Status = types.Order_STATUS_REJECTED
-		amendedOrder.Reason = types.OrderError_INTERNAL_ERROR
+		amendedOrder.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		m.orderBuf.Add(*amendedOrder)
 
 		if m.log.GetLevel() == logging.DebugLevel {

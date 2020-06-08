@@ -36,5 +36,5 @@ Feature: Test trader accounts
       | trader  | id        | type | volume | price | error               |
       | trader1 | ETH/DEC19 | sell |      1 |  1000 | margin check failed |
     Then the following orders are rejected:
-      | trader  | id        | reason              |
-      | trader1 | ETH/DEC19 | MARGIN_CHECK_FAILED |
+      | trader  | id        | reason                          |
+      | trader1 | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

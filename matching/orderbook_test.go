@@ -670,7 +670,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		Id:          "id-number-one",
 	}
 	_, err = book.SubmitOrder(invalidRemainingSizeOrdertypes)
-	assert.Equal(t, types.OrderError_INVALID_REMAINING_SIZE, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE, err)
 }
 
 func TestOrderBook_DeleteOrder(t *testing.T) {
@@ -725,7 +725,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_INVALID_MARKET_ID, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_MARKET_ID, err)
 
 }
 
@@ -889,7 +889,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_INVALID_MARKET_ID, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_MARKET_ID, err)
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
@@ -919,7 +919,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 		logger.Debug("error cancelling order", logging.Error(err))
 	}
 
-	assert.Equal(t, types.OrderError_INVALID_ORDER_ID, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
@@ -1033,11 +1033,11 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		TimeInForce: types.Order_TIF_GTC,
 	}
 	err = book.AmendOrder(newOrder, editedOrder)
-	if err != types.OrderError_INVALID_REMAINING_SIZE {
+	if err != types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_INVALID_REMAINING_SIZE, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
@@ -1078,11 +1078,11 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
-	if err != types.OrderError_ORDER_NOT_FOUND {
+	if err != types.OrderError_ORDER_ERROR_NOT_FOUND {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_NOT_FOUND, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_NOT_FOUND, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
@@ -1130,11 +1130,11 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
-	if err != types.OrderError_ORDER_AMEND_FAILURE {
+	if err != types.OrderError_ORDER_ERROR_AMEND_FAILURE {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_AMEND_FAILURE, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_AMEND_FAILURE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
@@ -1185,11 +1185,11 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
-	if err != types.OrderError_ORDER_OUT_OF_SEQUENCE {
+	if err != types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_OUT_OF_SEQUENCE, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
@@ -1240,11 +1240,11 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
-	if err != types.OrderError_ORDER_AMEND_FAILURE {
+	if err != types.OrderError_ORDER_ERROR_AMEND_FAILURE {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_ORDER_AMEND_FAILURE, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_AMEND_FAILURE, err)
 }
 
 // ProRata mode OFF which is a default config for vega ME
@@ -1680,6 +1680,6 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	// Check to see if the order still exists (it should not)
 	nonorder, err := book.GetOrderByID("100001")
-	assert.Equal(t, types.OrderError_INVALID_ORDER_ID, err)
+	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
 	assert.Equal(t, (*types.Order)(nil), nonorder)
 }

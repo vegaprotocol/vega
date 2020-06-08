@@ -161,7 +161,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 				logging.Order(*order),
 				logging.String("order-book", b.marketID))
 		}
-		return nil, types.OrderError_INVALID_MARKET_ID
+		return nil, types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
 	}
 
 	// Validate Order ID must be present
