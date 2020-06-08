@@ -767,7 +767,7 @@ func testVotingDeclinedProposal(t *testing.T) {
 		ProposalID: proposal.ID,
 	})
 	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalNotOpen.Error())
+	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
 }
 
 func testVotingPassedProposal(t *testing.T) {
