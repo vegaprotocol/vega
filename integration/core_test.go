@@ -243,9 +243,9 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 		// 	nil,
 		// )
 
-		side := proto.Side_Buy
+		side := proto.Side_SIDE_BUY
 		if row.Cells[1].Value == "sell" {
-			side = proto.Side_Sell
+			side = proto.Side_SIDE_SELL
 		}
 		vol, err := strconv.Atoi(row.Cells[2].Value)
 		if err != nil {

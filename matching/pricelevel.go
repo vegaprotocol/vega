@@ -133,7 +133,7 @@ func min(x, y uint64) uint64 {
 // Creates a trade of a given size between two orders and updates the order details
 func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	var buyer, seller *types.Order
-	if agg.Side == types.Side_Buy {
+	if agg.Side == types.Side_SIDE_BUY {
 		buyer = agg
 		seller = pass
 	} else {
@@ -160,7 +160,7 @@ func (l PriceLevel) print(log *logging.Logger) {
 	log.Debug(fmt.Sprintf("priceLevel: %d\n", l.price))
 	for _, o := range l.orders {
 		var side string
-		if o.Side == types.Side_Buy {
+		if o.Side == types.Side_SIDE_BUY {
 			side = "BUY"
 		} else {
 			side = "SELL"

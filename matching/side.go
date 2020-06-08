@@ -35,7 +35,7 @@ func (s *OrderBookSide) getHighestOrderPrice(side types.Side) (uint64, error) {
 		return 0, ErrNoOrder
 	}
 	// sell order descending
-	if side == types.Side_Sell {
+	if side == types.Side_SIDE_SELL {
 		return s.levels[0].price, nil
 	}
 	// buy order ascending
@@ -47,7 +47,7 @@ func (s *OrderBookSide) getLowestOrderPrice(side types.Side) (uint64, error) {
 		return 0, ErrNoOrder
 	}
 	// sell order descending
-	if side == types.Side_Sell {
+	if side == types.Side_SIDE_SELL {
 		return s.levels[len(s.levels)-1].price, nil
 	}
 	// buy order ascending
@@ -106,7 +106,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
 	var i int
-	if o.Side == types.Side_Buy {
+	if o.Side == types.Side_SIDE_BUY {
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= o.Price })
 	} else {
 		// sell side levels should be ordered in ascending
@@ -157,7 +157,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
 	var i int
-	if side == types.Side_Buy {
+	if side == types.Side_SIDE_BUY {
 		// buy side levels should be ordered in descending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
 	} else {
@@ -195,7 +195,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 	if agg.TimeInForce == types.Order_FOK {
 		totalVolume = agg.Remaining
 
-		if agg.Side == types.Side_Sell {
+		if agg.Side == types.Side_SIDE_SELL {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
 				if agg.Type == types.Order_NETWORK {
@@ -216,7 +216,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 		}
 
-		if agg.Side == types.Side_Buy {
+		if agg.Side == types.Side_SIDE_BUY {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
 				if agg.Type == types.Order_NETWORK {
@@ -260,7 +260,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		err     error
 	)
 
-	if agg.Side == types.Side_Sell {
+	if agg.Side == types.Side_SIDE_SELL {
 		// in here we iterate from the end, as it's easier to remove the
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
@@ -296,7 +296,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		}
 	}
 
-	if agg.Side == types.Side_Buy {
+	if agg.Side == types.Side_SIDE_BUY {
 		// in here we iterate from the end, as it's easier to remove the
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations

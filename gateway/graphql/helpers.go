@@ -36,7 +36,7 @@ func convertInterval(interval Interval) (types.Interval, error) {
 	default:
 		err := fmt.Errorf("invalid interval when subscribing to candles, falling back to default: I15M, (%v)", interval)
 
-		return types.Interval_INTERVAL_I15M, err
+		return types.Interval_INTERVAL_UNSPECIFIED, err
 	}
 }
 
@@ -81,18 +81,18 @@ func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	case OrderStatusRejected:
 		return types.Order_STATUS_REJECTED, nil
 	default:
-		return types.Order_STATUS_ACTIVE, fmt.Errorf("unknown status: %s", orderStatus.String())
+		return types.Order_STATUS_INVALID, fmt.Errorf("unknown status: %s", orderStatus.String())
 	}
 }
 
 func parseSide(side *Side) (types.Side, error) {
 	switch *side {
 	case SideBuy:
-		return types.Side_Buy, nil
+		return types.Side_SIDE_BUY, nil
 	case SideSell:
-		return types.Side_Sell, nil
+		return types.Side_SIDE_SELL, nil
 	default:
-		return types.Side_Buy, fmt.Errorf("unknown side: %s", side.String())
+		return types.Side_SIDE_BUY, fmt.Errorf("unknown side: %s", side.String())
 	}
 }
 

@@ -22,21 +22,21 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 		Id:          "order1",
 		MarketID:    "testmarket",
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_GTC,
 	}
 	// add the order to the side
-	side.addOrder(o, types.Side_Sell)
+	side.addOrder(o, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 1)
 
 	o2 := &types.Order{
 		Id:          "order2",
 		MarketID:    "testmarket",
 		PartyID:     "C",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        1,
 		Remaining:   1,
@@ -44,7 +44,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 	}
 
 	// add the order to the side
-	side.addOrder(o2, types.Side_Sell)
+	side.addOrder(o2, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 2)
 
 	// remove it and check the length of the array
@@ -57,60 +57,60 @@ func TestMemoryAllocationGetPriceLevelReturnAPriceLevelIfItAlreadyExists(t *test
 	// test for a sell side
 	side := getTestSide()
 	assert.Len(t, side.levels, 0)
-	pl := side.getPriceLevel(100, types.Side_Sell)
+	pl := side.getPriceLevel(100, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 1)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(101, types.Side_Sell)
+	pl = side.getPriceLevel(101, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 2)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(102, types.Side_Sell)
+	pl = side.getPriceLevel(102, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 3)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(103, types.Side_Sell)
+	pl = side.getPriceLevel(103, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 4)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104, types.Side_Sell)
+	pl = side.getPriceLevel(104, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 
 	// get existing one in bounds now
-	pl = side.getPriceLevel(102, types.Side_Sell)
+	pl = side.getPriceLevel(102, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(100, types.Side_Sell)
+	pl = side.getPriceLevel(100, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104, types.Side_Sell)
+	pl = side.getPriceLevel(104, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 
 	// test for a buy side
 	side = getTestSide()
 	assert.Len(t, side.levels, 0)
-	pl = side.getPriceLevel(100, types.Side_Buy)
+	pl = side.getPriceLevel(100, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 1)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(101, types.Side_Buy)
+	pl = side.getPriceLevel(101, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 2)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(102, types.Side_Buy)
+	pl = side.getPriceLevel(102, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 3)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(103, types.Side_Buy)
+	pl = side.getPriceLevel(103, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 4)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104, types.Side_Buy)
+	pl = side.getPriceLevel(104, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 
 	// get existing one in bounds now
-	pl = side.getPriceLevel(102, types.Side_Buy)
+	pl = side.getPriceLevel(102, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(100, types.Side_Buy)
+	pl = side.getPriceLevel(100, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104, types.Side_Buy)
+	pl = side.getPriceLevel(104, types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 }
@@ -121,21 +121,21 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		Id:          "order1",
 		MarketID:    "testmarket",
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_GTC,
 	}
 	// add the order to the side
-	side.addOrder(o, types.Side_Sell)
+	side.addOrder(o, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 1)
 
 	o2 := &types.Order{
 		Id:          "order2",
 		MarketID:    "testmarket",
 		PartyID:     "C",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        1,
 		Remaining:   1,
@@ -143,14 +143,14 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 	}
 
 	// add the order to the side
-	side.addOrder(o2, types.Side_Sell)
+	side.addOrder(o2, types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 2)
 
 	aggressiveOrder := &types.Order{
 		Id:          "order3",
 		MarketID:    "testmarket",
 		PartyID:     "X",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,

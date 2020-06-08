@@ -258,14 +258,14 @@ func testMarginWithOrderInBook(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		// {volume: 3, price: 258, tid: "t1", side: types.Side_Sell},
-		// {volume: 5, price: 240, tid: "t2", side: types.Side_Sell},
-		// {volume: 3, price: 188, tid: "t3", side: types.Side_Sell},
+		// {volume: 3, price: 258, tid: "t1", side: types.Side_SIDE_SELL},
+		// {volume: 5, price: 240, tid: "t2", side: types.Side_SIDE_SELL},
+		// {volume: 3, price: 188, tid: "t3", side: types.Side_SIDE_SELL},
 		// bids
 
-		{volume: 1, price: 120, tid: "t4", side: types.Side_Buy},
-		{volume: 4, price: 110, tid: "t5", side: types.Side_Buy},
-		{volume: 5, price: 108, tid: "t6", side: types.Side_Buy},
+		{volume: 1, price: 120, tid: "t4", side: types.Side_SIDE_BUY},
+		{volume: 4, price: 110, tid: "t5", side: types.Side_SIDE_BUY},
+		{volume: 5, price: 108, tid: "t6", side: types.Side_SIDE_BUY},
 	}
 
 	marketID := "testingmarket"
@@ -363,14 +363,14 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		{volume: 100, price: 250, tid: "t1", side: types.Side_Sell},
-		{volume: 11, price: 140, tid: "t2", side: types.Side_Sell},
-		{volume: 2, price: 112, tid: "t3", side: types.Side_Sell},
+		{volume: 100, price: 250, tid: "t1", side: types.Side_SIDE_SELL},
+		{volume: 11, price: 140, tid: "t2", side: types.Side_SIDE_SELL},
+		{volume: 2, price: 112, tid: "t3", side: types.Side_SIDE_SELL},
 		// bids
-		{volume: 1, price: 100, tid: "t4", side: types.Side_Buy},
-		{volume: 3, price: 96, tid: "t5", side: types.Side_Buy},
-		{volume: 15, price: 90, tid: "t6", side: types.Side_Buy},
-		{volume: 50, price: 87, tid: "t7", side: types.Side_Buy},
+		{volume: 1, price: 100, tid: "t4", side: types.Side_SIDE_BUY},
+		{volume: 3, price: 96, tid: "t5", side: types.Side_SIDE_BUY},
+		{volume: 15, price: 90, tid: "t6", side: types.Side_SIDE_BUY},
+		{volume: 50, price: 87, tid: "t7", side: types.Side_SIDE_BUY},
 	}
 
 	marketID := "testingmarket"

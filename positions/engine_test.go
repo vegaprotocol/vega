@@ -126,7 +126,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
 		PartyID:   "test_trader",
-		Side:      proto.Side_Buy,
+		Side:      proto.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
 	}
@@ -142,7 +142,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 
 	orderSell := proto.Order{
 		PartyID:   "test_trader",
-		Side:      proto.Side_Sell,
+		Side:      proto.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
 	}
@@ -166,7 +166,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
 		PartyID:   "test_trader",
-		Side:      proto.Side_Buy,
+		Side:      proto.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
 	}
@@ -180,7 +180,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 
 	orderSell := proto.Order{
 		PartyID:   "test_trader",
-		Side:      proto.Side_Sell,
+		Side:      proto.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
 	}
@@ -199,7 +199,7 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
 		PartyID:   "test_trader",
-		Side:      proto.Side_Buy,
+		Side:      proto.Side_SIDE_BUY,
 		Size:      uint64(999),
 		Remaining: uint64(999),
 	}

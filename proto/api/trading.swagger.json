@@ -2282,11 +2282,11 @@
       "type": "string",
       "enum": [
         "SIDE_UNSPECIFIED",
-        "Buy",
-        "Sell"
+        "SIDE_BUY",
+        "SIDE_SELL"
       ],
       "default": "SIDE_UNSPECIFIED",
-      "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - Buy: Buy\n - Sell: Sell"
+      "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - SIDE_BUY: Buy\n - SIDE_SELL: Sell"
     },
     "vegaSignedBundle": {
       "type": "object",

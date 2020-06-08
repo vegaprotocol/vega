@@ -92,7 +92,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		return 0, ErrInvalidVolume
 	}
 	vol := volume
-	if side == types.Side_Sell {
+	if side == types.Side_SIDE_SELL {
 		levels := b.sell.getLevels()
 		for i := len(levels) - 1; i >= 0; i-- {
 			lvl := levels[i]
@@ -142,12 +142,12 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
-	return b.buy.BestPriceAndVolume(types.Side_Buy)
+	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
 func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
-	return b.sell.BestPriceAndVolume(types.Side_Sell)
+	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
 }
 
 // CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -209,7 +209,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return err
 	}
 
-	if amendedOrder.Side == types.Side_Buy {
+	if amendedOrder.Side == types.Side_SIDE_BUY {
 		if err := b.buy.amendOrder(amendedOrder); err != nil {
 			if b.log.GetLevel() == logging.DebugLevel {
 				b.log.Debug("Failed to amend (buy side)",
@@ -445,14 +445,14 @@ func (b *OrderBook) RemoveDistressedOrders(
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
-	if orderSide == types.Side_Buy {
+	if orderSide == types.Side_SIDE_BUY {
 		return b.buy
 	}
 	return b.sell
 }
 
 func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
-	if orderSide == types.Side_Buy {
+	if orderSide == types.Side_SIDE_BUY {
 		return b.sell
 	}
 	return b.buy

@@ -28,7 +28,7 @@ func TestVersioning(t *testing.T) {
 		Type:        types.Order_LIMIT,
 		TimeInForce: types.Order_GTC,
 		Id:          "someid",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
 		Size:        size,

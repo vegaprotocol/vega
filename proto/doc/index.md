@@ -3026,8 +3026,8 @@ Order Type
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | SIDE_UNSPECIFIED | 0 | Default value, always invalid |
-| Buy | 1 | Buy |
-| Sell | 2 | Sell |
+| SIDE_BUY | 1 | Buy |
+| SIDE_SELL | 2 | Sell |
 
 
 

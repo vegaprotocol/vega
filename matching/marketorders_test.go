@@ -16,7 +16,7 @@ func TestOrderBook_MarketOrderFOKNotFilledResponsePrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_FOK,
@@ -37,7 +37,7 @@ func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_IOC,
@@ -58,7 +58,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        6,
 		Remaining:   6,
@@ -71,7 +71,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	order = types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_FOK,
@@ -99,7 +99,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        6,
 		Remaining:   6,
@@ -112,7 +112,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_IOC,

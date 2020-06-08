@@ -10,10 +10,10 @@ enum Side {
   SIDE_UNSPECIFIED = 0;
 
   // Buy
-  Buy = 1;
+  SIDE_BUY = 1;
 
   // Sell
-  Sell = 2;
+  SIDE_SELL = 2;
 }
 
 enum Interval {

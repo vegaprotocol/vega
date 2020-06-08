@@ -16,7 +16,7 @@ func TestOrderBookInvalid_emptyMarketID(t *testing.T) {
 	order := types.Order{
 		MarketID:    "",
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
@@ -35,7 +35,7 @@ func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
@@ -54,7 +54,7 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        0,
 		Remaining:   0,
@@ -73,7 +73,7 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       0,
 		Size:        1,
 		Remaining:   1,
@@ -92,7 +92,7 @@ func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   11,
@@ -111,7 +111,7 @@ func TestOrderBookInvalid_GTCMarket(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
@@ -130,7 +130,7 @@ func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
@@ -149,7 +149,7 @@ func TestOrderBookInvalid_GTTMarket(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
@@ -169,7 +169,7 @@ func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
@@ -189,7 +189,7 @@ func TestOrderBookInvalid_IOCNetwork(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,

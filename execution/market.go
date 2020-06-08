@@ -508,7 +508,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
-			if order.Side == types.Side_Buy {
+			if order.Side == types.Side_SIDE_BUY {
 				trade.BuyOrder = order.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -691,8 +691,8 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		MarketID:    m.GetID(),
 		Remaining:   size,
 		Status:      types.Order_STATUS_ACTIVE,
-		PartyID:     networkPartyID,  // network is not a party as such
-		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
+		PartyID:     networkPartyID,       // network is not a party as such
+		Side:        types.Side_SIDE_SELL, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.Order_FOK,            // this is an all-or-nothing order, so TIF == FOK
@@ -702,7 +702,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	m.idgen.SetID(&no)
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
-		no.Side = types.Side_Buy
+		no.Side = types.Side_SIDE_BUY
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&no)
@@ -740,7 +740,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
-			if no.Side == types.Side_Buy {
+			if no.Side == types.Side_SIDE_BUY {
 				trade.BuyOrder = no.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -840,11 +840,11 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	}
 
 	for i, trader := range traders {
-		tSide, nSide := types.Side_Sell, types.Side_Sell // one of them will have to sell
+		tSide, nSide := types.Side_SIDE_SELL, types.Side_SIDE_SELL // one of them will have to sell
 		if trader.Size() < 0 {
-			tSide = types.Side_Buy
+			tSide = types.Side_SIDE_BUY
 		} else {
-			nSide = types.Side_Buy
+			nSide = types.Side_SIDE_BUY
 		}
 		tSize := uint64(math.Abs(float64(trader.Size())))
 
@@ -880,7 +880,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			buyOrder  *types.Order
 			sellOrder *types.Order
 		)
-		if order.Side == types.Side_Buy {
+		if order.Side == types.Side_SIDE_BUY {
 			buyOrder = &order
 			sellOrder = &partyOrder
 		} else {

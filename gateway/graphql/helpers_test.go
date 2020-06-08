@@ -83,11 +83,11 @@ func TestParseSide(t *testing.T) {
 	buy := SideBuy
 	side, err := parseSide(&buy)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Side_Buy, side)
+	assert.Equal(t, types.Side_SIDE_BUY, side)
 	sell := SideSell
 	side, err = parseSide(&sell)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Side_Sell, side)
+	assert.Equal(t, types.Side_SIDE_SELL, side)
 	unknown := Side("好到时候")
 	_, err = parseSide(&unknown)
 	assert.Error(t, err)
