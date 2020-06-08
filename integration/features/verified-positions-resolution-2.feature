@@ -22,13 +22,13 @@ Feature: Position resolution case 2
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |    290 |   150 |                0 | LIMIT | GTC | sell-provider-1 |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   140 |                0 | LIMIT | GTC | buy-provider-1  |
+      | sellSideProvider | ETH/DEC19 | sell |    290 |   150 |                0 | LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   140 |                0 | LIMIT | TIF_GTC | buy-provider-1  |
 
 # insurance pool generation - trade
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | designatedLooser | ETH/DEC19 | buy  |    290 |   150 |                1 | LIMIT | GTC |
+      | designatedLooser | ETH/DEC19 | buy  |    290 |   150 |                1 | LIMIT | TIF_GTC |
 
 # insurance pool generation - modify order book
     Then traders cancels the following orders reference:
@@ -36,7 +36,7 @@ Feature: Position resolution case 2
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader          | id        | type | volume | price | resulting trades | type  | tif | reference      |
-      | buySideProvider | ETH/DEC19 | buy  |      1 |    40 |                0 | LIMIT | GTC | buy-provider-2 |
+      | buySideProvider | ETH/DEC19 | buy  |      1 |    40 |                0 | LIMIT | TIF_GTC | buy-provider-2 |
 
 # check the trader accounts
     Then I expect the trader to have a margin:
@@ -46,8 +46,8 @@ Feature: Position resolution case 2
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | sellSideProvider | ETH/DEC19 | sell |      1 |   120 |                0 | LIMIT | GTC |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   120 |                1 | LIMIT | GTC |
+      | sellSideProvider | ETH/DEC19 | sell |      1 |   120 |                0 | LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   120 |                1 | LIMIT | TIF_GTC |
 
 # check positions
     Then position API produce the following:
@@ -69,6 +69,6 @@ Feature: Position resolution case 2
 # We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
    Then traders place following orders:
       | trader           | id          | type  | volume | price | resulting trades  | type  | tif |
-      | sellSideProvider | ETH/DEC19   | sell  |     1  |   40  |                1  | LIMIT | FOK |
-      | sellSideProvider | ETH/DEC19   | sell  |     1  |    1  |                0  | LIMIT | FOK |
-      | buySideProvider  | ETH/DEC19   | buy   |     1  | 1000  |                0  | LIMIT | FOK |
+      | sellSideProvider | ETH/DEC19   | sell  |     1  |   40  |                1  | LIMIT | TIF_FOK |
+      | sellSideProvider | ETH/DEC19   | sell  |     1  |    1  |                0  | LIMIT | TIF_FOK |
+      | buySideProvider  | ETH/DEC19   | buy   |     1  | 1000  |                0  | LIMIT | TIF_FOK |

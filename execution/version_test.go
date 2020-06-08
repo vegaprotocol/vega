@@ -26,7 +26,7 @@ func TestVersioning(t *testing.T) {
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
@@ -104,7 +104,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Flip to GTT, check version moves to 6
-	amend.TimeInForce = types.Order_GTT
+	amend.TimeInForce = types.Order_TIF_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
 	amend.SizeDelta = 0
 	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
@@ -112,7 +112,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Price, price-1)
 		assert.EqualValues(t, order.Size, size-1)
 		assert.EqualValues(t, order.Remaining, size-1)
-		assert.EqualValues(t, order.TimeInForce, types.Order_GTT)
+		assert.EqualValues(t, order.TimeInForce, types.Order_TIF_GTT)
 		assert.EqualValues(t, order.Version, uint64(6))
 	})
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
@@ -126,7 +126,7 @@ func TestVersioning(t *testing.T) {
 		assert.EqualValues(t, order.Price, price-1)
 		assert.EqualValues(t, order.Size, size-1)
 		assert.EqualValues(t, order.Remaining, size-1)
-		assert.EqualValues(t, order.TimeInForce, types.Order_GTT)
+		assert.EqualValues(t, order.TimeInForce, types.Order_TIF_GTT)
 		assert.EqualValues(t, order.Version, uint64(7))
 	})
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
@@ -134,14 +134,14 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Flip back GTC, check version moves to 8
-	amend.TimeInForce = types.Order_GTC
+	amend.TimeInForce = types.Order_TIF_GTC
 	amend.ExpiresAt = nil
 	tm.orderStore.EXPECT().Add(gomock.Any()).Times(1).Do(func(order types.Order) {
 		assert.EqualValues(t, order.Id, orderID)
 		assert.EqualValues(t, order.Price, price-1)
 		assert.EqualValues(t, order.Size, size-1)
 		assert.EqualValues(t, order.Remaining, size-1)
-		assert.EqualValues(t, order.TimeInForce, types.Order_GTC)
+		assert.EqualValues(t, order.TimeInForce, types.Order_TIF_GTC)
 		assert.EqualValues(t, order.Version, uint64(8))
 	})
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend)

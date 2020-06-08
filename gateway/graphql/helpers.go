@@ -43,15 +43,15 @@ func convertInterval(interval Interval) (types.Interval, error) {
 func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch timeInForce {
 	case OrderTimeInForceGtc:
-		return types.Order_GTC, nil
+		return types.Order_TIF_GTC, nil
 	case OrderTimeInForceGtt:
-		return types.Order_GTT, nil
+		return types.Order_TIF_GTT, nil
 	case OrderTimeInForceIoc:
-		return types.Order_IOC, nil
+		return types.Order_TIF_IOC, nil
 	case OrderTimeInForceFok:
-		return types.Order_FOK, nil
+		return types.Order_TIF_FOK, nil
 	default:
-		return types.Order_GTC, fmt.Errorf("unknown type: %s", timeInForce.String())
+		return types.Order_TIF_GTC, fmt.Errorf("unknown type: %s", timeInForce.String())
 	}
 }
 

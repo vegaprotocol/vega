@@ -26,7 +26,7 @@ func TestMargins(t *testing.T) {
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,

@@ -1454,7 +1454,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}
 
 	// GTT must have an expiration value
-	if order.TimeInForce == types.Order_GTT && expiration != nil {
+	if order.TimeInForce == types.Order_TIF_GTT && expiration != nil {
 		var expiresAt time.Time
 		expiresAt, err = vegatime.Parse(*expiration)
 		if err != nil {

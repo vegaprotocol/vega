@@ -192,7 +192,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		totalPrice, totalVolume uint64
 	)
 
-	if agg.TimeInForce == types.Order_FOK {
+	if agg.TimeInForce == types.Order_TIF_FOK {
 		totalVolume = agg.Remaining
 
 		if agg.Side == types.Side_SIDE_SELL {

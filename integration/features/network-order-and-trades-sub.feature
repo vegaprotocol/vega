@@ -22,13 +22,13 @@ Feature: Ensure network trader are generated
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |    290 |   150 |                0 | LIMIT | GTC | sell-provider-1 |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   140 |                0 | LIMIT | GTC | buy-provider-1  |
+      | sellSideProvider | ETH/DEC19 | sell |    290 |   150 |                0 | LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   140 |                0 | LIMIT | TIF_GTC | buy-provider-1  |
 
 # insurance pool generation - trade
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | designatedLooser | ETH/DEC19 | buy  |    290 |   150 |                1 | LIMIT | GTC |
+      | designatedLooser | ETH/DEC19 | buy  |    290 |   150 |                1 | LIMIT | TIF_GTC |
 
 # insurance pool generation - modify order book
     Then traders cancels the following orders reference:
@@ -36,13 +36,13 @@ Feature: Ensure network trader are generated
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader          | id        | type | volume | price | resulting trades | type  | tif | reference      |
-      | buySideProvider | ETH/DEC19 | buy  |    400 |    40 |                0 | LIMIT | GTC | buy-provider-2 |
+      | buySideProvider | ETH/DEC19 | buy  |    400 |    40 |                0 | LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | sellSideProvider | ETH/DEC19 | sell |      1 |   120 |                0 | LIMIT | GTC |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   120 |                1 | LIMIT | GTC |
+      | sellSideProvider | ETH/DEC19 | sell |      1 |   120 |                0 | LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   120 |                1 | LIMIT | TIF_GTC |
 
 # check the network trade happened
     Then the following network trades happened:

@@ -19,7 +19,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -34,7 +34,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000002", // Invalid, must match original
 	}
@@ -55,7 +55,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -70,7 +70,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -91,7 +91,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -106,7 +106,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -127,7 +127,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -142,7 +142,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Price:       101, // Invalid, must match original
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -163,7 +163,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -178,7 +178,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Price:       100,                      // Must match
 		Size:        10,                       // Does not matter
 		Remaining:   10,                       // Does not matter
-		TimeInForce: types.Order_GTC,          // Does not matter
+		TimeInForce: types.Order_TIF_GTC,      // Does not matter
 		Type:        types.Order_LIMIT,        // Does not matter
 		Id:          "v0000000000000-0000001", // Must match
 	}
@@ -201,7 +201,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 		ExpiresAt:   10,
@@ -217,7 +217,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Type:        types.Order_LIMIT,
 		Id:          "v0000000000000-0000001",
 		ExpiresAt:   10,

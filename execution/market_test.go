@@ -221,7 +221,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// party2 sells
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_BUY,
@@ -236,7 +236,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	}
 	orderSell := &types.Order{
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_SELL,
@@ -321,7 +321,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// party2 sells
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_BUY,
@@ -384,7 +384,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// party2 sells
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_BUY,
@@ -436,7 +436,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// party2 sells
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
@@ -487,7 +487,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		PartyID:     party1,
 		Price:       &types.Price{Value: 200},
 		SizeDelta:   -50,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		ExpiresAt:   &types.Timestamp{Value: orderBuy.ExpiresAt},
 	}
 
@@ -596,7 +596,7 @@ func TestMarketCancelOrder(t *testing.T) {
 
 	orderBuy := &types.Order{
 		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,

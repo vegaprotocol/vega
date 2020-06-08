@@ -545,7 +545,7 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
@@ -609,7 +609,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)

@@ -929,13 +929,13 @@
       "type": "string",
       "enum": [
         "TIF_UNSPECIFIED",
-        "GTC",
-        "GTT",
-        "IOC",
-        "FOK"
+        "TIF_GTC",
+        "TIF_GTT",
+        "TIF_IOC",
+        "TIF_FOK"
       ],
       "default": "TIF_UNSPECIFIED",
-      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - TIF_GTC: good til cancelled\n - TIF_GTT: good til time\n - TIF_IOC: immediate or cancel\n - TIF_FOK: fill or kill",
       "title": "Order Time in Force"
     },
     "ProposalState": {

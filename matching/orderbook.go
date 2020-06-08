@@ -36,7 +36,7 @@ type OrderBook struct {
 
 func isPersistent(o *types.Order) bool {
 	return o.GetType() == types.Order_LIMIT &&
-		(o.GetTimeInForce() == types.Order_GTC || o.GetTimeInForce() == types.Order_GTT)
+		(o.GetTimeInForce() == types.Order_TIF_GTC || o.GetTimeInForce() == types.Order_TIF_GTT)
 }
 
 // NewOrderBook create an order book with a given name
@@ -235,7 +235,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
 		originalOrder.TimeInForce != amendedOrder.TimeInForce {
 		b.removePendingGttOrder(*originalOrder)
-		if amendedOrder.TimeInForce == types.Order_GTT {
+		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*amendedOrder)
 		}
 	}
@@ -275,7 +275,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if isPersistent(order) && order.Remaining > 0 && err == nil {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if order.TimeInForce == types.Order_GTT {
+		if order.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*order)
 		}
 
@@ -294,7 +294,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// What is an Immediate or Cancel Order?
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
-	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
+	if order.TimeInForce == types.Order_TIF_IOC && order.Remaining > 0 {
 		// Stopped as not filled at all
 		if order.Remaining == order.Size {
 			order.Status = types.Order_STATUS_STOPPED
@@ -308,7 +308,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// Fill or kill (FOK) is a type of time-in-force designation used in trading that instructs
 	// the protocol to execute an order immediately and completely or not at all.
 	// The order must be filled in its entirety or cancelled (killed).
-	if order.TimeInForce == types.Order_FOK && order.Remaining == order.Size {
+	if order.TimeInForce == types.Order_TIF_FOK && order.Remaining == order.Size {
 		// FOK and didnt trade at all we set status as Stopped
 		order.Status = types.Order_STATUS_STOPPED
 	}
@@ -319,7 +319,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 			// Ensure any fully filled impacted GTT orders are removed
 			// from internal matching engine pending orders list
-			if impactedOrders[idx].TimeInForce == types.Order_GTT {
+			if impactedOrders[idx].TimeInForce == types.Order_TIF_GTT {
 				b.removePendingGttOrder(*impactedOrders[idx])
 			}
 

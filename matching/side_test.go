@@ -26,7 +26,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 	}
 	// add the order to the side
 	side.addOrder(o, types.Side_SIDE_SELL)
@@ -40,7 +40,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 		Price:       101,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 	}
 
 	// add the order to the side
@@ -125,7 +125,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 	}
 	// add the order to the side
 	side.addOrder(o, types.Side_SIDE_SELL)
@@ -139,7 +139,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		Price:       101,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 	}
 
 	// add the order to the side
@@ -154,7 +154,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 	}
 
 	side.uncross(aggressiveOrder)

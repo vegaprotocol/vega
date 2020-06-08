@@ -60,19 +60,19 @@ func TestParseOrderTimeInForce(t *testing.T) {
 	fok := OrderTimeInForceFok
 	orderType, err := parseOrderTimeInForce(fok)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_FOK, orderType)
+	assert.Equal(t, types.Order_TIF_FOK, orderType)
 	ioc := OrderTimeInForceIoc
 	orderType, err = parseOrderTimeInForce(ioc)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_IOC, orderType)
+	assert.Equal(t, types.Order_TIF_IOC, orderType)
 	gtt := OrderTimeInForceGtt
 	orderType, err = parseOrderTimeInForce(gtt)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_GTT, orderType)
+	assert.Equal(t, types.Order_TIF_GTT, orderType)
 	gtc := OrderTimeInForceGtc
 	orderType, err = parseOrderTimeInForce(gtc)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_GTC, orderType)
+	assert.Equal(t, types.Order_TIF_GTC, orderType)
 	unknown := OrderTimeInForce("好到时候")
 	_, err = parseOrderTimeInForce(unknown)
 	assert.Error(t, err)

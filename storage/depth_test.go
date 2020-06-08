@@ -671,7 +671,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			PartyID:     testPartyA,
 			Price:       1337,
 			Remaining:   1337,
-			TimeInForce: types.Order_IOC,
+			TimeInForce: types.Order_TIF_IOC,
 		},
 		types.Order{
 			Id:          "100",
@@ -680,7 +680,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			PartyID:     testPartyA,
 			Price:       1337,
 			Remaining:   1337,
-			TimeInForce: types.Order_FOK,
+			TimeInForce: types.Order_TIF_FOK,
 		},
 		types.Order{
 			Id:          "199",
@@ -689,7 +689,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			PartyID:     testPartyA,
 			Price:       1337,
 			Remaining:   1337,
-			TimeInForce: types.Order_FOK,
+			TimeInForce: types.Order_TIF_FOK,
 			Type:        types.Order_NETWORK,
 			Reference:   "close-out distressed", // this is a close out order from the network
 		},
@@ -700,7 +700,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			PartyID:     testPartyA,
 			Price:       1337,
 			Remaining:   1337,
-			TimeInForce: types.Order_FOK,
+			TimeInForce: types.Order_TIF_FOK,
 			Type:        types.Order_NETWORK,
 			Reference:   "distressed-t1-p2", // this is a close out order from the network
 		},

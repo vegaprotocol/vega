@@ -16,7 +16,7 @@ Feature: Test trader accounts
     And "trader1" general accounts balance is "10000"
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |      1 |  1000 |                0 | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell |      1 |  1000 |                0 | LIMIT | TIF_GTC |
     Then the margins levels for the traders are:
       | trader  | id        | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 |         100 |    110 |     120 |     140 |

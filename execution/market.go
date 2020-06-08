@@ -478,7 +478,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// or if the order was stopped because of a wash trade
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC || order.Status == types.Order_STATUS_STOPPED) &&
+	if (order.TimeInForce == types.Order_TIF_FOK || order.TimeInForce == types.Order_TIF_IOC || order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0 {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
@@ -695,7 +695,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		Side:        types.Side_SIDE_SELL, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
-		TimeInForce: types.Order_FOK,            // this is an all-or-nothing order, so TIF == FOK
+		TimeInForce: types.Order_TIF_FOK,        // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
 	no.Size = no.Remaining
@@ -828,7 +828,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
-		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+		TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
 
@@ -866,7 +866,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
-			TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+			TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
 			Type:        types.Order_NETWORK,
 		}
 		m.idgen.SetID(&partyOrder)
@@ -1352,7 +1352,7 @@ func (m *Market) validateOrderAmendment(
 	amendment *types.OrderAmendment,
 ) error {
 	// check TIF and expiracy
-	if amendment.TimeInForce == types.Order_GTT {
+	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
 			return errors.New("cannot amend to order type GTT without an expiryAt value")
 		}
@@ -1361,13 +1361,13 @@ func (m *Market) validateOrderAmendment(
 		if amendment.ExpiresAt.Value <= order.CreatedAt {
 			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
 		}
-	} else if amendment.TimeInForce == types.Order_GTC {
+	} else if amendment.TimeInForce == types.Order_TIF_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != nil {
 			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
 		}
-	} else if amendment.TimeInForce == types.Order_FOK ||
-		amendment.TimeInForce == types.Order_IOC {
+	} else if amendment.TimeInForce == types.Order_TIF_FOK ||
+		amendment.TimeInForce == types.Order_TIF_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return errors.New("amend order, TIF FOK and IOC are not allowed")
 	}
@@ -1420,7 +1420,7 @@ func (m *Market) applyOrderAmendment(
 	// apply tif
 	if amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
 		order.TimeInForce = amendment.TimeInForce
-		if amendment.TimeInForce != types.Order_GTT {
+		if amendment.TimeInForce != types.Order_TIF_GTT {
 			order.ExpiresAt = 0
 		}
 	}

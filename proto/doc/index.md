@@ -2967,10 +2967,10 @@ Order Time in Force
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | TIF_UNSPECIFIED | 0 | Default value, can be valid for an amend |
-| GTC | 1 | good til cancelled |
-| GTT | 2 | good til time |
-| IOC | 3 | immediate or cancel |
-| FOK | 4 | fill or kill |
+| TIF_GTC | 1 | good til cancelled |
+| TIF_GTT | 2 | good til time |
+| TIF_IOC | 3 | immediate or cancel |
+| TIF_FOK | 4 | fill or kill |
 
 
 

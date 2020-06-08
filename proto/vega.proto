@@ -81,16 +81,16 @@ message Order {
     TIF_UNSPECIFIED = 0;
 
     // good til cancelled
-    GTC = 1;
+    TIF_GTC = 1;
 
     // good til time
-    GTT = 2;
+    TIF_GTT = 2;
 
     // immediate or cancel
-    IOC = 3;
+    TIF_IOC = 3;
 
     // fill or kill
-    FOK = 4;
+    TIF_FOK = 4;
   }
 
   // Order Type

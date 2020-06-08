@@ -155,7 +155,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoTimeInForce
 	}
 
-	if sub.TimeInForce == types.Order_GTT {
+	if sub.TimeInForce == types.Order_TIF_GTT {
 		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
@@ -163,7 +163,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		}
 	}
 
-	if sub.TimeInForce != types.Order_GTT && sub.ExpiresAt != 0 {
+	if sub.TimeInForce != types.Order_TIF_GTT && sub.ExpiresAt != 0 {
 		return ErrNonGTTOrderWithExpiry
 	}
 
@@ -171,7 +171,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrInvalidPriceForMarketOrder
 	}
 	if sub.Type == types.Order_MARKET &&
-		(sub.TimeInForce != types.Order_FOK && sub.TimeInForce != types.Order_IOC) {
+		(sub.TimeInForce != types.Order_TIF_FOK && sub.TimeInForce != types.Order_TIF_IOC) {
 		return ErrInvalidTimeInForceForMarketOrder
 	}
 	if sub.Type == types.Order_LIMIT && sub.Price == 0 {
@@ -209,7 +209,7 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 
 	// Only update ExpiresAt when TIF is related
 	if amendment.ExpiresAt != nil && amendment.ExpiresAt.Value > 0 {
-		if amendment.TimeInForce != types.Order_GTT &&
+		if amendment.TimeInForce != types.Order_TIF_GTT &&
 			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
 			// We cannot change the expire time for this order type
 			return ErrNonGTTOrderWithExpiry
@@ -217,7 +217,7 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	}
 
 	// if order is GTT convert datetime to blockchain ts
-	if amendment.TimeInForce == types.Order_GTT {
+	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
 			s.log.Error("unable to set trade type to GTT when no expiry given")
 			return ErrGTTOrderWithNoExpiry

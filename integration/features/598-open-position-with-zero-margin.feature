@@ -24,16 +24,16 @@ Feature: Regression test for issue 598
     And "chris" general accounts balance is "1000"
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | edd    | ETH/DEC19 | sell |     10 |   101 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     12 |   102 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     13 |   103 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     14 |   104 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     15 |   105 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     10 |    99 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     13 |    97 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     14 |    96 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     15 |    95 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     10 |   101 |                0 | LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     12 |   102 |                0 | LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     13 |   103 |                0 | LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     14 |   104 |                0 | LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     15 |   105 |                0 | LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     10 |    99 |                0 | LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     13 |    97 |                0 | LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     14 |    96 |                0 | LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     15 |    95 |                0 | LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    571 |     429 |
@@ -41,7 +41,7 @@ Feature: Regression test for issue 598
 # next instruction will trade with edd
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
-      | chris  | ETH/DEC19 | buy  |      10 |     0 |                1 | MARKET | IOC |
+      | chris  | ETH/DEC19 | buy  |      10 |     0 |                1 | MARKET | TIF_IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    571 |     429 |
@@ -49,7 +49,7 @@ Feature: Regression test for issue 598
 # next instruction will trade with barney
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type   | tif |
-      | chris  | ETH/DEC19 | sell |      10 |     0 |                1 | MARKET | IOC |
+      | chris  | ETH/DEC19 | sell |      10 |     0 |                1 | MARKET | TIF_IOC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | chris  | BTC   | ETH/DEC19 |     0  |     980 |
