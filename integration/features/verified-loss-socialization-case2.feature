@@ -26,18 +26,18 @@ Feature: Test loss socialization case 2
 # setup orderbook
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |   1000 |   120 |                0 | LIMIT | GTC | sell-provider-1 |
-      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | LIMIT | GTC | buy-provider-1  |
+      | sellSideProvider | ETH/DEC19 | sell |   1000 |   120 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 # trade 1 occur
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     25 |   100 |                0 | LIMIT | GTC |
-      | trader2 | ETH/DEC19 | buy  |     25 |   100 |                1 | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell |     25 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     25 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 # trade 2 occur
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     75 |   100 |                0 | LIMIT | GTC |
-      | trader3 | ETH/DEC19 | buy  |     75 |   100 |                1 | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell |     75 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     75 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # order book volume change
     Then traders cancels the following orders reference:
@@ -46,14 +46,14 @@ Feature: Test loss socialization case 2
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |   1000 |   300 |                0 | LIMIT | GTC | sell-provider-2 |
-      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | LIMIT | GTC | buy-provider-2  |
+      | sellSideProvider | ETH/DEC19 | sell |   1000 |   300 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
+      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
 # trade 4 occur
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader2 | ETH/DEC19 | buy  |     10 |   180 |                0 | LIMIT | GTC |
-      | trader4 | ETH/DEC19 | sell |     10 |   180 |                1 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | buy  |     10 |   180 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader4 | ETH/DEC19 | sell |     10 |   180 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # check positions
     Then position API produce the following:

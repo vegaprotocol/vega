@@ -349,7 +349,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 		// adding rejected order to the buf
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INVALID_MARKET_ID
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
 		evt := events.NewOrderEvent(ctx, order)
 		e.broker.Send(evt)
 

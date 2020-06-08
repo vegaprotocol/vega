@@ -20,14 +20,14 @@ import (
 
 var (
 	orderSubmission = types.OrderSubmission{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "order_id",
 		MarketID:    "market_id",
 		PartyID:     "party",
 		Price:       10000,
 		Size:        1,
 		Side:        types.Side(1),
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 	}
 )
 
@@ -145,7 +145,7 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	order.ExpiresAt = 12346
-	order.TimeInForce = types.Order_GTC
+	order.TimeInForce = types.Order_TIF_GTC
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 

@@ -22,14 +22,14 @@ Feature: Position resolution case 4
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |    150 |   200 |                0 | LIMIT | GTC | sell-provider-1 |
-      | buySideProvider  | ETH/DEC19 | buy  |     50 |   190 |                0 | LIMIT | GTC | buy-provider-1  |
-      | buySideProvider  | ETH/DEC19 | buy  |     50 |   180 |                0 | LIMIT | GTC | buy-provider-2  |
+      | sellSideProvider | ETH/DEC19 | sell |    150 |   200 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  |     50 |   190 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | buySideProvider  | ETH/DEC19 | buy  |     50 |   180 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
 # insurance pool generation - trade
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | designatedLooser | ETH/DEC19 | sell |    100 |   180 |                2 | LIMIT | GTC |
+      | designatedLooser | ETH/DEC19 | sell |    100 |   180 |                2 | TYPE_LIMIT | TIF_GTC |
 
     Then the margins levels for the traders are:
       | trader           | id        | maintenance | search | initial | release |
@@ -43,13 +43,13 @@ Feature: Position resolution case 4
 # add back some volume on the sell side
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |    150 |   350 |                0 | LIMIT | GTC | sell-provider-2 |
+      | sellSideProvider | ETH/DEC19 | sell |    150 |   350 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | sellSideProvider | ETH/DEC19 | sell |      1 |   300 |                0 | LIMIT | GTC |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   300 |                1 | LIMIT | GTC |
+      | sellSideProvider | ETH/DEC19 | sell |      1 |   300 |                0 | TYPE_LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   300 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "300"
 
@@ -72,9 +72,9 @@ Feature: Position resolution case 4
 # we expect 50 orders to be left there on the sell side
 # we buy a first time 50 to consume the book
 # then try to buy 1 again -> result in no trades -> sell side empty.
-# Try to sell one for low price -> no trades -> buy side empty -> order book empty. 
+# Try to sell one for low price -> no trades -> buy side empty -> order book empty.
    Then traders place following orders:
       | trader          | id        | type   | volume | price | resulting trades | type  | tif |
-      | buySideProvider | ETH/DEC19 | buy    |     50 |   350 |                1 | LIMIT | FOK |
-      | buySideProvider | ETH/DEC19 | buy    |      1 |   350 |                0 | LIMIT | FOK |
-      | sellSideProvider | ETH/DEC19 | sell  |      1 |   1   |                0 | LIMIT | FOK |
+      | buySideProvider | ETH/DEC19 | buy    |     50 |   350 |                1 | TYPE_LIMIT | TIF_FOK |
+      | buySideProvider | ETH/DEC19 | buy    |      1 |   350 |                0 | TYPE_LIMIT | TIF_FOK |
+      | sellSideProvider | ETH/DEC19 | sell  |      1 |   1   |                0 | TYPE_LIMIT | TIF_FOK |

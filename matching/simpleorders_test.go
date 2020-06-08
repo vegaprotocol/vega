@@ -17,12 +17,12 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -46,12 +46,12 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -75,12 +75,12 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_IOC,
-		Type:        types.Order_MARKET,
+		TimeInForce: types.Order_TIF_IOC,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -104,12 +104,12 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_IOC,
-		Type:        types.Order_MARKET,
+		TimeInForce: types.Order_TIF_IOC,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -137,12 +137,12 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_FOK,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -166,12 +166,12 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_FOK,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -198,12 +198,12 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -213,12 +213,12 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -242,12 +242,12 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -257,12 +257,12 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -286,12 +286,12 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -301,12 +301,12 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_IOC,
-		Type:        types.Order_MARKET,
+		TimeInForce: types.Order_TIF_IOC,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -330,12 +330,12 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -345,12 +345,12 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_IOC,
-		Type:        types.Order_MARKET,
+		TimeInForce: types.Order_TIF_IOC,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -374,12 +374,12 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -389,12 +389,12 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_FOK,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -418,12 +418,12 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -433,12 +433,12 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_FOK,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -462,12 +462,12 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -478,12 +478,12 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_FOK,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -507,12 +507,12 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -522,12 +522,12 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -543,12 +543,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -558,12 +558,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -573,12 +573,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 
 	confirm, err = book.SubmitOrder(&order2)
@@ -596,12 +596,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       1,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -611,12 +611,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       2,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -626,12 +626,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 
 	confirm, err = book.SubmitOrder(&order2)
@@ -675,12 +675,12 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 		Id:          "v0000000000000-0000001",
 	}
@@ -692,12 +692,12 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000002",
 	}
 	confirm, err = book.SubmitOrder(&order2)

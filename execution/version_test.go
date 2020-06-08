@@ -25,10 +25,10 @@ func TestVersioning(t *testing.T) {
 
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
-		TimeInForce: types.Order_GTC,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
 		Id:          "someid",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
 		Size:        size,
@@ -78,7 +78,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Flip to GTT, check version moves to 6
-	amend.TimeInForce = types.Order_GTT
+	amend.TimeInForce = types.Order_TIF_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
 	amend.SizeDelta = 0
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
@@ -92,7 +92,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Flip back GTC, check version moves to 8
-	amend.TimeInForce = types.Order_GTC
+	amend.TimeInForce = types.Order_TIF_GTC
 	amend.ExpiresAt = nil
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)

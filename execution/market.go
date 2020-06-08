@@ -359,7 +359,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if m.closed {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_MARKET_CLOSED
+		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMarketClosed
 	}
@@ -368,7 +368,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.MarketID != m.mkt.Id {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INVALID_MARKET_ID
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -386,7 +386,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if party == nil {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INVALID_PARTY_ID
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_PARTY_ID
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// trader should be created before even trying to post order
@@ -404,7 +404,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		)
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_MISSING_GENERAL_ACCOUNT
+		order.Reason = types.OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMissingGeneralAccountForParty
 	}
@@ -414,7 +414,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if err != nil {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_INTERNAL_ERROR
+		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -436,7 +436,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
+		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		m.log.Error("Unable to check/add margin for trader",
@@ -459,7 +459,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			order.Reason = oerr
 		} else {
 			// should not happend but still...
-			order.Reason = types.OrderError_INTERNAL_ERROR
+			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -475,7 +475,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// or if the order was stopped because of a wash trade
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC || order.Status == types.Order_STATUS_STOPPED) &&
+	if (order.TimeInForce == types.Order_TIF_FOK || order.TimeInForce == types.Order_TIF_IOC || order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0 {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
@@ -505,7 +505,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
-			if order.Side == types.Side_Buy {
+			if order.Side == types.Side_SIDE_BUY {
 				trade.BuyOrder = order.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -688,18 +688,18 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		MarketID:    m.GetID(),
 		Remaining:   size,
 		Status:      types.Order_STATUS_ACTIVE,
-		PartyID:     networkPartyID,  // network is not a party as such
-		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
+		PartyID:     networkPartyID,       // network is not a party as such
+		Side:        types.Side_SIDE_SELL, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
-		TimeInForce: types.Order_FOK,            // this is an all-or-nothing order, so TIF == FOK
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,        // this is an all-or-nothing order, so TIF == FOK
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	no.Size = no.Remaining
 	m.idgen.SetID(&no)
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
-		no.Side = types.Side_Buy
+		no.Side = types.Side_SIDE_BUY
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&no)
@@ -737,7 +737,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
-			if no.Side == types.Side_Buy {
+			if no.Side == types.Side_SIDE_BUY {
 				trade.BuyOrder = no.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -748,7 +748,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// setup the type of the trade to network
 			// this trade did happen with a GOOD trader to
 			// 0 out the BAD trader position
-			trade.Type = types.Trade_NETWORK_CLOSE_OUT_GOOD
+			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
 			m.tradeBuf.Add(*trade)
 
@@ -825,8 +825,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
-		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
+		Type:        types.Order_TYPE_NETWORK,
 	}
 
 	asset, _ := m.mkt.GetAsset()
@@ -837,11 +837,11 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	}
 
 	for i, trader := range traders {
-		tSide, nSide := types.Side_Sell, types.Side_Sell // one of them will have to sell
+		tSide, nSide := types.Side_SIDE_SELL, types.Side_SIDE_SELL // one of them will have to sell
 		if trader.Size() < 0 {
-			tSide = types.Side_Buy
+			tSide = types.Side_SIDE_BUY
 		} else {
-			nSide = types.Side_Buy
+			nSide = types.Side_SIDE_BUY
 		}
 		tSize := uint64(math.Abs(float64(trader.Size())))
 
@@ -863,8 +863,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
-			TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
-			Type:        types.Order_NETWORK,
+			TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
+			Type:        types.Order_TYPE_NETWORK,
 		}
 		m.idgen.SetID(&partyOrder)
 
@@ -877,7 +877,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			buyOrder  *types.Order
 			sellOrder *types.Order
 		)
-		if order.Side == types.Side_Buy {
+		if order.Side == types.Side_SIDE_BUY {
 			buyOrder = &order
 			sellOrder = &partyOrder
 		} else {
@@ -896,7 +896,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Buyer:     buyOrder.PartyID,
 			Seller:    sellOrder.PartyID,
 			Timestamp: partyOrder.CreatedAt,
-			Type:      types.Trade_NETWORK_CLOSE_OUT_BAD,
+			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
 		m.tradeBuf.Add(trade)
 
@@ -1283,7 +1283,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	if err != nil {
 		// adding order to the buffer first
 		amendedOrder.Status = types.Order_STATUS_REJECTED
-		amendedOrder.Reason = types.OrderError_INTERNAL_ERROR
+		amendedOrder.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -1349,7 +1349,7 @@ func (m *Market) validateOrderAmendment(
 	amendment *types.OrderAmendment,
 ) error {
 	// check TIF and expiracy
-	if amendment.TimeInForce == types.Order_GTT {
+	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
 			return errors.New("cannot amend to order type GTT without an expiryAt value")
 		}
@@ -1358,13 +1358,13 @@ func (m *Market) validateOrderAmendment(
 		if amendment.ExpiresAt.Value <= order.CreatedAt {
 			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
 		}
-	} else if amendment.TimeInForce == types.Order_GTC {
+	} else if amendment.TimeInForce == types.Order_TIF_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != nil {
 			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
 		}
-	} else if amendment.TimeInForce == types.Order_FOK ||
-		amendment.TimeInForce == types.Order_IOC {
+	} else if amendment.TimeInForce == types.Order_TIF_FOK ||
+		amendment.TimeInForce == types.Order_TIF_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return errors.New("amend order, TIF FOK and IOC are not allowed")
 	}
@@ -1417,7 +1417,7 @@ func (m *Market) applyOrderAmendment(
 	// apply tif
 	if amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
 		order.TimeInForce = amendment.TimeInForce
-		if amendment.TimeInForce != types.Order_GTT {
+		if amendment.TimeInForce != types.Order_TIF_GTT {
 			order.ExpiresAt = 0
 		}
 	}

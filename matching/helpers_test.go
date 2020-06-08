@@ -56,7 +56,7 @@ func (ob *OrderBook) getTotalBuyVolume() uint64 {
 }
 
 func (ob *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
-	if side == types.Side_Buy {
+	if side == types.Side_SIDE_BUY {
 		priceLevel := ob.buy.getPriceLevel(price, side)
 		if priceLevel != nil {
 			return priceLevel.volume
