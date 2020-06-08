@@ -2129,12 +2129,12 @@
       "type": "string",
       "enum": [
         "TYPE_UNSPECIFIED",
-        "LIMIT",
-        "MARKET",
-        "NETWORK"
+        "TYPE_LIMIT",
+        "TYPE_MARKET",
+        "TYPE_NETWORK"
       ],
       "default": "TYPE_UNSPECIFIED",
-      "description": "- TYPE_UNSPECIFIED: Default value, always invalid\n - LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
+      "description": "- TYPE_UNSPECIFIED: Default value, always invalid\n - TYPE_LIMIT: used for Limit orders\n - TYPE_MARKET: used for Market orders\n - TYPE_NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
       "title": "Order Type"
     },
     "vegaParty": {

@@ -198,7 +198,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		if agg.Side == types.Side_SIDE_SELL {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
-				if agg.Type == types.Order_NETWORK {
+				if agg.Type == types.Order_TYPE_NETWORK {
 					totalVolumeToFill += level.volume
 					factor := totalVolume
 					if level.volume < totalVolume {
@@ -206,7 +206,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 						totalVolume -= level.volume
 					}
 					totalPrice += level.price * factor
-				} else if level.price >= agg.Price || agg.Type == types.Order_MARKET {
+				} else if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
 					totalVolumeToFill += level.volume
 				}
 				// No need to keep looking once we pass the required amount
@@ -219,7 +219,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		if agg.Side == types.Side_SIDE_BUY {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
-				if agg.Type == types.Order_NETWORK {
+				if agg.Type == types.Order_TYPE_NETWORK {
 					totalVolumeToFill += level.volume
 					factor := totalVolume
 					if level.volume < totalVolume {
@@ -227,7 +227,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 						totalVolume -= level.volume
 					}
 					totalPrice += level.price * factor
-				} else if level.price <= agg.Price || agg.Type == types.Order_MARKET {
+				} else if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
 					totalVolumeToFill += level.volume
 				}
 				// No need to keep looking once we pass the required amount
@@ -237,7 +237,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 		}
 
-		if agg.Type == types.Order_NETWORK {
+		if agg.Type == types.Order_TYPE_NETWORK {
 			// set avg price for order
 			agg.Price = totalPrice / agg.Remaining
 		}
@@ -265,7 +265,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_MARKET {
+			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
 				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
@@ -301,7 +301,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_MARKET {
+			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
 				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)

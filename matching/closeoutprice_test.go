@@ -20,7 +20,7 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -59,7 +59,7 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -98,7 +98,7 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -126,7 +126,7 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order3)
 	assert.NoError(t, err)
@@ -160,7 +160,7 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -174,7 +174,7 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -188,7 +188,7 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order3)
 	assert.NoError(t, err)

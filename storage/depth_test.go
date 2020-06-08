@@ -690,7 +690,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			Price:       1337,
 			Remaining:   1337,
 			TimeInForce: types.Order_TIF_FOK,
-			Type:        types.Order_NETWORK,
+			Type:        types.Order_TYPE_NETWORK,
 			Reference:   "close-out distressed", // this is a close out order from the network
 		},
 		types.Order{
@@ -701,7 +701,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			Price:       1337,
 			Remaining:   1337,
 			TimeInForce: types.Order_TIF_FOK,
-			Type:        types.Order_NETWORK,
+			Type:        types.Order_TYPE_NETWORK,
 			Reference:   "distressed-t1-p2", // this is a close out order from the network
 		},
 	}

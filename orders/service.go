@@ -167,14 +167,14 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNonGTTOrderWithExpiry
 	}
 
-	if sub.Type == types.Order_MARKET && sub.Price != 0 {
+	if sub.Type == types.Order_TYPE_MARKET && sub.Price != 0 {
 		return ErrInvalidPriceForMarketOrder
 	}
-	if sub.Type == types.Order_MARKET &&
+	if sub.Type == types.Order_TYPE_MARKET &&
 		(sub.TimeInForce != types.Order_TIF_FOK && sub.TimeInForce != types.Order_TIF_IOC) {
 		return ErrInvalidTimeInForceForMarketOrder
 	}
-	if sub.Type == types.Order_LIMIT && sub.Price == 0 {
+	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 {
 		return ErrInvalidPriceForLimitOrder
 	}
 

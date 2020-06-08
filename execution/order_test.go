@@ -21,7 +21,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).Times(11)
 
 	orderBuy := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
@@ -126,7 +126,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
@@ -199,7 +199,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
@@ -253,7 +253,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	// Submit the original order
 	buyConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
@@ -272,7 +272,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Remaining:   50,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order",
-		Type:        types.Order_MARKET,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	// Submit an opposite order to partially fill
 	sellConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderSell)
@@ -307,7 +307,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		Price:       10,
 		Remaining:   100,
 		Reference:   "party1-buy-order",
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	// Submit the original order
 	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
@@ -361,7 +361,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Price:       5,
 		Remaining:   20,
 		Reference:   "party1-buy-order",
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	// Place an order
 	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
@@ -378,7 +378,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Price:       5,
 		Remaining:   10,
 		Reference:   "party2-sell-order",
-		Type:        types.Order_MARKET,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	// Partially fill the original order
 	sellConfirmation, err := tm.market.SubmitOrder(context.Background(), orderSell)
@@ -415,7 +415,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,

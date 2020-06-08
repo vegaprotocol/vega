@@ -2982,9 +2982,9 @@ Order Type
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | TYPE_UNSPECIFIED | 0 | Default value, always invalid |
-| LIMIT | 1 | used for Limit orders |
-| MARKET | 2 | used for Market orders |
-| NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
+| TYPE_LIMIT | 1 | used for Limit orders |
+| TYPE_MARKET | 2 | used for Market orders |
+| TYPE_NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 

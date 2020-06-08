@@ -63,7 +63,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	orders := []*types.Order{
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_BUY,
@@ -74,7 +74,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_BUY,
@@ -85,7 +85,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_BUY,
@@ -96,7 +96,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "d",
 			Side:        types.Side_SIDE_BUY,
@@ -125,7 +125,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	orders := []*types.Order{
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_SELL,
@@ -136,7 +136,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_SELL,
@@ -147,7 +147,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_SELL,
@@ -158,7 +158,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "d",
 			Side:        types.Side_SIDE_SELL,
@@ -187,7 +187,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	orders := []*types.Order{
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_BUY,
@@ -199,7 +199,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_BUY,
@@ -239,7 +239,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	orders := []*types.Order{
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_SELL,
@@ -251,7 +251,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_SELL,
@@ -291,7 +291,7 @@ func getClosePNLBuy(t *testing.T) {
 	orders := []*types.Order{
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_BUY,
@@ -303,7 +303,7 @@ func getClosePNLBuy(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_BUY,
@@ -315,7 +315,7 @@ func getClosePNLBuy(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
 			Side:        types.Side_SIDE_BUY,
@@ -353,7 +353,7 @@ func getClosePNLSell(t *testing.T) {
 	orders := []*types.Order{
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_SELL,
@@ -365,7 +365,7 @@ func getClosePNLSell(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_SELL,
@@ -377,7 +377,7 @@ func getClosePNLSell(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
 			Side:        types.Side_SIDE_SELL,
@@ -417,7 +417,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -430,7 +430,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	}
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -461,7 +461,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order1 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -478,7 +478,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order2 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -495,7 +495,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order3 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -512,7 +512,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order4 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -528,7 +528,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order5 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -545,7 +545,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order6 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -561,7 +561,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order7 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -578,7 +578,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order8 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -595,7 +595,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order9 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -611,7 +611,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	order10 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
 		Side:        types.Side_SIDE_SELL,
@@ -642,7 +642,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	defer book.Finish()
 	timeStampOrder := types.Order{
 		Status:    types.Order_STATUS_ACTIVE,
-		Type:      types.Order_LIMIT,
+		Type:      types.Order_TYPE_LIMIT,
 		Id:        "timestamporderID",
 		MarketID:  market,
 		PartyID:   "A",
@@ -658,7 +658,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 
 	invalidRemainingSizeOrdertypes := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_SIDE_SELL,
@@ -680,7 +680,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_SIDE_SELL,
@@ -708,7 +708,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    "invalid",
 		PartyID:     "A",
 		Side:        types.Side_SIDE_SELL,
@@ -742,7 +742,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_SIDE_SELL,
@@ -785,7 +785,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_SIDE_BUY,
@@ -827,7 +827,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Side:        types.Side_SIDE_BUY,
@@ -870,7 +870,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	defer book.Finish()
 	newOrder := &types.Order{
 		Status:    types.Order_STATUS_ACTIVE,
-		Type:      types.Order_LIMIT,
+		Type:      types.Order_TYPE_LIMIT,
 		MarketID:  market,
 		Id:        fmt.Sprintf("V%010d-%010d", 1, 1),
 		PartyID:   "A",
@@ -902,7 +902,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	defer book.Finish()
 	newOrder := &types.Order{
 		Status:    types.Order_STATUS_ACTIVE,
-		Type:      types.Order_LIMIT,
+		Type:      types.Order_TYPE_LIMIT,
 		MarketID:  market,
 		Id:        "id",
 		PartyID:   "A",
@@ -950,7 +950,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -973,7 +973,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 
 	editedOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -999,7 +999,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -1022,7 +1022,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 
 	editedOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
 		Id:          "123456",
@@ -1047,7 +1047,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1066,7 +1066,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 
 	editedOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		PartyID:     "A",
@@ -1095,7 +1095,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	defer book.Finish()
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1118,7 +1118,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 
 	editedOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1148,7 +1148,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1172,7 +1172,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 
 	editedOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1203,7 +1203,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1227,7 +1227,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 	editedOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
@@ -1265,7 +1265,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		// Side Sell
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
 			Side:        types.Side_SIDE_SELL,
@@ -1277,7 +1277,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
 			Side:        types.Side_SIDE_SELL,
@@ -1290,7 +1290,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		// Side Buy
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
 			Side:        types.Side_SIDE_BUY,
@@ -1302,7 +1302,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "D",
 			Side:        types.Side_SIDE_BUY,
@@ -1319,7 +1319,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		// Side Sell
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "E",
 			Side:        types.Side_SIDE_SELL,
@@ -1332,7 +1332,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		// Side Buy
 		{
 			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_LIMIT,
+			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
 			PartyID:     "F",
 			Side:        types.Side_SIDE_BUY,
@@ -1360,7 +1360,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
 				Status:      types.Order_STATUS_ACTIVE,
-				Type:        types.Order_LIMIT,
+				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
 				PartyID:     "M",
 				Side:        types.Side_SIDE_BUY,
@@ -1383,7 +1383,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			expectedPassiveOrdersAffected: []types.Order{
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "A",
 					Side:        types.Side_SIDE_SELL,
@@ -1399,7 +1399,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
 				Status:      types.Order_STATUS_ACTIVE,
-				Type:        types.Order_LIMIT,
+				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
 				PartyID:     "N",
 				Side:        types.Side_SIDE_BUY,
@@ -1430,7 +1430,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			expectedPassiveOrdersAffected: []types.Order{
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "B",
 					Side:        types.Side_SIDE_SELL,
@@ -1442,7 +1442,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				},
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "E",
 					Side:        types.Side_SIDE_SELL,
@@ -1458,7 +1458,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
 				Status:      types.Order_STATUS_ACTIVE,
-				Type:        types.Order_LIMIT,
+				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
 				PartyID:     "O",
 				Side:        types.Side_SIDE_SELL,
@@ -1497,7 +1497,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			expectedPassiveOrdersAffected: []types.Order{
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "F",
 					Side:        types.Side_SIDE_BUY,
@@ -1509,7 +1509,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				},
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "C",
 					Side:        types.Side_SIDE_BUY,
@@ -1521,7 +1521,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				},
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "D",
 					Side:        types.Side_SIDE_BUY,
@@ -1537,7 +1537,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
 				Status:      types.Order_STATUS_ACTIVE,
-				Type:        types.Order_LIMIT,
+				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
 				PartyID:     "X",
 				Side:        types.Side_SIDE_SELL,
@@ -1560,7 +1560,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			expectedPassiveOrdersAffected: []types.Order{
 				{
 					Status:      types.Order_STATUS_ACTIVE,
-					Type:        types.Order_LIMIT,
+					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
 					PartyID:     "D",
 					Side:        types.Side_SIDE_BUY,
@@ -1633,7 +1633,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	newOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "100000",
 		Side:        types.Side_SIDE_SELL,
@@ -1657,7 +1657,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	iocOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
 		Id:          "100001",
 		Side:        types.Side_SIDE_BUY,

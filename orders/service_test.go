@@ -20,7 +20,7 @@ import (
 
 var (
 	orderSubmission = types.OrderSubmission{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "order_id",
 		MarketID:    "market_id",
 		PartyID:     "party",

@@ -23,14 +23,14 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade for 10@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     10 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     10 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
@@ -42,8 +42,8 @@ Feature: MTM settlement tests
 # place trade for 1@111 to set new mark price
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "111"
 
@@ -71,22 +71,22 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for 10@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     10 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     10 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
 # place trade 2 for 2@113
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |      2 |   113 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |      2 |   113 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |      2 |   113 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |      2 |   113 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "113"
 
@@ -99,8 +99,8 @@ Feature: MTM settlement tests
 # place trade for 1@111 to set new mark price
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "111"
 
@@ -127,14 +127,14 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for -5@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |      5 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |      5 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |      5 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |      5 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
@@ -146,8 +146,8 @@ Feature: MTM settlement tests
 # place trade for 1@111 to set new mark price
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "111"
 
@@ -175,22 +175,22 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for -10@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     10 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     10 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     10 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     10 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
 # place trade 2 for -2@113
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |      2 |   113 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |      2 |   113 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |      2 |   113 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |      2 |   113 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "113"
 
@@ -203,8 +203,8 @@ Feature: MTM settlement tests
 # place trade for 1@111 to set new mark price
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "111"
 
@@ -229,14 +229,14 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for -20@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     20 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     20 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     20 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     20 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
@@ -261,22 +261,22 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for -10@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     10 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     10 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     10 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     10 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
 # place trade 2 for -10@113
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     10 |   114 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     10 |   114 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     10 |   114 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     10 |   114 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "114"
 
@@ -302,14 +302,14 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for -30@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     30 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     30 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     30 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     30 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
@@ -336,22 +336,22 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for 5@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |      5 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |      5 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |      5 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |      5 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
 # place trade 2 for -30@114
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     30 |   114 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     30 |   114 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     30 |   114 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     30 |   114 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "114"
 
@@ -364,8 +364,8 @@ Feature: MTM settlement tests
   # place trade for 1@111 to set new mark price
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "111"
 
@@ -392,22 +392,22 @@ Feature: MTM settlement tests
 # setup previous volume at 20
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     20 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     20 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # place trade 1 for 10@110
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  |     10 |   110 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  |     10 |   110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     10 |   110 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "110"
 
 # place trade 2 for -10@114
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |     10 |   114 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |     10 |   114 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |     10 |   114 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |     10 |   114 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "114"
 
@@ -420,8 +420,8 @@ Feature: MTM settlement tests
 # place trade for 1@111 to set new mark price
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |     1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell |     1 |   111 |                1 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC19" is "111"
 

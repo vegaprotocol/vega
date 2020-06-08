@@ -20,7 +20,7 @@ func TestOrderBookAmends_simpleAmend(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -35,7 +35,7 @@ func TestOrderBookAmends_simpleAmend(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.NoError(t, err)
@@ -54,7 +54,7 @@ func TestOrderBookAmends_invalidPartyID(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestOrderBookAmends_invalidPartyID(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
@@ -88,7 +88,7 @@ func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
@@ -122,7 +122,7 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -137,7 +137,7 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 		Size:        5,
 		Remaining:   5,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
@@ -156,7 +156,7 @@ func TestOrderBookAmends_reduceToZero(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -171,7 +171,7 @@ func TestOrderBookAmends_reduceToZero(t *testing.T) {
 		Size:        0,
 		Remaining:   0,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
@@ -190,7 +190,7 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -205,7 +205,7 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 		Size:        5,
 		Remaining:   5,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -220,7 +220,7 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 		Size:        6,
 		Remaining:   6,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
@@ -239,7 +239,7 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -254,7 +254,7 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 		Size:        5,
 		Remaining:   5,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
@@ -269,7 +269,7 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 		Size:        3,
 		Remaining:   3,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
@@ -289,7 +289,7 @@ func TestOrderBookAmends_noOrderToAmend(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	err := book.AmendOrder(nil, &amend)
 	assert.Error(t, types.ErrOrderNotFound, err)
@@ -308,7 +308,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	originalOrder := order
 	// Create the original GTC order
@@ -327,7 +327,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   1000000,
 	}
 	// Amend the order to be a GTT
@@ -346,7 +346,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   2000000,
 	}
 	// Amend the expiry time
@@ -365,7 +365,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 
 	// Amend back to be a GTC

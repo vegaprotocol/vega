@@ -54,7 +54,7 @@ func testFOKStopped(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_FOK,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -80,7 +80,7 @@ func testFOKFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -95,7 +95,7 @@ func testFOKFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_FOK,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -117,7 +117,7 @@ func testIOCStopped(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_IOC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -143,7 +143,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -158,7 +158,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIF_IOC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -184,7 +184,7 @@ func testIOCFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -199,7 +199,7 @@ func testIOCFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_IOC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -225,7 +225,7 @@ func testGTCActive(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -250,7 +250,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -280,7 +280,7 @@ func testGTCCancelledNotFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -311,7 +311,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -326,7 +326,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -354,7 +354,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -369,7 +369,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err = book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -401,7 +401,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -416,7 +416,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err = book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -446,7 +446,7 @@ func testGTCFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -461,7 +461,7 @@ func testGTCFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -487,7 +487,7 @@ func testGTTActive(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -513,7 +513,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -544,7 +544,7 @@ func testGTTCancelledNotFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -576,7 +576,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -592,7 +592,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -621,7 +621,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -637,7 +637,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err = book.SubmitOrder(&order)
@@ -670,7 +670,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -686,7 +686,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err = book.SubmitOrder(&order)
@@ -717,7 +717,7 @@ func testGTTFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -733,7 +733,7 @@ func testGTTFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -761,7 +761,7 @@ func testGTTExpiredNotFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -793,7 +793,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err := book.SubmitOrder(&order1)
@@ -809,7 +809,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
 	_, err = book.SubmitOrder(&order)

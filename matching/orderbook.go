@@ -35,7 +35,7 @@ type OrderBook struct {
 }
 
 func isPersistent(o *types.Order) bool {
-	return o.GetType() == types.Order_LIMIT &&
+	return o.GetType() == types.Order_TYPE_LIMIT &&
 		(o.GetTimeInForce() == types.Order_TIF_GTC || o.GetTimeInForce() == types.Order_TIF_GTT)
 }
 

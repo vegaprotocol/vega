@@ -23,8 +23,8 @@ Feature: Test mark to market settlement with insurance pool
    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | id         | type | volume | price | resulting trades | type  | tif |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | TIF_GTC |
-      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | LIMIT | TIF_GTC |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    120 |       1 |
@@ -33,14 +33,14 @@ Feature: Test mark to market settlement with insurance pool
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | id         | type | volume | price | resulting trades | type  | tif |
-      | trader2 |  ETH/DEC19 | buy |     1  |  6000 |                0 | LIMIT | TIF_GTC |
+      | trader2 |  ETH/DEC19 | buy |     1  |  6000 |                0 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader2 | ETH   | ETH/DEC19 |    264 |    9736 |
 
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | sell |      1 |  5000 |                1 | LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | sell |      1 |  5000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |      0 |       0 |

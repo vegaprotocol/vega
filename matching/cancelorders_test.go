@@ -20,7 +20,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -35,7 +35,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000002", // Invalid, must match original
 	}
 	_, err = book.CancelOrder(&order2)
@@ -56,7 +56,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -71,7 +71,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
@@ -92,7 +92,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -107,7 +107,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
@@ -128,7 +128,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -143,7 +143,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
@@ -164,7 +164,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTC,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -179,7 +179,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Size:        10,                       // Does not matter
 		Remaining:   10,                       // Does not matter
 		TimeInForce: types.Order_TIF_GTC,      // Does not matter
-		Type:        types.Order_LIMIT,        // Does not matter
+		Type:        types.Order_TYPE_LIMIT,   // Does not matter
 		Id:          "v0000000000000-0000001", // Must match
 	}
 	_, err = book.CancelOrder(&order2)
@@ -202,7 +202,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 		ExpiresAt:   10,
 	}
@@ -218,7 +218,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 		ExpiresAt:   10,
 	}

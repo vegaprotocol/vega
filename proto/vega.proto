@@ -99,13 +99,13 @@ message Order {
     TYPE_UNSPECIFIED = 0;
 
     // used for Limit orders
-    LIMIT = 1;
+    TYPE_LIMIT = 1;
 
     // used for Market orders
-    MARKET = 2;
+    TYPE_MARKET = 2;
 
     // used for orders where the initiating party is the network (used for distressed traders)
-    NETWORK = 3;
+    TYPE_NETWORK = 3;
   }
 
   enum Status {

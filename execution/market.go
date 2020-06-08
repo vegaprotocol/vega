@@ -696,7 +696,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.Order_TIF_FOK,        // this is an all-or-nothing order, so TIF == FOK
-		Type:        types.Order_NETWORK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	no.Size = no.Remaining
 	m.idgen.SetID(&no)
@@ -829,7 +829,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
 		TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
-		Type:        types.Order_NETWORK,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 
 	asset, _ := m.mkt.GetAsset()
@@ -867,7 +867,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
 			TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
-			Type:        types.Order_NETWORK,
+			Type:        types.Order_TYPE_NETWORK,
 		}
 		m.idgen.SetID(&partyOrder)
 

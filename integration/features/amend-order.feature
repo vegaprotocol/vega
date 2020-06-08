@@ -17,7 +17,7 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      1 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi  | ETH/DEC19 | sell |      1 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # cancel the order, so we cannot edit it.
     Then traders cancels the following orders reference:
@@ -41,8 +41,8 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
     Then traders amends the following orders reference:
@@ -53,7 +53,7 @@ Feature: Amend orders
 # this should match with the size 3 order of myboi
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 
 # Then the following trades happend
@@ -74,8 +74,8 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
     Then traders amends the following orders reference:
@@ -86,7 +86,7 @@ Feature: Amend orders
 # this should match with the size 3 order of myboi
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 
 # Then the following trades happend
@@ -107,14 +107,14 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # matching the order now
 # this will reduce the remaining to 2 so it get cancelled later on
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then traders amends the following orders reference:
@@ -137,7 +137,7 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 
 # cannot amend TIF to TIF_FOK so this will be rejected
@@ -156,7 +156,7 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 
 # TIF_GTT rejected because of missing expiresAt
@@ -175,7 +175,7 @@ Feature: Amend orders
 
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi  | ETH/DEC19 | sell |      5 |     1 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 
 # reducing size, remaining goes from 2 to -1, this will cancel

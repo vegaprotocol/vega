@@ -35,9 +35,9 @@ Feature: Test mark to market settlement
     And "trader3" general accounts balance is "5000"
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |      2 |  1000 |                0 | LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  |      1 |  1000 |                1 | LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC19 | buy  |      1 |  1000 |                1 | LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell |      2 |  1000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |      1 |  1000 |                1 | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |      1 |  1000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    240 |    9760 |

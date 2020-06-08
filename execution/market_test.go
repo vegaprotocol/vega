@@ -220,7 +220,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// party1 buys
 	// party2 sells
 	orderBuy := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
@@ -235,7 +235,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	orderSell := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
@@ -320,7 +320,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// party1 buys
 	// party2 sells
 	orderBuy := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
@@ -383,7 +383,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// party1 buys
 	// party2 sells
 	orderBuy := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
@@ -435,7 +435,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// party1 buys
 	// party2 sells
 	orderBuy := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
@@ -595,7 +595,7 @@ func TestMarketCancelOrder(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
-		Type:        types.Order_LIMIT,
+		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
