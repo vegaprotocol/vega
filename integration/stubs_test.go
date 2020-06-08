@@ -154,7 +154,7 @@ func (d *accStub) Add(acc proto.Account) {
 
 func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_MARGIN && v.MarketID == market {
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
 			return v, nil
 		}
 	}
@@ -163,7 +163,7 @@ func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, 
 
 func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_SETTLEMENT {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			return v, nil
 		}
 	}
@@ -172,7 +172,7 @@ func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, erro
 
 func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_INSURANCE {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_INSURANCE {
 			return v, nil
 		}
 	}
@@ -181,7 +181,7 @@ func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, e
 
 func (s *accStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return v, nil
 		}
 	}

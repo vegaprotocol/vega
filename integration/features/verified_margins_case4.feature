@@ -49,8 +49,8 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | buySideMM | 9000000  | 9    | trader1 |
 
     Then the following transfers happened:
-      | from   | to      | fromType   | toType | id        | amount  | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 | 2800000 | ETH   |
+      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2800000 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
@@ -96,8 +96,8 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
     # MTM
     And the following transfers happened:
-      | from   | to      | fromType   | toType | id        | amount   | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 | 13000000 | ETH   |
+      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 13000000 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |

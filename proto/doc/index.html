@@ -8077,32 +8077,38 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>ALL</td>
+                <td>ACCOUNT_TYPE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INSURANCE</td>
+                <td>ACCOUNT_TYPE_ALL</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>SETTLEMENT</td>
+                <td>ACCOUNT_TYPE_INSURANCE</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN</td>
+                <td>ACCOUNT_TYPE_SETTLEMENT</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>GENERAL</td>
+                <td>ACCOUNT_TYPE_MARGIN</td>
                 <td>4</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>ACCOUNT_TYPE_GENERAL</td>
+                <td>5</td>
                 <td><p></p></td>
               </tr>
 
@@ -8118,20 +8124,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>DISCONNECTED</td>
+                <td>CHAIN_STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>REPLAYING</td>
+                <td>CHAIN_STATUS_DISCONNECTED</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>CONNECTED</td>
+                <td>CHAIN_STATUS_REPLAYING</td>
                 <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>CHAIN_STATUS_CONNECTED</td>
+                <td>3</td>
                 <td><p></p></td>
               </tr>
 
@@ -8530,50 +8542,56 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>LOSS</td>
+                <td>TRANSFER_TYPE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>WIN</td>
+                <td>TRANSFER_TYPE_LOSS</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>CLOSE</td>
+                <td>TRANSFER_TYPE_WIN</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MTM_LOSS</td>
+                <td>TRANSFER_TYPE_CLOSE</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MTM_WIN</td>
+                <td>TRANSFER_TYPE_MTM_LOSS</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_LOW</td>
+                <td>TRANSFER_TYPE_MTM_WIN</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_HIGH</td>
+                <td>TRANSFER_TYPE_MARGIN_LOW</td>
                 <td>6</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_CONFISCATED</td>
+                <td>TRANSFER_TYPE_MARGIN_HIGH</td>
                 <td>7</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_MARGIN_CONFISCATED</td>
+                <td>8</td>
                 <td><p></p></td>
               </tr>
 

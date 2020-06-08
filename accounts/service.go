@@ -75,7 +75,7 @@ func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 }
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
-	if ty == types.AccountType_GENERAL {
+	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
 		// General accounts for party are not specific to one market, therefore marketID should not be set
 		marketID = ""
 	}
@@ -84,7 +84,7 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
-		if acc.GetType() == types.AccountType_GENERAL {
+		if acc.GetType() == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			if acc.GetMarketID() == "!" {
 				acc.MarketID = ""
 			}
@@ -159,7 +159,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 						(len(partyID) <= 0 || partyID == acc.Owner) &&
 						(len(asset) <= 0 || asset == acc.Asset) &&
-						(ty == types.AccountType_ALL || ty == acc.Type) {
+						(ty == types.AccountType_ACCOUNT_TYPE_ALL || ty == acc.Type) {
 						filtered = append(filtered, acc)
 					}
 				}

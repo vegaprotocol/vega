@@ -510,7 +510,7 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 // IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
 	if !a.IsValid() {
-		return types.AccountType_ALL
+		return types.AccountType_ACCOUNT_TYPE_ALL
 	}
 	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
 }

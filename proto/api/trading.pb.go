@@ -2170,7 +2170,7 @@ func (m *AccountsSubscribeRequest) GetType() proto1.AccountType {
 	if m != nil {
 		return m.Type
 	}
-	return proto1.AccountType_ALL
+	return proto1.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
 type OrdersSubscribeRequest struct {
@@ -3387,7 +3387,7 @@ func (m *PartyAccountsRequest) GetType() proto1.AccountType {
 	if m != nil {
 		return m.Type
 	}
-	return proto1.AccountType_ALL
+	return proto1.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
 func (m *PartyAccountsRequest) GetAsset() string {

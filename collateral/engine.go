@@ -106,8 +106,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 // this func uses named returns because it makes body of the func look clearer
 func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *types.Account, err error) {
 
-	insID := e.accountID(marketID, systemOwner, asset, types.AccountType_INSURANCE)
-	setID := e.accountID(marketID, systemOwner, asset, types.AccountType_SETTLEMENT)
+	insID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
+	setID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_SETTLEMENT)
 
 	if insurance, err = e.GetAccountByID(insID); err != nil {
 		if e.log.GetLevel() == logging.DebugLevel {
@@ -224,7 +224,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 
 		// get the state of the accounts before processing transfers
 		// so they can be used in the marginEvt, and to calculate the missing funds
-		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "general"),
@@ -232,7 +232,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 				logging.String("asset", asset))
 		}
 
-		marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+		marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "margin"),
@@ -254,7 +254,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			continue
 		}
 
-		if transfer.Type == types.TransferType_MTM_WIN {
+		if transfer.Type == types.TransferType_TRANSFER_TYPE_MTM_WIN {
 			// we processed all loss break then
 			winidx = i
 			break
@@ -373,7 +373,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 			logging.Uint64("collected", settle.Balance))
 		for _, evt := range transfers[winidx:] {
 			transfer := evt.Transfer()
-			if transfer != nil && transfer.Type == types.TransferType_MTM_WIN {
+			if transfer != nil && transfer.Type == types.TransferType_TRANSFER_TYPE_MTM_WIN {
 				distr.Add(evt.Transfer())
 			}
 		}
@@ -391,7 +391,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 		}
 		// no transfer needed if transfer is nil, just build the marginUpdate
 		if transfer == nil {
-			marginEvt.general, err = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_GENERAL))
+			marginEvt.general, err = e.GetAccountByID(e.accountID(noMarket, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 			if err != nil {
 				e.log.Error("unable to get party account",
 					logging.String("account-type", "general"),
@@ -399,7 +399,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 					logging.String("asset", asset))
 			}
 
-			marginEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_MARGIN))
+			marginEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 			if err != nil {
 				e.log.Error("unable to get party account",
 					logging.String("account-type", "margin"),
@@ -473,8 +473,8 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asse
 
 // GetPartyMargin will return the current margin for a given party
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
-	genID := e.accountID("", pos.Party(), asset, types.AccountType_GENERAL)
-	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountType_MARGIN)
+	genID := e.accountID("", pos.Party(), asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
+	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
 	genAcc, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
@@ -534,7 +534,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		//   to be at least to get back to the search level, and the amount will be enough to reach
 		//   InitialMargin
 		// In both case either the order will not be accepted, or the trader will be closed
-		if transfer.Type == types.TransferType_MARGIN_LOW &&
+		if transfer.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW &&
 			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		}
@@ -609,7 +609,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 
 	var err error
 	// the accounts for the trader we need
-	mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
+	mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 	if err != nil {
 		e.log.Error(
 			"Failed to get the margin trader account",
@@ -620,7 +620,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		return nil, err
 	}
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_GENERAL))
+	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
 		e.log.Error(
 			"Failed to get the general trader account",
@@ -631,7 +631,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		return nil, err
 	}
 	// final settle, or MTM settle, makes no difference, it's win/loss still
-	if p.Type == types.TransferType_LOSS || p.Type == types.TransferType_MTM_LOSS {
+	if p.Type == types.TransferType_TRANSFER_TYPE_LOSS || p.Type == types.TransferType_TRANSFER_TYPE_MTM_LOSS {
 		// losses are collected first from the margin account, then the general account, and finally
 		// taken out of the insurance pool
 		req := types.TransferRequest{
@@ -650,7 +650,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		}
 		return &req, nil
 	}
-	if p.Type == types.TransferType_WIN || p.Type == types.TransferType_MTM_WIN {
+	if p.Type == types.TransferType_TRANSFER_TYPE_WIN || p.Type == types.TransferType_TRANSFER_TYPE_MTM_WIN {
 		// the insurance pool in the FromAccount is not used ATM (losses should fully cover wins
 		// or the insurance pool has already been drained).
 		return &types.TransferRequest{
@@ -669,7 +669,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	}
 
 	// just in case...
-	if p.Type == types.TransferType_MARGIN_LOW {
+	if p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW {
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
 				mEvt.general,
@@ -799,7 +799,7 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 	resps := make([]*types.TransferResponse, 0, len(parties))
 
 	for _, v := range parties {
-		marginAcc, err := e.GetAccountByID(e.accountID(mktID, v, asset, types.AccountType_MARGIN))
+		marginAcc, err := e.GetAccountByID(e.accountID(mktID, v, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			e.log.Error(
 				"Failed to get the margin account",
@@ -811,7 +811,7 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 			continue
 		}
 
-		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountType_GENERAL))
+		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 		if err != nil {
 			e.log.Error(
 				"Failed to get the general account",
@@ -871,11 +871,11 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 // CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
 // if no general account exist for the trader for the given asset
 func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (string, error) {
-	marginID := e.accountID(marketID, partyID, asset, types.AccountType_MARGIN)
+	marginID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
 		// OK no margin ID, so let's try to get the general id then
 		// first check if generak account exists
-		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
+		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 		if _, ok := e.accs[generalID]; !ok {
 			e.log.Error("Tried to create a margin account for a party with no general account",
 				logging.String("party-id", partyID),
@@ -892,7 +892,7 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 			MarketID: marketID,
 			Balance:  0,
 			Owner:    partyID,
-			Type:     types.AccountType_MARGIN,
+			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 		}
 		e.accs[marginID] = &acc
 		e.buf.Add(acc)
@@ -904,7 +904,7 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 // one account per market, per asset for each trader
 func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 
-	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	if _, ok := e.accs[generalID]; !ok {
 		acc := types.Account{
 			Id:       generalID,
@@ -912,12 +912,12 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 			MarketID: noMarket,
 			Balance:  0,
 			Owner:    partyID,
-			Type:     types.AccountType_GENERAL,
+			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
 		e.buf.Add(acc)
 	}
-	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_GENERAL)
+	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	if _, ok := e.accs[tID]; !ok {
 		acc := types.Account{
 			Id:       tID,
@@ -925,7 +925,7 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 			MarketID: noMarket,
 			Balance:  0,
 			Owner:    partyID,
-			Type:     types.AccountType_GENERAL,
+			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[tID] = &acc
 		e.buf.Add(acc)
@@ -951,7 +951,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 	}
 	for _, trader := range traders {
 		// move monies from the margin account first
-		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_MARGIN))
+		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			return nil, err
 		}
@@ -960,7 +960,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 				FromAccount: acc.Id,
 				ToAccount:   ins.Id,
 				Amount:      acc.Balance,
-				Reference:   types.TransferType_MARGIN_CONFISCATED.String(),
+				Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED.String(),
 				Type:        "position-resolution",
 				Timestamp:   e.currentTime,
 			})
@@ -984,7 +984,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 // CreateMarketAccounts will create all required accounts for a market once
 // a new market is accepted through the network
 func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) (insuranceID, settleID string) {
-	insuranceID = e.accountID(marketID, "", asset, types.AccountType_INSURANCE)
+	insuranceID = e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
 	_, ok := e.accs[insuranceID]
 	if !ok {
 		insAcc := &types.Account{
@@ -993,13 +993,13 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) 
 			Owner:    systemOwner,
 			Balance:  insurance,
 			MarketID: marketID,
-			Type:     types.AccountType_INSURANCE,
+			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
 		e.accs[insuranceID] = insAcc
 		e.buf.Add(*insAcc)
 
 	}
-	settleID = e.accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
+	settleID = e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_SETTLEMENT)
 	_, ok = e.accs[settleID]
 	if !ok {
 		setAcc := &types.Account{
@@ -1008,7 +1008,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) 
 			Owner:    systemOwner,
 			Balance:  0,
 			MarketID: marketID,
-			Type:     types.AccountType_SETTLEMENT,
+			Type:     types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
 		}
 		e.accs[settleID] = setAcc
 		e.buf.Add(*setAcc)
@@ -1020,7 +1020,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) 
 // Withdraw will remove the specified amount from the trader
 // general account
 func (e *Engine) Withdraw(partyID, asset string, amount uint64) error {
-	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_GENERAL))
+	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
 		return ErrAccountDoesNotExist
 	}
@@ -1098,7 +1098,7 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 
 // GetPartyTokenBalance - get the token account for a given user
 func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
-	tID := e.accountID(noMarket, id, TokenAsset, types.AccountType_GENERAL)
+	tID := e.accountID(noMarket, id, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	acc, ok := e.accs[tID]
 	if !ok {
 		return nil, ErrPartyHasNoTokenAccount

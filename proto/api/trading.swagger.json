@@ -661,13 +661,14 @@
             "required": false,
             "type": "string",
             "enum": [
-              "ALL",
-              "INSURANCE",
-              "SETTLEMENT",
-              "MARGIN",
-              "GENERAL"
+              "ACCOUNT_TYPE_UNSPECIFIED",
+              "ACCOUNT_TYPE_ALL",
+              "ACCOUNT_TYPE_INSURANCE",
+              "ACCOUNT_TYPE_SETTLEMENT",
+              "ACCOUNT_TYPE_MARGIN",
+              "ACCOUNT_TYPE_GENERAL"
             ],
-            "default": "ALL"
+            "default": "ACCOUNT_TYPE_UNSPECIFIED"
           },
           {
             "name": "asset",
@@ -1501,13 +1502,14 @@
     "vegaAccountType": {
       "type": "string",
       "enum": [
-        "ALL",
-        "INSURANCE",
-        "SETTLEMENT",
-        "MARGIN",
-        "GENERAL"
+        "ACCOUNT_TYPE_UNSPECIFIED",
+        "ACCOUNT_TYPE_ALL",
+        "ACCOUNT_TYPE_INSURANCE",
+        "ACCOUNT_TYPE_SETTLEMENT",
+        "ACCOUNT_TYPE_MARGIN",
+        "ACCOUNT_TYPE_GENERAL"
       ],
-      "default": "ALL"
+      "default": "ACCOUNT_TYPE_UNSPECIFIED"
     },
     "vegaAssetSource": {
       "type": "object",
@@ -1578,11 +1580,12 @@
     "vegaChainStatus": {
       "type": "string",
       "enum": [
-        "DISCONNECTED",
-        "REPLAYING",
-        "CONNECTED"
+        "CHAIN_STATUS_UNSPECIFIED",
+        "CHAIN_STATUS_DISCONNECTED",
+        "CHAIN_STATUS_REPLAYING",
+        "CHAIN_STATUS_CONNECTED"
       ],
-      "default": "DISCONNECTED"
+      "default": "CHAIN_STATUS_UNSPECIFIED"
     },
     "vegaContinuousTrading": {
       "type": "object",
