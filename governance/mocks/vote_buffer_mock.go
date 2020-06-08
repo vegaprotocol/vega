@@ -44,3 +44,15 @@ func (mr *MockVoteBufMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockVoteBuf)(nil).Add), arg0)
 }
+
+// Flush mocks base method
+func (m *MockVoteBuf) Flush() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Flush")
+}
+
+// Flush indicates an expected call of Flush
+func (mr *MockVoteBufMockRecorder) Flush() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockVoteBuf)(nil).Flush))
+}

@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -40,6 +41,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 )
@@ -349,6 +351,17 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
 	l.topology = validators.NewTopology(l.Log, nil)
+
+	now, _ := l.timeService.GetTimeNow()
+
+	//  create collateral
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.accountBuf, l.lossSocBuf, now)
+	if err != nil {
+		log.Error("unable to initialise collateral", logging.Error(err))
+		return nil
+	}
+
+	l.governance := governance.NewEngine(l.Log, l.conf.Governance, cengine, l.proposalBuf, l.voteBuf, now)
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.

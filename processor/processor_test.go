@@ -21,15 +21,17 @@ import (
 
 type procTest struct {
 	*processor.Processor
-	eng    *mocks.MockExecutionEngine
-	ts     *mocks.MockTimeService
-	stat   *mocks.MockStats
-	tickCB func(time.Time)
-	ctrl   *gomock.Controller
-	cmd    *mocks.MockCommander
-	wallet *mocks.MockWallet
-	assets *mocks.MockAssets
-	top    *mocks.MockValidatorTopology
+	eng         *mocks.MockExecutionEngine
+	ts          *mocks.MockTimeService
+	stat        *mocks.MockStats
+	tickCB      func(time.Time)
+	ctrl        *gomock.Controller
+	cmd         *mocks.MockCommander
+	wallet      *mocks.MockWallet
+	assets      *mocks.MockAssets
+	top         *mocks.MockValidatorTopology
+	gov         *mocks.MockGovernanceEngine
+	proposalBuf *mocks.MockProposalBuf
 }
 
 type stubWallet struct {
@@ -49,6 +51,8 @@ func getTestProcessor(t *testing.T) *procTest {
 	wallet := mocks.NewMockWallet(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)
+	gov := mocks.NewMockGovernanceEngine(ctrl)
+	proposalBuf := mocks.NewMockProposalBuf(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(time.Time)
@@ -58,7 +62,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	wal := getTestStubWallet()
 	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
 
-	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, true)
+	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, proposalBuf, true)
 	assert.NoError(t, err)
 	return &procTest{
 		Processor: proc,

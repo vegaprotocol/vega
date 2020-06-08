@@ -21,6 +21,8 @@ var (
 
 	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
 	ErrVotePeriodExpired       = errors.New("proposal voting has been closed")
+
+	ErrAssetProposalReferenceDuplicate = errors.New("duplicate asset proposal for reference")
 )
 
 // Accounts ...
@@ -34,12 +36,19 @@ type Accounts interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
 type Buffer interface {
 	Add(types.Proposal)
+	Flush()
 }
 
 // VoteBuf...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance VoteBuf
 type VoteBuf interface {
 	Add(types.Vote)
+	Flush()
+}
+
+// ValidatorTopology...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/governance ValidatorTopology
+type ValidatorTopology interface {
 }
 
 type network struct {
@@ -58,6 +67,10 @@ type Engine struct {
 	proposals    map[string]*proposalVote
 	proposalRefs map[string]*proposalVote
 	net          network
+
+	// used for nodes proposals
+	top           ValidatorTopology
+	nodeProposals map[string]*nodeProposal
 }
 
 type proposalVote struct {
@@ -66,7 +79,7 @@ type proposalVote struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, top ValidatorTopology, now time.Time) *Engine {
 	// ensure params are set
 	cfg.initParams()
 	return &Engine{
@@ -85,6 +98,8 @@ func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf 
 			maxEnact:      cfg.params.DefaultMaxEnact,
 			participation: cfg.params.DefaultMinParticipation,
 		},
+		nodeProposals: map[string]*nodeProposal{},
+		top:           top,
 	}
 }
 
@@ -118,6 +133,10 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 			delete(e.proposalRefs, p.Reference) // remove from ref map, Foo
 		}
 	}
+
+	// flush here for now
+	e.buf.Flush()
+	e.vbuf.Flush()
 	return e.processProposals(expired)
 }
 
@@ -137,16 +156,37 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 		delete(e.proposals, p.ID)
 		delete(e.proposalRefs, p.Reference)
 	} else {
-		pv := proposalVote{
-			Proposal: &p,
-			yes:      map[string]*types.Vote{},
-			no:       map[string]*types.Vote{},
+		// now if it's a 2 steps proposal, start the node votes
+		if e.isTwoStepsProposal(&p) {
+			e.startTwoStepsProposal(&p)
+		} else {
+			e.startProposal(&p)
 		}
-		e.proposals[p.ID] = &pv
-		e.proposalRefs[p.Reference] = &pv
 	}
 	e.buf.Add(p)
 	return err
+}
+
+func (e *Engine) startProposal(p *types.Proposal) {
+	pv := proposalVote{
+		Proposal: p,
+		yes:      map[string]*types.Vote{},
+		no:       map[string]*types.Vote{},
+	}
+	e.proposals[p.ID] = &pv
+	e.proposalRefs[p.Reference] = &pv
+}
+
+func (e *Engine) startTwoStepsProposal(p *types.Proposal) {
+
+}
+
+func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
+	if na := p.Terms.GetNewAsset(); na != nil {
+		return true
+	}
+	// add more cases here if needed later.
+	return false
 }
 
 func (e *Engine) validateProposal(p types.Proposal) error {

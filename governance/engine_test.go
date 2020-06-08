@@ -248,6 +248,8 @@ func getTestEngine(t *testing.T) *tstEngine {
 	buf := mocks.NewMockBuffer(ctrl)
 	vbuf := mocks.NewMockVoteBuf(ctrl)
 	eng := governance.NewEngine(logging.NewTestLogger(), cfg, accs, buf, vbuf, time.Now())
+	buf.EXPECT().Flush().AnyTimes()
+	vbuf.EXPECT().Flush().AnyTimes()
 	return &tstEngine{
 		Engine: eng,
 		ctrl:   ctrl,

@@ -63,6 +63,20 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0)
 }
 
+// EnactProposal mocks base method
+func (m *MockExecutionEngine) EnactProposal(arg0 *proto.Proposal) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnactProposal", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnactProposal indicates an expected call of EnactProposal
+func (mr *MockExecutionEngineMockRecorder) EnactProposal(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnactProposal", reflect.TypeOf((*MockExecutionEngine)(nil).EnactProposal), arg0)
+}
+
 // Generate mocks base method
 func (m *MockExecutionEngine) Generate() error {
 	m.ctrl.T.Helper()

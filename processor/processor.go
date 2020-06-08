@@ -55,6 +55,14 @@ type ExecutionEngine interface {
 	Generate() error
 	SubmitProposal(proposal *types.Proposal) error
 	VoteOnProposal(vote *types.Vote) error
+	EnactProposal(proposal *types.Proposal) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
+type GovernanceEngine interface {
+	AddProposal(types.Proposal) error
+	AddVote(types.Vote) error
+	OnChainTimeUpdate(time.Time) []*types.Proposal
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -104,6 +112,13 @@ type ValidatorTopology interface {
 	Len() int
 }
 
+// ProposalBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/processor ProposalBuf
+type ProposalBuf interface {
+	Add(types.Proposal)
+	Flush()
+}
+
 const (
 	notValidAssetProposal uint32 = iota
 	validAssetProposal
@@ -128,6 +143,7 @@ type Processor struct {
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
+	gov               GovernanceEngine
 	time              TimeService
 	wallet            Wallet
 	vegaWallet        nodewallet.Wallet
@@ -138,10 +154,12 @@ type Processor struct {
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
 	top               ValidatorTopology
+	idgen             *IDgenerator
+	proposalBuf       ProposalBuf
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, proposalBuf ProposalBuf, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -165,6 +183,8 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		top:               top,
 		isValidator:       isValidator,
 		vegaWallet:        vegaWallet,
+		gov:               gov,
+		idgen:             NewIDGen(),
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -476,13 +496,13 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if na := proposal.Terms.GetNewAsset(); na != nil {
 			return p.startAssetNodeProposal(proposal)
 		}
-		return p.exec.SubmitProposal(proposal)
+		return p.SubmitProposal(proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		return p.exec.VoteOnProposal(vote)
+		return p.VoteOnProposal(vote)
 	case blockchain.RegisterNodeCommand:
 		node, err := p.getNodeRegistration(data)
 		if err != nil {
@@ -717,8 +737,47 @@ func (p *Processor) validateAsset(ctx context.Context, np *nodeProposal, prop *t
 	}
 }
 
+// SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
+func (p *Processor) SubmitProposal(proposal *types.Proposal) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Submitting proposal",
+			logging.String("proposal-id", proposal.ID),
+			logging.String("proposal-reference", proposal.Reference),
+			logging.String("proposal-party", proposal.PartyID),
+			logging.String("proposal-terms", proposal.Terms.String()))
+	}
+	// TODO(JEREMY): use hash of the signature here.
+	p.idgen.SetProposalID(proposal)
+	return p.gov.AddProposal(*proposal)
+}
+
+// VoteOnProposal sends proposal vote to governance engine
+func (p *Processor) VoteOnProposal(vote *types.Vote) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("Voting on proposal",
+			logging.String("proposal-id", vote.ProposalID),
+			logging.String("vote-party", vote.PartyID),
+			logging.String("vote-value", vote.Value.String()))
+	}
+	return p.gov.AddVote(*vote)
+}
+
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
+	p.idgen.NewBatch()
+	acceptedProposals := p.gov.OnChainTimeUpdate(t)
+	for _, proposal := range acceptedProposals {
+		if err := p.exec.EnactProposal(proposal); err != nil {
+			proposal.State = types.Proposal_FAILED
+			p.log.Error("unable to enact proposal",
+				logging.String("proposal-id", proposal.ID),
+				logging.Error(err))
+		}
+		p.proposalBuf.Add(*proposal)
+	}
+	// governance flush
+	p.proposalBuf.Flush()
+
 	for k, prop := range p.nodeProposals {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote agregated, and own vote sent
@@ -765,4 +824,5 @@ func (p *Processor) onTick(t time.Time) {
 			prop.cancel()
 		}
 	}
+
 }

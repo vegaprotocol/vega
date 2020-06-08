@@ -80,6 +80,9 @@ message Proposal {
 
     // Proposal has been executed and the changes under this proposal have now been applied.
     ENACTED   = 5;
+
+    // waiting for validators validation of the proposal
+    WAITING_FOR_NODE_VOTE = 6;
   }
 
   string        ID        = 1;
