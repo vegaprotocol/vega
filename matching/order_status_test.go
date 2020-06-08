@@ -46,6 +46,7 @@ func testFOKStopped(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID,
 		Side:        types.Side_Sell,
@@ -58,7 +59,7 @@ func testFOKStopped(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, types.Order_Stopped, order.Status)
+	assert.Equal(t, types.Order_STATUS_STOPPED, order.Status)
 }
 
 func testFOKFilled(t *testing.T) {
@@ -71,6 +72,7 @@ func testFOKFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID1,
 		Side:        types.Side_Sell,
@@ -85,6 +87,7 @@ func testFOKFilled(t *testing.T) {
 
 	// now place our fok order to be filled
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -97,7 +100,7 @@ func testFOKFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_Filled, order.Status)
+	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
 }
 
 func testIOCStopped(t *testing.T) {
@@ -106,6 +109,7 @@ func testIOCStopped(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID,
 		Side:        types.Side_Sell,
@@ -118,7 +122,7 @@ func testIOCStopped(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, types.Order_Stopped, order.Status)
+	assert.Equal(t, types.Order_STATUS_STOPPED, order.Status)
 }
 
 func testIOCPartiallyFilled(t *testing.T) {
@@ -131,6 +135,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID1,
 		Side:        types.Side_Sell,
@@ -145,6 +150,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// now place our IOC order to be filled
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -157,7 +163,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_PartiallyFilled, order.Status)
+	assert.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, order.Status)
 }
 
 func testIOCFilled(t *testing.T) {
@@ -170,6 +176,7 @@ func testIOCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID1,
 		Side:        types.Side_Sell,
@@ -184,6 +191,7 @@ func testIOCFilled(t *testing.T) {
 
 	// now place our fok order to be filled
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -196,7 +204,7 @@ func testIOCFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_Filled, order.Status)
+	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
 }
 
 func testGTCActive(t *testing.T) {
@@ -208,6 +216,7 @@ func testGTCActive(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -220,7 +229,7 @@ func testGTCActive(t *testing.T) {
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_Active, order1.Status)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, order1.Status)
 }
 
 func testGTCStoppedNotFilled(t *testing.T) {
@@ -232,6 +241,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -249,7 +259,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_Stopped, rmOrders[0].Status)
+	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
 }
 
 func testGTCCancelledNotFilled(t *testing.T) {
@@ -261,6 +271,7 @@ func testGTCCancelledNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -277,7 +288,7 @@ func testGTCCancelledNotFilled(t *testing.T) {
 	// then stop the order
 	confirm, err := book.CancelOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
 }
 
 func testGTCActivePartiallyFilled(t *testing.T) {
@@ -291,6 +302,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -306,6 +318,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -318,7 +331,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Len(t, confirm.PassiveOrdersAffected, 1)
-	assert.Equal(t, types.Order_Active, confirm.PassiveOrdersAffected[0].Status)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, confirm.PassiveOrdersAffected[0].Status)
 }
 
 func testGTCCancelledPartiallyFilled(t *testing.T) {
@@ -332,6 +345,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -347,6 +361,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -363,7 +378,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	confirm, err := book.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
 }
 
 func testGTCStoppedPartiallyFilled(t *testing.T) {
@@ -377,6 +392,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -392,6 +408,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -408,7 +425,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_Stopped, rmOrders[0].Status)
+	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
 }
 
 func testGTCFilled(t *testing.T) {
@@ -421,6 +438,7 @@ func testGTCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID1,
 		Side:        types.Side_Sell,
@@ -435,6 +453,7 @@ func testGTCFilled(t *testing.T) {
 
 	// now place our GTC order to be filled
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -447,7 +466,7 @@ func testGTCFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_Filled, order.Status)
+	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
 }
 
 func testGTTActive(t *testing.T) {
@@ -459,6 +478,7 @@ func testGTTActive(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -472,7 +492,7 @@ func testGTTActive(t *testing.T) {
 	}
 	_, err := book.SubmitOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_Active, order1.Status)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, order1.Status)
 }
 
 func testGTTStoppedNotFilled(t *testing.T) {
@@ -484,6 +504,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -502,7 +523,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_Stopped, rmOrders[0].Status)
+	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
 }
 
 func testGTTCancelledNotFilled(t *testing.T) {
@@ -514,6 +535,7 @@ func testGTTCancelledNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -531,7 +553,7 @@ func testGTTCancelledNotFilled(t *testing.T) {
 	// then stop the order
 	confirm, err := book.CancelOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
 }
 
 func testGTTActivePartiallyFilled(t *testing.T) {
@@ -545,6 +567,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -561,6 +584,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -574,7 +598,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Len(t, confirm.PassiveOrdersAffected, 1)
-	assert.Equal(t, types.Order_Active, confirm.PassiveOrdersAffected[0].Status)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, confirm.PassiveOrdersAffected[0].Status)
 }
 
 func testGTTCancelledPartiallyFilled(t *testing.T) {
@@ -588,6 +612,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and cancelled
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -604,6 +629,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -621,7 +647,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	confirm, err := book.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_Cancelled, confirm.Order.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
 }
 
 func testGTTStoppedPartiallyFilled(t *testing.T) {
@@ -635,6 +661,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -651,6 +678,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -668,7 +696,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_Stopped, rmOrders[0].Status)
+	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
 }
 
 func testGTTFilled(t *testing.T) {
@@ -681,6 +709,7 @@ func testGTTFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID1,
 		Side:        types.Side_Sell,
@@ -696,6 +725,7 @@ func testGTTFilled(t *testing.T) {
 
 	// now place our GTT order to be filled
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -709,7 +739,7 @@ func testGTTFilled(t *testing.T) {
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_Filled, order.Status)
+	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
 }
 
 func testGTTExpiredNotFilled(t *testing.T) {
@@ -722,6 +752,7 @@ func testGTTExpiredNotFilled(t *testing.T) {
 
 	// place a first order to sit in the book, and expired
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -739,7 +770,7 @@ func testGTTExpiredNotFilled(t *testing.T) {
 	// then remove expired, set 1 sec after order exp time.
 	orders := book.RemoveExpiredOrders(11)
 	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_Expired, orders[0].Status)
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 }
 
 func testGTTExpiredPartiallyFilled(t *testing.T) {
@@ -753,6 +784,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and expired
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
 		MarketID:    market,
 		PartyID:     partyID1,
@@ -769,6 +801,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     partyID2,
 		Side:        types.Side_Buy,
@@ -785,7 +818,7 @@ func testGTTExpiredPartiallyFilled(t *testing.T) {
 	// then remove expired, set 1 sec after order exp time.
 	orders := book.RemoveExpiredOrders(11)
 	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_Expired, orders[0].Status)
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 }
 
 type marketPositionFake struct {

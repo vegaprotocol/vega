@@ -178,7 +178,7 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
 		TimeInForce: orderSubmission.TimeInForce,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Remaining:   orderSubmission.Size,
 		Version:     execution.InitialOrderVersion,
 	}
@@ -202,7 +202,7 @@ func testGetByOrderIDFirstVersion(t *testing.T) {
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
 		TimeInForce: orderSubmission.TimeInForce,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Remaining:   orderSubmission.Size,
 		Version:     execution.InitialOrderVersion,
 	}

@@ -62,6 +62,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -72,6 +73,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -82,6 +84,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -92,6 +95,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "d",
@@ -120,6 +124,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -130,6 +135,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -140,6 +146,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -150,6 +157,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_GTC,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "d",
@@ -178,6 +186,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -189,6 +198,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -228,6 +238,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -239,6 +250,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -278,6 +290,7 @@ func getClosePNLBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -289,6 +302,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -300,6 +314,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
@@ -337,6 +352,7 @@ func getClosePNLSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -348,6 +364,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -359,6 +376,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
@@ -398,6 +416,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	currentTimestamp := getCurrentUtcTimestampNano()
 
 	order1 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -410,6 +429,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Id:          "v0000000000000-0000001",
 	}
 	order2 := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -440,6 +460,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	someTimeLater := currentTimestamp + (1000 * 1000)
 
 	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -456,6 +477,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -472,6 +494,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order3 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -488,6 +511,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order4 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -503,6 +527,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order5 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -519,6 +544,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order6 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -534,6 +560,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order7 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -550,6 +577,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order8 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -566,6 +594,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order9 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -581,6 +610,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, nil)
 
 	order10 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     party,
@@ -611,6 +641,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	timeStampOrder := types.Order{
+		Status:    types.Order_STATUS_ACTIVE,
 		Type:      types.Order_LIMIT,
 		Id:        "timestamporderID",
 		MarketID:  market,
@@ -626,6 +657,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	book.CancelOrder(&timeStampOrder)
 
 	invalidRemainingSizeOrdertypes := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -647,6 +679,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -674,6 +707,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    "invalid",
 		PartyID:     "A",
@@ -707,6 +741,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	// Arrange
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -732,7 +767,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	// Assert
 	assert.Nil(t, err)
 	assert.Equal(t, id, res.Order.Id)
-	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
 }
@@ -749,6 +784,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	// Arrange
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -774,7 +810,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	// Assert
 	assert.Nil(t, err)
 	assert.Equal(t, id, res.Order.Id)
-	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
 }
@@ -790,6 +826,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 
 	id := fmt.Sprintf("V%010d-%010d", 1, 1)
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -832,6 +869,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
+		Status:    types.Order_STATUS_ACTIVE,
 		Type:      types.Order_LIMIT,
 		MarketID:  market,
 		Id:        fmt.Sprintf("V%010d-%010d", 1, 1),
@@ -863,6 +901,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
+		Status:    types.Order_STATUS_ACTIVE,
 		Type:      types.Order_LIMIT,
 		MarketID:  market,
 		Id:        "id",
@@ -910,6 +949,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -932,6 +972,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -957,6 +998,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -979,6 +1021,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		PartyID:     "A",
@@ -1003,6 +1046,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	defer book.Finish()
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1021,6 +1065,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	fmt.Printf("confirmation : %+v", confirmation)
 
 	editedOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1049,6 +1094,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1071,6 +1117,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1100,6 +1147,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1123,6 +1171,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1153,6 +1202,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1176,6 +1226,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "123456",
@@ -1213,6 +1264,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "A",
@@ -1224,6 +1276,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "B",
@@ -1236,6 +1289,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "C",
@@ -1247,6 +1301,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "D",
@@ -1263,6 +1318,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "E",
@@ -1275,6 +1331,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_LIMIT,
 			MarketID:    market,
 			PartyID:     "F",
@@ -1302,6 +1359,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "M",
@@ -1324,6 +1382,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "A",
@@ -1339,6 +1398,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "N",
@@ -1369,6 +1429,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "B",
@@ -1380,6 +1441,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   0,
 				},
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "E",
@@ -1395,6 +1457,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
+				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "O",
@@ -1433,6 +1496,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "F",
@@ -1444,6 +1508,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   1,
 				},
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "C",
@@ -1455,6 +1520,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   0,
 				},
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "D",
@@ -1470,6 +1536,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
+				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_LIMIT,
 				MarketID:    market,
 				PartyID:     "X",
@@ -1492,6 +1559,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_LIMIT,
 					MarketID:    market,
 					PartyID:     "D",
@@ -1564,6 +1632,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
 	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "100000",
@@ -1587,6 +1656,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	iocOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_LIMIT,
 		MarketID:    market,
 		Id:          "100001",

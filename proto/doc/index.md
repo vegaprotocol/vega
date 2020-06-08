@@ -2948,13 +2948,14 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| Active | 0 |  |
-| Expired | 1 |  |
-| Cancelled | 2 |  |
-| Stopped | 3 |  |
-| Filled | 4 |  |
-| Rejected | 5 |  |
-| PartiallyFilled | 6 |  |
+| STATUS_INVALID | 0 |  |
+| STATUS_ACTIVE | 1 |  |
+| STATUS_EXPIRED | 2 |  |
+| STATUS_CANCELLED | 3 |  |
+| STATUS_STOPPED | 4 |  |
+| STATUS_FILLED | 5 |  |
+| STATUS_REJECTED | 6 |  |
+| STATUS_PARTIALLY_FILLED | 7 |  |
 
 
 

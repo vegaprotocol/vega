@@ -229,8 +229,8 @@ func TestMarketDepth_Hard(t *testing.T) {
 	secondBatchOfOrders[0].Remaining = secondBatchOfOrders[0].Remaining - uint64(100)
 
 	secondBatchOfOrders[1].Remaining = 0
-	secondBatchOfOrders[2].Status = types.Order_Cancelled
-	secondBatchOfOrders[3].Status = types.Order_Expired
+	secondBatchOfOrders[2].Status = types.Order_STATUS_CANCELLED
+	secondBatchOfOrders[3].Status = types.Order_STATUS_EXPIRED
 
 	err = orderStore.SaveBatch(secondBatchOfOrders)
 	assert.NoError(t, err)
@@ -480,7 +480,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 80,
-			Status:    types.Order_Expired,
+			Status:    types.Order_STATUS_EXPIRED,
 		},
 	}
 
@@ -603,7 +603,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 80,
-			Status:    types.Order_Expired,
+			Status:    types.Order_STATUS_EXPIRED,
 		},
 	}
 
@@ -662,7 +662,7 @@ func Test_SomeOrdersAreNotAddedToDepth(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     1337,
 			Remaining: 1337,
-			Status:    types.Order_Rejected,
+			Status:    types.Order_STATUS_REJECTED,
 		},
 		types.Order{
 			Id:          "99",
@@ -732,7 +732,7 @@ func TestOrderBookStoppedOrder(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 100,
-			Status:    types.Order_Active,
+			Status:    types.Order_STATUS_ACTIVE,
 		},
 	}
 
@@ -755,7 +755,7 @@ func TestOrderBookStoppedOrder(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 100,
-			Status:    types.Order_Stopped,
+			Status:    types.Order_STATUS_STOPPED,
 		},
 	}
 
@@ -784,7 +784,7 @@ func TestOrderBookPartiallyFilledOrder(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 100,
-			Status:    types.Order_Active,
+			Status:    types.Order_STATUS_ACTIVE,
 		},
 	}
 
@@ -808,7 +808,7 @@ func TestOrderBookPartiallyFilledOrder(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 80,
-			Status:    types.Order_Active,
+			Status:    types.Order_STATUS_ACTIVE,
 		},
 	}
 
@@ -832,7 +832,7 @@ func TestOrderBookPartiallyFilledOrder(t *testing.T) {
 			PartyID:   testPartyA,
 			Price:     113,
 			Remaining: 80,
-			Status:    types.Order_PartiallyFilled,
+			Status:    types.Order_STATUS_PARTIALLY_FILLED,
 		},
 	}
 

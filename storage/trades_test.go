@@ -190,7 +190,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		Remaining:   1000,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   0,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 	}
 
 	orderB := &types.Order{
@@ -203,7 +203,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		Remaining:   100,
 		TimeInForce: types.Order_GTC,
 		CreatedAt:   1,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 	}
 
 	trade1 := &types.Trade{

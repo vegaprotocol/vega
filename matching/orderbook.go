@@ -180,7 +180,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	order.Status = types.Order_Cancelled
+	order.Status = types.Order_STATUS_CANCELLED
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -288,7 +288,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// Was the aggressive order fully filled?
 	if order.Remaining == 0 {
-		order.Status = types.Order_Filled
+		order.Status = types.Order_STATUS_FILLED
 	}
 
 	// What is an Immediate or Cancel Order?
@@ -297,10 +297,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
 		// Stopped as not filled at all
 		if order.Remaining == order.Size {
-			order.Status = types.Order_Stopped
+			order.Status = types.Order_STATUS_STOPPED
 		} else {
 			// IOC so we set status as Cancelled.
-			order.Status = types.Order_PartiallyFilled
+			order.Status = types.Order_STATUS_PARTIALLY_FILLED
 		}
 	}
 
@@ -310,12 +310,12 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// The order must be filled in its entirety or cancelled (killed).
 	if order.TimeInForce == types.Order_FOK && order.Remaining == order.Size {
 		// FOK and didnt trade at all we set status as Stopped
-		order.Status = types.Order_Stopped
+		order.Status = types.Order_STATUS_STOPPED
 	}
 
 	for idx := range impactedOrders {
 		if impactedOrders[idx].Remaining == 0 {
-			impactedOrders[idx].Status = types.Order_Filled
+			impactedOrders[idx].Status = types.Order_STATUS_FILLED
 
 			// Ensure any fully filled impacted GTT orders are removed
 			// from internal matching engine pending orders list
@@ -330,10 +330,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// if we did hit a wash trade, set the status to stopped
 	if err != nil && err == ErrWashTrade {
-		order.Status = types.Order_Stopped
+		order.Status = types.Order_STATUS_STOPPED
 	}
 
-	if order.Status == types.Order_Active {
+	if order.Status == types.Order_STATUS_ACTIVE {
 		b.ordersByID[order.Id] = order
 	}
 
@@ -378,7 +378,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			// so it was already deleted, we do not remove them from the expiringOrders
 			// when they get cancelled as this would required unnecessary computation that
 			// can be delayed for later.
-			order.Status = types.Order_Expired
+			order.Status = types.Order_STATUS_EXPIRED
 			out = append(out, *order)
 		}
 	}
@@ -437,7 +437,7 @@ func (b *OrderBook) RemoveDistressedOrders(
 				continue
 			}
 			// here we set the status of the order as stopped as the system triggered it as well.
-			confirm.Order.Status = types.Order_Stopped
+			confirm.Order.Status = types.Order_STATUS_STOPPED
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}

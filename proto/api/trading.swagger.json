@@ -914,15 +914,16 @@
     "OrderStatus": {
       "type": "string",
       "enum": [
-        "Active",
-        "Expired",
-        "Cancelled",
-        "Stopped",
-        "Filled",
-        "Rejected",
-        "PartiallyFilled"
+        "STATUS_INVALID",
+        "STATUS_ACTIVE",
+        "STATUS_EXPIRED",
+        "STATUS_CANCELLED",
+        "STATUS_STOPPED",
+        "STATUS_FILLED",
+        "STATUS_REJECTED",
+        "STATUS_PARTIALLY_FILLED"
       ],
-      "default": "Active"
+      "default": "STATUS_INVALID"
     },
     "OrderTimeInForce": {
       "type": "string",
