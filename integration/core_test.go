@@ -136,7 +136,6 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.party, // party-engine here!
 		mkt,
 		mktsetup.candles,
-		mktsetup.orders,
 		mktsetup.parties,
 		mktsetup.trades,
 		mktsetup.marginLevelsBuf,
@@ -243,9 +242,9 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 		// 	nil,
 		// )
 
-		side := proto.Side_Buy
+		side := proto.Side_SIDE_BUY
 		if row.Cells[1].Value == "sell" {
-			side = proto.Side_Sell
+			side = proto.Side_SIDE_SELL
 		}
 		vol, err := strconv.Atoi(row.Cells[2].Value)
 		if err != nil {
@@ -268,8 +267,8 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			Size:        uint64(vol),
 			Remaining:   uint64(vol),
 			ExpiresAt:   tomorrow.Unix(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		result, err := core.SubmitOrder(context.TODO(), &order)

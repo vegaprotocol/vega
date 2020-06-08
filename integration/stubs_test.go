@@ -59,6 +59,34 @@ func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
+func (b *brokerStub) GetOrderEvents() []events.Order {
+	batch := b.GetBatch(events.OrderEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.Order, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Order:
+			ret = append(ret, *et)
+		case events.Order:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
+func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
+	data := b.GetOrderEvents()
+	for _, o := range data {
+		v := o.Order()
+		if v.Reference == ref && v.PartyID == party {
+			return *v, nil
+		}
+	}
+	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+}
+
 func (b *brokerStub) ResetType(t events.Type) {
 	b.mu.Lock()
 	b.data[t] = []events.Event{}

@@ -226,6 +226,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -266,6 +267,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -302,6 +304,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -332,7 +335,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -357,7 +360,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -382,7 +385,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -541,8 +544,8 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
@@ -605,8 +608,8 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
@@ -628,9 +631,11 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 			continue
 		}
 
-		for _, v := range execsetup.orders.data {
+		data := execsetup.broker.GetOrderEvents()
+		for _, o := range data {
+			v := o.Order()
 			if v.PartyID == val(row, 0) && v.MarketID == val(row, 1) &&
-				v.Status == proto.Order_Rejected && v.Reason.String() == val(row, 2) {
+				v.Status == proto.Order_STATUS_REJECTED && v.Reason.String() == val(row, 2) {
 				ordCnt -= 1
 			}
 		}
@@ -759,7 +764,7 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -809,7 +814,7 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -969,8 +974,10 @@ func executedTrades(trades *gherkin.DataTable) error {
 }
 
 func dumpOrders() error {
-	for n, o := range execsetup.orders.data {
-		fmt.Printf("order %s: %v\n", n, o)
+	data := execsetup.broker.GetOrderEvents()
+	for _, v := range data {
+		o := *v.Order()
+		fmt.Printf("order %s: %v\n", o.Id, o)
 	}
 	return nil
 }

@@ -8269,44 +8269,50 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>Active</td>
+                <td>STATUS_INVALID</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Expired</td>
+                <td>STATUS_ACTIVE</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Cancelled</td>
+                <td>STATUS_EXPIRED</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Stopped</td>
+                <td>STATUS_CANCELLED</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Filled</td>
+                <td>STATUS_STOPPED</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Rejected</td>
+                <td>STATUS_FILLED</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>PartiallyFilled</td>
+                <td>STATUS_REJECTED</td>
                 <td>6</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>STATUS_PARTIALLY_FILLED</td>
+                <td>7</td>
                 <td><p></p></td>
               </tr>
 
@@ -8328,25 +8334,25 @@ after each successful amend </p></td>
               </tr>
 
               <tr>
-                <td>GTC</td>
+                <td>TIF_GTC</td>
                 <td>1</td>
                 <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
-                <td>GTT</td>
+                <td>TIF_GTT</td>
                 <td>2</td>
                 <td><p>good til time</p></td>
               </tr>
 
               <tr>
-                <td>IOC</td>
+                <td>TIF_IOC</td>
                 <td>3</td>
                 <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
-                <td>FOK</td>
+                <td>TIF_FOK</td>
                 <td>4</td>
                 <td><p>fill or kill</p></td>
               </tr>
@@ -8369,19 +8375,19 @@ after each successful amend </p></td>
               </tr>
 
               <tr>
-                <td>LIMIT</td>
+                <td>TYPE_LIMIT</td>
                 <td>1</td>
                 <td><p>used for Limit orders</p></td>
               </tr>
 
               <tr>
-                <td>MARKET</td>
+                <td>TYPE_MARKET</td>
                 <td>2</td>
                 <td><p>used for Market orders</p></td>
               </tr>
 
               <tr>
-                <td>NETWORK</td>
+                <td>TYPE_NETWORK</td>
                 <td>3</td>
                 <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
               </tr>
@@ -8398,121 +8404,121 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>NONE</td>
+                <td>ORDER_ERROR_NONE</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_MARKET_ID</td>
+                <td>ORDER_ERROR_INVALID_MARKET_ID</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_ORDER_ID</td>
+                <td>ORDER_ERROR_INVALID_ORDER_ID</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_OUT_OF_SEQUENCE</td>
+                <td>ORDER_ERROR_OUT_OF_SEQUENCE</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_REMAINING_SIZE</td>
+                <td>ORDER_ERROR_INVALID_REMAINING_SIZE</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>TIME_FAILURE</td>
+                <td>ORDER_ERROR_TIME_FAILURE</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_REMOVAL_FAILURE</td>
+                <td>ORDER_ERROR_REMOVAL_FAILURE</td>
                 <td>6</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_EXPIRATION_DATETIME</td>
+                <td>ORDER_ERROR_INVALID_EXPIRATION_DATETIME</td>
                 <td>7</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_ORDER_REFERENCE</td>
+                <td>ORDER_ERROR_INVALID_ORDER_REFERENCE</td>
                 <td>8</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>EDIT_NOT_ALLOWED</td>
+                <td>ORDER_ERROR_EDIT_NOT_ALLOWED</td>
                 <td>9</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_AMEND_FAILURE</td>
+                <td>ORDER_ERROR_AMEND_FAILURE</td>
                 <td>10</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_NOT_FOUND</td>
+                <td>ORDER_ERROR_NOT_FOUND</td>
                 <td>11</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_PARTY_ID</td>
+                <td>ORDER_ERROR_INVALID_PARTY_ID</td>
                 <td>12</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARKET_CLOSED</td>
+                <td>ORDER_ERROR_MARKET_CLOSED</td>
                 <td>13</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_CHECK_FAILED</td>
+                <td>ORDER_ERROR_MARGIN_CHECK_FAILED</td>
                 <td>14</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MISSING_GENERAL_ACCOUNT</td>
+                <td>ORDER_ERROR_MISSING_GENERAL_ACCOUNT</td>
                 <td>15</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INTERNAL_ERROR</td>
+                <td>ORDER_ERROR_INTERNAL_ERROR</td>
                 <td>16</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_SIZE</td>
+                <td>ORDER_ERROR_INVALID_SIZE</td>
                 <td>17</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_PERSISTENCE</td>
+                <td>ORDER_ERROR_INVALID_PERSISTENCE</td>
                 <td>18</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_TYPE</td>
+                <td>ORDER_ERROR_INVALID_TYPE</td>
                 <td>19</td>
                 <td><p></p></td>
               </tr>
@@ -8535,13 +8541,13 @@ after each successful amend </p></td>
               </tr>
 
               <tr>
-                <td>Buy</td>
+                <td>SIDE_BUY</td>
                 <td>1</td>
                 <td><p>Buy</p></td>
               </tr>
 
               <tr>
-                <td>Sell</td>
+                <td>SIDE_SELL</td>
                 <td>2</td>
                 <td><p>Sell</p></td>
               </tr>
@@ -8558,20 +8564,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>DEFAULT</td>
+                <td>TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid</p></td>
               </tr>
 
               <tr>
-                <td>NETWORK_CLOSE_OUT_GOOD</td>
+                <td>TYPE_DEFAULT</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>NETWORK_CLOSE_OUT_BAD</td>
+                <td>TYPE_NETWORK_CLOSE_OUT_GOOD</td>
                 <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>TYPE_NETWORK_CLOSE_OUT_BAD</td>
+                <td>3</td>
                 <td><p></p></td>
               </tr>
 

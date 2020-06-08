@@ -42,15 +42,15 @@ func TestParseOrderStatus(t *testing.T) {
 	active := OrderStatusActive
 	status, err := parseOrderStatus(&active)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_Active, status)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, status)
 	expired := OrderStatusExpired
 	status, err = parseOrderStatus(&expired)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_Expired, status)
+	assert.Equal(t, types.Order_STATUS_EXPIRED, status)
 	cancelled := OrderStatusCancelled
 	status, err = parseOrderStatus(&cancelled)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_Cancelled, status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, status)
 	unknown := OrderStatus("好候")
 	_, err = parseOrderStatus(&unknown)
 	assert.Error(t, err)
@@ -60,19 +60,19 @@ func TestParseOrderTimeInForce(t *testing.T) {
 	fok := OrderTimeInForceFok
 	orderType, err := parseOrderTimeInForce(fok)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_FOK, orderType)
+	assert.Equal(t, types.Order_TIF_FOK, orderType)
 	ioc := OrderTimeInForceIoc
 	orderType, err = parseOrderTimeInForce(ioc)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_IOC, orderType)
+	assert.Equal(t, types.Order_TIF_IOC, orderType)
 	gtt := OrderTimeInForceGtt
 	orderType, err = parseOrderTimeInForce(gtt)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_GTT, orderType)
+	assert.Equal(t, types.Order_TIF_GTT, orderType)
 	gtc := OrderTimeInForceGtc
 	orderType, err = parseOrderTimeInForce(gtc)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_GTC, orderType)
+	assert.Equal(t, types.Order_TIF_GTC, orderType)
 	unknown := OrderTimeInForce("好到时候")
 	_, err = parseOrderTimeInForce(unknown)
 	assert.Error(t, err)
@@ -83,11 +83,11 @@ func TestParseSide(t *testing.T) {
 	buy := SideBuy
 	side, err := parseSide(&buy)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Side_Buy, side)
+	assert.Equal(t, types.Side_SIDE_BUY, side)
 	sell := SideSell
 	side, err = parseSide(&sell)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Side_Sell, side)
+	assert.Equal(t, types.Side_SIDE_SELL, side)
 	unknown := Side("好到时候")
 	_, err = parseSide(&unknown)
 	assert.Error(t, err)

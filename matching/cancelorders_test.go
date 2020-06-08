@@ -15,12 +15,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -30,12 +30,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000002", // Invalid, must match original
 	}
 	_, err = book.CancelOrder(&order2)
@@ -51,12 +51,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -66,12 +66,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    "incorrectMarket", // Invalid, must match original
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
@@ -87,12 +87,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -102,12 +102,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Sell, // Invalid, must match original
+		Side:        types.Side_SIDE_SELL, // Invalid, must match original
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
@@ -123,12 +123,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -138,12 +138,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       101, // Invalid, must match original
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
@@ -159,12 +159,12 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -174,12 +174,12 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    market,                   // Must match
 		PartyID:     "B",                      // Does not matter
-		Side:        types.Side_Buy,           // Must match
+		Side:        types.Side_SIDE_BUY,      // Must match
 		Price:       100,                      // Must match
 		Size:        10,                       // Does not matter
 		Remaining:   10,                       // Does not matter
-		TimeInForce: types.Order_GTC,          // Does not matter
-		Type:        types.Order_LIMIT,        // Does not matter
+		TimeInForce: types.Order_TIF_GTC,      // Does not matter
+		Type:        types.Order_TYPE_LIMIT,   // Does not matter
 		Id:          "v0000000000000-0000001", // Must match
 	}
 	_, err = book.CancelOrder(&order2)
@@ -197,12 +197,12 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 		ExpiresAt:   10,
 	}
@@ -213,12 +213,12 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	order2 := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 		ExpiresAt:   10,
 	}

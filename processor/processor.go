@@ -300,7 +300,7 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		Type:        orderSubmission.Type,
 		ExpiresAt:   orderSubmission.ExpiresAt,
 		Reference:   orderSubmission.Reference,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		CreatedAt:   0,
 		Remaining:   orderSubmission.Size,
 	}

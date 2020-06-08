@@ -914,27 +914,28 @@
     "OrderStatus": {
       "type": "string",
       "enum": [
-        "Active",
-        "Expired",
-        "Cancelled",
-        "Stopped",
-        "Filled",
-        "Rejected",
-        "PartiallyFilled"
+        "STATUS_INVALID",
+        "STATUS_ACTIVE",
+        "STATUS_EXPIRED",
+        "STATUS_CANCELLED",
+        "STATUS_STOPPED",
+        "STATUS_FILLED",
+        "STATUS_REJECTED",
+        "STATUS_PARTIALLY_FILLED"
       ],
-      "default": "Active"
+      "default": "STATUS_INVALID"
     },
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
         "TIF_UNSPECIFIED",
-        "GTC",
-        "GTT",
-        "IOC",
-        "FOK"
+        "TIF_GTC",
+        "TIF_GTT",
+        "TIF_IOC",
+        "TIF_FOK"
       ],
       "default": "TIF_UNSPECIFIED",
-      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - GTC: good til cancelled\n - GTT: good til time\n - IOC: immediate or cancel\n - FOK: fill or kill",
+      "description": "- TIF_UNSPECIFIED: Default value, can be valid for an amend\n - TIF_GTC: good til cancelled\n - TIF_GTT: good til time\n - TIF_IOC: immediate or cancel\n - TIF_FOK: fill or kill",
       "title": "Order Time in Force"
     },
     "ProposalState": {
@@ -2073,28 +2074,28 @@
     "vegaOrderError": {
       "type": "string",
       "enum": [
-        "NONE",
-        "INVALID_MARKET_ID",
-        "INVALID_ORDER_ID",
-        "ORDER_OUT_OF_SEQUENCE",
-        "INVALID_REMAINING_SIZE",
-        "TIME_FAILURE",
-        "ORDER_REMOVAL_FAILURE",
-        "INVALID_EXPIRATION_DATETIME",
-        "INVALID_ORDER_REFERENCE",
-        "EDIT_NOT_ALLOWED",
-        "ORDER_AMEND_FAILURE",
-        "ORDER_NOT_FOUND",
-        "INVALID_PARTY_ID",
-        "MARKET_CLOSED",
-        "MARGIN_CHECK_FAILED",
-        "MISSING_GENERAL_ACCOUNT",
-        "INTERNAL_ERROR",
-        "INVALID_SIZE",
-        "INVALID_PERSISTENCE",
-        "INVALID_TYPE"
+        "ORDER_ERROR_NONE",
+        "ORDER_ERROR_INVALID_MARKET_ID",
+        "ORDER_ERROR_INVALID_ORDER_ID",
+        "ORDER_ERROR_OUT_OF_SEQUENCE",
+        "ORDER_ERROR_INVALID_REMAINING_SIZE",
+        "ORDER_ERROR_TIME_FAILURE",
+        "ORDER_ERROR_REMOVAL_FAILURE",
+        "ORDER_ERROR_INVALID_EXPIRATION_DATETIME",
+        "ORDER_ERROR_INVALID_ORDER_REFERENCE",
+        "ORDER_ERROR_EDIT_NOT_ALLOWED",
+        "ORDER_ERROR_AMEND_FAILURE",
+        "ORDER_ERROR_NOT_FOUND",
+        "ORDER_ERROR_INVALID_PARTY_ID",
+        "ORDER_ERROR_MARKET_CLOSED",
+        "ORDER_ERROR_MARGIN_CHECK_FAILED",
+        "ORDER_ERROR_MISSING_GENERAL_ACCOUNT",
+        "ORDER_ERROR_INTERNAL_ERROR",
+        "ORDER_ERROR_INVALID_SIZE",
+        "ORDER_ERROR_INVALID_PERSISTENCE",
+        "ORDER_ERROR_INVALID_TYPE"
       ],
-      "default": "NONE"
+      "default": "ORDER_ERROR_NONE"
     },
     "vegaOrderSubmission": {
       "type": "object",
@@ -2138,12 +2139,12 @@
       "type": "string",
       "enum": [
         "TYPE_UNSPECIFIED",
-        "LIMIT",
-        "MARKET",
-        "NETWORK"
+        "TYPE_LIMIT",
+        "TYPE_MARKET",
+        "TYPE_NETWORK"
       ],
       "default": "TYPE_UNSPECIFIED",
-      "description": "- TYPE_UNSPECIFIED: Default value, always invalid\n - LIMIT: used for Limit orders\n - MARKET: used for Market orders\n - NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
+      "description": "- TYPE_UNSPECIFIED: Default value, always invalid\n - TYPE_LIMIT: used for Limit orders\n - TYPE_MARKET: used for Market orders\n - TYPE_NETWORK: used for orders where the initiating party is the network (used for distressed traders)",
       "title": "Order Type"
     },
     "vegaParty": {
@@ -2297,11 +2298,11 @@
       "type": "string",
       "enum": [
         "SIDE_UNSPECIFIED",
-        "Buy",
-        "Sell"
+        "SIDE_BUY",
+        "SIDE_SELL"
       ],
       "default": "SIDE_UNSPECIFIED",
-      "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - Buy: Buy\n - Sell: Sell"
+      "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - SIDE_BUY: Buy\n - SIDE_SELL: Sell"
     },
     "vegaSignedBundle": {
       "type": "object",
@@ -2545,11 +2546,13 @@
     "vegaTradeType": {
       "type": "string",
       "enum": [
-        "DEFAULT",
-        "NETWORK_CLOSE_OUT_GOOD",
-        "NETWORK_CLOSE_OUT_BAD"
+        "TYPE_UNSPECIFIED",
+        "TYPE_DEFAULT",
+        "TYPE_NETWORK_CLOSE_OUT_GOOD",
+        "TYPE_NETWORK_CLOSE_OUT_BAD"
       ],
-      "default": "DEFAULT"
+      "default": "TYPE_UNSPECIFIED",
+      "title": "- TYPE_UNSPECIFIED: Default value, always invalid"
     },
     "vegaTransferBalance": {
       "type": "object",

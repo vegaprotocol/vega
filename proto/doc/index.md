@@ -2950,13 +2950,14 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| Active | 0 |  |
-| Expired | 1 |  |
-| Cancelled | 2 |  |
-| Stopped | 3 |  |
-| Filled | 4 |  |
-| Rejected | 5 |  |
-| PartiallyFilled | 6 |  |
+| STATUS_INVALID | 0 |  |
+| STATUS_ACTIVE | 1 |  |
+| STATUS_EXPIRED | 2 |  |
+| STATUS_CANCELLED | 3 |  |
+| STATUS_STOPPED | 4 |  |
+| STATUS_FILLED | 5 |  |
+| STATUS_REJECTED | 6 |  |
+| STATUS_PARTIALLY_FILLED | 7 |  |
 
 
 
@@ -2968,10 +2969,10 @@ Order Time in Force
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | TIF_UNSPECIFIED | 0 | Default value, can be valid for an amend |
-| GTC | 1 | good til cancelled |
-| GTT | 2 | good til time |
-| IOC | 3 | immediate or cancel |
-| FOK | 4 | fill or kill |
+| TIF_GTC | 1 | good til cancelled |
+| TIF_GTT | 2 | good til time |
+| TIF_IOC | 3 | immediate or cancel |
+| TIF_FOK | 4 | fill or kill |
 
 
 
@@ -2983,9 +2984,9 @@ Order Type
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | TYPE_UNSPECIFIED | 0 | Default value, always invalid |
-| LIMIT | 1 | used for Limit orders |
-| MARKET | 2 | used for Market orders |
-| NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
+| TYPE_LIMIT | 1 | used for Limit orders |
+| TYPE_MARKET | 2 | used for Market orders |
+| TYPE_NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 
@@ -2996,26 +2997,26 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NONE | 0 |  |
-| INVALID_MARKET_ID | 1 |  |
-| INVALID_ORDER_ID | 2 |  |
-| ORDER_OUT_OF_SEQUENCE | 3 |  |
-| INVALID_REMAINING_SIZE | 4 |  |
-| TIME_FAILURE | 5 |  |
-| ORDER_REMOVAL_FAILURE | 6 |  |
-| INVALID_EXPIRATION_DATETIME | 7 |  |
-| INVALID_ORDER_REFERENCE | 8 |  |
-| EDIT_NOT_ALLOWED | 9 |  |
-| ORDER_AMEND_FAILURE | 10 |  |
-| ORDER_NOT_FOUND | 11 |  |
-| INVALID_PARTY_ID | 12 |  |
-| MARKET_CLOSED | 13 |  |
-| MARGIN_CHECK_FAILED | 14 |  |
-| MISSING_GENERAL_ACCOUNT | 15 |  |
-| INTERNAL_ERROR | 16 |  |
-| INVALID_SIZE | 17 |  |
-| INVALID_PERSISTENCE | 18 |  |
-| INVALID_TYPE | 19 |  |
+| ORDER_ERROR_NONE | 0 |  |
+| ORDER_ERROR_INVALID_MARKET_ID | 1 |  |
+| ORDER_ERROR_INVALID_ORDER_ID | 2 |  |
+| ORDER_ERROR_OUT_OF_SEQUENCE | 3 |  |
+| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 |  |
+| ORDER_ERROR_TIME_FAILURE | 5 |  |
+| ORDER_ERROR_REMOVAL_FAILURE | 6 |  |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 |  |
+| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 |  |
+| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 |  |
+| ORDER_ERROR_AMEND_FAILURE | 10 |  |
+| ORDER_ERROR_NOT_FOUND | 11 |  |
+| ORDER_ERROR_INVALID_PARTY_ID | 12 |  |
+| ORDER_ERROR_MARKET_CLOSED | 13 |  |
+| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 |  |
+| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 |  |
+| ORDER_ERROR_INTERNAL_ERROR | 16 |  |
+| ORDER_ERROR_INVALID_SIZE | 17 |  |
+| ORDER_ERROR_INVALID_PERSISTENCE | 18 |  |
+| ORDER_ERROR_INVALID_TYPE | 19 |  |
 
 
 
@@ -3027,8 +3028,8 @@ Order Type
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | SIDE_UNSPECIFIED | 0 | Default value, always invalid |
-| Buy | 1 | Buy |
-| Sell | 2 | Sell |
+| SIDE_BUY | 1 | Buy |
+| SIDE_SELL | 2 | Sell |
 
 
 
@@ -3039,9 +3040,10 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DEFAULT | 0 |  |
-| NETWORK_CLOSE_OUT_GOOD | 1 |  |
-| NETWORK_CLOSE_OUT_BAD | 2 |  |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| TYPE_DEFAULT | 1 |  |
+| TYPE_NETWORK_CLOSE_OUT_GOOD | 2 |  |
+| TYPE_NETWORK_CLOSE_OUT_BAD | 3 |  |
 
 
 
