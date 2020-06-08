@@ -90,6 +90,7 @@ type NodeCommand struct {
 
 	transferSub    *subscribers.TransferResponse
 	marketEventSub *subscribers.MarketEvent
+	orderSub       *subscribers.OrderEvent
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
