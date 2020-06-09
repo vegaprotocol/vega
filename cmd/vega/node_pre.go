@@ -349,7 +349,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.candleBuf,
 		l.marketBuf,
 		l.partyBuf,
-		l.accountBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
 		l.settleBuf,

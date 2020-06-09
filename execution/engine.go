@@ -30,13 +30,6 @@ type OrderBuf interface {
 	Flush() error
 }
 
-// TradeBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
-type TradeBuf interface {
-	Add(types.Trade)
-	Flush() error
-}
-
 // CandleBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
 type CandleBuf interface {
@@ -49,6 +42,13 @@ type CandleBuf interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketBuf
 type MarketBuf interface {
 	Add(types.Market)
+	Flush() error
+}
+
+// TradeBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
+type TradeBuf interface {
+	Add(types.Trade)
 	Flush() error
 }
 
@@ -71,13 +71,6 @@ type SettlementBuf interface {
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	NotifyOnTick(f func(time.Time))
-}
-
-// AccountBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
-type AccountBuf interface {
-	Add(types.Account)
-	Flush() error
 }
 
 // MarketDataBuf ...
@@ -131,14 +124,13 @@ type Engine struct {
 	governance *governance.Engine
 	idgen      *IDgenerator
 
-	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marketBuf       MarketBuf
 	partyBuf        PartyBuf
-	accountBuf      AccountBuf
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
+	tradeBuf        TradeBuf
 	lossSocBuf      LossSocializationBuf
 	proposalBuf     ProposalBuf
 	voteBuf         VoteBuf
@@ -157,7 +149,6 @@ func NewEngine(
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
 	partyBuf PartyBuf,
-	accountBuf AccountBuf,
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
@@ -191,17 +182,16 @@ func NewEngine(
 		Config:          executionConfig,
 		markets:         map[string]*Market{},
 		candleBuf:       candleBuf,
-		tradeBuf:        tradeBuf,
 		marketBuf:       marketBuf,
 		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
 		governance:      gengine,
 		party:           NewParty(log, cengine, pmkts, partyBuf),
-		accountBuf:      accountBuf,
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
+		tradeBuf:        tradeBuf,
 		lossSocBuf:      lossSocBuf,
 		proposalBuf:     proposalBuf,
 		voteBuf:         voteBuf,
@@ -552,18 +542,11 @@ func (e *Engine) Generate() error {
 	e.proposalBuf.Flush()
 	e.voteBuf.Flush()
 
-	// Accounts
-	err := e.accountBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "failed to flush accounts buffer")
-	}
-
 	// margins levels
 	e.marginLevelsBuf.Flush()
 
 	// Trades - flush after orders so the traders reference an existing order
-	err = e.tradeBuf.Flush()
-	if err != nil {
+	if err := e.tradeBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush trades buffer")
 	}
 	// Transfers
@@ -573,8 +556,7 @@ func (e *Engine) Generate() error {
 	evt := events.NewTime(context.Background(), now)
 	e.broker.Send(evt)
 	// Markets
-	err = e.marketBuf.Flush()
-	if err != nil {
+	if err := e.marketBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush markets buffer")
 	}
 	// Market data is added to buffer on Generate
