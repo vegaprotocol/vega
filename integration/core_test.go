@@ -215,7 +215,7 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 			Amount:   uint64(generalBal),
 		}
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.party.NotifyTraderAccountWithTopUpAmount(notif, generalBal)
+		_ = mktsetup.party.NotifyTraderAccountWithTopUpAmount(context.Background(), notif, generalBal)
 	}
 	return nil
 }
