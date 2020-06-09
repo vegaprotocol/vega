@@ -85,7 +85,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 
 			if !traderHaveGeneralAccount(execsetup.accs[val(row, 0)], asset) {
 				acc := account{
-					Type:    proto.AccountType_GENERAL,
+					Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
 					Balance: u64val(row, 1),
 					Asset:   asset,
 				}
@@ -93,7 +93,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			}
 
 			acc := account{
-				Type:    proto.AccountType_MARGIN,
+				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: 0,
 				Market:  mkt.Name,
 				Asset:   asset,
@@ -138,7 +138,7 @@ func haveOnlyOneAccountPerAsset(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	for _, acc := range execsetup.accounts.data {
-		if acc.Owner == arg1 && acc.Type == proto.AccountType_GENERAL {
+		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL {
 			if _, ok := assets[acc.Asset]; ok {
 				return fmt.Errorf("trader=%v have multiple account for asset=%v", arg1, acc.Asset)
 			}
@@ -152,7 +152,7 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	for _, acc := range execsetup.accounts.data {
-		if acc.Owner == arg1 && acc.Type == proto.AccountType_MARGIN {
+		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
 			}
@@ -846,7 +846,7 @@ func dumpTransfers() error {
 func accountID(marketID, partyID, asset string, _ty int32) string {
 	ty := proto.AccountType(_ty)
 	idbuf := make([]byte, 256)
-	if ty == proto.AccountType_GENERAL {
+	if ty == proto.AccountType_ACCOUNT_TYPE_GENERAL {
 		marketID = ""
 	}
 	if partyID == "market" {

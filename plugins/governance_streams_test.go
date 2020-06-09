@@ -35,15 +35,15 @@ func testDanglingVoteImpactOnProposals(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    "some-party",
 		ProposalID: "non-existent-proposal1",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    "some-party",
 		ProposalID: "non-existent-proposal2",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    "some-party",
 		ProposalID: "non-existent-proposal3",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 	for i := 0; i < 100; i++ { // polling for 1s to make sure nothing is omitted
 		select {
@@ -87,14 +87,14 @@ func testReadClosedSubs(t *testing.T) {
 	plugin.pCh <- []types.Proposal{{
 		ID:        "proposal-post-close",
 		PartyID:   "some-other-party",
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
 	plugin.vCh <- []types.Vote{{
 		PartyID:    "some-other-party",
 		ProposalID: "proposal-post-close",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 
 	// poll for 300ms give plugin to make sure the channel is not reused
@@ -133,7 +133,7 @@ func testGeneralGovernanceSubs(t *testing.T) {
 	proposal := types.Proposal{
 		ID:        "proposal1",
 		PartyID:   "some-party",
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewAsset{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
@@ -156,7 +156,7 @@ func testGeneralGovernanceSubs(t *testing.T) {
 		props[i] = types.Proposal{
 			ID:      "prop-" + fmt.Sprintf("%3d", i),
 			PartyID: "spammer",
-			State:   types.Proposal_OPEN,
+			State:   types.Proposal_STATE_OPEN,
 			Terms: &types.ProposalTerms{Change: &types.ProposalTerms_UpdateMarket{
 				UpdateMarket: &types.UpdateMarket{},
 			}},
@@ -194,30 +194,30 @@ func testPartyProposalsSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}}
 	plugin.pCh <- []types.Proposal{{
 		ID:        proposal1,
 		PartyID:   partyA,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}, {
 		ID:        proposal2,
 		PartyID:   partyB,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
@@ -260,19 +260,19 @@ func testPartyVotesSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}}
 	receivedA := <-chA
 	assert.Len(t, receivedA, 2)
@@ -291,13 +291,13 @@ func testPartyVotesSubs(t *testing.T) {
 	plugin.pCh <- []types.Proposal{{
 		ID:        proposal1,
 		PartyID:   partyA,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}, {
 		ID:        proposal2,
 		PartyID:   partyB,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
@@ -306,19 +306,19 @@ func testPartyVotesSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 	receivedA = <-chA
 	assert.Len(t, receivedA, 2)
@@ -338,19 +338,19 @@ func testPartyVotesSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 	receivedA = <-chA
 	assert.Len(t, receivedA, 2)
@@ -389,19 +389,19 @@ func testProposalVotesSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}}
 	received1 := <-ch1
 	assert.Len(t, received1, 2)
@@ -420,13 +420,13 @@ func testProposalVotesSubs(t *testing.T) {
 	plugin.pCh <- []types.Proposal{{
 		ID:        proposal1,
 		PartyID:   partyA,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}, {
 		ID:        proposal2,
 		PartyID:   partyB,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
@@ -435,19 +435,19 @@ func testProposalVotesSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 	received1 = <-ch1
 	assert.Len(t, received1, 2)
@@ -467,19 +467,19 @@ func testProposalVotesSubs(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    partyA,
 		ProposalID: proposal1,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyA,
 		ProposalID: proposal2,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal2,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}, {
 		PartyID:    partyB,
 		ProposalID: proposal1,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 	received1 = <-ch1
 	assert.Len(t, received1, 2)

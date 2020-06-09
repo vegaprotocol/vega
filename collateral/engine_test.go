@@ -184,7 +184,7 @@ func testTransferLoss(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -192,7 +192,7 @@ func testTransferLoss(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 	}
 
@@ -232,7 +232,7 @@ func testTransferComplexLoss(t *testing.T) {
 				Asset:  "BTC",
 				Amount: int64(-price),
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 	}
 	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
@@ -261,7 +261,7 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 				Asset:  "BTC",
 				Amount: -price,
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 	}
 	resp, err := eng.FinalSettlement(testMarketID, pos)
@@ -303,7 +303,7 @@ func testDistributeWin(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -311,26 +311,26 @@ func testDistributeWin(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	}
 
 	expMoneyBalance := price
 	eng.buf.EXPECT().Add(gomock.Any()).Times(4).Do(func(acc types.Account) {
-		if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			assert.Equal(t, price, acc.Balance)
 		}
 		// this accounts for 2 calls
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
+		if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			assert.Equal(t, expMoneyBalance, acc.Balance)
 			expMoneyBalance += price
 		}
 	})
 	// eng.buf.EXPECT().Add(gomock.Any()).MinTimes(4).Do(func(acc types.Account) {
-	// 	if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
+	// 	if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 	// 		assert.Equal(t, price, acc.Balance)
 	// 	}
-	// 	if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
+	// 	if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 	// 		// assert.Equal(t, 5*price+factor, acc.Balance)
 	// 		assert.Equal(t, 7*price, acc.Balance)
 	// 	}
@@ -341,7 +341,7 @@ func testDistributeWin(t *testing.T) {
 	assert.NoError(t, err)
 	// total balance of settlement account should be 3 times price
 	for _, bal := range resp.Balances {
-		if bal.Account.Type == types.AccountType_SETTLEMENT {
+		if bal.Account.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			assert.Zero(t, bal.Account.Balance)
 		}
 	}
@@ -378,7 +378,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -386,7 +386,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: trader,
@@ -394,7 +394,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -402,16 +402,16 @@ func testProcessBoth(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	}
 
 	// next up, updating the balance of the traders' general accounts
 	eng.buf.EXPECT().Add(gomock.Any()).Times(8).Do(func(acc types.Account) {
-		// if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
+		// if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 		// 	assert.Equal(t, int64(3000), acc.Balance)
 		// }
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_GENERAL {
+		if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, int64(2000), acc.Balance)
 		}
 	})
@@ -421,7 +421,7 @@ func testProcessBoth(t *testing.T) {
 	resp := responses[0]
 	// total balance of settlement account should be 3 times price
 	for _, bal := range resp.Balances {
-		if bal.Account.Type == types.AccountType_SETTLEMENT {
+		if bal.Account.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			assert.Zero(t, bal.Account.Balance)
 		}
 	}
@@ -462,7 +462,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 				Amount: int64(-price) * 2, // lost 2xprice, trader only won half
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: trader,
@@ -470,7 +470,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 	}
 
@@ -510,7 +510,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -518,7 +518,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: trader,
@@ -526,7 +526,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -534,7 +534,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	}
 
@@ -545,7 +545,7 @@ func testProcessBothProRated(t *testing.T) {
 	// resp := responses[0]
 	// // total balance of settlement account should be 3 times price
 	// for _, bal := range resp.Balances {
-	// 	if bal.Account.Type == types.AccountType_SETTLEMENT {
+	// 	if bal.Account.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 	// 		// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
 	// 		assert.Equal(t, int64(1), bal.Account.Balance)
 	// 	}
@@ -584,7 +584,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -592,7 +592,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: trader,
@@ -600,7 +600,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -608,7 +608,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: int64(price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 	}
 
@@ -622,7 +622,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	// resp := raw[0]
 	// // total balance of settlement account should be 3 times price
 	// for _, bal := range resp.Balances {
-	// 	if bal.Account.Type == types.AccountType_SETTLEMENT {
+	// 	if bal.Account.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 	// 		// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
 	// 		assert.Equal(t, int64(1), bal.Account.Balance)
 	// 	}
@@ -740,7 +740,7 @@ func testMTMSuccess(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -748,7 +748,7 @@ func testMTMSuccess(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: trader,
@@ -756,7 +756,7 @@ func testMTMSuccess(t *testing.T) {
 				Amount: int64(price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -764,15 +764,15 @@ func testMTMSuccess(t *testing.T) {
 				Amount: int64(price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 	}
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
-		if acc.Owner == trader && acc.Type == types.AccountType_GENERAL {
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, acc.Balance, int64(833))
 		}
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_GENERAL {
+		if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, acc.Balance, int64(1666))
 		}
 	})
@@ -803,7 +803,7 @@ func TestInvalidMarketID(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 	}
 	transfers := eng.getTestMTMTransfer(pos)
@@ -835,7 +835,7 @@ func TestEmptyTransfer(t *testing.T) {
 				Amount: int64(0),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 	}
 	transfers := eng.getTestMTMTransfer(pos)
@@ -864,7 +864,7 @@ func TestNoMarginAccount(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 	}
 	transfers := eng.getTestMTMTransfer(pos)
@@ -889,7 +889,7 @@ func TestNoGeneralAccount(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 	}
 	transfers := eng.getTestMTMTransfer(pos)
@@ -953,7 +953,7 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 				Amount: int64(-price),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 	}
 
@@ -979,7 +979,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 				Amount: int64(-amount * 100),
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 	}
 
@@ -1077,7 +1077,7 @@ func TestMTMLossSocialization(t *testing.T) {
 				Amount: -700,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: lossTrader2,
@@ -1085,7 +1085,7 @@ func TestMTMLossSocialization(t *testing.T) {
 				Amount: -1400,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
 			Owner: winTrader1,
@@ -1093,7 +1093,7 @@ func TestMTMLossSocialization(t *testing.T) {
 				Amount: 1400,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 		{
 			Owner: winTrader2,
@@ -1101,15 +1101,15 @@ func TestMTMLossSocialization(t *testing.T) {
 				Amount: 700,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_MTM_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
 		},
 	}
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
-		if acc.Owner == winTrader1 && acc.Type == types.AccountType_MARGIN {
+		if acc.Owner == winTrader1 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			assert.Equal(t, acc.Balance, uint64(1066))
 		}
-		if acc.Owner == winTrader2 && acc.Type == types.AccountType_MARGIN {
+		if acc.Owner == winTrader2 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			assert.Equal(t, acc.Balance, uint64(534))
 		}
 	})
@@ -1142,12 +1142,12 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 				Asset:  testMarketAsset,
 			},
 			MinAmount: 100,
-			Type:      types.TransferType_MARGIN_LOW,
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		},
 	}
 
 	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
-		if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			assert.Equal(t, acc.Balance, uint64(100))
 		}
 	})
@@ -1178,7 +1178,7 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 				Asset:  testMarketAsset,
 			},
 			MinAmount: 100000,
-			Type:      types.TransferType_MARGIN_LOW,
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		},
 	}
 
@@ -1213,7 +1213,7 @@ func TestMarginUpdates(t *testing.T) {
 				Asset:  testMarketAsset,
 			},
 			MinAmount: 100,
-			Type:      types.TransferType_MARGIN_LOW,
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		},
 	}
 

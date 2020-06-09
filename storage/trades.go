@@ -16,11 +16,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// ErrTradeWithUnspecifiedType is used when Trade.Type == types.Trade_TYPE_UNSPECIFIED.
-	ErrTradeWithUnspecifiedType = errors.New("trade has unspecified type")
-)
-
 // Trade is a package internal data struct that implements the TradeStore interface.
 type Trade struct {
 	Config
@@ -420,7 +415,7 @@ func (ts *Trade) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error)
 	for _, trade := range batch {
 		if trade.Type == types.Trade_TYPE_UNSPECIFIED {
 			ts.log.Error("attempting to store a trade with UNSPECIFIED Type (tradeBatchToMap)")
-			return nil, ErrTradeWithUnspecifiedType
+			return nil, ErrUnspecifiedType
 		}
 		tradeBuf, err := proto.Marshal(&trade)
 		if err != nil {

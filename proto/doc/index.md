@@ -1907,12 +1907,13 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
-| OPEN | 1 | Proposal is open for voting. |
-| PASSED | 2 | Proposal has gained enough support to be executed. |
-| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
-| DECLINED | 4 | Proposal didn&#39;t get enough votes |
-| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
+| STATE_UNSPECIFIED | 0 | Default value, always invalid. |
+| STATE_FAILED | 1 | Proposal could not be enacted after being accepted by the network. |
+| STATE_OPEN | 2 | Proposal is open for voting. |
+| STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
+| STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals). |
+| STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes. |
+| STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 
 
@@ -1923,8 +1924,9 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NO | 0 |  |
-| YES | 1 |  |
+| VALUE_UNSPECIFIED | 0 | Default value, always invalid. |
+| VALUE_NO | 1 | A vote against the proposal. |
+| VALUE_YES | 2 | A vote in favour of the proposal. |
 
 
 
@@ -2903,11 +2905,11 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ALL | 0 |  |
-| INSURANCE | 1 |  |
-| SETTLEMENT | 2 |  |
-| MARGIN | 3 |  |
-| GENERAL | 4 |  |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
+| ACCOUNT_TYPE_INSURANCE | 1 |  |
+| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
+| ACCOUNT_TYPE_MARGIN | 3 |  |
+| ACCOUNT_TYPE_GENERAL | 4 |  |
 
 
 
@@ -2918,9 +2920,10 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DISCONNECTED | 0 |  |
-| REPLAYING | 1 |  |
-| CONNECTED | 2 |  |
+| CHAIN_STATUS_UNSPECIFIED | 0 |  |
+| CHAIN_STATUS_DISCONNECTED | 1 |  |
+| CHAIN_STATUS_REPLAYING | 2 |  |
+| CHAIN_STATUS_CONNECTED | 3 |  |
 
 
 
@@ -3052,14 +3055,15 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LOSS | 0 |  |
-| WIN | 1 |  |
-| CLOSE | 2 |  |
-| MTM_LOSS | 3 |  |
-| MTM_WIN | 4 |  |
-| MARGIN_LOW | 5 |  |
-| MARGIN_HIGH | 6 |  |
-| MARGIN_CONFISCATED | 7 |  |
+| TRANSFER_TYPE_UNSPECIFIED | 0 |  |
+| TRANSFER_TYPE_LOSS | 1 |  |
+| TRANSFER_TYPE_WIN | 2 |  |
+| TRANSFER_TYPE_CLOSE | 3 |  |
+| TRANSFER_TYPE_MTM_LOSS | 4 |  |
+| TRANSFER_TYPE_MTM_WIN | 5 |  |
+| TRANSFER_TYPE_MARGIN_LOW | 6 |  |
+| TRANSFER_TYPE_MARGIN_HIGH | 7 |  |
+| TRANSFER_TYPE_MARGIN_CONFISCATED | 8 |  |
 
 
 
