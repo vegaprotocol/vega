@@ -4764,17 +4764,31 @@
                 </tr>
 
                 <tr>
-                  <td>minParticipationStake</td>
+                  <td>minRequiredParticipation</td>
                   <td><a href="#float">float</a></td>
                   <td></td>
-                  <td><p>Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
+                  <td><p>Constrains minimum participation level allowed to be set for a proposal. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
                 </tr>
 
                 <tr>
-                  <td>minRequiredMajorityStake</td>
+                  <td>minRequiredMajority</td>
                   <td><a href="#float">float</a></td>
                   <td></td>
-                  <td><p>Constrains minimum required majority stake necessary for a proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
+                  <td><p>Constrains minimum majority level allowed to be set for a proposal. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
+                </tr>
+
+                <tr>
+                  <td>minProposingBalance</td>
+                  <td><a href="#float">float</a></td>
+                  <td></td>
+                  <td><p>Minimum balance required for a party to be able to submit a new proposal. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
+                </tr>
+
+                <tr>
+                  <td>minVotingBalance</td>
+                  <td><a href="#float">float</a></td>
+                  <td></td>
+                  <td><p>Minimum balance required for a party to be able to cast a vote. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -4794,7 +4808,7 @@
               <tbody>
 
                 <tr>
-                  <td>minParticipationStake</td>
+                  <td>minRequiredParticipation</td>
                   <td>
                     <ul>
 
@@ -4807,11 +4821,37 @@
                 </tr>
 
                 <tr>
-                  <td>minRequiredMajorityStake</td>
+                  <td>minRequiredMajority</td>
                   <td>
                     <ul>
 
                       <li>float_gte: 0.5</li>
+
+                      <li>float_lte: 1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minProposingBalance</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gt: 0</li>
+
+                      <li>float_lte: 1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minVotingBalance</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gt: 0</li>
 
                       <li>float_lte: 1</li>
 
@@ -5050,28 +5090,32 @@
                   <td>closingTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Timestamp (Unix time in seconds) when voting closes for this proposal </p></td>
+                  <td><p>Timestamp (Unix time in seconds) when voting closes for this proposal.
+Constrained by <tt>minCloseInSeconds</tt> and <tt>maxCloseInSeconds</tt> network parameters. </p></td>
                 </tr>
 
                 <tr>
                   <td>enactmentTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Timestamp (Unix time in seconds) when proposal gets enacted (if passed) </p></td>
+                  <td><p>Timestamp (Unix time in seconds) when proposal gets enacted (if passed).
+Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network parameters. </p></td>
                 </tr>
 
                 <tr>
-                  <td>minParticipationStake</td>
+                  <td>requiredParticipation</td>
                   <td><a href="#float">float</a></td>
                   <td></td>
-                  <td><p>Minimum participation stake fraction of total stake required for a proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
+                  <td><p>Participation level required for the proposal to pass. Constrained by <tt>minRequiredParticipation</tt> network parameter.
+Value from <tt>0</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value. </p></td>
                 </tr>
 
                 <tr>
-                  <td>minRequiredMajorityStake</td>
+                  <td>requiredMajority</td>
                   <td><a href="#float">float</a></td>
                   <td></td>
-                  <td><p>Minimum required majority stake necessary for a proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
+                  <td><p>Majority level required for the proposal to pass. Constrained by <tt>minRequiredMajority</tt> network parameter.
+Value from <tt>0.5</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value </p></td>
                 </tr>
 
                 <tr>
@@ -5148,7 +5192,7 @@
                 </tr>
 
                 <tr>
-                  <td>minParticipationStake</td>
+                  <td>requiredParticipation</td>
                   <td>
                     <ul>
 
@@ -5161,11 +5205,11 @@
                 </tr>
 
                 <tr>
-                  <td>minRequiredMajorityStake</td>
+                  <td>requiredMajority</td>
                   <td>
                     <ul>
 
-                      <li>float_gte: 0.5</li>
+                      <li>float_gte: 0</li>
 
                       <li>float_lte: 1</li>
 

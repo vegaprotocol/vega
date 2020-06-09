@@ -1770,8 +1770,10 @@
 | maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
 | minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
 | maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| minParticipationStake | [float](#float) |  | Constrains minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
-| minRequiredMajorityStake | [float](#float) |  | Constrains minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`. |
+| minRequiredParticipation | [float](#float) |  | Constrains minimum participation level allowed to be set for a proposal. Value from `0` to `1`. |
+| minRequiredMajority | [float](#float) |  | Constrains minimum majority level allowed to be set for a proposal. Value from `0.5` to `1`. |
+| minProposingBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
+| minVotingBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
 
 
 
@@ -1836,10 +1838,10 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
-| enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
-| minParticipationStake | [float](#float) |  | Minimum participation stake fraction of total stake required for a proposal to pass. Value from `0` to `1`. |
-| minRequiredMajorityStake | [float](#float) |  | Minimum required majority stake necessary for a proposal to pass. Value from `0.5` to `1`. |
+| closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal. Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters. |
+| enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed). Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. |
+| requiredParticipation | [float](#float) |  | Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter. Value from `0` to `1`; `0` to use network parameter value. |
+| requiredMajority | [float](#float) |  | Majority level required for the proposal to pass. Constrained by `minRequiredMajority` network parameter. Value from `0.5` to `1`; `0` to use network parameter value |
 | validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
 | newMarket | [NewMarket](#vega.NewMarket) |  |  |

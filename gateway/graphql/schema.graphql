@@ -1210,16 +1210,28 @@ type UpdateNetwork {
   maxEnactInSeconds: Int
 
   """
-  Network parameter that restricts the minimum participation stake
-  required for a proposal to pass. Value from 0 and 1.
+  Network parameter that restricts the minimum participation level
+  allowed to be set for a proposal. Value from 0 and 1.
   """
-  minParticipationStake: Float
+  minRequiredParticipation: Float
 
   """
-  Network parameter that restricts the minimum required majority stake
-  needed for a proposal to pass. Value from 0.5 to 1.
+  Network parameter that restricts the minimum majority level
+  allowed to be set for a proposal. Value from 0.5 to 1.
   """
-  minRequiredMajorityStake: Float
+  minRequiredMajority: Float
+
+  """
+  Network parameter setting minimum balance required for a party
+  to be able to submit a new proposal. Value greater than 0 to 1.
+  """
+  minProposingBalance: Float
+
+  """
+  Network parameter setting minimum balance required for a party
+  to be able to cast a vote.  Value greater than 0 to 1.
+  """
+  minVotingBalance: Float
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -1247,17 +1259,30 @@ input UpdateNetworkInput {
   """
   maxEnactInSeconds: Int
 
-  """
-  Network parameter that restricts the minimum participation stake
-  required for a proposal to pass. Value from 0 and 1.
-  """
-  minParticipationStake: Float
 
   """
-  Network parameter that restricts the minimum required majority stake
-  needed for a proposal to pass. Value from 0.5 to 1.
+  Network parameter that restricts the minimum participation level
+  allowed to be set for a proposal. Value from 0 and 1.
   """
-  minRequiredMajorityStake: Float
+  minRequiredParticipation: Float
+
+  """
+  Network parameter that restricts the minimum majority level
+  allowed to be set for a proposal. Value from 0.5 to 1.
+  """
+  minRequiredMajority: Float
+
+  """
+  Network parameter setting minimum balance required for a party
+  to be able to submit a new proposal. Value greater than 0 to 1.
+  """
+  minProposingBalance: Float
+
+  """
+  Network parameter setting minimum balance required for a party
+  to be able to cast a vote.  Value greater than 0 to 1.
+  """
+  minVotingBalance: Float
 }
 
 
@@ -1265,14 +1290,27 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "ISO-8601 time and date when voting closes for this proposal."
+  """
+  ISO-8601 time and date when voting closes for this proposal.
+  Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
+  """
   closingDatetime: String!
-  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  """
+  ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  """
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
-  minParticipationStake: Float!
-  "Minimum required majority stake needed for a proposal to pass. Value from 0.5 to 1."
-  minRequiredMajorityStake: Float!
+  """
+  Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
+  Value from 0 to 1.
+  """
+  requiredParticipation: Float!
+  """
+  Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
+  Value from 0 to 1.
+  """
+  requiredMajority: Float!
+
   "Actual change being introduced by the proposal"
   change: ProposalChange
 }
@@ -1280,14 +1318,27 @@ type ProposalTerms {
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 "Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
 input ProposalTermsInput {
-  "ISO-8601 time and date when voting closes for this proposal."
+  """
+  ISO-8601 time and date when voting closes for this proposal.
+  Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
+  """
   closingDatetime: String!
-  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  """
+  ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  """
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass. Value from 0 and 1."
-  minParticipationStake: Float!
-  "Minimum required majority stake needed for a proposal to pass. Value from 0.5 to 1."
-  minRequiredMajorityStake: Float!
+
+  """
+  Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
+  Value from 0 to 1. Omit to use network parameter value.
+  """
+  requiredParticipation: Float
+  """
+  Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
+  Value from 0 to 1. Omit to use network parameter value.
+  """
+  requiredMajority: Float
   
   "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
