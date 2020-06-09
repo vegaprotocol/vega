@@ -237,6 +237,7 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
+	ctx := context.TODO()
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
@@ -288,7 +289,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.FinalSettlement(m.GetID(), positions)
+			transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 			if err != nil {
 				m.log.Error(
 					"Failed to get ledger movements after settling closed market",
@@ -298,7 +299,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			} else {
 				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
 				// this will be next block
-				evt := events.NewTransferResponse(context.TODO(), transfers)
+				evt := events.NewTransferResponse(ctx, transfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
@@ -314,13 +315,13 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 				asset, _ := m.mkt.GetAsset()
 				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
+				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 				if err != nil {
 					m.log.Error("Clear market error",
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					evt := events.NewTransferResponse(context.TODO(), clearMarketTransfers)
+					evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 					m.broker.Send(evt)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
@@ -395,7 +396,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// ensure party have a general account, and margin account is / can be created
 	asset, _ := m.mkt.GetAsset()
-	_, err := m.collateral.CreatePartyMarginAccount(order.PartyID, order.MarketID, asset)
+	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.PartyID, order.MarketID, asset)
 	if err != nil {
 		m.log.Error("Margin account verification failed",
 			logging.String("party-id", order.PartyID),
@@ -537,7 +538,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		margins := m.collateralAndRisk(ctx, settle)
 		if len(margins) > 0 {
 
-			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
+			transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug(
 					"Updated margin balances",
@@ -666,7 +667,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
 		var movements *types.TransferResponse
-		movements, err = m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
+		movements, err = m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -779,7 +780,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	m.settlement.RemoveDistressed(closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
-	movements, err := m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
+	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
@@ -800,7 +801,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
 
-	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
+	_, responses, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug(
 			"ledger movements after MTM on traders who closed out distressed",
@@ -945,7 +946,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(m.GetID(), riskUpdate)
+		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
@@ -1021,7 +1022,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
 	asset, _ := m.mkt.GetAsset()
-	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
+	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to process mark to market settlement (collateral)",
@@ -1119,6 +1120,7 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 // CancelOrderByID locates order by its Id and cancels it
 // @TODO This function should not exist. Needs to be removed
 func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
+	ctx := context.TODO()
 	order, err := m.matching.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
@@ -1128,7 +1130,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 		PartyID:  order.PartyID,
 		MarketID: order.MarketID,
 	}
-	return m.CancelOrder(context.TODO(), &cancellation)
+	return m.CancelOrder(ctx, &cancellation)
 }
 
 // AmendOrder amend an existing order from the order book

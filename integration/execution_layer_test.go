@@ -111,7 +111,7 @@ func iExpectTheTradersToHaveNewGeneralAccount(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		_, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		_, err := execsetup.broker.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return fmt.Errorf("missing general account for trader=%v asset=%v", val(row, 0), val(row, 1))
 		}
@@ -123,7 +123,7 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 	balance, _ := strconv.ParseUint(arg2, 10, 0)
 	for _, mkt := range execsetup.mkts {
 		asset, _ := mkt.GetAsset()
-		acc, err := execsetup.accounts.getTraderGeneralAccount(arg1, asset)
+		acc, err := execsetup.broker.getTraderGeneralAccount(arg1, asset)
 		if err != nil {
 			return err
 		}
@@ -137,7 +137,12 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 func haveOnlyOneAccountPerAsset(arg1 string) error {
 	assets := map[string]struct{}{}
 
-	for _, acc := range execsetup.accounts.data {
+	accs := execsetup.broker.GetAccounts()
+	data := make([]proto.Account, 0, len(accs))
+	for _, a := range accs {
+		data = append(data, a.Account())
+	}
+	for _, acc := range data {
 		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL {
 			if _, ok := assets[acc.Asset]; ok {
 				return fmt.Errorf("trader=%v have multiple account for asset=%v", arg1, acc.Asset)
@@ -151,7 +156,12 @@ func haveOnlyOneAccountPerAsset(arg1 string) error {
 func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
-	for _, acc := range execsetup.accounts.data {
+	accs := execsetup.broker.GetAccounts()
+	data := make([]proto.Account, 0, len(accs))
+	for _, a := range accs {
+		data = append(data, a.Account())
+	}
+	for _, acc := range data {
 		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
@@ -180,7 +190,7 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 	balance, _ := strconv.ParseUint(balancestr, 10, 0)
-	acc, err := execsetup.accounts.getTraderGeneralAccount(trader, asset)
+	acc, err := execsetup.broker.getTraderGeneralAccount(trader, asset)
 	if err != nil {
 		return err
 	}
@@ -411,7 +421,7 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		generalAccount, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		generalAccount, err := execsetup.broker.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -421,7 +431,7 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 		if generalAccount.GetBalance() != u64val(row, 4) {
 			hasError = true
 		}
-		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		marginAccount, err := execsetup.broker.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
@@ -440,7 +450,12 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
-	for _, v := range execsetup.accounts.data {
+	batch := execsetup.broker.GetAccounts()
+	data := make([]types.Account, 0, len(batch))
+	for _, e := range batch {
+		data = append(data, e.Account())
+	}
+	for _, v := range data {
 		if v.Asset != collateral.TokenAsset {
 			cumul += uint64(v.Balance)
 		}
@@ -497,7 +512,7 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 
 func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.accounts.getMarketSettlementAccount(market)
+	acc, err := execsetup.broker.getMarketSettlementAccount(market)
 	if err != nil {
 		return err
 	}
@@ -509,7 +524,7 @@ func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string
 
 func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.accounts.getMarketInsurancePoolAccount(market)
+	acc, err := execsetup.broker.getMarketInsurancePoolAccount(market)
 	if err != nil {
 		return err
 	}
