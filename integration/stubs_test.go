@@ -101,7 +101,7 @@ func (b *brokerStub) getMarketInsurancePoolAccount(market string) (proto.Account
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_INSURANCE {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_INSURANCE {
 			return v, nil
 		}
 	}
@@ -112,7 +112,7 @@ func (b *brokerStub) getTraderMarginAccount(trader, market string) (proto.Accoun
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == proto.AccountType_MARGIN && v.MarketID == market {
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
 			return v, nil
 		}
 	}
@@ -123,7 +123,7 @@ func (b *brokerStub) getMarketSettlementAccount(market string) (proto.Account, e
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_SETTLEMENT {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			return v, nil
 		}
 	}
@@ -134,7 +134,7 @@ func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (proto.Accoun
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return v, nil
 		}
 	}
