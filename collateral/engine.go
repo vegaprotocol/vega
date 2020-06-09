@@ -1080,6 +1080,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 	if acc.Asset == TokenAsset {
 		e.totalTokens += inc
 	}
+	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	e.buf.Add(*acc)
 	return nil
 }

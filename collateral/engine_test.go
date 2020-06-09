@@ -88,6 +88,7 @@ func testInitialTokens(t *testing.T) {
 	acc, err = eng.GetPartyTokenAccount(trader)
 	assert.NoError(t, err)
 	assert.NotNil(t, acc)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, eng.IncrementBalance(context.Background(), acc.Id, 10000))
 	acc, err = eng.GetPartyTokenAccount(trader)
 	assert.NoError(t, err)
@@ -235,6 +236,7 @@ func testTransferComplexLoss(t *testing.T) {
 	_ = eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	marginTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err = eng.Engine.IncrementBalance(context.Background(), marginTrader, half)
 	assert.Nil(t, err)
 
@@ -295,6 +297,7 @@ func testDistributeWin(t *testing.T) {
 
 	// set settlement account
 	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err := eng.Engine.IncrementBalance(context.Background(), eng.marketSettlementID, price*2)
 	assert.Nil(t, err)
 
@@ -397,6 +400,7 @@ func testProcessBoth(t *testing.T) {
 	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err = eng.Engine.IncrementBalance(context.Background(), marginMoneyTrader, price*5)
 	assert.Nil(t, err)
 
@@ -507,6 +511,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 	}
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	transfers := eng.getTestMTMTransfer(pos)
 	_, _, err = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
 	// this should return an error
@@ -533,6 +538,7 @@ func testProcessBothProRated(t *testing.T) {
 	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err = eng.Engine.IncrementBalance(context.Background(), marginMoneyTrader, price*5)
 	assert.Nil(t, err)
 
@@ -609,6 +615,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err = eng.Engine.IncrementBalance(context.Background(), marginMoneyTrader, price*5)
 	assert.Nil(t, err)
 
@@ -683,6 +690,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 	assert.Nil(t, err)
 
 	// add balance to margin account for trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err = eng.Engine.IncrementBalance(context.Background(), marginID, 100)
 	assert.Nil(t, err)
 
@@ -702,7 +710,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 			party: trader,
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1111,7 +1119,7 @@ func TestMTMLossSocialization(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(14)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(12)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(14)
 	_ = eng.Engine.CreatePartyGeneralAccount(context.Background(), lossTrader1, testMarketAsset)
 	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), lossTrader1, testMarketID, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), margin, 500)
@@ -1197,7 +1205,7 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(4)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1219,6 +1227,14 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 
 	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
 		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+			assert.Equal(t, acc.Balance, uint64(100))
+		}
+	})
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
 			assert.Equal(t, acc.Balance, uint64(100))
 		}
 	})
@@ -1268,7 +1284,7 @@ func TestMarginUpdates(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1304,7 +1320,7 @@ func TestClearMarket(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1325,7 +1341,7 @@ func TestClearMarketNoMargin(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 
@@ -1344,7 +1360,7 @@ func TestWithdrawalOK(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1361,7 +1377,7 @@ func TestWithdrawalExact(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1378,7 +1394,7 @@ func TestWithdrawalNotEnough(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1396,7 +1412,7 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1415,11 +1431,13 @@ func TestChangeBalance(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	account, err := eng.Engine.GetAccountByID(acc)
 	assert.NoError(t, err)
 	assert.Equal(t, account.Balance, uint64(500))
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.Engine.IncrementBalance(context.Background(), acc, 250)
 	account, err = eng.Engine.GetAccountByID(acc)
 	assert.Equal(t, account.Balance, uint64(750))
