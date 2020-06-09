@@ -249,6 +249,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -337,6 +338,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	_ = broker.Subscribe(l.transferSub, true)
 	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
 	_ = broker.Subscribe(l.orderSub, true)
+	_ = broker.Subscribe(l.accountSub, true)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(

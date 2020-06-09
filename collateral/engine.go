@@ -1,6 +1,7 @@
 package collateral
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -42,6 +43,11 @@ type AccountBuffer interface {
 	Add(types.Account)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/collateral Broker
+type Broker interface {
+	Send(event events.Event)
+}
+
 // LossSocializationBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/collateral LossSocializationBuf
 type LossSocializationBuf interface {
@@ -57,6 +63,7 @@ type Engine struct {
 
 	accs        map[string]*types.Account
 	buf         AccountBuffer
+	broker      Broker
 	lossSocBuf  LossSocializationBuf
 	totalTokens uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
@@ -66,7 +73,7 @@ type Engine struct {
 }
 
 // New instantiates a new collateral engine
-func New(log *logging.Logger, conf Config, buf AccountBuffer, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
+func New(log *logging.Logger, conf Config, broker Broker, buf AccountBuffer, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -75,6 +82,7 @@ func New(log *logging.Logger, conf Config, buf AccountBuffer, lossSocBuf LossSoc
 		Config:      conf,
 		accs:        make(map[string]*types.Account, initialAccountSize),
 		buf:         buf,
+		broker:      broker,
 		currentTime: now.UnixNano(),
 		idbuf:       make([]byte, 256),
 		lossSocBuf:  lossSocBuf,
@@ -194,7 +202,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
 // return ledger move stuff here, too (separate return value, because we need to stream those)
-func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error) {
+func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil, nil
@@ -556,8 +564,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 }
 
 // MarginUpdate will run the margin updates over a set of risk events (margin updates)
-func (e *Engine) MarginUpdateOnOrder(
-	marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
+func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
 	// create "fake" settle account for market ID
 	settle := &types.Account{
 		MarketID: marketID,
@@ -870,7 +877,7 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 
 // CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
 // if no general account exist for the trader for the given asset
-func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (string, error) {
+func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error) {
 	marginID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
 		// OK no margin ID, so let's try to get the general id then
@@ -895,6 +902,7 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 		}
 		e.accs[marginID] = &acc
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.buf.Add(acc)
 	}
 	return marginID, nil
@@ -936,7 +944,7 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 
 // RemoveDistressed will remove all distressed trader in the event positions
 // for a given market and asset
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
+func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
 	tl := len(traders)
 	if tl == 0 {
 		return nil, nil
@@ -983,7 +991,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 
 // CreateMarketAccounts will create all required accounts for a market once
 // a new market is accepted through the network
-func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) (insuranceID, settleID string) {
+func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string, insurance uint64) (insuranceID, settleID string) {
 	insuranceID = e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
 	_, ok := e.accs[insuranceID]
 	if !ok {
@@ -996,6 +1004,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) 
 			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
 		e.accs[insuranceID] = insAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
 		e.buf.Add(*insAcc)
 
 	}
@@ -1011,6 +1020,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance uint64) 
 			Type:     types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
 		}
 		e.accs[settleID] = setAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
 		e.buf.Add(*setAcc)
 	}
 

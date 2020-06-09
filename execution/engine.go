@@ -177,7 +177,7 @@ func NewEngine(
 		return nil
 	}
 	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, lossSocBuf, now)
+	cengine, err := collateral.New(log, executionConfig.Collateral, broker, accountBuf, lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
@@ -320,7 +320,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)

@@ -395,7 +395,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// ensure party have a general account, and margin account is / can be created
 	asset, _ := m.mkt.GetAsset()
-	_, err := m.collateral.CreatePartyMarginAccount(order.PartyID, order.MarketID, asset)
+	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.PartyID, order.MarketID, asset)
 	if err != nil {
 		m.log.Error("Margin account verification failed",
 			logging.String("party-id", order.PartyID),
@@ -666,7 +666,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
 		var movements *types.TransferResponse
-		movements, err = m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
+		movements, err = m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -779,7 +779,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	m.settlement.RemoveDistressed(closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
-	movements, err := m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
+	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
@@ -800,7 +800,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
 
-	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
+	_, responses, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug(
 			"ledger movements after MTM on traders who closed out distressed",
@@ -945,7 +945,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(m.GetID(), riskUpdate)
+		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
@@ -1021,7 +1021,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
 	asset, _ := m.mkt.GetAsset()
-	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
+	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to process mark to market settlement (collateral)",
