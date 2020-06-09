@@ -140,9 +140,9 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 	}
 	var err error
 	if err = e.validateProposal(p); err != nil {
-		p.State = types.Proposal_REJECTED
+		p.State = types.Proposal_STATE_REJECTED
 	}
-	if p.State != types.Proposal_OPEN {
+	if p.State != types.Proposal_STATE_OPEN {
 		delete(e.proposals, p.ID)
 		delete(e.proposalRefs, p.Reference)
 	} else {
@@ -202,7 +202,7 @@ func (e *Engine) AddVote(v types.Vote) error {
 	}
 	// we only want to count the last vote, so add to yes/no map, delete from the other
 	// if the party hasn't cast a vote yet, the delete is just a noop
-	if v.Value == types.Vote_YES {
+	if v.Value == types.Vote_VALUE_YES {
 		delete(p.no, v.PartyID)
 		p.yes[v.PartyID] = &v
 	} else {

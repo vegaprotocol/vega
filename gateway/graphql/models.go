@@ -287,12 +287,6 @@ type ProposalTerms struct {
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
 	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
-	// Value from 0 to 1.
-	RequiredParticipation float64 `json:"requiredParticipation"`
-	// Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
-	// Value from 0 to 1.
-	RequiredMajority float64 `json:"requiredMajority"`
 	// Actual change being introduced by the proposal - action the proposal triggers if passed and enacted.
 	Change ProposalChange `json:"change"`
 }
@@ -305,14 +299,6 @@ type ProposalTermsInput struct {
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
 	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Optional field defining participation level required for the proposal to pass.
-	// Constrained by `minRequiredParticipation` network parameter.
-	// Value from 0 to 1. Omit to use the network parameter value.
-	RequiredParticipation *float64 `json:"requiredParticipation"`
-	// Optional field defining majority level required for the proposal to pass.
-	// Constrained by "minRequiredParticipation" network parameter.
-	// Value from 0.5 to 1. Omit to use the network parameter value.
-	RequiredMajority *float64 `json:"requiredMajority"`
 	// Field defining new market change - the proposal will create new market if passed and enacted.
 	// It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
 	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
@@ -430,18 +416,18 @@ type UpdateNetwork struct {
 	// can be set to be executed (if that proposal passed).
 	// Value represents duration in seconds.
 	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that restricts the minimum participation level
-	// allowed to be set for a proposal. Value from 0 and 1.
-	MinRequiredParticipation *float64 `json:"minRequiredParticipation"`
-	// Network parameter that restricts the minimum majority level
-	// allowed to be set for a proposal. Value from 0.5 to 1.
-	MinRequiredMajority *float64 `json:"minRequiredMajority"`
+	// Network parameter that sets participation level required for any proposal to pass.
+	// Value from 0 to 1.
+	RequiredParticipation *float64 `json:"requiredParticipation"`
+	// Network parameter that sets majority level required for any proposal to pass.
+	// Value from 0.5 to 1.
+	RequiredMajority *float64 `json:"requiredMajority"`
 	// Network parameter setting minimum balance required for a party
 	// to be able to submit a new proposal. Value greater than 0 to 1.
-	MinProposingBalance *float64 `json:"minProposingBalance"`
+	MinProposerBalance *float64 `json:"minProposerBalance"`
 	// Network parameter setting minimum balance required for a party
 	// to be able to cast a vote.  Value greater than 0 to 1.
-	MinVotingBalance *float64 `json:"minVotingBalance"`
+	MinVoterBalance *float64 `json:"minVoterBalance"`
 }
 
 func (UpdateNetwork) IsProposalChange() {}
@@ -462,18 +448,18 @@ type UpdateNetworkInput struct {
 	// can be set to be executed (if that proposal passed).
 	// Value represents duration in seconds.
 	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that restricts the minimum participation level
-	// allowed to be set for a proposal. Value from 0 and 1.
-	MinRequiredParticipation *float64 `json:"minRequiredParticipation"`
-	// Network parameter that restricts the minimum majority level
-	// allowed to be set for a proposal. Value from 0.5 to 1.
-	MinRequiredMajority *float64 `json:"minRequiredMajority"`
+	// Network parameter that sets participation level required for any proposal to pass.
+	// Value from 0 to 1.
+	RequiredParticipation *float64 `json:"requiredParticipation"`
+	// Network parameter that sets majority level required for any proposal to pass.
+	// Value from 0.5 to 1.
+	RequiredMajority *float64 `json:"requiredMajority"`
 	// Network parameter setting minimum balance required for a party
 	// to be able to submit a new proposal. Value greater than 0 to 1.
-	MinProposingBalance *float64 `json:"minProposingBalance"`
+	MinProposerBalance *float64 `json:"minProposerBalance"`
 	// Network parameter setting minimum balance required for a party
 	// to be able to cast a vote.  Value greater than 0 to 1.
-	MinVotingBalance *float64 `json:"minVotingBalance"`
+	MinVoterBalance *float64 `json:"minVoterBalance"`
 }
 
 type Vote struct {

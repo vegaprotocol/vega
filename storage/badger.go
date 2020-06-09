@@ -24,6 +24,9 @@ var (
 	// ErrTimeoutReached signals that at timeout occurs while processing
 	// the badger query
 	ErrTimeoutReached = errors.New("context cancelled due to timeout")
+
+	// ErrUnspecifiedType is used when an object has Type == unspecified.
+	ErrUnspecifiedType = errors.New("attempting to store an object with unspecified type")
 )
 
 type badgerStore struct {
@@ -324,19 +327,19 @@ func (bs *badgerStore) tradeOrderIDKey(orderID, ID string) []byte {
 // accountGeneralKey relates only to a party and asset, no market index/references
 func (bs *badgerStore) accountInsuranceIDKey(marketID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
-		bs.getAccountTypePrefix(types.AccountType_INSURANCE), marketID, assetID))
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_INSURANCE), marketID, assetID))
 }
 
 // accountGeneralKey relates only to a party and asset, no market index/references
 func (bs *badgerStore) accountGeneralIDKey(partyID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
-		bs.getAccountTypePrefix(types.AccountType_GENERAL), partyID, assetID))
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_GENERAL), partyID, assetID))
 }
 
 // accountMarginKey is composed from a party market and asset, has a market index (future work could add an asset index)
 func (bs *badgerStore) accountMarginIDKey(partyID string, marketID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",
-		bs.getAccountTypePrefix(types.AccountType_MARGIN), partyID, marketID, assetID))
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_MARGIN), partyID, marketID, assetID))
 }
 
 // accountMarketKey is used to provide an index of all accounts for a particular market (no party scope).
@@ -356,13 +359,13 @@ func (bs *badgerStore) accountAssetKey(assetID string, partyID string, accountID
 // Currently we only write GENERAL and MARGIN type records to store.
 func (bs *badgerStore) getAccountTypePrefix(accType types.AccountType) string {
 	switch accType {
-	case types.AccountType_MARGIN:
+	case types.AccountType_ACCOUNT_TYPE_MARGIN:
 		return "MP"
-	case types.AccountType_SETTLEMENT:
+	case types.AccountType_ACCOUNT_TYPE_SETTLEMENT:
 		return "SP"
-	case types.AccountType_INSURANCE:
+	case types.AccountType_ACCOUNT_TYPE_INSURANCE:
 		return "IP"
-	case types.AccountType_GENERAL:
+	case types.AccountType_ACCOUNT_TYPE_GENERAL:
 		return "GP"
 	default:
 		return "ERR"

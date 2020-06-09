@@ -215,7 +215,7 @@ type account struct {
 
 func getTraderMarginAccount(accs []account, market string) (account, error) {
 	for _, v := range accs {
-		if v.Type == proto.AccountType_MARGIN && v.Market == market {
+		if v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.Market == market {
 			return v, nil
 		}
 	}
@@ -224,7 +224,7 @@ func getTraderMarginAccount(accs []account, market string) (account, error) {
 
 func getTraderGeneralAccount(accs []account, asset string) (account, error) {
 	for _, v := range accs {
-		if v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+		if v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return v, nil
 		}
 	}
@@ -233,7 +233,7 @@ func getTraderGeneralAccount(accs []account, asset string) (account, error) {
 
 func traderHaveGeneralAccount(accs []account, asset string) bool {
 	for _, v := range accs {
-		if v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+		if v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return true
 		}
 	}

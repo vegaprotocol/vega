@@ -1749,9 +1749,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposal | [Proposal](#vega.Proposal) |  |  |
-| yes | [Vote](#vega.Vote) | repeated |  |
-| no | [Vote](#vega.Vote) | repeated |  |
+| proposal | [Proposal](#vega.Proposal) |  | Proposal |
+| yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
+| no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
 
 
 
@@ -1770,8 +1770,8 @@
 | maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
 | minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
 | maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| minRequiredParticipation | [float](#float) |  | Constrains minimum participation level allowed to be set for a proposal. Value from `0` to `1`. |
-| minRequiredMajority | [float](#float) |  | Constrains minimum majority level allowed to be set for a proposal. Value from `0.5` to `1`. |
+| requiredParticipation | [float](#float) |  | Participation level required for any proposal to pass. Value from `0` to `1`. |
+| requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
 | minProposingBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVotingBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
 
@@ -1818,12 +1818,12 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| reference | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| state | [Proposal.State](#vega.Proposal.State) |  |  |
-| timestamp | [int64](#int64) |  |  |
-| terms | [ProposalTerms](#vega.ProposalTerms) |  |  |
+| ID | [string](#string) |  | Proposal unique identifier. |
+| reference | [string](#string) |  | Proposal reference. |
+| partyID | [string](#string) |  | Proposal author, identifier of the party submitting the proposal. |
+| state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition) |
+| timestamp | [int64](#int64) |  | Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. |
+| terms | [ProposalTerms](#vega.ProposalTerms) |  | Proposal configuration and the actual change that is meant to be executed when proposal is enacted. |
 
 
 
@@ -1840,13 +1840,11 @@ To be implemented
 | ----- | ---- | ----- | ----------- |
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal. Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters. |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed). Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. |
-| requiredParticipation | [float](#float) |  | Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter. Value from `0` to `1`; `0` to use network parameter value. |
-| requiredMajority | [float](#float) |  | Majority level required for the proposal to pass. Constrained by `minRequiredMajority` network parameter. Value from `0.5` to `1`; `0` to use network parameter value |
-| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition |
-| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
-| newMarket | [NewMarket](#vega.NewMarket) |  |  |
-| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
-| newAsset | [NewAsset](#vega.NewAsset) |  |  |
+| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition. |
+| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
+| newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
+| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
+| newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
 
 
 
@@ -1886,10 +1884,10 @@ TODO
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| value | [Vote.Value](#vega.Vote.Value) |  |  |
-| proposalID | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| partyID | [string](#string) |  | Voter&#39;s party identifier. |
+| value | [Vote.Value](#vega.Vote.Value) |  | Actual vote. |
+| proposalID | [string](#string) |  | Identifier of the proposal being voted on. |
+| timestamp | [int64](#int64) |  | Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network. |
 
 
 
@@ -1911,12 +1909,13 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
-| OPEN | 1 | Proposal is open for voting. |
-| PASSED | 2 | Proposal has gained enough support to be executed. |
-| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
-| DECLINED | 4 | Proposal didn&#39;t get enough votes |
-| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
+| STATE_UNSPECIFIED | 0 | Default value, always invalid. |
+| STATE_FAILED | 1 | Proposal enactment has failed - even though proposal has passed, its execusion could not be performed. |
+| STATE_OPEN | 2 | Proposal is open for voting. |
+| STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
+| STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements). |
+| STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
+| STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 
 
@@ -1927,8 +1926,9 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NO | 0 |  |
-| YES | 1 |  |
+| VALUE_UNSPECIFIED | 0 | Default value, always invalid. |
+| VALUE_NO | 1 | A vote against the proposal. |
+| VALUE_YES | 2 | A vote in favour of the proposal. |
 
 
 
@@ -2907,11 +2907,11 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ALL | 0 |  |
-| INSURANCE | 1 |  |
-| SETTLEMENT | 2 |  |
-| MARGIN | 3 |  |
-| GENERAL | 4 |  |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
+| ACCOUNT_TYPE_INSURANCE | 1 |  |
+| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
+| ACCOUNT_TYPE_MARGIN | 3 |  |
+| ACCOUNT_TYPE_GENERAL | 4 |  |
 
 
 
@@ -2922,9 +2922,10 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DISCONNECTED | 0 |  |
-| REPLAYING | 1 |  |
-| CONNECTED | 2 |  |
+| CHAIN_STATUS_UNSPECIFIED | 0 |  |
+| CHAIN_STATUS_DISCONNECTED | 1 |  |
+| CHAIN_STATUS_REPLAYING | 2 |  |
+| CHAIN_STATUS_CONNECTED | 3 |  |
 
 
 
@@ -3056,14 +3057,15 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LOSS | 0 |  |
-| WIN | 1 |  |
-| CLOSE | 2 |  |
-| MTM_LOSS | 3 |  |
-| MTM_WIN | 4 |  |
-| MARGIN_LOW | 5 |  |
-| MARGIN_HIGH | 6 |  |
-| MARGIN_CONFISCATED | 7 |  |
+| TRANSFER_TYPE_UNSPECIFIED | 0 |  |
+| TRANSFER_TYPE_LOSS | 1 |  |
+| TRANSFER_TYPE_WIN | 2 |  |
+| TRANSFER_TYPE_CLOSE | 3 |  |
+| TRANSFER_TYPE_MTM_LOSS | 4 |  |
+| TRANSFER_TYPE_MTM_WIN | 5 |  |
+| TRANSFER_TYPE_MARGIN_LOW | 6 |  |
+| TRANSFER_TYPE_MARGIN_HIGH | 7 |  |
+| TRANSFER_TYPE_MARGIN_CONFISCATED | 8 |  |
 
 
 

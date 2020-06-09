@@ -64,7 +64,7 @@ func New(log *logging.Logger, conf Config, clt BlockchainClient) *Status {
 			log:               log,
 			config:            conf,
 			client:            clt,
-			status:            uint32(types.ChainStatus_DISCONNECTED),
+			status:            uint32(types.ChainStatus_CHAIN_STATUS_DISCONNECTED),
 			starting:          true,
 			retriesCount:      int(conf.Retries),
 			retriesInitCount:  int(conf.Retries),
@@ -146,7 +146,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	defer cs.cfgMu.Unlock()
 	newStatus := status
 	_, err := cs.client.Health()
-	if (status == types.ChainStatus_DISCONNECTED || status == types.ChainStatus_REPLAYING) && err == nil {
+	if (status == types.ChainStatus_CHAIN_STATUS_DISCONNECTED || status == types.ChainStatus_CHAIN_STATUS_REPLAYING) && err == nil {
 		cs.starting = false
 		cs.retriesCount = int(cs.config.Retries)
 		// node is connected, now let's check if we are replaying
@@ -169,19 +169,19 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 		cs.notifyChainVersion(res.NodeInfo.Version)
 
 		if res.SyncInfo.CatchingUp {
-			newStatus = types.ChainStatus_REPLAYING
+			newStatus = types.ChainStatus_CHAIN_STATUS_REPLAYING
 		} else {
-			newStatus = types.ChainStatus_CONNECTED
+			newStatus = types.ChainStatus_CHAIN_STATUS_CONNECTED
 		}
-	} else if status == types.ChainStatus_CONNECTED && err != nil {
-		newStatus = types.ChainStatus_DISCONNECTED
+	} else if status == types.ChainStatus_CHAIN_STATUS_CONNECTED && err != nil {
+		newStatus = types.ChainStatus_CHAIN_STATUS_DISCONNECTED
 	}
 
-	if status == types.ChainStatus_DISCONNECTED {
+	if status == types.ChainStatus_CHAIN_STATUS_DISCONNECTED {
 		cs.retriesCount--
 	}
 
-	if newStatus == types.ChainStatus_CONNECTED {
+	if newStatus == types.ChainStatus_CHAIN_STATUS_CONNECTED {
 		cs.retriesCount = cs.retriesInitCount
 		// Check backlog length
 		utx, err := cs.client.GetUnconfirmedTxCount(context.Background())
@@ -213,7 +213,7 @@ func (cs *ChainStatus) start(ctx context.Context) {
 			currentStatus = cs.tick(currentStatus)
 			// if status changed to disconnect, we try to call the onChainDisconnect
 			// callback
-			if currentStatus == types.ChainStatus_DISCONNECTED && cs.onChainDisconnect != nil && !cs.starting {
+			if currentStatus == types.ChainStatus_CHAIN_STATUS_DISCONNECTED && cs.onChainDisconnect != nil && !cs.starting {
 				cs.log.Info("Chain is disconnected, we'll try to reconnect",
 					logging.Int("retries-left", cs.retriesCount),
 				)

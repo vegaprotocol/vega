@@ -262,11 +262,9 @@ type ComplexityRoot struct {
 	}
 
 	ProposalTerms struct {
-		Change                func(childComplexity int) int
-		ClosingDatetime       func(childComplexity int) int
-		EnactmentDatetime     func(childComplexity int) int
-		RequiredMajority      func(childComplexity int) int
-		RequiredParticipation func(childComplexity int) int
+		Change            func(childComplexity int) int
+		ClosingDatetime   func(childComplexity int) int
+		EnactmentDatetime func(childComplexity int) int
 	}
 
 	ProposalVote struct {
@@ -378,14 +376,14 @@ type ComplexityRoot struct {
 	}
 
 	UpdateNetwork struct {
-		MaxCloseInSeconds        func(childComplexity int) int
-		MaxEnactInSeconds        func(childComplexity int) int
-		MinCloseInSeconds        func(childComplexity int) int
-		MinEnactInSeconds        func(childComplexity int) int
-		MinProposingBalance      func(childComplexity int) int
-		MinRequiredMajority      func(childComplexity int) int
-		MinRequiredParticipation func(childComplexity int) int
-		MinVotingBalance         func(childComplexity int) int
+		MaxCloseInSeconds     func(childComplexity int) int
+		MaxEnactInSeconds     func(childComplexity int) int
+		MinCloseInSeconds     func(childComplexity int) int
+		MinEnactInSeconds     func(childComplexity int) int
+		MinProposerBalance    func(childComplexity int) int
+		MinVoterBalance       func(childComplexity int) int
+		RequiredMajority      func(childComplexity int) int
+		RequiredParticipation func(childComplexity int) int
 	}
 
 	Vote struct {
@@ -1534,20 +1532,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.EnactmentDatetime(childComplexity), true
 
-	case "ProposalTerms.requiredMajority":
-		if e.complexity.ProposalTerms.RequiredMajority == nil {
-			break
-		}
-
-		return e.complexity.ProposalTerms.RequiredMajority(childComplexity), true
-
-	case "ProposalTerms.requiredParticipation":
-		if e.complexity.ProposalTerms.RequiredParticipation == nil {
-			break
-		}
-
-		return e.complexity.ProposalTerms.RequiredParticipation(childComplexity), true
-
 	case "ProposalVote.proposalID":
 		if e.complexity.ProposalVote.ProposalID == nil {
 			break
@@ -2216,33 +2200,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateNetwork.MinEnactInSeconds(childComplexity), true
 
-	case "UpdateNetwork.minProposingBalance":
-		if e.complexity.UpdateNetwork.MinProposingBalance == nil {
+	case "UpdateNetwork.minProposerBalance":
+		if e.complexity.UpdateNetwork.MinProposerBalance == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MinProposingBalance(childComplexity), true
+		return e.complexity.UpdateNetwork.MinProposerBalance(childComplexity), true
 
-	case "UpdateNetwork.minRequiredMajority":
-		if e.complexity.UpdateNetwork.MinRequiredMajority == nil {
+	case "UpdateNetwork.minVoterBalance":
+		if e.complexity.UpdateNetwork.MinVoterBalance == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MinRequiredMajority(childComplexity), true
+		return e.complexity.UpdateNetwork.MinVoterBalance(childComplexity), true
 
-	case "UpdateNetwork.minRequiredParticipation":
-		if e.complexity.UpdateNetwork.MinRequiredParticipation == nil {
+	case "UpdateNetwork.requiredMajority":
+		if e.complexity.UpdateNetwork.RequiredMajority == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MinRequiredParticipation(childComplexity), true
+		return e.complexity.UpdateNetwork.RequiredMajority(childComplexity), true
 
-	case "UpdateNetwork.minVotingBalance":
-		if e.complexity.UpdateNetwork.MinVotingBalance == nil {
+	case "UpdateNetwork.requiredParticipation":
+		if e.complexity.UpdateNetwork.RequiredParticipation == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetwork.MinVotingBalance(childComplexity), true
+		return e.complexity.UpdateNetwork.RequiredParticipation(childComplexity), true
 
 	case "Vote.datetime":
 		if e.complexity.Vote.Datetime == nil {
@@ -3558,28 +3542,27 @@ type UpdateNetwork {
   maxEnactInSeconds: Int
 
   """
-  Network parameter that restricts the minimum participation level
-  allowed to be set for a proposal. Value from 0 and 1.
+  Network parameter that sets participation level required for any proposal to pass.
+  Value from 0 to 1.
   """
-  minRequiredParticipation: Float
-
+  requiredParticipation: Float
   """
-  Network parameter that restricts the minimum majority level
-  allowed to be set for a proposal. Value from 0.5 to 1.
+  Network parameter that sets majority level required for any proposal to pass.
+  Value from 0.5 to 1.
   """
-  minRequiredMajority: Float
+  requiredMajority: Float
 
   """
   Network parameter setting minimum balance required for a party
   to be able to submit a new proposal. Value greater than 0 to 1.
   """
-  minProposingBalance: Float
+  minProposerBalance: Float
 
   """
   Network parameter setting minimum balance required for a party
   to be able to cast a vote.  Value greater than 0 to 1.
   """
-  minVotingBalance: Float
+  minVoterBalance: Float
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -3608,27 +3591,27 @@ input UpdateNetworkInput {
   maxEnactInSeconds: Int
 
   """
-  Network parameter that restricts the minimum participation level
-  allowed to be set for a proposal. Value from 0 and 1.
+  Network parameter that sets participation level required for any proposal to pass.
+  Value from 0 to 1.
   """
-  minRequiredParticipation: Float
+  requiredParticipation: Float
   """
-  Network parameter that restricts the minimum majority level
-  allowed to be set for a proposal. Value from 0.5 to 1.
+  Network parameter that sets majority level required for any proposal to pass.
+  Value from 0.5 to 1.
   """
-  minRequiredMajority: Float
+  requiredMajority: Float
 
   """
   Network parameter setting minimum balance required for a party
   to be able to submit a new proposal. Value greater than 0 to 1.
   """
-  minProposingBalance: Float
+  minProposerBalance: Float
 
   """
   Network parameter setting minimum balance required for a party
   to be able to cast a vote.  Value greater than 0 to 1.
   """
-  minVotingBalance: Float
+  minVoterBalance: Float
 }
 
 
@@ -3646,16 +3629,6 @@ type ProposalTerms {
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   """
   enactmentDatetime: String!
-  """
-  Participation level required for the proposal to pass. Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
-  Value from 0 to 1.
-  """
-  requiredParticipation: Float!
-  """
-  Participation level required for the proposal to pass. Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
-  Value from 0 to 1.
-  """
-  requiredMajority: Float!
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -3674,19 +3647,6 @@ input ProposalTermsInput {
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   """
   enactmentDatetime: String!
-
-  """
-  Optional field defining participation level required for the proposal to pass.
-  Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
-  Value from 0 to 1. Omit to use the network parameter value.
-  """
-  requiredParticipation: Float
-  """
-  Optional field defining majority level required for the proposal to pass.
-  Constrained by "minRequiredParticipation" network parameter.
-  Value from 0.5 to 1. Omit to use the network parameter value.
-  """
-  requiredMajority: Float
 
 
   """
@@ -9035,74 +8995,6 @@ func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalTerms_requiredParticipation(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProposalTerms",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RequiredParticipation, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProposalTerms_requiredMajority(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProposalTerms",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RequiredMajority, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -12102,7 +11994,7 @@ func (ec *executionContext) _UpdateNetwork_maxEnactInSeconds(ctx context.Context
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_minRequiredParticipation(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_requiredParticipation(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12119,7 +12011,7 @@ func (ec *executionContext) _UpdateNetwork_minRequiredParticipation(ctx context.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MinRequiredParticipation, nil
+		return obj.RequiredParticipation, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12133,7 +12025,7 @@ func (ec *executionContext) _UpdateNetwork_minRequiredParticipation(ctx context.
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_minRequiredMajority(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_requiredMajority(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12150,7 +12042,7 @@ func (ec *executionContext) _UpdateNetwork_minRequiredMajority(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MinRequiredMajority, nil
+		return obj.RequiredMajority, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12164,7 +12056,7 @@ func (ec *executionContext) _UpdateNetwork_minRequiredMajority(ctx context.Conte
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_minProposingBalance(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_minProposerBalance(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12181,7 +12073,7 @@ func (ec *executionContext) _UpdateNetwork_minProposingBalance(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MinProposingBalance, nil
+		return obj.MinProposerBalance, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12195,7 +12087,7 @@ func (ec *executionContext) _UpdateNetwork_minProposingBalance(ctx context.Conte
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetwork_minVotingBalance(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetwork_minVoterBalance(ctx context.Context, field graphql.CollectedField, obj *UpdateNetwork) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12212,7 +12104,7 @@ func (ec *executionContext) _UpdateNetwork_minVotingBalance(ctx context.Context,
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MinVotingBalance, nil
+		return obj.MinVoterBalance, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13707,18 +13599,6 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "requiredParticipation":
-			var err error
-			it.RequiredParticipation, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "requiredMajority":
-			var err error
-			it.RequiredMajority, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "newMarket":
 			var err error
 			it.NewMarket, err = ec.unmarshalONewMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx, v)
@@ -13899,27 +13779,27 @@ func (ec *executionContext) unmarshalInputUpdateNetworkInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "minRequiredParticipation":
+		case "requiredParticipation":
 			var err error
-			it.MinRequiredParticipation, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			it.RequiredParticipation, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "minRequiredMajority":
+		case "requiredMajority":
 			var err error
-			it.MinRequiredMajority, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			it.RequiredMajority, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "minProposingBalance":
+		case "minProposerBalance":
 			var err error
-			it.MinProposingBalance, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			it.MinProposerBalance, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "minVotingBalance":
+		case "minVoterBalance":
 			var err error
-			it.MinVotingBalance, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			it.MinVoterBalance, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15842,16 +15722,6 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "requiredParticipation":
-			out.Values[i] = ec._ProposalTerms_requiredParticipation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "requiredMajority":
-			out.Values[i] = ec._ProposalTerms_requiredMajority(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "change":
 			out.Values[i] = ec._ProposalTerms_change(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -16823,14 +16693,14 @@ func (ec *executionContext) _UpdateNetwork(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._UpdateNetwork_minEnactInSeconds(ctx, field, obj)
 		case "maxEnactInSeconds":
 			out.Values[i] = ec._UpdateNetwork_maxEnactInSeconds(ctx, field, obj)
-		case "minRequiredParticipation":
-			out.Values[i] = ec._UpdateNetwork_minRequiredParticipation(ctx, field, obj)
-		case "minRequiredMajority":
-			out.Values[i] = ec._UpdateNetwork_minRequiredMajority(ctx, field, obj)
-		case "minProposingBalance":
-			out.Values[i] = ec._UpdateNetwork_minProposingBalance(ctx, field, obj)
-		case "minVotingBalance":
-			out.Values[i] = ec._UpdateNetwork_minVotingBalance(ctx, field, obj)
+		case "requiredParticipation":
+			out.Values[i] = ec._UpdateNetwork_requiredParticipation(ctx, field, obj)
+		case "requiredMajority":
+			out.Values[i] = ec._UpdateNetwork_requiredMajority(ctx, field, obj)
+		case "minProposerBalance":
+			out.Values[i] = ec._UpdateNetwork_minProposerBalance(ctx, field, obj)
+		case "minVoterBalance":
+			out.Values[i] = ec._UpdateNetwork_minVoterBalance(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

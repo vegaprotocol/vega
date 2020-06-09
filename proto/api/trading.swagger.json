@@ -661,13 +661,13 @@
             "required": false,
             "type": "string",
             "enum": [
-              "ALL",
-              "INSURANCE",
-              "SETTLEMENT",
-              "MARGIN",
-              "GENERAL"
+              "ACCOUNT_TYPE_UNSPECIFIED",
+              "ACCOUNT_TYPE_INSURANCE",
+              "ACCOUNT_TYPE_SETTLEMENT",
+              "ACCOUNT_TYPE_MARGIN",
+              "ACCOUNT_TYPE_GENERAL"
             ],
-            "default": "ALL"
+            "default": "ACCOUNT_TYPE_UNSPECIFIED"
           },
           {
             "name": "asset",
@@ -941,23 +941,26 @@
     "ProposalState": {
       "type": "string",
       "enum": [
-        "FAILED",
-        "OPEN",
-        "PASSED",
-        "REJECTED",
-        "DECLINED",
-        "ENACTED"
+        "STATE_UNSPECIFIED",
+        "STATE_FAILED",
+        "STATE_OPEN",
+        "STATE_PASSED",
+        "STATE_REJECTED",
+        "STATE_DECLINED",
+        "STATE_ENACTED"
       ],
-      "default": "FAILED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - FAILED: Proposal could not be enacted after being accepted by the network\n - OPEN: Proposal is open for voting.\n - PASSED: Proposal has gained enough support to be executed.\n - REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals)\n - DECLINED: Proposal didn't get enough votes\n - ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+      "default": "STATE_UNSPECIFIED",
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
     "VoteValue": {
       "type": "string",
       "enum": [
-        "NO",
-        "YES"
+        "VALUE_UNSPECIFIED",
+        "VALUE_NO",
+        "VALUE_YES"
       ],
-      "default": "NO"
+      "default": "VALUE_UNSPECIFIED",
+      "description": " - VALUE_UNSPECIFIED: Default value, always invalid.\n - VALUE_NO: A vote against the proposal.\n - VALUE_YES: A vote in favour of the proposal."
     },
     "apiAmendOrderRequest": {
       "type": "object",
@@ -1501,13 +1504,13 @@
     "vegaAccountType": {
       "type": "string",
       "enum": [
-        "ALL",
-        "INSURANCE",
-        "SETTLEMENT",
-        "MARGIN",
-        "GENERAL"
+        "ACCOUNT_TYPE_UNSPECIFIED",
+        "ACCOUNT_TYPE_INSURANCE",
+        "ACCOUNT_TYPE_SETTLEMENT",
+        "ACCOUNT_TYPE_MARGIN",
+        "ACCOUNT_TYPE_GENERAL"
       ],
-      "default": "ALL"
+      "default": "ACCOUNT_TYPE_UNSPECIFIED"
     },
     "vegaAssetSource": {
       "type": "object",
@@ -1578,11 +1581,12 @@
     "vegaChainStatus": {
       "type": "string",
       "enum": [
-        "DISCONNECTED",
-        "REPLAYING",
-        "CONNECTED"
+        "CHAIN_STATUS_UNSPECIFIED",
+        "CHAIN_STATUS_DISCONNECTED",
+        "CHAIN_STATUS_REPLAYING",
+        "CHAIN_STATUS_CONNECTED"
       ],
-      "default": "DISCONNECTED"
+      "default": "CHAIN_STATUS_UNSPECIFIED"
     },
     "vegaContinuousTrading": {
       "type": "object",
@@ -1660,19 +1664,22 @@
       "type": "object",
       "properties": {
         "proposal": {
-          "$ref": "#/definitions/vegaProposal"
+          "$ref": "#/definitions/vegaProposal",
+          "title": "Proposal"
         },
         "yes": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaVote"
-          }
+          },
+          "description": "All \"yes\" votes in favour of the proposal above."
         },
         "no": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaVote"
-          }
+          },
+          "description": "All \"no\" votes against the proposal above."
         }
       }
     },
@@ -1937,15 +1944,15 @@
           "format": "int64",
           "description": "Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
         },
-        "minRequiredParticipation": {
+        "requiredParticipation": {
           "type": "number",
           "format": "float",
-          "description": "Constrains minimum participation level allowed to be set for a proposal. Value from `0` to `1`."
+          "description": "Participation level required for any proposal to pass. Value from `0` to `1`."
         },
-        "minRequiredMajority": {
+        "requiredMajority": {
           "type": "number",
           "format": "float",
-          "description": "Constrains minimum majority level allowed to be set for a proposal. Value from `0.5` to `1`."
+          "description": "Majority level required for any proposal to pass. Value from `0.5` to `1`."
         },
         "minProposingBalance": {
           "type": "number",
@@ -2226,23 +2233,29 @@
       "type": "object",
       "properties": {
         "ID": {
-          "type": "string"
+          "type": "string",
+          "description": "Proposal unique identifier."
         },
         "reference": {
-          "type": "string"
+          "type": "string",
+          "description": "Proposal reference."
         },
         "partyID": {
-          "type": "string"
+          "type": "string",
+          "description": "Proposal author, identifier of the party submitting the proposal."
         },
         "state": {
-          "$ref": "#/definitions/ProposalState"
+          "$ref": "#/definitions/ProposalState",
+          "title": "Proposal state (see Proposal.State definition)"
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network."
         },
         "terms": {
-          "$ref": "#/definitions/vegaProposalTerms"
+          "$ref": "#/definitions/vegaProposalTerms",
+          "description": "Proposal configuration and the actual change that is meant to be executed when proposal is enacted."
         }
       }
     },
@@ -2259,31 +2272,25 @@
           "format": "int64",
           "description": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed).\nConstrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters."
         },
-        "requiredParticipation": {
-          "type": "number",
-          "format": "float",
-          "description": "Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.\nValue from `0` to `1`; `0` to use network parameter value."
-        },
-        "requiredMajority": {
-          "type": "number",
-          "format": "float",
-          "title": "Majority level required for the proposal to pass. Constrained by `minRequiredMajority` network parameter.\nValue from `0.5` to `1`; `0` to use network parameter value"
-        },
         "validationTimestamp": {
           "type": "string",
           "format": "int64"
         },
         "updateMarket": {
-          "$ref": "#/definitions/vegaUpdateMarket"
+          "$ref": "#/definitions/vegaUpdateMarket",
+          "description": "Proposal change for modifying an existing market on Vega."
         },
         "newMarket": {
-          "$ref": "#/definitions/vegaNewMarket"
+          "$ref": "#/definitions/vegaNewMarket",
+          "description": "Proposal change for creating new market on Vega."
         },
         "updateNetwork": {
-          "$ref": "#/definitions/vegaUpdateNetwork"
+          "$ref": "#/definitions/vegaUpdateNetwork",
+          "description": "Proposal change for updating Vega network parameters."
         },
         "newAsset": {
-          "$ref": "#/definitions/vegaNewAsset"
+          "$ref": "#/definitions/vegaNewAsset",
+          "description": "Proposal change for creating new assets on Vega."
         }
       }
     },
@@ -2608,17 +2615,21 @@
       "type": "object",
       "properties": {
         "partyID": {
-          "type": "string"
+          "type": "string",
+          "description": "Voter's party identifier."
         },
         "value": {
-          "$ref": "#/definitions/VoteValue"
+          "$ref": "#/definitions/VoteValue",
+          "description": "Actual vote."
         },
         "proposalID": {
-          "type": "string"
+          "type": "string",
+          "description": "Identifier of the proposal being voted on."
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network."
         }
       }
     }

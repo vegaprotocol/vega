@@ -286,7 +286,7 @@ func (s *Svc) PrepareProposal(
 	return &types.Proposal{
 		Reference: reference,
 		PartyID:   party,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     terms,
 	}, nil
 }

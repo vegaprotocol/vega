@@ -34,23 +34,23 @@ func TestAccount_GetByPartyAndAsset(t *testing.T) {
 	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
-	accs, err := accountStore.GetPartyAccounts(testAccountParty2, "", testAssetEUR, types.AccountType_ALL)
+	accs, err := accountStore.GetPartyAccounts(testAccountParty2, "", testAssetEUR, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 	assert.Equal(t, accs[0].Asset, testAssetEUR)
 	assert.Equal(t, accs[1].Asset, testAssetEUR)
 
-	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", testAssetEUR, types.AccountType_ALL)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", testAssetEUR, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 0)
 
-	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", testAssetUSD, types.AccountType_ALL)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", testAssetUSD, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 	assert.Equal(t, accs[0].Asset, testAssetUSD)
 	assert.Equal(t, accs[1].Asset, testAssetUSD)
 
-	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", testAssetGBP, types.AccountType_ALL)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", testAssetGBP, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 	assert.Equal(t, accs[0].Asset, testAssetGBP)
@@ -75,23 +75,23 @@ func TestAccount_GetByPartyAndType(t *testing.T) {
 	assert.Nil(t, err)
 
 	// General accounts
-	accs, err := accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_GENERAL)
+	accs, err := accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_ACCOUNT_TYPE_GENERAL)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 
 	// Margin accounts
-	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_MARGIN)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_ACCOUNT_TYPE_MARGIN)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 
 	// Invalid account type
-	accs, err = accountStore.GetPartyAccounts(testAccountParty2, "", "", types.AccountType_INSURANCE)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty2, "", "", types.AccountType_ACCOUNT_TYPE_INSURANCE)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), invalid)
 	assert.Nil(t, accs)
 
 	// Invalid account type
-	accs, err = accountStore.GetPartyAccounts(testAccountParty2, "", "", types.AccountType_SETTLEMENT)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty2, "", "", types.AccountType_ACCOUNT_TYPE_SETTLEMENT)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), invalid)
 	assert.Nil(t, accs)
@@ -112,13 +112,13 @@ func TestAccount_GetByPartyAndMarket(t *testing.T) {
 	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
-	accs, err := accountStore.GetPartyAccounts(testAccountParty1, testAccountMarket1, "", types.AccountType_ALL)
+	accs, err := accountStore.GetPartyAccounts(testAccountParty1, testAccountMarket1, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 	assert.Equal(t, testAccountMarket1, accs[0].MarketID)
 	assert.Equal(t, testAccountMarket1, accs[1].MarketID)
 
-	accs, err = accountStore.GetPartyAccounts(testAccountParty1, testAccountMarket2, "", types.AccountType_ALL)
+	accs, err = accountStore.GetPartyAccounts(testAccountParty1, testAccountMarket2, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
 	assert.Equal(t, testAccountMarket2, accs[0].MarketID)
@@ -140,7 +140,7 @@ func TestAccount_GetByParty(t *testing.T) {
 	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
-	accs, err := accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_ALL)
+	accs, err := accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 4)
 	assert.Equal(t, testAccountMarket1, accs[0].MarketID)
@@ -154,42 +154,42 @@ func getTestAccounts() []*types.Account {
 		{
 			Owner:    testAccountParty1,
 			MarketID: testAccountMarket1,
-			Type:     types.AccountType_GENERAL,
+			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetGBP,
 			Balance:  1024,
 		},
 		{
 			Owner:    testAccountParty1,
 			MarketID: testAccountMarket1,
-			Type:     types.AccountType_MARGIN,
+			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetGBP,
 			Balance:  1024,
 		},
 		{
 			Owner:    testAccountParty1,
 			MarketID: testAccountMarket2,
-			Type:     types.AccountType_GENERAL,
+			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetUSD,
 			Balance:  1,
 		},
 		{
 			Owner:    testAccountParty1,
 			MarketID: testAccountMarket2,
-			Type:     types.AccountType_MARGIN,
+			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetUSD,
 			Balance:  9,
 		},
 		{
 			Owner:    testAccountParty2,
 			MarketID: testAccountMarket2,
-			Type:     types.AccountType_GENERAL,
+			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetEUR,
 			Balance:  2048,
 		},
 		{
 			Owner:    testAccountParty2,
 			MarketID: testAccountMarket2,
-			Type:     types.AccountType_MARGIN,
+			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetEUR,
 			Balance:  1024,
 		},

@@ -18,17 +18,17 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *NetworkConfiguration) Validate() error {
-	if !(this.MinRequiredParticipation >= 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredParticipation", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.MinRequiredParticipation))
+	if !(this.RequiredParticipation >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("RequiredParticipation", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.RequiredParticipation))
 	}
-	if !(this.MinRequiredParticipation <= 1) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredParticipation", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinRequiredParticipation))
+	if !(this.RequiredParticipation <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("RequiredParticipation", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.RequiredParticipation))
 	}
-	if !(this.MinRequiredMajority >= 0.5) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredMajority", fmt.Errorf(`value '%v' must be greater than or equal to '0.5'`, this.MinRequiredMajority))
+	if !(this.RequiredMajority >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("RequiredMajority", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.RequiredMajority))
 	}
-	if !(this.MinRequiredMajority <= 1) {
-		return github_com_mwitkow_go_proto_validators.FieldError("MinRequiredMajority", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.MinRequiredMajority))
+	if !(this.RequiredMajority <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("RequiredMajority", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.RequiredMajority))
 	}
 	if !(this.MinProposingBalance > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinProposingBalance", fmt.Errorf(`value '%v' must be strictly greater than '0'`, this.MinProposingBalance))
@@ -86,18 +86,6 @@ func (this *ProposalTerms) Validate() error {
 	}
 	if !(this.EnactmentTimestamp > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("EnactmentTimestamp", fmt.Errorf(`value '%v' must be greater than '0'`, this.EnactmentTimestamp))
-	}
-	if !(this.RequiredParticipation >= 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("RequiredParticipation", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.RequiredParticipation))
-	}
-	if !(this.RequiredParticipation <= 1) {
-		return github_com_mwitkow_go_proto_validators.FieldError("RequiredParticipation", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.RequiredParticipation))
-	}
-	if !(this.RequiredMajority >= 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("RequiredMajority", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.RequiredMajority))
-	}
-	if !(this.RequiredMajority <= 1) {
-		return github_com_mwitkow_go_proto_validators.FieldError("RequiredMajority", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.RequiredMajority))
 	}
 	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateMarket); ok {
 		if oneOfNester.UpdateMarket != nil {

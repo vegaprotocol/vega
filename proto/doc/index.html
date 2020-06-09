@@ -4701,21 +4701,21 @@
                   <td>proposal</td>
                   <td><a href="#vega.Proposal">Proposal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal </p></td>
                 </tr>
 
                 <tr>
                   <td>yes</td>
                   <td><a href="#vega.Vote">Vote</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>All &#34;yes&#34; votes in favour of the proposal above. </p></td>
                 </tr>
 
                 <tr>
                   <td>no</td>
                   <td><a href="#vega.Vote">Vote</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>All &#34;no&#34; votes against the proposal above. </p></td>
                 </tr>
 
             </tbody>
@@ -4764,17 +4764,17 @@
                 </tr>
 
                 <tr>
-                  <td>minRequiredParticipation</td>
+                  <td>requiredParticipation</td>
                   <td><a href="#float">float</a></td>
                   <td></td>
-                  <td><p>Constrains minimum participation level allowed to be set for a proposal. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
+                  <td><p>Participation level required for any proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
                 </tr>
 
                 <tr>
-                  <td>minRequiredMajority</td>
+                  <td>requiredMajority</td>
                   <td><a href="#float">float</a></td>
                   <td></td>
-                  <td><p>Constrains minimum majority level allowed to be set for a proposal. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
+                  <td><p>Majority level required for any proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
                 </tr>
 
                 <tr>
@@ -4808,7 +4808,7 @@
               <tbody>
 
                 <tr>
-                  <td>minRequiredParticipation</td>
+                  <td>requiredParticipation</td>
                   <td>
                     <ul>
 
@@ -4821,11 +4821,11 @@
                 </tr>
 
                 <tr>
-                  <td>minRequiredMajority</td>
+                  <td>requiredMajority</td>
                   <td>
                     <ul>
 
-                      <li>float_gte: 0.5</li>
+                      <li>float_gte: 0</li>
 
                       <li>float_lte: 1</li>
 
@@ -4982,42 +4982,42 @@
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal unique identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal reference. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal author, identifier of the party submitting the proposal. </p></td>
                 </tr>
 
                 <tr>
                   <td>state</td>
                   <td><a href="#vega.Proposal.State">Proposal.State</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal state (see Proposal.State definition) </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. </p></td>
                 </tr>
 
                 <tr>
                   <td>terms</td>
                   <td><a href="#vega.ProposalTerms">ProposalTerms</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal configuration and the actual change that is meant to be executed when proposal is enacted. </p></td>
                 </tr>
 
             </tbody>
@@ -5103,54 +5103,38 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 </tr>
 
                 <tr>
-                  <td>requiredParticipation</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Participation level required for the proposal to pass. Constrained by <tt>minRequiredParticipation</tt> network parameter.
-Value from <tt>0</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredMajority</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Majority level required for the proposal to pass. Constrained by <tt>minRequiredMajority</tt> network parameter.
-Value from <tt>0.5</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value </p></td>
-                </tr>
-
-                <tr>
                   <td>validationTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>TODO: this should be moved into <tt>NewAsset</tt> definition </p></td>
+                  <td><p>TODO: this should be moved into <tt>NewAsset</tt> definition. </p></td>
                 </tr>
 
                 <tr>
                   <td>updateMarket</td>
                   <td><a href="#vega.UpdateMarket">UpdateMarket</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal change for modifying an existing market on Vega. </p></td>
                 </tr>
 
                 <tr>
                   <td>newMarket</td>
                   <td><a href="#vega.NewMarket">NewMarket</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal change for creating new market on Vega. </p></td>
                 </tr>
 
                 <tr>
                   <td>updateNetwork</td>
                   <td><a href="#vega.UpdateNetwork">UpdateNetwork</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal change for updating Vega network parameters. </p></td>
                 </tr>
 
                 <tr>
                   <td>newAsset</td>
                   <td><a href="#vega.NewAsset">NewAsset</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal change for creating new assets on Vega. </p></td>
                 </tr>
 
             </tbody>
@@ -5186,32 +5170,6 @@ Value from <tt>0.5</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value
                     <ul>
 
                       <li>int_gt: 0</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>requiredParticipation</td>
-                  <td>
-                    <ul>
-
-                      <li>float_gte: 0</li>
-
-                      <li>float_lte: 1</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>requiredMajority</td>
-                  <td>
-                    <ul>
-
-                      <li>float_gte: 0</li>
-
-                      <li>float_lte: 1</li>
 
                     </ul>
                   </td>
@@ -5296,28 +5254,28 @@ Value from <tt>0.5</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Voter&#39;s party identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>value</td>
                   <td><a href="#vega.Vote.Value">Vote.Value</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Actual vote. </p></td>
                 </tr>
 
                 <tr>
                   <td>proposalID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Identifier of the proposal being voted on. </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network. </p></td>
                 </tr>
 
             </tbody>
@@ -5387,38 +5345,44 @@ Value from <tt>0.5</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value
           <tbody>
 
               <tr>
-                <td>FAILED</td>
+                <td>STATE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Proposal could not be enacted after being accepted by the network</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>OPEN</td>
+                <td>STATE_FAILED</td>
                 <td>1</td>
+                <td><p>Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.</p></td>
+              </tr>
+
+              <tr>
+                <td>STATE_OPEN</td>
+                <td>2</td>
                 <td><p>Proposal is open for voting.</p></td>
               </tr>
 
               <tr>
-                <td>PASSED</td>
-                <td>2</td>
+                <td>STATE_PASSED</td>
+                <td>3</td>
                 <td><p>Proposal has gained enough support to be executed.</p></td>
               </tr>
 
               <tr>
-                <td>REJECTED</td>
-                <td>3</td>
-                <td><p>Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals)</p></td>
-              </tr>
-
-              <tr>
-                <td>DECLINED</td>
+                <td>STATE_REJECTED</td>
                 <td>4</td>
-                <td><p>Proposal didn&#39;t get enough votes</p></td>
+                <td><p>Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).</p></td>
               </tr>
 
               <tr>
-                <td>ENACTED</td>
+                <td>STATE_DECLINED</td>
                 <td>5</td>
+                <td><p>Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level).</p></td>
+              </tr>
+
+              <tr>
+                <td>STATE_ENACTED</td>
+                <td>6</td>
                 <td><p>Proposal has been executed and the changes under this proposal have now been applied.</p></td>
               </tr>
 
@@ -5434,15 +5398,21 @@ Value from <tt>0.5</tt> to <tt>1</tt>; <tt>0</tt> to use network parameter value
           <tbody>
 
               <tr>
-                <td>NO</td>
+                <td>VALUE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>YES</td>
+                <td>VALUE_NO</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>A vote against the proposal.</p></td>
+              </tr>
+
+              <tr>
+                <td>VALUE_YES</td>
+                <td>2</td>
+                <td><p>A vote in favour of the proposal.</p></td>
               </tr>
 
           </tbody>
@@ -8190,31 +8160,31 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>ALL</td>
+                <td>ACCOUNT_TYPE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INSURANCE</td>
+                <td>ACCOUNT_TYPE_INSURANCE</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>SETTLEMENT</td>
+                <td>ACCOUNT_TYPE_SETTLEMENT</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN</td>
+                <td>ACCOUNT_TYPE_MARGIN</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>GENERAL</td>
+                <td>ACCOUNT_TYPE_GENERAL</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
@@ -8231,20 +8201,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>DISCONNECTED</td>
+                <td>CHAIN_STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>REPLAYING</td>
+                <td>CHAIN_STATUS_DISCONNECTED</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>CONNECTED</td>
+                <td>CHAIN_STATUS_REPLAYING</td>
                 <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>CHAIN_STATUS_CONNECTED</td>
+                <td>3</td>
                 <td><p></p></td>
               </tr>
 
@@ -8643,50 +8619,56 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>LOSS</td>
+                <td>TRANSFER_TYPE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>WIN</td>
+                <td>TRANSFER_TYPE_LOSS</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>CLOSE</td>
+                <td>TRANSFER_TYPE_WIN</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MTM_LOSS</td>
+                <td>TRANSFER_TYPE_CLOSE</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MTM_WIN</td>
+                <td>TRANSFER_TYPE_MTM_LOSS</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_LOW</td>
+                <td>TRANSFER_TYPE_MTM_WIN</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_HIGH</td>
+                <td>TRANSFER_TYPE_MARGIN_LOW</td>
                 <td>6</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_CONFISCATED</td>
+                <td>TRANSFER_TYPE_MARGIN_HIGH</td>
                 <td>7</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_MARGIN_CONFISCATED</td>
+                <td>8</td>
                 <td><p></p></td>
               </tr>
 

@@ -199,14 +199,14 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		_ = mktsetup.colE.IncrementBalance(margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
-			proto.AccountType_MARGIN: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_MARGIN: &proto.Account{
 				Id:      margin,
-				Type:    proto.AccountType_MARGIN,
+				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: marginBal,
 			},
-			proto.AccountType_GENERAL: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_GENERAL: &proto.Account{
 				Id:      general,
-				Type:    proto.AccountType_GENERAL,
+				Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
 				Balance: generalBal,
 			},
 		}
@@ -298,16 +298,16 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 			return err
 		}
 		accounts := mktsetup.traderAccs[trader]
-		acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+		acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_ACCOUNT_TYPE_MARGIN].Id)
 		if err != nil {
 			return err
 		}
 		// sync margin account state
-		mktsetup.traderAccs[trader][proto.AccountType_MARGIN] = acc
+		mktsetup.traderAccs[trader][proto.AccountType_ACCOUNT_TYPE_MARGIN] = acc
 		if acc.Balance != margin {
 			return fmt.Errorf("expected %s margin account balance to be %d instead saw %d", trader, margin, acc.Balance)
 		}
-		acc, err = mktsetup.colE.GetAccountByID(accounts[proto.AccountType_GENERAL].Id)
+		acc, err = mktsetup.colE.GetAccountByID(accounts[proto.AccountType_ACCOUNT_TYPE_GENERAL].Id)
 		if err != nil {
 			return err
 		}
@@ -315,14 +315,14 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 			return fmt.Errorf("expected %s general account balance to be %d, instead saw %d", trader, general, acc.Balance)
 		}
 		// sync general account state
-		mktsetup.traderAccs[trader][proto.AccountType_GENERAL] = acc
+		mktsetup.traderAccs[trader][proto.AccountType_ACCOUNT_TYPE_GENERAL] = acc
 	}
 	return nil
 }
 
 func hasNotBeenAddedToTheMarket(trader string) error {
 	accounts := mktsetup.traderAccs[trader]
-	acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+	acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_ACCOUNT_TYPE_MARGIN].Id)
 	if err != nil || acc.Balance == 0 {
 		return nil
 	}

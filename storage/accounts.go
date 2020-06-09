@@ -87,7 +87,7 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 		return nil, ErrMissingMarketID
 	}
 
-	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_INSURANCE, marketID, false)
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_INSURANCE, marketID, false)
 	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for market: %s", marketID))
@@ -113,19 +113,19 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 		return nil, ErrMissingPartyID
 	}
 
-	if ty != types.AccountType_GENERAL && ty != types.AccountType_MARGIN && ty != types.AccountType_ALL {
+	if ty != types.AccountType_ACCOUNT_TYPE_GENERAL && ty != types.AccountType_ACCOUNT_TYPE_MARGIN && ty != types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
 	}
 
 	// first we get all accounts
 	// Read all GENERAL accounts for party
-	keyPrefix, validFor := a.badger.accountPartyPrefix(types.AccountType_GENERAL, partyID, false)
+	keyPrefix, validFor := a.badger.accountPartyPrefix(types.AccountType_ACCOUNT_TYPE_GENERAL, partyID, false)
 	generalAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for party: %s", partyID))
 	}
 	// Read all MARGIN accounts for party
-	keyPrefix, validFor = a.badger.accountPartyPrefix(types.AccountType_MARGIN, partyID, false)
+	keyPrefix, validFor = a.badger.accountPartyPrefix(types.AccountType_ACCOUNT_TYPE_MARGIN, partyID, false)
 	marginAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading margin accounts for party: %s", partyID))
@@ -136,7 +136,7 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 	for _, acc := range accounts {
 		if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 			(len(asset) <= 0 || asset == acc.Asset) &&
-			(ty == types.AccountType_ALL || ty == acc.Type) {
+			(ty == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED || ty == acc.Type) {
 			// ensure there's no duplicate
 			out = append(out, acc)
 		}
@@ -290,12 +290,17 @@ func (a *Account) notify(accs []*types.Account) {
 func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, error) {
 	batch := make(map[string][]byte)
 	for _, acc := range accounts {
-		if acc.Type == types.AccountType_SETTLEMENT {
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+			a.log.Error("attempting to store an account with UNSPECIFIED Type")
+			return nil, ErrUnspecifiedType
+		}
+
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			// do not save settlement account
 			continue
 		}
 		// Validate marketID as only MARGIN accounts should have a marketID specified
-		if acc.MarketID == "" && acc.Type != types.AccountType_GENERAL {
+		if acc.MarketID == "" && acc.Type != types.AccountType_ACCOUNT_TYPE_GENERAL {
 			err := fmt.Errorf("general account should not have a market")
 			a.log.Error(err.Error(), logging.Account(*acc))
 			return nil, err
@@ -311,12 +316,12 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			return nil, err
 		}
 
-		if acc.Type == types.AccountType_INSURANCE {
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
 			insuranceIDKey := a.badger.accountInsuranceIDKey(acc.MarketID, acc.Asset)
 			batch[string(insuranceIDKey)] = buf
 		}
 		// Check the type of account and write only the data required for GENERAL accounts.
-		if acc.Type == types.AccountType_GENERAL {
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			// General accounts have no scope of an individual market, they span all markets.
 			generalIDKey := a.badger.accountGeneralIDKey(acc.Owner, acc.Asset)
 			generalAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(generalIDKey))
@@ -324,7 +329,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			batch[string(generalAssetKey)] = generalIDKey
 		}
 		// Check the type of account and write only the data/keys required for MARGIN accounts.
-		if acc.Type == types.AccountType_MARGIN {
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketID, acc.Asset)
 			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIDKey))
 			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIDKey))
