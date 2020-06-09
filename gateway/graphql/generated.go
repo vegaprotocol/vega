@@ -3607,13 +3607,11 @@ input UpdateNetworkInput {
   """
   maxEnactInSeconds: Int
 
-
   """
   Network parameter that restricts the minimum participation level
   allowed to be set for a proposal. Value from 0 and 1.
   """
   minRequiredParticipation: Float
-
   """
   Network parameter that restricts the minimum majority level
   allowed to be set for a proposal. Value from 0.5 to 1.
@@ -3659,8 +3657,8 @@ type ProposalTerms {
   """
   requiredMajority: Float!
 
-  "Actual change being introduced by the proposal"
-  change: ProposalChange
+  "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
+  change: ProposalChange!
 }
 
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
@@ -3678,21 +3676,37 @@ input ProposalTermsInput {
   enactmentDatetime: String!
 
   """
-  Participation level required for the proposal to pass. Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
+  Optional field defining participation level required for the proposal to pass.
+  Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
   Value from 0 to 1. Omit to use network parameter value.
   """
   requiredParticipation: Float
   """
-  Participation level required for the proposal to pass. Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
-  Value from 0 to 1. Omit to use network parameter value.
+  Optional field defining majority level required for the proposal to pass.
+  Constrained by "minRequiredParticipation" network parameter.
+  Value from 0.5 to 1. Omit to use the network parameter value.
   """
   requiredMajority: Float
-  
-  "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
-  updateMarket: UpdateMarketInput
-  "Optional field to define new market change. If this is set along with another change, proposal will not be accepted."
+
+
+  """
+  Field defining new market change - the proposal will create new market if passed and enacted.
+  It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+  """
   newMarket: NewMarketInput
-  "Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted."
+  """
+  Field defining update market change - the proposal will update existing market if passed and enacted.
+  It can only be set if "newMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+  """
+  updateMarket: UpdateMarketInput
+  
+  """
+  Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
+  It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
+  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+  """
   updateNetwork: UpdateNetworkInput
 }
 
@@ -9113,11 +9127,14 @@ func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(ProposalChange)
 	fc.Result = res
-	return ec.marshalOProposalChange2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalChange(ctx, field.Selections, res)
+	return ec.marshalNProposalChange2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalChange(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalVote_vote(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
@@ -13702,15 +13719,15 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "updateMarket":
-			var err error
-			it.UpdateMarket, err = ec.unmarshalOUpdateMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "newMarket":
 			var err error
 			it.NewMarket, err = ec.unmarshalONewMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "updateMarket":
+			var err error
+			it.UpdateMarket, err = ec.unmarshalOUpdateMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15837,6 +15854,9 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 			}
 		case "change":
 			out.Values[i] = ec._ProposalTerms_change(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17563,6 +17583,16 @@ func (ec *executionContext) marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Proposal(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNProposalChange2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalChange(ctx context.Context, sel ast.SelectionSet, v ProposalChange) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ProposalChange(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {
 	var res ProposalState
 	return res, res.UnmarshalGQL(v)
@@ -18698,13 +18728,6 @@ func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._Proposal(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOProposalChange2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalChange(ctx context.Context, sel ast.SelectionSet, v ProposalChange) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ProposalChange(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {

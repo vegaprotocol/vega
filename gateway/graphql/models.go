@@ -293,7 +293,7 @@ type ProposalTerms struct {
 	// Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
 	// Value from 0 to 1.
 	RequiredMajority float64 `json:"requiredMajority"`
-	// Actual change being introduced by the proposal
+	// Actual change being introduced by the proposal - action the proposal triggers if passed and enacted.
 	Change ProposalChange `json:"change"`
 }
 
@@ -305,17 +305,25 @@ type ProposalTermsInput struct {
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
 	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
+	// Optional field defining participation level required for the proposal to pass.
+	// Constrained by `minRequiredParticipation` network parameter.
 	// Value from 0 to 1. Omit to use network parameter value.
 	RequiredParticipation *float64 `json:"requiredParticipation"`
-	// Participation level required for the proposal to pass. Constrained by `minRequiredParticipation` network parameter.
-	// Value from 0 to 1. Omit to use network parameter value.
+	// Optional field defining majority level required for the proposal to pass.
+	// Constrained by "minRequiredParticipation" network parameter.
+	// Value from 0.5 to 1. Omit to use the network parameter value.
 	RequiredMajority *float64 `json:"requiredMajority"`
-	// Optional field to define update market change. If this is set along with another change, proposal will not be accepted.
-	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
-	// Optional field to define new market change. If this is set along with another change, proposal will not be accepted.
+	// Field defining new market change - the proposal will create new market if passed and enacted.
+	// It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
 	NewMarket *NewMarketInput `json:"newMarket"`
-	// Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted.
+	// Field defining update market change - the proposal will update existing market if passed and enacted.
+	// It can only be set if "newMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
+	// Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
+	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
+	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
 }
 
