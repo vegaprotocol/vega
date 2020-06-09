@@ -76,6 +76,72 @@ func (b *brokerStub) GetOrderEvents() []events.Order {
 	return ret
 }
 
+func (b *brokerStub) GetAccounts() []events.Acc {
+	batch := b.GetBatch(events.AccountEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make(map[string]events.Acc, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Acc:
+			ret[et.Account().Id] = *et
+		case events.Acc:
+			ret[et.Account().Id] = et
+		}
+	}
+	s := make([]events.Acc, 0, len(ret))
+	for _, e := range ret {
+		s = append(s, e)
+	}
+	return s
+}
+
+func (b *brokerStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_INSURANCE {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == trader && v.Type == proto.AccountType_MARGIN && v.MarketID == market {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getMarketSettlementAccount(market string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_SETTLEMENT {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+			return v, nil
+		}
+	}
+
+	return proto.Account{}, errors.New("account does not exist")
+}
+
 func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
 	data := b.GetOrderEvents()
 	for _, o := range data {

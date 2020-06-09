@@ -154,11 +154,11 @@ func theMarket(mSetup *gherkin.DataTable) error {
 
 func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 	// we currently have N accounts, creating system accounts should create 2 more accounts
-	current := len(mktsetup.accounts.data)
+	current := len(mktsetup.broker.GetAccounts())
 	// this should create market accounts, currently same way it's done in execution engine (register market)
 	asset, _ := mktsetup.market.GetAsset()
-	_, _ = mktsetup.colE.CreateMarketAccounts(mktsetup.core.GetID(), asset, 0)
-	if len(mktsetup.accounts.data) != current+2 {
+	_, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
+	if len(mktsetup.broker.GetAccounts()) != current+2 {
 		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err
@@ -194,9 +194,9 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		asset, _ := mktsetup.market.GetAsset()
 		// get the account balance, ensure we can set the margin balance in this step if we want to
 		// and get the account ID's so we can keep track of the state correctly
-		general := mktsetup.colE.CreatePartyGeneralAccount(row.Cells[0].Value, asset)
-		margin, _ := mktsetup.colE.CreatePartyMarginAccount(row.Cells[0].Value, market, asset)
-		_ = mktsetup.colE.IncrementBalance(margin, marginBal)
+		general := mktsetup.colE.CreatePartyGeneralAccount(context.Background(), row.Cells[0].Value, asset)
+		margin, _ := mktsetup.colE.CreatePartyMarginAccount(context.Background(), row.Cells[0].Value, market, asset)
+		_ = mktsetup.colE.IncrementBalance(context.Background(), margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
 			proto.AccountType_ACCOUNT_TYPE_MARGIN: &proto.Account{

@@ -94,7 +94,7 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
 		collateral.NewDefaultConfig(),
-		accounts,
+		broker,
 		lossBuf,
 		time.Now(),
 	)
