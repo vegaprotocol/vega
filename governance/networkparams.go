@@ -13,12 +13,14 @@ const (
 
 // These Governance parameters are fixed, unless overridden by ldflags for test purposes.
 var (
-	MinClose                 = ""
-	MaxClose                 = ""
-	MinEnact                 = ""
-	MaxEnact                 = ""
-	MinParticipationStake    = ""
-	MinRequiredMajorityStake = ""
+	MinClose              = ""
+	MaxClose              = ""
+	MinEnact              = ""
+	MaxEnact              = ""
+	RequiredParticipation = ""
+	RequiredMajority      = ""
+	MinProposerBalance    = ""
+	MinVoterBalance       = ""
 )
 
 const (
@@ -31,32 +33,42 @@ const (
 	defaultMinEnact = 2 * day // must be >= minClose
 	// defaultMaxEnact is the hardcoded maximum enactment offset duration
 	defaultMaxEnact = 1 * year
-	// defaultMinParticipationStake is hardcoded minimum participation stake fraction (from `0` to `1`)
-	defaultMinParticipationStake = 0.01
-	// defaultMinRequiredMajority is hardcoded equired majority stake fraction (from `0.5` to `1`)
-	defaultMinRequiredMajorityStake = 0.5
+	// defaultRequiredParticipation is hardcoded participation level required for any proposal to pass (from `0` to `1`)
+	defaultRequiredParticipation = 0.00001
+	// defaultRequiredMajority is hardcoded majority level required for any proposal to pass (from `0.5` to `1`)
+	defaultRequiredMajority = 0.66
+	// defaultProposerBalance is hardcoded minimum balance required for a party
+	// to be able to submit a new proposal (greater than `0` to `1`)
+	defaultMinProposerBalance = 0.00001
+	// defaultMinVoterBalance is hardcoded minimum balance required for a party
+	// to be able to cast a vote (greater than `0` to `1`).
+	defaultMinVoterBalance = 0.00001
 )
 
 // NetworkParameters stores governance network parameters
 type NetworkParameters struct {
-	minClose                 time.Duration
-	maxClose                 time.Duration
-	minEnact                 time.Duration
-	maxEnact                 time.Duration
-	minParticipationStake    float32
-	minRequiredMajorityStake float32
+	minClose              time.Duration
+	maxClose              time.Duration
+	minEnact              time.Duration
+	maxEnact              time.Duration
+	requiredParticipation float32
+	requiredMajority      float32
+	minProposerBalance    float32
+	minVoterBalance       float32
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
 func DefaultNetworkParameters() *NetworkParameters {
 	var err error
 	result := &NetworkParameters{
-		minClose:                 defaultMinClose,
-		maxClose:                 defaultMaxClose,
-		minEnact:                 defaultMinEnact,
-		maxEnact:                 defaultMaxEnact,
-		minParticipationStake:    defaultMinParticipationStake,
-		minRequiredMajorityStake: defaultMinRequiredMajorityStake,
+		minClose:              defaultMinClose,
+		maxClose:              defaultMaxClose,
+		minEnact:              defaultMinEnact,
+		maxEnact:              defaultMaxEnact,
+		requiredParticipation: defaultRequiredParticipation,
+		requiredMajority:      defaultRequiredMajority,
+		minProposerBalance:    defaultMinProposerBalance,
+		minVoterBalance:       defaultMinVoterBalance,
 	}
 	if len(MinClose) > 0 {
 		result.minClose, err = time.ParseDuration(MinClose)
@@ -82,31 +94,57 @@ func DefaultNetworkParameters() *NetworkParameters {
 			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxEnact, err.Error()))
 		}
 	}
-	if len(MinParticipationStake) > 0 {
-		stakeValue, err := strconv.ParseFloat(MinParticipationStake, 32)
+	if len(RequiredParticipation) > 0 {
+		levelValue, err := strconv.ParseFloat(RequiredParticipation, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse float value, %s: %s", MinParticipationStake, err.Error()))
+			panic(fmt.Sprintf("Failed to parse RequiredParticipation, %s: %s", RequiredParticipation, err.Error()))
 		}
-		if stakeValue < 0 {
-			panic(fmt.Sprintf("Invalid MinParticipationStake (negative): %s", MinParticipationStake))
+		if levelValue < 0 {
+			panic(fmt.Sprintf("Invalid RequiredParticipation (negative): %s", RequiredParticipation))
 		}
-		if stakeValue > 1 {
-			panic(fmt.Sprintf("Invalid MinParticipationStake (over 1): %s", MinParticipationStake))
+		if levelValue > 1 {
+			panic(fmt.Sprintf("Invalid RequiredParticipation (over 1): %s", RequiredParticipation))
 		}
-		result.minParticipationStake = float32(stakeValue)
+		result.requiredParticipation = float32(levelValue)
 	}
-	if len(MinRequiredMajorityStake) > 0 {
-		stakeValue, err := strconv.ParseFloat(MinRequiredMajorityStake, 32)
+	if len(RequiredMajority) > 0 {
+		levelValue, err := strconv.ParseFloat(RequiredMajority, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse float value, %s: %s", MinRequiredMajorityStake, err.Error()))
+			panic(fmt.Sprintf("Failed to parse RequiredMajority, %s: %s", RequiredMajority, err.Error()))
 		}
-		if stakeValue < 0.5 {
-			panic(fmt.Sprintf("Invalid MinRequiredMajorityStake (less than 0.5): %s", MinRequiredMajorityStake))
+		if levelValue < 0.5 {
+			panic(fmt.Sprintf("Invalid RequiredMajority (less than 0.5): %s", RequiredMajority))
 		}
-		if stakeValue > 1 {
-			panic(fmt.Sprintf("Invalid MinRequiredMajorityStake (over 1): %s", MinRequiredMajorityStake))
+		if levelValue > 1 {
+			panic(fmt.Sprintf("Invalid RequiredMajority (over 1): %s", RequiredMajority))
 		}
-		result.minRequiredMajorityStake = float32(stakeValue)
+		result.requiredMajority = float32(levelValue)
+	}
+	if len(MinProposerBalance) > 0 {
+		levelValue, err := strconv.ParseFloat(MinProposerBalance, 32)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to parse MinProposerBalance, %s: %s", MinProposerBalance, err.Error()))
+		}
+		if levelValue <= 0 {
+			panic(fmt.Sprintf("Invalid MinProposingBalance (less or equal than 0): %s", MinProposerBalance))
+		}
+		if levelValue > 1 {
+			panic(fmt.Sprintf("Invalid MinProposingBalance (over 1): %s", MinProposerBalance))
+		}
+		result.minProposerBalance = float32(levelValue)
+	}
+	if len(MinVoterBalance) > 0 {
+		levelValue, err := strconv.ParseFloat(MinVoterBalance, 32)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to parse MinVoterBalance, %s: %s", MinVoterBalance, err.Error()))
+		}
+		if levelValue <= 0 {
+			panic(fmt.Sprintf("Invalid MinVoterBalance (less or equal than 0): %s", MinVoterBalance))
+		}
+		if levelValue > 1 {
+			panic(fmt.Sprintf("Invalid MinVoterBalance (over 1): %s", MinVoterBalance))
+		}
+		result.minVoterBalance = float32(levelValue)
 	}
 
 	result.maxClose = max(result.maxClose, result.minClose) // maxClose must be >= minClose
