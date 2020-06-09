@@ -186,7 +186,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 			return nil, err
 		}
 		for _, bal := range res.Balances {
-			if err := e.UpdateBalance(bal.Account.Id, bal.Balance); err != nil {
+			if err := e.UpdateBalance(context.TODO(), bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.Id),
@@ -762,7 +762,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			amount -= acc.Balance
 			// partial amount resolves differently
 			parts = acc.Balance / uint64(len(req.ToAccount))
-			if err := e.UpdateBalance(acc.Id, 0); err != nil {
+			if err := e.UpdateBalance(context.TODO(), acc.Id, 0); err != nil {
 				e.log.Error(
 					"Failed to set balance of account to 0",
 					logging.String("account-id", acc.Id),
@@ -977,7 +977,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
 				return nil, err
 			}
-			if err := e.UpdateBalance(acc.Id, 0); err != nil {
+			if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
 				return nil, err
 			}
 		}
@@ -1041,7 +1041,7 @@ func (e *Engine) Withdraw(partyID, asset string, amount uint64) error {
 	if uint64(acc.Balance) < amount {
 		// if we have less balance than required to withdraw, just set it to 0
 		// and return an error
-		if err := e.UpdateBalance(acc.Id, 0); err != nil {
+		if err := e.UpdateBalance(context.TODO(), acc.Id, 0); err != nil {
 			return err
 		}
 		return fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
@@ -1054,7 +1054,7 @@ func (e *Engine) Withdraw(partyID, asset string, amount uint64) error {
 }
 
 // UpdateBalance will update the balance of a given account
-func (e *Engine) UpdateBalance(id string, balance uint64) error {
+func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) error {
 	acc, ok := e.accs[id]
 	if !ok {
 		return ErrAccountDoesNotExist
@@ -1064,6 +1064,7 @@ func (e *Engine) UpdateBalance(id string, balance uint64) error {
 		e.totalTokens += uint64(balance)
 	}
 	acc.Balance = balance
+	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	e.buf.Add(*acc)
 	return nil
 }
