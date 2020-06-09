@@ -263,7 +263,7 @@ func (e *Engine) CreateGeneralAccounts(partyID string) error {
 }
 
 func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
-	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
+	err := e.collateral.Withdraw(ctx, w.PartyID, w.Asset, w.Amount)
 	if err != nil {
 		e.log.Error("An error occurred during withdrawal",
 			logging.String("party-id", w.PartyID),

@@ -1350,7 +1350,7 @@ func TestWithdrawalOK(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	err = eng.Engine.Withdraw(trader, testMarketAsset, 100)
+	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 100)
 	assert.Nil(t, err)
 }
 
@@ -1367,7 +1367,7 @@ func TestWithdrawalExact(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	err = eng.Engine.Withdraw(trader, testMarketAsset, 500)
+	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 500)
 	assert.Nil(t, err)
 }
 
@@ -1385,7 +1385,7 @@ func TestWithdrawalNotEnough(t *testing.T) {
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.Withdraw(trader, testMarketAsset, 600)
+	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 600)
 	assert.Error(t, err)
 }
 
@@ -1402,7 +1402,7 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	err = eng.Engine.Withdraw("invalid", testMarketAsset, 600)
+	err = eng.Engine.Withdraw(context.Background(), "invalid", testMarketAsset, 600)
 	assert.Error(t, err)
 }
 

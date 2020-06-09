@@ -1031,7 +1031,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 
 // Withdraw will remove the specified amount from the trader
 // general account
-func (e *Engine) Withdraw(partyID, asset string, amount uint64) error {
+func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) error {
 	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
 		return ErrAccountDoesNotExist
@@ -1041,7 +1041,7 @@ func (e *Engine) Withdraw(partyID, asset string, amount uint64) error {
 	if uint64(acc.Balance) < amount {
 		// if we have less balance than required to withdraw, just set it to 0
 		// and return an error
-		if err := e.UpdateBalance(context.TODO(), acc.Id, 0); err != nil {
+		if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
 			return err
 		}
 		return fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
