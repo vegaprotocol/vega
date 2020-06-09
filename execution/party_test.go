@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -49,9 +50,9 @@ func TestNewParty(t *testing.T) {
 		TraderID: trader1,
 		Amount:   9876,
 	}
-	err = party.NotifyTraderAccount(&notify1)
+	err = party.NotifyTraderAccount(context.Background(), &notify1)
 	assert.NoError(t, err)
-	err = party.NotifyTraderAccount(&notify1)
+	err = party.NotifyTraderAccount(context.Background(), &notify1)
 	assert.NoError(t, err)
 
 	notify2 := proto.NotifyTraderAccount{
@@ -62,7 +63,7 @@ func TestNewParty(t *testing.T) {
 	res = party.GetByMarket(testMarketID)
 	assert.Equal(t, 1, len(res))
 
-	err = party.NotifyTraderAccountWithTopUpAmount(&notify2, uint64(4567))
+	err = party.NotifyTraderAccountWithTopUpAmount(context.Background(), &notify2, uint64(4567))
 	assert.NoError(t, err)
 
 	res = party.GetByMarket(testMarketID)
@@ -78,14 +79,14 @@ func TestNewParty(t *testing.T) {
 	assert.Nil(t, noParty)
 	assert.Equal(t, err, execution.ErrPartyDoesNotExist)
 
-	err = party.NotifyTraderAccountWithTopUpAmount(&notify2, 0)
+	err = party.NotifyTraderAccountWithTopUpAmount(context.Background(), &notify2, 0)
 	assert.NoError(t, err)
 
 	notify1.Amount = 0
-	err = party.NotifyTraderAccount(&notify1)
+	err = party.NotifyTraderAccount(context.Background(), &notify1)
 	assert.NoError(t, err)
 
-	err = party.NotifyTraderAccount(nil)
+	err = party.NotifyTraderAccount(context.Background(), nil)
 	assert.Error(t, err)
 	assert.Equal(t, err, execution.ErrNotifyPartyIdMissing)
 }
@@ -121,11 +122,11 @@ func TestNewAccount(t *testing.T) {
 	assert.Equal(t, 0, len(res))
 
 	trader := "Finn the human"
-	accs, err := party.MakeGeneralAccounts(trader)
+	accs, err := party.MakeGeneralAccounts(context.Background(), trader)
 	assert.NoError(t, err)
 	assert.Len(t, accs, 1)
 
-	accs, err = party.MakeGeneralAccounts(trader)
+	accs, err = party.MakeGeneralAccounts(context.Background(), trader)
 	assert.NoError(t, err)
 	assert.Len(t, accs, 1)
 

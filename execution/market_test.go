@@ -151,7 +151,7 @@ func getMarkets(closingAt time.Time) []types.Market {
 
 func addAccount(market *testMarket, party string) {
 	market.partyStore.EXPECT().Add(gomock.Any()).Times(1)
-	market.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party})
+	market.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party})
 	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 }
@@ -167,8 +167,8 @@ func TestMarketClosing(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
-	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
-	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
+	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
+	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party2})
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
@@ -190,8 +190,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// and move some monies to the market
 	// this will also output the close accounts
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
-	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
-	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
+	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
+	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party2})
 
 	// submit orders
 	// party1 buys
@@ -268,7 +268,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
-	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
+	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	// submit orders
@@ -316,7 +316,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
-	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(&types.NotifyTraderAccount{TraderID: party1}, 0)
+	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(context.Background(), &types.NotifyTraderAccount{TraderID: party1}, 0)
 
 	// submit orders
 	// party1 buys
@@ -343,7 +343,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "margin check failed")
 }

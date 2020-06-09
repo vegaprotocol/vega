@@ -243,12 +243,13 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // NotifyTraderAccount notify the engine to create a new account for a party
 func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
-	return e.party.NotifyTraderAccount(notify)
+	return e.party.NotifyTraderAccount(ctx, notify)
 }
 
 // CreateGeneralAccounts creates new general accounts for a party
 func (e *Engine) CreateGeneralAccounts(partyID string) error {
-	_, err := e.party.MakeGeneralAccounts(partyID)
+	ctx := context.TODO() // not sure if this call is used at all
+	_, err := e.party.MakeGeneralAccounts(ctx, partyID)
 	return err
 }
 
