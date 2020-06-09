@@ -293,7 +293,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		// // update the to accounts now
 		for _, bal := range res.Balances {
 			amountCollected += bal.Balance
-			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.Id),
@@ -441,7 +441,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 		// update the to accounts now
 		for _, bal := range res.Balances {
-			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.Id),
@@ -549,7 +549,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		response = append(response, res)
 		for _, v := range res.GetTransfers() {
 			// increment the to account
-			if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+			if err := e.IncrementBalance(context.TODO(), v.ToAccount, v.Amount); err != nil {
 				e.log.Error(
 					"Failed to increment balance for account",
 					logging.String("account-id", v.ToAccount),
@@ -597,7 +597,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	}
 	for _, v := range res.GetTransfers() {
 		// increment the to account
-		if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
 			e.log.Error(
 				"Failed to increment balance for account",
 				logging.String("account-id", v.ToAccount),
@@ -858,7 +858,7 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 
 		for _, v := range ledgerEntries.Transfers {
 			// increment the to account
-			if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+			if err := e.IncrementBalance(context.TODO(), v.ToAccount, v.Amount); err != nil {
 				e.log.Error(
 					"Failed to increment balance for account",
 					logging.String("account-id", v.ToAccount),
@@ -974,7 +974,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 				Type:        "position-resolution",
 				Timestamp:   e.currentTime,
 			})
-			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, ins.Id, acc.Balance); err != nil {
 				return nil, err
 			}
 			if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
@@ -1071,7 +1071,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 
 // IncrementBalance will increment the balance of a given account
 // using the given value
-func (e *Engine) IncrementBalance(id string, inc uint64) error {
+func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) error {
 	acc, ok := e.accs[id]
 	if !ok {
 		return ErrAccountDoesNotExist

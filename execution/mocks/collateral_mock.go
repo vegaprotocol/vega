@@ -93,15 +93,15 @@ func (mr *MockCollateralMockRecorder) GetPartyTokenAccount(arg0 interface{}) *go
 }
 
 // IncrementBalance mocks base method
-func (m *MockCollateral) IncrementBalance(arg0 string, arg1 uint64) error {
+func (m *MockCollateral) IncrementBalance(arg0 context.Context, arg1 string, arg2 uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementBalance", arg0, arg1)
+	ret := m.ctrl.Call(m, "IncrementBalance", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // IncrementBalance indicates an expected call of IncrementBalance
-func (mr *MockCollateralMockRecorder) IncrementBalance(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) IncrementBalance(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementBalance", reflect.TypeOf((*MockCollateral)(nil).IncrementBalance), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementBalance", reflect.TypeOf((*MockCollateral)(nil).IncrementBalance), arg0, arg1, arg2)
 }

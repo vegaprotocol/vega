@@ -17,7 +17,7 @@ var ErrInvalidPartyId = errors.New("party id is not valid")
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) string
-	IncrementBalance(id string, amount uint64) error
+	IncrementBalance(ctx context.Context, id string, amount uint64) error
 	DecrementBalance(id string, amount uint64) error
 	GetAccountByID(id string) (*types.Account, error)
 	GetPartyTokenAccount(string) (*types.Account, error)
@@ -156,7 +156,7 @@ func (p *Party) addParty(ptyID, mktID string) {
 
 func (p *Party) creditGeneralAccount(accountID string, amount uint64) error {
 
-	if err := p.collateral.IncrementBalance(accountID, amount); err != nil {
+	if err := p.collateral.IncrementBalance(context.TODO(), accountID, amount); err != nil {
 		p.log.Error("unable to top-up general account", logging.Error(err))
 		return err
 	}
@@ -195,7 +195,7 @@ func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount ui
 	if err != nil {
 		return err
 	}
-	if err := p.collateral.IncrementBalance(tknAcc.Id, notify.Amount); err != nil {
+	if err := p.collateral.IncrementBalance(context.TODO(), tknAcc.Id, notify.Amount); err != nil {
 		p.log.Error("unable to top-up token account", logging.Error(err))
 		return err
 	}
