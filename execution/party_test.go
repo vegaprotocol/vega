@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"code.vegaprotocol.io/vega/collateral"
-	collateralmocks "code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
@@ -22,19 +21,19 @@ func TestNewParty(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	partyBuf := mocks.NewMockPartyBuf(ctrl)
-	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
+	broker := mocks.NewMockBroker(ctrl)
 
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, lossBuf, now)
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
 	testMarketID := testMarket[0].Id
 
-	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
-	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
+	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
 	assert.NotNil(t, party)
@@ -97,19 +96,19 @@ func TestNewAccount(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	partyBuf := mocks.NewMockPartyBuf(ctrl)
-	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
 
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, lossBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, lossBuf, now)
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
 	testMarketID := testMarket[0].Id
 
-	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
-	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Return()
+	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
 	assert.NotNil(t, party)
