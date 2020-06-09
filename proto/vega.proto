@@ -117,6 +117,10 @@ message Order {
     STATUS_FILLED = 5;
     STATUS_REJECTED = 6;
     STATUS_PARTIALLY_FILLED = 7;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/helpers.go (func parseOrderStatus)
+    //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
   string id = 1;
@@ -175,7 +179,10 @@ enum OrderError {
   ORDER_ERROR_INVALID_PERSISTENCE = 18;
   ORDER_ERROR_INVALID_TYPE = 19;
 
-  // Note: If adding an enum value, add a matching entry in proto/errors.go.
+  // Note: If adding an enum value, add a matching entry in:
+  //       - proto/errors.go (func Error)
+  //       - gateway/graphql/resolvers.go (func RejectionReasonFromProtoOrderError)
+  //       - gateway/graphql/schema.graphql (enum RejectionReason)
 }
 
 message Trade {
@@ -187,6 +194,10 @@ message Trade {
     TYPE_DEFAULT = 1;
     TYPE_NETWORK_CLOSE_OUT_GOOD = 2;
     TYPE_NETWORK_CLOSE_OUT_BAD = 3;
+
+  // Note: If adding an enum value, add a matching entry in:
+  //       - gateway/graphql/resolvers.go (func TradeTypeFromProtoTradeType)
+  //       - gateway/graphql/schema.graphql (enum TradeType)
   }
 
   string id = 1;

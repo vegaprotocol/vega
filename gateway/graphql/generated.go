@@ -366,6 +366,7 @@ type ComplexityRoot struct {
 		SellOrder func(childComplexity int) int
 		Seller    func(childComplexity int) int
 		Size      func(childComplexity int) int
+		Type      func(childComplexity int) int
 	}
 
 	TransactionSubmitted struct {
@@ -560,6 +561,7 @@ type TradeResolver interface {
 	Price(ctx context.Context, obj *proto.Trade) (string, error)
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
 	CreatedAt(ctx context.Context, obj *proto.Trade) (string, error)
+	Type(ctx context.Context, obj *proto.Trade) (TradeType, error)
 }
 
 type executableSchema struct {
@@ -2163,6 +2165,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Size(childComplexity), true
 
+	case "Trade.type":
+		if e.complexity.Trade.Type == nil {
+			break
+		}
+
+		return e.complexity.Trade.Type(childComplexity), true
+
 	case "TransactionSubmitted.success":
 		if e.complexity.TransactionSubmitted.Success == nil {
 			break
@@ -3204,6 +3213,22 @@ type Trade {
 
   "RFC3339Nano for when the trade occurred"
   createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+}
+
+"Valid trade types"
+enum TradeType {
+
+  "Default trade type"
+  TYPE_DEFAULT
+
+  "Network close-out - good"
+  TYPE_NETWORK_CLOSE_OUT_GOOD
+
+  "Network close-out - bad"
+  TYPE_NETWORK_CLOSE_OUT_BAD
 }
 
 "An account record"
@@ -3222,19 +3247,19 @@ type Account {
 enum OrderTimeInForce {
 
     "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
-    FOK
+    TIF_FOK
 
     "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
-    IOC
+    TIF_IOC
 
     "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
-    GTC
+    TIF_GTC
 
     """
     This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
     NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
     """
-    GTT
+    TIF_GTT
 }
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
@@ -3244,56 +3269,89 @@ enum OrderStatus {
   The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
   Active does not necessarily mean it's still on the order book.
   """
-  Active
-
-  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  Cancelled
+  STATUS_ACTIVE
 
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
-  Expired
+  STATUS_EXPIRED
+
+  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
+  STATUS_CANCELLED
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
-  Stopped
+  STATUS_STOPPED
 
   "This order is fully filled with remaining equals zero."
-  Filled
+  STATUS_FILLED
 
   "This order was rejected while beeing processed in the core."
-  Rejected
+  STATUS_REJECTED
+
+  "This order was partially filled."
+  STATUS_PARTIALLY_FILLED
 }
 
 "Reason for the order beeing rejected by the core node"
 enum RejectionReason {
+
+  "There was no error"
+  ORDER_ERROR_NONE
+
   "Market id is invalid"
-  InvalidMarketId
+  ORDER_ERROR_INVALID_MARKET_ID
+
   "Order id is invalid"
-  InvalidOrderId
+  ORDER_ERROR_INVALID_ORDER_ID
+
   "Order is out of sequence"
-  OrderOutOfSequence
+  ORDER_ERROR_OUT_OF_SEQUENCE
+
   "Remaining size in the order is invalid"
-  InvalidRemainingSize
+  ORDER_ERROR_INVALID_REMAINING_SIZE
+
   "Time has failed us"
-  TimeFailure
+  ORDER_ERROR_TIME_FAILURE
+
   "Unable to remove the order"
-  OrderRemovalFailure
+  ORDER_ERROR_REMOVAL_FAILURE
+
   "Expiration time is invalid"
-  InvalidExpirationTime
+  ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+
   "Order reference is invalid"
-  InvalidOrderReference
+  ORDER_ERROR_INVALID_ORDER_REFERENCE
+
   "Edit is not allowed"
-  EditNotAllowed
+  ORDER_ERROR_EDIT_NOT_ALLOWED
+
   "Order amend fail"
-  OrderAmendFailure
+  ORDER_ERROR_AMEND_FAILURE
+
   "Order does not exist"
-  OrderNotFound
+  ORDER_ERROR_NOT_FOUND
+
   "Party id is invalid"
-  InvalidPartyId
+  ORDER_ERROR_INVALID_PARTY_ID
+
   "Market is closed"
-  MarketClosed
+  ORDER_ERROR_MARKET_CLOSED
+
   "Margin check failed"
-  MarginCheckFailed
+  ORDER_ERROR_MARGIN_CHECK_FAILED
+
+  "Order missing general account"
+  ORDER_ERROR_MISSING_GENERAL_ACCOUNT
+
   "An internal error happend"
-  InternalError
+  ORDER_ERROR_INTERNAL_ERROR
+
+  "Invalid size"
+  ORDER_ERROR_INVALID_SIZE
+
+  "Invalid persistence"
+  ORDER_ERROR_INVALID_PERSISTENCE
+
+  "Invalid type"
+  ORDER_ERROR_INVALID_TYPE
 }
 
 enum OrderType {
@@ -3588,7 +3646,7 @@ input ProposalTermsInput {
   enactmentDatetime: String!
   "Minimum participation stake required for this proposal to pass"
   minParticipationStake: Int!
-  
+
   "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
   updateMarket: UpdateMarketInput
   "Optional field to define new market change. If this is set along with another change, proposal will not be accepted."
@@ -11760,6 +11818,40 @@ func (ec *executionContext) _Trade_createdAt(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Trade_type(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().Type(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TradeType)
+	fc.Result = res
+	return ec.marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16464,6 +16556,20 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_type(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17509,6 +17615,15 @@ func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Trade(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, v interface{}) (TradeType, error) {
+	var res TradeType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, sel ast.SelectionSet, v TradeType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {

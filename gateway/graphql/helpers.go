@@ -42,16 +42,16 @@ func convertInterval(interval Interval) (types.Interval, error) {
 
 func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch timeInForce {
-	case OrderTimeInForceGtc:
+	case OrderTimeInForceTifGtc:
 		return types.Order_TIF_GTC, nil
-	case OrderTimeInForceGtt:
+	case OrderTimeInForceTifGtt:
 		return types.Order_TIF_GTT, nil
-	case OrderTimeInForceIoc:
+	case OrderTimeInForceTifIoc:
 		return types.Order_TIF_IOC, nil
-	case OrderTimeInForceFok:
+	case OrderTimeInForceTifFok:
 		return types.Order_TIF_FOK, nil
 	default:
-		return types.Order_TIF_GTC, fmt.Errorf("unknown type: %s", timeInForce.String())
+		return types.Order_TIF_UNSPECIFIED, fmt.Errorf("unknown type: %s", timeInForce.String())
 	}
 }
 
@@ -64,22 +64,26 @@ func parseOrderType(ty OrderType) (types.Order_Type, error) {
 	default:
 		// handle types.Order_TYPE_NETWORK as an error here, as we do not expected
 		// it to be set by through the API, only by the core internally
-		return 0, fmt.Errorf("unknown type: %s", ty.String())
+		return types.Order_TYPE_UNSPECIFIED, fmt.Errorf("unknown type: %s", ty.String())
 	}
 }
 
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
-	case OrderStatusActive:
+	case OrderStatusStatusActive:
 		return types.Order_STATUS_ACTIVE, nil
-	case OrderStatusExpired:
+	case OrderStatusStatusExpired:
 		return types.Order_STATUS_EXPIRED, nil
-	case OrderStatusCancelled:
+	case OrderStatusStatusCancelled:
 		return types.Order_STATUS_CANCELLED, nil
-	case OrderStatusFilled:
+	case OrderStatusStatusStopped:
+		return types.Order_STATUS_STOPPED, nil
+	case OrderStatusStatusFilled:
 		return types.Order_STATUS_FILLED, nil
-	case OrderStatusRejected:
+	case OrderStatusStatusRejected:
 		return types.Order_STATUS_REJECTED, nil
+	case OrderStatusStatusPartiallyFilled:
+		return types.Order_STATUS_PARTIALLY_FILLED, nil
 	default:
 		return types.Order_STATUS_INVALID, fmt.Errorf("unknown status: %s", orderStatus.String())
 	}
@@ -92,7 +96,7 @@ func parseSide(side *Side) (types.Side, error) {
 	case SideSell:
 		return types.Side_SIDE_SELL, nil
 	default:
-		return types.Side_SIDE_BUY, fmt.Errorf("unknown side: %s", side.String())
+		return types.Side_SIDE_UNSPECIFIED, fmt.Errorf("unknown side: %s", side.String())
 	}
 }
 

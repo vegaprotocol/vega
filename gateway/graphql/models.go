@@ -559,31 +559,34 @@ type OrderStatus string
 const (
 	// The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
 	// Active does not necessarily mean it's still on the order book.
-	OrderStatusActive OrderStatus = "Active"
-	// The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-	OrderStatusCancelled OrderStatus = "Cancelled"
+	OrderStatusStatusActive OrderStatus = "STATUS_ACTIVE"
 	// This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
-	OrderStatusExpired OrderStatus = "Expired"
+	OrderStatusStatusExpired OrderStatus = "STATUS_EXPIRED"
+	// The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+	OrderStatusStatusCancelled OrderStatus = "STATUS_CANCELLED"
 	// This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
-	OrderStatusStopped OrderStatus = "Stopped"
+	OrderStatusStatusStopped OrderStatus = "STATUS_STOPPED"
 	// This order is fully filled with remaining equals zero.
-	OrderStatusFilled OrderStatus = "Filled"
+	OrderStatusStatusFilled OrderStatus = "STATUS_FILLED"
 	// This order was rejected while beeing processed in the core.
-	OrderStatusRejected OrderStatus = "Rejected"
+	OrderStatusStatusRejected OrderStatus = "STATUS_REJECTED"
+	// This order was partially filled.
+	OrderStatusStatusPartiallyFilled OrderStatus = "STATUS_PARTIALLY_FILLED"
 )
 
 var AllOrderStatus = []OrderStatus{
-	OrderStatusActive,
-	OrderStatusCancelled,
-	OrderStatusExpired,
-	OrderStatusStopped,
-	OrderStatusFilled,
-	OrderStatusRejected,
+	OrderStatusStatusActive,
+	OrderStatusStatusExpired,
+	OrderStatusStatusCancelled,
+	OrderStatusStatusStopped,
+	OrderStatusStatusFilled,
+	OrderStatusStatusRejected,
+	OrderStatusStatusPartiallyFilled,
 }
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected:
+	case OrderStatusStatusActive, OrderStatusStatusExpired, OrderStatusStatusCancelled, OrderStatusStatusStopped, OrderStatusStatusFilled, OrderStatusStatusRejected, OrderStatusStatusPartiallyFilled:
 		return true
 	}
 	return false
@@ -615,26 +618,26 @@ type OrderTimeInForce string
 
 const (
 	// The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-	OrderTimeInForceFok OrderTimeInForce = "FOK"
+	OrderTimeInForceTifFok OrderTimeInForce = "TIF_FOK"
 	// The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-	OrderTimeInForceIoc OrderTimeInForce = "IOC"
+	OrderTimeInForceTifIoc OrderTimeInForce = "TIF_IOC"
 	// This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-	OrderTimeInForceGtc OrderTimeInForce = "GTC"
+	OrderTimeInForceTifGtc OrderTimeInForce = "TIF_GTC"
 	// This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
 	// NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-	OrderTimeInForceGtt OrderTimeInForce = "GTT"
+	OrderTimeInForceTifGtt OrderTimeInForce = "TIF_GTT"
 )
 
 var AllOrderTimeInForce = []OrderTimeInForce{
-	OrderTimeInForceFok,
-	OrderTimeInForceIoc,
-	OrderTimeInForceGtc,
-	OrderTimeInForceGtt,
+	OrderTimeInForceTifFok,
+	OrderTimeInForceTifIoc,
+	OrderTimeInForceTifGtc,
+	OrderTimeInForceTifGtt,
 }
 
 func (e OrderTimeInForce) IsValid() bool {
 	switch e {
-	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt:
+	case OrderTimeInForceTifFok, OrderTimeInForceTifIoc, OrderTimeInForceTifGtc, OrderTimeInForceTifGtt:
 		return true
 	}
 	return false
@@ -772,59 +775,74 @@ func (e ProposalState) MarshalGQL(w io.Writer) {
 type RejectionReason string
 
 const (
+	// There was no error
+	RejectionReasonOrderErrorNone RejectionReason = "ORDER_ERROR_NONE"
 	// Market id is invalid
-	RejectionReasonInvalidMarketID RejectionReason = "InvalidMarketId"
+	RejectionReasonOrderErrorInvalidMarketID RejectionReason = "ORDER_ERROR_INVALID_MARKET_ID"
 	// Order id is invalid
-	RejectionReasonInvalidOrderID RejectionReason = "InvalidOrderId"
+	RejectionReasonOrderErrorInvalidOrderID RejectionReason = "ORDER_ERROR_INVALID_ORDER_ID"
 	// Order is out of sequence
-	RejectionReasonOrderOutOfSequence RejectionReason = "OrderOutOfSequence"
+	RejectionReasonOrderErrorOutOfSequence RejectionReason = "ORDER_ERROR_OUT_OF_SEQUENCE"
 	// Remaining size in the order is invalid
-	RejectionReasonInvalidRemainingSize RejectionReason = "InvalidRemainingSize"
+	RejectionReasonOrderErrorInvalidRemainingSize RejectionReason = "ORDER_ERROR_INVALID_REMAINING_SIZE"
 	// Time has failed us
-	RejectionReasonTimeFailure RejectionReason = "TimeFailure"
+	RejectionReasonOrderErrorTimeFailure RejectionReason = "ORDER_ERROR_TIME_FAILURE"
 	// Unable to remove the order
-	RejectionReasonOrderRemovalFailure RejectionReason = "OrderRemovalFailure"
+	RejectionReasonOrderErrorRemovalFailure RejectionReason = "ORDER_ERROR_REMOVAL_FAILURE"
 	// Expiration time is invalid
-	RejectionReasonInvalidExpirationTime RejectionReason = "InvalidExpirationTime"
+	RejectionReasonOrderErrorInvalidExpirationDatetime RejectionReason = "ORDER_ERROR_INVALID_EXPIRATION_DATETIME"
 	// Order reference is invalid
-	RejectionReasonInvalidOrderReference RejectionReason = "InvalidOrderReference"
+	RejectionReasonOrderErrorInvalidOrderReference RejectionReason = "ORDER_ERROR_INVALID_ORDER_REFERENCE"
 	// Edit is not allowed
-	RejectionReasonEditNotAllowed RejectionReason = "EditNotAllowed"
+	RejectionReasonOrderErrorEditNotAllowed RejectionReason = "ORDER_ERROR_EDIT_NOT_ALLOWED"
 	// Order amend fail
-	RejectionReasonOrderAmendFailure RejectionReason = "OrderAmendFailure"
+	RejectionReasonOrderErrorAmendFailure RejectionReason = "ORDER_ERROR_AMEND_FAILURE"
 	// Order does not exist
-	RejectionReasonOrderNotFound RejectionReason = "OrderNotFound"
+	RejectionReasonOrderErrorNotFound RejectionReason = "ORDER_ERROR_NOT_FOUND"
 	// Party id is invalid
-	RejectionReasonInvalidPartyID RejectionReason = "InvalidPartyId"
+	RejectionReasonOrderErrorInvalidPartyID RejectionReason = "ORDER_ERROR_INVALID_PARTY_ID"
 	// Market is closed
-	RejectionReasonMarketClosed RejectionReason = "MarketClosed"
+	RejectionReasonOrderErrorMarketClosed RejectionReason = "ORDER_ERROR_MARKET_CLOSED"
 	// Margin check failed
-	RejectionReasonMarginCheckFailed RejectionReason = "MarginCheckFailed"
+	RejectionReasonOrderErrorMarginCheckFailed RejectionReason = "ORDER_ERROR_MARGIN_CHECK_FAILED"
+	// Order missing general account
+	RejectionReasonOrderErrorMissingGeneralAccount RejectionReason = "ORDER_ERROR_MISSING_GENERAL_ACCOUNT"
 	// An internal error happend
-	RejectionReasonInternalError RejectionReason = "InternalError"
+	RejectionReasonOrderErrorInternalError RejectionReason = "ORDER_ERROR_INTERNAL_ERROR"
+	// Invalid size
+	RejectionReasonOrderErrorInvalidSize RejectionReason = "ORDER_ERROR_INVALID_SIZE"
+	// Invalid persistence
+	RejectionReasonOrderErrorInvalidPersistence RejectionReason = "ORDER_ERROR_INVALID_PERSISTENCE"
+	// Invalid type
+	RejectionReasonOrderErrorInvalidType RejectionReason = "ORDER_ERROR_INVALID_TYPE"
 )
 
 var AllRejectionReason = []RejectionReason{
-	RejectionReasonInvalidMarketID,
-	RejectionReasonInvalidOrderID,
-	RejectionReasonOrderOutOfSequence,
-	RejectionReasonInvalidRemainingSize,
-	RejectionReasonTimeFailure,
-	RejectionReasonOrderRemovalFailure,
-	RejectionReasonInvalidExpirationTime,
-	RejectionReasonInvalidOrderReference,
-	RejectionReasonEditNotAllowed,
-	RejectionReasonOrderAmendFailure,
-	RejectionReasonOrderNotFound,
-	RejectionReasonInvalidPartyID,
-	RejectionReasonMarketClosed,
-	RejectionReasonMarginCheckFailed,
-	RejectionReasonInternalError,
+	RejectionReasonOrderErrorNone,
+	RejectionReasonOrderErrorInvalidMarketID,
+	RejectionReasonOrderErrorInvalidOrderID,
+	RejectionReasonOrderErrorOutOfSequence,
+	RejectionReasonOrderErrorInvalidRemainingSize,
+	RejectionReasonOrderErrorTimeFailure,
+	RejectionReasonOrderErrorRemovalFailure,
+	RejectionReasonOrderErrorInvalidExpirationDatetime,
+	RejectionReasonOrderErrorInvalidOrderReference,
+	RejectionReasonOrderErrorEditNotAllowed,
+	RejectionReasonOrderErrorAmendFailure,
+	RejectionReasonOrderErrorNotFound,
+	RejectionReasonOrderErrorInvalidPartyID,
+	RejectionReasonOrderErrorMarketClosed,
+	RejectionReasonOrderErrorMarginCheckFailed,
+	RejectionReasonOrderErrorMissingGeneralAccount,
+	RejectionReasonOrderErrorInternalError,
+	RejectionReasonOrderErrorInvalidSize,
+	RejectionReasonOrderErrorInvalidPersistence,
+	RejectionReasonOrderErrorInvalidType,
 }
 
 func (e RejectionReason) IsValid() bool {
 	switch e {
-	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonInternalError:
+	case RejectionReasonOrderErrorNone, RejectionReasonOrderErrorInvalidMarketID, RejectionReasonOrderErrorInvalidOrderID, RejectionReasonOrderErrorOutOfSequence, RejectionReasonOrderErrorInvalidRemainingSize, RejectionReasonOrderErrorTimeFailure, RejectionReasonOrderErrorRemovalFailure, RejectionReasonOrderErrorInvalidExpirationDatetime, RejectionReasonOrderErrorInvalidOrderReference, RejectionReasonOrderErrorEditNotAllowed, RejectionReasonOrderErrorAmendFailure, RejectionReasonOrderErrorNotFound, RejectionReasonOrderErrorInvalidPartyID, RejectionReasonOrderErrorMarketClosed, RejectionReasonOrderErrorMarginCheckFailed, RejectionReasonOrderErrorMissingGeneralAccount, RejectionReasonOrderErrorInternalError, RejectionReasonOrderErrorInvalidSize, RejectionReasonOrderErrorInvalidPersistence, RejectionReasonOrderErrorInvalidType:
 		return true
 	}
 	return false
@@ -892,6 +910,53 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Valid trade types
+type TradeType string
+
+const (
+	// Default trade type
+	TradeTypeTypeDefault TradeType = "TYPE_DEFAULT"
+	// Network close-out - good
+	TradeTypeTypeNetworkCloseOutGood TradeType = "TYPE_NETWORK_CLOSE_OUT_GOOD"
+	// Network close-out - bad
+	TradeTypeTypeNetworkCloseOutBad TradeType = "TYPE_NETWORK_CLOSE_OUT_BAD"
+)
+
+var AllTradeType = []TradeType{
+	TradeTypeTypeDefault,
+	TradeTypeTypeNetworkCloseOutGood,
+	TradeTypeTypeNetworkCloseOutBad,
+}
+
+func (e TradeType) IsValid() bool {
+	switch e {
+	case TradeTypeTypeDefault, TradeTypeTypeNetworkCloseOutGood, TradeTypeTypeNetworkCloseOutBad:
+		return true
+	}
+	return false
+}
+
+func (e TradeType) String() string {
+	return string(e)
+}
+
+func (e *TradeType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TradeType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TradeType", str)
+	}
+	return nil
+}
+
+func (e TradeType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

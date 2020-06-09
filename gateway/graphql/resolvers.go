@@ -767,10 +767,9 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 
 	if len(res.Accounts) > 0 {
 		return res.Accounts, nil
-	} else {
-		// mandatory return field in schema
-		return []*types.Account{}, nil
 	}
+	// mandatory return field in schema
+	return []*types.Account{}, nil
 }
 
 func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*types.GovernanceData, error) {
@@ -1060,35 +1059,35 @@ type myOrderResolver VegaResolverRoot
 func RejectionReasonFromProtoOrderError(o types.OrderError) (RejectionReason, error) {
 	switch o {
 	case types.OrderError_ORDER_ERROR_INVALID_MARKET_ID:
-		return RejectionReasonInvalidMarketID, nil
+		return RejectionReasonOrderErrorInvalidMarketID, nil
 	case types.OrderError_ORDER_ERROR_INVALID_ORDER_ID:
-		return RejectionReasonInvalidOrderID, nil
+		return RejectionReasonOrderErrorInvalidOrderID, nil
 	case types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE:
-		return RejectionReasonOrderOutOfSequence, nil
+		return RejectionReasonOrderErrorOutOfSequence, nil
 	case types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE:
-		return RejectionReasonInvalidRemainingSize, nil
+		return RejectionReasonOrderErrorInvalidRemainingSize, nil
 	case types.OrderError_ORDER_ERROR_TIME_FAILURE:
-		return RejectionReasonTimeFailure, nil
+		return RejectionReasonOrderErrorTimeFailure, nil
 	case types.OrderError_ORDER_ERROR_REMOVAL_FAILURE:
-		return RejectionReasonOrderRemovalFailure, nil
+		return RejectionReasonOrderErrorRemovalFailure, nil
 	case types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME:
-		return RejectionReasonInvalidExpirationTime, nil
+		return RejectionReasonOrderErrorInvalidExpirationDatetime, nil
 	case types.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE:
-		return RejectionReasonInvalidOrderReference, nil
+		return RejectionReasonOrderErrorInvalidOrderReference, nil
 	case types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED:
-		return RejectionReasonEditNotAllowed, nil
+		return RejectionReasonOrderErrorEditNotAllowed, nil
 	case types.OrderError_ORDER_ERROR_AMEND_FAILURE:
-		return RejectionReasonOrderAmendFailure, nil
+		return RejectionReasonOrderErrorAmendFailure, nil
 	case types.OrderError_ORDER_ERROR_NOT_FOUND:
-		return RejectionReasonOrderNotFound, nil
+		return RejectionReasonOrderErrorNotFound, nil
 	case types.OrderError_ORDER_ERROR_INVALID_PARTY_ID:
-		return RejectionReasonInvalidPartyID, nil
+		return RejectionReasonOrderErrorInvalidPartyID, nil
 	case types.OrderError_ORDER_ERROR_MARKET_CLOSED:
-		return RejectionReasonMarketClosed, nil
+		return RejectionReasonOrderErrorMarketClosed, nil
 	case types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED:
-		return RejectionReasonMarginCheckFailed, nil
+		return RejectionReasonOrderErrorMarginCheckFailed, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
-		return RejectionReasonInternalError, nil
+		return RejectionReasonOrderErrorInternalError, nil
 	default:
 		return "", fmt.Errorf("invalid RejectionReason: %v", o)
 	}
@@ -1238,6 +1237,28 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 		return nil, customErrorFromStatus(err)
 	}
 	return res.Party, nil
+}
+
+// TradeTypeFromProtoTradeType does a proto-to-GraphQL conversion.
+func TradeTypeFromProtoTradeType(tt types.Trade_Type) (TradeType, error) {
+	switch tt {
+	case types.Trade_TYPE_UNSPECIFIED:
+		return TradeTypeTypeDefault, errors.New("unspecified trade type")
+	case types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD:
+		return TradeTypeTypeNetworkCloseOutGood, nil
+	case types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD:
+		return TradeTypeTypeNetworkCloseOutBad, nil
+	default:
+		return "", fmt.Errorf("invalid trade type: %v", tt)
+	}
+}
+
+func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
+	ttype, err := TradeTypeFromProtoTradeType(obj.Type)
+	if err != nil {
+		return TradeTypeTypeDefault, err
+	}
+	return ttype, nil
 }
 
 // END: Trade Resolver
