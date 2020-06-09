@@ -38,6 +38,10 @@ enum Interval {
 
   // 1 day
   INTERVAL_I1D = 86400;
+
+  // Note: If adding an enum value, add a matching entry in:
+  //       - gateway/graphql/helpers.go (func convertInterval)
+  //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
 message Price {
@@ -91,6 +95,10 @@ message Order {
 
     // fill or kill
     TIF_FOK = 4;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/helpers.go (func parseOrderTimeInForce)
+    //       - gateway/graphql/schema.graphql (enum OrderTimeInForce)
   }
 
   // Order Type
