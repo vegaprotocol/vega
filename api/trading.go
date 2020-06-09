@@ -205,6 +205,10 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
+	if req.Vote.Value == types.Vote_VALUE_UNSPECIFIED {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
 	vote, err := s.governanceService.PrepareVote(req.Vote)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
