@@ -37,12 +37,7 @@ var (
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
 )
 
-// AccountBuffer ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buffer_mock.go -package mocks code.vegaprotocol.io/vega/collateral AccountBuffer
-type AccountBuffer interface {
-	Add(types.Account)
-}
-
+// Broker send events
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/collateral Broker
 type Broker interface {
 	Send(event events.Event)
@@ -62,7 +57,6 @@ type Engine struct {
 	cfgMu sync.Mutex
 
 	accs        map[string]*types.Account
-	buf         AccountBuffer
 	broker      Broker
 	lossSocBuf  LossSocializationBuf
 	totalTokens uint64
@@ -73,7 +67,7 @@ type Engine struct {
 }
 
 // New instantiates a new collateral engine
-func New(log *logging.Logger, conf Config, broker Broker, buf AccountBuffer, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
+func New(log *logging.Logger, conf Config, broker Broker, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -81,7 +75,6 @@ func New(log *logging.Logger, conf Config, broker Broker, buf AccountBuffer, los
 		log:         log,
 		Config:      conf,
 		accs:        make(map[string]*types.Account, initialAccountSize),
-		buf:         buf,
 		broker:      broker,
 		currentTime: now.UnixNano(),
 		idbuf:       make([]byte, 256),
@@ -903,7 +896,6 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 		}
 		e.accs[marginID] = &acc
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
-		e.buf.Add(acc)
 	}
 	return marginID, nil
 }
@@ -924,7 +916,6 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 		}
 		e.accs[generalID] = &acc
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
-		e.buf.Add(acc)
 	}
 	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	if _, ok := e.accs[tID]; !ok {
@@ -938,7 +929,6 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 		}
 		e.accs[tID] = &acc
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
-		e.buf.Add(acc)
 	}
 
 	return generalID
@@ -1007,7 +997,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		}
 		e.accs[insuranceID] = insAcc
 		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
-		e.buf.Add(*insAcc)
 
 	}
 	settleID = e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_SETTLEMENT)
@@ -1023,7 +1012,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		}
 		e.accs[settleID] = setAcc
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
-		e.buf.Add(*setAcc)
 	}
 
 	return
@@ -1065,7 +1053,6 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	}
 	acc.Balance = balance
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	e.buf.Add(*acc)
 	return nil
 }
 
@@ -1081,7 +1068,6 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 		e.totalTokens += inc
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	e.buf.Add(*acc)
 	return nil
 }
 
@@ -1097,7 +1083,6 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 		e.totalTokens -= dec
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	e.buf.Add(*acc)
 	return nil
 }
 

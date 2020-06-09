@@ -177,7 +177,7 @@ func NewEngine(
 		return nil
 	}
 	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, broker, accountBuf, lossSocBuf, now)
+	cengine, err := collateral.New(log, executionConfig.Collateral, broker, lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
