@@ -307,7 +307,7 @@ type ProposalTermsInput struct {
 	EnactmentDatetime string `json:"enactmentDatetime"`
 	// Optional field defining participation level required for the proposal to pass.
 	// Constrained by `minRequiredParticipation` network parameter.
-	// Value from 0 to 1. Omit to use network parameter value.
+	// Value from 0 to 1. Omit to use the network parameter value.
 	RequiredParticipation *float64 `json:"requiredParticipation"`
 	// Optional field defining majority level required for the proposal to pass.
 	// Constrained by "minRequiredParticipation" network parameter.

@@ -3678,7 +3678,7 @@ input ProposalTermsInput {
   """
   Optional field defining participation level required for the proposal to pass.
   Constrained by ` + "`" + `minRequiredParticipation` + "`" + ` network parameter.
-  Value from 0 to 1. Omit to use network parameter value.
+  Value from 0 to 1. Omit to use the network parameter value.
   """
   requiredParticipation: Float
   """
