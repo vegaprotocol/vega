@@ -315,13 +315,13 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 				asset, _ := m.mkt.GetAsset()
 				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
+				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 				if err != nil {
 					m.log.Error("Clear market error",
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					evt := events.NewTransferResponse(context.TODO(), clearMarketTransfers)
+					evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 					m.broker.Send(evt)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
@@ -538,7 +538,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		margins := m.collateralAndRisk(ctx, settle)
 		if len(margins) > 0 {
 
-			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
+			transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug(
 					"Updated margin balances",
@@ -1120,6 +1120,7 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 // CancelOrderByID locates order by its Id and cancels it
 // @TODO This function should not exist. Needs to be removed
 func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
+	ctx := context.TODO()
 	order, err := m.matching.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
@@ -1129,7 +1130,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 		PartyID:  order.PartyID,
 		MarketID: order.MarketID,
 	}
-	return m.CancelOrder(context.TODO(), &cancellation)
+	return m.CancelOrder(ctx, &cancellation)
 }
 
 // AmendOrder amend an existing order from the order book

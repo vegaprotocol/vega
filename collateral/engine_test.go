@@ -99,7 +99,8 @@ func testInitialTokens(t *testing.T) {
 	acc.Balance /= 2
 	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
 	// test subtracting something from the balance
-	assert.NoError(t, eng.DecrementBalance(acc.Id, 100))
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t, eng.DecrementBalance(context.Background(), acc.Id, 100))
 	acc.Balance -= 100
 	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
 }
@@ -252,7 +253,7 @@ func testTransferComplexLoss(t *testing.T) {
 		},
 	}
 	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
 	assert.Equal(t, 1, len(responses))
 	resp := responses[0]
@@ -345,7 +346,7 @@ func testDistributeWin(t *testing.T) {
 			expMoneyBalance += price
 		}
 	})
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(evt events.Event) {
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1284,7 +1285,7 @@ func TestMarginUpdates(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1306,7 +1307,7 @@ func TestMarginUpdates(t *testing.T) {
 		},
 	}
 
-	resp, margin, err := eng.Engine.MarginUpdate(testMarketID, list)
+	resp, margin, err := eng.Engine.MarginUpdate(context.Background(), testMarketID, list)
 	assert.Nil(t, err)
 	assert.Equal(t, len(margin), 0)
 	assert.Equal(t, len(resp), 1)
@@ -1320,7 +1321,7 @@ func TestClearMarket(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1328,7 +1329,7 @@ func TestClearMarket(t *testing.T) {
 
 	parties := []string{trader}
 
-	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
+	responses, err := eng.Engine.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
 
 	assert.Nil(t, err)
 	assert.Equal(t, len(responses), 1)
@@ -1347,7 +1348,7 @@ func TestClearMarketNoMargin(t *testing.T) {
 
 	parties := []string{trader}
 
-	responses, err := eng.Engine.ClearMarket(testMarketID, testMarketAsset, parties)
+	responses, err := eng.Engine.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
 
 	assert.NoError(t, err)
 	assert.Equal(t, len(responses), 0)
@@ -1360,7 +1361,7 @@ func TestWithdrawalOK(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1377,7 +1378,7 @@ func TestWithdrawalExact(t *testing.T) {
 
 	// create traders
 	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)

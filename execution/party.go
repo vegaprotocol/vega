@@ -18,7 +18,7 @@ var ErrInvalidPartyId = errors.New("party id is not valid")
 type Collateral interface {
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) string
 	IncrementBalance(ctx context.Context, id string, amount uint64) error
-	DecrementBalance(id string, amount uint64) error
+	DecrementBalance(ctx context.Context, id string, amount uint64) error
 	GetAccountByID(id string) (*types.Account, error)
 	GetPartyTokenAccount(string) (*types.Account, error)
 }
