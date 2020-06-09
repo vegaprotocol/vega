@@ -910,7 +910,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 
 // CreatePartyGeneralAccount creates trader accounts for a given market
 // one account per market, per asset for each trader
-func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
+func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) string {
 
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	if _, ok := e.accs[generalID]; !ok {
@@ -923,6 +923,7 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.buf.Add(acc)
 	}
 	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
@@ -936,6 +937,7 @@ func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[tID] = &acc
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.buf.Add(acc)
 	}
 
