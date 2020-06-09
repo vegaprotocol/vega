@@ -148,7 +148,7 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 // FinalSettlement will process the list of transfer instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
 // other transfer types have dedicated funcs (MartToMarket, MarginUpdate)
-func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
+func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil
@@ -186,7 +186,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 			return nil, err
 		}
 		for _, bal := range res.Balances {
-			if err := e.UpdateBalance(context.TODO(), bal.Account.Id, bal.Balance); err != nil {
+			if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.Id),

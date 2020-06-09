@@ -237,6 +237,7 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
+	ctx := context.TODO()
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
@@ -288,7 +289,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.FinalSettlement(m.GetID(), positions)
+			transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 			if err != nil {
 				m.log.Error(
 					"Failed to get ledger movements after settling closed market",
@@ -298,7 +299,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			} else {
 				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
 				// this will be next block
-				evt := events.NewTransferResponse(context.TODO(), transfers)
+				evt := events.NewTransferResponse(ctx, transfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
