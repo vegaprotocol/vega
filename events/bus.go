@@ -39,6 +39,7 @@ const (
 	PositionResolution
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
 	OrderEvent
+	AccountEvent
 )
 
 var (
@@ -52,6 +53,8 @@ var (
 		TransferResponses:  "TransferResponses",
 		PositionResolution: "PositionResolution",
 		MarketEvent:        "MarketEvent",
+		OrderEvent:         "OrderEvent",
+		AccountEvent:       "AccountEvent",
 	}
 )
 
@@ -69,6 +72,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case *types.Order:
 		e := NewOrderEvent(ctx, tv)
+		return e, nil
+	case types.Account:
+		e := NewAccountEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

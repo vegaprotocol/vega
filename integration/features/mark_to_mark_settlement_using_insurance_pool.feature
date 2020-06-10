@@ -51,6 +51,6 @@ Feature: Test mark to market settlement with insurance pool
    And the insurance pool balance is "5121" for the market "ETH/DEC19"
 
     # Then the following transfers happened:
-    #   | from    | to     | fromType | toType     | id        | amount | asset |
-    #   | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | ETH   |
+    #   | from    | to     | fromType            | toType                  | id        | amount | asset |
+    #   | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |    240 | ETH   |
     # And the settlement account balance is "0" for the market "ETH/DEC19" before MTM

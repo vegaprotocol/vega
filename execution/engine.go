@@ -30,13 +30,6 @@ type OrderBuf interface {
 	Flush() error
 }
 
-// TradeBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
-type TradeBuf interface {
-	Add(types.Trade)
-	Flush() error
-}
-
 // CandleBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
 type CandleBuf interface {
@@ -49,6 +42,13 @@ type CandleBuf interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketBuf
 type MarketBuf interface {
 	Add(types.Market)
+	Flush() error
+}
+
+// TradeBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
+type TradeBuf interface {
+	Add(types.Trade)
 	Flush() error
 }
 
@@ -71,13 +71,6 @@ type SettlementBuf interface {
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	NotifyOnTick(f func(time.Time))
-}
-
-// AccountBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
-type AccountBuf interface {
-	Add(types.Account)
-	Flush() error
 }
 
 // MarketDataBuf ...
@@ -131,14 +124,13 @@ type Engine struct {
 	governance *governance.Engine
 	idgen      *IDgenerator
 
-	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marketBuf       MarketBuf
 	partyBuf        PartyBuf
-	accountBuf      AccountBuf
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
+	tradeBuf        TradeBuf
 	lossSocBuf      LossSocializationBuf
 	proposalBuf     ProposalBuf
 	voteBuf         VoteBuf
@@ -157,7 +149,6 @@ func NewEngine(
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
 	partyBuf PartyBuf,
-	accountBuf AccountBuf,
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
@@ -177,7 +168,7 @@ func NewEngine(
 		return nil
 	}
 	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, lossSocBuf, now)
+	cengine, err := collateral.New(log, executionConfig.Collateral, broker, lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
@@ -191,17 +182,16 @@ func NewEngine(
 		Config:          executionConfig,
 		markets:         map[string]*Market{},
 		candleBuf:       candleBuf,
-		tradeBuf:        tradeBuf,
 		marketBuf:       marketBuf,
 		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
 		governance:      gengine,
 		party:           NewParty(log, cengine, pmkts, partyBuf),
-		accountBuf:      accountBuf,
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
+		tradeBuf:        tradeBuf,
 		lossSocBuf:      lossSocBuf,
 		proposalBuf:     proposalBuf,
 		voteBuf:         voteBuf,
@@ -253,17 +243,18 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // NotifyTraderAccount notify the engine to create a new account for a party
 func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
-	return e.party.NotifyTraderAccount(notify)
+	return e.party.NotifyTraderAccount(ctx, notify)
 }
 
 // CreateGeneralAccounts creates new general accounts for a party
 func (e *Engine) CreateGeneralAccounts(partyID string) error {
-	_, err := e.party.MakeGeneralAccounts(partyID)
+	ctx := context.TODO() // not sure if this call is used at all
+	_, err := e.party.MakeGeneralAccounts(ctx, partyID)
 	return err
 }
 
 func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
-	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
+	err := e.collateral.Withdraw(ctx, w.PartyID, w.Asset, w.Amount)
 	if err != nil {
 		e.log.Error("An error occurred during withdrawal",
 			logging.String("party-id", w.PartyID),
@@ -320,7 +311,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
@@ -458,7 +449,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	acceptedProposals := e.governance.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
 		if err := e.enactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_FAILED
+			proposal.State = types.Proposal_STATE_FAILED
 			e.log.Error("unable to enact proposal",
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
@@ -488,7 +479,7 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if err := e.SubmitMarket(newMarket.Changes); err != nil {
 			return err
 		}
-		proposal.State = types.Proposal_ENACTED
+		proposal.State = types.Proposal_STATE_ENACTED
 		return nil
 	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
 
@@ -552,18 +543,11 @@ func (e *Engine) Generate() error {
 	e.proposalBuf.Flush()
 	e.voteBuf.Flush()
 
-	// Accounts
-	err := e.accountBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "failed to flush accounts buffer")
-	}
-
 	// margins levels
 	e.marginLevelsBuf.Flush()
 
 	// Trades - flush after orders so the traders reference an existing order
-	err = e.tradeBuf.Flush()
-	if err != nil {
+	if err := e.tradeBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush trades buffer")
 	}
 	// Transfers
@@ -573,8 +557,7 @@ func (e *Engine) Generate() error {
 	evt := events.NewTime(context.Background(), now)
 	e.broker.Send(evt)
 	// Markets
-	err = e.marketBuf.Flush()
-	if err != nil {
+	if err := e.marketBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush markets buffer")
 	}
 	// Market data is added to buffer on Generate

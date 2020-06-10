@@ -562,7 +562,7 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID
 		req := protoapi.PartyAccountsRequest{
 			PartyID:  *partyID,
 			MarketID: market.ID,
-			Type:     types.AccountType_MARGIN,
+			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    "",
 		}
 		res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
@@ -712,15 +712,15 @@ func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]
 func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
 	switch acc {
 	case AccountTypeGeneral:
-		return types.AccountType_GENERAL, nil
+		return types.AccountType_ACCOUNT_TYPE_GENERAL, nil
 	case AccountTypeMargin:
-		return types.AccountType_MARGIN, nil
+		return types.AccountType_ACCOUNT_TYPE_MARGIN, nil
 	case AccountTypeInsurance:
-		return types.AccountType_INSURANCE, nil
+		return types.AccountType_ACCOUNT_TYPE_INSURANCE, nil
 	case AccountTypeSettlement:
-		return types.AccountType_SETTLEMENT, nil
+		return types.AccountType_ACCOUNT_TYPE_SETTLEMENT, nil
 	default:
-		return types.AccountType_ALL, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
+		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
 	}
 }
 
@@ -732,7 +732,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	var (
 		mktid = ""
 		asst  = ""
-		accTy = types.AccountType_ALL
+		accTy = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 		err   error
 	)
 
@@ -744,7 +744,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	}
 	if accType != nil {
 		accTy, err = AccountTypeToProto(*accType)
-		if err != nil || (accTy != types.AccountType_GENERAL && accTy != types.AccountType_MARGIN) {
+		if err != nil || (accTy != types.AccountType_ACCOUNT_TYPE_GENERAL && accTy != types.AccountType_ACCOUNT_TYPE_MARGIN) {
 			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
 	}
@@ -1575,13 +1575,13 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}
 	req := &protoapi.PrepareVoteRequest{
 		Vote: &types.Vote{
-			Value:      types.Vote_NO,
+			Value:      types.Vote_VALUE_NO,
 			PartyID:    partyID,
 			ProposalID: proposalID,
 		},
 	}
 	if value == VoteValueYes {
-		req.Vote.Value = types.Vote_YES
+		req.Vote.Value = types.Vote_VALUE_YES
 	}
 	resp, err := r.tradingClient.PrepareVote(ctx, req)
 	if err != nil {
@@ -2116,7 +2116,7 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 	}
 
 	// Only margin accounts have a market relation
-	if acc.Type == types.AccountType_MARGIN {
+	if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 		req := protoapi.MarketByIDRequest{MarketID: acc.MarketID}
 		res, err := r.tradingDataClient.MarketByID(ctx, &req)
 		if err != nil {
@@ -2132,13 +2132,13 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
 	var t AccountType
 	switch obj.Type {
-	case types.AccountType_MARGIN:
+	case types.AccountType_ACCOUNT_TYPE_MARGIN:
 		return AccountTypeMargin, nil
-	case types.AccountType_GENERAL:
+	case types.AccountType_ACCOUNT_TYPE_GENERAL:
 		return AccountTypeGeneral, nil
-	case types.AccountType_INSURANCE:
+	case types.AccountType_ACCOUNT_TYPE_INSURANCE:
 		return AccountTypeInsurance, nil
-	case types.AccountType_SETTLEMENT:
+	case types.AccountType_ACCOUNT_TYPE_SETTLEMENT:
 		return AccountTypeSettlement, nil
 	}
 	return t, ErrUnknownAccountType

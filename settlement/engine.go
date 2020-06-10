@@ -218,14 +218,14 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		}
 
 		if mtmShare > 0 {
-			settle.Type = types.TransferType_MTM_WIN
+			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
 			wins = append(wins, &mtmTransfer{
 				MarketPosition: current,
 				transfer:       settle,
 			})
 		} else {
 			// losses are prepended
-			settle.Type = types.TransferType_MTM_LOSS
+			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
 			transfers = append(transfers, &mtmTransfer{
 				MarketPosition: current,
 				transfer:       settle,
@@ -322,11 +322,11 @@ func (e *Engine) settleAll(lastMarkPrice uint64) ([]*types.Transfer, error) {
 		)
 		if amt.Amount < 0 {
 			// trader is winning...
-			settlePos.Type = types.TransferType_LOSS
+			settlePos.Type = types.TransferType_TRANSFER_TYPE_LOSS
 			aggregated = append(aggregated, settlePos)
 		} else {
 			// bad name again, but SELL means trader is owed money
-			settlePos.Type = types.TransferType_WIN
+			settlePos.Type = types.TransferType_TRANSFER_TYPE_WIN
 			owed = append(owed, settlePos)
 		}
 	}

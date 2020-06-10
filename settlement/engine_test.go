@@ -79,21 +79,21 @@ func testSettleExpiredSuccess(t *testing.T) {
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[0].trader,
 			Amount: &types.FinancialAmount{
 				Amount: 1000,
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	} // }}}
 	oraclePrice := uint64(1100)
@@ -148,21 +148,21 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
 				Amount: -500,
 			},
-			Type: types.TransferType_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[0].trader,
 			Amount: &types.FinancialAmount{
 				Amount: 1000,
 			},
-			Type: types.TransferType_WIN,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	} // }}}
 
@@ -426,8 +426,8 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.NotEmpty(t, transfers)
 		assert.Equal(t, 3, len(transfers))
 		// start with losses, end with wins
-		assert.Equal(t, types.TransferType_MTM_LOSS, transfers[0].Transfer().Type)
-		assert.Equal(t, types.TransferType_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
+		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, transfers[0].Transfer().Type)
+		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
 		assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
 	}
 }

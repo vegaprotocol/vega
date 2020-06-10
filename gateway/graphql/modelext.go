@@ -510,7 +510,7 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 // IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
 	if !a.IsValid() {
-		return types.AccountType_ALL
+		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 	}
 	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
 }
@@ -750,17 +750,17 @@ func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalSta
 func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
 	switch s {
 	case ProposalStateFailed:
-		return types.Proposal_FAILED, nil
+		return types.Proposal_STATE_FAILED, nil
 	case ProposalStateOpen:
-		return types.Proposal_OPEN, nil
+		return types.Proposal_STATE_OPEN, nil
 	case ProposalStatePassed:
-		return types.Proposal_PASSED, nil
+		return types.Proposal_STATE_PASSED, nil
 	case ProposalStateDeclined:
-		return types.Proposal_DECLINED, nil
+		return types.Proposal_STATE_DECLINED, nil
 	case ProposalStateRejected:
-		return types.Proposal_REJECTED, nil
+		return types.Proposal_STATE_REJECTED, nil
 	case ProposalStateEnacted:
-		return types.Proposal_ENACTED, nil
+		return types.Proposal_STATE_ENACTED, nil
 	}
 	return types.Proposal_State(-1), ErrInvalidProposalState
 }
@@ -768,17 +768,17 @@ func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
 // ProposalStateFromProto ...
 func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
 	switch state {
-	case types.Proposal_FAILED:
+	case types.Proposal_STATE_FAILED:
 		return ProposalStateFailed, nil
-	case types.Proposal_OPEN:
+	case types.Proposal_STATE_OPEN:
 		return ProposalStateOpen, nil
-	case types.Proposal_PASSED:
+	case types.Proposal_STATE_PASSED:
 		return ProposalStatePassed, nil
-	case types.Proposal_DECLINED:
+	case types.Proposal_STATE_DECLINED:
 		return ProposalStateDeclined, nil
-	case types.Proposal_REJECTED:
+	case types.Proposal_STATE_REJECTED:
 		return ProposalStateRejected, nil
-	case types.Proposal_ENACTED:
+	case types.Proposal_STATE_ENACTED:
 		return ProposalStateEnacted, nil
 	}
 	return ProposalState(""), ErrInvalidProposalState
@@ -786,7 +786,7 @@ func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
 
 // VoteValueFromProto ...
 func VoteValueFromProto(v types.Vote_Value) VoteValue {
-	if v == types.Vote_YES {
+	if v == types.Vote_VALUE_YES {
 		return VoteValueYes
 	}
 	return VoteValueNo

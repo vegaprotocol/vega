@@ -318,9 +318,10 @@ message Statistics {
 }
 
 enum ChainStatus {
-    DISCONNECTED = 0;
-    REPLAYING = 1;
-    CONNECTED = 2;
+  CHAIN_STATUS_UNSPECIFIED = 0;
+  CHAIN_STATUS_DISCONNECTED = 1;
+  CHAIN_STATUS_REPLAYING = 2;
+  CHAIN_STATUS_CONNECTED = 3;
 }
 
 message NotifyTraderAccount {
@@ -377,11 +378,11 @@ message NodeVote {
 }
 
 enum AccountType {
-  ALL = 0;
-  INSURANCE = 1;
-  SETTLEMENT = 2;
-  MARGIN = 3;
-  GENERAL = 4;
+  ACCOUNT_TYPE_UNSPECIFIED = 0;
+  ACCOUNT_TYPE_INSURANCE = 1;
+  ACCOUNT_TYPE_SETTLEMENT = 2;
+  ACCOUNT_TYPE_MARGIN = 3;
+  ACCOUNT_TYPE_GENERAL = 4;
 }
 
 message Account {
@@ -399,14 +400,15 @@ message FinancialAmount {
 }
 
 enum TransferType {
-  LOSS = 0;
-  WIN = 1;
-  CLOSE = 2;
-  MTM_LOSS = 3;
-  MTM_WIN = 4;
-  MARGIN_LOW = 5;
-  MARGIN_HIGH = 6;
-  MARGIN_CONFISCATED = 7;
+  TRANSFER_TYPE_UNSPECIFIED = 0;
+  TRANSFER_TYPE_LOSS = 1;
+  TRANSFER_TYPE_WIN = 2;
+  TRANSFER_TYPE_CLOSE = 3;
+  TRANSFER_TYPE_MTM_LOSS = 4;
+  TRANSFER_TYPE_MTM_WIN = 5;
+  TRANSFER_TYPE_MARGIN_LOW = 6;
+  TRANSFER_TYPE_MARGIN_HIGH = 7;
+  TRANSFER_TYPE_MARGIN_CONFISCATED = 8;
 }
 
 message Transfer {
