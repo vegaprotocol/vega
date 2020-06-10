@@ -656,10 +656,9 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 
 	if len(res.Orders) > 0 {
 		return res.Orders, nil
-	} else {
-		// mandatory return field in schema
-		return []*types.Order{}, nil
 	}
+	// mandatory return field in schema
+	return []*types.Order{}, nil
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
@@ -685,10 +684,9 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 
 	if len(res.Trades) > 0 {
 		return res.Trades, nil
-	} else {
-		// mandatory return field in schema
-		return []*types.Trade{}, nil
 	}
+	// mandatory return field in schema
+	return []*types.Trade{}, nil
 }
 
 func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]*types.Position, error) {
@@ -703,25 +701,9 @@ func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]
 	}
 	if len(res.Positions) > 0 {
 		return res.Positions, nil
-	} else {
-		// mandatory return field in schema
-		return []*types.Position{}, nil
 	}
-}
-
-func AccountTypeToProto(acc AccountType) (types.AccountType, error) {
-	switch acc {
-	case AccountTypeGeneral:
-		return types.AccountType_ACCOUNT_TYPE_GENERAL, nil
-	case AccountTypeMargin:
-		return types.AccountType_ACCOUNT_TYPE_MARGIN, nil
-	case AccountTypeInsurance:
-		return types.AccountType_ACCOUNT_TYPE_INSURANCE, nil
-	case AccountTypeSettlement:
-		return types.AccountType_ACCOUNT_TYPE_SETTLEMENT, nil
-	default:
-		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %v, return default (ALL)", acc)
-	}
+	// mandatory return field in schema
+	return []*types.Position{}, nil
 }
 
 func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
@@ -743,7 +725,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		asst = *asset
 	}
 	if accType != nil {
-		accTy, err = AccountTypeToProto(*accType)
+		accTy, err = convertAccountType(*accType)
 		if err != nil || (accTy != types.AccountType_ACCOUNT_TYPE_GENERAL && accTy != types.AccountType_ACCOUNT_TYPE_MARGIN) {
 			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
@@ -837,7 +819,7 @@ func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceDa
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
-	return ProposalStateFromProto(data.Proposal.State)
+	return unconvertProposalState(data.Proposal.State)
 }
 
 func (r *myProposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
@@ -865,8 +847,12 @@ func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vot
 		if err != nil {
 			return nil, err
 		}
+		value, err := unconvertVoteValue(v.Value)
+		if err != nil {
+			return nil, err
+		}
 		result[i] = &Vote{
-			Value:    VoteValueFromProto(v.Value),
+			Value:    value,
 			Party:    voter,
 			Datetime: nanoTSToDatetime(v.Timestamp),
 		}
@@ -1056,48 +1042,11 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 
 type myOrderResolver VegaResolverRoot
 
-func RejectionReasonFromProtoOrderError(o types.OrderError) (RejectionReason, error) {
-	switch o {
-	case types.OrderError_ORDER_ERROR_INVALID_MARKET_ID:
-		return RejectionReasonInvalidMarketID, nil
-	case types.OrderError_ORDER_ERROR_INVALID_ORDER_ID:
-		return RejectionReasonInvalidOrderID, nil
-	case types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE:
-		return RejectionReasonOrderOutOfSequence, nil
-	case types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE:
-		return RejectionReasonInvalidRemainingSize, nil
-	case types.OrderError_ORDER_ERROR_TIME_FAILURE:
-		return RejectionReasonTimeFailure, nil
-	case types.OrderError_ORDER_ERROR_REMOVAL_FAILURE:
-		return RejectionReasonOrderRemovalFailure, nil
-	case types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME:
-		return RejectionReasonInvalidExpirationTime, nil
-	case types.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE:
-		return RejectionReasonInvalidOrderReference, nil
-	case types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED:
-		return RejectionReasonEditNotAllowed, nil
-	case types.OrderError_ORDER_ERROR_AMEND_FAILURE:
-		return RejectionReasonOrderAmendFailure, nil
-	case types.OrderError_ORDER_ERROR_NOT_FOUND:
-		return RejectionReasonOrderNotFound, nil
-	case types.OrderError_ORDER_ERROR_INVALID_PARTY_ID:
-		return RejectionReasonInvalidPartyID, nil
-	case types.OrderError_ORDER_ERROR_MARKET_CLOSED:
-		return RejectionReasonMarketClosed, nil
-	case types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED:
-		return RejectionReasonMarginCheckFailed, nil
-	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
-		return RejectionReasonInternalError, nil
-	default:
-		return "", fmt.Errorf("invalid RejectionReason: %v", o)
-	}
-}
-
 func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*RejectionReason, error) {
 	if o.Reason == types.OrderError_ORDER_ERROR_NONE {
 		return nil, nil
 	}
-	reason, err := RejectionReasonFromProtoOrderError(o.Reason)
+	reason, err := unconvertRejectionReason(o.Reason)
 	if err != nil {
 		return nil, err
 	}
@@ -1108,29 +1057,19 @@ func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 	return strconv.FormatUint(obj.Price, 10), nil
 }
 func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
-	return OrderTimeInForce(obj.TimeInForce.String()), nil
+	return unconvertOrderTimeInForce(obj.TimeInForce)
 }
 
 func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
-	t := OrderType(obj.Type.String())
+	t, err := unconvertOrderType(obj.Type)
+	if err != nil {
+		return nil, err
+	}
 	return &t, nil
 }
 
 func (r *myOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
-	side, err := unconvertSide(obj.Side)
-	if err != nil {
-		r.log.Warn("Side conversion from proto to gql type failed, falling back to default: Buy",
-			logging.String("side", obj.Side.String()),
-			logging.Error(err),
-		)
-		return SideBuy, err
-	}
-	if !side.IsValid() {
-		r.log.Warn("Side conversion from proto to gql type failed, falling back to default: Buy",
-			logging.String("side", obj.Side.String()))
-		return SideBuy, fmt.Errorf("failed to convert Interval to GraphQL enum: %s", obj.Side.String())
-	}
-	return side, nil
+	return unconvertSide(obj.Side)
 }
 
 func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
@@ -1153,20 +1092,7 @@ func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (stri
 }
 
 func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
-	orderStatus, err := unconvertOrderStatus(obj.Status)
-	if err != nil {
-		r.log.Warn("OrderStatus conversion from proto to gql type failed, falling back to default: Active",
-			logging.String("status", obj.Status.String()),
-			logging.Error(err),
-		)
-		return OrderStatusActive, err
-	}
-	if !orderStatus.IsValid() {
-		r.log.Warn("OrderStatus conversion from proto to gql type failed, falling back to default: Active",
-			logging.String("status", obj.Status.String()))
-		return OrderStatusActive, fmt.Errorf("failed to convert Interval to GraphQL enum: %s", obj.Side.String())
-	}
-	return orderStatus, nil
+	return unconvertOrderStatus(obj.Status)
 }
 
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
@@ -1268,22 +1194,8 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 	return res.Party, nil
 }
 
-// TradeTypeFromProtoTradeType does a proto-to-GraphQL conversion.
-func TradeTypeFromProtoTradeType(tt types.Trade_Type) (TradeType, error) {
-	switch tt {
-	case types.Trade_TYPE_UNSPECIFIED:
-		return TradeTypeDefault, errors.New("unspecified trade type")
-	case types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD:
-		return TradeTypeNetworkCloseOutGood, nil
-	case types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD:
-		return TradeTypeNetworkCloseOutBad, nil
-	default:
-		return TradeTypeDefault, fmt.Errorf("invalid trade type: %v", tt)
-	}
-}
-
 func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
-	return TradeTypeFromProtoTradeType(obj.Type)
+	return unconvertTradeType(obj.Type)
 }
 
 // END: Trade Resolver
@@ -1314,20 +1226,7 @@ func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (st
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
-	interval, err := unconvertInterval(obj.Interval)
-	if err != nil {
-		r.log.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
-			logging.String("interval", obj.Interval.String()),
-			logging.Error(err),
-		)
-		return IntervalI15m, err
-	}
-	if !interval.IsValid() {
-		r.log.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
-			logging.String("interval", obj.Interval.String()))
-		return IntervalI15m, fmt.Errorf("failed to convert Interval to GraphQL enum: %s", obj.Interval.String())
-	}
-	return interval, nil
+	return unconvertInterval(obj.Interval)
 }
 
 // END: Candle Resolver
@@ -1496,13 +1395,13 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}
 
 	order.PartyID = party
-	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
+	if order.TimeInForce, err = convertOrderTimeInForce(timeInForce); err != nil {
 		return nil, err
 	}
-	if order.Side, err = convertSide(&side); err != nil {
+	if order.Side, err = convertSide(side); err != nil {
 		return nil, err
 	}
-	if order.Type, err = parseOrderType(ty); err != nil {
+	if order.Type, err = convertOrderType(ty); err != nil {
 		return nil, err
 	}
 
@@ -1605,17 +1504,22 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
+	protoValue, err := convertVoteValue(value)
+	if err != nil {
+		return nil, err
+	}
 	req := &protoapi.PrepareVoteRequest{
 		Vote: &types.Vote{
-			Value:      types.Vote_VALUE_NO,
+			Value:      protoValue,
 			PartyID:    partyID,
 			ProposalID: proposalID,
 		},
 	}
-	if value == VoteValueYes {
-		req.Vote.Value = types.Vote_VALUE_YES
-	}
 	resp, err := r.tradingClient.PrepareVote(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	gqlValue, err := unconvertVoteValue(resp.Vote.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -1624,7 +1528,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 		Vote: &ProposalVote{
 			Vote: &Vote{
 				Party: party,
-				Value: VoteValueFromProto(resp.Vote.Value),
+				Value: gqlValue,
 			},
 			ProposalID: resp.Vote.ProposalID,
 		},
@@ -1660,7 +1564,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("invalid size, could not convert to unsigned int")
 	}
 
-	order.TimeInForce, err = parseOrderTimeInForce(tif)
+	order.TimeInForce, err = convertOrderTimeInForce(tif)
 	if err != nil {
 		r.log.Error("unable to parse time in force in order amend",
 			logging.Error(err))
@@ -2162,18 +2066,7 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 }
 
 func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
-	var t AccountType
-	switch obj.Type {
-	case types.AccountType_ACCOUNT_TYPE_MARGIN:
-		return AccountTypeMargin, nil
-	case types.AccountType_ACCOUNT_TYPE_GENERAL:
-		return AccountTypeGeneral, nil
-	case types.AccountType_ACCOUNT_TYPE_INSURANCE:
-		return AccountTypeInsurance, nil
-	case types.AccountType_ACCOUNT_TYPE_SETTLEMENT:
-		return AccountTypeSettlement, nil
-	}
-	return t, ErrUnknownAccountType
+	return unconvertAccountType(obj.Type)
 }
 
 // END: Account Resolver

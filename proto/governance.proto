@@ -83,6 +83,10 @@ message Proposal {
 
     // Proposal has been executed and the changes under this proposal have now been applied.
     STATE_ENACTED = 6;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/generated_helpers.yml
+    //       - gateway/graphql/schema.graphql (enum ProposalState)
   }
 
   string        ID        = 1;
@@ -104,6 +108,10 @@ message Vote {
 
     // A vote in favour of the proposal.
     VALUE_YES = 2;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/generated_helpers.yml
+    //       - gateway/graphql/schema.graphql (enum VoteValue)
   }
 
   string partyID    = 1 [(validator.field) = {string_not_empty : true}];

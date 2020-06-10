@@ -2,7 +2,6 @@ package gql
 
 import (
 	"math"
-	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -42,9 +41,9 @@ var (
 	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
 	// ErrNilContinuousTradingTickSize ...
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
-	// ErrnilScalingFactors...
+	// ErrNilScalingFactors ...
 	ErrNilScalingFactors = errors.New("nil scaling factors")
-	// ErrNilMarginCalculator
+	// ErrNilMarginCalculator ...
 	ErrNilMarginCalculator = errors.New("nil margin calculator")
 	// ErrParticipationStake ...
 	ErrParticipationStake = errors.New("minimum participation stake contains too large value")
@@ -509,10 +508,8 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 
 // IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
-	if !a.IsValid() {
-		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
-	}
-	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
+	at, _ := convertAccountType(a)
+	return at
 }
 
 // ProposalTermsFromProto ...
@@ -748,56 +745,16 @@ func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalSta
 
 // IntoProtoValue ...
 func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
-	switch s {
-	case ProposalStateFailed:
-		return types.Proposal_STATE_FAILED, nil
-	case ProposalStateOpen:
-		return types.Proposal_STATE_OPEN, nil
-	case ProposalStatePassed:
-		return types.Proposal_STATE_PASSED, nil
-	case ProposalStateDeclined:
-		return types.Proposal_STATE_DECLINED, nil
-	case ProposalStateRejected:
-		return types.Proposal_STATE_REJECTED, nil
-	case ProposalStateEnacted:
-		return types.Proposal_STATE_ENACTED, nil
-	}
-	return types.Proposal_State(-1), ErrInvalidProposalState
-}
-
-// ProposalStateFromProto ...
-func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
-	switch state {
-	case types.Proposal_STATE_FAILED:
-		return ProposalStateFailed, nil
-	case types.Proposal_STATE_OPEN:
-		return ProposalStateOpen, nil
-	case types.Proposal_STATE_PASSED:
-		return ProposalStatePassed, nil
-	case types.Proposal_STATE_DECLINED:
-		return ProposalStateDeclined, nil
-	case types.Proposal_STATE_REJECTED:
-		return ProposalStateRejected, nil
-	case types.Proposal_STATE_ENACTED:
-		return ProposalStateEnacted, nil
-	}
-	return ProposalState(""), ErrInvalidProposalState
-}
-
-// VoteValueFromProto ...
-func VoteValueFromProto(v types.Vote_Value) VoteValue {
-	if v == types.Vote_VALUE_YES {
-		return VoteValueYes
-	}
-	return VoteValueNo
+	return convertProposalState(s)
 }
 
 // ProposalVoteFromProto ...
 func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
+	value, _ := unconvertVoteValue(v.Value)
 	return &ProposalVote{
 		Vote: &Vote{
 			Party:    caster,
-			Value:    VoteValueFromProto(v.Value),
+			Value:    value,
 			Datetime: nanoTSToDatetime(v.Timestamp),
 		},
 		ProposalID: v.ProposalID,

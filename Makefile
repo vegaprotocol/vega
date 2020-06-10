@@ -87,8 +87,13 @@ install: ## install the binaries in GOPATH/bin
 	done
 
 .PHONY: gqlgen
-gqlgen: ## run gqlgen
+gqlgen: gateway/graphql/generated_helpers.go ## run gqlgen
+	@echo "Making $@"
 	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen --config gqlgen.yml
+
+gateway/graphql/generated_helpers.go: gateway/graphql/generated_helpers.yml script/generate_graphql_helpers.py
+	@echo "Making $@"
+	@python3 script/generate_graphql_helpers.py --config "$<" >"$@"
 
 .PHONY: gqlgen_check
 gqlgen_check: ## GraphQL: Check committed files match just-generated files

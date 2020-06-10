@@ -14,6 +14,10 @@ enum Side {
 
   // Sell
   SIDE_SELL = 2;
+
+  // Note: If adding an enum value, add a matching entry in:
+  //       - gateway/graphql/generated_helpers.yml
+  //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
 enum Interval {
@@ -40,7 +44,7 @@ enum Interval {
   INTERVAL_I1D = 86400;
 
   // Note: If adding an enum value, add a matching entry in:
-  //       - gateway/graphql/helpers.go (func convertInterval)
+  //       - gateway/graphql/generated_helpers.yml
   //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
@@ -97,7 +101,7 @@ message Order {
     TIF_FOK = 4;
 
     // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/helpers.go (func parseOrderTimeInForce)
+    //       - gateway/graphql/generated_helpers.yml
     //       - gateway/graphql/schema.graphql (enum OrderTimeInForce)
   }
 
@@ -114,6 +118,10 @@ message Order {
 
     // used for orders where the initiating party is the network (used for distressed traders)
     TYPE_NETWORK = 3;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/generated_helpers.yml
+    //       - gateway/graphql/schema.graphql (enum OrderType)
   }
 
   enum Status {
@@ -127,7 +135,7 @@ message Order {
     STATUS_PARTIALLY_FILLED = 7;
 
     // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/helpers.go (func parseOrderStatus)
+    //       - gateway/graphql/generated_helpers.yml
     //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
@@ -189,7 +197,7 @@ enum OrderError {
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
-  //       - gateway/graphql/resolvers.go (func RejectionReasonFromProtoOrderError)
+  //       - gateway/graphql/generated_helpers.yml
   //       - gateway/graphql/schema.graphql (enum RejectionReason)
 }
 
@@ -203,9 +211,9 @@ message Trade {
     TYPE_NETWORK_CLOSE_OUT_GOOD = 2;
     TYPE_NETWORK_CLOSE_OUT_BAD = 3;
 
-  // Note: If adding an enum value, add a matching entry in:
-  //       - gateway/graphql/resolvers.go (func TradeTypeFromProtoTradeType)
-  //       - gateway/graphql/schema.graphql (enum TradeType)
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/generated_helpers.yml
+    //       - gateway/graphql/schema.graphql (enum TradeType)
   }
 
   string id = 1;
@@ -322,6 +330,8 @@ enum ChainStatus {
   CHAIN_STATUS_DISCONNECTED = 1;
   CHAIN_STATUS_REPLAYING = 2;
   CHAIN_STATUS_CONNECTED = 3;
+
+  // Note: ChainStatus does not exist in GraphQL.
 }
 
 message NotifyTraderAccount {
@@ -383,6 +393,10 @@ enum AccountType {
   ACCOUNT_TYPE_SETTLEMENT = 2;
   ACCOUNT_TYPE_MARGIN = 3;
   ACCOUNT_TYPE_GENERAL = 4;
+
+  // Note: If adding an enum value, add a matching entry in:
+  //       - gateway/graphql/generated_helpers.yml
+  //       - gateway/graphql/schema.graphql (enum AccountType)
 }
 
 message Account {
