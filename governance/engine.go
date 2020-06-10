@@ -232,11 +232,12 @@ func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, tota
 		//(yes+no) >= (yes + no + novote)* required participation ratio
 		totalVotes >= float32(totalStake)*e.networkParams.requiredParticipation {
 		data.State = types.Proposal_STATE_PASSED
+		e.log.Debug("Proposal passed", logging.String("proposal-id", data.ID))
 	} else if totalVotes == 0 {
-		e.log.Info("Declined proposal - no votes", logging.String("proposal-id", data.ID))
+		e.log.Info("Proposal declined - no votes", logging.String("proposal-id", data.ID))
 	} else {
 		e.log.Info(
-			"Declined proposal",
+			"Proposal declined",
 			logging.String("proposal-id", data.ID),
 			logging.Uint64("yes-votes", yes),
 			logging.Float32("min-yes-required", totalVotes*e.networkParams.requiredMajority),
