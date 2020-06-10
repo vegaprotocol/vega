@@ -605,7 +605,7 @@ func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) e
 
 	proposal.Timestamp = now.UnixNano()
 	e.idgen.SetProposalID(proposal)
-	return e.governance.AddProposal(*proposal)
+	return e.governance.SubmitProposal(*proposal)
 }
 
 // VoteOnProposal sends proposal vote to governance engine

@@ -519,10 +519,8 @@ func (a AccountType) IntoProto() types.AccountType {
 // ProposalTermsFromProto ...
 func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) {
 	result := &ProposalTerms{
-		ClosingDatetime:          secondsTSToDatetime(terms.ClosingTimestamp),
-		EnactmentDatetime:        secondsTSToDatetime(terms.EnactmentTimestamp),
-		MinParticipationStake:    float64(terms.MinParticipationStake),
-		MinRequiredMajorityStake: float64(terms.MinRequiredMajorityStake),
+		ClosingDatetime:   secondsTSToDatetime(terms.ClosingTimestamp),
+		EnactmentDatetime: secondsTSToDatetime(terms.EnactmentTimestamp),
 	}
 	if terms.GetUpdateMarket() != nil {
 		result.Change = nil
@@ -705,19 +703,9 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		return nil, err
 	}
 
-	if p.MinParticipationStake < 0 || p.MinParticipationStake > 1 {
-		return nil, ErrMinParticipationStakeInvalid
-	}
-
-	if p.MinRequiredMajorityStake < 0.5 || p.MinRequiredMajorityStake > 1 {
-		return nil, ErrMinRequiredMajorityStakeInvalid
-	}
-
 	result := &types.ProposalTerms{
-		ClosingTimestamp:         closing,
-		EnactmentTimestamp:       enactment,
-		MinParticipationStake:    float32(p.MinParticipationStake),    // downcasting value from 0 to 1
-		MinRequiredMajorityStake: float32(p.MinRequiredMajorityStake), // downcasting value from 0.5 to 1
+		ClosingTimestamp:   closing,
+		EnactmentTimestamp: enactment,
 	}
 	if p.UpdateMarket != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}

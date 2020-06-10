@@ -1954,12 +1954,12 @@
           "format": "float",
           "description": "Majority level required for any proposal to pass. Value from `0.5` to `1`."
         },
-        "minProposingBalance": {
+        "minProposerBalance": {
           "type": "number",
           "format": "float",
           "description": "Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`."
         },
-        "minVotingBalance": {
+        "minVoterBalance": {
           "type": "number",
           "format": "float",
           "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."

@@ -107,17 +107,13 @@ func testPrepareProposalNormal(t *testing.T) {
 
 	updateNetwork := types.UpdateNetwork{
 		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds:        100 * 24 * 60 * 60,
-			MaxCloseInSeconds:        1000 * 24 * 60 * 60,
-			MinParticipationStake:    0.01,
-			MinRequiredMajorityStake: 0.5,
+			MinCloseInSeconds: 100 * 24 * 60 * 60,
+			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
 		},
 	}
 	terms := types.ProposalTerms{
-		ClosingTimestamp:         time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
-		EnactmentTimestamp:       time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
-		MinParticipationStake:    0.5,
-		MinRequiredMajorityStake: 0.5,
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
 		Change: &types.ProposalTerms_UpdateNetwork{
 			UpdateNetwork: &updateNetwork,
 		},

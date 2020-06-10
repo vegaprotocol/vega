@@ -20,13 +20,13 @@ message NetworkConfiguration {
   int64 maxEnactInSeconds = 4;
 
   // Participation level required for any proposal to pass. Value from `0` to `1`.
-  float requiredParticipation = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
+  float requiredParticipation = 5;
   // Majority level required for any proposal to pass. Value from `0.5` to `1`.
-  float requiredMajority = 6 [(validator.field) = {float_gte: 0, float_lte: 1}];
+  float requiredMajority = 6;
   // Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`.
-  float minProposerBalance = 7 [(validator.field) = {float_gt: 0, float_lte: 1}];
+  float minProposerBalance = 7;
   // Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`.
-  float minVoterBalance = 8 [(validator.field) = {float_gt: 0, float_lte: 1}];
+  float minVoterBalance = 8;
 }
 
 message UpdateMarket {
