@@ -39,15 +39,15 @@ func TestSafeStringUint64(t *testing.T) {
 }
 
 func TestParseOrderStatus(t *testing.T) {
-	active := OrderStatusStatusActive
+	active := OrderStatusActive
 	status, err := parseOrderStatus(&active)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, status)
-	expired := OrderStatusStatusExpired
+	expired := OrderStatusExpired
 	status, err = parseOrderStatus(&expired)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, status)
-	cancelled := OrderStatusStatusCancelled
+	cancelled := OrderStatusCancelled
 	status, err = parseOrderStatus(&cancelled)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, status)
@@ -57,19 +57,19 @@ func TestParseOrderStatus(t *testing.T) {
 }
 
 func TestParseOrderTimeInForce(t *testing.T) {
-	fok := OrderTimeInForceTifFok
+	fok := OrderTimeInForceFok
 	orderType, err := parseOrderTimeInForce(fok)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_FOK, orderType)
-	ioc := OrderTimeInForceTifIoc
+	ioc := OrderTimeInForceIoc
 	orderType, err = parseOrderTimeInForce(ioc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_IOC, orderType)
-	gtt := OrderTimeInForceTifGtt
+	gtt := OrderTimeInForceGtt
 	orderType, err = parseOrderTimeInForce(gtt)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_GTT, orderType)
-	gtc := OrderTimeInForceTifGtc
+	gtc := OrderTimeInForceGtc
 	orderType, err = parseOrderTimeInForce(gtc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_GTC, orderType)

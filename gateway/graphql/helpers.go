@@ -42,13 +42,13 @@ func convertInterval(interval Interval) (types.Interval, error) {
 
 func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch timeInForce {
-	case OrderTimeInForceTifGtc:
+	case OrderTimeInForceGtc:
 		return types.Order_TIF_GTC, nil
-	case OrderTimeInForceTifGtt:
+	case OrderTimeInForceGtt:
 		return types.Order_TIF_GTT, nil
-	case OrderTimeInForceTifIoc:
+	case OrderTimeInForceIoc:
 		return types.Order_TIF_IOC, nil
-	case OrderTimeInForceTifFok:
+	case OrderTimeInForceFok:
 		return types.Order_TIF_FOK, nil
 	default:
 		return types.Order_TIF_UNSPECIFIED, fmt.Errorf("unknown type: %s", timeInForce.String())
@@ -70,19 +70,19 @@ func parseOrderType(ty OrderType) (types.Order_Type, error) {
 
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
-	case OrderStatusStatusActive:
+	case OrderStatusActive:
 		return types.Order_STATUS_ACTIVE, nil
-	case OrderStatusStatusExpired:
+	case OrderStatusExpired:
 		return types.Order_STATUS_EXPIRED, nil
-	case OrderStatusStatusCancelled:
+	case OrderStatusCancelled:
 		return types.Order_STATUS_CANCELLED, nil
-	case OrderStatusStatusStopped:
+	case OrderStatusStopped:
 		return types.Order_STATUS_STOPPED, nil
-	case OrderStatusStatusFilled:
+	case OrderStatusFilled:
 		return types.Order_STATUS_FILLED, nil
-	case OrderStatusStatusRejected:
+	case OrderStatusRejected:
 		return types.Order_STATUS_REJECTED, nil
-	case OrderStatusStatusPartiallyFilled:
+	case OrderStatusPartiallyFilled:
 		return types.Order_STATUS_PARTIALLY_FILLED, nil
 	default:
 		return types.Order_STATUS_INVALID, fmt.Errorf("unknown status: %s", orderStatus.String())

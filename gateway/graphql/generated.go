@@ -3222,13 +3222,13 @@ type Trade {
 enum TradeType {
 
   "Default trade type"
-  TYPE_DEFAULT
+  Default
 
   "Network close-out - good"
-  TYPE_NETWORK_CLOSE_OUT_GOOD
+  NetworkCloseOutGood
 
   "Network close-out - bad"
-  TYPE_NETWORK_CLOSE_OUT_BAD
+  NetworkCloseOutBad
 }
 
 "An account record"
@@ -3247,19 +3247,19 @@ type Account {
 enum OrderTimeInForce {
 
     "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
-    TIF_FOK
+    FOK
 
     "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
-    TIF_IOC
+    IOC
 
     "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
-    TIF_GTC
+    GTC
 
     """
     This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
     NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
     """
-    TIF_GTT
+    GTT
 }
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
@@ -3269,89 +3269,86 @@ enum OrderStatus {
   The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
   Active does not necessarily mean it's still on the order book.
   """
-  STATUS_ACTIVE
+  Active
 
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
-  STATUS_EXPIRED
+  Expired
 
   "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  STATUS_CANCELLED
+  Cancelled
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
-  STATUS_STOPPED
+  Stopped
 
   "This order is fully filled with remaining equals zero."
-  STATUS_FILLED
+  Filled
 
   "This order was rejected while beeing processed in the core."
-  STATUS_REJECTED
+  Rejected
 
   "This order was partially filled."
-  STATUS_PARTIALLY_FILLED
+  PartiallyFilled
 }
 
 "Reason for the order beeing rejected by the core node"
 enum RejectionReason {
 
-  "There was no error"
-  ORDER_ERROR_NONE
-
   "Market id is invalid"
-  ORDER_ERROR_INVALID_MARKET_ID
+  InvalidMarketId
 
   "Order id is invalid"
-  ORDER_ERROR_INVALID_ORDER_ID
+  InvalidOrderId
 
   "Order is out of sequence"
-  ORDER_ERROR_OUT_OF_SEQUENCE
+  OrderOutOfSequence
 
   "Remaining size in the order is invalid"
-  ORDER_ERROR_INVALID_REMAINING_SIZE
+  InvalidRemainingSize
 
   "Time has failed us"
-  ORDER_ERROR_TIME_FAILURE
+  TimeFailure
 
   "Unable to remove the order"
-  ORDER_ERROR_REMOVAL_FAILURE
+  OrderRemovalFailure
 
   "Expiration time is invalid"
-  ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+  InvalidExpirationTime
 
   "Order reference is invalid"
-  ORDER_ERROR_INVALID_ORDER_REFERENCE
+  InvalidOrderReference
 
   "Edit is not allowed"
-  ORDER_ERROR_EDIT_NOT_ALLOWED
+  EditNotAllowed
 
   "Order amend fail"
-  ORDER_ERROR_AMEND_FAILURE
+  OrderAmendFailure
 
   "Order does not exist"
-  ORDER_ERROR_NOT_FOUND
+  OrderNotFound
 
   "Party id is invalid"
-  ORDER_ERROR_INVALID_PARTY_ID
+  InvalidPartyId
 
   "Market is closed"
-  ORDER_ERROR_MARKET_CLOSED
+  MarketClosed
 
   "Margin check failed"
-  ORDER_ERROR_MARGIN_CHECK_FAILED
+  MarginCheckFailed
 
   "Order missing general account"
-  ORDER_ERROR_MISSING_GENERAL_ACCOUNT
+  MissingGeneralAccount
 
   "An internal error happend"
-  ORDER_ERROR_INTERNAL_ERROR
+  InternalError
 
   "Invalid size"
-  ORDER_ERROR_INVALID_SIZE
+  InvalidSize
 
   "Invalid persistence"
-  ORDER_ERROR_INVALID_PERSISTENCE
+  InvalidPersistence
 
   "Invalid type"
-  ORDER_ERROR_INVALID_TYPE
+  InvalidType
 }
 
 enum OrderType {

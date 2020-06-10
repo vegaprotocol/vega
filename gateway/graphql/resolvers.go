@@ -1059,35 +1059,35 @@ type myOrderResolver VegaResolverRoot
 func RejectionReasonFromProtoOrderError(o types.OrderError) (RejectionReason, error) {
 	switch o {
 	case types.OrderError_ORDER_ERROR_INVALID_MARKET_ID:
-		return RejectionReasonOrderErrorInvalidMarketID, nil
+		return RejectionReasonInvalidMarketID, nil
 	case types.OrderError_ORDER_ERROR_INVALID_ORDER_ID:
-		return RejectionReasonOrderErrorInvalidOrderID, nil
+		return RejectionReasonInvalidOrderID, nil
 	case types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE:
-		return RejectionReasonOrderErrorOutOfSequence, nil
+		return RejectionReasonOrderOutOfSequence, nil
 	case types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE:
-		return RejectionReasonOrderErrorInvalidRemainingSize, nil
+		return RejectionReasonInvalidRemainingSize, nil
 	case types.OrderError_ORDER_ERROR_TIME_FAILURE:
-		return RejectionReasonOrderErrorTimeFailure, nil
+		return RejectionReasonTimeFailure, nil
 	case types.OrderError_ORDER_ERROR_REMOVAL_FAILURE:
-		return RejectionReasonOrderErrorRemovalFailure, nil
+		return RejectionReasonOrderRemovalFailure, nil
 	case types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME:
-		return RejectionReasonOrderErrorInvalidExpirationDatetime, nil
+		return RejectionReasonInvalidExpirationTime, nil
 	case types.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE:
-		return RejectionReasonOrderErrorInvalidOrderReference, nil
+		return RejectionReasonInvalidOrderReference, nil
 	case types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED:
-		return RejectionReasonOrderErrorEditNotAllowed, nil
+		return RejectionReasonEditNotAllowed, nil
 	case types.OrderError_ORDER_ERROR_AMEND_FAILURE:
-		return RejectionReasonOrderErrorAmendFailure, nil
+		return RejectionReasonOrderAmendFailure, nil
 	case types.OrderError_ORDER_ERROR_NOT_FOUND:
-		return RejectionReasonOrderErrorNotFound, nil
+		return RejectionReasonOrderNotFound, nil
 	case types.OrderError_ORDER_ERROR_INVALID_PARTY_ID:
-		return RejectionReasonOrderErrorInvalidPartyID, nil
+		return RejectionReasonInvalidPartyID, nil
 	case types.OrderError_ORDER_ERROR_MARKET_CLOSED:
-		return RejectionReasonOrderErrorMarketClosed, nil
+		return RejectionReasonMarketClosed, nil
 	case types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED:
-		return RejectionReasonOrderErrorMarginCheckFailed, nil
+		return RejectionReasonMarginCheckFailed, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
-		return RejectionReasonOrderErrorInternalError, nil
+		return RejectionReasonInternalError, nil
 	default:
 		return "", fmt.Errorf("invalid RejectionReason: %v", o)
 	}
@@ -1243,22 +1243,18 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 func TradeTypeFromProtoTradeType(tt types.Trade_Type) (TradeType, error) {
 	switch tt {
 	case types.Trade_TYPE_UNSPECIFIED:
-		return TradeTypeTypeDefault, errors.New("unspecified trade type")
+		return TradeTypeDefault, errors.New("unspecified trade type")
 	case types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD:
-		return TradeTypeTypeNetworkCloseOutGood, nil
+		return TradeTypeNetworkCloseOutGood, nil
 	case types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD:
-		return TradeTypeTypeNetworkCloseOutBad, nil
+		return TradeTypeNetworkCloseOutBad, nil
 	default:
-		return "", fmt.Errorf("invalid trade type: %v", tt)
+		return TradeTypeDefault, fmt.Errorf("invalid trade type: %v", tt)
 	}
 }
 
 func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
-	ttype, err := TradeTypeFromProtoTradeType(obj.Type)
-	if err != nil {
-		return TradeTypeTypeDefault, err
-	}
-	return ttype, nil
+	return TradeTypeFromProtoTradeType(obj.Type)
 }
 
 // END: Trade Resolver
