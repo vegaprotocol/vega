@@ -40,19 +40,19 @@ func TestSafeStringUint64(t *testing.T) {
 
 func TestParseOrderStatus(t *testing.T) {
 	active := OrderStatusActive
-	status, err := parseOrderStatus(&active)
+	status, err := convertOrderStatus(&active)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, status)
 	expired := OrderStatusExpired
-	status, err = parseOrderStatus(&expired)
+	status, err = convertOrderStatus(&expired)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, status)
 	cancelled := OrderStatusCancelled
-	status, err = parseOrderStatus(&cancelled)
+	status, err = convertOrderStatus(&cancelled)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, status)
 	unknown := OrderStatus("好候")
-	_, err = parseOrderStatus(&unknown)
+	_, err = convertOrderStatus(&unknown)
 	assert.Error(t, err)
 }
 
@@ -81,15 +81,15 @@ func TestParseOrderTimeInForce(t *testing.T) {
 
 func TestParseSide(t *testing.T) {
 	buy := SideBuy
-	side, err := parseSide(&buy)
+	side, err := convertSide(&buy)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	sell := SideSell
-	side, err = parseSide(&sell)
+	side, err = convertSide(&sell)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Side_SIDE_SELL, side)
 	unknown := Side("好到时候")
-	_, err = parseSide(&unknown)
+	_, err = convertSide(&unknown)
 	assert.Error(t, err)
 }
 

@@ -1117,8 +1117,22 @@ func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderTyp
 }
 
 func (r *myOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
-	return Side(obj.Side.String()), nil
+	side, err := unconvertSide(obj.Side)
+	if err != nil {
+		r.log.Warn("Side conversion from proto to gql type failed, falling back to default: Buy",
+			logging.String("side", obj.Side.String()),
+			logging.Error(err),
+		)
+		return SideBuy, err
+	}
+	if !side.IsValid() {
+		r.log.Warn("Side conversion from proto to gql type failed, falling back to default: Buy",
+			logging.String("side", obj.Side.String()))
+		return SideBuy, fmt.Errorf("failed to convert Interval to GraphQL enum: %s", obj.Side.String())
+	}
+	return side, nil
 }
+
 func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
 	if obj == nil {
 		return nil, errors.New("invalid order")
@@ -1137,9 +1151,24 @@ func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, e
 func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
+
 func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
-	return OrderStatus(obj.Status.String()), nil
+	orderStatus, err := unconvertOrderStatus(obj.Status)
+	if err != nil {
+		r.log.Warn("OrderStatus conversion from proto to gql type failed, falling back to default: Active",
+			logging.String("status", obj.Status.String()),
+			logging.Error(err),
+		)
+		return OrderStatusActive, err
+	}
+	if !orderStatus.IsValid() {
+		r.log.Warn("OrderStatus conversion from proto to gql type failed, falling back to default: Active",
+			logging.String("status", obj.Status.String()))
+		return OrderStatusActive, fmt.Errorf("failed to convert Interval to GraphQL enum: %s", obj.Side.String())
+	}
+	return orderStatus, nil
 }
+
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
@@ -1285,13 +1314,20 @@ func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (st
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
-	interval := Interval(obj.Interval.String())
-	if interval.IsValid() {
-		return interval, nil
+	interval, err := unconvertInterval(obj.Interval)
+	if err != nil {
+		r.log.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
+			logging.String("interval", obj.Interval.String()),
+			logging.Error(err),
+		)
+		return IntervalI15m, err
 	}
-	r.log.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
-		logging.String("interval", interval.String()))
-	return IntervalI15m, nil
+	if !interval.IsValid() {
+		r.log.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
+			logging.String("interval", obj.Interval.String()))
+		return IntervalI15m, fmt.Errorf("failed to convert Interval to GraphQL enum: %s", obj.Interval.String())
+	}
+	return interval, nil
 }
 
 // END: Candle Resolver
@@ -1463,7 +1499,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
 		return nil, err
 	}
-	if order.Side, err = parseSide(&side); err != nil {
+	if order.Side, err = convertSide(&side); err != nil {
 		return nil, err
 	}
 	if order.Type, err = parseOrderType(ty); err != nil {

@@ -19,6 +19,7 @@ func safeStringUint64(input string) (uint64, error) {
 	return 0, fmt.Errorf("invalid input string for uint64 conversion %s", input)
 }
 
+// convertInterval converts a GraphQL enum to a Proto enum
 func convertInterval(interval Interval) (types.Interval, error) {
 	switch interval {
 	case IntervalI15m:
@@ -34,9 +35,29 @@ func convertInterval(interval Interval) (types.Interval, error) {
 	case IntervalI6h:
 		return types.Interval_INTERVAL_I6H, nil
 	default:
-		err := fmt.Errorf("invalid interval when subscribing to candles, falling back to default: I15M, (%v)", interval)
-
+		err := fmt.Errorf("failed to convert Interval from GraphQL to Proto: %v", interval)
 		return types.Interval_INTERVAL_UNSPECIFIED, err
+	}
+}
+
+// unconvertInterval converts a Proto enum to a Proto enum
+func unconvertInterval(interval types.Interval) (Interval, error) {
+	switch interval {
+	case types.Interval_INTERVAL_I15M:
+		return IntervalI15m, nil
+	case types.Interval_INTERVAL_I1D:
+		return IntervalI1d, nil
+	case types.Interval_INTERVAL_I1H:
+		return IntervalI1h, nil
+	case types.Interval_INTERVAL_I1M:
+		return IntervalI1m, nil
+	case types.Interval_INTERVAL_I5M:
+		return IntervalI5m, nil
+	case types.Interval_INTERVAL_I6H:
+		return IntervalI6h, nil
+	default:
+		err := fmt.Errorf("failed to convert Interval from Proto to GraphQL: %v", interval)
+		return IntervalI15m, err
 	}
 }
 
@@ -68,7 +89,8 @@ func parseOrderType(ty OrderType) (types.Order_Type, error) {
 	}
 }
 
-func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
+// convertOrderStatus converts a GraphQL enum to a Proto enum
+func convertOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
 	case OrderStatusActive:
 		return types.Order_STATUS_ACTIVE, nil
@@ -85,18 +107,57 @@ func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	case OrderStatusPartiallyFilled:
 		return types.Order_STATUS_PARTIALLY_FILLED, nil
 	default:
-		return types.Order_STATUS_INVALID, fmt.Errorf("unknown status: %s", orderStatus.String())
+		err := fmt.Errorf("failed to convert OrderStatus from GraphQL to Proto: %v", orderStatus)
+		return types.Order_STATUS_INVALID, err
 	}
 }
 
-func parseSide(side *Side) (types.Side, error) {
+// unconvertOrderStatus converts a Proto enum to a GraphQL enum
+func unconvertOrderStatus(orderStatus types.Order_Status) (OrderStatus, error) {
+	switch orderStatus {
+	case types.Order_STATUS_ACTIVE:
+		return OrderStatusActive, nil
+	case types.Order_STATUS_EXPIRED:
+		return OrderStatusExpired, nil
+	case types.Order_STATUS_CANCELLED:
+		return OrderStatusCancelled, nil
+	case types.Order_STATUS_STOPPED:
+		return OrderStatusStopped, nil
+	case types.Order_STATUS_FILLED:
+		return OrderStatusFilled, nil
+	case types.Order_STATUS_REJECTED:
+		return OrderStatusRejected, nil
+	case types.Order_STATUS_PARTIALLY_FILLED:
+		return OrderStatusPartiallyFilled, nil
+	default:
+		err := fmt.Errorf("failed to convert OrderStatus from Proto to GraphQL: %v", orderStatus)
+		return OrderStatusActive, err
+	}
+}
+
+// convertSide converts a GraphQL enum to a Proto enum
+func convertSide(side *Side) (types.Side, error) {
 	switch *side {
 	case SideBuy:
 		return types.Side_SIDE_BUY, nil
 	case SideSell:
 		return types.Side_SIDE_SELL, nil
 	default:
-		return types.Side_SIDE_UNSPECIFIED, fmt.Errorf("unknown side: %s", side.String())
+		err := fmt.Errorf("failed to convert Side from GraphQL to Proto: %v", side)
+		return types.Side_SIDE_UNSPECIFIED, err
+	}
+}
+
+// unconvertSide converts a Proto enum to a GraphQL enum
+func unconvertSide(side types.Side) (Side, error) {
+	switch side {
+	case types.Side_SIDE_BUY:
+		return SideBuy, nil
+	case types.Side_SIDE_SELL:
+		return SideSell, nil
+	default:
+		err := fmt.Errorf("failed to convert Side from Proto to GraphQL: %v", side)
+		return SideBuy, err
 	}
 }
 
