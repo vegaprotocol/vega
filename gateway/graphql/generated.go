@@ -3553,13 +3553,13 @@ type UpdateNetwork {
   requiredMajority: Float
 
   """
-  Network parameter setting minimum balance required for a party
+  Network parameter that sets minimum balance required for a party
   to be able to submit a new proposal. Value greater than 0 to 1.
   """
   minProposerBalance: Float
 
   """
-  Network parameter setting minimum balance required for a party
+  Network parameter that sets minimum balance required for a party
   to be able to cast a vote.  Value greater than 0 to 1.
   """
   minVoterBalance: Float
@@ -3602,13 +3602,13 @@ input UpdateNetworkInput {
   requiredMajority: Float
 
   """
-  Network parameter setting minimum balance required for a party
+  Network parameter that sets minimum balance required for a party
   to be able to submit a new proposal. Value greater than 0 to 1.
   """
   minProposerBalance: Float
 
   """
-  Network parameter setting minimum balance required for a party
+  Network parameter that sets minimum balance required for a party
   to be able to cast a vote.  Value greater than 0 to 1.
   """
   minVoterBalance: Float

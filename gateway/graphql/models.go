@@ -422,10 +422,10 @@ type UpdateNetwork struct {
 	// Network parameter that sets majority level required for any proposal to pass.
 	// Value from 0.5 to 1.
 	RequiredMajority *float64 `json:"requiredMajority"`
-	// Network parameter setting minimum balance required for a party
+	// Network parameter that sets minimum balance required for a party
 	// to be able to submit a new proposal. Value greater than 0 to 1.
 	MinProposerBalance *float64 `json:"minProposerBalance"`
-	// Network parameter setting minimum balance required for a party
+	// Network parameter that sets minimum balance required for a party
 	// to be able to cast a vote.  Value greater than 0 to 1.
 	MinVoterBalance *float64 `json:"minVoterBalance"`
 }
@@ -454,10 +454,10 @@ type UpdateNetworkInput struct {
 	// Network parameter that sets majority level required for any proposal to pass.
 	// Value from 0.5 to 1.
 	RequiredMajority *float64 `json:"requiredMajority"`
-	// Network parameter setting minimum balance required for a party
+	// Network parameter that sets minimum balance required for a party
 	// to be able to submit a new proposal. Value greater than 0 to 1.
 	MinProposerBalance *float64 `json:"minProposerBalance"`
-	// Network parameter setting minimum balance required for a party
+	// Network parameter that sets minimum balance required for a party
 	// to be able to cast a vote.  Value greater than 0 to 1.
 	MinVoterBalance *float64 `json:"minVoterBalance"`
 }
