@@ -21,7 +21,6 @@ func TestVersioning(t *testing.T) {
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
