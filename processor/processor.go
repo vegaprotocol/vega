@@ -119,12 +119,6 @@ type ProposalBuf interface {
 	Flush()
 }
 
-const (
-	notValidAssetProposal uint32 = iota
-	validAssetProposal
-	voteSentAssetProposal
-)
-
 type nodeProposal struct {
 	*types.Proposal
 	votes     map[string]struct{}

@@ -49,6 +49,8 @@ type VoteBuf interface {
 // ValidatorTopology...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/governance ValidatorTopology
 type ValidatorTopology interface {
+	Exists([]byte) bool
+	Len() int
 }
 
 type network struct {
