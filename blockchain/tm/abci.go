@@ -117,7 +117,7 @@ func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.R
 	if a.LogTimeDebug {
 		a.log.Debug("Block time for height",
 			logging.Int64("height", beginBlock.Header.Height),
-			logging.Int64("num-txs", beginBlock.Header.NumTxs),
+			// TODO: logging.Int64("num-txs", beginBlock.Header.NumTxs),
 			logging.Int64("epoch-nano", beginBlock.Header.Time.UnixNano()),
 			logging.String("time", beginBlock.Header.Time.String()))
 	}
