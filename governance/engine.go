@@ -57,11 +57,11 @@ type Engine struct {
 	vbuf        VoteBuf
 	currentTime time.Time
 
-	activeProposals map[string]*governanceData
+	activeProposals map[string]*proposalData
 	networkParams   NetworkParameters
 }
 
-type governanceData struct {
+type proposalData struct {
 	*types.Proposal
 	yes map[string]*types.Vote
 	no  map[string]*types.Vote
@@ -86,7 +86,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		vbuf:            vbuf,
 		log:             log,
 		currentTime:     now,
-		activeProposals: map[string]*governanceData{},
+		activeProposals: map[string]*proposalData{},
 		networkParams:   *params,
 	}
 }
@@ -110,22 +110,24 @@ func (e *Engine) ReloadConf(cfg Config) {
 // OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t
-	now := t.Unix()
-
-	totalStake := e.accounts.GetTotalTokens()
-	counter := newStakeCounter(e.log, e.accounts)
-
 	var toBeEnacted []*types.Proposal
-	for id, proposal := range e.activeProposals {
-		if proposal.Terms.ClosingTimestamp < now {
-			e.closeProposal(proposal, counter, totalStake)
-		}
+	if len(e.activeProposals) > 0 {
+		now := t.Unix()
 
-		if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
-			delete(e.activeProposals, id)
-		} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
-			toBeEnacted = append(toBeEnacted, proposal.Proposal)
-			delete(e.activeProposals, id)
+		totalStake := e.accounts.GetTotalTokens()
+		counter := newStakeCounter(e.log, e.accounts)
+
+		for id, proposal := range e.activeProposals {
+			if proposal.Terms.ClosingTimestamp < now {
+				e.closeProposal(proposal, counter, totalStake)
+			}
+
+			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
+				delete(e.activeProposals, id)
+			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
+				toBeEnacted = append(toBeEnacted, proposal.Proposal)
+				delete(e.activeProposals, id)
+			}
 		}
 	}
 	return toBeEnacted
@@ -144,7 +146,7 @@ func (e *Engine) SubmitProposal(proposal types.Proposal) error {
 		if err != nil {
 			proposal.State = types.Proposal_STATE_REJECTED
 		} else {
-			e.activeProposals[proposal.ID] = &governanceData{
+			e.activeProposals[proposal.ID] = &proposalData{
 				Proposal: &proposal,
 				yes:      map[string]*types.Vote{},
 				no:       map[string]*types.Vote{},
@@ -158,14 +160,6 @@ func (e *Engine) SubmitProposal(proposal types.Proposal) error {
 
 // validates proposals read from the chain
 func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
-	proposerTokens, err := getGovernanceTokens(e.accounts, proposal.PartyID)
-	if err != nil {
-		return err
-	}
-	totalTokens := e.accounts.GetTotalTokens()
-	if float32(proposerTokens) < float32(totalTokens)*e.networkParams.minProposerBalance {
-		return ErrProposalInsufficientTokens
-	}
 	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(e.networkParams.minClose).Unix() {
 		return ErrProposalCloseTimeTooSoon
 	}
@@ -177,6 +171,14 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
 	}
 	if proposal.Terms.EnactmentTimestamp > e.currentTime.Add(e.networkParams.maxEnact).Unix() {
 		return ErrProposalEnactTimeTooLate
+	}
+	proposerTokens, err := getGovernanceTokens(e.accounts, proposal.PartyID)
+	if err != nil {
+		return err
+	}
+	totalTokens := e.accounts.GetTotalTokens()
+	if float32(proposerTokens) < float32(totalTokens)*e.networkParams.minProposerBalance {
+		return ErrProposalInsufficientTokens
 	}
 	return nil
 }
@@ -200,7 +202,14 @@ func (e *Engine) AddVote(vote types.Vote) error {
 	return nil
 }
 
-func (e *Engine) validateVote(vote types.Vote) (*governanceData, error) {
+func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
+	proposal, found := e.activeProposals[vote.ProposalID]
+	if !found {
+		return nil, ErrProposalNotFound
+	} else if proposal.State == types.Proposal_STATE_PASSED {
+		return nil, ErrProposalPassed
+	}
+
 	voterTokens, err := getGovernanceTokens(e.accounts, vote.PartyID)
 	if err != nil {
 		return nil, err
@@ -210,42 +219,38 @@ func (e *Engine) validateVote(vote types.Vote) (*governanceData, error) {
 		return nil, ErrVoterInsufficientTokens
 	}
 
-	proposal, found := e.activeProposals[vote.ProposalID]
-	if !found {
-		return nil, ErrProposalNotFound
-	} else if proposal.State == types.Proposal_STATE_PASSED {
-		return nil, ErrProposalPassed
-	}
 	return proposal, nil
 }
 
 // sets proposal in either declined or passed state
-func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, totalStake uint64) {
-	data.State = types.Proposal_STATE_DECLINED // declined unless passed
+func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, totalStake uint64) {
+	if proposal.State == types.Proposal_STATE_OPEN {
+		proposal.State = types.Proposal_STATE_DECLINED // declined unless passed
 
-	yes := counter.countVotes(data.yes)
-	no := counter.countVotes(data.no)
-	totalVotes := float32(yes + no)
+		yes := counter.countVotes(proposal.yes)
+		no := counter.countVotes(proposal.no)
+		totalVotes := float32(yes + no)
 
-	// yes          > (yes + no)* required majority ratio
-	if float32(yes) > totalVotes*e.networkParams.requiredMajority &&
-		//(yes+no) >= (yes + no + novote)* required participation ratio
-		totalVotes >= float32(totalStake)*e.networkParams.requiredParticipation {
-		data.State = types.Proposal_STATE_PASSED
-		e.log.Debug("Proposal passed", logging.String("proposal-id", data.ID))
-	} else if totalVotes == 0 {
-		e.log.Info("Proposal declined - no votes", logging.String("proposal-id", data.ID))
-	} else {
-		e.log.Info(
-			"Proposal declined",
-			logging.String("proposal-id", data.ID),
-			logging.Uint64("yes-votes", yes),
-			logging.Float32("min-yes-required", totalVotes*e.networkParams.requiredMajority),
-			logging.Float32("total-votes", totalVotes),
-			logging.Float32("min-total-votes-required", float32(totalStake)*e.networkParams.requiredParticipation),
-		)
+		// yes          > (yes + no)* required majority ratio
+		if float32(yes) > totalVotes*e.networkParams.requiredMajority &&
+			//(yes+no) >= (yes + no + novote)* required participation ratio
+			totalVotes >= float32(totalStake)*e.networkParams.requiredParticipation {
+			proposal.State = types.Proposal_STATE_PASSED
+			e.log.Debug("Proposal passed", logging.String("proposal-id", proposal.ID))
+		} else if totalVotes == 0 {
+			e.log.Info("Proposal declined - no votes", logging.String("proposal-id", proposal.ID))
+		} else {
+			e.log.Info(
+				"Proposal declined",
+				logging.String("proposal-id", proposal.ID),
+				logging.Uint64("yes-votes", yes),
+				logging.Float32("min-yes-required", totalVotes*e.networkParams.requiredMajority),
+				logging.Float32("total-votes", totalVotes),
+				logging.Float32("min-total-votes-required", float32(totalStake)*e.networkParams.requiredParticipation),
+			)
+		}
+		e.buf.Add(*proposal.Proposal)
 	}
-	e.buf.Add(*data.Proposal)
 }
 
 // stakeCounter caches token balance per party and counts votes
