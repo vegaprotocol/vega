@@ -43,7 +43,7 @@ steps:
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       # Build normal executable
-      - ./script/build.sh -t linux/amd64
+      - ./script/build.sh -a build -t linux/amd64
       # Build executable for sytstem-tests, with custom Governance parameters. 8760h is 24*365 hours.
       - env
           VEGA_GOVERNANCE_MIN_CLOSE=5s
@@ -51,7 +51,7 @@ steps:
           VEGA_GOVERNANCE_MIN_ENACT=5s
           VEGA_GOVERNANCE_MAX_ENACT=8760h
           VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=1
-          ./script/build.sh -t linux/amd64 -s "-systemtests"
+          ./script/build.sh -a build -t linux/amd64 -s "-systemtests"
     depends_on:
       - fetch
     when:
@@ -182,7 +182,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build.sh -t linux/amd64
+      - ./script/build.sh -a build -t linux/amd64
     depends_on:
       - fetch
     when:
@@ -293,7 +293,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build.sh -T
+      - ./script/build.sh -a build -T
     depends_on:
       - build-branch
     when:
