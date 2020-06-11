@@ -6,8 +6,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
-	cmn "github.com/tendermint/tendermint/libs/common"
 	tmlog "github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/service"
 )
 
 // Server is an abstraction over the abci server
@@ -15,7 +15,7 @@ type Server struct {
 	Config
 	log  *logging.Logger
 	abci *AbciApplication
-	srv  cmn.Service
+	srv  service.Service
 }
 
 // NewServer instantiate a new server
