@@ -125,7 +125,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	mktsetup = getMarketTestSetup(mkt)
 	// create the party engine, and add to the test setup
 	// so we can register parties and their account balances
-	mktsetup.party = execution.NewParty(log, mktsetup.colE, []proto.Market{*mkt}, mktsetup.parties)
+	mktsetup.party = execution.NewParty(log, mktsetup.colE, []proto.Market{*mkt}, mktsetup.broker)
 	m, err := execution.NewMarket(
 		log,
 		risk.NewDefaultConfig(),
@@ -136,7 +136,6 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.party, // party-engine here!
 		mkt,
 		mktsetup.candles,
-		mktsetup.parties,
 		mktsetup.trades,
 		mktsetup.marginLevelsBuf,
 		NewSettlementStub(),

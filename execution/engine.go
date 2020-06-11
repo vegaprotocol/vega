@@ -52,13 +52,6 @@ type TradeBuf interface {
 	Flush() error
 }
 
-// PartyBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyBuf
-type PartyBuf interface {
-	Add(types.Party)
-	Flush() error
-}
-
 // SettlementBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
 type SettlementBuf interface {
@@ -126,7 +119,6 @@ type Engine struct {
 
 	candleBuf       CandleBuf
 	marketBuf       MarketBuf
-	partyBuf        PartyBuf
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
@@ -148,7 +140,6 @@ func NewEngine(
 	tradeBuf TradeBuf,
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
-	partyBuf PartyBuf,
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
@@ -183,11 +174,10 @@ func NewEngine(
 		markets:         map[string]*Market{},
 		candleBuf:       candleBuf,
 		marketBuf:       marketBuf,
-		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
 		governance:      gengine,
-		party:           NewParty(log, cengine, pmkts, partyBuf),
+		party:           NewParty(log, cengine, pmkts, broker),
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
@@ -564,9 +554,6 @@ func (e *Engine) Generate() error {
 		e.marketDataBuf.Add(v.GetMarketData())
 	}
 	e.marketDataBuf.Flush()
-	// Parties
-	_ = e.partyBuf.Flush() // JL: do not check errors here as they only happened when a party is created
-
 	return nil
 }
 
