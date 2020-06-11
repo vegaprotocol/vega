@@ -62,29 +62,20 @@ coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
 
 .PHONY: deps
 deps: ## Get the dependencies
-	@go mod download
-	@go mod vendor
-	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
-	@mkdir -p "$$GOPATH/pkg/mod/@indirect"
-	@modvendor -copy="**/*.proto"
+	@./script/build.sh -a deps
 
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
 	@d="" ; test -n "$$DEBUGVEGA" && d="-d" ; \
-	./script/build.sh $d -t linux/amd64
+	./script/build.sh $$d -a build -t default
 
 .PHONY: gofmtsimplify
 gofmtsimplify:
 	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
 
 .PHONY: install
-install: SHELL:=/bin/bash
 install: ## install the binaries in GOPATH/bin
-	@source ./script/build.sh && set_version && set_ldflags && \
-	echo "Version: $$version ($$version_hash)" && \
-	for app in "$${apps[@]}" ; do \
-		env CGO_ENABLED=1 go install -v -ldflags "$$ldflags" "./cmd/$$app" || exit 1 ; \
-	done
+	@./script/build.sh -a install -t default
 
 .PHONY: gqlgen
 gqlgen: ## run gqlgen
@@ -107,7 +98,7 @@ ineffectassign: ## Check for ineffectual assignments
 	if test "$$(echo -n "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" ; exit 1 ; fi
 
 .PHONY: proto
-proto: deps ## build proto definitions
+proto: ## build proto definitions
 	@./proto/generate.sh
 
 .PHONY: proto_check
@@ -150,7 +141,7 @@ print_check: ## Check for fmt.Print functions in Go code
 	if test "$$count" -gt 0 ; then exit 1 ; fi
 
 .PHONY: docker
-docker: SHELL:=/bin/bash
+docker: SHELL:=/usr/bin/env bash
 docker: ## Make docker container image from scratch
 	@source ./script/build.sh && \
 	if ! test -f "$(HOME)/.ssh/id_rsa" ; then \
