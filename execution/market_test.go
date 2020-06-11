@@ -70,7 +70,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore,
-		partyStore, tradeStore, marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
+		tradeStore, marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()

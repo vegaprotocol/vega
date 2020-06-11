@@ -287,7 +287,6 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.party,
 		marketConfig,
 		e.candleBuf,
-		e.partyBuf,
 		e.tradeBuf,
 		e.marginLevelsBuf,
 		e.settleBuf,
