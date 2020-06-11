@@ -174,7 +174,7 @@ func NewEngine(
 		return nil
 	}
 
-	networkParameters := governance.DefaultNetworkParameters() //TODO: store the parameters so proposals can update them
+	networkParameters := governance.DefaultNetworkParameters(log) //TODO: store the parameters so proposals can update them
 	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
 
 	e := &Engine{

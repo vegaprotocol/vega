@@ -665,7 +665,8 @@ func getTestEngine(t *testing.T) *tstEngine {
 	accs := mocks.NewMockAccounts(ctrl)
 	buf := mocks.NewMockBuffer(ctrl)
 	vbuf := mocks.NewMockVoteBuf(ctrl)
-	eng := governance.NewEngine(logging.NewTestLogger(), cfg, governance.DefaultNetworkParameters(), accs, buf, vbuf, time.Now())
+	log := logging.NewTestLogger()
+	eng := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, buf, vbuf, time.Now())
 	return &tstEngine{
 		Engine: eng,
 		ctrl:   ctrl,

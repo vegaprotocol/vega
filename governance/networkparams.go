@@ -1,9 +1,10 @@
 package governance
 
 import (
-	"fmt"
 	"strconv"
 	"time"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (
@@ -63,13 +64,13 @@ type NetworkParameters struct {
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
-func DefaultNetworkParameters() *NetworkParameters {
+func DefaultNetworkParameters(log *logging.Logger) *NetworkParameters {
 	return &NetworkParameters{
-		newMarkets: defaultNewMarketParameters(),
+		newMarkets: defaultNewMarketParameters(log),
 	}
 }
 
-func defaultNewMarketParameters() ProposalParameters {
+func defaultNewMarketParameters(log *logging.Logger) ProposalParameters {
 	var err error
 	result := ProposalParameters{
 		MinClose:              defaultMinClose,
@@ -85,76 +86,132 @@ func defaultNewMarketParameters() ProposalParameters {
 	if len(MinClose) > 0 {
 		result.MinClose, err = time.ParseDuration(MinClose)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MinClose, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("MinClose", MinClose),
+				logging.Error(err),
+			)
 		}
 	}
 	if len(MaxClose) > 0 {
 		result.MaxClose, err = time.ParseDuration(MaxClose)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxClose, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("MaxClose", MaxClose),
+				logging.Error(err),
+			)
 		}
 	}
 	if len(MinEnact) > 0 {
 		result.MinEnact, err = time.ParseDuration(MinEnact)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MinEnact, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("MinEnact", MinEnact),
+				logging.Error(err),
+			)
 		}
 	}
 	if len(MaxEnact) > 0 {
 		result.MaxEnact, err = time.ParseDuration(MaxEnact)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxEnact, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("MaxEnact", MaxEnact),
+				logging.Error(err),
+			)
 		}
 	}
 	if len(RequiredParticipation) > 0 {
 		levelValue, err := strconv.ParseFloat(RequiredParticipation, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse RequiredParticipation, %s: %s", RequiredParticipation, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("RequiredParticipation", RequiredParticipation),
+				logging.Error(err),
+			)
 		}
 		if levelValue < 0 {
-			panic(fmt.Sprintf("Invalid RequiredParticipation (negative): %s", RequiredParticipation))
+			log.Fatal(
+				"New market network parameter is invalid (negative)",
+				logging.String("RequiredParticipation", RequiredParticipation),
+			)
 		}
 		if levelValue > 1 {
-			panic(fmt.Sprintf("Invalid RequiredParticipation (over 1): %s", RequiredParticipation))
+			log.Fatal(
+				"New market network parameter is invalid (over 1)",
+				logging.String("RequiredParticipation", RequiredParticipation),
+			)
 		}
 		result.RequiredParticipation = float32(levelValue)
 	}
 	if len(RequiredMajority) > 0 {
 		levelValue, err := strconv.ParseFloat(RequiredMajority, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse RequiredMajority, %s: %s", RequiredMajority, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("RequiredMajority", RequiredMajority),
+				logging.Error(err),
+			)
 		}
 		if levelValue < 0.5 {
-			panic(fmt.Sprintf("Invalid RequiredMajority (less than 0.5): %s", RequiredMajority))
+			log.Fatal(
+				"New market network parameter is invalid (less than 0.5)",
+				logging.String("RequiredMajority", RequiredMajority),
+			)
 		}
 		if levelValue > 1 {
-			panic(fmt.Sprintf("Invalid RequiredMajority (over 1): %s", RequiredMajority))
+			log.Fatal(
+				"New market network parameter is invalid (over 1)",
+				logging.String("RequiredMajority", RequiredMajority),
+			)
 		}
 		result.RequiredMajority = float32(levelValue)
 	}
 	if len(MinProposerBalance) > 0 {
 		levelValue, err := strconv.ParseFloat(MinProposerBalance, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse MinProposerBalance, %s: %s", MinProposerBalance, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("MinProposerBalance", MinProposerBalance),
+				logging.Error(err),
+			)
 		}
 		if levelValue <= 0 {
-			panic(fmt.Sprintf("Invalid MinProposingBalance (less or equal than 0): %s", MinProposerBalance))
+			log.Fatal(
+				"New market network parameter is invalid (less or equal than 0)",
+				logging.String("MinProposerBalance", MinProposerBalance),
+			)
 		}
 		if levelValue > 1 {
-			panic(fmt.Sprintf("Invalid MinProposingBalance (over 1): %s", MinProposerBalance))
+			log.Fatal(
+				"New market network parameter is invalid (over 1)",
+				logging.String("MinProposerBalance", MinProposerBalance),
+			)
 		}
 		result.MinProposerBalance = float32(levelValue)
 	}
 	if len(MinVoterBalance) > 0 {
 		levelValue, err := strconv.ParseFloat(MinVoterBalance, 32)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to parse MinVoterBalance, %s: %s", MinVoterBalance, err.Error()))
+			log.Fatal(
+				"Failed to parse new market network parameter",
+				logging.String("MinVoterBalance", MinVoterBalance),
+				logging.Error(err),
+			)
 		}
 		if levelValue <= 0 {
-			panic(fmt.Sprintf("Invalid MinVoterBalance (less or equal than 0): %s", MinVoterBalance))
+			log.Fatal(
+				"New market network parameter is invalid (less or equal than 0)",
+				logging.String("MinVoterBalance", MinVoterBalance),
+			)
 		}
 		if levelValue > 1 {
-			panic(fmt.Sprintf("Invalid MinVoterBalance (over 1): %s", MinVoterBalance))
+			log.Fatal(
+				"New market network parameter is invalid (over 1)",
+				logging.String("MinVoterBalance", MinVoterBalance),
+			)
 		}
 		result.MinVoterBalance = float32(levelValue)
 	}
