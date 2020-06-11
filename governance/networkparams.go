@@ -45,51 +45,63 @@ const (
 	defaultMinVoterBalance = 0.00001
 )
 
-// NetworkParameters stores governance network parameters
+// ProposalParameters stores proposal specific parameters
+type ProposalParameters struct {
+	MinClose              time.Duration
+	MaxClose              time.Duration
+	MinEnact              time.Duration
+	MaxEnact              time.Duration
+	RequiredParticipation float32
+	RequiredMajority      float32
+	MinProposerBalance    float32
+	MinVoterBalance       float32
+}
+
+// NetworkParameters stores network parameters per proposal type
 type NetworkParameters struct {
-	minClose              time.Duration
-	maxClose              time.Duration
-	minEnact              time.Duration
-	maxEnact              time.Duration
-	requiredParticipation float32
-	requiredMajority      float32
-	minProposerBalance    float32
-	minVoterBalance       float32
+	newMarkets ProposalParameters
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
 func DefaultNetworkParameters() *NetworkParameters {
-	var err error
-	result := &NetworkParameters{
-		minClose:              defaultMinClose,
-		maxClose:              defaultMaxClose,
-		minEnact:              defaultMinEnact,
-		maxEnact:              defaultMaxEnact,
-		requiredParticipation: defaultRequiredParticipation,
-		requiredMajority:      defaultRequiredMajority,
-		minProposerBalance:    defaultMinProposerBalance,
-		minVoterBalance:       defaultMinVoterBalance,
+	return &NetworkParameters{
+		newMarkets: defaultNewMarketParameters(),
 	}
+}
+
+func defaultNewMarketParameters() ProposalParameters {
+	var err error
+	result := ProposalParameters{
+		MinClose:              defaultMinClose,
+		MaxClose:              defaultMaxClose,
+		MinEnact:              defaultMinEnact,
+		MaxEnact:              defaultMaxEnact,
+		RequiredParticipation: defaultRequiredParticipation,
+		RequiredMajority:      defaultRequiredMajority,
+		MinProposerBalance:    defaultMinProposerBalance,
+		MinVoterBalance:       defaultMinVoterBalance,
+	}
+
 	if len(MinClose) > 0 {
-		result.minClose, err = time.ParseDuration(MinClose)
+		result.MinClose, err = time.ParseDuration(MinClose)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MinClose, err.Error()))
 		}
 	}
 	if len(MaxClose) > 0 {
-		result.maxClose, err = time.ParseDuration(MaxClose)
+		result.MaxClose, err = time.ParseDuration(MaxClose)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxClose, err.Error()))
 		}
 	}
 	if len(MinEnact) > 0 {
-		result.minEnact, err = time.ParseDuration(MinEnact)
+		result.MinEnact, err = time.ParseDuration(MinEnact)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MinEnact, err.Error()))
 		}
 	}
 	if len(MaxEnact) > 0 {
-		result.maxEnact, err = time.ParseDuration(MaxEnact)
+		result.MaxEnact, err = time.ParseDuration(MaxEnact)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to parse time duration, %s: %s", MaxEnact, err.Error()))
 		}
@@ -105,7 +117,7 @@ func DefaultNetworkParameters() *NetworkParameters {
 		if levelValue > 1 {
 			panic(fmt.Sprintf("Invalid RequiredParticipation (over 1): %s", RequiredParticipation))
 		}
-		result.requiredParticipation = float32(levelValue)
+		result.RequiredParticipation = float32(levelValue)
 	}
 	if len(RequiredMajority) > 0 {
 		levelValue, err := strconv.ParseFloat(RequiredMajority, 32)
@@ -118,7 +130,7 @@ func DefaultNetworkParameters() *NetworkParameters {
 		if levelValue > 1 {
 			panic(fmt.Sprintf("Invalid RequiredMajority (over 1): %s", RequiredMajority))
 		}
-		result.requiredMajority = float32(levelValue)
+		result.RequiredMajority = float32(levelValue)
 	}
 	if len(MinProposerBalance) > 0 {
 		levelValue, err := strconv.ParseFloat(MinProposerBalance, 32)
@@ -131,7 +143,7 @@ func DefaultNetworkParameters() *NetworkParameters {
 		if levelValue > 1 {
 			panic(fmt.Sprintf("Invalid MinProposingBalance (over 1): %s", MinProposerBalance))
 		}
-		result.minProposerBalance = float32(levelValue)
+		result.MinProposerBalance = float32(levelValue)
 	}
 	if len(MinVoterBalance) > 0 {
 		levelValue, err := strconv.ParseFloat(MinVoterBalance, 32)
@@ -144,12 +156,12 @@ func DefaultNetworkParameters() *NetworkParameters {
 		if levelValue > 1 {
 			panic(fmt.Sprintf("Invalid MinVoterBalance (over 1): %s", MinVoterBalance))
 		}
-		result.minVoterBalance = float32(levelValue)
+		result.MinVoterBalance = float32(levelValue)
 	}
 
-	result.maxClose = max(result.maxClose, result.minClose) // maxClose must be >= minClose
-	result.minEnact = max(result.minEnact, result.minClose) // minEnact must be >= minClose
-	result.maxEnact = max(result.maxEnact, result.minEnact) // maxEnact must be >= minEnact
+	result.MaxClose = max(result.MaxClose, result.MinClose) // MaxClose must be >= MinClose
+	result.MinEnact = max(result.MinEnact, result.MinClose) // MinEnact must be >= MinClose
+	result.MaxEnact = max(result.MaxEnact, result.MinEnact) // MaxEnact must be >= MinEnact
 	return result
 }
 

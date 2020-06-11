@@ -25,6 +25,7 @@ var (
 	ErrProposalMinRequiredMajorityStakeInvalid = errors.New("proposal minimum required majority stake is out of bounds [0.5..1]")
 	ErrVoterInsufficientTokens                 = errors.New("vote requires more tokens than party has")
 	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
+	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
 )
 
 // Accounts ...
@@ -69,16 +70,6 @@ type proposalData struct {
 
 // NewEngine creates new governance engine instance
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
-	log.Debug("Governance network parameters",
-		logging.String("MinClose", params.minClose.String()),
-		logging.String("MaxClose", params.maxClose.String()),
-		logging.String("MinEnact", params.minEnact.String()),
-		logging.String("MaxEnact", params.maxEnact.String()),
-		logging.Float32("RequiredParticipation", params.requiredParticipation),
-		logging.Float32("RequiredMajority", params.requiredMajority),
-		logging.Float32("MinProposerBalance", params.minProposerBalance),
-		logging.Float32("MinVoterBalance", params.minVoterBalance),
-	)
 	return &Engine{
 		Config:          cfg,
 		accounts:        accs,
@@ -158,18 +149,29 @@ func (e *Engine) SubmitProposal(proposal types.Proposal) error {
 	return ErrProposalInvalidState
 }
 
+func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
+	if terms.GetNewMarket() != nil {
+		return &e.networkParams.newMarkets, nil
+	}
+	return nil, ErrNoNetworkParams
+}
+
 // validates proposals read from the chain
 func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
-	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(e.networkParams.minClose).Unix() {
+	params, err := e.getProposalParams(proposal.Terms)
+	if err != nil {
+		return err
+	}
+	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
 		return ErrProposalCloseTimeTooSoon
 	}
-	if proposal.Terms.ClosingTimestamp > e.currentTime.Add(e.networkParams.maxClose).Unix() {
+	if proposal.Terms.ClosingTimestamp > e.currentTime.Add(params.MaxClose).Unix() {
 		return ErrProposalCloseTimeTooLate
 	}
-	if proposal.Terms.EnactmentTimestamp < e.currentTime.Add(e.networkParams.minEnact).Unix() {
+	if proposal.Terms.EnactmentTimestamp < e.currentTime.Add(params.MinEnact).Unix() {
 		return ErrProposalEnactTimeTooSoon
 	}
-	if proposal.Terms.EnactmentTimestamp > e.currentTime.Add(e.networkParams.maxEnact).Unix() {
+	if proposal.Terms.EnactmentTimestamp > e.currentTime.Add(params.MaxEnact).Unix() {
 		return ErrProposalEnactTimeTooLate
 	}
 	proposerTokens, err := getGovernanceTokens(e.accounts, proposal.PartyID)
@@ -177,7 +179,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
 		return err
 	}
 	totalTokens := e.accounts.GetTotalTokens()
-	if float32(proposerTokens) < float32(totalTokens)*e.networkParams.minProposerBalance {
+	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
 		return ErrProposalInsufficientTokens
 	}
 	return nil
@@ -210,12 +212,17 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 		return nil, ErrProposalPassed
 	}
 
+	params, err := e.getProposalParams(proposal.Terms)
+	if err != nil {
+		return nil, err
+	}
+
 	voterTokens, err := getGovernanceTokens(e.accounts, vote.PartyID)
 	if err != nil {
 		return nil, err
 	}
 	totalTokens := e.accounts.GetTotalTokens()
-	if float32(voterTokens) < float32(totalTokens)*e.networkParams.minVoterBalance {
+	if float32(voterTokens) < float32(totalTokens)*params.MinVoterBalance {
 		return nil, ErrVoterInsufficientTokens
 	}
 
@@ -223,18 +230,23 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 }
 
 // sets proposal in either declined or passed state
-func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, totalStake uint64) {
+func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, totalStake uint64) error {
 	if proposal.State == types.Proposal_STATE_OPEN {
 		proposal.State = types.Proposal_STATE_DECLINED // declined unless passed
+
+		params, err := e.getProposalParams(proposal.Terms)
+		if err != nil {
+			return err
+		}
 
 		yes := counter.countVotes(proposal.yes)
 		no := counter.countVotes(proposal.no)
 		totalVotes := float32(yes + no)
 
 		// yes          > (yes + no)* required majority ratio
-		if float32(yes) > totalVotes*e.networkParams.requiredMajority &&
+		if float32(yes) > totalVotes*params.RequiredMajority &&
 			//(yes+no) >= (yes + no + novote)* required participation ratio
-			totalVotes >= float32(totalStake)*e.networkParams.requiredParticipation {
+			totalVotes >= float32(totalStake)*params.RequiredParticipation {
 			proposal.State = types.Proposal_STATE_PASSED
 			e.log.Debug("Proposal passed", logging.String("proposal-id", proposal.ID))
 		} else if totalVotes == 0 {
@@ -244,13 +256,14 @@ func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, to
 				"Proposal declined",
 				logging.String("proposal-id", proposal.ID),
 				logging.Uint64("yes-votes", yes),
-				logging.Float32("min-yes-required", totalVotes*e.networkParams.requiredMajority),
+				logging.Float32("min-yes-required", totalVotes*params.RequiredMajority),
 				logging.Float32("total-votes", totalVotes),
-				logging.Float32("min-total-votes-required", float32(totalStake)*e.networkParams.requiredParticipation),
+				logging.Float32("min-total-votes-required", float32(totalStake)*params.RequiredParticipation),
 			)
 		}
 		e.buf.Add(*proposal.Proposal)
 	}
+	return nil
 }
 
 // stakeCounter caches token balance per party and counts votes
