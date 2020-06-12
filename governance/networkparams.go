@@ -232,7 +232,7 @@ func defaultNewMarketParameters(log *logging.Logger) ProposalParameters {
 	}
 	if result.MinEnact < result.MinClose {
 		log.Fatal(
-			"New market MinEnact network parameter is larger than MinClose",
+			"New market MinEnact network parameter is less than MinClose",
 			logging.String("MinEnact", result.MinEnact.String()),
 			logging.String("MinClose", result.MinClose.String()),
 		)
