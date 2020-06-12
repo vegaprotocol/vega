@@ -19,12 +19,14 @@ import (
 // Trade is a package internal data struct that implements the TradeStore interface.
 type Trade struct {
 	Config
+	configLock sync.RWMutex
+	log        *logging.Logger
 
-	mu              sync.Mutex
-	log             *logging.Logger
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Trade
 	subscriberID    uint64
+	subscribersLock sync.RWMutex
+
 	onCriticalError func()
 }
 
@@ -66,16 +68,16 @@ func (ts *Trade) ReloadConf(cfg Config) {
 	}
 
 	// only Timeout is really use in here
-	ts.mu.Lock()
+	ts.configLock.Lock()
 	ts.Config = cfg
-	ts.mu.Unlock()
+	ts.configLock.Unlock()
 }
 
 // Subscribe to a channel of new or updated trades. The subscriber id will be returned as a uint64 value
 // and must be retained for future reference and to unsubscribe.
 func (ts *Trade) Subscribe(trades chan<- []types.Trade) uint64 {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
+	ts.subscribersLock.Lock()
+	defer ts.subscribersLock.Unlock()
 
 	ts.subscriberID++
 	ts.subscribers[ts.subscriberID] = trades
@@ -88,8 +90,8 @@ func (ts *Trade) Subscribe(trades chan<- []types.Trade) uint64 {
 
 // Unsubscribe from an trades channel. Provide the subscriber id you wish to stop receiving new events for.
 func (ts *Trade) Unsubscribe(id uint64) error {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
+	ts.subscribersLock.Lock()
+	defer ts.subscribersLock.Unlock()
 
 	if len(ts.subscribers) == 0 {
 		ts.log.Debug("Un-subscribe called in trade store, no subscribers connected",
@@ -117,7 +119,11 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	//TODO: (WG 05/11/2019): Bug: Setting limit to maximum value of uint64 results in l=-1
 	result := make([]*types.Trade, 0, int(limit))
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ts.configLock.RLock()
+	timeout := ts.Config.Timeout.Duration
+	ts.configLock.RUnlock()
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -191,7 +197,11 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 	tmk, tmkLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ts.configLock.RLock()
+	timeout := ts.Config.Timeout.Duration
+	ts.configLock.RUnlock()
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -301,7 +311,11 @@ func (ts *Trade) GetByOrderID(ctx context.Context, orderID string, skip, limit u
 	tmk, tmkLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ts.configLock.RLock()
+	timeout := ts.Config.Timeout.Duration
+	ts.configLock.RUnlock()
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -386,6 +400,10 @@ func (ts *Trade) notify(items []types.Trade) error {
 	if len(items) == 0 {
 		return nil
 	}
+
+	ts.subscribersLock.RLock()
+	defer ts.subscribersLock.RUnlock()
+
 	if len(ts.subscribers) == 0 {
 		ts.log.Debug("No subscribers connected in trade store")
 		return nil
