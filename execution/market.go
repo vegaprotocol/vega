@@ -356,6 +356,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	m.idgen.SetID(order)
 	order.CreatedAt = m.currentTime.UnixNano()
 	order.Version = InitialOrderVersion
+	order.Status = types.Order_STATUS_ACTIVE
 
 	if m.closed {
 		// adding order to the buffer first
