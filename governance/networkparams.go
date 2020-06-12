@@ -216,15 +216,26 @@ func defaultNewMarketParameters(log *logging.Logger) ProposalParameters {
 		result.MinVoterBalance = float32(levelValue)
 	}
 
-	result.MaxClose = max(result.MaxClose, result.MinClose) // MaxClose must be >= MinClose
-	result.MinEnact = max(result.MinEnact, result.MinClose) // MinEnact must be >= MinClose
-	result.MaxEnact = max(result.MaxEnact, result.MinEnact) // MaxEnact must be >= MinEnact
-	return result
-}
-
-func max(left, right time.Duration) time.Duration {
-	if left > right {
-		return left
+	if result.MaxClose < result.MinClose {
+		log.Fatal(
+			"New market MaxClose network parameter is less than MinClose",
+			logging.String("MaxClose", result.MaxClose.String()),
+			logging.String("MinClose", result.MinClose.String()),
+		)
 	}
-	return right
+	if result.MaxEnact < result.MinEnact {
+		log.Fatal(
+			"New market MaxEnact network parameter is less than MinEnact",
+			logging.String("MaxEnact", result.MaxEnact.String()),
+			logging.String("MinEnact", result.MinEnact.String()),
+		)
+	}
+	if result.MinEnact < result.MinClose {
+		log.Fatal(
+			"New market MinEnact network parameter is larger than MinClose",
+			logging.String("MinEnact", result.MinEnact.String()),
+			logging.String("MinClose", result.MinClose.String()),
+		)
+	}
+	return result
 }
