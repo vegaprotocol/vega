@@ -6,8 +6,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
-	"github.com/tendermint/tendermint/libs/service"
 	tmlog "github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/service"
 )
 
 // Server is an abstraction over the abci server
