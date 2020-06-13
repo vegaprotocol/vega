@@ -88,9 +88,10 @@ steps:
       - make retest
       # More small checks. Run all, instead of exiting after first failure.
       - failed=""
-      - rm -rf vendor # for gqlgen_check
-      - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
+      - for target in codeowners_check print_check proto_check race vet ; do
           echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - rm -rf vendor # for gqlgen_check
+      - make gqlgen_check || failed="$$failed gqlgen_check"
       - /usr/local/bin/check-rest-endpoints.py
           --bindings gateway/rest/grpc-rest-bindings.yml
           --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
