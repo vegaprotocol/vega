@@ -17,15 +17,15 @@ retest: ## Re-run all unit tests
 
 .PHONY: test
 test: ## Run unit tests
-	@go test ./...
+	@./script/build.sh -a test
 
 .PHONY: integrationtest
 integrationtest: ## run integration tests, showing ledger movements and full scenario output
-	@go test -v ./integration/... -godog.format=pretty
+	@./script/build.sh -a integrationtest
 
 .PHONY: race
 race: ## Run data race detector
-	@env CGO_ENABLED=1 go test -race ./...
+	@./script/build.sh -a race
 
 .PHONY: mocks
 mocks: ## Make mocks
@@ -45,20 +45,9 @@ vetshadow: # Run go vet with shadow detection
 	@go vet -shadow ./... 2>&1 | grep -vE '^(#|gateway/graphql/generated.go|proto/.*\.pb\.(gw\.)?go)' ; \
 	code="$$?" ; test "$$code" -ne 0
 
-.PHONY: .testCoverage.txt
-.testCoverage.txt:
-	@go list ./... |grep -v '/gateway' | xargs go test -covermode=count -coverprofile="$@"
-	@go tool cover -func="$@"
-
 .PHONY: coverage
-coverage: .testCoverage.txt ## Generate global code coverage report
-
-.PHONY: .testCoverage.html
-.testCoverage.html: .testCoverage.txt
-	@go tool cover -html="$^" -o "$@"
-
-.PHONY: coveragehtml
-coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
+coverage: ## Generate global code coverage report
+	@./script/build.sh -a coverage
 
 .PHONY: deps
 deps: ## Get the dependencies
@@ -198,9 +187,7 @@ spellcheck: ## Run markdown spellcheck container
 # The integration directory is special, and contains a package called core_test.
 .PHONY: staticcheck
 staticcheck: ## Run statick analysis checks
-	@go list ./... | grep -v /integration | xargs staticcheck
-	@f="$$(mktemp)" && find integration -name '*.go' | xargs staticcheck | grep -v 'could not load export data' | tee "$$f" && \
-	count="$$(wc -l <"$$f")" && rm -f "$$f" && if test "$$count" -gt 0 ; then exit 1 ; fi
+	@./script/build.sh -a staticcheck
 
 .PHONY: clean
 clean: SHELL:=/bin/bash

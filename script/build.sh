@@ -14,6 +14,7 @@ alltargets=( \
 help() {
 	echo "Command line arguments:"
 	echo
+	echo "  -a action  Take action: build, coverage, deps, install, integrationtest, test, race"
 	echo "  -d         Build debug binaries"
 	echo "  -T         Build all available GOOS+GOARCH combinations (see below)"
 	echo "  -t list    Build specified GOOS+GOARCH combinations"
@@ -98,10 +99,6 @@ parse_args() {
 		case "$flag" in
 		a)
 			action="$OPTARG"
-			if ! echo "$action" | grep -qE '^(deps|build|install)$' ; then
-				echo "Invalid action: $action"
-				return 1
-			fi
 			;;
 		d)
 			gcflags="all=-N -l"
@@ -127,16 +124,6 @@ parse_args() {
 			;;
 		esac
 	done
-	if test -z "$action" ; then
-		help
-		exit 1
-	fi
-	set_ldflags
-	if test "(" "$action" == build -o "$action" == install ")" -a -z "${targets[*]}" ; then
-		help
-		exit 1
-	fi
-	echo "Version: $version ($version_hash)"
 }
 
 can_build() {
@@ -156,118 +143,172 @@ can_build() {
 	return "$canbuild"
 }
 
-set_custom_flags() {
-	case "$target" in
-	default)
-		:
-		;;
-	darwin/*)
-		cc=o64-clang
-		cxx=o64-clang++
-		;;
-	linux/386)
-		:
-		;;
-	linux/amd64)
-		:
-		;;
-	linux/arm64)
-		cc=aarch64-linux-gnu-gcc-9
-		cxx=aarch64-linux-gnu-g++-9
-		;;
-	linux/mips)
-		cc=mips-linux-gnu-gcc-9
-		cxx=mips-linux-gnu-g++-9
-		;;
-	linux/mipsle)
-		cc=mipsel-linux-gnu-gcc-9
-		cxx=mipsel-linux-gnu-g++-9
-		;;
-	linux/mips64)
-		cc=mips64-linux-gnuabi64-gcc-9
-		cxx=mips64-linux-gnuabi64-g++-9
-		;;
-	linux/mips64le)
-		cc=mips64el-linux-gnuabi64-gcc-9
-		cxx=mips64el-linux-gnuabi64-g++-9
-		;;
-	windows/386)
-		typesuffix=".exe"
-		cc=i686-w64-mingw32-gcc-posix
-		cxx=i686-w64-mingw32-g++-posix
-		# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
-		win32_winnt="-D_WIN32_WINNT=0x0A00" # Windows 10
-		cgo_cflags="$cgo_cflags $win32_winnt"
-		cgo_cxxflags="$win32_winnt"
-		;;
-	windows/amd64)
-		typesuffix=".exe"
-		cc=x86_64-w64-mingw32-gcc-posix
-		cxx=x86_64-w64-mingw32-g++-posix
-		# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
-		win32_winnt="-D_WIN32_WINNT=0x0A00" # Windows 10
-		cgo_cflags="$cgo_cflags $win32_winnt"
-		cgo_cxxflags="$win32_winnt"
-		;;
-	*)
-		echo "$target: Building this os+arch combination is TBD"
-		skip=yes
-		;;
-	esac
+set_go_flags() {
+	local target
+	target="$1" ; shift
+	cc=""
+	cgo_cflags="-I$PWD/vendor/github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1 -I$PWD/vendor/github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1/libsecp256k1"
+	cgo_ldflags=""
+	cgo_cxxflags=""
+	cxx=""
+	goarm=""
+	if test "$target" == default ; then
+		goarch=""
+		goos=""
+		osarchsuffix=""
+	else
+		goarch="$(echo "$target" | cut -f2 -d/)"
+		goos="$(echo "$target" | cut -f1 -d/)"
+		osarchsuffix="-$goos-$goarch"
+	fi
+	typesuffix=""
+	skip=no
+	if test "$action" == build ; then
+		case "$target" in
+		default)
+			:
+			;;
+		darwin/*)
+			cc=o64-clang
+			cxx=o64-clang++
+			;;
+		linux/386)
+			:
+			;;
+		linux/amd64)
+			:
+			;;
+		linux/arm64)
+			cc=aarch64-linux-gnu-gcc-9
+			cxx=aarch64-linux-gnu-g++-9
+			;;
+		linux/mips)
+			cc=mips-linux-gnu-gcc-9
+			cxx=mips-linux-gnu-g++-9
+			;;
+		linux/mipsle)
+			cc=mipsel-linux-gnu-gcc-9
+			cxx=mipsel-linux-gnu-g++-9
+			;;
+		linux/mips64)
+			cc=mips64-linux-gnuabi64-gcc-9
+			cxx=mips64-linux-gnuabi64-g++-9
+			;;
+		linux/mips64le)
+			cc=mips64el-linux-gnuabi64-gcc-9
+			cxx=mips64el-linux-gnuabi64-g++-9
+			;;
+		windows/386)
+			typesuffix=".exe"
+			cc=i686-w64-mingw32-gcc-posix
+			cxx=i686-w64-mingw32-g++-posix
+			# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
+			win32_winnt="-D_WIN32_WINNT=0x0A00" # Windows 10
+			cgo_cflags="$cgo_cflags $win32_winnt"
+			cgo_cxxflags="$win32_winnt"
+			;;
+		windows/amd64)
+			typesuffix=".exe"
+			cc=x86_64-w64-mingw32-gcc-posix
+			cxx=x86_64-w64-mingw32-g++-posix
+			# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
+			win32_winnt="-D_WIN32_WINNT=0x0A00" # Windows 10
+			cgo_cflags="$cgo_cflags $win32_winnt"
+			cgo_cxxflags="$win32_winnt"
+			;;
+		*)
+			echo "$target: Building this os+arch combination is TBD"
+			skip=yes
+			;;
+		esac
+	fi
+	export \
+		CC="$cc" \
+		CGO_ENABLED=1 \
+		CGO_CFLAGS="$cgo_cflags" \
+		CGO_LDFLAGS="$cgo_ldflags" \
+		CGO_CXXFLAGS="$cgo_cxxflags" \
+		CXX="$cxx" \
+		GO111MODULE=on \
+		GOARCH="$goarch" \
+		GOARM="$goarm" \
+		GOOS="$goos" \
+		GOPROXY=direct \
+		GOSUMDB=off
+
 }
 
 run() {
 	check_golang_version
-	set_version
 	parse_args "$@"
+	if test -z "$action" ; then
+		help
+		exit 1
+	fi
+	if test "(" "$action" == build -o "$action" == install ")" -a -z "${targets[*]}" ; then
+		help
+		exit 1
+	fi
+	set_version
+	set_ldflags
+	echo "Version: $version ($version_hash)"
 
-	if test "$action" == deps ; then
+	set_go_flags default
+	case "$action" in
+	build)
+		: # handled below
+		;;
+	coverage)
+		c=.testCoverage.txt
+		go list ./... | grep -v '/gateway' | xargs go test -covermode=count -coverprofile="$c" && \
+			go tool cover -func="$c" && \
+			go tool cover -html="$c" -o .testCoverage.html
+		return $?
+		;;
+	deps)
 		deps
 		return "$?"
-	fi
+		;;
+	install)
+		: # handled below
+		;;
+	integrationtest)
+		go test -v ./integration/... -godog.format=pretty
+		return "$?"
+		;;
+	test)
+		go test ./...
+		return "$?"
+		;;
+	race)
+		go test -race ./...
+		return "$?"
+		;;
+	staticcheck)
+		f="$(mktemp)"
+		(
+			go list ./... | grep -v /integration | xargs staticcheck
+			find integration -name '*.go' | xargs staticcheck | grep -v 'could not load export data'
+		) | tee "$f"
+		count="$(wc -l <"$f")"
+		rm -f "$f"
+		if test "$count" -gt 0 ; then
+			return 1
+		fi
+		return 0
+		;;
+	*)
+		echo "Invalid action: $action"
+		return 1
+	esac
 
 	failed=0
 	for target in "${targets[@]}" ; do
-		cc=""
-		cgo_cflags="-I$PWD/vendor/github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1 -I$PWD/vendor/github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1/libsecp256k1"
-		cgo_ldflags=""
-		cgo_cxxflags=""
-		cxx=""
-		goarm=""
-		if test "$target" == default ; then
-			goarch=""
-			goos=""
-			osarchsuffix=""
-		else
-			goarch="$(echo "$target" | cut -f2 -d/)"
-			goos="$(echo "$target" | cut -f1 -d/)"
-			osarchsuffix="-$goos-$goarch"
+		set_go_flags "$target"
+		if test "$skip" == yes ; then
+			continue
 		fi
-		typesuffix=""
-		skip=no
-		if test "$action" == build ; then
-			set_custom_flags
-
-			if test "$skip" == yes ; then
-				continue
-			fi
-
-			can_build "$target" "$cc" "$cxx" || continue
-		fi
-
-		export \
-			CC="$cc" \
-			CGO_ENABLED=1 \
-			CGO_CFLAGS="$cgo_cflags" \
-			CGO_LDFLAGS="$cgo_ldflags" \
-			CGO_CXXFLAGS="$cgo_cxxflags" \
-			CXX="$cxx" \
-			GO111MODULE=on \
-			GOARCH="$goarch" \
-			GOARM="$goarm" \
-			GOOS="$goos" \
-			GOPROXY=direct \
-			GOSUMDB=off
+		can_build "$target" "$cc" "$cxx" || continue
 
 		log="/tmp/go.log"
 		echo "$target: deps ... "
