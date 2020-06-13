@@ -292,7 +292,7 @@ run() {
 		f="$(mktemp)"
 		(
 			go list ./... | grep -v /integration | xargs staticcheck
-			find integration -name '*.go' | xargs staticcheck | grep -v 'could not load export data'
+			find integration -name '*.go' -print0 | xargs -0 staticcheck | grep -v 'could not load export data'
 		) | tee "$f"
 		count="$(wc -l <"$f")"
 		rm -f "$f"
