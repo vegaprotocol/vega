@@ -38,12 +38,11 @@ msan: ## Run memory sanitizer
 
 .PHONY: vet
 vet: ## Run go vet
-	@go vet -all ./...
+	@./script/build.sh -a vet
 
 .PHONY: vetshadow
 vetshadow: # Run go vet with shadow detection
-	@go vet -shadow ./... 2>&1 | grep -vE '^(#|gateway/graphql/generated.go|proto/.*\.pb\.(gw\.)?go)' ; \
-	code="$$?" ; test "$$code" -ne 0
+	@./script/build.sh -a vetshadow
 
 .PHONY: coverage
 coverage: ## Generate global code coverage report
@@ -68,7 +67,7 @@ install: ## install the binaries in GOPATH/bin
 
 .PHONY: gqlgen
 gqlgen: ## run gqlgen
-	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen --config gqlgen.yml
+	@./script/build.sh -a gqlgen
 
 .PHONY: gqlgen_check
 gqlgen_check: ## GraphQL: Check committed files match just-generated files

@@ -269,11 +269,24 @@ run() {
 		deps
 		return "$?"
 		;;
+	gqlgen)
+		test -d vendor && mv vendor .vendor.tmp
+		pushd ./gateway/graphql/ 1>/dev/null || return 1
+		go run github.com/99designs/gqlgen --config gqlgen.yml
+		code="$?"
+		popd 1>/dev/null || return 1
+		test -d .vendor.tmp && mv .vendor.tmp vendor
+		return "$code"
+		;;
 	install)
 		: # handled below
 		;;
 	integrationtest)
 		go test -v ./integration/... -godog.format=pretty
+		return "$?"
+		;;
+	mocks)
+		go generate ./...
 		return "$?"
 		;;
 	test)
@@ -297,6 +310,18 @@ run() {
 		count="$(wc -l <"$f")"
 		rm -f "$f"
 		if test "$count" -gt 0 ; then
+			return 1
+		fi
+		return 0
+		;;
+	vet)
+		go vet -all ./...
+		return "$?"
+		;;
+	vetshadow)
+		go vet -shadow ./... 2>&1 | grep -vE '^(#|gateway/graphql/generated.go|proto/.*\.pb\.(gw\.)?go)'
+		code="$$?"
+		if test "$code" -gt 0 ; then
 			return 1
 		fi
 		return 0
