@@ -284,6 +284,10 @@ run() {
 		go test -race ./...
 		return "$?"
 		;;
+	retest)
+		go test -count=1 ./...
+		return "$?"
+		;;
 	staticcheck)
 		f="$(mktemp)"
 		(

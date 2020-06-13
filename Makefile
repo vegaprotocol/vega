@@ -13,7 +13,7 @@ lint: ## Lint the files
 
 .PHONY: retest
 retest: ## Re-run all unit tests
-	@go test -count=1 ./...
+	@./script/build.sh -a retest
 
 .PHONY: test
 test: ## Run unit tests
