@@ -85,7 +85,7 @@ message Proposal {
     STATE_ENACTED = 6;
 
     // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/generated_helpers.yml
+    //       - gateway/graphql/helpers_enum.go
     //       - gateway/graphql/schema.graphql (enum ProposalState)
   }
 
@@ -110,7 +110,7 @@ message Vote {
     VALUE_YES = 2;
 
     // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/generated_helpers.yml
+    //       - gateway/graphql/helpers_enum.go
     //       - gateway/graphql/schema.graphql (enum VoteValue)
   }
 
