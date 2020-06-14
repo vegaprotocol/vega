@@ -1,5 +1,3 @@
-// Code may be generated, avoid editing.
-
 package gql
 
 import (

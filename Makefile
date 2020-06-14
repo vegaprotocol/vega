@@ -88,7 +88,6 @@ install: ## install the binaries in GOPATH/bin
 
 .PHONY: gqlgen
 gqlgen: ## run gqlgen
-	@echo "Making $@"
 	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen --config gqlgen.yml
 
 .PHONY: gqlgen_check
