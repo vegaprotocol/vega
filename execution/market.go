@@ -78,7 +78,6 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	partyBuf        PartyBuf
 	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
@@ -123,7 +122,6 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candleBuf CandleBuf,
-	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
@@ -187,7 +185,6 @@ func NewMarket(
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
-		partyBuf:           partyBuf,
 		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
 		marginLevelsBuf:    marginLevelsBuf,

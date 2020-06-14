@@ -21,7 +21,6 @@ func TestNewParty(t *testing.T) {
 	trader2 := "B0b@f3tt"
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	partyBuf := mocks.NewMockPartyBuf(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
@@ -33,12 +32,11 @@ func TestNewParty(t *testing.T) {
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
 	testMarketID := testMarket[0].Id
 
-	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
+	party := execution.NewParty(log, collateralEngine, nil, broker)
 	assert.NotNil(t, party)
-	party = execution.NewParty(log, collateralEngine, testMarket, partyBuf)
+	party = execution.NewParty(log, collateralEngine, testMarket, broker)
 	assert.NotNil(t, party)
 
 	res := party.GetByMarket("invalid")
@@ -96,7 +94,6 @@ func TestNewAccount(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	partyBuf := mocks.NewMockPartyBuf(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -108,12 +105,11 @@ func TestNewAccount(t *testing.T) {
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
 	testMarketID := testMarket[0].Id
 
-	partyBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	party := execution.NewParty(log, collateralEngine, nil, partyBuf)
+	party := execution.NewParty(log, collateralEngine, nil, broker)
 	assert.NotNil(t, party)
-	party = execution.NewParty(log, collateralEngine, testMarket, partyBuf)
+	party = execution.NewParty(log, collateralEngine, testMarket, broker)
 	assert.NotNil(t, party)
 
 	res := party.GetByMarket("invalid")
