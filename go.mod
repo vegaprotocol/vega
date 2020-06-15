@@ -39,5 +39,3 @@ require (
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	google.golang.org/grpc v1.28.1
 )
-
-replace github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
