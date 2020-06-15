@@ -6,8 +6,8 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// convertAccountType converts a GraphQL enum to a Proto enum
-func convertAccountType(x AccountType) (types.AccountType, error) {
+// convertAccountTypeToProto converts a GraphQL enum to a Proto enum
+func convertAccountTypeToProto(x AccountType) (types.AccountType, error) {
 	switch x {
 	case AccountTypeGeneral:
 		return types.AccountType_ACCOUNT_TYPE_GENERAL, nil
@@ -23,8 +23,8 @@ func convertAccountType(x AccountType) (types.AccountType, error) {
 	}
 }
 
-// unconvertAccountType converts a Proto enum to a GraphQL enum
-func unconvertAccountType(x types.AccountType) (AccountType, error) {
+// convertAccountTypeFromProto converts a Proto enum to a GraphQL enum
+func convertAccountTypeFromProto(x types.AccountType) (AccountType, error) {
 	switch x {
 	case types.AccountType_ACCOUNT_TYPE_GENERAL:
 		return AccountTypeGeneral, nil
@@ -40,8 +40,8 @@ func unconvertAccountType(x types.AccountType) (AccountType, error) {
 	}
 }
 
-// convertInterval converts a GraphQL enum to a Proto enum
-func convertInterval(x Interval) (types.Interval, error) {
+// convertIntervalToProto converts a GraphQL enum to a Proto enum
+func convertIntervalToProto(x Interval) (types.Interval, error) {
 	switch x {
 	case IntervalI1m:
 		return types.Interval_INTERVAL_I1M, nil
@@ -61,8 +61,8 @@ func convertInterval(x Interval) (types.Interval, error) {
 	}
 }
 
-// unconvertInterval converts a Proto enum to a GraphQL enum
-func unconvertInterval(x types.Interval) (Interval, error) {
+// convertIntervalFromProto converts a Proto enum to a GraphQL enum
+func convertIntervalFromProto(x types.Interval) (Interval, error) {
 	switch x {
 	case types.Interval_INTERVAL_I1M:
 		return IntervalI1m, nil
@@ -82,8 +82,8 @@ func unconvertInterval(x types.Interval) (Interval, error) {
 	}
 }
 
-// convertOrderStatus converts a GraphQL enum to a Proto enum
-func convertOrderStatus(x OrderStatus) (types.Order_Status, error) {
+// convertOrderStatusToProto converts a GraphQL enum to a Proto enum
+func convertOrderStatusToProto(x OrderStatus) (types.Order_Status, error) {
 	switch x {
 	case OrderStatusActive:
 		return types.Order_STATUS_ACTIVE, nil
@@ -105,8 +105,8 @@ func convertOrderStatus(x OrderStatus) (types.Order_Status, error) {
 	}
 }
 
-// unconvertOrderStatus converts a Proto enum to a GraphQL enum
-func unconvertOrderStatus(x types.Order_Status) (OrderStatus, error) {
+// convertOrderStatusFromProto converts a Proto enum to a GraphQL enum
+func convertOrderStatusFromProto(x types.Order_Status) (OrderStatus, error) {
 	switch x {
 	case types.Order_STATUS_ACTIVE:
 		return OrderStatusActive, nil
@@ -128,8 +128,8 @@ func unconvertOrderStatus(x types.Order_Status) (OrderStatus, error) {
 	}
 }
 
-// convertOrderType converts a GraphQL enum to a Proto enum
-func convertOrderType(x OrderType) (types.Order_Type, error) {
+// convertOrderTypeToProto converts a GraphQL enum to a Proto enum
+func convertOrderTypeToProto(x OrderType) (types.Order_Type, error) {
 	switch x {
 	case OrderTypeLimit:
 		return types.Order_TYPE_LIMIT, nil
@@ -143,8 +143,8 @@ func convertOrderType(x OrderType) (types.Order_Type, error) {
 	}
 }
 
-// unconvertOrderType converts a Proto enum to a GraphQL enum
-func unconvertOrderType(x types.Order_Type) (OrderType, error) {
+// convertOrderTypeFromProto converts a Proto enum to a GraphQL enum
+func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 	switch x {
 	case types.Order_TYPE_LIMIT:
 		return OrderTypeLimit, nil
@@ -158,8 +158,8 @@ func unconvertOrderType(x types.Order_Type) (OrderType, error) {
 	}
 }
 
-// convertProposalState converts a GraphQL enum to a Proto enum
-func convertProposalState(x ProposalState) (types.Proposal_State, error) {
+// convertProposalStateToProto converts a GraphQL enum to a Proto enum
+func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) {
 	switch x {
 	case ProposalStateFailed:
 		return types.Proposal_STATE_FAILED, nil
@@ -179,8 +179,8 @@ func convertProposalState(x ProposalState) (types.Proposal_State, error) {
 	}
 }
 
-// unconvertProposalState converts a Proto enum to a GraphQL enum
-func unconvertProposalState(x types.Proposal_State) (ProposalState, error) {
+// convertProposalStateFromProto converts a Proto enum to a GraphQL enum
+func convertProposalStateFromProto(x types.Proposal_State) (ProposalState, error) {
 	switch x {
 	case types.Proposal_STATE_FAILED:
 		return ProposalStateFailed, nil
@@ -200,8 +200,8 @@ func unconvertProposalState(x types.Proposal_State) (ProposalState, error) {
 	}
 }
 
-// convertRejectionReason converts a GraphQL enum to a Proto enum
-func convertRejectionReason(x RejectionReason) (types.OrderError, error) {
+// convertRejectionReasonToProto converts a GraphQL enum to a Proto enum
+func convertRejectionReasonToProto(x RejectionReason) (types.OrderError, error) {
 	switch x {
 	case RejectionReasonInvalidMarketID:
 		return types.OrderError_ORDER_ERROR_INVALID_MARKET_ID, nil
@@ -239,8 +239,8 @@ func convertRejectionReason(x RejectionReason) (types.OrderError, error) {
 	}
 }
 
-// unconvertRejectionReason converts a Proto enum to a GraphQL enum
-func unconvertRejectionReason(x types.OrderError) (RejectionReason, error) {
+// convertRejectionReasonFromProto converts a Proto enum to a GraphQL enum
+func convertRejectionReasonFromProto(x types.OrderError) (RejectionReason, error) {
 	switch x {
 	case types.OrderError_ORDER_ERROR_INVALID_MARKET_ID:
 		return RejectionReasonInvalidMarketID, nil
@@ -278,8 +278,8 @@ func unconvertRejectionReason(x types.OrderError) (RejectionReason, error) {
 	}
 }
 
-// convertSide converts a GraphQL enum to a Proto enum
-func convertSide(x Side) (types.Side, error) {
+// convertSideToProto converts a GraphQL enum to a Proto enum
+func convertSideToProto(x Side) (types.Side, error) {
 	switch x {
 	case SideBuy:
 		return types.Side_SIDE_BUY, nil
@@ -291,8 +291,8 @@ func convertSide(x Side) (types.Side, error) {
 	}
 }
 
-// unconvertSide converts a Proto enum to a GraphQL enum
-func unconvertSide(x types.Side) (Side, error) {
+// convertSideFromProto converts a Proto enum to a GraphQL enum
+func convertSideFromProto(x types.Side) (Side, error) {
 	switch x {
 	case types.Side_SIDE_BUY:
 		return SideBuy, nil
@@ -304,8 +304,8 @@ func unconvertSide(x types.Side) (Side, error) {
 	}
 }
 
-// convertOrderTimeInForce converts a GraphQL enum to a Proto enum
-func convertOrderTimeInForce(x OrderTimeInForce) (types.Order_TimeInForce, error) {
+// convertOrderTimeInForceToProto converts a GraphQL enum to a Proto enum
+func convertOrderTimeInForceToProto(x OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch x {
 	case OrderTimeInForceFok:
 		return types.Order_TIF_FOK, nil
@@ -321,8 +321,8 @@ func convertOrderTimeInForce(x OrderTimeInForce) (types.Order_TimeInForce, error
 	}
 }
 
-// unconvertOrderTimeInForce converts a Proto enum to a GraphQL enum
-func unconvertOrderTimeInForce(x types.Order_TimeInForce) (OrderTimeInForce, error) {
+// convertOrderTimeInForceFromProto converts a Proto enum to a GraphQL enum
+func convertOrderTimeInForceFromProto(x types.Order_TimeInForce) (OrderTimeInForce, error) {
 	switch x {
 	case types.Order_TIF_FOK:
 		return OrderTimeInForceFok, nil
@@ -338,8 +338,8 @@ func unconvertOrderTimeInForce(x types.Order_TimeInForce) (OrderTimeInForce, err
 	}
 }
 
-// convertTradeType converts a GraphQL enum to a Proto enum
-func convertTradeType(x TradeType) (types.Trade_Type, error) {
+// convertTradeTypeToProto converts a GraphQL enum to a Proto enum
+func convertTradeTypeToProto(x TradeType) (types.Trade_Type, error) {
 	switch x {
 	case TradeTypeDefault:
 		return types.Trade_TYPE_DEFAULT, nil
@@ -353,8 +353,8 @@ func convertTradeType(x TradeType) (types.Trade_Type, error) {
 	}
 }
 
-// unconvertTradeType converts a Proto enum to a GraphQL enum
-func unconvertTradeType(x types.Trade_Type) (TradeType, error) {
+// convertTradeTypeFromProto converts a Proto enum to a GraphQL enum
+func convertTradeTypeFromProto(x types.Trade_Type) (TradeType, error) {
 	switch x {
 	case types.Trade_TYPE_DEFAULT:
 		return TradeTypeDefault, nil
@@ -368,8 +368,8 @@ func unconvertTradeType(x types.Trade_Type) (TradeType, error) {
 	}
 }
 
-// convertVoteValue converts a GraphQL enum to a Proto enum
-func convertVoteValue(x VoteValue) (types.Vote_Value, error) {
+// convertVoteValueToProto converts a GraphQL enum to a Proto enum
+func convertVoteValueToProto(x VoteValue) (types.Vote_Value, error) {
 	switch x {
 	case VoteValueNo:
 		return types.Vote_VALUE_NO, nil
@@ -381,8 +381,8 @@ func convertVoteValue(x VoteValue) (types.Vote_Value, error) {
 	}
 }
 
-// unconvertVoteValue converts a Proto enum to a GraphQL enum
-func unconvertVoteValue(x types.Vote_Value) (VoteValue, error) {
+// convertVoteValueFromProto converts a Proto enum to a GraphQL enum
+func convertVoteValueFromProto(x types.Vote_Value) (VoteValue, error) {
 	switch x {
 	case types.Vote_VALUE_NO:
 		return VoteValueNo, nil

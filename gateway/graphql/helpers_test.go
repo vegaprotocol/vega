@@ -40,56 +40,56 @@ func TestSafeStringUint64(t *testing.T) {
 
 func TestParseOrderStatus(t *testing.T) {
 	active := OrderStatusActive
-	status, err := convertOrderStatus(active)
+	status, err := convertOrderStatusToProto(active)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, status)
 	expired := OrderStatusExpired
-	status, err = convertOrderStatus(expired)
+	status, err = convertOrderStatusToProto(expired)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, status)
 	cancelled := OrderStatusCancelled
-	status, err = convertOrderStatus(cancelled)
+	status, err = convertOrderStatusToProto(cancelled)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, status)
 	unknown := OrderStatus("好候")
-	_, err = convertOrderStatus(unknown)
+	_, err = convertOrderStatusToProto(unknown)
 	assert.Error(t, err)
 }
 
 func TestParseOrderTimeInForce(t *testing.T) {
 	fok := OrderTimeInForceFok
-	orderType, err := convertOrderTimeInForce(fok)
+	orderType, err := convertOrderTimeInForceToProto(fok)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_FOK, orderType)
 	ioc := OrderTimeInForceIoc
-	orderType, err = convertOrderTimeInForce(ioc)
+	orderType, err = convertOrderTimeInForceToProto(ioc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_IOC, orderType)
 	gtt := OrderTimeInForceGtt
-	orderType, err = convertOrderTimeInForce(gtt)
+	orderType, err = convertOrderTimeInForceToProto(gtt)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_GTT, orderType)
 	gtc := OrderTimeInForceGtc
-	orderType, err = convertOrderTimeInForce(gtc)
+	orderType, err = convertOrderTimeInForceToProto(gtc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_GTC, orderType)
 	unknown := OrderTimeInForce("好到时候")
-	_, err = convertOrderTimeInForce(unknown)
+	_, err = convertOrderTimeInForceToProto(unknown)
 	assert.Error(t, err)
 
 }
 
 func TestParseSide(t *testing.T) {
 	buy := SideBuy
-	side, err := convertSide(buy)
+	side, err := convertSideToProto(buy)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	sell := SideSell
-	side, err = convertSide(sell)
+	side, err = convertSideToProto(sell)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Side_SIDE_SELL, side)
 	unknown := Side("好到时候")
-	_, err = convertSide(unknown)
+	_, err = convertSideToProto(unknown)
 	assert.Error(t, err)
 }
 

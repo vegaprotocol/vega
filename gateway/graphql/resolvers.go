@@ -511,7 +511,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *
 
 func (r *myMarketResolver) Candles(ctx context.Context, market *Market,
 	sinceRaw string, interval Interval) ([]*types.Candle, error) {
-	pinterval, err := convertInterval(interval)
+	pinterval, err := convertIntervalToProto(interval)
 	if err != nil {
 		r.log.Debug("interval convert error", logging.Error(err))
 	}
@@ -725,7 +725,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		asst = *asset
 	}
 	if accType != nil {
-		accTy, err = convertAccountType(*accType)
+		accTy, err = convertAccountTypeToProto(*accType)
 		if err != nil || (accTy != types.AccountType_ACCOUNT_TYPE_GENERAL && accTy != types.AccountType_ACCOUNT_TYPE_MARGIN) {
 			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
@@ -819,7 +819,7 @@ func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceDa
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
-	return unconvertProposalState(data.Proposal.State)
+	return convertProposalStateFromProto(data.Proposal.State)
 }
 
 func (r *myProposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
@@ -847,7 +847,7 @@ func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vot
 		if err != nil {
 			return nil, err
 		}
-		value, err := unconvertVoteValue(v.Value)
+		value, err := convertVoteValueFromProto(v.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -1046,7 +1046,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*R
 	if o.Reason == types.OrderError_ORDER_ERROR_NONE {
 		return nil, nil
 	}
-	reason, err := unconvertRejectionReason(o.Reason)
+	reason, err := convertRejectionReasonFromProto(o.Reason)
 	if err != nil {
 		return nil, err
 	}
@@ -1057,11 +1057,11 @@ func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 	return strconv.FormatUint(obj.Price, 10), nil
 }
 func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
-	return unconvertOrderTimeInForce(obj.TimeInForce)
+	return convertOrderTimeInForceFromProto(obj.TimeInForce)
 }
 
 func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
-	t, err := unconvertOrderType(obj.Type)
+	t, err := convertOrderTypeFromProto(obj.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -1069,7 +1069,7 @@ func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderTyp
 }
 
 func (r *myOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
-	return unconvertSide(obj.Side)
+	return convertSideFromProto(obj.Side)
 }
 
 func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
@@ -1092,7 +1092,7 @@ func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (stri
 }
 
 func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
-	return unconvertOrderStatus(obj.Status)
+	return convertOrderStatusFromProto(obj.Status)
 }
 
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
@@ -1195,7 +1195,7 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 }
 
 func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
-	return unconvertTradeType(obj.Type)
+	return convertTradeTypeFromProto(obj.Type)
 }
 
 // END: Trade Resolver
@@ -1226,7 +1226,7 @@ func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (st
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
-	return unconvertInterval(obj.Interval)
+	return convertIntervalFromProto(obj.Interval)
 }
 
 // END: Candle Resolver
@@ -1395,13 +1395,13 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}
 
 	order.PartyID = party
-	if order.TimeInForce, err = convertOrderTimeInForce(timeInForce); err != nil {
+	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
 		return nil, err
 	}
-	if order.Side, err = convertSide(side); err != nil {
+	if order.Side, err = convertSideToProto(side); err != nil {
 		return nil, err
 	}
-	if order.Type, err = convertOrderType(ty); err != nil {
+	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
 		return nil, err
 	}
 
@@ -1499,7 +1499,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	protoValue, err := convertVoteValue(value)
+	protoValue, err := convertVoteValueToProto(value)
 	if err != nil {
 		return nil, err
 	}
@@ -1514,7 +1514,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	gqlValue, err := unconvertVoteValue(resp.Vote.Value)
+	gqlValue, err := convertVoteValueFromProto(resp.Vote.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -1559,7 +1559,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("invalid size, could not convert to unsigned int")
 	}
 
-	order.TimeInForce, err = convertOrderTimeInForce(tif)
+	order.TimeInForce, err = convertOrderTimeInForceToProto(tif)
 	if err != nil {
 		r.log.Error("unable to parse time in force in order amend",
 			logging.Error(err))
@@ -1871,7 +1871,7 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 
 func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
 
-	pinterval, err := convertInterval(interval)
+	pinterval, err := convertIntervalToProto(interval)
 	if err != nil {
 		r.log.Debug("invalid interval for candles subscriptions", logging.Error(err))
 	}
@@ -2061,7 +2061,7 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 }
 
 func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
-	return unconvertAccountType(obj.Type)
+	return convertAccountTypeFromProto(obj.Type)
 }
 
 // END: Account Resolver

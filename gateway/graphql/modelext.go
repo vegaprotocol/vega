@@ -504,7 +504,7 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 
 // IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
-	at, _ := convertAccountType(a)
+	at, _ := convertAccountTypeToProto(a)
 	return at
 }
 
@@ -736,12 +736,12 @@ func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalSta
 
 // IntoProtoValue ...
 func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
-	return convertProposalState(s)
+	return convertProposalStateToProto(s)
 }
 
 // ProposalVoteFromProto ...
 func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
-	value, _ := unconvertVoteValue(v.Value)
+	value, _ := convertVoteValueFromProto(v.Value)
 	return &ProposalVote{
 		Vote: &Vote{
 			Party:    caster,
