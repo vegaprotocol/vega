@@ -32,7 +32,7 @@ func NewOrderEvent(ctx context.Context, log *logging.Logger, store OrderStore) *
 		buf:   []types.Order{},
 	}
 	o.running = true
-	go o.loop(ctx)
+	go o.loop(o.ctx)
 	return &o
 }
 
