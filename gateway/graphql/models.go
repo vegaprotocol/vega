@@ -282,28 +282,34 @@ type PreparedVote struct {
 
 type ProposalTerms struct {
 	// ISO-8601 time and date when voting closes for this proposal.
+	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
 	ClosingDatetime string `json:"closingDatetime"`
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Minimum participation stake required for this proposal to pass
-	MinParticipationStake int `json:"minParticipationStake"`
-	// Actual change being introduced by the proposal
+	// Actual change being introduced by the proposal - action the proposal triggers if passed and enacted.
 	Change ProposalChange `json:"change"`
 }
 
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
 type ProposalTermsInput struct {
 	// ISO-8601 time and date when voting closes for this proposal.
+	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
 	ClosingDatetime string `json:"closingDatetime"`
 	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
 	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Minimum participation stake required for this proposal to pass
-	MinParticipationStake int `json:"minParticipationStake"`
-	// Optional field to define update market change. If this is set along with another change, proposal will not be accepted.
-	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
-	// Optional field to define new market change. If this is set along with another change, proposal will not be accepted.
+	// Field defining new market change - the proposal will create new market if passed and enacted.
+	// It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
 	NewMarket *NewMarketInput `json:"newMarket"`
-	// Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted.
+	// Field defining update market change - the proposal will update existing market if passed and enacted.
+	// It can only be set if "newMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
+	// Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
+	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
+	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
 }
 
@@ -410,9 +416,18 @@ type UpdateNetwork struct {
 	// can be set to be executed (if that proposal passed).
 	// Value represents duration in seconds.
 	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that restricts the minimum participation stake
-	// required for a proposal to pass.
-	MinParticipationStake *int `json:"minParticipationStake"`
+	// Network parameter that sets participation level required for any proposal to pass.
+	// Value from 0 to 1.
+	RequiredParticipation *float64 `json:"requiredParticipation"`
+	// Network parameter that sets majority level required for any proposal to pass.
+	// Value from 0.5 to 1.
+	RequiredMajority *float64 `json:"requiredMajority"`
+	// Network parameter that sets minimum balance required for a party
+	// to be able to submit a new proposal. Value greater than 0 to 1.
+	MinProposerBalance *float64 `json:"minProposerBalance"`
+	// Network parameter that sets minimum balance required for a party
+	// to be able to cast a vote.  Value greater than 0 to 1.
+	MinVoterBalance *float64 `json:"minVoterBalance"`
 }
 
 func (UpdateNetwork) IsProposalChange() {}
@@ -433,9 +448,18 @@ type UpdateNetworkInput struct {
 	// can be set to be executed (if that proposal passed).
 	// Value represents duration in seconds.
 	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that restricts the minimum participation stake
-	// required for a proposal to pass.
-	MinParticipationStake *int `json:"minParticipationStake"`
+	// Network parameter that sets participation level required for any proposal to pass.
+	// Value from 0 to 1.
+	RequiredParticipation *float64 `json:"requiredParticipation"`
+	// Network parameter that sets majority level required for any proposal to pass.
+	// Value from 0.5 to 1.
+	RequiredMajority *float64 `json:"requiredMajority"`
+	// Network parameter that sets minimum balance required for a party
+	// to be able to submit a new proposal. Value greater than 0 to 1.
+	MinProposerBalance *float64 `json:"minProposerBalance"`
+	// Network parameter that sets minimum balance required for a party
+	// to be able to cast a vote.  Value greater than 0 to 1.
+	MinVoterBalance *float64 `json:"minVoterBalance"`
 }
 
 type Vote struct {

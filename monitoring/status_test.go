@@ -33,7 +33,7 @@ func TestAppStatus(t *testing.T) {
 			CatchingUp: false,
 		},
 		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.32.9",
+			Version: "0.33.5",
 		},
 	}
 
