@@ -12,24 +12,35 @@ alltargets=( \
 )
 
 help() {
+	col=""
+	nocol=""
+	if test -t 1 ; then
+		col="\033[36m"
+		nocol="\033[0m"
+	fi
 	echo "Command line arguments:"
 	echo
-	echo "  -a action  Take action: build, coverage, deps, install, integrationtest, test, race"
+	echo "  -a action  Take action: build, coverage, deps, gqlgen, install, integrationtest, mocks, test, race, retest, staticcheck, vet"
+
+	grep ')[ ]##' "$0" | awk 'BEGIN {FS = "\)[ ]## "}; {printf "'"$col"'%-20s'"$nocol"' %s\n", $1, $2}'
+
 	echo "  -d         Build debug binaries"
-	echo "  -T         Build all available GOOS+GOARCH combinations (see below)"
-	echo "  -t list    Build specified GOOS+GOARCH combinations"
+	echo "  -T         Build all available GOOS+GOARCH combinations"
+	echo "  -t list    Build specified GOOS+GOARCH combinations (comma-separated list)"
+
+	for target in "${alltargets[@]}" ; do
+		echo -e "\t$col$target$nocol"
+	done
+
 	echo "  -s suffix  Add arbitrary suffix to compiled binary names"
 	echo "  -h         Show this help"
 	echo
 	echo "Apps to be built:"
 	for app in "${apps[@]}" ; do
-		echo "  * $app"
+		echo -e "\t$col$app$nocol"
 	done
 	echo
 	echo "Available targets:"
-	for target in "${alltargets[@]}" ; do
-		echo "  * $target"
-	done
 }
 
 check_golang_version() {
@@ -255,21 +266,21 @@ run() {
 
 	set_go_flags default
 	case "$action" in
-	build)
+	build) ## Build apps
 		: # handled below
 		;;
-	coverage)
+	coverage) ## Calculate coverage
 		c=.testCoverage.txt
 		go list ./... | grep -v '/gateway' | xargs go test -covermode=count -coverprofile="$c" && \
 			go tool cover -func="$c" && \
 			go tool cover -html="$c" -o .testCoverage.html
 		return $?
 		;;
-	deps)
+	deps) ## Get dependencies
 		deps
 		return "$?"
 		;;
-	gqlgen)
+	gqlgen) ## Run gqlgen
 		test -d vendor && mv vendor .vendor.tmp
 		pushd ./gateway/graphql/ 1>/dev/null || return 1
 		go run github.com/99designs/gqlgen --config gqlgen.yml
@@ -278,30 +289,30 @@ run() {
 		test -d .vendor.tmp && mv .vendor.tmp vendor
 		return "$code"
 		;;
-	install)
+	install) ## Build apps (in $GOPATH/bin)
 		: # handled below
 		;;
-	integrationtest)
+	integrationtest) ## Run integration tests (godog)
 		go test -v ./integration/... -godog.format=pretty
 		return "$?"
 		;;
-	mocks)
+	mocks) ## Generate mocks
 		go generate ./...
 		return "$?"
 		;;
-	test)
+	test) ## Run go test
 		go test ./...
 		return "$?"
 		;;
-	race)
+	race) ## Run go test -race
 		go test -race ./...
 		return "$?"
 		;;
-	retest)
+	retest) ## Run go test (and force re-test)
 		go test -count=1 ./...
 		return "$?"
 		;;
-	staticcheck)
+	staticcheck) ## Run staticcheck
 		f="$(mktemp)"
 		(
 			go list ./... | grep -v /integration | xargs staticcheck
@@ -314,17 +325,9 @@ run() {
 		fi
 		return 0
 		;;
-	vet)
-		go vet -all ./...
+	vet) ## Run go vet
+		go vet ./...
 		return "$?"
-		;;
-	vetshadow)
-		go vet -shadow ./... 2>&1 | grep -vE '^(#|gateway/graphql/generated.go|proto/.*\.pb\.(gw\.)?go)'
-		code="$$?"
-		if test "$code" -gt 0 ; then
-			return 1
-		fi
-		return 0
 		;;
 	*)
 		echo "Invalid action: $action"
