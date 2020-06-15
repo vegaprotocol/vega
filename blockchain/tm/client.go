@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/tendermint/tendermint/rpc/client"
+	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -18,7 +18,7 @@ var (
 )
 
 type Client struct {
-	tmclt *client.HTTP
+	tmclt *tmclihttp.HTTP
 }
 
 func NewClient(cfg Config) (*Client, error) {
@@ -28,8 +28,12 @@ func NewClient(cfg Config) (*Client, error) {
 	if len(cfg.ClientEndpoint) <= 0 {
 		return nil, ErrEmptyClientEndpoint
 	}
+	clt, err := tmclihttp.New(cfg.ClientAddr, cfg.ClientEndpoint)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
-		tmclt: client.NewHTTP(cfg.ClientAddr, cfg.ClientEndpoint),
+		tmclt: clt,
 	}, nil
 }
 
@@ -85,7 +89,7 @@ func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 }
 
 func (c *Client) Validators() ([]*tmtypes.Validator, error) {
-	res, err := c.tmclt.Validators(nil)
+	res, err := c.tmclt.Validators(nil, 0, 100)
 	if err != nil {
 		return nil, err
 	}
