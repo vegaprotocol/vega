@@ -92,6 +92,7 @@ type NodeCommand struct {
 	marketEventSub *subscribers.MarketEvent
 	orderSub       *subscribers.OrderEvent
 	accountSub     *subscribers.AccountSub
+	partySub       *subscribers.PartySub
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
