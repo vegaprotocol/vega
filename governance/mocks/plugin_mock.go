@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockPlugin is a mock of Plugin interface

@@ -1518,11 +1518,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, 
 
 func (r *myMutationResolver) PrepareProposal(
 	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
-
-	if proposalTerms.MinParticipationStake < 0 {
-		return nil, errors.New("minParticipationStake is invalid, must be positive")
-	}
-
 	var ref string
 	if reference != nil {
 		ref = *reference

@@ -1,7 +1,6 @@
 package gql
 
 import (
-	"math"
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -46,8 +45,6 @@ var (
 	ErrNilScalingFactors = errors.New("nil scaling factors")
 	// ErrNilMarginCalculator
 	ErrNilMarginCalculator = errors.New("nil margin calculator")
-	// ErrParticipationStake ...
-	ErrParticipationStake = errors.New("minimum participation stake contains too large value")
 	// ErrInvalidTickSize ...
 	ErrInvalidTickSize = errors.New("invalid tick size")
 	// ErrInvalidDecimalPlaces ...
@@ -517,13 +514,9 @@ func (a AccountType) IntoProto() types.AccountType {
 
 // ProposalTermsFromProto ...
 func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) {
-	if terms.MinParticipationStake > math.MaxInt32 {
-		return nil, ErrParticipationStake
-	}
 	result := &ProposalTerms{
-		ClosingDatetime:       secondsTSToDatetime(terms.ClosingTimestamp),
-		EnactmentDatetime:     secondsTSToDatetime(terms.EnactmentTimestamp),
-		MinParticipationStake: int(terms.MinParticipationStake),
+		ClosingDatetime:   secondsTSToDatetime(terms.ClosingTimestamp),
+		EnactmentDatetime: secondsTSToDatetime(terms.EnactmentTimestamp),
 	}
 	if terms.GetUpdateMarket() != nil {
 		result.Change = nil
@@ -707,9 +700,8 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	}
 
 	result := &types.ProposalTerms{
-		ClosingTimestamp:      closing,
-		EnactmentTimestamp:    enactment,
-		MinParticipationStake: uint64(p.MinParticipationStake),
+		ClosingTimestamp:   closing,
+		EnactmentTimestamp: enactment,
 	}
 	if p.UpdateMarket != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}

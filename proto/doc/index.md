@@ -1749,9 +1749,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposal | [Proposal](#vega.Proposal) |  |  |
-| yes | [Vote](#vega.Vote) | repeated |  |
-| no | [Vote](#vega.Vote) | repeated |  |
+| proposal | [Proposal](#vega.Proposal) |  | Proposal |
+| yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
+| no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
 
 
 
@@ -1766,11 +1766,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  |  |
-| maxCloseInSeconds | [int64](#int64) |  |  |
-| minEnactInSeconds | [int64](#int64) |  |  |
-| maxEnactInSeconds | [int64](#int64) |  |  |
-| minParticipationStake | [uint64](#uint64) |  |  |
+| minCloseInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
+| maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
+| minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
+| maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
+| requiredParticipation | [float](#float) |  | Participation level required for any proposal to pass. Value from `0` to `1`. |
+| requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
+| minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
+| minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
 
 
 
@@ -1815,12 +1818,12 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| reference | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| state | [Proposal.State](#vega.Proposal.State) |  |  |
-| timestamp | [int64](#int64) |  |  |
-| terms | [ProposalTerms](#vega.ProposalTerms) |  |  |
+| ID | [string](#string) |  | Proposal unique identifier. |
+| reference | [string](#string) |  | Proposal reference. |
+| partyID | [string](#string) |  | Proposal author, identifier of the party submitting the proposal. |
+| state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition) |
+| timestamp | [int64](#int64) |  | Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. |
+| terms | [ProposalTerms](#vega.ProposalTerms) |  | Proposal configuration and the actual change that is meant to be executed when proposal is enacted. |
 
 
 
@@ -1835,14 +1838,13 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal |
-| enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed) |
-| minParticipationStake | [uint64](#uint64) |  |  |
-| validationTimestamp | [int64](#int64) |  |  |
-| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  |  |
-| newMarket | [NewMarket](#vega.NewMarket) |  |  |
-| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  |  |
-| newAsset | [NewAsset](#vega.NewAsset) |  |  |
+| closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal. Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters. |
+| enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed). Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. |
+| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition. |
+| updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
+| newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
+| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
+| newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
 
 
 
@@ -1882,10 +1884,10 @@ TODO
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| value | [Vote.Value](#vega.Vote.Value) |  |  |
-| proposalID | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| partyID | [string](#string) |  | Voter&#39;s party identifier. |
+| value | [Vote.Value](#vega.Vote.Value) |  | Actual vote. |
+| proposalID | [string](#string) |  | Identifier of the proposal being voted on. |
+| timestamp | [int64](#int64) |  | Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network. |
 
 
 
@@ -1908,11 +1910,11 @@ Proposal can enter Failed state from any other state.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | STATE_UNSPECIFIED | 0 | Default value, always invalid. |
-| STATE_FAILED | 1 | Proposal could not be enacted after being accepted by the network. |
+| STATE_FAILED | 1 | Proposal enactment has failed - even though proposal has passed, its execusion could not be performed. |
 | STATE_OPEN | 2 | Proposal is open for voting. |
 | STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
-| STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals). |
-| STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes. |
+| STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements). |
+| STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
 | STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 

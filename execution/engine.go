@@ -165,7 +165,7 @@ func NewEngine(
 		return nil
 	}
 
-	networkParameters := governance.DefaultNetworkParameters() //TODO: store the parameters so proposals can update them
+	networkParameters := governance.DefaultNetworkParameters(log) //TODO: store the parameters so proposals can update them
 	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
 
 	e := &Engine{
@@ -574,7 +574,7 @@ func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) e
 
 	proposal.Timestamp = now.UnixNano()
 	e.idgen.SetProposalID(proposal)
-	return e.governance.AddProposal(*proposal)
+	return e.governance.SubmitProposal(*proposal)
 }
 
 // VoteOnProposal sends proposal vote to governance engine
