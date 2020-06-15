@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	minVersion = semver.MustParse("0.32.9")
-	maxVersion = semver.MustParse("0.33.0")
+	minVersion = semver.MustParse("0.33.5")
+	maxVersion = semver.MustParse("0.34.0")
 )
 
 var defaultChainVersion = ChainVersion{

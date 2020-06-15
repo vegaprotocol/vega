@@ -132,7 +132,7 @@ func (n *NOOPChain) GetChainID(context.Context) (string, error) {
 func (n *NOOPChain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
 		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.32.9",
+			Version: "0.33.5",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,
