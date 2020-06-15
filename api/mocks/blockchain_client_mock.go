@@ -80,6 +80,21 @@ func (mr *MockBlockchainClientMockRecorder) CreateOrder(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockBlockchainClient)(nil).CreateOrder), arg0, arg1)
 }
 
+// GetChainID mocks base method
+func (m *MockBlockchainClient) GetChainID(arg0 context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainID", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChainID indicates an expected call of GetChainID
+func (mr *MockBlockchainClientMockRecorder) GetChainID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainID", reflect.TypeOf((*MockBlockchainClient)(nil).GetChainID), arg0)
+}
+
 // GetGenesisTime mocks base method
 func (m *MockBlockchainClient) GetGenesisTime(arg0 context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()

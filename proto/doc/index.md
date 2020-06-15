@@ -10,15 +10,24 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
-    - [GetGovernanceDataResponse](#api.GetGovernanceDataResponse)
+    - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
+    - [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse)
+    - [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest)
+    - [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse)
+    - [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest)
+    - [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
+    - [GetProposalByIDResponse](#api.GetProposalByIDResponse)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
-    - [GetProposalResponse](#api.GetProposalResponse)
+    - [GetProposalByReferenceResponse](#api.GetProposalByReferenceResponse)
     - [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest)
-    - [GetProposalsByStateRequest](#api.GetProposalsByStateRequest)
+    - [GetProposalsByPartyResponse](#api.GetProposalsByPartyResponse)
+    - [GetProposalsRequest](#api.GetProposalsRequest)
+    - [GetProposalsResponse](#api.GetProposalsResponse)
     - [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest)
+    - [GetUpdateMarketProposalsResponse](#api.GetUpdateMarketProposalsResponse)
     - [GetVotesByPartyRequest](#api.GetVotesByPartyRequest)
-    - [GetVotesResponse](#api.GetVotesResponse)
+    - [GetVotesByPartyResponse](#api.GetVotesByPartyResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
@@ -297,9 +306,84 @@
 
 
 
-<a name="api.GetGovernanceDataResponse"></a>
+<a name="api.GetNetworkParametersProposalsRequest"></a>
 
-### GetGovernanceDataResponse
+### GetNetworkParametersProposalsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetNetworkParametersProposalsResponse"></a>
+
+### GetNetworkParametersProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
+<a name="api.GetNewAssetProposalsRequest"></a>
+
+### GetNewAssetProposalsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetNewAssetProposalsResponse"></a>
+
+### GetNewAssetProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
+<a name="api.GetNewMarketProposalsRequest"></a>
+
+### GetNewMarketProposalsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetNewMarketProposalsResponse"></a>
+
+### GetNewMarketProposalsResponse
 
 
 
@@ -327,6 +411,21 @@
 
 
 
+<a name="api.GetProposalByIDResponse"></a>
+
+### GetProposalByIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+
+
+
+
+
+
 <a name="api.GetProposalByReferenceRequest"></a>
 
 ### GetProposalByReferenceRequest
@@ -342,15 +441,15 @@
 
 
 
-<a name="api.GetProposalResponse"></a>
+<a name="api.GetProposalByReferenceResponse"></a>
 
-### GetProposalResponse
+### GetProposalByReferenceResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposal | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
 
 
 
@@ -366,22 +465,52 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
-| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
 
 
 
 
 
 
-<a name="api.GetProposalsByStateRequest"></a>
+<a name="api.GetProposalsByPartyResponse"></a>
 
-### GetProposalsByStateRequest
+### GetProposalsByPartyResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
+<a name="api.GetProposalsRequest"></a>
+
+### GetProposalsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetProposalsResponse"></a>
+
+### GetProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
 
 
 
@@ -397,7 +526,22 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
-| state | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+
+
+
+
+
+
+<a name="api.GetUpdateMarketProposalsResponse"></a>
+
+### GetUpdateMarketProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
 
 
 
@@ -419,9 +563,9 @@
 
 
 
-<a name="api.GetVotesResponse"></a>
+<a name="api.GetVotesByPartyResponse"></a>
 
-### GetVotesResponse
+### GetVotesByPartyResponse
 
 
 
@@ -1460,15 +1604,15 @@
 | TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
 | TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
 | TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
-| GetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for all proposals |
-| GetProposalsByParty | [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
-| GetVotesByParty | [GetVotesByPartyRequest](#api.GetVotesByPartyRequest) | [GetVotesResponse](#api.GetVotesResponse) | Get votes by party casting them |
-| GetNewMarketProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
-| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
-| GetNetworkParametersProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
-| GetNewAssetProposals | [GetProposalsByStateRequest](#api.GetProposalsByStateRequest) | [GetGovernanceDataResponse](#api.GetGovernanceDataResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
-| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by ID |
-| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalResponse](#api.GetProposalResponse) | Get governance data (proposals and votes) for a proposal located by reference |
+| GetProposals | [GetProposalsRequest](#api.GetProposalsRequest) | [GetProposalsResponse](#api.GetProposalsResponse) | Get governance data (proposals and votes) for all proposals |
+| GetProposalsByParty | [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest) | [GetProposalsByPartyResponse](#api.GetProposalsByPartyResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
+| GetVotesByParty | [GetVotesByPartyRequest](#api.GetVotesByPartyRequest) | [GetVotesByPartyResponse](#api.GetVotesByPartyResponse) | Get votes by party casting them |
+| GetNewMarketProposals | [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest) | [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
+| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetUpdateMarketProposalsResponse](#api.GetUpdateMarketProposalsResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
+| GetNetworkParametersProposals | [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest) | [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
+| GetNewAssetProposals | [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest) | [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
+| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalByIDResponse](#api.GetProposalByIDResponse) | Get governance data (proposals and votes) for a proposal located by ID |
+| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalByReferenceResponse](#api.GetProposalByReferenceResponse) | Get governance data (proposals and votes) for a proposal located by reference |
 | ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
@@ -1763,12 +1907,13 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| FAILED | 0 | Proposal could not be enacted after being accepted by the network |
-| OPEN | 1 | Proposal is open for voting. |
-| PASSED | 2 | Proposal has gained enough support to be executed. |
-| REJECTED | 3 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals) |
-| DECLINED | 4 | Proposal didn&#39;t get enough votes |
-| ENACTED | 5 | Proposal has been executed and the changes under this proposal have now been applied. |
+| STATE_UNSPECIFIED | 0 | Default value, always invalid. |
+| STATE_FAILED | 1 | Proposal could not be enacted after being accepted by the network. |
+| STATE_OPEN | 2 | Proposal is open for voting. |
+| STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
+| STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals). |
+| STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes. |
+| STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
 
 
 
@@ -1779,8 +1924,9 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NO | 0 |  |
-| YES | 1 |  |
+| VALUE_UNSPECIFIED | 0 | Default value, always invalid. |
+| VALUE_NO | 1 | A vote against the proposal. |
+| VALUE_YES | 2 | A vote in favour of the proposal. |
 
 
 
@@ -2618,6 +2764,7 @@ Proposal can enter Failed state from any other state.
 | chainVersion | [string](#string) |  |  |
 | blockDuration | [uint64](#uint64) |  | nanoseconds |
 | uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
+| chainID | [string](#string) |  | Unique ID of the blockchain |
 
 
 
@@ -2758,11 +2905,11 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ALL | 0 |  |
-| INSURANCE | 1 |  |
-| SETTLEMENT | 2 |  |
-| MARGIN | 3 |  |
-| GENERAL | 4 |  |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
+| ACCOUNT_TYPE_INSURANCE | 1 |  |
+| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
+| ACCOUNT_TYPE_MARGIN | 3 |  |
+| ACCOUNT_TYPE_GENERAL | 4 |  |
 
 
 
@@ -2773,9 +2920,10 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DISCONNECTED | 0 |  |
-| REPLAYING | 1 |  |
-| CONNECTED | 2 |  |
+| CHAIN_STATUS_UNSPECIFIED | 0 |  |
+| CHAIN_STATUS_DISCONNECTED | 1 |  |
+| CHAIN_STATUS_REPLAYING | 2 |  |
+| CHAIN_STATUS_CONNECTED | 3 |  |
 
 
 
@@ -2786,12 +2934,13 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| I1M | 0 | 1 minute |
-| I5M | 1 | 5 minutes |
-| I15M | 2 | 15 minutes |
-| I1H | 3 | 1 hour |
-| I6H | 4 | 6 hours |
-| I1D | 5 | 1 day |
+| INTERVAL_UNSPECIFIED | 0 | Default value, always invalid |
+| INTERVAL_I1M | 60 | 1 minute |
+| INTERVAL_I5M | 300 | 5 minutes |
+| INTERVAL_I15M | 900 | 15 minutes |
+| INTERVAL_I1H | 3600 | 1 hour |
+| INTERVAL_I6H | 21600 | 6 hours |
+| INTERVAL_I1D | 86400 | 1 day |
 
 
 
@@ -2802,13 +2951,14 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| Active | 0 |  |
-| Expired | 1 |  |
-| Cancelled | 2 |  |
-| Stopped | 3 |  |
-| Filled | 4 |  |
-| Rejected | 5 |  |
-| PartiallyFilled | 6 |  |
+| STATUS_INVALID | 0 |  |
+| STATUS_ACTIVE | 1 |  |
+| STATUS_EXPIRED | 2 |  |
+| STATUS_CANCELLED | 3 |  |
+| STATUS_STOPPED | 4 |  |
+| STATUS_FILLED | 5 |  |
+| STATUS_REJECTED | 6 |  |
+| STATUS_PARTIALLY_FILLED | 7 |  |
 
 
 
@@ -2820,10 +2970,10 @@ Order Time in Force
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | TIF_UNSPECIFIED | 0 | Default value, can be valid for an amend |
-| GTC | 1 | good til cancelled |
-| GTT | 2 | good til time |
-| IOC | 3 | immediate or cancel |
-| FOK | 4 | fill or kill |
+| TIF_GTC | 1 | good til cancelled |
+| TIF_GTT | 2 | good til time |
+| TIF_IOC | 3 | immediate or cancel |
+| TIF_FOK | 4 | fill or kill |
 
 
 
@@ -2834,9 +2984,10 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LIMIT | 0 | used for Limit orders |
-| MARKET | 1 | used for Market orders |
-| NETWORK | 2 | used for orders where the initiating party is the network (used for distressed traders) |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| TYPE_LIMIT | 1 | used for Limit orders |
+| TYPE_MARKET | 2 | used for Market orders |
+| TYPE_NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 
@@ -2847,25 +2998,26 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NONE | 0 |  |
-| INVALID_MARKET_ID | 1 |  |
-| INVALID_ORDER_ID | 2 |  |
-| ORDER_OUT_OF_SEQUENCE | 3 |  |
-| INVALID_REMAINING_SIZE | 4 |  |
-| TIME_FAILURE | 5 |  |
-| ORDER_REMOVAL_FAILURE | 6 |  |
-| INVALID_EXPIRATION_DATETIME | 7 |  |
-| INVALID_ORDER_REFERENCE | 8 |  |
-| EDIT_NOT_ALLOWED | 9 |  |
-| ORDER_AMEND_FAILURE | 10 |  |
-| ORDER_NOT_FOUND | 11 |  |
-| INVALID_PARTY_ID | 12 |  |
-| MARKET_CLOSED | 13 |  |
-| MARGIN_CHECK_FAILED | 14 |  |
-| MISSING_GENERAL_ACCOUNT | 15 |  |
-| INTERNAL_ERROR | 16 |  |
-| INVALID_SIZE | 17 |  |
-| INVALID_PERSISTENCE | 18 |  |
+| ORDER_ERROR_NONE | 0 |  |
+| ORDER_ERROR_INVALID_MARKET_ID | 1 |  |
+| ORDER_ERROR_INVALID_ORDER_ID | 2 |  |
+| ORDER_ERROR_OUT_OF_SEQUENCE | 3 |  |
+| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 |  |
+| ORDER_ERROR_TIME_FAILURE | 5 |  |
+| ORDER_ERROR_REMOVAL_FAILURE | 6 |  |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 |  |
+| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 |  |
+| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 |  |
+| ORDER_ERROR_AMEND_FAILURE | 10 |  |
+| ORDER_ERROR_NOT_FOUND | 11 |  |
+| ORDER_ERROR_INVALID_PARTY_ID | 12 |  |
+| ORDER_ERROR_MARKET_CLOSED | 13 |  |
+| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 |  |
+| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 |  |
+| ORDER_ERROR_INTERNAL_ERROR | 16 |  |
+| ORDER_ERROR_INVALID_SIZE | 17 |  |
+| ORDER_ERROR_INVALID_PERSISTENCE | 18 |  |
+| ORDER_ERROR_INVALID_TYPE | 19 |  |
 
 
 
@@ -2876,8 +3028,9 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| Buy | 0 |  |
-| Sell | 1 |  |
+| SIDE_UNSPECIFIED | 0 | Default value, always invalid |
+| SIDE_BUY | 1 | Buy |
+| SIDE_SELL | 2 | Sell |
 
 
 
@@ -2888,9 +3041,10 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DEFAULT | 0 |  |
-| NETWORK_CLOSE_OUT_GOOD | 1 |  |
-| NETWORK_CLOSE_OUT_BAD | 2 |  |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| TYPE_DEFAULT | 1 |  |
+| TYPE_NETWORK_CLOSE_OUT_GOOD | 2 |  |
+| TYPE_NETWORK_CLOSE_OUT_BAD | 3 |  |
 
 
 
@@ -2901,14 +3055,15 @@ Order Type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LOSS | 0 |  |
-| WIN | 1 |  |
-| CLOSE | 2 |  |
-| MTM_LOSS | 3 |  |
-| MTM_WIN | 4 |  |
-| MARGIN_LOW | 5 |  |
-| MARGIN_HIGH | 6 |  |
-| MARGIN_CONFISCATED | 7 |  |
+| TRANSFER_TYPE_UNSPECIFIED | 0 |  |
+| TRANSFER_TYPE_LOSS | 1 |  |
+| TRANSFER_TYPE_WIN | 2 |  |
+| TRANSFER_TYPE_CLOSE | 3 |  |
+| TRANSFER_TYPE_MTM_LOSS | 4 |  |
+| TRANSFER_TYPE_MTM_WIN | 5 |  |
+| TRANSFER_TYPE_MARGIN_LOW | 6 |  |
+| TRANSFER_TYPE_MARGIN_HIGH | 7 |  |
+| TRANSFER_TYPE_MARGIN_CONFISCATED | 8 |  |
 
 
 

@@ -22,47 +22,47 @@ func safeStringUint64(input string) (uint64, error) {
 func convertInterval(interval Interval) (types.Interval, error) {
 	switch interval {
 	case IntervalI15m:
-		return types.Interval_I15M, nil
+		return types.Interval_INTERVAL_I15M, nil
 	case IntervalI1d:
-		return types.Interval_I1D, nil
+		return types.Interval_INTERVAL_I1D, nil
 	case IntervalI1h:
-		return types.Interval_I1H, nil
+		return types.Interval_INTERVAL_I1H, nil
 	case IntervalI1m:
-		return types.Interval_I1M, nil
+		return types.Interval_INTERVAL_I1M, nil
 	case IntervalI5m:
-		return types.Interval_I5M, nil
+		return types.Interval_INTERVAL_I5M, nil
 	case IntervalI6h:
-		return types.Interval_I6H, nil
+		return types.Interval_INTERVAL_I6H, nil
 	default:
 		err := fmt.Errorf("invalid interval when subscribing to candles, falling back to default: I15M, (%v)", interval)
 
-		return types.Interval_I15M, err
+		return types.Interval_INTERVAL_UNSPECIFIED, err
 	}
 }
 
 func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch timeInForce {
 	case OrderTimeInForceGtc:
-		return types.Order_GTC, nil
+		return types.Order_TIF_GTC, nil
 	case OrderTimeInForceGtt:
-		return types.Order_GTT, nil
+		return types.Order_TIF_GTT, nil
 	case OrderTimeInForceIoc:
-		return types.Order_IOC, nil
+		return types.Order_TIF_IOC, nil
 	case OrderTimeInForceFok:
-		return types.Order_FOK, nil
+		return types.Order_TIF_FOK, nil
 	default:
-		return types.Order_GTC, fmt.Errorf("unknown type: %s", timeInForce.String())
+		return types.Order_TIF_GTC, fmt.Errorf("unknown type: %s", timeInForce.String())
 	}
 }
 
 func parseOrderType(ty OrderType) (types.Order_Type, error) {
 	switch ty {
 	case OrderTypeLimit:
-		return types.Order_LIMIT, nil
+		return types.Order_TYPE_LIMIT, nil
 	case OrderTypeMarket:
-		return types.Order_MARKET, nil
+		return types.Order_TYPE_MARKET, nil
 	default:
-		// handle types.Order_NETWORK as an error here, as we do not expected
+		// handle types.Order_TYPE_NETWORK as an error here, as we do not expected
 		// it to be set by through the API, only by the core internally
 		return 0, fmt.Errorf("unknown type: %s", ty.String())
 	}
@@ -71,28 +71,28 @@ func parseOrderType(ty OrderType) (types.Order_Type, error) {
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
 	case OrderStatusActive:
-		return types.Order_Active, nil
+		return types.Order_STATUS_ACTIVE, nil
 	case OrderStatusExpired:
-		return types.Order_Expired, nil
+		return types.Order_STATUS_EXPIRED, nil
 	case OrderStatusCancelled:
-		return types.Order_Cancelled, nil
+		return types.Order_STATUS_CANCELLED, nil
 	case OrderStatusFilled:
-		return types.Order_Filled, nil
+		return types.Order_STATUS_FILLED, nil
 	case OrderStatusRejected:
-		return types.Order_Rejected, nil
+		return types.Order_STATUS_REJECTED, nil
 	default:
-		return types.Order_Active, fmt.Errorf("unknown status: %s", orderStatus.String())
+		return types.Order_STATUS_INVALID, fmt.Errorf("unknown status: %s", orderStatus.String())
 	}
 }
 
 func parseSide(side *Side) (types.Side, error) {
 	switch *side {
 	case SideBuy:
-		return types.Side_Buy, nil
+		return types.Side_SIDE_BUY, nil
 	case SideSell:
-		return types.Side_Sell, nil
+		return types.Side_SIDE_SELL, nil
 	default:
-		return types.Side_Buy, fmt.Errorf("unknown side: %s", side.String())
+		return types.Side_SIDE_BUY, fmt.Errorf("unknown side: %s", side.String())
 	}
 }
 
@@ -128,11 +128,15 @@ func customErrorFromStatus(err error) error {
 	return err
 }
 
-func timestampToDatetime(timestampInSeconds int64) string {
+func secondsTSToDatetime(timestampInSeconds int64) string {
 	return vegatime.Format(vegatime.Unix(timestampInSeconds, 0))
 }
 
-func parseTimestamp(timestamp string) (int64, error) {
+func nanoTSToDatetime(timestampInNanoSeconds int64) string {
+	return vegatime.Format(vegatime.UnixNano(timestampInNanoSeconds))
+}
+
+func datetimeToSecondsTS(timestamp string) (int64, error) {
 	converted, err := vegatime.Parse(timestamp)
 	if err != nil {
 		return 0, err

@@ -17,6 +17,7 @@ import (
 
 type chainClientImpl interface {
 	GetGenesisTime(context.Context) (time.Time, error)
+	GetChainID(context.Context) (string, error)
 	GetStatus(context.Context) (*tmctypes.ResultStatus, error)
 	GetNetworkInfo(context.Context) (*tmctypes.ResultNetInfo, error)
 	GetUnconfirmedTxCount(context.Context) (int, error)
@@ -111,9 +112,14 @@ func (c *Client) CreateOrder(ctx context.Context, order *types.Order) error {
 	return err
 }
 
-// GetGenesisTime will retrieve the genesis time from the blockchain
+// GetGenesisTime retrieves the genesis time from the blockchain
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	return c.clt.GetGenesisTime(ctx)
+}
+
+// GetChainID retrieves the chainID from the blockchain
+func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
+	return c.clt.GetChainID(ctx)
 }
 
 // GetStatus returns the current status of the chain

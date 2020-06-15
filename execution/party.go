@@ -1,9 +1,11 @@
 package execution
 
 import (
+	"context"
 	"errors"
 	"sync"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -15,9 +17,9 @@ var ErrInvalidPartyId = errors.New("party id is not valid")
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
-	CreatePartyGeneralAccount(partyID, asset string) string
-	IncrementBalance(id string, amount uint64) error
-	DecrementBalance(id string, amount uint64) error
+	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) string
+	IncrementBalance(ctx context.Context, id string, amount uint64) error
+	DecrementBalance(ctx context.Context, id string, amount uint64) error
 	GetAccountByID(id string) (*types.Account, error)
 	GetPartyTokenAccount(string) (*types.Account, error)
 }
@@ -27,13 +29,13 @@ type Party struct {
 	log           *logging.Logger
 	collateral    Collateral
 	markets       []types.Market
-	partyBuf      PartyBuf
+	broker        Broker
 	partyByMarket map[string]map[string]struct{}
 	mu            sync.Mutex
 }
 
 // NewParty instantiates a new party
-func NewParty(log *logging.Logger, col Collateral, markets []types.Market, partyBuf PartyBuf) *Party {
+func NewParty(log *logging.Logger, col Collateral, markets []types.Market, broker Broker) *Party {
 	partyByMarket := map[string]map[string]struct{}{}
 	for _, v := range markets {
 		partyByMarket[v.Id] = map[string]struct{}{}
@@ -42,7 +44,7 @@ func NewParty(log *logging.Logger, col Collateral, markets []types.Market, party
 		log:           log,
 		collateral:    col,
 		markets:       markets,
-		partyBuf:      partyBuf,
+		broker:        broker,
 		partyByMarket: partyByMarket,
 	}
 }
@@ -65,23 +67,24 @@ func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error)
 	return nil, ErrPartyDoesNotExist
 }
 
+// Do we still use this other than in tests?
 // NotifyTraderAccountWithTopUpAmount will create a new party in the system
 // and top-up it general account with the given amount
-func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *types.NotifyTraderAccount, amount uint64) error {
-	return p.notifyTraderAccount(notify, amount)
+func (p *Party) NotifyTraderAccountWithTopUpAmount(ctx context.Context, notify *types.NotifyTraderAccount, amount uint64) error {
+	return p.notifyTraderAccount(ctx, notify, amount)
 }
 
 // Void type represents nothingness, emptiness
 type Void struct{}
 
 // MakeGeneralAccounts creates general accounts on every market for the given party id
-func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
+func (p *Party) MakeGeneralAccounts(ctx context.Context, partyID string) (map[string]Void, error) {
 	if len(partyID) <= 0 {
 		return nil, ErrInvalidPartyId
 	}
 
 	// ignore errors as they can only happen when the party already exists
-	p.partyBuf.Add(types.Party{Id: partyID})
+	p.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 
 	result := map[string]Void{}
 
@@ -94,7 +97,8 @@ func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
 		}
 
 		// create account
-		generalAccount := p.collateral.CreatePartyGeneralAccount(partyID, asset)
+		// @TODO this context needs to come from somewhere...
+		generalAccount := p.collateral.CreatePartyGeneralAccount(ctx, partyID, asset)
 		if _, exists := result[generalAccount]; !exists {
 			result[generalAccount] = Void{}
 			if _, err := p.collateral.GetAccountByID(generalAccount); err != nil {
@@ -116,21 +120,34 @@ func (p *Party) MakeGeneralAccounts(partyID string) (map[string]Void, error) {
 
 // NotifyTraderAccount will create a new party in the system
 // and top-up it general account with the default amount
-func (p *Party) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
+func (p *Party) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
 	if notify == nil {
 		return ErrNotifyPartyIdMissing
 	}
 	if notify.Amount == 0 {
-		return p.notifyTraderAccount(notify, 1000000000) // 10000.00000
+		return p.notifyTraderAccount(ctx, notify, 1000000000) // 10000.00000
 	}
-	return p.notifyTraderAccount(notify, notify.Amount)
+	return p.notifyTraderAccount(ctx, notify, notify.Amount)
+}
+
+// returns parties from an existing market (if any)
+// @TODO: untie parties from the markets
+func (p *Party) getParties() map[string]struct{} {
+	var result map[string]struct{}
+	for _, result = range p.partyByMarket {
+		break // select existing market (if any) parties
+	}
+	if result == nil {
+		result = map[string]struct{}{}
+	}
+	return result
 }
 
 func (p *Party) addMarket(market types.Market) {
 	p.mu.Lock()
 	if _, found := p.partyByMarket[market.Id]; !found {
 		p.markets = append(p.markets, market)
-		p.partyByMarket[market.Id] = map[string]struct{}{}
+		p.partyByMarket[market.Id] = p.getParties()
 	}
 	p.mu.Unlock()
 }
@@ -139,9 +156,9 @@ func (p *Party) addParty(ptyID, mktID string) {
 	p.partyByMarket[mktID][ptyID] = struct{}{}
 }
 
-func (p *Party) creditGeneralAccount(accountID string, amount uint64) error {
+func (p *Party) creditGeneralAccount(ctx context.Context, accountID string, amount uint64) error {
 
-	if err := p.collateral.IncrementBalance(accountID, amount); err != nil {
+	if err := p.collateral.IncrementBalance(ctx, accountID, amount); err != nil {
 		p.log.Error("unable to top-up general account", logging.Error(err))
 		return err
 	}
@@ -161,17 +178,17 @@ func (p *Party) creditGeneralAccount(accountID string, amount uint64) error {
 	return nil
 }
 
-func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount uint64) error {
+func (p *Party) notifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount, amount uint64) error {
 	if notify == nil {
 		return ErrNotifyPartyIdMissing
 	}
 
-	generalAccs, err := p.MakeGeneralAccounts(notify.TraderID)
+	generalAccs, err := p.MakeGeneralAccounts(ctx, notify.TraderID)
 	if err != nil {
 		return err
 	}
 	for acc := range generalAccs {
-		if err = p.creditGeneralAccount(acc, amount); err != nil {
+		if err = p.creditGeneralAccount(ctx, acc, amount); err != nil {
 			return err
 		}
 	}
@@ -180,7 +197,7 @@ func (p *Party) notifyTraderAccount(notify *types.NotifyTraderAccount, amount ui
 	if err != nil {
 		return err
 	}
-	if err := p.collateral.IncrementBalance(tknAcc.Id, notify.Amount); err != nil {
+	if err := p.collateral.IncrementBalance(ctx, tknAcc.Id, notify.Amount); err != nil {
 		p.log.Error("unable to top-up token account", logging.Error(err))
 		return err
 	}

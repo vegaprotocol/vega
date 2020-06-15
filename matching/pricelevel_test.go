@@ -12,27 +12,27 @@ import (
 func TestGetPriceLevel(t *testing.T) {
 	side := &OrderBookSide{}
 	assert.Equal(t, 0, len(side.levels))
-	side.getPriceLevel(100, types.Side_Sell)
+	side.getPriceLevel(100, types.Side_SIDE_SELL)
 	assert.Equal(t, 1, len(side.levels))
 
-	side.getPriceLevel(110, types.Side_Sell)
+	side.getPriceLevel(110, types.Side_SIDE_SELL)
 	assert.Equal(t, 2, len(side.levels))
 
-	side.getPriceLevel(100, types.Side_Sell)
+	side.getPriceLevel(100, types.Side_SIDE_SELL)
 	assert.Equal(t, 2, len(side.levels))
 }
 
 func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{}
-	l := side.getPriceLevel(100, types.Side_Sell)
+	l := side.getPriceLevel(100, types.Side_SIDE_SELL)
 	order := &types.Order{
 		MarketID:    "testOrderBook",
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		CreatedAt:   0,
 	}
 
@@ -55,15 +55,15 @@ func TestUncross(t *testing.T) {
 	defer logger.Sync()
 
 	side := &OrderBookSide{}
-	l := side.getPriceLevel(100, types.Side_Sell)
+	l := side.getPriceLevel(100, types.Side_SIDE_SELL)
 	passiveOrder := &types.Order{
 		MarketID:    "testOrderBook",
 		PartyID:     "A",
-		Side:        types.Side_Sell,
+		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		CreatedAt:   0,
 	}
 	l.addOrder(passiveOrder)
@@ -71,11 +71,11 @@ func TestUncross(t *testing.T) {
 	aggresiveOrder := &types.Order{
 		MarketID:    "testOrderBook",
 		PartyID:     "B",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_GTC,
+		TimeInForce: types.Order_TIF_GTC,
 		CreatedAt:   0,
 	}
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder)

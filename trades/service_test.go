@@ -67,9 +67,9 @@ func TestGetByMarket(t *testing.T) {
 	invalid := "LTC/DEC19"
 	expErr := errors.New("phobos communications link interrupted")
 	expect := []*types.Trade{
-		{Id: "A", MarketID: market, Price: 100},
-		{Id: "B", MarketID: market, Price: 200},
-		{Id: "C", MarketID: market, Price: 300},
+		{Type: types.Trade_TYPE_DEFAULT, Id: "A", MarketID: market, Price: 100},
+		{Type: types.Trade_TYPE_DEFAULT, Id: "B", MarketID: market, Price: 200},
+		{Type: types.Trade_TYPE_DEFAULT, Id: "C", MarketID: market, Price: 300},
 	}
 
 	ui0, ui1, uiDefault := uint64(0), uint64(1), uint64(svc.Config.PageSizeDefault)
@@ -99,12 +99,12 @@ func TestTradeService_GetByParty(t *testing.T) {
 
 	expect := map[string][]*types.Trade{
 		partyA: []*types.Trade{
-			{Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
-			{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
 		},
 		partyB: []*types.Trade{
-			{Id: "C", Buyer: partyB, Seller: partyA, Price: 100},
-			{Id: "D", Buyer: partyA, Seller: partyB, Price: 200},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "C", Buyer: partyB, Seller: partyA, Price: 100},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "D", Buyer: partyA, Seller: partyB, Price: 200},
 		},
 		invalid: nil,
 	}
@@ -146,6 +146,7 @@ func testObserveTradesSuccess(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketID: market,
 			Price:    1000,
@@ -154,6 +155,7 @@ func testObserveTradesSuccess(t *testing.T) {
 			Seller:   seller,
 		},
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketID: market,
 			Price:    1200,
@@ -195,6 +197,7 @@ func testObserveTradesNoWrite(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketID: market,
 			Price:    1000,
@@ -203,6 +206,7 @@ func testObserveTradesNoWrite(t *testing.T) {
 			Seller:   seller,
 		},
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketID: market,
 			Price:    1200,
@@ -249,6 +253,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketID: market,
 			Price:    1000,
@@ -257,6 +262,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 			Seller:   seller,
 		},
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketID: market,
 			Price:    1200,
@@ -265,6 +271,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 			Seller:   seller,
 		},
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade3",
 			MarketID: filterMarket,
 			Price:    1200,
@@ -309,6 +316,7 @@ func testObserveTradesFilterNone(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketID: market,
 			Price:    1000,
@@ -317,6 +325,7 @@ func testObserveTradesFilterNone(t *testing.T) {
 			Seller:   seller,
 		},
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketID: market,
 			Price:    1200,
@@ -325,6 +334,7 @@ func testObserveTradesFilterNone(t *testing.T) {
 			Seller:   seller,
 		},
 		{
+			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade3",
 			MarketID: filterMarket,
 			Price:    1200,
@@ -382,12 +392,12 @@ func (t *testService) Finish() {
 //	tradeService.Init(vega, &tradeStore)
 //
 //	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
-//		{Trade: types.Trade{Id: "A", MarketID: market, Price: 1}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "B", MarketID: market, Price: 2}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "C", MarketID: market, Price: 3}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "D", MarketID: market, Price: 4}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "E", MarketID: market, Price: 5}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "F", MarketID: market, Price: 6}, OrderId: orderId},
+//		{Trade: types.Trade{Type: types.Trade_TYPE_DEFAULT, Id: "A", MarketID: market, Price: 1}, OrderId: orderId},
+//		{Trade: types.Trade{Type: types.Trade_TYPE_DEFAULT, Id: "B", MarketID: market, Price: 2}, OrderId: orderId},
+//		{Trade: types.Trade{Type: types.Trade_TYPE_DEFAULT, Id: "C", MarketID: market, Price: 3}, OrderId: orderId},
+//		{Trade: types.Trade{Type: types.Trade_TYPE_DEFAULT, Id: "D", MarketID: market, Price: 4}, OrderId: orderId},
+//		{Trade: types.Trade{Type: types.Trade_TYPE_DEFAULT, Id: "E", MarketID: market, Price: 5}, OrderId: orderId},
+//		{Trade: types.Trade{Type: types.Trade_TYPE_DEFAULT, Id: "F", MarketID: market, Price: 6}, OrderId: orderId},
 //	}, nil).Once()
 //
 //	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderId, datastore.GetParamsLimitDefault)

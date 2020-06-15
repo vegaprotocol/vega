@@ -47,6 +47,7 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 
 	req := &protoapi.SubmitOrderRequest{
 		Submission: &types.OrderSubmission{
+			Type:     types.Order_TYPE_LIMIT,
 			MarketID: "nonexistantmarket",
 		},
 	}
@@ -286,7 +287,7 @@ func TestPrepareProposal(t *testing.T) {
 			},
 		},
 	})
-	assert.Contains(t, err.Error(), "Internal error")
+	assert.Contains(t, err.Error(), "InvalidArgument")
 	assert.Nil(t, proposal)
 
 	g.Stop()

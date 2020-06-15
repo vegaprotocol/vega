@@ -16,12 +16,12 @@ func TestOrderBookInvalid_emptyMarketID(t *testing.T) {
 	order := types.Order{
 		MarketID:    "",
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidMarketID, err)
@@ -35,12 +35,12 @@ func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPartyID, err)
@@ -54,15 +54,15 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        0,
 		Remaining:   0,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
-	assert.Equal(t, types.ErrInvalidSize, err)
+	assert.Equal(t, types.ErrInvalidRemainingSize, err)
 	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
 }
 
@@ -73,12 +73,12 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       0,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -92,12 +92,12 @@ func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   11,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidRemainingSize, err)
@@ -111,12 +111,12 @@ func TestOrderBookInvalid_GTCMarket(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_MARKET,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
@@ -130,12 +130,12 @@ func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTC,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_GTC,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
@@ -149,12 +149,12 @@ func TestOrderBookInvalid_GTTMarket(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
-		Type:        types.Order_MARKET,
+		TimeInForce: types.Order_TIF_GTT,
+		Type:        types.Order_TYPE_MARKET,
 		ExpiresAt:   1,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -169,12 +169,12 @@ func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_GTT,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_GTT,
+		Type:        types.Order_TYPE_NETWORK,
 		ExpiresAt:   1,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -189,12 +189,12 @@ func TestOrderBookInvalid_IOCNetwork(t *testing.T) {
 	order := types.Order{
 		MarketID:    market,
 		PartyID:     "A",
-		Side:        types.Side_Buy,
+		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_IOC,
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_IOC,
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)

@@ -107,7 +107,7 @@ func testMarginLevelsTS(t *testing.T) {
 	assert.Equal(t, int64(20), trans.Amount.Amount)
 	// min = 17 so we go back to search level
 	assert.Equal(t, int64(17), trans.MinAmount)
-	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
 }
 
 func testMarginTopup(t *testing.T) {
@@ -137,7 +137,7 @@ func testMarginTopup(t *testing.T) {
 	assert.Equal(t, int64(20), trans.Amount.Amount)
 	// min = 17 so we go back to search level
 	assert.Equal(t, int64(17), trans.MinAmount)
-	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
 }
 
 func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
@@ -216,7 +216,7 @@ func testMarginOverflow(t *testing.T) {
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(470), trans.Amount.Amount)
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
-	assert.Equal(t, types.TransferType_MARGIN_HIGH, trans.Type)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
 }
 
 // implementation of the test from the specs
@@ -258,14 +258,14 @@ func testMarginWithOrderInBook(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		// {volume: 3, price: 258, tid: "t1", side: types.Side_Sell},
-		// {volume: 5, price: 240, tid: "t2", side: types.Side_Sell},
-		// {volume: 3, price: 188, tid: "t3", side: types.Side_Sell},
+		// {volume: 3, price: 258, tid: "t1", side: types.Side_SIDE_SELL},
+		// {volume: 5, price: 240, tid: "t2", side: types.Side_SIDE_SELL},
+		// {volume: 3, price: 188, tid: "t3", side: types.Side_SIDE_SELL},
 		// bids
 
-		{volume: 1, price: 120, tid: "t4", side: types.Side_Buy},
-		{volume: 4, price: 110, tid: "t5", side: types.Side_Buy},
-		{volume: 5, price: 108, tid: "t6", side: types.Side_Buy},
+		{volume: 1, price: 120, tid: "t4", side: types.Side_SIDE_BUY},
+		{volume: 4, price: 110, tid: "t5", side: types.Side_SIDE_BUY},
+		{volume: 5, price: 108, tid: "t6", side: types.Side_SIDE_BUY},
 	}
 
 	marketID := "testingmarket"
@@ -291,9 +291,9 @@ func testMarginWithOrderInBook(t *testing.T) {
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_GTT,
-			Type:        types.Order_LIMIT,
-			Status:      types.Order_Active,
+			TimeInForce: types.Order_TIF_GTT,
+			Type:        types.Order_TYPE_LIMIT,
+			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
 		}
 		_, err := book.SubmitOrder(o)
@@ -363,14 +363,14 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		{volume: 100, price: 250, tid: "t1", side: types.Side_Sell},
-		{volume: 11, price: 140, tid: "t2", side: types.Side_Sell},
-		{volume: 2, price: 112, tid: "t3", side: types.Side_Sell},
+		{volume: 100, price: 250, tid: "t1", side: types.Side_SIDE_SELL},
+		{volume: 11, price: 140, tid: "t2", side: types.Side_SIDE_SELL},
+		{volume: 2, price: 112, tid: "t3", side: types.Side_SIDE_SELL},
 		// bids
-		{volume: 1, price: 100, tid: "t4", side: types.Side_Buy},
-		{volume: 3, price: 96, tid: "t5", side: types.Side_Buy},
-		{volume: 15, price: 90, tid: "t6", side: types.Side_Buy},
-		{volume: 50, price: 87, tid: "t7", side: types.Side_Buy},
+		{volume: 1, price: 100, tid: "t4", side: types.Side_SIDE_BUY},
+		{volume: 3, price: 96, tid: "t5", side: types.Side_SIDE_BUY},
+		{volume: 15, price: 90, tid: "t6", side: types.Side_SIDE_BUY},
+		{volume: 50, price: 87, tid: "t7", side: types.Side_SIDE_BUY},
 	}
 
 	marketID := "testingmarket"
@@ -396,9 +396,9 @@ func testMarginWithOrderInBook2(t *testing.T) {
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_GTT,
-			Type:        types.Order_LIMIT,
-			Status:      types.Order_Active,
+			TimeInForce: types.Order_TIF_GTT,
+			Type:        types.Order_TYPE_LIMIT,
+			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
 		}
 		_, err := book.SubmitOrder(o)

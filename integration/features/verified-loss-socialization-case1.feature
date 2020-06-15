@@ -26,16 +26,16 @@ Feature: Test loss socialization case 1
 # setup orderbook
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |   1000 |   120 |                0 | LIMIT | GTC | sell-provider-1 |
-      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | LIMIT | GTC | buy-provider-1  |
+      | sellSideProvider | ETH/DEC19 | sell |   1000 |   120 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 # trader 1 place an order + we check margins
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |    100 |   100 |                0 | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell |    100 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
 # then trader2 place an order, and we calculate the margins again
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader2 | ETH/DEC19 | buy  |    100 |   100 |                1 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | buy  |    100 |   100 |                1 | TYPE_LIMIT | TIF_GTC |
 # then we change the volume in the book
     Then traders cancels the following orders reference:
       | trader           | reference       |
@@ -43,12 +43,12 @@ Feature: Test loss socialization case 1
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |   1000 |   200 |                0 | LIMIT | GTC | sell-provider-2 |
-      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | LIMIT | GTC | buy-provider-2  |
+      | sellSideProvider | ETH/DEC19 | sell |   1000 |   200 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
+      | buySideProvider  | ETH/DEC19 | buy  |   1000 |    80 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader2 | ETH/DEC19 | buy  |    100 |   180 |                0 | LIMIT | GTC |
-      | trader3 | ETH/DEC19 | sell |    100 |   180 |                1 | LIMIT | GTC |
+      | trader2 | ETH/DEC19 | buy  |    100 |   180 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | sell |    100 |   180 |                1 | TYPE_LIMIT | TIF_GTC |
     Then position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 |      0 |             0 |       -5000 |

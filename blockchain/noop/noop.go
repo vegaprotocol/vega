@@ -46,6 +46,7 @@ type NOOPChain struct {
 	proc        Processor
 	service     ApplicationService
 	genesisTime time.Time
+	chainID     string
 	txs         chan []byte
 
 	totalTxLastBatch uint64
@@ -122,6 +123,10 @@ func (n *NOOPChain) Stop() error {
 
 func (n *NOOPChain) GetGenesisTime(context.Context) (time.Time, error) {
 	return n.genesisTime, nil
+}
+
+func (n *NOOPChain) GetChainID(context.Context) (string, error) {
+	return n.chainID, nil
 }
 
 func (n *NOOPChain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {

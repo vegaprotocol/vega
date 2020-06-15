@@ -176,17 +176,20 @@ func (s *tradingService) PrepareProposal(
 ) (*protoapi.PrepareProposalResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareProposal", startTime)
-	proposal, err := s.governanceService.PrepareProposal(ctx,
-		req.PartyID, req.Reference, req.Proposal)
+
+	if err := req.Validate(); err != nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyID, req.Reference, req.Proposal)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
+		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	raw, err := proto.Marshal(proposal) // marshal whole proposal
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareProposal)
+		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	if raw, err = txEncode(raw, blockchain.ProposeCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareProposal)
+		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	return &protoapi.PrepareProposalResponse{
 		Blob:            raw,
@@ -197,19 +200,25 @@ func (s *tradingService) PrepareProposal(
 func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareVoteRequest) (*protoapi.PrepareVoteResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareVote", startTime)
+
 	if err := req.Validate(); err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+
+	if req.Vote.Value == types.Vote_VALUE_UNSPECIFIED {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
 	vote, err := s.governanceService.PrepareVote(req.Vote)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest)
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	raw, err := proto.Marshal(vote)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote)
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	if raw, err = txEncode(raw, blockchain.VoteCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote)
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	return &protoapi.PrepareVoteResponse{
 		Blob: raw,

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -249,6 +248,9 @@ func (l *NodeCommand) loadMarketsConfig() error {
 func (l *NodeCommand) setupSubscibers() {
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -336,18 +338,18 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	broker := broker.New(l.ctx)
 	_ = broker.Subscribe(l.transferSub, true)
 	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
+	_ = broker.Subscribe(l.orderSub, true)
+	_ = broker.Subscribe(l.accountSub, true)
+	_ = broker.Subscribe(l.partySub, true)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.orderBuf,
 		l.tradeBuf,
 		l.candleBuf,
 		l.marketBuf,
-		l.partyBuf,
-		l.accountBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
 		l.settleBuf,
@@ -363,7 +365,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, !l.noStores)
+	if err != nil {
+		return err
+	}
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
@@ -420,15 +425,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	return
-}
-
-// SetUlimits sets limits (within OS-specified limits):
-// * nofile - max number of open files - for badger LSM tree
-func (l *NodeCommand) SetUlimits() error {
-	return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
-		Max: l.conf.UlimitNOFile,
-		Cur: l.conf.UlimitNOFile,
-	})
 }
 
 func getTerminalPassphrase() (string, error) {

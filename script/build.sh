@@ -8,6 +8,7 @@ alltargets=( \
 	"linux/386" "linux/amd64" "linux/arm64" \
 	"linux/mips" "linux/mipsle" "linux/mips64" "linux/mips64le" \
 	"darwin/amd64" \
+	"windows/386" "windows/amd64"
 )
 
 help() {
@@ -107,7 +108,7 @@ can_build() {
 			continue
 		fi
 
-		if ! which command -v "$compiler" 1>/dev/null ; then
+		if ! command -v "$compiler" 1>/dev/null ; then
 			echo "$target: Cannot build. Need $compiler"
 			canbuild=1
 		fi
@@ -163,7 +164,16 @@ run() {
 			cc=mips64el-linux-gnuabi64-gcc-9
 			cxx=mips64el-linux-gnuabi64-g++-9
 			;;
-		windows/*)
+		windows/386)
+			typesuffix=".exe"
+			cc=i686-w64-mingw32-gcc-posix
+			cxx=i686-w64-mingw32-g++-posix
+			# https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=vs-2019
+			win32_winnt="-D_WIN32_WINNT=0x0A00" # Windows 10
+			cgo_flags="$win32_winnt"
+			cgo_cxxflags="$win32_winnt"
+			;;
+		windows/amd64)
 			typesuffix=".exe"
 			cc=x86_64-w64-mingw32-gcc-posix
 			cxx=x86_64-w64-mingw32-g++-posix

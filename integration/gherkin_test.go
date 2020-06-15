@@ -40,9 +40,9 @@ func f64val(rows *gherkin.TableRow, idx int) float64 {
 func sideval(rows *gherkin.TableRow, idx int) proto.Side {
 	s := rows.Cells[idx].Value
 	if s == "sell" {
-		return proto.Side_Sell
+		return proto.Side_SIDE_SELL
 	}
-	return proto.Side_Buy
+	return proto.Side_SIDE_BUY
 }
 
 func tifval(rows *gherkin.TableRow, idx int) (proto.Order_TimeInForce, error) {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/contextutil"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -38,6 +38,9 @@ const (
 	TransferResponses
 	PositionResolution
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
+	OrderEvent
+	AccountEvent
+	PartyEvent
 )
 
 var (
@@ -51,6 +54,9 @@ var (
 		TransferResponses:  "TransferResponses",
 		PositionResolution: "PositionResolution",
 		MarketEvent:        "MarketEvent",
+		OrderEvent:         "OrderEvent",
+		AccountEvent:       "AccountEvent",
+		PartyEvent:         "PartyEvent",
 	}
 )
 
@@ -66,29 +72,27 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 	case []*types.TransferResponse:
 		e := NewTransferResponse(ctx, tv)
 		return e, nil
+	case *types.Order:
+		e := NewOrderEvent(ctx, tv)
+		return e, nil
+	case types.Account:
+		e := NewAccountEvent(ctx, tv)
+		return e, nil
+	case types.Party:
+		e := NewPartyEvent(ctx, tv)
+		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
 }
 
 // A base event holds no data, so the constructor will not be called directly
 func newBase(ctx context.Context, t Type) *Base {
-	b := Base{
-		ctx: ctx,
-		et:  t,
+	ctx, tID := contextutil.TraceIDFromContext(ctx)
+	return &Base{
+		ctx:     ctx,
+		traceID: tID,
+		et:      t,
 	}
-	tID := ctx.Value("traceID")
-	if tID == nil {
-		b.traceID = uuid.NewV4().String()
-		ctx = context.WithValue(ctx, "traceID", b.traceID)
-		b.ctx = ctx
-	} else if s, ok := tID.(string); !ok {
-		b.traceID = uuid.NewV4().String()
-		ctx = context.WithValue(ctx, "traceID", b.traceID)
-		b.ctx = ctx
-	} else {
-		b.traceID = s
-	}
-	return &b
 }
 
 // TraceID returns the... traceID obviously

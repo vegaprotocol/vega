@@ -332,7 +332,7 @@ func startCandles(ctx context.Context, wg *sync.WaitGroup) error {
 	client := api.NewTradingDataClient(conn)
 	req := &api.CandlesSubscribeRequest{
 		MarketID: market,
-		Interval: proto.Interval_I1M,
+		Interval: proto.Interval_INTERVAL_I1M,
 	}
 	stream, err := client.CandlesSubscribe(ctx, req)
 	if err != nil {

@@ -203,7 +203,27 @@
                 </li>
 
                 <li>
-                  <a href="#api.GetGovernanceDataResponse"><span class="badge">M</span>GetGovernanceDataResponse</a>
+                  <a href="#api.GetNetworkParametersProposalsRequest"><span class="badge">M</span>GetNetworkParametersProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNetworkParametersProposalsResponse"><span class="badge">M</span>GetNetworkParametersProposalsResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNewAssetProposalsRequest"><span class="badge">M</span>GetNewAssetProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNewAssetProposalsResponse"><span class="badge">M</span>GetNewAssetProposalsResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNewMarketProposalsRequest"><span class="badge">M</span>GetNewMarketProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNewMarketProposalsResponse"><span class="badge">M</span>GetNewMarketProposalsResponse</a>
                 </li>
 
                 <li>
@@ -211,11 +231,15 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetProposalByIDResponse"><span class="badge">M</span>GetProposalByIDResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalByReferenceRequest"><span class="badge">M</span>GetProposalByReferenceRequest</a>
                 </li>
 
                 <li>
-                  <a href="#api.GetProposalResponse"><span class="badge">M</span>GetProposalResponse</a>
+                  <a href="#api.GetProposalByReferenceResponse"><span class="badge">M</span>GetProposalByReferenceResponse</a>
                 </li>
 
                 <li>
@@ -223,7 +247,15 @@
                 </li>
 
                 <li>
-                  <a href="#api.GetProposalsByStateRequest"><span class="badge">M</span>GetProposalsByStateRequest</a>
+                  <a href="#api.GetProposalsByPartyResponse"><span class="badge">M</span>GetProposalsByPartyResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetProposalsRequest"><span class="badge">M</span>GetProposalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetProposalsResponse"><span class="badge">M</span>GetProposalsResponse</a>
                 </li>
 
                 <li>
@@ -231,11 +263,15 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetUpdateMarketProposalsResponse"><span class="badge">M</span>GetUpdateMarketProposalsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetVotesByPartyRequest"><span class="badge">M</span>GetVotesByPartyRequest</a>
                 </li>
 
                 <li>
-                  <a href="#api.GetVotesResponse"><span class="badge">M</span>GetVotesResponse</a>
+                  <a href="#api.GetVotesByPartyResponse"><span class="badge">M</span>GetVotesByPartyResponse</a>
                 </li>
 
                 <li>
@@ -1119,7 +1155,127 @@
 
 
 
-        <h3 id="api.GetGovernanceDataResponse">GetGovernanceDataResponse</h3>
+        <h3 id="api.GetNetworkParametersProposalsRequest">GetNetworkParametersProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>selectInState</td>
+                  <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNetworkParametersProposalsResponse">GetNetworkParametersProposalsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNewAssetProposalsRequest">GetNewAssetProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>selectInState</td>
+                  <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNewAssetProposalsResponse">GetNewAssetProposalsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNewMarketProposalsRequest">GetNewMarketProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>selectInState</td>
+                  <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNewMarketProposalsResponse">GetNewMarketProposalsResponse</h3>
         <p></p>
 
 
@@ -1194,6 +1350,30 @@
 
 
 
+        <h3 id="api.GetProposalByIDResponse">GetProposalByIDResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</h3>
         <p></p>
 
@@ -1245,7 +1425,7 @@
 
 
 
-        <h3 id="api.GetProposalResponse">GetProposalResponse</h3>
+        <h3 id="api.GetProposalByReferenceResponse">GetProposalByReferenceResponse</h3>
         <p></p>
 
 
@@ -1256,7 +1436,7 @@
             <tbody>
 
                 <tr>
-                  <td>proposal</td>
+                  <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -1287,7 +1467,7 @@
                 </tr>
 
                 <tr>
-                  <td>state</td>
+                  <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -1327,7 +1507,7 @@
 
 
 
-        <h3 id="api.GetProposalsByStateRequest">GetProposalsByStateRequest</h3>
+        <h3 id="api.GetProposalsByPartyResponse">GetProposalsByPartyResponse</h3>
         <p></p>
 
 
@@ -1338,9 +1518,57 @@
             <tbody>
 
                 <tr>
-                  <td>state</td>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetProposalsRequest">GetProposalsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetProposalsResponse">GetProposalsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
 
@@ -1369,7 +1597,7 @@
                 </tr>
 
                 <tr>
-                  <td>state</td>
+                  <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -1404,6 +1632,30 @@
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.GetUpdateMarketProposalsResponse">GetUpdateMarketProposalsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -1460,7 +1712,7 @@
 
 
 
-        <h3 id="api.GetVotesResponse">GetVotesResponse</h3>
+        <h3 id="api.GetVotesByPartyResponse">GetVotesByPartyResponse</h3>
         <p></p>
 
 
@@ -4053,64 +4305,64 @@
 
               <tr>
                 <td>GetProposals</td>
-                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><a href="#api.GetProposalsRequest">GetProposalsRequest</a></td>
+                <td><a href="#api.GetProposalsResponse">GetProposalsResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for all proposals</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalsByParty</td>
                 <td><a href="#api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><a href="#api.GetProposalsByPartyResponse">GetProposalsByPartyResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for proposals by party authoring them</p></td>
               </tr>
 
               <tr>
                 <td>GetVotesByParty</td>
                 <td><a href="#api.GetVotesByPartyRequest">GetVotesByPartyRequest</a></td>
-                <td><a href="#api.GetVotesResponse">GetVotesResponse</a></td>
+                <td><a href="#api.GetVotesByPartyResponse">GetVotesByPartyResponse</a></td>
                 <td><p>Get votes by party casting them</p></td>
               </tr>
 
               <tr>
                 <td>GetNewMarketProposals</td>
-                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><a href="#api.GetNewMarketProposalsRequest">GetNewMarketProposalsRequest</a></td>
+                <td><a href="#api.GetNewMarketProposalsResponse">GetNewMarketProposalsResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for proposals that aim creating new markets</p></td>
               </tr>
 
               <tr>
                 <td>GetUpdateMarketProposals</td>
                 <td><a href="#api.GetUpdateMarketProposalsRequest">GetUpdateMarketProposalsRequest</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><a href="#api.GetUpdateMarketProposalsResponse">GetUpdateMarketProposalsResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for proposals that aim updating markets</p></td>
               </tr>
 
               <tr>
                 <td>GetNetworkParametersProposals</td>
-                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><a href="#api.GetNetworkParametersProposalsRequest">GetNetworkParametersProposalsRequest</a></td>
+                <td><a href="#api.GetNetworkParametersProposalsResponse">GetNetworkParametersProposalsResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for proposals that aim updating Vega network parameters</p></td>
               </tr>
 
               <tr>
                 <td>GetNewAssetProposals</td>
-                <td><a href="#api.GetProposalsByStateRequest">GetProposalsByStateRequest</a></td>
-                <td><a href="#api.GetGovernanceDataResponse">GetGovernanceDataResponse</a></td>
+                <td><a href="#api.GetNewAssetProposalsRequest">GetNewAssetProposalsRequest</a></td>
+                <td><a href="#api.GetNewAssetProposalsResponse">GetNewAssetProposalsResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for proposals aiming to create new assets</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalByID</td>
                 <td><a href="#api.GetProposalByIDRequest">GetProposalByIDRequest</a></td>
-                <td><a href="#api.GetProposalResponse">GetProposalResponse</a></td>
+                <td><a href="#api.GetProposalByIDResponse">GetProposalByIDResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for a proposal located by ID</p></td>
               </tr>
 
               <tr>
                 <td>GetProposalByReference</td>
                 <td><a href="#api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</a></td>
-                <td><a href="#api.GetProposalResponse">GetProposalResponse</a></td>
+                <td><a href="#api.GetProposalByReferenceResponse">GetProposalByReferenceResponse</a></td>
                 <td><p>Get governance data (proposals and votes) for a proposal located by reference</p></td>
               </tr>
 
@@ -5022,38 +5274,44 @@
           <tbody>
 
               <tr>
-                <td>FAILED</td>
+                <td>STATE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Proposal could not be enacted after being accepted by the network</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>OPEN</td>
+                <td>STATE_FAILED</td>
                 <td>1</td>
+                <td><p>Proposal could not be enacted after being accepted by the network.</p></td>
+              </tr>
+
+              <tr>
+                <td>STATE_OPEN</td>
+                <td>2</td>
                 <td><p>Proposal is open for voting.</p></td>
               </tr>
 
               <tr>
-                <td>PASSED</td>
-                <td>2</td>
+                <td>STATE_PASSED</td>
+                <td>3</td>
                 <td><p>Proposal has gained enough support to be executed.</p></td>
               </tr>
 
               <tr>
-                <td>REJECTED</td>
-                <td>3</td>
-                <td><p>Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals)</p></td>
-              </tr>
-
-              <tr>
-                <td>DECLINED</td>
+                <td>STATE_REJECTED</td>
                 <td>4</td>
-                <td><p>Proposal didn&#39;t get enough votes</p></td>
+                <td><p>Proposal wasn&#39;t accepted (validation failed, author not allowed to submit proposals).</p></td>
               </tr>
 
               <tr>
-                <td>ENACTED</td>
+                <td>STATE_DECLINED</td>
                 <td>5</td>
+                <td><p>Proposal didn&#39;t get enough votes.</p></td>
+              </tr>
+
+              <tr>
+                <td>STATE_ENACTED</td>
+                <td>6</td>
                 <td><p>Proposal has been executed and the changes under this proposal have now been applied.</p></td>
               </tr>
 
@@ -5069,15 +5327,21 @@
           <tbody>
 
               <tr>
-                <td>NO</td>
+                <td>VALUE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>YES</td>
+                <td>VALUE_NO</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>A vote against the proposal.</p></td>
+              </tr>
+
+              <tr>
+                <td>VALUE_YES</td>
+                <td>2</td>
+                <td><p>A vote in favour of the proposal.</p></td>
               </tr>
 
           </tbody>
@@ -7492,6 +7756,13 @@ after each successful amend </p></td>
                   <td><p>ISO 8601 datetime, nanosecond precision </p></td>
                 </tr>
 
+                <tr>
+                  <td>chainID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique ID of the blockchain </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -7818,31 +8089,31 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>ALL</td>
+                <td>ACCOUNT_TYPE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INSURANCE</td>
+                <td>ACCOUNT_TYPE_INSURANCE</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>SETTLEMENT</td>
+                <td>ACCOUNT_TYPE_SETTLEMENT</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN</td>
+                <td>ACCOUNT_TYPE_MARGIN</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>GENERAL</td>
+                <td>ACCOUNT_TYPE_GENERAL</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
@@ -7859,20 +8130,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>DISCONNECTED</td>
+                <td>CHAIN_STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>REPLAYING</td>
+                <td>CHAIN_STATUS_DISCONNECTED</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>CONNECTED</td>
+                <td>CHAIN_STATUS_REPLAYING</td>
                 <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>CHAIN_STATUS_CONNECTED</td>
+                <td>3</td>
                 <td><p></p></td>
               </tr>
 
@@ -7888,38 +8165,44 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>I1M</td>
+                <td>INTERVAL_UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>INTERVAL_I1M</td>
+                <td>60</td>
                 <td><p>1 minute</p></td>
               </tr>
 
               <tr>
-                <td>I5M</td>
-                <td>1</td>
+                <td>INTERVAL_I5M</td>
+                <td>300</td>
                 <td><p>5 minutes</p></td>
               </tr>
 
               <tr>
-                <td>I15M</td>
-                <td>2</td>
+                <td>INTERVAL_I15M</td>
+                <td>900</td>
                 <td><p>15 minutes</p></td>
               </tr>
 
               <tr>
-                <td>I1H</td>
-                <td>3</td>
+                <td>INTERVAL_I1H</td>
+                <td>3600</td>
                 <td><p>1 hour</p></td>
               </tr>
 
               <tr>
-                <td>I6H</td>
-                <td>4</td>
+                <td>INTERVAL_I6H</td>
+                <td>21600</td>
                 <td><p>6 hours</p></td>
               </tr>
 
               <tr>
-                <td>I1D</td>
-                <td>5</td>
+                <td>INTERVAL_I1D</td>
+                <td>86400</td>
                 <td><p>1 day</p></td>
               </tr>
 
@@ -7935,44 +8218,50 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>Active</td>
+                <td>STATUS_INVALID</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Expired</td>
+                <td>STATUS_ACTIVE</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Cancelled</td>
+                <td>STATUS_EXPIRED</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Stopped</td>
+                <td>STATUS_CANCELLED</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Filled</td>
+                <td>STATUS_STOPPED</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>Rejected</td>
+                <td>STATUS_FILLED</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>PartiallyFilled</td>
+                <td>STATUS_REJECTED</td>
                 <td>6</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>STATUS_PARTIALLY_FILLED</td>
+                <td>7</td>
                 <td><p></p></td>
               </tr>
 
@@ -7994,25 +8283,25 @@ after each successful amend </p></td>
               </tr>
 
               <tr>
-                <td>GTC</td>
+                <td>TIF_GTC</td>
                 <td>1</td>
                 <td><p>good til cancelled</p></td>
               </tr>
 
               <tr>
-                <td>GTT</td>
+                <td>TIF_GTT</td>
                 <td>2</td>
                 <td><p>good til time</p></td>
               </tr>
 
               <tr>
-                <td>IOC</td>
+                <td>TIF_IOC</td>
                 <td>3</td>
                 <td><p>immediate or cancel</p></td>
               </tr>
 
               <tr>
-                <td>FOK</td>
+                <td>TIF_FOK</td>
                 <td>4</td>
                 <td><p>fill or kill</p></td>
               </tr>
@@ -8029,20 +8318,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>LIMIT</td>
+                <td>TYPE_UNSPECIFIED</td>
                 <td>0</td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>TYPE_LIMIT</td>
+                <td>1</td>
                 <td><p>used for Limit orders</p></td>
               </tr>
 
               <tr>
-                <td>MARKET</td>
-                <td>1</td>
+                <td>TYPE_MARKET</td>
+                <td>2</td>
                 <td><p>used for Market orders</p></td>
               </tr>
 
               <tr>
-                <td>NETWORK</td>
-                <td>2</td>
+                <td>TYPE_NETWORK</td>
+                <td>3</td>
                 <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
               </tr>
 
@@ -8058,116 +8353,122 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>NONE</td>
+                <td>ORDER_ERROR_NONE</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_MARKET_ID</td>
+                <td>ORDER_ERROR_INVALID_MARKET_ID</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_ORDER_ID</td>
+                <td>ORDER_ERROR_INVALID_ORDER_ID</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_OUT_OF_SEQUENCE</td>
+                <td>ORDER_ERROR_OUT_OF_SEQUENCE</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_REMAINING_SIZE</td>
+                <td>ORDER_ERROR_INVALID_REMAINING_SIZE</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>TIME_FAILURE</td>
+                <td>ORDER_ERROR_TIME_FAILURE</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_REMOVAL_FAILURE</td>
+                <td>ORDER_ERROR_REMOVAL_FAILURE</td>
                 <td>6</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_EXPIRATION_DATETIME</td>
+                <td>ORDER_ERROR_INVALID_EXPIRATION_DATETIME</td>
                 <td>7</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_ORDER_REFERENCE</td>
+                <td>ORDER_ERROR_INVALID_ORDER_REFERENCE</td>
                 <td>8</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>EDIT_NOT_ALLOWED</td>
+                <td>ORDER_ERROR_EDIT_NOT_ALLOWED</td>
                 <td>9</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_AMEND_FAILURE</td>
+                <td>ORDER_ERROR_AMEND_FAILURE</td>
                 <td>10</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>ORDER_NOT_FOUND</td>
+                <td>ORDER_ERROR_NOT_FOUND</td>
                 <td>11</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_PARTY_ID</td>
+                <td>ORDER_ERROR_INVALID_PARTY_ID</td>
                 <td>12</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARKET_CLOSED</td>
+                <td>ORDER_ERROR_MARKET_CLOSED</td>
                 <td>13</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_CHECK_FAILED</td>
+                <td>ORDER_ERROR_MARGIN_CHECK_FAILED</td>
                 <td>14</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MISSING_GENERAL_ACCOUNT</td>
+                <td>ORDER_ERROR_MISSING_GENERAL_ACCOUNT</td>
                 <td>15</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INTERNAL_ERROR</td>
+                <td>ORDER_ERROR_INTERNAL_ERROR</td>
                 <td>16</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_SIZE</td>
+                <td>ORDER_ERROR_INVALID_SIZE</td>
                 <td>17</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>INVALID_PERSISTENCE</td>
+                <td>ORDER_ERROR_INVALID_PERSISTENCE</td>
                 <td>18</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_INVALID_TYPE</td>
+                <td>19</td>
                 <td><p></p></td>
               </tr>
 
@@ -8183,15 +8484,21 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>Buy</td>
+                <td>SIDE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid</p></td>
               </tr>
 
               <tr>
-                <td>Sell</td>
+                <td>SIDE_BUY</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Buy</p></td>
+              </tr>
+
+              <tr>
+                <td>SIDE_SELL</td>
+                <td>2</td>
+                <td><p>Sell</p></td>
               </tr>
 
           </tbody>
@@ -8206,20 +8513,26 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>DEFAULT</td>
+                <td>TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid</p></td>
               </tr>
 
               <tr>
-                <td>NETWORK_CLOSE_OUT_GOOD</td>
+                <td>TYPE_DEFAULT</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>NETWORK_CLOSE_OUT_BAD</td>
+                <td>TYPE_NETWORK_CLOSE_OUT_GOOD</td>
                 <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>TYPE_NETWORK_CLOSE_OUT_BAD</td>
+                <td>3</td>
                 <td><p></p></td>
               </tr>
 
@@ -8235,50 +8548,56 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>LOSS</td>
+                <td>TRANSFER_TYPE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>WIN</td>
+                <td>TRANSFER_TYPE_LOSS</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>CLOSE</td>
+                <td>TRANSFER_TYPE_WIN</td>
                 <td>2</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MTM_LOSS</td>
+                <td>TRANSFER_TYPE_CLOSE</td>
                 <td>3</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MTM_WIN</td>
+                <td>TRANSFER_TYPE_MTM_LOSS</td>
                 <td>4</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_LOW</td>
+                <td>TRANSFER_TYPE_MTM_WIN</td>
                 <td>5</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_HIGH</td>
+                <td>TRANSFER_TYPE_MARGIN_LOW</td>
                 <td>6</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>MARGIN_CONFISCATED</td>
+                <td>TRANSFER_TYPE_MARGIN_HIGH</td>
                 <td>7</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_MARGIN_CONFISCATED</td>
+                <td>8</td>
                 <td><p></p></td>
               </tr>
 

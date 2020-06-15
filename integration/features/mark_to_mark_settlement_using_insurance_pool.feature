@@ -23,8 +23,8 @@ Feature: Test mark to market settlement with insurance pool
    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | id         | type | volume | price | resulting trades | type  | tif |
-      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | LIMIT | GTC |
-      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | LIMIT | GTC |
+      | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |    120 |       1 |
@@ -33,14 +33,14 @@ Feature: Test mark to market settlement with insurance pool
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | id         | type | volume | price | resulting trades | type  | tif |
-      | trader2 |  ETH/DEC19 | buy |     1  |  6000 |                0 | LIMIT | GTC |
+      | trader2 |  ETH/DEC19 | buy |     1  |  6000 |                0 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset |        id | margin | general |
       | trader2 | ETH   | ETH/DEC19 |    264 |    9736 |
 
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader3 | ETH/DEC19 | sell |      1 |  5000 |                1 | LIMIT | GTC |
+      | trader3 | ETH/DEC19 | sell |      1 |  5000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
@@ -51,6 +51,6 @@ Feature: Test mark to market settlement with insurance pool
    And the insurance pool balance is "5121" for the market "ETH/DEC19"
 
     # Then the following transfers happened:
-    #   | from    | to     | fromType | toType     | id        | amount | asset |
-    #   | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | ETH   |
+    #   | from    | to     | fromType            | toType                  | id        | amount | asset |
+    #   | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |    240 | ETH   |
     # And the settlement account balance is "0" for the market "ETH/DEC19" before MTM

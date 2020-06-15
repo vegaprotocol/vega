@@ -55,7 +55,7 @@ func TestAppStatus(t *testing.T) {
 		checker := monitoring.New(log, cfg, blockchainClient)
 
 		wg.Wait()
-		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
+		assert.Equal(t, types.ChainStatus_CHAIN_STATUS_CONNECTED, checker.ChainStatus())
 
 		checker.Stop()
 	})
@@ -79,7 +79,7 @@ func TestAppStatus(t *testing.T) {
 		checker := monitoring.New(log, cfg, blockchainClient)
 
 		wg.Wait()
-		assert.Equal(t, types.ChainStatus_REPLAYING, checker.ChainStatus())
+		assert.Equal(t, types.ChainStatus_CHAIN_STATUS_REPLAYING, checker.ChainStatus())
 
 		checker.Stop()
 	})
@@ -95,7 +95,7 @@ func TestAppStatus(t *testing.T) {
 		})
 		checker := monitoring.New(log, cfg, blockchainClient)
 		<-end
-		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
+		assert.Equal(t, types.ChainStatus_CHAIN_STATUS_DISCONNECTED, checker.ChainStatus())
 
 		checker.Stop()
 	})
@@ -124,10 +124,10 @@ func TestAppStatus(t *testing.T) {
 		checker := monitoring.New(log, cfg, blockchainClient)
 		wg.Wait()
 		// ensure status is CONNECTED
-		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
+		assert.Equal(t, types.ChainStatus_CHAIN_STATUS_CONNECTED, checker.ChainStatus())
 		<-end
 		// ensure it's now disconnected
-		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
+		assert.Equal(t, types.ChainStatus_CHAIN_STATUS_DISCONNECTED, checker.ChainStatus())
 
 		checker.Stop()
 

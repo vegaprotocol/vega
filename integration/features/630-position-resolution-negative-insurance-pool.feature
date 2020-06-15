@@ -21,15 +21,15 @@ Feature: Regression test for issue 630
 # setup orderbook
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | sellSideProvider | ETH/DEC19 | sell |    200 | 10000 |                0 | LIMIT | GTC |
-      | buySideProvider  | ETH/DEC19 | buy  |    200 |     1 |                0 | LIMIT | GTC |
+      | sellSideProvider | ETH/DEC19 | sell |    200 | 10000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/DEC19 | buy  |    200 |     1 |                0 | TYPE_LIMIT | TIF_GTC |
     And All balances cumulated are worth "2240000"
     Then the margins levels for the traders are:
       | trader           | id        | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 |        2000 |   2200 |    2400 |    2800 |
     Then traders place following orders:
       | trader    | id        | type      | volume | price | resulting trades | type  | tif |
-      | traderGuy | ETH/DEC19 | buy       |    100 | 10000 |                1 | LIMIT | GTC |
+      | traderGuy | ETH/DEC19 | buy       |    100 | 10000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
      | trader           | asset | id        | margin | general |
      | traderGuy        | BTC   | ETH/DEC19 |      0 |  0 |

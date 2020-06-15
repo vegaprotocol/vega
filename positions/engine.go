@@ -120,7 +120,7 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
-	if order.Side == types.Side_Buy {
+	if order.Side == types.Side_SIDE_BUY {
 		pos.buy += int64(order.Remaining)
 	} else {
 		pos.sell += int64(order.Remaining)
@@ -137,7 +137,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 	if !found {
 		err = ErrPositionNotFound
 	} else {
-		if order.Side == types.Side_Buy {
+		if order.Side == types.Side_SIDE_BUY {
 			pos.buy -= int64(order.Remaining)
 		} else {
 			pos.sell -= int64(order.Remaining)
@@ -158,7 +158,7 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		err = ErrPositionNotFound
 		return
 	}
-	if originalOrder.Side == types.Side_Buy {
+	if originalOrder.Side == types.Side_SIDE_BUY {
 		pos.buy -= int64(originalOrder.Remaining)
 		pos.buy += int64(newOrder.Remaining)
 	} else {

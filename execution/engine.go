@@ -30,13 +30,6 @@ type OrderBuf interface {
 	Flush() error
 }
 
-// TradeBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
-type TradeBuf interface {
-	Add(types.Trade)
-	Flush() error
-}
-
 // CandleBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
 type CandleBuf interface {
@@ -52,10 +45,10 @@ type MarketBuf interface {
 	Flush() error
 }
 
-// PartyBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyBuf
-type PartyBuf interface {
-	Add(types.Party)
+// TradeBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
+type TradeBuf interface {
+	Add(types.Trade)
 	Flush() error
 }
 
@@ -71,13 +64,6 @@ type SettlementBuf interface {
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	NotifyOnTick(f func(time.Time))
-}
-
-// AccountBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
-type AccountBuf interface {
-	Add(types.Account)
-	Flush() error
 }
 
 // MarketDataBuf ...
@@ -131,15 +117,12 @@ type Engine struct {
 	governance *governance.Engine
 	idgen      *IDgenerator
 
-	orderBuf        OrderBuf
-	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marketBuf       MarketBuf
-	partyBuf        PartyBuf
-	accountBuf      AccountBuf
 	marketDataBuf   MarketDataBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
+	tradeBuf        TradeBuf
 	lossSocBuf      LossSocializationBuf
 	proposalBuf     ProposalBuf
 	voteBuf         VoteBuf
@@ -154,12 +137,9 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	time TimeService,
-	orderBuf OrderBuf,
 	tradeBuf TradeBuf,
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
-	partyBuf PartyBuf,
-	accountBuf AccountBuf,
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
@@ -179,7 +159,7 @@ func NewEngine(
 		return nil
 	}
 	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, lossSocBuf, now)
+	cengine, err := collateral.New(log, executionConfig.Collateral, broker, lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
@@ -193,18 +173,15 @@ func NewEngine(
 		Config:          executionConfig,
 		markets:         map[string]*Market{},
 		candleBuf:       candleBuf,
-		orderBuf:        orderBuf,
-		tradeBuf:        tradeBuf,
 		marketBuf:       marketBuf,
-		partyBuf:        partyBuf,
 		time:            time,
 		collateral:      cengine,
 		governance:      gengine,
-		party:           NewParty(log, cengine, pmkts, partyBuf),
-		accountBuf:      accountBuf,
+		party:           NewParty(log, cengine, pmkts, broker),
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
+		tradeBuf:        tradeBuf,
 		lossSocBuf:      lossSocBuf,
 		proposalBuf:     proposalBuf,
 		voteBuf:         voteBuf,
@@ -255,18 +232,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
-func (e *Engine) NotifyTraderAccount(notify *types.NotifyTraderAccount) error {
-	return e.party.NotifyTraderAccount(notify)
+func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
+	return e.party.NotifyTraderAccount(ctx, notify)
 }
 
 // CreateGeneralAccounts creates new general accounts for a party
 func (e *Engine) CreateGeneralAccounts(partyID string) error {
-	_, err := e.party.MakeGeneralAccounts(partyID)
+	ctx := context.TODO() // not sure if this call is used at all
+	_, err := e.party.MakeGeneralAccounts(ctx, partyID)
 	return err
 }
 
-func (e *Engine) Withdraw(w *types.Withdraw) error {
-	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
+func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
+	err := e.collateral.Withdraw(ctx, w.PartyID, w.Asset, w.Amount)
 	if err != nil {
 		e.log.Error("An error occurred during withdrawal",
 			logging.String("party-id", w.PartyID),
@@ -299,8 +277,6 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.party,
 		marketConfig,
 		e.candleBuf,
-		e.orderBuf,
-		e.partyBuf,
 		e.tradeBuf,
 		e.marginLevelsBuf,
 		e.settleBuf,
@@ -324,7 +300,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
@@ -336,7 +312,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -352,25 +328,26 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		e.idgen.SetID(order)
 
 		// adding rejected order to the buf
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_INVALID_MARKET_ID
-		e.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
+		evt := events.NewOrderEvent(ctx, order)
+		e.broker.Send(evt)
 
 		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
-	if order.Status == types.Order_Active {
+	if order.Status == types.Order_STATUS_ACTIVE {
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 
-	conf, err := mkt.SubmitOrder(order)
+	conf, err := mkt.SubmitOrder(ctx, order)
 	if err != nil {
 		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
-	if conf.Order.Status == types.Order_Filled {
+	if conf.Order.Status == types.Order_STATUS_FILLED {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 
@@ -380,17 +357,9 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Amend order",
-			logging.String("order-id", orderAmendment.GetOrderID()),
-			logging.String("party-id", orderAmendment.GetPartyID()),
-			logging.String("market-id", orderAmendment.GetMarketID()),
-			logging.Uint64("price", orderAmendment.GetPrice().Value),
-			logging.Int64("sizeDelta", orderAmendment.GetSizeDelta()),
-			logging.String("tif", orderAmendment.GetTimeInForce().String()),
-			logging.Int64("expires-at", orderAmendment.GetExpiresAt().Value),
-		)
+		e.log.Debug("Amend order", logging.OrderAmendment(orderAmendment))
 	}
 
 	mkt, ok := e.markets[orderAmendment.MarketID]
@@ -400,19 +369,19 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(orderAmendment)
+	conf, err := mkt.AmendOrder(ctx, orderAmendment)
 	if err != nil {
 		return nil, err
 	}
 	// order was active, not anymore -> decrement gauge
-	if conf.Order.Status != types.Order_Active {
+	if conf.Order.Status != types.Order_STATUS_ACTIVE {
 		metrics.OrderGaugeAdd(-1, orderAmendment.MarketID)
 	}
 	return conf, nil
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
@@ -421,11 +390,11 @@ func (e *Engine) CancelOrder(order *types.OrderCancellation) (*types.OrderCancel
 		return nil, types.ErrInvalidMarketID
 	}
 
-	conf, err := mkt.CancelOrder(order)
+	conf, err := mkt.CancelOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
-	if conf.Order.Status == types.Order_Cancelled {
+	if conf.Order.Status == types.Order_STATUS_CANCELLED {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 	return conf, nil
@@ -444,7 +413,7 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	if err != nil {
 		return nil, err
 	}
-	if conf.Order.Status == types.Order_Cancelled {
+	if conf.Order.Status == types.Order_STATUS_CANCELLED {
 		metrics.OrderGaugeAdd(-1, marketID)
 	}
 	return conf, nil
@@ -469,7 +438,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	acceptedProposals := e.governance.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
 		if err := e.enactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_FAILED
+			proposal.State = types.Proposal_STATE_FAILED
 			e.log.Error("unable to enact proposal",
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
@@ -495,10 +464,11 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
 		}
+		newMarket.Changes.Id = proposal.ID // reusing proposal ID for market ID
 		if err := e.SubmitMarket(newMarket.Changes); err != nil {
 			return err
 		}
-		proposal.State = types.Proposal_ENACTED
+		proposal.State = types.Proposal_STATE_ENACTED
 		return nil
 	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
 
@@ -537,7 +507,8 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	}
 	for _, order := range expiringOrders {
 		order := order
-		e.orderBuf.Add(order)
+		evt := events.NewOrderEvent(context.Background(), &order)
+		e.broker.Send(evt)
 		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
 	}
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -561,23 +532,11 @@ func (e *Engine) Generate() error {
 	e.proposalBuf.Flush()
 	e.voteBuf.Flush()
 
-	// Accounts
-	err := e.accountBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "failed to flush accounts buffer")
-	}
-
 	// margins levels
 	e.marginLevelsBuf.Flush()
-	// Orders
-	err = e.orderBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, "failed to flush orders buffer")
-	}
 
 	// Trades - flush after orders so the traders reference an existing order
-	err = e.tradeBuf.Flush()
-	if err != nil {
+	if err := e.tradeBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush trades buffer")
 	}
 	// Transfers
@@ -587,8 +546,7 @@ func (e *Engine) Generate() error {
 	evt := events.NewTime(context.Background(), now)
 	e.broker.Send(evt)
 	// Markets
-	err = e.marketBuf.Flush()
-	if err != nil {
+	if err := e.marketBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush markets buffer")
 	}
 	// Market data is added to buffer on Generate
@@ -596,14 +554,11 @@ func (e *Engine) Generate() error {
 		e.marketDataBuf.Add(v.GetMarketData())
 	}
 	e.marketDataBuf.Flush()
-	// Parties
-	_ = e.partyBuf.Flush() // JL: do not check errors here as they only happened when a party is created
-
 	return nil
 }
 
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
-func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
+func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submitting proposal",
 			logging.String("proposal-id", proposal.ID),
@@ -623,7 +578,7 @@ func (e *Engine) SubmitProposal(proposal *types.Proposal) error {
 }
 
 // VoteOnProposal sends proposal vote to governance engine
-func (e *Engine) VoteOnProposal(vote *types.Vote) error {
+func (e *Engine) VoteOnProposal(ctx context.Context, vote *types.Vote) error {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Voting on proposal",
 			logging.String("proposal-id", vote.ProposalID),
