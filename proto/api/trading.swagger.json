@@ -1842,12 +1842,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "32 pseudo-random upper-case letters and digits"
-        },
-        "name": {
-          "type": "string",
-          "title": "a human-understandable name for the Market, perhaps including a currency pair and a maturity date"
+          "type": "string"
         },
         "tradableInstrument": {
           "$ref": "#/definitions/vegaTradableInstrument"
@@ -1979,7 +1974,54 @@
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaMarket"
+          "$ref": "#/definitions/vegaNewMarketConfiguration"
+        }
+      }
+    },
+    "vegaNewMarketConfiguration": {
+      "type": "object",
+      "properties": {
+        "instrumentName": {
+          "type": "string",
+          "title": "name of an existing instrument to be used by the new market"
+        },
+        "instrumentCode": {
+          "type": "string",
+          "title": "code of an existing instrument to be used by the new market"
+        },
+        "baseName": {
+          "type": "string"
+        },
+        "quoteName": {
+          "type": "string"
+        },
+        "marginCalculator": {
+          "$ref": "#/definitions/vegaMarginCalculator"
+        },
+        "decimalPlaces": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "productMaturity": {
+          "type": "string"
+        },
+        "productAsset": {
+          "type": "string"
+        },
+        "riskModel": {
+          "$ref": "#/definitions/vegaRiskModel"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalModelParams"
+        },
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams"
+        },
+        "continuous": {
+          "$ref": "#/definitions/vegaContinuousTrading"
+        },
+        "discrete": {
+          "$ref": "#/definitions/vegaDiscreteTrading"
         }
       }
     },
@@ -2293,6 +2335,15 @@
           "description": "Proposal change for creating new assets on Vega."
         }
       }
+    },
+    "vegaRiskModel": {
+      "type": "string",
+      "enum": [
+        "RISK_MODEL_UNSPECIFIED",
+        "RISK_MODEL_SIMPLE",
+        "RISK_MODEL_LOG_NORMAL"
+      ],
+      "default": "RISK_MODEL_UNSPECIFIED"
     },
     "vegaScalingFactors": {
       "type": "object",

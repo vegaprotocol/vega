@@ -32,8 +32,43 @@ message NetworkConfiguration {
 message UpdateMarket {
   //TODO
 }
+
+
+enum RiskModel {
+  RISK_MODEL_UNSPECIFIED = 0;
+  RISK_MODEL_SIMPLE = 1;
+  RISK_MODEL_LOG_NORMAL = 2;
+}
+
+message NewMarketConfiguration {
+  // name of an existing instrument to be used by the new market
+  string instrumentName = 1 [(validator.field) = {string_not_empty : true}];
+  // code of an existing instrument to be used by the new market
+  string instrumentCode = 2 [(validator.field) = {string_not_empty : true}];
+
+  string baseName = 3 [(validator.field) = {string_not_empty : true}];
+  string quoteName = 4 [(validator.field) = {string_not_empty : true}];
+
+  MarginCalculator marginCalculator = 5;
+  uint64 decimalPlaces = 6;
+  
+  string productMaturity = 7 [(validator.field) = {string_not_empty : true}];
+  string productAsset = 8 [(validator.field) = {string_not_empty : true}];
+
+  RiskModel riskModel = 9 [(validator.field) = {is_in_enum : true}];
+  oneof riskParameters {
+    LogNormalModelParams logNormal = 100;
+    SimpleModelParams simple = 101;
+  }
+
+  oneof tradingMode {
+    ContinuousTrading continuous = 200;
+    DiscreteTrading discrete = 201;
+  }
+}
+
 message NewMarket {
-  Market changes = 1 [(validator.field) = {msg_exists: true}];
+  NewMarketConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
 }
 message UpdateNetwork {
   NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
@@ -105,10 +140,6 @@ message Proposal {
 
     // Proposal has been executed and the changes under this proposal have now been applied.
     STATE_ENACTED = 6;
-
-    // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/helpers_enum.go
-    //       - gateway/graphql/schema.graphql (enum ProposalState)
   }
 
   // Proposal unique identifier.
@@ -136,10 +167,6 @@ message Vote {
 
     // A vote in favour of the proposal.
     VALUE_YES = 2;
-
-    // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/helpers_enum.go
-    //       - gateway/graphql/schema.graphql (enum VoteValue)
   }
 
   // Voter's party identifier.

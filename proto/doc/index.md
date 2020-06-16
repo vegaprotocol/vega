@@ -114,6 +114,7 @@
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
+    - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
@@ -121,6 +122,7 @@
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
+    - [RiskModel](#vega.RiskModel)
     - [Vote.Value](#vega.Vote.Value)
 
 
@@ -1803,7 +1805,34 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [Market](#vega.Market) |  |  |
+| changes | [NewMarketConfiguration](#vega.NewMarketConfiguration) |  |  |
+
+
+
+
+
+
+<a name="vega.NewMarketConfiguration"></a>
+
+### NewMarketConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instrumentName | [string](#string) |  | name of an existing instrument to be used by the new market |
+| instrumentCode | [string](#string) |  | code of an existing instrument to be used by the new market |
+| baseName | [string](#string) |  |  |
+| quoteName | [string](#string) |  |  |
+| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
+| decimalPlaces | [uint64](#uint64) |  |  |
+| productMaturity | [string](#string) |  |  |
+| productAsset | [string](#string) |  |  |
+| riskModel | [RiskModel](#vega.RiskModel) |  |  |
+| logNormal | [LogNormalModelParams](#vega.LogNormalModelParams) |  |  |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  |  |
+| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
+| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
 
 
@@ -1916,6 +1945,19 @@ Proposal can enter Failed state from any other state.
 | STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements). |
 | STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
 | STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
+
+
+
+<a name="vega.RiskModel"></a>
+
+### RiskModel
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RISK_MODEL_UNSPECIFIED | 0 |  |
+| RISK_MODEL_SIMPLE | 1 |  |
+| RISK_MODEL_LOG_NORMAL | 2 |  |
 
 
 
@@ -2137,8 +2179,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | 32 pseudo-random upper-case letters and digits |
-| name | [string](#string) |  | a human-understandable name for the Market, perhaps including a currency pair and a maturity date |
+| id | [string](#string) |  |  |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |

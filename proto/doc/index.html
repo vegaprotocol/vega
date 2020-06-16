@@ -593,6 +593,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NewMarketConfiguration"><span class="badge">M</span>NewMarketConfiguration</a>
+                </li>
+
+                <li>
                   <a href="#vega.Proposal"><span class="badge">M</span>Proposal</a>
                 </li>
 
@@ -615,6 +619,10 @@
 
                 <li>
                   <a href="#vega.Proposal.State"><span class="badge">E</span>Proposal.State</a>
+                </li>
+
+                <li>
+                  <a href="#vega.RiskModel"><span class="badge">E</span>RiskModel</a>
                 </li>
 
                 <li>
@@ -4861,7 +4869,7 @@
 
                 <tr>
                   <td>changes</td>
-                  <td><a href="#vega.Market">Market</a></td>
+                  <td><a href="#vega.NewMarketConfiguration">NewMarketConfiguration</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4888,6 +4896,207 @@
                     <ul>
 
                       <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.NewMarketConfiguration">NewMarketConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>instrumentName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>name of an existing instrument to be used by the new market </p></td>
+                </tr>
+
+                <tr>
+                  <td>instrumentCode</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>code of an existing instrument to be used by the new market </p></td>
+                </tr>
+
+                <tr>
+                  <td>baseName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marginCalculator</td>
+                  <td><a href="#vega.MarginCalculator">MarginCalculator</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>decimalPlaces</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>productMaturity</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>productAsset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>riskModel</td>
+                  <td><a href="#vega.RiskModel">RiskModel</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>logNormal</td>
+                  <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>simple</td>
+                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>continuous</td>
+                  <td><a href="#vega.ContinuousTrading">ContinuousTrading</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>discrete</td>
+                  <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>instrumentName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>instrumentCode</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>baseName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>productMaturity</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>productAsset</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>riskModel</td>
+                  <td>
+                    <ul>
+
+                      <li>is_in_enum: true</li>
 
                     </ul>
                   </td>
@@ -5316,6 +5525,35 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>STATE_ENACTED</td>
                 <td>6</td>
                 <td><p>Proposal has been executed and the changes under this proposal have now been applied.</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.RiskModel">RiskModel</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>RISK_MODEL_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>RISK_MODEL_SIMPLE</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>RISK_MODEL_LOG_NORMAL</td>
+                <td>2</td>
+                <td><p></p></td>
               </tr>
 
           </tbody>
@@ -5766,14 +6004,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>32 pseudo-random upper-case letters and digits </p></td>
-                </tr>
-
-                <tr>
-                  <td>name</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a human-understandable name for the Market, perhaps including a currency pair and a maturity date </p></td>
+                  <td><p> </p></td>
                 </tr>
 
                 <tr>
