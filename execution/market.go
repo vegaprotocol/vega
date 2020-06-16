@@ -847,7 +847,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		order.Size = tSize
 		order.Remaining = 0
 		order.Side = nSide
-		order.Status = types.Order_STATUS_ACTIVE // ensure the status is always active
+		order.Status = types.Order_STATUS_FILLED // An order with no remaining must be filled
 		m.idgen.SetID(&order)
 
 		// this is the party order
