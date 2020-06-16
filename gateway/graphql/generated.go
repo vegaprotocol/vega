@@ -365,6 +365,7 @@ type ComplexityRoot struct {
 		SellOrder func(childComplexity int) int
 		Seller    func(childComplexity int) int
 		Size      func(childComplexity int) int
+		Type      func(childComplexity int) int
 	}
 
 	TransactionSubmitted struct {
@@ -562,6 +563,7 @@ type TradeResolver interface {
 	Price(ctx context.Context, obj *proto.Trade) (string, error)
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
 	CreatedAt(ctx context.Context, obj *proto.Trade) (string, error)
+	Type(ctx context.Context, obj *proto.Trade) (TradeType, error)
 }
 
 type executableSchema struct {
@@ -2158,6 +2160,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Size(childComplexity), true
 
+	case "Trade.type":
+		if e.complexity.Trade.Type == nil {
+			break
+		}
+
+		return e.complexity.Trade.Type(childComplexity), true
+
 	case "TransactionSubmitted.success":
 		if e.complexity.TransactionSubmitted.Success == nil {
 			break
@@ -3220,6 +3229,22 @@ type Trade {
 
   "RFC3339Nano for when the trade occurred"
   createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+}
+
+"Valid trade types"
+enum TradeType {
+
+  "Default trade type"
+  Default
+
+  "Network close-out - good"
+  NetworkCloseOutGood
+
+  "Network close-out - bad"
+  NetworkCloseOutBad
 }
 
 "An account record"
@@ -3262,11 +3287,11 @@ enum OrderStatus {
   """
   Active
 
-  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  Cancelled
-
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
   Expired
+
+  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
+  Cancelled
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
   Stopped
@@ -3276,40 +3301,70 @@ enum OrderStatus {
 
   "This order was rejected while beeing processed in the core."
   Rejected
+
+  "This order was partially filled."
+  PartiallyFilled
 }
 
 "Reason for the order beeing rejected by the core node"
 enum RejectionReason {
+
   "Market id is invalid"
   InvalidMarketId
+
   "Order id is invalid"
   InvalidOrderId
+
   "Order is out of sequence"
   OrderOutOfSequence
+
   "Remaining size in the order is invalid"
   InvalidRemainingSize
+
   "Time has failed us"
   TimeFailure
+
   "Unable to remove the order"
   OrderRemovalFailure
+
   "Expiration time is invalid"
   InvalidExpirationTime
+
   "Order reference is invalid"
   InvalidOrderReference
+
   "Edit is not allowed"
   EditNotAllowed
+
   "Order amend fail"
   OrderAmendFailure
+
   "Order does not exist"
   OrderNotFound
+
   "Party id is invalid"
   InvalidPartyId
+
   "Market is closed"
   MarketClosed
+
   "Margin check failed"
   MarginCheckFailed
+
+  "Order missing general account"
+  MissingGeneralAccount
+
   "An internal error happend"
   InternalError
+
+  "Invalid size"
+  InvalidSize
+
+  "Invalid persistence"
+  InvalidPersistence
+
+  "Invalid type"
+  InvalidType
 }
 
 enum OrderType {
@@ -3661,7 +3716,7 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateMarket: UpdateMarketInput
-  
+
   """
   Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
   It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
@@ -11802,6 +11857,40 @@ func (ec *executionContext) _Trade_createdAt(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Trade_type(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().Type(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TradeType)
+	fc.Result = res
+	return ec.marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16609,6 +16698,20 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_type(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17670,6 +17773,15 @@ func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Trade(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, v interface{}) (TradeType, error) {
+	var res TradeType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, sel ast.SelectionSet, v TradeType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {

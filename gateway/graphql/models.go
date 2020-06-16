@@ -584,30 +584,33 @@ const (
 	// The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
 	// Active does not necessarily mean it's still on the order book.
 	OrderStatusActive OrderStatus = "Active"
-	// The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-	OrderStatusCancelled OrderStatus = "Cancelled"
 	// This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
 	OrderStatusExpired OrderStatus = "Expired"
+	// The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+	OrderStatusCancelled OrderStatus = "Cancelled"
 	// This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
 	OrderStatusStopped OrderStatus = "Stopped"
 	// This order is fully filled with remaining equals zero.
 	OrderStatusFilled OrderStatus = "Filled"
 	// This order was rejected while beeing processed in the core.
 	OrderStatusRejected OrderStatus = "Rejected"
+	// This order was partially filled.
+	OrderStatusPartiallyFilled OrderStatus = "PartiallyFilled"
 )
 
 var AllOrderStatus = []OrderStatus{
 	OrderStatusActive,
-	OrderStatusCancelled,
 	OrderStatusExpired,
+	OrderStatusCancelled,
 	OrderStatusStopped,
 	OrderStatusFilled,
 	OrderStatusRejected,
+	OrderStatusPartiallyFilled,
 }
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected:
+	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled:
 		return true
 	}
 	return false
@@ -824,8 +827,16 @@ const (
 	RejectionReasonMarketClosed RejectionReason = "MarketClosed"
 	// Margin check failed
 	RejectionReasonMarginCheckFailed RejectionReason = "MarginCheckFailed"
+	// Order missing general account
+	RejectionReasonMissingGeneralAccount RejectionReason = "MissingGeneralAccount"
 	// An internal error happend
 	RejectionReasonInternalError RejectionReason = "InternalError"
+	// Invalid size
+	RejectionReasonInvalidSize RejectionReason = "InvalidSize"
+	// Invalid persistence
+	RejectionReasonInvalidPersistence RejectionReason = "InvalidPersistence"
+	// Invalid type
+	RejectionReasonInvalidType RejectionReason = "InvalidType"
 )
 
 var AllRejectionReason = []RejectionReason{
@@ -843,12 +854,16 @@ var AllRejectionReason = []RejectionReason{
 	RejectionReasonInvalidPartyID,
 	RejectionReasonMarketClosed,
 	RejectionReasonMarginCheckFailed,
+	RejectionReasonMissingGeneralAccount,
 	RejectionReasonInternalError,
+	RejectionReasonInvalidSize,
+	RejectionReasonInvalidPersistence,
+	RejectionReasonInvalidType,
 }
 
 func (e RejectionReason) IsValid() bool {
 	switch e {
-	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonInternalError:
+	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonMissingGeneralAccount, RejectionReasonInternalError, RejectionReasonInvalidSize, RejectionReasonInvalidPersistence, RejectionReasonInvalidType:
 		return true
 	}
 	return false
@@ -916,6 +931,53 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Valid trade types
+type TradeType string
+
+const (
+	// Default trade type
+	TradeTypeDefault TradeType = "Default"
+	// Network close-out - good
+	TradeTypeNetworkCloseOutGood TradeType = "NetworkCloseOutGood"
+	// Network close-out - bad
+	TradeTypeNetworkCloseOutBad TradeType = "NetworkCloseOutBad"
+)
+
+var AllTradeType = []TradeType{
+	TradeTypeDefault,
+	TradeTypeNetworkCloseOutGood,
+	TradeTypeNetworkCloseOutBad,
+}
+
+func (e TradeType) IsValid() bool {
+	switch e {
+	case TradeTypeDefault, TradeTypeNetworkCloseOutGood, TradeTypeNetworkCloseOutBad:
+		return true
+	}
+	return false
+}
+
+func (e TradeType) String() string {
+	return string(e)
+}
+
+func (e *TradeType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TradeType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TradeType", str)
+	}
+	return nil
+}
+
+func (e TradeType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

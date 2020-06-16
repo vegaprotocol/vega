@@ -888,6 +888,22 @@ type Trade {
 
   "RFC3339Nano for when the trade occurred"
   createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+}
+
+"Valid trade types"
+enum TradeType {
+
+  "Default trade type"
+  Default
+
+  "Network close-out - good"
+  NetworkCloseOutGood
+
+  "Network close-out - bad"
+  NetworkCloseOutBad
 }
 
 "An account record"
@@ -930,11 +946,11 @@ enum OrderStatus {
   """
   Active
 
-  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  Cancelled
-
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
   Expired
+
+  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
+  Cancelled
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
   Stopped
@@ -944,40 +960,70 @@ enum OrderStatus {
 
   "This order was rejected while beeing processed in the core."
   Rejected
+
+  "This order was partially filled."
+  PartiallyFilled
 }
 
 "Reason for the order beeing rejected by the core node"
 enum RejectionReason {
+
   "Market id is invalid"
   InvalidMarketId
+
   "Order id is invalid"
   InvalidOrderId
+
   "Order is out of sequence"
   OrderOutOfSequence
+
   "Remaining size in the order is invalid"
   InvalidRemainingSize
+
   "Time has failed us"
   TimeFailure
+
   "Unable to remove the order"
   OrderRemovalFailure
+
   "Expiration time is invalid"
   InvalidExpirationTime
+
   "Order reference is invalid"
   InvalidOrderReference
+
   "Edit is not allowed"
   EditNotAllowed
+
   "Order amend fail"
   OrderAmendFailure
+
   "Order does not exist"
   OrderNotFound
+
   "Party id is invalid"
   InvalidPartyId
+
   "Market is closed"
   MarketClosed
+
   "Margin check failed"
   MarginCheckFailed
+
+  "Order missing general account"
+  MissingGeneralAccount
+
   "An internal error happend"
   InternalError
+
+  "Invalid size"
+  InvalidSize
+
+  "Invalid persistence"
+  InvalidPersistence
+
+  "Invalid type"
+  InvalidType
 }
 
 enum OrderType {
@@ -1329,7 +1375,7 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateMarket: UpdateMarketInput
-  
+
   """
   Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
   It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
