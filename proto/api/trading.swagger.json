@@ -2141,8 +2141,7 @@
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
-          "type": "string",
-          "format": "int64"
+          "$ref": "#/definitions/vegaTimestamp"
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"

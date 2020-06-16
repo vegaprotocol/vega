@@ -155,16 +155,20 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoTimeInForce
 	}
 
-	if sub.TimeInForce == types.Order_TIF_GTT {
-		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
-		if err != nil {
+	switch sub.TimeInForce {
+	case types.Order_TIF_GTT:
+		if sub.ExpiresAt == nil {
+			return ErrGTTOrderWithNoExpiry
+		}
+		if _, err := s.validateOrderExpirationTS(sub.ExpiresAt.Value); err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return err
 		}
-	}
-
-	if sub.TimeInForce != types.Order_TIF_GTT && sub.ExpiresAt != 0 {
-		return ErrNonGTTOrderWithExpiry
+	default:
+		// non-GTT submission
+		if sub.ExpiresAt != nil {
+			return ErrNonGTTOrderWithExpiry
+		}
 	}
 
 	if sub.Type == types.Order_TYPE_MARKET && sub.Price != 0 {

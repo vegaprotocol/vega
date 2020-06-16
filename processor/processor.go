@@ -36,6 +36,9 @@ var (
 	ErrRegisterNodePubKeyDoesNotMatch               = errors.New("node register key does not match")
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
 	ErrVegaWalletRequired                           = errors.New("vega wallet required")
+
+	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiracy
+	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -289,6 +292,14 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		return nil, err
 	}
 
+	var expiresAt int64
+	if orderSubmission.TimeInForce == types.Order_TIF_GTT {
+		if orderSubmission.ExpiresAt == nil {
+			return nil, ErrGTTOrderWithNoExpiry
+		}
+		expiresAt = orderSubmission.ExpiresAt.Value
+	}
+
 	order := types.Order{
 		Id:          orderSubmission.Id,
 		MarketID:    orderSubmission.MarketID,
@@ -298,7 +309,7 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		Side:        orderSubmission.Side,
 		TimeInForce: orderSubmission.TimeInForce,
 		Type:        orderSubmission.Type,
-		ExpiresAt:   orderSubmission.ExpiresAt,
+		ExpiresAt:   expiresAt,
 		Reference:   orderSubmission.Reference,
 		Status:      types.Order_STATUS_ACTIVE,
 		CreatedAt:   0,

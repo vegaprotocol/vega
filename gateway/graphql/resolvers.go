@@ -1414,7 +1414,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		order.ExpiresAt = &types.Timestamp{Value: expiresAt.UnixNano()}
 	}
 	if reference != nil {
 		order.Reference = *reference

@@ -366,7 +366,7 @@ message OrderSubmission {
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
-  int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
+  Timestamp expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
   string reference = 10;
 }

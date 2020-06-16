@@ -2550,7 +2550,7 @@ Proposal can enter Failed state from any other state.
 | size | [uint64](#uint64) |  |  |
 | side | [Side](#vega.Side) |  |  |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
+| expiresAt | [Timestamp](#vega.Timestamp) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | reference | [string](#string) |  |  |
 
