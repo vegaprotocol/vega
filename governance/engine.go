@@ -259,6 +259,7 @@ func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, to
 				logging.Float32("min-yes-required", totalVotes*params.RequiredMajority),
 				logging.Float32("total-votes", totalVotes),
 				logging.Float32("min-total-votes-required", float32(totalStake)*params.RequiredParticipation),
+				logging.Float32("tokens", float32(totalStake),
 			)
 		}
 		e.buf.Add(*proposal.Proposal)
