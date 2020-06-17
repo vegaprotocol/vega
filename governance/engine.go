@@ -4,9 +4,13 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -53,6 +57,22 @@ type ValidatorTopology interface {
 	Len() int
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/governance Wallet
+type Wallet interface {
+	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/governance Commander
+type Commander interface {
+	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
+type Assets interface {
+	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
+	Get(assetID string) (assets.Asset, error)
+}
+
 type network struct {
 	minClose, maxClose, minEnact, maxEnact int64
 	participation                          uint64
@@ -69,10 +89,9 @@ type Engine struct {
 	proposals    map[string]*proposalVote
 	proposalRefs map[string]*proposalVote
 	net          network
+	isValidator  bool
 
-	// used for nodes proposals
-	top           ValidatorTopology
-	nodeProposals map[string]*nodeProposal
+	nodeProposalValidation *NodeValidation
 }
 
 type proposalVote struct {
@@ -81,9 +100,16 @@ type proposalVote struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, top ValidatorTopology, now time.Time) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf VoteBuf, top ValidatorTopology, wallet Wallet, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
+	log = log.Named(namedLogger)
 	// ensure params are set
 	cfg.initParams()
+
+	nodeValidation, err := NewNodeValidation(log, top, wallet, cmd, assets, now, isValidator)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Engine{
 		Config:       cfg,
 		accs:         accs,
@@ -100,9 +126,8 @@ func NewEngine(log *logging.Logger, cfg Config, accs Accounts, buf Buffer, vbuf 
 			maxEnact:      cfg.params.DefaultMaxEnact,
 			participation: cfg.params.DefaultMinParticipation,
 		},
-		nodeProposals: map[string]*nodeProposal{},
-		top:           top,
-	}
+		nodeProposalValidation: nodeValidation,
+	}, nil
 }
 
 // ReloadConf updates the internal configuration of the collateral engine
@@ -136,6 +161,13 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 		}
 	}
 
+	// then get all proposal accepted through node validation, and start their vote time.
+	for _, p := range e.nodeProposalValidation.OnChainTimeUpdate(t) {
+		e.log.Info("proposal has been validated by nodes, starting now",
+			logging.String("proposal-id", p.ID))
+		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
+	}
+
 	// flush here for now
 	e.buf.Flush()
 	e.vbuf.Flush()
@@ -160,7 +192,7 @@ func (e *Engine) AddProposal(p types.Proposal) error {
 	} else {
 		// now if it's a 2 steps proposal, start the node votes
 		if e.isTwoStepsProposal(&p) {
-			e.startTwoStepsProposal(&p)
+			err = e.startTwoStepsProposal(&p)
 		} else {
 			e.startProposal(&p)
 		}
@@ -179,16 +211,12 @@ func (e *Engine) startProposal(p *types.Proposal) {
 	e.proposalRefs[p.Reference] = &pv
 }
 
-func (e *Engine) startTwoStepsProposal(p *types.Proposal) {
-
+func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
+	return e.nodeProposalValidation.Start(p)
 }
 
 func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
-	if na := p.Terms.GetNewAsset(); na != nil {
-		return true
-	}
-	// add more cases here if needed later.
-	return false
+	return e.nodeProposalValidation.IsNodeValidationRequired(p)
 }
 
 func (e *Engine) validateProposal(p types.Proposal) error {

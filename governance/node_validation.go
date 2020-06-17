@@ -6,26 +6,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/governance Commander
-type Commander interface {
-	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
-type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
-	Get(assetID string) (assets.Asset, error)
-}
 
 var (
 	ErrNoNodeValidationRequired            = errors.New("no node validation required")
@@ -34,6 +21,7 @@ var (
 	ErrInvalidProposalReferenceForNodeVote = errors.New("invalid reference proposal for node vote")
 	ErrDuplicateVoteFromNode               = errors.New("duplicate vote from node")
 	ErrNodeIsNotAValidator                 = errors.New("node is not a validator")
+	ErrVegaWalletRequired                  = errors.New("vega wallet required")
 )
 
 const (
@@ -70,15 +58,21 @@ type nodeProposal struct {
 	cancel     func()
 }
 
-func (n *NodeValidation) newNodeValidation(
+func NewNodeValidation(
 	log *logging.Logger,
 	top ValidatorTopology,
-	vegaWallet nodewallet.Wallet,
+	wallet Wallet,
 	cmd Commander,
 	assets Assets,
 	now time.Time,
 	isValidator bool,
-) *NodeValidation {
+) (*NodeValidation, error) {
+
+	vegaWallet, ok := wallet.Get(nodewallet.Vega)
+	if !ok {
+		return nil, ErrVegaWalletRequired
+	}
+
 	return &NodeValidation{
 		log:              log,
 		top:              top,
@@ -88,7 +82,7 @@ func (n *NodeValidation) newNodeValidation(
 		vegaWallet:       vegaWallet,
 		currentTimestamp: now,
 		isValidator:      isValidator,
-	}
+	}, nil
 }
 
 // returns validated proposal by all nodes
@@ -183,7 +177,7 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 // Start the node validation of a proposal
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
-		n.log.Error("not an asset proposal", logging.String("ref", p.Reference))
+		n.log.Error("no node validation required", logging.String("ref", p.Reference))
 		return ErrNoNodeValidationRequired
 	}
 
