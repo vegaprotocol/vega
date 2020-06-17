@@ -70,7 +70,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			Amount:   u64val(row, 1),
 		}
 
-		err := execsetup.engine.NotifyTraderAccount(context.TODO(), &notif)
+		err := execsetup.engine.NotifyTraderAccount(context.Background(), &notif)
 		if err != nil {
 			return err
 		}
@@ -180,7 +180,7 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 		Amount:   amount,
 	}
 
-	err := execsetup.engine.NotifyTraderAccount(context.TODO(), &notif)
+	err := execsetup.engine.NotifyTraderAccount(context.Background(), &notif)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 		Asset:   asset,
 	}
 
-	err := execsetup.engine.Withdraw(context.TODO(), &notif)
+	err := execsetup.engine.Withdraw(context.Background(), &notif)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		result, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
+		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
 			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
 		}
@@ -291,7 +291,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		if _, err := execsetup.engine.SubmitOrder(context.TODO(), &order); err == nil {
+		if _, err := execsetup.engine.SubmitOrder(context.Background(), &order); err == nil {
 			return fmt.Errorf("expected trader %s to not exist", order.PartyID)
 		}
 	}
@@ -328,7 +328,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		result, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
+		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
 			return err
 		}
@@ -356,7 +356,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(context.TODO(), &cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -381,7 +381,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(context.TODO(), &cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -406,7 +406,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			MarketID: o.MarketID,
 		}
 
-		_, err = execsetup.engine.CancelOrder(context.TODO(), &cancel)
+		_, err = execsetup.engine.CancelOrder(context.Background(), &cancel)
 		if err != nil {
 			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
 		}
@@ -563,7 +563,7 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
+		_, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 6), err)
 		}
@@ -614,6 +614,11 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			continue
 		}
 
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+
 		order := proto.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -623,11 +628,11 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_TYPE_LIMIT,
+			Type:        oty,
 			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(context.TODO(), &order)
+		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
 		}
@@ -809,7 +814,7 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			TimeInForce: tif,
 		}
 
-		_, err = execsetup.engine.AmendOrder(context.TODO(), &amend)
+		_, err = execsetup.engine.AmendOrder(context.Background(), &amend)
 		if err != nil && success {
 			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyID, o.Reference, err)
 		}
