@@ -58,7 +58,7 @@ func (t *TradeSub) Push(e events.Event) {
 
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use
 func (t *TradeSub) write(e TE) {
-	t.buf = append(o.buf, e.Trade())
+	t.buf = append(t.buf, e.Trade())
 }
 
 func (t *TradeSub) flush() {
