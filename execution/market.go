@@ -350,7 +350,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// set those at the begining as even rejected order get through the buffers
 	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
 	order.Version = InitialOrderVersion
 
 	if m.closed {
