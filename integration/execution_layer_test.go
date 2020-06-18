@@ -738,7 +738,8 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 		}
 		ok := false
 		party, side, volume := val(row, 0), sideval(row, 1), u64val(row, 2)
-		for _, v := range execsetup.trades.data {
+		data := execsetup.broker.getTrades()
+		for _, v := range data {
 			if (v.Buyer == party || v.Seller == party) && v.Aggressor == side && v.Size == volume {
 				ok = true
 				break
@@ -762,7 +763,8 @@ func theFollowingTradesHappened(trades *gherkin.DataTable) error {
 		}
 		ok := false
 		buyer, seller, price, volume := val(row, 0), val(row, 1), u64val(row, 2), u64val(row, 3)
-		for _, v := range execsetup.trades.data {
+		data := execsetup.broker.getTrades()
+		for _, v := range data {
 			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == volume {
 				ok = true
 				break
@@ -976,7 +978,8 @@ func executedTrades(trades *gherkin.DataTable) error {
 			size := u64val(row, 2)
 			counterparty := val(row, 3)
 			var found bool = false
-			for _, v := range execsetup.trades.data {
+			data := execsetup.broker.getTrades()
+			for _, v := range data {
 				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
 					found = true
 					break

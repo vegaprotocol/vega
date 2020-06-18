@@ -12,12 +12,12 @@ type Trade struct {
 }
 
 func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
-	return &Order{
+	return &Trade{
 		Base: newBase(ctx, OrderEvent),
 		t:    t,
 	}
 }
 
-func (o *Trade) Trade() types.Trade {
+func (t *Trade) Trade() types.Trade {
 	return t.t
 }
