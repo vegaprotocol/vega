@@ -27,11 +27,11 @@ var (
 const (
 	// defaultMinClose is the hardcoded minimum voting close offset duration
 	// (relative to the time proposal is received from the chain)
-	defaultMinClose = time.Second
+	defaultMinClose = 2 * day
 	// defaultMaxClose is the hardcoded maximum voting close offset duration
 	defaultMaxClose = 1 * year
 	// defaultMinEnact is the hardcoded minimum enactment offset duration
-	defaultMinEnact = time.Second
+	defaultMinEnact = 2 * day // must be >= minClose
 	// defaultMaxEnact is the hardcoded maximum enactment offset duration
 	defaultMaxEnact = 1 * year
 	// defaultRequiredParticipation is hardcoded participation level required for any proposal to pass (from `0` to `1`)
