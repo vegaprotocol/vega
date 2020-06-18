@@ -766,8 +766,7 @@ func theFollowingTradesHappened(trades *gherkin.DataTable) error {
 		data := execsetup.broker.getTrades()
 		for _, v := range data {
 			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == volume {
-				ok = true
-				break
+				return nil
 			}
 		}
 

@@ -13,7 +13,7 @@ type Trade struct {
 
 func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
 	return &Trade{
-		Base: newBase(ctx, OrderEvent),
+		Base: newBase(ctx, TradeEvent),
 		t:    t,
 	}
 }
