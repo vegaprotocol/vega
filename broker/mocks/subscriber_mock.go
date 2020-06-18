@@ -61,6 +61,20 @@ func (mr *MockSubscriberMockRecorder) Closed() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Closed", reflect.TypeOf((*MockSubscriber)(nil).Closed))
 }
 
+// ID mocks base method
+func (m *MockSubscriber) ID() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockSubscriberMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockSubscriber)(nil).ID))
+}
+
 // Push mocks base method
 func (m *MockSubscriber) Push(arg0 events.Event) {
 	m.ctrl.T.Helper()
@@ -71,6 +85,18 @@ func (m *MockSubscriber) Push(arg0 events.Event) {
 func (mr *MockSubscriberMockRecorder) Push(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockSubscriber)(nil).Push), arg0)
+}
+
+// SetID mocks base method
+func (m *MockSubscriber) SetID(arg0 int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetID", arg0)
+}
+
+// SetID indicates an expected call of SetID
+func (mr *MockSubscriberMockRecorder) SetID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetID", reflect.TypeOf((*MockSubscriber)(nil).SetID), arg0)
 }
 
 // Skip mocks base method

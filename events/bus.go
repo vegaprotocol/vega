@@ -41,6 +41,7 @@ const (
 	OrderEvent
 	AccountEvent
 	PartyEvent
+	TradeEvent
 )
 
 var (
@@ -57,6 +58,7 @@ var (
 		OrderEvent:         "OrderEvent",
 		AccountEvent:       "AccountEvent",
 		PartyEvent:         "PartyEvent",
+		TradeEvent:         "TradeEvent",
 	}
 )
 
@@ -80,6 +82,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Party:
 		e := NewPartyEvent(ctx, tv)
+		return e, nil
+	case types.Trade:
+		e := NewTradeEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
