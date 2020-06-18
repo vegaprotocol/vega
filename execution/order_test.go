@@ -276,6 +276,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		CreatedAt:   10000000000,
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIF_GTC,
 		Id:          "someid",
