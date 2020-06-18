@@ -1,4 +1,4 @@
-FROM docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13 \
+FROM docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4 \
 	AS builder
 RUN \
 	git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol" && \
@@ -19,10 +19,9 @@ RUN make install
 
 
 FROM scratch
-ENTRYPOINT ["/vega"]
-CMD ["node"]
+ENTRYPOINT ["/vega-linux-amd64"]
 EXPOSE 3002/tcp 3003/tcp 3004/tcp 26658/tcp
-COPY --from=builder /go/bin/dummyriskmodel /
-COPY --from=builder /go/bin/vega /
-COPY --from=builder /go/bin/vegaccount /
-COPY --from=builder /go/bin/vegastream /
+COPY --from=builder /go/bin/dummyriskmodel-linux-amd64 /
+COPY --from=builder /go/bin/vega-linux-amd64 /
+COPY --from=builder /go/bin/vegaccount-linux-amd64 /
+COPY --from=builder /go/bin/vegastream-linux-amd64 /

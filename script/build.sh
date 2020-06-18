@@ -20,7 +20,7 @@ help() {
 	fi
 	echo "Command line arguments:"
 	echo
-	echo "  -a action  Take action: build, coverage, deps, gqlgen, install, integrationtest, mocks, test, race, retest, staticcheck, vet"
+	echo "  -a action  Take action:"
 
 	grep ')[ ]##' "$0" | awk 'BEGIN {FS = "\)[ ]## "}; {printf "'"$col"'%-20s'"$nocol"' %s\n", $1, $2}'
 
