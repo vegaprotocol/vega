@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.20.1
+
+*2020-06-18*
+
+This release fixes one small bug that was causing many closed streams, which was a problem for API clients.
+
+## Improvements
+
+- [#1813](https://github.com/vegaprotocol/vega/pull/1813) Set `PartyEvent` type to party event
+
 ## 0.20.0
 
 *2020-06-15*

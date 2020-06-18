@@ -322,7 +322,7 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - /usr/local/bin/changelog-slack.sh "$$DRONE_TAG" "$$SLACK_HOOK_URL"
+      - /usr/local/bin/changelog-slack.sh "$$DRONE_TAG" "$$SLACK_HOOK_URL" "#engineering"
     when:
       event: tag
     depends_on:
