@@ -12,6 +12,7 @@ type Base struct {
 	sCh     chan struct{}
 	ch      chan events.Event
 	running bool
+	id      int
 }
 
 func newBase(ctx context.Context, buf int) *Base {
@@ -60,4 +61,14 @@ func (b *Base) Halt() {
 	b.cfunc()   // cancels the subscriber context, which breaks the loop
 	b.Pause()   // close the skip channel
 	close(b.ch) // close the event channel
+}
+
+// SetID set the ID (exposed only to broker)
+func (b *Base) SetID(id int) {
+	b.id = id
+}
+
+// ID returns the subscriber ID
+func (b *Base) ID() int {
+	return b.id
 }

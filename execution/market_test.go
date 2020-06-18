@@ -29,7 +29,6 @@ type testMarket struct {
 	collateraEngine *collateral.Engine
 	partyEngine     *execution.Party
 	candleStore     *mocks.MockCandleBuf
-	tradeStore      *mocks.MockTradeBuf
 	settleBuf       *mocks.MockSettlementBuf
 
 	broker *mocks.MockBroker
@@ -46,7 +45,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	matchingConfig := matching.NewDefaultConfig()
 
 	candleStore := mocks.NewMockCandleBuf(ctrl)
-	tradeStore := mocks.NewMockTradeBuf(ctrl)
 	settleBuf := mocks.NewMockSettlementBuf(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -68,7 +66,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore,
-		tradeStore, marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
+		marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -84,7 +82,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		collateraEngine: collateralEngine,
 		partyEngine:     partyEngine,
 		candleStore:     candleStore,
-		tradeStore:      tradeStore,
 		settleBuf:       settleBuf,
 		broker:          broker,
 		now:             now,
@@ -222,7 +219,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	}
 
 	// submit orders
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
@@ -280,7 +276,6 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	}
 
 	// submit orders
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
@@ -322,7 +317,6 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	}
 
 	// submit orders
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
@@ -361,7 +355,6 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	}
 
 	// submit orders
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 

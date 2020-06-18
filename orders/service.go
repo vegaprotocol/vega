@@ -46,6 +46,8 @@ var (
 	ErrNoSide = errors.New("no value has been set for the side")
 	// ErrNoType no value has been set for the type
 	ErrNoType = errors.New("no value has been set for the type")
+	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
+	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
 )
 
 // TimeService ...
@@ -176,6 +178,9 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	}
 	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 {
 		return ErrInvalidPriceForLimitOrder
+	}
+	if sub.Type == types.Order_TYPE_NETWORK {
+		return ErrUnAuthorizedOrderType
 	}
 
 	return nil

@@ -76,6 +76,23 @@ func (b *brokerStub) GetOrderEvents() []events.Order {
 	return ret
 }
 
+func (b *brokerStub) GetTradeEvents() []events.Trade {
+	batch := b.GetBatch(events.TradeEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.Trade, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Trade:
+			ret = append(ret, *et)
+		case events.Trade:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
 func (b *brokerStub) GetAccounts() []events.Acc {
 	batch := b.GetBatch(events.AccountEvent)
 	if len(batch) == 0 {
@@ -151,6 +168,15 @@ func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
 		}
 	}
 	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+}
+
+func (b *brokerStub) getTrades() []proto.Trade {
+	data := b.GetTradeEvents()
+	trades := make([]proto.Trade, 0, len(data))
+	for _, t := range data {
+		trades = append(trades, t.Trade())
+	}
+	return trades
 }
 
 func (b *brokerStub) ResetType(t events.Type) {

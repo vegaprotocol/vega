@@ -888,6 +888,22 @@ type Trade {
 
   "RFC3339Nano for when the trade occurred"
   createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+}
+
+"Valid trade types"
+enum TradeType {
+
+  "Default trade type"
+  Default
+
+  "Network close-out - good"
+  NetworkCloseOutGood
+
+  "Network close-out - bad"
+  NetworkCloseOutBad
 }
 
 "An account record"
@@ -930,11 +946,11 @@ enum OrderStatus {
   """
   Active
 
-  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  Cancelled
-
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
   Expired
+
+  "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
+  Cancelled
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
   Stopped
@@ -944,40 +960,70 @@ enum OrderStatus {
 
   "This order was rejected while beeing processed in the core."
   Rejected
+
+  "This order was partially filled."
+  PartiallyFilled
 }
 
 "Reason for the order beeing rejected by the core node"
 enum RejectionReason {
+
   "Market id is invalid"
   InvalidMarketId
+
   "Order id is invalid"
   InvalidOrderId
+
   "Order is out of sequence"
   OrderOutOfSequence
+
   "Remaining size in the order is invalid"
   InvalidRemainingSize
+
   "Time has failed us"
   TimeFailure
+
   "Unable to remove the order"
   OrderRemovalFailure
+
   "Expiration time is invalid"
   InvalidExpirationTime
+
   "Order reference is invalid"
   InvalidOrderReference
+
   "Edit is not allowed"
   EditNotAllowed
+
   "Order amend fail"
   OrderAmendFailure
+
   "Order does not exist"
   OrderNotFound
+
   "Party id is invalid"
   InvalidPartyId
+
   "Market is closed"
   MarketClosed
+
   "Margin check failed"
   MarginCheckFailed
+
+  "Order missing general account"
+  MissingGeneralAccount
+
   "An internal error happend"
   InternalError
+
+  "Invalid size"
+  InvalidSize
+
+  "Invalid persistence"
+  InvalidPersistence
+
+  "Invalid type"
+  InvalidType
 }
 
 enum OrderType {
@@ -1210,10 +1256,27 @@ type UpdateNetwork {
   maxEnactInSeconds: Int
 
   """
-  Network parameter that restricts the minimum participation stake
-  required for a proposal to pass.
+  Network parameter that sets participation level required for any proposal to pass.
+  Value from 0 to 1.
   """
-  minParticipationStake: Int
+  requiredParticipation: Float
+  """
+  Network parameter that sets majority level required for any proposal to pass.
+  Value from 0.5 to 1.
+  """
+  requiredMajority: Float
+
+  """
+  Network parameter that sets minimum balance required for a party
+  to be able to submit a new proposal. Value greater than 0 to 1.
+  """
+  minProposerBalance: Float
+
+  """
+  Network parameter that sets minimum balance required for a party
+  to be able to cast a vote.  Value greater than 0 to 1.
+  """
+  minVoterBalance: Float
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -1242,10 +1305,27 @@ input UpdateNetworkInput {
   maxEnactInSeconds: Int
 
   """
-  Network parameter that restricts the minimum participation stake
-  required for a proposal to pass.
+  Network parameter that sets participation level required for any proposal to pass.
+  Value from 0 to 1.
   """
-  minParticipationStake: Int
+  requiredParticipation: Float
+  """
+  Network parameter that sets majority level required for any proposal to pass.
+  Value from 0.5 to 1.
+  """
+  requiredMajority: Float
+
+  """
+  Network parameter that sets minimum balance required for a party
+  to be able to submit a new proposal. Value greater than 0 to 1.
+  """
+  minProposerBalance: Float
+
+  """
+  Network parameter that sets minimum balance required for a party
+  to be able to cast a vote.  Value greater than 0 to 1.
+  """
+  minVoterBalance: Float
 }
 
 
@@ -1253,31 +1333,54 @@ union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
-  "ISO-8601 time and date when voting closes for this proposal."
+  """
+  ISO-8601 time and date when voting closes for this proposal.
+  Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
+  """
   closingDatetime: String!
-  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  """
+  ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  """
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass"
-  minParticipationStake: Int!
-  "Actual change being introduced by the proposal"
-  change: ProposalChange
+
+  "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
+  change: ProposalChange!
 }
 
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 "Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
 input ProposalTermsInput {
-  "ISO-8601 time and date when voting closes for this proposal."
+  """
+  ISO-8601 time and date when voting closes for this proposal.
+  Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
+  """
   closingDatetime: String!
-  "ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time."
+  """
+  ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  """
   enactmentDatetime: String!
-  "Minimum participation stake required for this proposal to pass"
-  minParticipationStake: Int!
-  
-  "Optional field to define update market change. If this is set along with another change, proposal will not be accepted."
-  updateMarket: UpdateMarketInput
-  "Optional field to define new market change. If this is set along with another change, proposal will not be accepted."
+
+
+  """
+  Field defining new market change - the proposal will create new market if passed and enacted.
+  It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+  """
   newMarket: NewMarketInput
-  "Optional field to define an update of network parameters. If this is set along with another change, proposal will not be accepted."
+  """
+  Field defining update market change - the proposal will update existing market if passed and enacted.
+  It can only be set if "newMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
+  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+  """
+  updateMarket: UpdateMarketInput
+
+  """
+  Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
+  It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
+  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
+  """
   updateNetwork: UpdateNetworkInput
 }
 
