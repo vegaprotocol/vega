@@ -278,6 +278,13 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.P
 	if err != nil {
 		return nil, err
 	}
+
+	// if we asked for a single party it may be null
+	// so then we return an empty slice
+	if party == nil {
+		return []*types.Party{}, nil
+	}
+
 	return []*types.Party{party}, nil
 }
 
