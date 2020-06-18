@@ -80,7 +80,6 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
@@ -124,7 +123,6 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candleBuf CandleBuf,
-	tradeBuf TradeBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
 	now time.Time,
@@ -187,7 +185,6 @@ func NewMarket(
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
-		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
 		marginLevelsBuf:    marginLevelsBuf,
 		settleBuf:          settlementBuf,
@@ -521,7 +518,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			m.tradeBuf.Add(*trade)
+			m.broker.Send(events.NewTradeEvent(ctx, *trade))
 
 			// Save to trade buffer for generating candles etc
 			err := m.candleBuf.AddTrade(*trade)
@@ -758,7 +755,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// 0 out the BAD trader position
 			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
-			m.tradeBuf.Add(*trade)
+			m.broker.Send(events.NewTradeEvent(ctx, *trade))
 
 			// Save to trade buffer for generating candles etc
 			err = m.candleBuf.AddTrade(*trade)
@@ -906,7 +903,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Timestamp: partyOrder.CreatedAt,
 			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
-		m.tradeBuf.Add(trade)
+		m.broker.Send(events.NewTradeEvent(ctx, trade))
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()

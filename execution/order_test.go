@@ -219,7 +219,6 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
@@ -271,7 +270,6 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt)
 
 	addAccount(tm, party1)
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -325,7 +323,6 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes()
 
