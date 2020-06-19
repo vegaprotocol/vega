@@ -301,6 +301,10 @@ func (e *Engine) createMarket(marketID string, definition *types.NewMarketConfig
 	if len(marketID) == 0 {
 		return ErrNoMarketID
 	}
+	if _, found := e.markets[marketID]; found {
+		return ErrMarketAlreadyExist
+	}
+
 	if err := governance.ValidateNewMarket(e.time, definition); err != nil {
 		return err
 	}
