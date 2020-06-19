@@ -41,8 +41,6 @@ var (
 	ErrTradingDurationNegative = errors.New("invalid trading duration (negative)")
 	// ErrTickSizeNegative ...
 	ErrTickSizeNegative = errors.New("invalid tick size (negative)")
-	// ErrNilDiscreteTradingDuration ...
-	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
 	// ErrNilContinuousTradingTickSize ...
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
 	// ErrNilScalingFactors ...
@@ -313,6 +311,21 @@ func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	}
 }
 
+// NewMarketTradingModeFromProto ...
+func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
+	if ptm == nil {
+		return nil, ErrNilTradingMode
+	}
+	switch ptmimpl := ptm.(type) {
+	case *types.NewMarketConfiguration_Continuous:
+		return ContinuousTradingFromProto(ptmimpl.Continuous)
+	case *types.NewMarketConfiguration_Discrete:
+		return DiscreteTradingFromProto(ptmimpl.Discrete)
+	default:
+		return nil, ErrUnimplementedTradingMode
+	}
+}
+
 // InstrumentMetadataFromProto ...
 func InstrumentMetadataFromProto(pim *types.InstrumentMetadata) (*InstrumentMetadata, error) {
 	if pim == nil {
@@ -576,7 +589,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 	if err != nil {
 		return nil, err
 	}
-	mode, err := TradingModeFromProto(newMarket.TradingMode)
+	mode, err := NewMarketTradingModeFromProto(newMarket.TradingMode)
 	if err != nil {
 		return nil, err
 	}
