@@ -34,6 +34,20 @@ func (m *MockGovernanceEngine) EXPECT() *MockGovernanceEngineMockRecorder {
 	return m.recorder
 }
 
+// AddNodeVote mocks base method
+func (m *MockGovernanceEngine) AddNodeVote(arg0 *proto.NodeVote) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddNodeVote", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddNodeVote indicates an expected call of AddNodeVote
+func (mr *MockGovernanceEngineMockRecorder) AddNodeVote(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddNodeVote), arg0)
+}
+
 // AddProposal mocks base method
 func (m *MockGovernanceEngine) AddProposal(arg0 proto.Proposal) error {
 	m.ctrl.T.Helper()

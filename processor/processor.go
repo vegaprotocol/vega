@@ -1,10 +1,8 @@
 package processor
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -53,8 +51,6 @@ type ExecutionEngine interface {
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Withdraw(*types.Withdraw) error
 	Generate() error
-	SubmitProposal(proposal *types.Proposal) error
-	VoteOnProposal(vote *types.Vote) error
 	EnactProposal(proposal *types.Proposal) error
 }
 
@@ -62,6 +58,7 @@ type ExecutionEngine interface {
 type GovernanceEngine interface {
 	AddProposal(types.Proposal) error
 	AddVote(types.Vote) error
+	AddNodeVote(*types.NodeVote) error
 	OnChainTimeUpdate(time.Time) []*types.Proposal
 }
 
@@ -142,8 +139,6 @@ type Processor struct {
 	wallet            Wallet
 	vegaWallet        nodewallet.Wallet
 	assets            Assets
-	nodeProposals     map[string]*nodeProposal
-	pendingValidation []*types.Proposal
 	cmd               Commander
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
@@ -164,21 +159,20 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 	}
 
 	p := &Processor{
-		log:               log,
-		stat:              stat,
-		Config:            config,
-		exec:              exec,
-		time:              ts,
-		wallet:            wallet,
-		assets:            assets,
-		nodeProposals:     map[string]*nodeProposal{},
-		pendingValidation: []*types.Proposal{},
-		cmd:               cmd,
-		top:               top,
-		isValidator:       isValidator,
-		vegaWallet:        vegaWallet,
-		gov:               gov,
-		idgen:             NewIDGen(),
+		log:         log,
+		stat:        stat,
+		Config:      config,
+		exec:        exec,
+		time:        ts,
+		wallet:      wallet,
+		assets:      assets,
+		cmd:         cmd,
+		top:         top,
+		isValidator: isValidator,
+		vegaWallet:  vegaWallet,
+		gov:         gov,
+		proposalBuf: proposalBuf,
+		idgen:       NewIDGen(),
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -485,11 +479,6 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		// proposal is a new asset proposal?
-
-		if na := proposal.Terms.GetNewAsset(); na != nil {
-			return p.startAssetNodeProposal(proposal)
-		}
 		return p.SubmitProposal(proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
@@ -513,17 +502,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-
-		// if not a validator reject the vote
-		if !p.top.Exists(vote.PubKey) {
-			return ErrUnknownNodeKey
-		}
-
-		prop, ok := p.nodeProposals[vote.Reference]
-		if !ok {
-			return ErrUnknownProposal
-		}
-		prop.votes[hex.EncodeToString(vote.PubKey)] = struct{}{}
+		return p.gov.AddNodeVote(vote)
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -534,44 +513,6 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
 	}
-	return nil
-}
-
-func (p *Processor) startAssetNodeProposal(proposal *types.Proposal) error {
-	asset := proposal.Terms.GetNewAsset()
-	if asset == nil {
-		p.log.Error("not an asset proposal", logging.String("ref", proposal.Reference))
-		return ErrNotAnAssetProposal
-	}
-
-	_, ok := p.nodeProposals[proposal.Reference]
-	if ok {
-		return ErrAssetProposalReferenceDuplicate
-	}
-	if err := p.checkAssetProposal(proposal); err != nil {
-		return err
-	}
-
-	assetID, err := p.assets.NewAsset(proposal.Reference,
-		proposal.Terms.GetNewAsset().GetChanges())
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	// @TODO check valid timestamps
-	np := &nodeProposal{
-		Proposal:   proposal,
-		votes:      map[string]struct{}{},
-		validTime:  time.Unix(proposal.Terms.ValidationTimestamp, 0),
-		validState: notValidAssetProposal,
-		cancel:     cancel,
-		assetID:    assetID,
-	}
-	p.nodeProposals[proposal.Reference] = np
-	// start asset validation
-	go p.validateAsset(ctx, np, proposal)
-
 	return nil
 }
 
@@ -688,49 +629,6 @@ func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
 	return nil
 }
 
-func (p *Processor) validateAsset(ctx context.Context, np *nodeProposal, prop *types.Proposal) {
-
-	// get the asset to validate from the assets pool
-	asset, err := p.assets.Get(np.assetID)
-	if err != nil {
-		p.log.Error("Validating asset, unable to get the asset",
-			logging.String("ref", prop.GetTerms().String()),
-			logging.Error(err),
-		)
-		return
-	}
-
-	// wait time between call to validation
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	for {
-		// first try to validate the asset
-		p.log.Debug("Validating asset",
-			logging.String("asset-source", prop.GetTerms().String()),
-		)
-		if asset == nil {
-
-		}
-		if err != nil {
-			p.log.Error("error validating asset", logging.Error(err))
-
-		} else {
-			if asset.IsValid() {
-				atomic.StoreUint32(&np.validState, validAssetProposal)
-				return
-			}
-		}
-
-		// wait or break if the time's up
-		select {
-		case <-ctx.Done():
-			p.log.Error("asset validation context error", logging.Error(ctx.Err()))
-			return
-		case _ = <-ticker.C:
-		}
-	}
-}
-
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
 func (p *Processor) SubmitProposal(proposal *types.Proposal) error {
 	if p.log.GetLevel() == logging.DebugLevel {
@@ -771,52 +669,5 @@ func (p *Processor) onTick(t time.Time) {
 	}
 	// governance flush
 	p.proposalBuf.Flush()
-
-	for k, prop := range p.nodeProposals {
-		// this proposal has passed the node-voting period, or all nodes have voted/approved
-		// time expired, or all vote agregated, and own vote sent
-		state := atomic.LoadUint32(&prop.validState)
-		if prop.validTime.Before(t) || (len(prop.votes) == p.top.Len() && state == voteSentAssetProposal) {
-			// if not all nodes have approved, just remove
-			if len(prop.votes) < p.top.Len() {
-				p.log.Warn("proposal was not accepted by all nodes",
-					logging.String("proposal", prop.Proposal.String()),
-					logging.Int("vote-count", len(prop.votes)),
-					logging.Int("node-count", p.top.Len()),
-				)
-			} else if err := p.exec.SubmitProposal(prop.Proposal); err != nil {
-				p.log.Error("Failed to submit node-approved proposal",
-					logging.String("proposal", prop.Proposal.String()),
-				)
-				continue // try again next block
-			}
-			// either proposal wasn't accepted, or it's been passed on to governance
-			delete(p.nodeProposals, k)
-			// cancelling this but it should already be exited if th proposal
-			// was valid
-			prop.cancel()
-		}
-
-		// or check if the proposal if valid,
-		// if it is, we will send our own message through the network.
-		if state == validAssetProposal {
-			// if not a validator no need to send the vote
-			if p.isValidator {
-				nv := &types.NodeVote{
-					PubKey:    p.vegaWallet.PubKeyOrAddress(),
-					Reference: prop.Reference,
-				}
-				if err := p.cmd.Command(p.vegaWallet, blockchain.NodeVoteCommand, nv); err != nil {
-					p.log.Error("unable tosend command", logging.Error(err))
-					// @TODO keep in memory, retry later?
-					continue
-				}
-			}
-			atomic.StoreUint32(&prop.validState, voteSentAssetProposal)
-			// cancelling this but it should already be exited if th proposal
-			// was valid
-			prop.cancel()
-		}
-	}
 
 }

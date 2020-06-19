@@ -147,6 +147,7 @@ func NewEngine(
 	marketDataBuf MarketDataBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
+	lossSocBuf LossSocializationBuf,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 ) *Engine {
@@ -171,6 +172,7 @@ func NewEngine(
 		marketDataBuf:   marketDataBuf,
 		marginLevelsBuf: marginLevelsBuf,
 		settleBuf:       settleBuf,
+		lossSocBuf:      lossSocBuf,
 		idgen:           NewIDGen(),
 	}
 
