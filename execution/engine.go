@@ -24,13 +24,6 @@ var (
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
 	ErrNoMarketID = errors.New("no valid market id was supplied")
-
-	// ErrProductTypeNotSupported is returned if product type supplied via governance is not yet supported
-	// (this error should really never occur)
-	ErrProductTypeNotSupported = errors.New("product type is not supported")
-
-	// ErrInvalidTradingMode is returned if supplied trading is not valid (has to be either continuous or descrete)
-	ErrInvalidTradingMode = errors.New("trading mode is invalid")
 )
 
 // OrderBuf ...
@@ -328,7 +321,7 @@ func (e *Engine) createMarket(marketID string, definition *types.NewMarketConfig
 }
 
 // SubmitMarket will submit a new market configuration to the network
-//TODO: remove me once all markets are created via governance
+//TODO: remove me once all markets are being created exclusively via governance
 func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	return e.addMarket(marketConfig)
 }
