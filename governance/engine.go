@@ -157,7 +157,7 @@ func (e *Engine) SubmitProposal(proposal types.Proposal) error {
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	if terms.GetNewMarket() != nil {
-		return &e.networkParams.newMarkets, nil
+		return &e.networkParams.NewMarkets, nil
 	}
 	return nil, ErrNoNetworkParams
 }

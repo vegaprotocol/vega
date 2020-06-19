@@ -308,7 +308,7 @@ func (e *Engine) createMarket(marketID string, definition *types.NewMarketConfig
 	if len(marketID) == 0 {
 		return ErrNoMarketID
 	}
-	if err := governance.ValidateNewMarket(definition); err != nil {
+	if err := governance.ValidateNewMarket(e.time, definition); err != nil {
 		return err
 	}
 	networkParams := e.governance.GetNetworkParameters()

@@ -120,8 +120,6 @@ type IntrumentConfiguration struct {
 	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
-	// Metadata for this instrument, tags
-	Metadata []*string `json:"metadata"`
 	// Future product specification
 	FutureProduct *FutureProduct `json:"futureProduct"`
 }
@@ -135,8 +133,6 @@ type IntrumentConfigurationInput struct {
 	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
-	// Metadata for this instrument, tags
-	Metadata []*string `json:"metadata"`
 	// Future product specification
 	FutureProduct *FutureProductInput `json:"futureProduct"`
 }
@@ -233,6 +229,8 @@ type NewMarket struct {
 	DecimalPlaces int `json:"decimalPlaces"`
 	// New market risk configuration
 	Risk *Risk `json:"risk"`
+	// Metadata for this instrument, tags
+	Metadata []*string `json:"metadata"`
 	// Trading mode
 	TradingMode TradingMode `json:"tradingMode"`
 }
@@ -247,6 +245,8 @@ type NewMarketInput struct {
 	DecimalPlaces int `json:"decimalPlaces"`
 	// New market risk configuration
 	Risk *RiskInput `json:"risk"`
+	// Metadata for this instrument, tags
+	Metadata []*string `json:"metadata"`
 	// Trading mode
 	TradingMode *TradingModeInput `json:"tradingMode"`
 }
@@ -321,7 +321,7 @@ type ProposalVote struct {
 }
 
 type Risk struct {
-	Model RiskModel `json:"model"`
+	Model RiskModelType `json:"model"`
 	// Simple risk model parameters. Set only if risk model is Simple
 	SimpleParameters *SimpleRiskModelParams `json:"simpleParameters"`
 	// Log normal risk model parameters. Set only if risk model is LogNormal
@@ -379,7 +379,7 @@ type TradableInstrument struct {
 }
 
 type TradingModeInput struct {
-	Mode *TradingModeType `json:"mode"`
+	Mode TradingModeType `json:"mode"`
 	// Duration of continuous trading in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency

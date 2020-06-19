@@ -121,7 +121,6 @@ type ComplexityRoot struct {
 		BaseName      func(childComplexity int) int
 		Code          func(childComplexity int) int
 		FutureProduct func(childComplexity int) int
-		Metadata      func(childComplexity int) int
 		Name          func(childComplexity int) int
 		QuoteName     func(childComplexity int) int
 	}
@@ -198,6 +197,7 @@ type ComplexityRoot struct {
 	NewMarket struct {
 		DecimalPlaces func(childComplexity int) int
 		Instrument    func(childComplexity int) int
+		Metadata      func(childComplexity int) int
 		Risk          func(childComplexity int) int
 		TradingMode   func(childComplexity int) int
 	}
@@ -844,13 +844,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.IntrumentConfiguration.FutureProduct(childComplexity), true
 
-	case "IntrumentConfiguration.metadata":
-		if e.complexity.IntrumentConfiguration.Metadata == nil {
-			break
-		}
-
-		return e.complexity.IntrumentConfiguration.Metadata(childComplexity), true
-
 	case "IntrumentConfiguration.name":
 		if e.complexity.IntrumentConfiguration.Name == nil {
 			break
@@ -1253,6 +1246,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.Instrument(childComplexity), true
+
+	case "NewMarket.metadata":
+		if e.complexity.NewMarket.Metadata == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.Metadata(childComplexity), true
 
 	case "NewMarket.risk":
 		if e.complexity.NewMarket.Risk == nil {
@@ -3606,7 +3606,7 @@ input RiskInput {
 }
 
 type Risk {
-  model: RiskModel!
+  model: RiskModelType!
   "Simple risk model parameters. Set only if risk model is Simple"
   simpleParameters: SimpleRiskModelParams
   "Log normal risk model parameters. Set only if risk model is LogNormal"
@@ -3631,19 +3631,12 @@ type FutureProduct {
 input IntrumentConfigurationInput {
   "Full and fairly descriptive name for the instrument"
   name: String!
-
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-
   "String representing the base (e.g. BTCUSD -> BTC is base)"
   baseName: String!
-
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-
-  "Metadata for this instrument, tags"
-  metadata: [String]!
-
   "Future product specification"
   futureProduct: FutureProductInput
 }
@@ -3657,8 +3650,6 @@ type IntrumentConfiguration {
   baseName: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-  "Metadata for this instrument, tags"
-  metadata: [String]!
   "Future product specification"
   futureProduct: FutureProduct
 }
@@ -3669,7 +3660,7 @@ enum TradingModeType {
 }
 
 input TradingModeInput {
-  mode: TradingModeType
+  mode: TradingModeType!
   "Duration of continuous trading in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
@@ -3686,7 +3677,8 @@ input NewMarketInput {
   decimalPlaces: Int!
   "New market risk configuration"
   risk: RiskInput!
-
+  "Metadata for this instrument, tags"
+  metadata: [String]!
   "Trading mode"
   tradingMode: TradingModeInput!
 }
@@ -3698,6 +3690,8 @@ type NewMarket {
   decimalPlaces: Int!
   "New market risk configuration"
   risk: Risk!
+  "Metadata for this instrument, tags"
+  metadata: [String]!
   "Trading mode"
   tradingMode: TradingMode!
 }
@@ -6154,40 +6148,6 @@ func (ec *executionContext) _IntrumentConfiguration_quoteName(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _IntrumentConfiguration_metadata(ctx context.Context, field graphql.CollectedField, obj *IntrumentConfiguration) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "IntrumentConfiguration",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Metadata, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*string)
-	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _IntrumentConfiguration_futureProduct(ctx context.Context, field graphql.CollectedField, obj *IntrumentConfiguration) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7912,6 +7872,40 @@ func (ec *executionContext) _NewMarket_risk(ctx context.Context, field graphql.C
 	res := resTmp.(*Risk)
 	fc.Result = res
 	return ec.marshalNRisk2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRisk(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarket_metadata(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Metadata, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_tradingMode(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
@@ -10375,9 +10369,9 @@ func (ec *executionContext) _Risk_model(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(RiskModel)
+	res := resTmp.(RiskModelType)
 	fc.Result = res
-	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
+	return ec.marshalNRiskModelType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModelType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Risk_simpleParameters(ctx context.Context, field graphql.CollectedField, obj *Risk) (ret graphql.Marshaler) {
@@ -14102,12 +14096,6 @@ func (ec *executionContext) unmarshalInputIntrumentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
-		case "metadata":
-			var err error
-			it.Metadata, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "futureProduct":
 			var err error
 			it.FutureProduct, err = ec.unmarshalOFutureProductInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureProductInput(ctx, v)
@@ -14201,6 +14189,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 		case "risk":
 			var err error
 			it.Risk, err = ec.unmarshalNRiskInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "metadata":
+			var err error
+			it.Metadata, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14320,7 +14314,7 @@ func (ec *executionContext) unmarshalInputTradingModeInput(ctx context.Context, 
 		switch k {
 		case "mode":
 			var err error
-			it.Mode, err = ec.unmarshalOTradingModeType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx, v)
+			it.Mode, err = ec.unmarshalNTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15007,11 +15001,6 @@ func (ec *executionContext) _IntrumentConfiguration(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "metadata":
-			out.Values[i] = ec._IntrumentConfiguration_metadata(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "futureProduct":
 			out.Values[i] = ec._IntrumentConfiguration_futureProduct(ctx, field, obj)
 		default:
@@ -15648,6 +15637,11 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 			}
 		case "risk":
 			out.Values[i] = ec._NewMarket_risk(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "metadata":
+			out.Values[i] = ec._NewMarket_metadata(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -18436,6 +18430,15 @@ func (ec *executionContext) unmarshalNTradingModeInput2ᚖcodeᚗvegaprotocolᚗ
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalNTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, v interface{}) (TradingModeType, error) {
+	var res TradingModeType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, sel ast.SelectionSet, v TradingModeType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNTransactionSubmitted2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx context.Context, sel ast.SelectionSet, v TransactionSubmitted) graphql.Marshaler {
 	return ec._TransactionSubmitted(ctx, sel, &v)
 }
@@ -19546,30 +19549,6 @@ func (ec *executionContext) marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Trade(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, v interface{}) (TradingModeType, error) {
-	var res TradingModeType
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, sel ast.SelectionSet, v TradingModeType) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOTradingModeType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, v interface{}) (*TradingModeType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOTradingModeType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, sel ast.SelectionSet, v *TradingModeType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOUpdateMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx context.Context, v interface{}) (UpdateMarketInput, error) {

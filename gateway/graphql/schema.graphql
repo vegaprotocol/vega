@@ -1128,7 +1128,7 @@ input RiskInput {
 }
 
 type Risk {
-  model: RiskModel!
+  model: RiskModelType!
   "Simple risk model parameters. Set only if risk model is Simple"
   simpleParameters: SimpleRiskModelParams
   "Log normal risk model parameters. Set only if risk model is LogNormal"
@@ -1153,19 +1153,12 @@ type FutureProduct {
 input IntrumentConfigurationInput {
   "Full and fairly descriptive name for the instrument"
   name: String!
-
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-
   "String representing the base (e.g. BTCUSD -> BTC is base)"
   baseName: String!
-
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-
-  "Metadata for this instrument, tags"
-  metadata: [String]!
-
   "Future product specification"
   futureProduct: FutureProductInput
 }
@@ -1179,8 +1172,6 @@ type IntrumentConfiguration {
   baseName: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-  "Metadata for this instrument, tags"
-  metadata: [String]!
   "Future product specification"
   futureProduct: FutureProduct
 }
@@ -1191,7 +1182,7 @@ enum TradingModeType {
 }
 
 input TradingModeInput {
-  mode: TradingModeType
+  mode: TradingModeType!
   "Duration of continuous trading in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
@@ -1208,7 +1199,8 @@ input NewMarketInput {
   decimalPlaces: Int!
   "New market risk configuration"
   risk: RiskInput!
-
+  "Metadata for this instrument, tags"
+  metadata: [String]!
   "Trading mode"
   tradingMode: TradingModeInput!
 }
@@ -1220,6 +1212,8 @@ type NewMarket {
   decimalPlaces: Int!
   "New market risk configuration"
   risk: Risk!
+  "Metadata for this instrument, tags"
+  metadata: [String]!
   "Trading mode"
   tradingMode: TradingMode!
 }
