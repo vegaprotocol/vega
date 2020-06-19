@@ -38,6 +38,11 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
+func validateAsset(asset string) error {
+	//@TODO: call proper asset validation once implemented
+	return nil
+}
+
 func validateFuture(timeSvc TimeService, future *types.FutureProduct) error {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
@@ -50,8 +55,7 @@ func validateFuture(timeSvc TimeService, future *types.FutureProduct) error {
 	if maturity.UnixNano() < now.UnixNano() {
 		return ErrProductMaturityIsPast
 	}
-	//@TODO: search for future.Asset among existing assets once it is implemented
-	return nil
+	return validateAsset(future.Asset)
 }
 
 func validateInstrument(timeSvc TimeService, instrument *types.IntrumentConfiguration) error {
