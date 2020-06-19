@@ -19,11 +19,11 @@ func TestModelConverters(t *testing.T) {
 	})
 	t.Run("DiscreteTrading.IntoProto", func(t *testing.T) {
 
-		dt := &gql.DiscreteTrading{Duration: intptr(123)}
+		dt := &gql.DiscreteTrading{Duration: 123}
 		pdt, err := dt.IntoProto()
 		assert.NotNil(t, pdt)
 		assert.Nil(t, err)
-		assert.Equal(t, int64(*dt.Duration), pdt.Discrete.Duration)
+		assert.Equal(t, int64(dt.Duration), pdt.Discrete.DurationNs)
 	})
 
 	t.Run("Future.IntoProto nil oracle", func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("Market.IntoProto", func(t *testing.T) {
 		mkt := gql.Market{
-			TradingMode: &gql.ContinuousTrading{TickSize: intptr(123)},
+			TradingMode: &gql.ContinuousTrading{TickSize: 123},
 			TradableInstrument: &gql.TradableInstrument{
 				Instrument: &gql.Instrument{
 					Product: &gql.Future{
@@ -189,7 +189,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("TradingModeFromProto Discrete", func(t *testing.T) {
 		ptm := &proto.Market_Discrete{
 			Discrete: &proto.DiscreteTrading{
-				Duration: 42,
+				DurationNs: 42,
 			},
 		}
 		tm, err := gql.TradingModeFromProto(ptm)

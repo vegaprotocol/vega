@@ -29,8 +29,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 
 	// general stuff like name, ID, code, asset, and initial mark price
-	mkt.Name = row.Cells[0].Value
-	parts := strings.Split(mkt.Name, "/")
+	parts := strings.Split(row.Cells[0].Value, "/")
 	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
 	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
 	prod := mkt.TradableInstrument.Instrument.GetFuture()
