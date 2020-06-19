@@ -62,10 +62,83 @@ func TestNodeValidation(t *testing.T) {
 	t.Run("start - OK", testStartOK)
 
 	t.Run("add node vote - error invalid proposal reference", testNodeVoteInvalidProposalReference)
-	// t.Run("add node vote - error note a validator", testNodeVoteNotAValidator)
-	// t.Run("add node vote - error duplicate vote", testNodeVoteDuplicateVote)
-	// t.Run("add node vote - OK", testNodeVoteOK)
+	t.Run("add node vote - error note a validator", testNodeVoteNotAValidator)
+	t.Run("add node vote - error duplicate vote", testNodeVoteDuplicateVote)
+	t.Run("add node vote - OK", testNodeVoteOK)
 
+	t.Run("on chain time update validated asset", testOnChainTimeUpdate)
+}
+
+func testOnChainTimeUpdate(t *testing.T) {
+	nv := getTestNodeValidation(t)
+	defer nv.ctrl.Finish()
+
+	// first submit a proposal
+	builtinAsset := &types.BuiltinAsset{
+		Name:   "USDC",
+		Symbol: "USDC",
+	}
+
+	now := time.Now()
+	// first closing time < validation time
+	p := &types.Proposal{
+		Reference: "REF",
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: builtinAsset,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	nv.assets.EXPECT().NewAsset(
+		gomock.Any(), gomock.Any()).
+		Times(1).Return("ASSETID", nil)
+
+	ch := make(chan struct{}, 1)
+	asset := builtin.New("ASSETID", builtinAsset)
+	nv.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(string) (assets.Asset, error) {
+		ch <- struct{}{}
+		return asset, nil
+	})
+
+	err := nv.Start(p)
+	<-ch
+	assert.NoError(t, err)
+
+	// here we gonna wait just a little because hte validation is done asynchronously, and while we use a channel previously to ensure that the function to get the asset we not sure we ran through the validation already
+	time.Sleep(50 * time.Millisecond)
+
+	nv.top.EXPECT().Len().AnyTimes().Return(1)
+	nv.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+
+	// no we call time update once.
+	// this will call the commander to send the NodeVote
+	// and return 0 validatedProposals
+	validatedProposals := nv.OnChainTimeUpdate(now.Add(1 * time.Second))
+	assert.Len(t, validatedProposals, 0)
+
+	// no we submit the vote
+
+	v := &types.NodeVote{
+		Reference: "REF",
+		PubKey:    []byte("avalidator"),
+	}
+
+	nv.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
+	err = nv.AddNodeVote(v)
+	assert.NoError(t, err)
+
+	//we call time update once more now that the proposal should have all node votes
+	validatedProposals = nv.OnChainTimeUpdate(now.Add(1 * time.Second))
+	assert.Len(t, validatedProposals, 1)
 }
 
 func testNodeValidationRequiredTrue(t *testing.T) {
@@ -118,6 +191,178 @@ func testNodeVoteInvalidProposalReference(t *testing.T) {
 
 	err := nv.AddNodeVote(v)
 	assert.EqualError(t, err, governance.ErrInvalidProposalReferenceForNodeVote.Error())
+}
+
+func testNodeVoteNotAValidator(t *testing.T) {
+	nv := getTestNodeValidation(t)
+	defer nv.ctrl.Finish()
+
+	// first submit a proposal
+	builtinAsset := &types.BuiltinAsset{
+		Name:   "USDC",
+		Symbol: "USDC",
+	}
+
+	now := time.Now()
+	// first closing time < validation time
+	p := &types.Proposal{
+		Reference: "REF",
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: builtinAsset,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	nv.assets.EXPECT().NewAsset(
+		gomock.Any(), gomock.Any()).
+		Times(1).Return("ASSETID", nil)
+
+	ch := make(chan struct{}, 1)
+	asset := builtin.New("ASSETID", builtinAsset)
+	nv.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(string) (assets.Asset, error) {
+		ch <- struct{}{}
+		return asset, nil
+	})
+
+	err := nv.Start(p)
+	<-ch
+	assert.NoError(t, err)
+
+	// no we submit the vote
+
+	v := &types.NodeVote{
+		Reference: "REF",
+		PubKey:    []byte("notavalidator"),
+	}
+
+	nv.top.EXPECT().Exists(gomock.Any()).Times(1).Return(false)
+	err = nv.AddNodeVote(v)
+	assert.EqualError(t, err, governance.ErrNodeIsNotAValidator.Error())
+}
+
+func testNodeVoteDuplicateVote(t *testing.T) {
+	nv := getTestNodeValidation(t)
+	defer nv.ctrl.Finish()
+
+	// first submit a proposal
+	builtinAsset := &types.BuiltinAsset{
+		Name:   "USDC",
+		Symbol: "USDC",
+	}
+
+	now := time.Now()
+	// first closing time < validation time
+	p := &types.Proposal{
+		Reference: "REF",
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: builtinAsset,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	nv.assets.EXPECT().NewAsset(
+		gomock.Any(), gomock.Any()).
+		Times(1).Return("ASSETID", nil)
+
+	ch := make(chan struct{}, 1)
+	asset := builtin.New("ASSETID", builtinAsset)
+	nv.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(string) (assets.Asset, error) {
+		ch <- struct{}{}
+		return asset, nil
+	})
+
+	err := nv.Start(p)
+	<-ch
+	assert.NoError(t, err)
+
+	// no we submit the vote
+
+	v := &types.NodeVote{
+		Reference: "REF",
+		PubKey:    []byte("notavalidator"),
+	}
+
+	nv.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
+	err = nv.AddNodeVote(v)
+	assert.NoError(t, err)
+
+	nv.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
+	err = nv.AddNodeVote(v)
+	assert.EqualError(t, err, governance.ErrDuplicateVoteFromNode.Error())
+}
+
+func testNodeVoteOK(t *testing.T) {
+	nv := getTestNodeValidation(t)
+	defer nv.ctrl.Finish()
+
+	// first submit a proposal
+	builtinAsset := &types.BuiltinAsset{
+		Name:   "USDC",
+		Symbol: "USDC",
+	}
+
+	now := time.Now()
+	// first closing time < validation time
+	p := &types.Proposal{
+		Reference: "REF",
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetSource{
+						Source: &types.AssetSource_BuiltinAsset{
+							BuiltinAsset: builtinAsset,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	nv.assets.EXPECT().NewAsset(
+		gomock.Any(), gomock.Any()).
+		Times(1).Return("ASSETID", nil)
+
+	ch := make(chan struct{}, 1)
+	asset := builtin.New("ASSETID", builtinAsset)
+	nv.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(string) (assets.Asset, error) {
+		ch <- struct{}{}
+		return asset, nil
+	})
+
+	err := nv.Start(p)
+	<-ch
+	assert.NoError(t, err)
+
+	// no we submit the vote
+
+	v := &types.NodeVote{
+		Reference: "REF",
+		PubKey:    []byte("notavalidator"),
+	}
+
+	nv.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
+	err = nv.AddNodeVote(v)
+	assert.NoError(t, err)
 }
 
 func testStartErrorCheckProposalFailed(t *testing.T) {

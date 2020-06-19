@@ -151,6 +151,7 @@ func (n *NodeValidation) AddNodeVote(nv *types.NodeVote) error {
 	if !n.top.Exists(nv.PubKey) {
 		n.log.Error("non-validator node tried to register node vote",
 			logging.String("pubkey", hex.EncodeToString(nv.PubKey)))
+		return ErrNodeIsNotAValidator
 	}
 
 	_, ok = np.votes[string(nv.PubKey)]
