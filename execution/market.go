@@ -51,6 +51,13 @@ var (
 	// ErrInvalidOrderType is returned if processed order has an invalid order type
 	ErrInvalidOrderType = errors.New("invalid order type")
 
+	// ErrProductTypeNotSupported is returned if product type supplied via governance is not yet supported
+	// (this error should really never occur)
+	ErrProductTypeNotSupported = errors.New("product type is not supported")
+
+	// ErrInvalidTradingMode is returned if supplied trading is not valid (has to be either continuous or descrete)
+	ErrInvalidTradingMode = errors.New("trading mode is invalid")
+
 	networkPartyID = "network"
 )
 
