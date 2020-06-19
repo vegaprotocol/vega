@@ -22,7 +22,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type ContinuousTrading struct {
-	// Duration in nanoseconds, maximum 1 month
+	// Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
 	DurationNs           int64    `protobuf:"varint,1,opt,name=durationNs,proto3" json:"durationNs,omitempty"`
 	TickSize             uint64   `protobuf:"varint,2,opt,name=tickSize,proto3" json:"tickSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -70,7 +70,7 @@ func (m *ContinuousTrading) GetTickSize() uint64 {
 }
 
 type DiscreteTrading struct {
-	// Duration in nanoseconds, maximum 1 month
+	// Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
 	DurationNs           int64    `protobuf:"varint,1,opt,name=durationNs,proto3" json:"durationNs,omitempty"`
 	TickSize             uint64   `protobuf:"varint,2,opt,name=tickSize,proto3" json:"tickSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`

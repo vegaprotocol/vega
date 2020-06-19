@@ -960,7 +960,8 @@
         "MODEL_LOG_NORMAL"
       ],
       "default": "MODEL_UNSPECIFIED",
-      "title": "- MODEL_UNSPECIFIED: Default value, always invalid.\n - MODEL_SIMPLE: Simple risk model\n - MODEL_LOG_NORMAL: Log normal risk model"
+      "description": "- MODEL_UNSPECIFIED: Default value, always invalid.\n - MODEL_SIMPLE: Simple risk model\n - MODEL_LOG_NORMAL: Log normal risk model",
+      "title": "Predefined risk models"
     },
     "VoteValue": {
       "type": "string",
@@ -1604,7 +1605,7 @@
         "durationNs": {
           "type": "string",
           "format": "int64",
-          "title": "Duration in nanoseconds, maximum 1 month"
+          "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
         },
         "tickSize": {
           "type": "string",
@@ -1618,7 +1619,7 @@
         "durationNs": {
           "type": "string",
           "format": "int64",
-          "title": "Duration in nanoseconds, maximum 1 month"
+          "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
         },
         "tickSize": {
           "type": "string",
@@ -1680,16 +1681,19 @@
         }
       }
     },
-    "vegaFutureConfiguration": {
+    "vegaFutureProduct": {
       "type": "object",
       "properties": {
         "maturity": {
-          "type": "string"
+          "type": "string",
+          "title": "Future product maturity"
         },
         "asset": {
-          "type": "string"
+          "type": "string",
+          "title": "Product asset name"
         }
-      }
+      },
+      "title": "Future product configuration"
     },
     "vegaGovernanceData": {
       "type": "object",
@@ -1773,19 +1777,23 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Instrument name"
         },
         "code": {
-          "type": "string"
+          "type": "string",
+          "title": "Instrument code"
         },
         "baseName": {
-          "type": "string"
+          "type": "string",
+          "title": "Base security used as the reference"
         },
         "quoteName": {
-          "type": "string"
+          "type": "string",
+          "title": "Quote (secondary) security"
         },
         "future": {
-          "$ref": "#/definitions/vegaFutureConfiguration"
+          "$ref": "#/definitions/vegaFutureProduct"
         }
       }
     },
@@ -2033,14 +2041,24 @@
       "type": "object",
       "properties": {
         "instrument": {
-          "$ref": "#/definitions/vegaIntrumentConfiguration"
+          "$ref": "#/definitions/vegaIntrumentConfiguration",
+          "title": "New market instrument configuration"
         },
         "decimalPlaces": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "Decimal places used for the new market"
         },
         "risk": {
-          "$ref": "#/definitions/vegaRiskConfiguration"
+          "$ref": "#/definitions/vegaRiskConfiguration",
+          "title": "New market risk configuration"
+        },
+        "metadata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "New market meta data, tags"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -2365,18 +2383,16 @@
       "type": "object",
       "properties": {
         "model": {
-          "$ref": "#/definitions/RiskConfigurationModel"
+          "$ref": "#/definitions/RiskConfigurationModel",
+          "title": "Selected risk model"
         },
         "simple": {
           "$ref": "#/definitions/vegaSimpleModelParams",
           "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
         },
         "logNormal": {
-          "$ref": "#/definitions/vegaLogNormalModelParams",
+          "$ref": "#/definitions/vegaLogNormalRiskModel",
           "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
-        },
-        "marginCalculator": {
-          "$ref": "#/definitions/vegaMarginCalculator"
         }
       }
     },

@@ -162,6 +162,7 @@ func NewMarket(
 		now.UnixNano(),
 		mkt.GetId(),
 	)
+	z := time.Hour
 	settleEngine := settlement.New(
 		log,
 		settlementConfig,

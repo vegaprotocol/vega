@@ -41,14 +41,9 @@ func (this *RiskConfiguration) Validate() error {
 			}
 		}
 	}
-	if this.MarginCalculator != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginCalculator); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("MarginCalculator", err)
-		}
-	}
 	return nil
 }
-func (this *FutureConfiguration) Validate() error {
+func (this *FutureProduct) Validate() error {
 	return nil
 }
 func (this *IntrumentConfiguration) Validate() error {

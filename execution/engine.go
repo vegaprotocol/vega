@@ -275,7 +275,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
-			logging.String("market-name", marketConfig.GetName()),
+			logging.String("market-id", marketConfig.Id),
 			logging.Error(err),
 		)
 	}

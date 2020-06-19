@@ -577,7 +577,7 @@
             <ul>
 
                 <li>
-                  <a href="#vega.FutureConfiguration"><span class="badge">M</span>FutureConfiguration</a>
+                  <a href="#vega.FutureProduct"><span class="badge">M</span>FutureProduct</a>
                 </li>
 
                 <li>
@@ -4707,8 +4707,8 @@
       <p></p>
 
 
-        <h3 id="vega.FutureConfiguration">FutureConfiguration</h3>
-        <p></p>
+        <h3 id="vega.FutureProduct">FutureProduct</h3>
+        <p>Future product configuration</p>
 
 
           <table class="field-table">
@@ -4721,14 +4721,14 @@
                   <td>maturity</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Future product maturity </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Product asset name </p></td>
                 </tr>
 
             </tbody>
@@ -4790,33 +4790,33 @@
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Instrument name </p></td>
                 </tr>
 
                 <tr>
                   <td>code</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Instrument code </p></td>
                 </tr>
 
                 <tr>
                   <td>baseName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Base security used as the reference </p></td>
                 </tr>
 
                 <tr>
                   <td>quoteName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Quote (secondary) security </p></td>
                 </tr>
 
                 <tr>
                   <td>future</td>
-                  <td><a href="#vega.FutureConfiguration">FutureConfiguration</a></td>
+                  <td><a href="#vega.FutureProduct">FutureProduct</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5077,21 +5077,28 @@
                   <td>instrument</td>
                   <td><a href="#vega.IntrumentConfiguration">IntrumentConfiguration</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>New market instrument configuration </p></td>
                 </tr>
 
                 <tr>
                   <td>decimalPlaces</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Decimal places used for the new market </p></td>
                 </tr>
 
                 <tr>
                   <td>risk</td>
                   <td><a href="#vega.RiskConfiguration">RiskConfiguration</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>New market risk configuration </p></td>
+                </tr>
+
+                <tr>
+                  <td>metadata</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>New market meta data, tags </p></td>
                 </tr>
 
                 <tr>
@@ -5392,7 +5399,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>model</td>
                   <td><a href="#vega.RiskConfiguration.Model">RiskConfiguration.Model</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Selected risk model </p></td>
                 </tr>
 
                 <tr>
@@ -5404,16 +5411,9 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
                 <tr>
                   <td>logNormal</td>
-                  <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
+                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
                   <td></td>
                   <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
-                </tr>
-
-                <tr>
-                  <td>marginCalculator</td>
-                  <td><a href="#vega.MarginCalculator">MarginCalculator</a></td>
-                  <td></td>
-                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -5658,7 +5658,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
         </table>
 
         <h3 id="vega.RiskConfiguration.Model">RiskConfiguration.Model</h3>
-        <p></p>
+        <p>Predefined risk models</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -5741,7 +5741,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>durationNs</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Duration in nanoseconds, maximum 1 month </p></td>
+                  <td><p>Duration in nanoseconds, maximum 1 month (2592000000000000 ns) </p></td>
                 </tr>
 
                 <tr>
@@ -5801,7 +5801,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>durationNs</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Duration in nanoseconds, maximum 1 month </p></td>
+                  <td><p>Duration in nanoseconds, maximum 1 month (2592000000000000 ns) </p></td>
                 </tr>
 
                 <tr>

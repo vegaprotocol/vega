@@ -35,7 +35,7 @@ message UpdateMarket {
 
 
 message RiskConfiguration {
-
+  // Predefined risk models
   enum Model {
     // Default value, always invalid.
     MODEL_UNSPECIFIED = 0;
@@ -46,40 +46,52 @@ message RiskConfiguration {
   
     // @TODO: replace this enum with one defined in the risk package once it is ready
   }
-
+  // Selected risk model
   Model model = 1 [(validator.field) = {is_in_enum : true}];
+  // Risk model parameters
   oneof parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
     SimpleModelParams simple = 100;
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
-    LogNormalModelParams logNormal = 101;
+    LogNormalRiskModel logNormal = 101;
   }
-
-  MarginCalculator marginCalculator = 2;
 }
 
-message FutureConfiguration {
+// Future product configuration
+message FutureProduct {
+  // Future product maturity
   string maturity = 1;
+  // Product asset name
   string asset = 2;
 }
 
 message IntrumentConfiguration {
+  // Instrument name
   string name = 1 [(validator.field) = {string_not_empty : true}];
+  // Instrument code
   string code = 2 [(validator.field) = {string_not_empty : true}];
+  // Base security used as the reference
   string baseName = 3 [(validator.field) = {string_not_empty : true}];
+  // Quote (secondary) security 
   string quoteName = 4 [(validator.field) = {string_not_empty : true}];
-
+  // Product specification
   oneof product {
-    FutureConfiguration future = 100;
+    FutureProduct future = 100;
 
-    //@TODO: add more products
+    //@TODO: more products
   }
 }
 
 message NewMarketConfiguration {
+  // New market instrument configuration
   IntrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
+  // Decimal places used for the new market
   uint64 decimalPlaces = 2 [(validator.field) = {int_lt: 100}];
+  // New market risk configuration
   RiskConfiguration risk = 3 [(validator.field) = {msg_exists: true}];
+  // New market meta data, tags
+  repeated string metadata = 4;
+  // Trading mode
   oneof tradingMode {
     ContinuousTrading continuous = 200;
     DiscreteTrading discrete = 201;

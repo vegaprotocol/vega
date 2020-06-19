@@ -110,7 +110,7 @@
 
 
 - [proto/governance.proto](#proto/governance.proto)
-    - [FutureConfiguration](#vega.FutureConfiguration)
+    - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [IntrumentConfiguration](#vega.IntrumentConfiguration)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
@@ -1746,16 +1746,16 @@
 
 
 
-<a name="vega.FutureConfiguration"></a>
+<a name="vega.FutureProduct"></a>
 
-### FutureConfiguration
-
+### FutureProduct
+Future product configuration
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maturity | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
+| maturity | [string](#string) |  | Future product maturity |
+| asset | [string](#string) |  | Product asset name |
 
 
 
@@ -1787,11 +1787,11 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| code | [string](#string) |  |  |
-| baseName | [string](#string) |  |  |
-| quoteName | [string](#string) |  |  |
-| future | [FutureConfiguration](#vega.FutureConfiguration) |  |  |
+| name | [string](#string) |  | Instrument name |
+| code | [string](#string) |  | Instrument code |
+| baseName | [string](#string) |  | Base security used as the reference |
+| quoteName | [string](#string) |  | Quote (secondary) security |
+| future | [FutureProduct](#vega.FutureProduct) |  |  |
 
 
 
@@ -1858,9 +1858,10 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instrument | [IntrumentConfiguration](#vega.IntrumentConfiguration) |  |  |
-| decimalPlaces | [uint64](#uint64) |  |  |
-| risk | [RiskConfiguration](#vega.RiskConfiguration) |  |  |
+| instrument | [IntrumentConfiguration](#vega.IntrumentConfiguration) |  | New market instrument configuration |
+| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
+| risk | [RiskConfiguration](#vega.RiskConfiguration) |  | New market risk configuration |
+| metadata | [string](#string) | repeated | New market meta data, tags |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -1918,10 +1919,9 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| model | [RiskConfiguration.Model](#vega.RiskConfiguration.Model) |  |  |
+| model | [RiskConfiguration.Model](#vega.RiskConfiguration.Model) |  | Selected risk model |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
-| logNormal | [LogNormalModelParams](#vega.LogNormalModelParams) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
-| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
+| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 
 
 
@@ -1999,7 +1999,7 @@ Proposal can enter Failed state from any other state.
 <a name="vega.RiskConfiguration.Model"></a>
 
 ### RiskConfiguration.Model
-
+Predefined risk models
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -2044,7 +2044,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month |
+| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
 | tickSize | [uint64](#uint64) |  |  |
 
 
@@ -2060,7 +2060,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month |
+| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
 | tickSize | [uint64](#uint64) |  |  |
 
 

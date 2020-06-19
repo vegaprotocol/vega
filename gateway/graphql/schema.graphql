@@ -442,14 +442,18 @@ type Statistics {
 
 "A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
-  "Size of an increment in price in terms of the quote currency (uint64)"
-  tickSize: Int
+  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+  duration: Int!
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
 "Some non continuous trading mode"
 type DiscreteTrading {
-  "Duration of the trading (uint64)"
-  duration: Int
+  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+  duration: Int!
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
 union TradingMode =
@@ -1082,53 +1086,19 @@ enum AccountType {
   General
 }
 
-input InstrumentMetadatInput {
-  "An arbitrary list of tags to associated to associate to the Instrument"
-  tags: [String]!
+"Predefined risk models"
+enum RiskModelType {
+  "Simple risk model"
+  Simple
+  "Log normal risk model"
+  LogNormal
 }
 
-input EthereumEventInput {
-  "The ID of the ethereum contract to use"
-  contractId: String!
-
-  "Name of the Ethereum event to listen to"
-  event: String!
-}
-
-input FutureInput {
-  "The maturity date of the product"
-  maturity: String!
-
-  "The name of the asset"
-  asset: String!
-
-  "The oracle used for this product"
-  ethereumOracle: EthereumEventInput!
-}
-
-input InstrumentInput {
-  "Uniquely identify an instrument accrods all instruments available on Vega"
-  id: String!
-
-  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
-  code: String!
-
-  "Full and fairly descriptive name for the instrument"
-  name: String!
-
-  "String representing the base (e.g. BTCUSD -> BTC is base)"
-  baseName: String!
-
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
-
-  initialMarkPrice: String!
-
-  "Metadata for this instrument"
-  metadata: InstrumentMetadatInput!
-
-  "A reference to or instance of a fully specified product, including all required product parameters for that product"
-  futureProduct: FutureInput!
+input SimpleRiskModelParamsInput {
+  "Risk factor for long"
+  factorLong: Float!
+  "Risk factor for short"
+  factorShort: Float!
 }
 
 input LogNormalModelParamsInput {
@@ -1140,13 +1110,6 @@ input LogNormalModelParamsInput {
   sigma: Float!
 }
 
-input SimpleRiskModelParamsInput {
-  "Risk factor for long"
-  factorLong: Float!
-  "Risk factor for short"
-  factorShort: Float!
-}
-
 input LogNormalRiskModelInput {
   "Lambda parameter of the risk model"
   riskAversionParameter: Float!
@@ -1156,57 +1119,109 @@ input LogNormalRiskModelInput {
   params: LogNormalModelParamsInput!
 }
 
-input SimpleRiskModelInput {
-  "Params for the simple risk model"
-  params: SimpleRiskModelParamsInput!
+input RiskInput {
+  model: RiskModelType!
+  "Simple risk model parameters. Set only if risk model is Simple"
+  simpleParameters: SimpleRiskModelParamsInput
+  "Log normal risk model parameters. Set only if risk model is LogNormal"
+  logNormalParameters: LogNormalRiskModelInput
 }
 
-input ScalingFactorsInput {
-  "the scaling factor that determines the margin level at which we have to search for more money"
-  searchLevel: Float!
-
-  "the scaling factor that determines the optimal margin level"
-  initialMargin: Float!
-
-  "The scaling factor that determines the overflow margin level"
-  collateralRelease: Float!
+type Risk {
+  model: RiskModel!
+  "Simple risk model parameters. Set only if risk model is Simple"
+  simpleParameters: SimpleRiskModelParams
+  "Log normal risk model parameters. Set only if risk model is LogNormal"
+  logNormalParameters: LogNormalRiskModel
 }
 
-
-input MarginCalculatorInput {
-  "The scaling factors that will be used for margin calculation"
-  scalingFactors: ScalingFactorsInput!
+"Future product configuration"
+input FutureProductInput {
+  "Future product maturity"
+  maturity: String!
+  "Product asset name"
+  asset: String!
 }
 
-"Input variation of tradable instrument details"
-input TradableInstrumentInput {
-  instrument: InstrumentInput!
-
-  simpleRiskModel: SimpleRiskModelInput
-  logNormalRiskModel: LogNormalRiskModelInput
-
-  marginCalculator: MarginCalculatorInput
+type FutureProduct {
+  "Future product maturity"
+  maturity: String!
+  "Product asset name"
+  asset: String!
 }
 
+input IntrumentConfigurationInput {
+  "Full and fairly descriptive name for the instrument"
+  name: String!
 
-input ContinuousTradingInput {
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
+  code: String!
+
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
+  "Metadata for this instrument, tags"
+  metadata: [String]!
+
+  "Future product specification"
+  futureProduct: FutureProductInput
+}
+
+type IntrumentConfiguration {
+  "Full and fairly descriptive name for the instrument"
+  name: String!
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
+  code: String!
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+  "Metadata for this instrument, tags"
+  metadata: [String]!
+  "Future product specification"
+  futureProduct: FutureProduct
+}
+
+enum TradingModeType {
+  Continuous
+  Discrete
+}
+
+input TradingModeInput {
+  mode: TradingModeType
+  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+  duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
-input DiscreteTradingInput {
-  "Duration of the trading"
-  duration: Int!
+"""
+Allows creating new markets on the network
+"""
+input NewMarketInput {
+  "New market instrument configuration"
+  instrument: IntrumentConfigurationInput!
+  "Decimal places used for the new market"
+  decimalPlaces: Int!
+  "New market risk configuration"
+  risk: RiskInput!
+
+  "Trading mode"
+  tradingMode: TradingModeInput!
 }
 
-
-"Input variation of market details same to those defined in Market type"
-input MarketInput {
-  name: String!
-  tradableInstrument: TradableInstrumentInput!
-  continuousTradingMode: ContinuousTradingInput
-  discreteTradingMode: DiscreteTradingInput
+type NewMarket {
+  "New market instrument configuration"
+  instrument: IntrumentConfiguration!
+  "Decimal places used for the new market"
   decimalPlaces: Int!
+  "New market risk configuration"
+  risk: Risk!
+  "Trading mode"
+  tradingMode: TradingMode!
 }
 
 """
@@ -1220,15 +1235,6 @@ input UpdateMarketInput {
   marketId: String!
 }
 
-"""
-Allows creating new markets on the network
-"""
-type NewMarket {
-  market: Market!
-}
-input NewMarketInput {
-  market: MarketInput!
-}
 
 "Allows submitting a proposal for changing governance network parameters"
 type UpdateNetwork {
@@ -1329,7 +1335,7 @@ input UpdateNetworkInput {
 }
 
 
-union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
