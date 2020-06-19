@@ -577,7 +577,15 @@
             <ul>
 
                 <li>
+                  <a href="#vega.FutureConfiguration"><span class="badge">M</span>FutureConfiguration</a>
+                </li>
+
+                <li>
                   <a href="#vega.GovernanceData"><span class="badge">M</span>GovernanceData</a>
+                </li>
+
+                <li>
+                  <a href="#vega.IntrumentConfiguration"><span class="badge">M</span>IntrumentConfiguration</a>
                 </li>
 
                 <li>
@@ -605,6 +613,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.RiskConfiguration"><span class="badge">M</span>RiskConfiguration</a>
+                </li>
+
+                <li>
                   <a href="#vega.UpdateMarket"><span class="badge">M</span>UpdateMarket</a>
                 </li>
 
@@ -622,7 +634,7 @@
                 </li>
 
                 <li>
-                  <a href="#vega.RiskModel"><span class="badge">E</span>RiskModel</a>
+                  <a href="#vega.RiskConfiguration.Model"><span class="badge">E</span>RiskConfiguration.Model</a>
                 </li>
 
                 <li>
@@ -4695,6 +4707,37 @@
       <p></p>
 
 
+        <h3 id="vega.FutureConfiguration">FutureConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>maturity</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.GovernanceData">GovernanceData</h3>
         <p></p>
 
@@ -4728,6 +4771,118 @@
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.IntrumentConfiguration">IntrumentConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>code</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>baseName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>future</td>
+                  <td><a href="#vega.FutureConfiguration">FutureConfiguration</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>name</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>code</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>baseName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -4919,36 +5074,8 @@
             <tbody>
 
                 <tr>
-                  <td>instrumentName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>name of an existing instrument to be used by the new market </p></td>
-                </tr>
-
-                <tr>
-                  <td>instrumentCode</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>code of an existing instrument to be used by the new market </p></td>
-                </tr>
-
-                <tr>
-                  <td>baseName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>quoteName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>marginCalculator</td>
-                  <td><a href="#vega.MarginCalculator">MarginCalculator</a></td>
+                  <td>instrument</td>
+                  <td><a href="#vega.IntrumentConfiguration">IntrumentConfiguration</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4961,36 +5088,8 @@
                 </tr>
 
                 <tr>
-                  <td>productMaturity</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>productAsset</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>riskModel</td>
-                  <td><a href="#vega.RiskModel">RiskModel</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>logNormal</td>
-                  <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>simple</td>
-                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
+                  <td>risk</td>
+                  <td><a href="#vega.RiskConfiguration">RiskConfiguration</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5026,77 +5125,33 @@
               <tbody>
 
                 <tr>
-                  <td>instrumentName</td>
+                  <td>instrument</td>
                   <td>
                     <ul>
 
-                      <li>string_not_empty: true</li>
+                      <li>msg_exists: true</li>
 
                     </ul>
                   </td>
                 </tr>
 
                 <tr>
-                  <td>instrumentCode</td>
+                  <td>decimalPlaces</td>
                   <td>
                     <ul>
 
-                      <li>string_not_empty: true</li>
+                      <li>int_lt: 100</li>
 
                     </ul>
                   </td>
                 </tr>
 
                 <tr>
-                  <td>baseName</td>
+                  <td>risk</td>
                   <td>
                     <ul>
 
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>quoteName</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>productMaturity</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>productAsset</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>riskModel</td>
-                  <td>
-                    <ul>
-
-                      <li>is_in_enum: true</li>
+                      <li>msg_exists: true</li>
 
                     </ul>
                   </td>
@@ -5323,6 +5378,78 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
+        <h3 id="vega.RiskConfiguration">RiskConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>model</td>
+                  <td><a href="#vega.RiskConfiguration.Model">RiskConfiguration.Model</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>simple</td>
+                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
+                  <td></td>
+                  <td><p>Simple risk model parameters, valid only if MODEL_SIMPLE is selected </p></td>
+                </tr>
+
+                <tr>
+                  <td>logNormal</td>
+                  <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
+                  <td></td>
+                  <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
+                </tr>
+
+                <tr>
+                  <td>marginCalculator</td>
+                  <td><a href="#vega.MarginCalculator">MarginCalculator</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>model</td>
+                  <td>
+                    <ul>
+
+                      <li>is_in_enum: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
         <h3 id="vega.UpdateMarket">UpdateMarket</h3>
         <p>TODO</p>
 
@@ -5530,7 +5657,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
           </tbody>
         </table>
 
-        <h3 id="vega.RiskModel">RiskModel</h3>
+        <h3 id="vega.RiskConfiguration.Model">RiskConfiguration.Model</h3>
         <p></p>
         <table class="enum-table">
           <thead>
@@ -5539,21 +5666,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
           <tbody>
 
               <tr>
-                <td>RISK_MODEL_UNSPECIFIED</td>
+                <td>MODEL_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
-                <td>RISK_MODEL_SIMPLE</td>
+                <td>MODEL_SIMPLE</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Simple risk model</p></td>
               </tr>
 
               <tr>
-                <td>RISK_MODEL_LOG_NORMAL</td>
+                <td>MODEL_LOG_NORMAL</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>Log normal risk model</p></td>
               </tr>
 
           </tbody>
@@ -5611,6 +5738,13 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
             <tbody>
 
                 <tr>
+                  <td>durationNs</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Duration in nanoseconds, maximum 1 month </p></td>
+                </tr>
+
+                <tr>
                   <td>tickSize</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
@@ -5619,6 +5753,35 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>durationNs</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                      <li>int_lt: 2592000000000000</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -5635,14 +5798,50 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
             <tbody>
 
                 <tr>
-                  <td>duration</td>
+                  <td>durationNs</td>
                   <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Duration in nanoseconds, maximum 1 month </p></td>
+                </tr>
+
+                <tr>
+                  <td>tickSize</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>durationNs</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                      <li>int_lt: 2592000000000000</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 

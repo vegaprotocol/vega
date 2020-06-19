@@ -110,19 +110,22 @@
 
 
 - [proto/governance.proto](#proto/governance.proto)
+    - [FutureConfiguration](#vega.FutureConfiguration)
     - [GovernanceData](#vega.GovernanceData)
+    - [IntrumentConfiguration](#vega.IntrumentConfiguration)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
+    - [RiskConfiguration](#vega.RiskConfiguration)
     - [UpdateMarket](#vega.UpdateMarket)
     - [UpdateNetwork](#vega.UpdateNetwork)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
-    - [RiskModel](#vega.RiskModel)
+    - [RiskConfiguration.Model](#vega.RiskConfiguration.Model)
     - [Vote.Value](#vega.Vote.Value)
 
 
@@ -1743,6 +1746,22 @@
 
 
 
+<a name="vega.FutureConfiguration"></a>
+
+### FutureConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maturity | [string](#string) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="vega.GovernanceData"></a>
 
 ### GovernanceData
@@ -1754,6 +1773,25 @@
 | proposal | [Proposal](#vega.Proposal) |  | Proposal |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
+
+
+
+
+
+
+<a name="vega.IntrumentConfiguration"></a>
+
+### IntrumentConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| code | [string](#string) |  |  |
+| baseName | [string](#string) |  |  |
+| quoteName | [string](#string) |  |  |
+| future | [FutureConfiguration](#vega.FutureConfiguration) |  |  |
 
 
 
@@ -1820,17 +1858,9 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instrumentName | [string](#string) |  | name of an existing instrument to be used by the new market |
-| instrumentCode | [string](#string) |  | code of an existing instrument to be used by the new market |
-| baseName | [string](#string) |  |  |
-| quoteName | [string](#string) |  |  |
-| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
+| instrument | [IntrumentConfiguration](#vega.IntrumentConfiguration) |  |  |
 | decimalPlaces | [uint64](#uint64) |  |  |
-| productMaturity | [string](#string) |  |  |
-| productAsset | [string](#string) |  |  |
-| riskModel | [RiskModel](#vega.RiskModel) |  |  |
-| logNormal | [LogNormalModelParams](#vega.LogNormalModelParams) |  |  |
-| simple | [SimpleModelParams](#vega.SimpleModelParams) |  |  |
+| risk | [RiskConfiguration](#vega.RiskConfiguration) |  |  |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -1874,6 +1904,24 @@ To be implemented
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
 | newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
+
+
+
+
+
+
+<a name="vega.RiskConfiguration"></a>
+
+### RiskConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| model | [RiskConfiguration.Model](#vega.RiskConfiguration.Model) |  |  |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
+| logNormal | [LogNormalModelParams](#vega.LogNormalModelParams) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
+| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
 
 
 
@@ -1948,16 +1996,16 @@ Proposal can enter Failed state from any other state.
 
 
 
-<a name="vega.RiskModel"></a>
+<a name="vega.RiskConfiguration.Model"></a>
 
-### RiskModel
+### RiskConfiguration.Model
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| RISK_MODEL_UNSPECIFIED | 0 |  |
-| RISK_MODEL_SIMPLE | 1 |  |
-| RISK_MODEL_LOG_NORMAL | 2 |  |
+| MODEL_UNSPECIFIED | 0 | Default value, always invalid. |
+| MODEL_SIMPLE | 1 | Simple risk model |
+| MODEL_LOG_NORMAL | 2 | Log normal risk model |
 
 
 
@@ -1996,6 +2044,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month |
 | tickSize | [uint64](#uint64) |  |  |
 
 
@@ -2011,7 +2060,8 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| duration | [int64](#int64) |  |  |
+| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month |
+| tickSize | [uint64](#uint64) |  |  |
 
 
 

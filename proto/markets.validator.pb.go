@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
 
@@ -17,9 +18,21 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *ContinuousTrading) Validate() error {
+	if !(this.DurationNs > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DurationNs", fmt.Errorf(`value '%v' must be greater than '0'`, this.DurationNs))
+	}
+	if !(this.DurationNs < 2592000000000000) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DurationNs", fmt.Errorf(`value '%v' must be less than '2592000000000000'`, this.DurationNs))
+	}
 	return nil
 }
 func (this *DiscreteTrading) Validate() error {
+	if !(this.DurationNs > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DurationNs", fmt.Errorf(`value '%v' must be greater than '0'`, this.DurationNs))
+	}
+	if !(this.DurationNs < 2592000000000000) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DurationNs", fmt.Errorf(`value '%v' must be less than '2592000000000000'`, this.DurationNs))
+	}
 	return nil
 }
 func (this *Future) Validate() error {

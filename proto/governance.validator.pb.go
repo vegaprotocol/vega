@@ -23,12 +23,40 @@ func (this *NetworkConfiguration) Validate() error {
 func (this *UpdateMarket) Validate() error {
 	return nil
 }
-func (this *NewMarketConfiguration) Validate() error {
-	if this.InstrumentName == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("InstrumentName", fmt.Errorf(`value '%v' must not be an empty string`, this.InstrumentName))
+func (this *RiskConfiguration) Validate() error {
+	if _, ok := RiskConfiguration_Model_name[int32(this.Model)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("Model", fmt.Errorf(`value '%v' must be a valid RiskConfiguration_Model field`, this.Model))
 	}
-	if this.InstrumentCode == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("InstrumentCode", fmt.Errorf(`value '%v' must not be an empty string`, this.InstrumentCode))
+	if oneOfNester, ok := this.GetParameters().(*RiskConfiguration_Simple); ok {
+		if oneOfNester.Simple != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Simple); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Simple", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetParameters().(*RiskConfiguration_LogNormal); ok {
+		if oneOfNester.LogNormal != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LogNormal); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LogNormal", err)
+			}
+		}
+	}
+	if this.MarginCalculator != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginCalculator); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarginCalculator", err)
+		}
+	}
+	return nil
+}
+func (this *FutureConfiguration) Validate() error {
+	return nil
+}
+func (this *IntrumentConfiguration) Validate() error {
+	if this.Name == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Name", fmt.Errorf(`value '%v' must not be an empty string`, this.Name))
+	}
+	if this.Code == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Code", fmt.Errorf(`value '%v' must not be an empty string`, this.Code))
 	}
 	if this.BaseName == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("BaseName", fmt.Errorf(`value '%v' must not be an empty string`, this.BaseName))
@@ -36,32 +64,33 @@ func (this *NewMarketConfiguration) Validate() error {
 	if this.QuoteName == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("QuoteName", fmt.Errorf(`value '%v' must not be an empty string`, this.QuoteName))
 	}
-	if this.MarginCalculator != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginCalculator); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("MarginCalculator", err)
-		}
-	}
-	if this.ProductMaturity == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("ProductMaturity", fmt.Errorf(`value '%v' must not be an empty string`, this.ProductMaturity))
-	}
-	if this.ProductAsset == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("ProductAsset", fmt.Errorf(`value '%v' must not be an empty string`, this.ProductAsset))
-	}
-	if _, ok := RiskModel_name[int32(this.RiskModel)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("RiskModel", fmt.Errorf(`value '%v' must be a valid RiskModel field`, this.RiskModel))
-	}
-	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_LogNormal); ok {
-		if oneOfNester.LogNormal != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LogNormal); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("LogNormal", err)
+	if oneOfNester, ok := this.GetProduct().(*IntrumentConfiguration_Future); ok {
+		if oneOfNester.Future != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Future); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Future", err)
 			}
 		}
 	}
-	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_Simple); ok {
-		if oneOfNester.Simple != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Simple); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Simple", err)
-			}
+	return nil
+}
+func (this *NewMarketConfiguration) Validate() error {
+	if nil == this.Instrument {
+		return github_com_mwitkow_go_proto_validators.FieldError("Instrument", fmt.Errorf("message must exist"))
+	}
+	if this.Instrument != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Instrument); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Instrument", err)
+		}
+	}
+	if !(this.DecimalPlaces < 100) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '100'`, this.DecimalPlaces))
+	}
+	if nil == this.Risk {
+		return github_com_mwitkow_go_proto_validators.FieldError("Risk", fmt.Errorf("message must exist"))
+	}
+	if this.Risk != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Risk); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Risk", err)
 		}
 	}
 	if oneOfNester, ok := this.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {

@@ -34,33 +34,52 @@ message UpdateMarket {
 }
 
 
-enum RiskModel {
-  RISK_MODEL_UNSPECIFIED = 0;
-  RISK_MODEL_SIMPLE = 1;
-  RISK_MODEL_LOG_NORMAL = 2;
+message RiskConfiguration {
+
+  enum Model {
+    // Default value, always invalid.
+    MODEL_UNSPECIFIED = 0;
+    // Simple risk model
+    MODEL_SIMPLE = 1;
+    // Log normal risk model
+    MODEL_LOG_NORMAL = 2;
+  
+    // @TODO: replace this enum with one defined in the risk package once it is ready
+  }
+
+  Model model = 1 [(validator.field) = {is_in_enum : true}];
+  oneof parameters {
+    // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
+    SimpleModelParams simple = 100;
+    // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
+    LogNormalModelParams logNormal = 101;
+  }
+
+  MarginCalculator marginCalculator = 2;
 }
 
-message NewMarketConfiguration {
-  // name of an existing instrument to be used by the new market
-  string instrumentName = 1 [(validator.field) = {string_not_empty : true}];
-  // code of an existing instrument to be used by the new market
-  string instrumentCode = 2 [(validator.field) = {string_not_empty : true}];
+message FutureConfiguration {
+  string maturity = 1;
+  string asset = 2;
+}
 
+message IntrumentConfiguration {
+  string name = 1 [(validator.field) = {string_not_empty : true}];
+  string code = 2 [(validator.field) = {string_not_empty : true}];
   string baseName = 3 [(validator.field) = {string_not_empty : true}];
   string quoteName = 4 [(validator.field) = {string_not_empty : true}];
 
-  MarginCalculator marginCalculator = 5;
-  uint64 decimalPlaces = 6;
-  
-  string productMaturity = 7 [(validator.field) = {string_not_empty : true}];
-  string productAsset = 8 [(validator.field) = {string_not_empty : true}];
+  oneof product {
+    FutureConfiguration future = 100;
 
-  RiskModel riskModel = 9 [(validator.field) = {is_in_enum : true}];
-  oneof riskParameters {
-    LogNormalModelParams logNormal = 100;
-    SimpleModelParams simple = 101;
+    //@TODO: add more products
   }
+}
 
+message NewMarketConfiguration {
+  IntrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
+  uint64 decimalPlaces = 2 [(validator.field) = {int_lt: 100}];
+  RiskConfiguration risk = 3 [(validator.field) = {msg_exists: true}];
   oneof tradingMode {
     ContinuousTrading continuous = 200;
     DiscreteTrading discrete = 201;

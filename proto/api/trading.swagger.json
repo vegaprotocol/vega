@@ -952,6 +952,16 @@
       "default": "STATE_UNSPECIFIED",
       "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
+    "RiskConfigurationModel": {
+      "type": "string",
+      "enum": [
+        "MODEL_UNSPECIFIED",
+        "MODEL_SIMPLE",
+        "MODEL_LOG_NORMAL"
+      ],
+      "default": "MODEL_UNSPECIFIED",
+      "title": "- MODEL_UNSPECIFIED: Default value, always invalid.\n - MODEL_SIMPLE: Simple risk model\n - MODEL_LOG_NORMAL: Log normal risk model"
+    },
     "VoteValue": {
       "type": "string",
       "enum": [
@@ -1591,6 +1601,11 @@
     "vegaContinuousTrading": {
       "type": "object",
       "properties": {
+        "durationNs": {
+          "type": "string",
+          "format": "int64",
+          "title": "Duration in nanoseconds, maximum 1 month"
+        },
         "tickSize": {
           "type": "string",
           "format": "uint64"
@@ -1600,9 +1615,14 @@
     "vegaDiscreteTrading": {
       "type": "object",
       "properties": {
-        "duration": {
+        "durationNs": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Duration in nanoseconds, maximum 1 month"
+        },
+        "tickSize": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -1657,6 +1677,17 @@
         },
         "ethereumEvent": {
           "$ref": "#/definitions/vegaEthereumEvent"
+        }
+      }
+    },
+    "vegaFutureConfiguration": {
+      "type": "object",
+      "properties": {
+        "maturity": {
+          "type": "string"
+        },
+        "asset": {
+          "type": "string"
         }
       }
     },
@@ -1737,6 +1768,26 @@
       ],
       "default": "INTERVAL_UNSPECIFIED",
       "title": "- INTERVAL_UNSPECIFIED: Default value, always invalid\n - INTERVAL_I1M: 1 minute\n - INTERVAL_I5M: 5 minutes\n - INTERVAL_I15M: 15 minutes\n - INTERVAL_I1H: 1 hour\n - INTERVAL_I6H: 6 hours\n - INTERVAL_I1D: 1 day"
+    },
+    "vegaIntrumentConfiguration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "baseName": {
+          "type": "string"
+        },
+        "quoteName": {
+          "type": "string"
+        },
+        "future": {
+          "$ref": "#/definitions/vegaFutureConfiguration"
+        }
+      }
     },
     "vegaLedgerEntry": {
       "type": "object",
@@ -1981,41 +2032,15 @@
     "vegaNewMarketConfiguration": {
       "type": "object",
       "properties": {
-        "instrumentName": {
-          "type": "string",
-          "title": "name of an existing instrument to be used by the new market"
-        },
-        "instrumentCode": {
-          "type": "string",
-          "title": "code of an existing instrument to be used by the new market"
-        },
-        "baseName": {
-          "type": "string"
-        },
-        "quoteName": {
-          "type": "string"
-        },
-        "marginCalculator": {
-          "$ref": "#/definitions/vegaMarginCalculator"
+        "instrument": {
+          "$ref": "#/definitions/vegaIntrumentConfiguration"
         },
         "decimalPlaces": {
           "type": "string",
           "format": "uint64"
         },
-        "productMaturity": {
-          "type": "string"
-        },
-        "productAsset": {
-          "type": "string"
-        },
-        "riskModel": {
-          "$ref": "#/definitions/vegaRiskModel"
-        },
-        "logNormal": {
-          "$ref": "#/definitions/vegaLogNormalModelParams"
-        },
-        "simple": {
-          "$ref": "#/definitions/vegaSimpleModelParams"
+        "risk": {
+          "$ref": "#/definitions/vegaRiskConfiguration"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -2336,14 +2361,24 @@
         }
       }
     },
-    "vegaRiskModel": {
-      "type": "string",
-      "enum": [
-        "RISK_MODEL_UNSPECIFIED",
-        "RISK_MODEL_SIMPLE",
-        "RISK_MODEL_LOG_NORMAL"
-      ],
-      "default": "RISK_MODEL_UNSPECIFIED"
+    "vegaRiskConfiguration": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/RiskConfigurationModel"
+        },
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams",
+          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalModelParams",
+          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
+        },
+        "marginCalculator": {
+          "$ref": "#/definitions/vegaMarginCalculator"
+        }
+      }
     },
     "vegaScalingFactors": {
       "type": "object",
