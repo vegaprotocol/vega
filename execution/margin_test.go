@@ -80,7 +80,6 @@ func TestPartialFillMargins(t *testing.T) {
 	addAccount(tm, party2)
 	addAccount(tm, party3)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 
 	// use party 2+3 to set super high mark price
