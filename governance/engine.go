@@ -242,6 +242,10 @@ func (e *Engine) validateProposal(p types.Proposal) error {
 	return nil
 }
 
+func (e *Engine) AddNodeVote(v *types.NodeVote) error {
+	return e.nodeProposalValidation.AddNodeVote(v)
+}
+
 func (e *Engine) AddVote(v types.Vote) error {
 	p, err := e.validateVote(v)
 	if err != nil {
