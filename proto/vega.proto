@@ -521,3 +521,14 @@ message SignedBundle {
     bytes pubKey = 102;
   }
 }
+
+enum NodeSignatureKind {
+  NODE_SIGNATURE_KIND_ASSET_NEW = 0;
+  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 1;
+}
+
+message NodeSignature {
+  string ID = 1;
+  bytes sig = 2;
+  NodeSignatureKind kind = 3;
+}

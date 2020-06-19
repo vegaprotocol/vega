@@ -147,6 +147,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [NodeRegistration](#vega.NodeRegistration)
+    - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
@@ -176,6 +177,7 @@
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -2439,6 +2441,23 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.NodeSignature"></a>
+
+### NodeSignature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| sig | [bytes](#bytes) |  |  |
+| kind | [NodeSignatureKind](#vega.NodeSignatureKind) |  |  |
+
+
+
+
+
+
 <a name="vega.NodeVote"></a>
 
 ### NodeVote
@@ -2963,6 +2982,18 @@ Proposal can enter Failed state from any other state.
 | INTERVAL_I1H | 3600 | 1 hour |
 | INTERVAL_I6H | 21600 | 6 hours |
 | INTERVAL_I1D | 86400 | 1 day |
+
+
+
+<a name="vega.NodeSignatureKind"></a>
+
+### NodeSignatureKind
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NODE_SIGNATURE_KIND_ASSET_NEW | 0 |  |
+| NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 1 |  |
 
 
 
