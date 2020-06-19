@@ -40,10 +40,6 @@ msan: ## Run memory sanitizer
 vet: ## Run go vet
 	@./script/build.sh -a vet
 
-.PHONY: vetshadow
-vetshadow: # Run go vet with shadow detection
-	@./script/build.sh -a vetshadow
-
 .PHONY: coverage
 coverage: ## Generate global code coverage report
 	@./script/build.sh -a coverage

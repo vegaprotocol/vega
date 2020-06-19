@@ -1151,7 +1151,7 @@ func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*pr
 func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("PartyByID", startTime)
-	pty, err := validateParty(ctx, req.PartyID, h.PartyService)
+	pty, err := validateParty(ctx, h.log, req.PartyID, h.PartyService)
 	if err != nil {
 		return nil, err // validateParty already returns an API error, no need to additionally wrap
 	}
@@ -1252,7 +1252,7 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	return mkt, nil
 }
 
-func validateParty(ctx context.Context, partyID string, partyService PartyService) (*types.Party, error) {
+func validateParty(ctx context.Context, log *logging.Logger, partyID string, partyService PartyService) (*types.Party, error) {
 	var pty *types.Party
 	var err error
 	if len(partyID) == 0 {
@@ -1260,7 +1260,13 @@ func validateParty(ctx context.Context, partyID string, partyService PartyServic
 	}
 	pty, err = partyService.GetByID(ctx, partyID)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrPartyServiceGetByID, err)
+		// we just log the error here, then return an nil error.
+		// right now the only error possible is about not finding a party
+		// we just not an actual error
+		log.Debug("error getting party by ID",
+			logging.Error(err),
+			logging.String("party-id", partyID))
+		err = nil
 	}
 	return pty, err
 }
