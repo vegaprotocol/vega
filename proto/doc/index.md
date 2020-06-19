@@ -2045,7 +2045,6 @@ Predefined risk models
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
 | tickSize | [uint64](#uint64) |  |  |
 
 

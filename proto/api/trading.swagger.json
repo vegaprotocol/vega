@@ -1602,11 +1602,6 @@
     "vegaContinuousTrading": {
       "type": "object",
       "properties": {
-        "durationNs": {
-          "type": "string",
-          "format": "int64",
-          "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
-        },
         "tickSize": {
           "type": "string",
           "format": "uint64"

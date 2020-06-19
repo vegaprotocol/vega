@@ -78,7 +78,6 @@ type ComplexityRoot struct {
 	}
 
 	ContinuousTrading struct {
-		Duration func(childComplexity int) int
 		TickSize func(childComplexity int) int
 	}
 
@@ -689,13 +688,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Candle.Volume(childComplexity), true
-
-	case "ContinuousTrading.duration":
-		if e.complexity.ContinuousTrading.Duration == nil {
-			break
-		}
-
-		return e.complexity.ContinuousTrading.Duration(childComplexity), true
 
 	case "ContinuousTrading.tickSize":
 		if e.complexity.ContinuousTrading.TickSize == nil {
@@ -2920,23 +2912,19 @@ type Statistics {
 
 "A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
-  "Duration of continuous trading in nanoseconds. Maximum 1 month."
-  duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
-"Some non continuous trading mode"
+"Frequent batch auctions trading mode"
 type DiscreteTrading {
-  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
-union TradingMode =
-ContinuousTrading
-| DiscreteTrading
+union TradingMode = ContinuousTrading | DiscreteTrading
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -3654,14 +3642,15 @@ type IntrumentConfiguration {
   futureProduct: FutureProduct
 }
 
-enum TradingModeType {
-  Continuous
-  Discrete
+"A mode where Vega try to execute order as soon as they are received"
+input ContinuousTradingInput {
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
-input TradingModeInput {
-  mode: TradingModeType!
-  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+"Frequent batch auctions trading mode"
+input DiscreteTradingInput {
+  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
@@ -3679,8 +3668,11 @@ input NewMarketInput {
   risk: RiskInput!
   "Metadata for this instrument, tags"
   metadata: [String]!
-  "Trading mode"
-  tradingMode: TradingModeInput!
+
+  "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
+  continuousTrading: ContinuousTradingInput
+  "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
+  discreteTrading: DiscreteTradingInput
 }
 
 type NewMarket {
@@ -5364,40 +5356,6 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	res := resTmp.(Interval)
 	fc.Result = res
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ContinuousTrading_duration(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ContinuousTrading",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Duration, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) (ret graphql.Marshaler) {
@@ -14042,6 +14000,48 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Context, obj interface{}) (ContinuousTradingInput, error) {
+	var it ContinuousTradingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "tickSize":
+			var err error
+			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Context, obj interface{}) (DiscreteTradingInput, error) {
+	var it DiscreteTradingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "duration":
+			var err error
+			it.Duration, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tickSize":
+			var err error
+			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputFutureProductInput(ctx context.Context, obj interface{}) (FutureProductInput, error) {
 	var it FutureProductInput
 	var asMap = obj.(map[string]interface{})
@@ -14198,9 +14198,15 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "tradingMode":
+		case "continuousTrading":
 			var err error
-			it.TradingMode, err = ec.unmarshalNTradingModeInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeInput(ctx, v)
+			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "discreteTrading":
+			var err error
+			it.DiscreteTrading, err = ec.unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14297,36 +14303,6 @@ func (ec *executionContext) unmarshalInputSimpleRiskModelParamsInput(ctx context
 		case "factorShort":
 			var err error
 			it.FactorShort, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputTradingModeInput(ctx context.Context, obj interface{}) (TradingModeInput, error) {
-	var it TradingModeInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "mode":
-			var err error
-			it.Mode, err = ec.unmarshalNTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "duration":
-			var err error
-			it.Duration, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "tickSize":
-			var err error
-			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14732,11 +14708,6 @@ func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ContinuousTrading")
-		case "duration":
-			out.Values[i] = ec._ContinuousTrading_duration(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "tickSize":
 			out.Values[i] = ec._ContinuousTrading_tickSize(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -18418,27 +18389,6 @@ func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvega�
 	return ec._TradingMode(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTradingModeInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeInput(ctx context.Context, v interface{}) (TradingModeInput, error) {
-	return ec.unmarshalInputTradingModeInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNTradingModeInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeInput(ctx context.Context, v interface{}) (*TradingModeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNTradingModeInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalNTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, v interface{}) (TradingModeType, error) {
-	var res TradingModeType
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNTradingModeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingModeType(ctx context.Context, sel ast.SelectionSet, v TradingModeType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNTransactionSubmitted2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx context.Context, sel ast.SelectionSet, v TransactionSubmitted) graphql.Marshaler {
 	return ec._TransactionSubmitted(ctx, sel, &v)
 }
@@ -18838,6 +18788,30 @@ func (ec *executionContext) marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Candle(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOContinuousTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx context.Context, v interface{}) (ContinuousTradingInput, error) {
+	return ec.unmarshalInputContinuousTradingInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx context.Context, v interface{}) (*ContinuousTradingInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOContinuousTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx context.Context, v interface{}) (DiscreteTradingInput, error) {
+	return ec.unmarshalInputDiscreteTradingInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx context.Context, v interface{}) (*DiscreteTradingInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {

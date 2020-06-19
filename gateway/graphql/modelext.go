@@ -9,8 +9,8 @@ import (
 var (
 	// ErrNilTradingMode ...
 	ErrNilTradingMode = errors.New("nil trading mode")
-	// ErrInvalidTradingMode ...
-	ErrInvalidTradingMode = errors.New("invalid trading mode")
+	// ErrAmbiguousTradingMode ...
+	ErrAmbiguousTradingMode = errors.New("more than one trading mode selected")
 	// ErrUnimplementedTradingMode ...
 	ErrUnimplementedTradingMode = errors.New("unimplemented trading mode")
 	// ErrNilMarket ...
@@ -64,13 +64,9 @@ func (c *ContinuousTrading) IntoProto() (*types.Market_Continuous, error) {
 	if c.TickSize < 0 {
 		return nil, ErrTickSizeNegative
 	}
-	if c.Duration < 0 {
-		return nil, ErrTradingDurationNegative
-	}
 	return &types.Market_Continuous{
 		Continuous: &types.ContinuousTrading{
-			TickSize:   uint64(c.TickSize),
-			DurationNs: int64(c.Duration),
+			TickSize: uint64(c.TickSize),
 		},
 	}, nil
 }
@@ -282,7 +278,6 @@ func (m *Market) IntoProto() (*types.Market, error) {
 // ContinuousTradingFromProto ...
 func ContinuousTradingFromProto(pct *types.ContinuousTrading) (*ContinuousTrading, error) {
 	return &ContinuousTrading{
-		Duration: int(pct.DurationNs),
 		TickSize: int(pct.TickSize),
 	}, nil
 }
@@ -701,30 +696,35 @@ func (r *RiskInput) IntoProto() (*types.RiskConfiguration, error) {
 	return nil, ErrNilRiskModel
 }
 
-// IntoProto ...
-func (t *TradingModeInput) IntoProto(market *types.NewMarketConfiguration) error {
-	if t.TickSize < 0 {
-		return ErrInvalidTickSize
+// TradingModeIntoProto ...
+func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfiguration) error {
+	if n.ContinuousTrading != nil && n.DiscreteTrading != nil {
+		return ErrAmbiguousTradingMode
+	} else if n.ContinuousTrading == nil && n.DiscreteTrading == nil {
+		return ErrNilTradingMode
 	}
 
-	if t.Mode == TradingModeTypeContinuous {
-		market.TradingMode = &types.NewMarketConfiguration_Continuous{
+	if n.ContinuousTrading != nil {
+		if n.ContinuousTrading.TickSize < 0 {
+			return ErrInvalidTickSize
+		}
+		target.TradingMode = &types.NewMarketConfiguration_Continuous{
 			Continuous: &types.ContinuousTrading{
-				DurationNs: int64(t.Duration),
-				TickSize:   uint64(t.TickSize),
+				TickSize: uint64(n.ContinuousTrading.TickSize),
 			},
 		}
-		return nil
-	} else if t.Mode == TradingModeTypeDiscrete {
-		market.TradingMode = &types.NewMarketConfiguration_Discrete{
+	} else if n.DiscreteTrading != nil {
+		if n.DiscreteTrading.TickSize < 0 {
+			return ErrInvalidTickSize
+		}
+		target.TradingMode = &types.NewMarketConfiguration_Discrete{
 			Discrete: &types.DiscreteTrading{
-				DurationNs: int64(t.Duration),
-				TickSize:   uint64(t.TickSize),
+				DurationNs: int64(n.DiscreteTrading.Duration),
+				TickSize:   uint64(n.DiscreteTrading.TickSize),
 			},
 		}
-		return nil
 	}
-	return ErrInvalidTradingMode
+	return nil
 }
 
 // IntoProto ...
@@ -746,7 +746,7 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		Risk:          risk,
 		DecimalPlaces: uint64(n.DecimalPlaces),
 	}
-	if err := n.TradingMode.IntoProto(result); err != nil {
+	if err := n.TradingModeIntoProto(result); err != nil {
 		return nil, err
 	}
 	for _, tag := range n.Metadata {

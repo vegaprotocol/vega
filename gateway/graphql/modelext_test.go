@@ -473,9 +473,7 @@ func TestModelConverters(t *testing.T) {
 				},
 			},
 			Metadata: []*string{stringptr("tag:1"), stringptr("tag:2")},
-			TradingMode: &gql.TradingModeInput{
-				Mode:     gql.TradingModeTypeContinuous,
-				Duration: 100,
+			ContinuousTrading: &gql.ContinuousTradingInput{
 				TickSize: 10,
 			},
 			DecimalPlaces: 5,
@@ -518,12 +516,10 @@ func TestModelConverters(t *testing.T) {
 				},
 			},
 			Metadata: []*string{stringptr("tag:1"), stringptr("tag:2")},
-			TradingMode: &gql.TradingModeInput{
-				Mode:     gql.TradingModeTypeDiscrete,
+			DiscreteTrading: &gql.DiscreteTradingInput{
 				Duration: 100,
 				TickSize: 10,
 			},
-
 			DecimalPlaces: 5,
 		}
 		pmkt, err := mkt.IntoProto()
@@ -575,8 +571,7 @@ func TestModelConverters(t *testing.T) {
 			DecimalPlaces: 5,
 			TradingMode: &proto.NewMarketConfiguration_Continuous{
 				Continuous: &proto.ContinuousTrading{
-					DurationNs: 100000000,
-					TickSize:   42,
+					TickSize: 42,
 				},
 			},
 		}

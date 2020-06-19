@@ -710,8 +710,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 				DecimalPlaces: 5,
 				TradingMode: &types.NewMarketConfiguration_Continuous{
 					Continuous: &types.ContinuousTrading{
-						TickSize:   10,
-						DurationNs: 10 * time.Hour.Nanoseconds(),
+						TickSize: 10,
 					},
 				},
 			},

@@ -442,23 +442,19 @@ type Statistics {
 
 "A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
-  "Duration of continuous trading in nanoseconds. Maximum 1 month."
-  duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
-"Some non continuous trading mode"
+"Frequent batch auctions trading mode"
 type DiscreteTrading {
-  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
-union TradingMode =
-ContinuousTrading
-| DiscreteTrading
+union TradingMode = ContinuousTrading | DiscreteTrading
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -1176,14 +1172,15 @@ type IntrumentConfiguration {
   futureProduct: FutureProduct
 }
 
-enum TradingModeType {
-  Continuous
-  Discrete
+"A mode where Vega try to execute order as soon as they are received"
+input ContinuousTradingInput {
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
-input TradingModeInput {
-  mode: TradingModeType!
-  "Duration of continuous trading in nanoseconds. Maximum 1 month."
+"Frequent batch auctions trading mode"
+input DiscreteTradingInput {
+  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
@@ -1201,8 +1198,11 @@ input NewMarketInput {
   risk: RiskInput!
   "Metadata for this instrument, tags"
   metadata: [String]!
-  "Trading mode"
-  tradingMode: TradingModeInput!
+
+  "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
+  continuousTrading: ContinuousTradingInput
+  "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
+  discreteTrading: DiscreteTradingInput
 }
 
 type NewMarket {

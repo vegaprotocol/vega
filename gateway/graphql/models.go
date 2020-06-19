@@ -32,23 +32,35 @@ type TradingMode interface {
 
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
-	// Duration of continuous trading in nanoseconds. Maximum 1 month.
-	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency
 	TickSize int `json:"tickSize"`
 }
 
 func (ContinuousTrading) IsTradingMode() {}
 
-// Some non continuous trading mode
+// A mode where Vega try to execute order as soon as they are received
+type ContinuousTradingInput struct {
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
+}
+
+// Frequent batch auctions trading mode
 type DiscreteTrading struct {
-	// Duration of continuous trading in nanoseconds. Maximum 1 month.
+	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency
 	TickSize int `json:"tickSize"`
 }
 
 func (DiscreteTrading) IsTradingMode() {}
+
+// Frequent batch auctions trading mode
+type DiscreteTradingInput struct {
+	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
+	Duration int `json:"duration"`
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
+}
 
 // An Ethereum oracle
 type EthereumEvent struct {
@@ -247,8 +259,10 @@ type NewMarketInput struct {
 	Risk *RiskInput `json:"risk"`
 	// Metadata for this instrument, tags
 	Metadata []*string `json:"metadata"`
-	// Trading mode
-	TradingMode *TradingModeInput `json:"tradingMode"`
+	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
+	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
+	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
+	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
 }
 
 type PreparedAmendOrder struct {
@@ -376,14 +390,6 @@ type TradableInstrument struct {
 	RiskModel RiskModel `json:"riskModel"`
 	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
-}
-
-type TradingModeInput struct {
-	Mode TradingModeType `json:"mode"`
-	// Duration of continuous trading in nanoseconds. Maximum 1 month.
-	Duration int `json:"duration"`
-	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
 }
 
 type TransactionSubmitted struct {
@@ -1024,47 +1030,6 @@ func (e *TradeType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TradeType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type TradingModeType string
-
-const (
-	TradingModeTypeContinuous TradingModeType = "Continuous"
-	TradingModeTypeDiscrete   TradingModeType = "Discrete"
-)
-
-var AllTradingModeType = []TradingModeType{
-	TradingModeTypeContinuous,
-	TradingModeTypeDiscrete,
-}
-
-func (e TradingModeType) IsValid() bool {
-	switch e {
-	case TradingModeTypeContinuous, TradingModeTypeDiscrete:
-		return true
-	}
-	return false
-}
-
-func (e TradingModeType) String() string {
-	return string(e)
-}
-
-func (e *TradingModeType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = TradingModeType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid TradingModeType", str)
-	}
-	return nil
-}
-
-func (e TradingModeType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
