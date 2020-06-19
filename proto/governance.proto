@@ -85,11 +85,11 @@ message IntrumentConfiguration {
 message NewMarketConfiguration {
   // New market instrument configuration
   IntrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
-  // Decimal places used for the new market
-  uint64 decimalPlaces = 2 [(validator.field) = {int_lt: 100}];
   // New market risk configuration
-  RiskConfiguration risk = 3 [(validator.field) = {msg_exists: true}];
-  // New market meta data, tags
+  RiskConfiguration risk = 2 [(validator.field) = {msg_exists: true}];
+  // Decimal places used for the new market
+  uint64 decimalPlaces = 3 [(validator.field) = {int_lt: 150}];
+  // Optional new market meta data, tags
   repeated string metadata = 4;
   // Trading mode
   oneof tradingMode {
