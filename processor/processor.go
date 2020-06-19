@@ -551,7 +551,7 @@ func (p *Processor) startAssetNodeProposal(ctx context.Context, proposal *types.
 		Proposal:   proposal,
 		ctx:        ctx,
 		votes:      map[string]struct{}{},
-		validTime:  time.Unix(proposal.Terms.ValidationTimestamp, 0),
+		validTime:  time.Unix(asset.ValidationTimestamp, 0),
 		validState: notValidAssetProposal,
 		cancel:     cancel,
 		assetID:    assetID,
@@ -666,11 +666,11 @@ func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
 	if asset == nil {
 		return nil
 	}
-	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
+	if prop.Terms.ClosingTimestamp < asset.ValidationTimestamp {
 		return ErrProposalValidationTimestampInvalid
 	}
 	minValid, maxValid := p.currentTimestamp.Add(minValidationPeriod*time.Second), p.currentTimestamp.Add(maxValidationPeriod*time.Second)
-	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
+	if asset.ValidationTimestamp < minValid.Unix() || asset.ValidationTimestamp > maxValid.Unix() {
 		return ErrProposalValidationTimestampInvalid
 	}
 	return nil

@@ -58,15 +58,49 @@ type ProposalParameters struct {
 	MinVoterBalance       float32
 }
 
+// ScalingFactors stores scaling factors for all markets created via governance
+type ScalingFactors struct {
+	SearchLevel       float64
+	InitialMargin     float64
+	CollateralRelease float64
+}
+
+// FutureOracle stores future product oracle configuration
+type FutureOracle struct {
+	ContractID string
+	Event      string
+	Value      uint64
+}
+
 // NetworkParameters stores network parameters per proposal type
 type NetworkParameters struct {
-	newMarkets ProposalParameters
+	NewMarkets          ProposalParameters
+	MarginConfiguration ScalingFactors
+	FutureOracle        FutureOracle
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
 func DefaultNetworkParameters(log *logging.Logger) *NetworkParameters {
 	return &NetworkParameters{
-		newMarkets: defaultNewMarketParameters(log),
+		NewMarkets:          defaultNewMarketParameters(log),
+		MarginConfiguration: defaultMarginConfiguration(),
+		FutureOracle:        defaultFutureOracle(),
+	}
+}
+
+func defaultMarginConfiguration() ScalingFactors {
+	return ScalingFactors{
+		SearchLevel:       1.1,
+		InitialMargin:     1.2,
+		CollateralRelease: 1.4,
+	}
+}
+
+func defaultFutureOracle() FutureOracle {
+	return FutureOracle{
+		ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+		Event:      "price_changed",
+		Value:      1500000,
 	}
 }
 

@@ -98,6 +98,12 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.mu.Unlock()
 }
 
+// GetNetworkParameters returns current state of network parameters defined for governance
+func (e *Engine) GetNetworkParameters() NetworkParameters {
+	//TODO: add synchronisation once it is possible to update network parameters
+	return e.networkParams
+}
+
 // OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t

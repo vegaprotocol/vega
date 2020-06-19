@@ -18,6 +18,11 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *NetworkConfiguration) Validate() error {
+	if this.MarginConfiguration != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginConfiguration); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarginConfiguration", err)
+		}
+	}
 	return nil
 }
 func (this *UpdateMarket) Validate() error {
@@ -83,9 +88,6 @@ func (this *NewMarketConfiguration) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Instrument", err)
 		}
 	}
-	if !(this.DecimalPlaces < 100) {
-		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '100'`, this.DecimalPlaces))
-	}
 	if nil == this.Risk {
 		return github_com_mwitkow_go_proto_validators.FieldError("Risk", fmt.Errorf("message must exist"))
 	}
@@ -93,6 +95,9 @@ func (this *NewMarketConfiguration) Validate() error {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Risk); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Risk", err)
 		}
+	}
+	if !(this.DecimalPlaces < 150) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '150'`, this.DecimalPlaces))
 	}
 	if oneOfNester, ok := this.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
 		if oneOfNester.Continuous != nil {

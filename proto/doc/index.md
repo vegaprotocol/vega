@@ -1754,7 +1754,7 @@ Future product configuration
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maturity | [string](#string) |  | Future product maturity |
+| maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp) |
 | asset | [string](#string) |  | Product asset name |
 
 
@@ -1814,6 +1814,7 @@ Future product configuration
 | requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
 | minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
+| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance |
 
 
 
@@ -1829,6 +1830,7 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | changes | [AssetSource](#vega.AssetSource) |  |  |
+| validationTimestamp | [int64](#int64) |  |  |
 
 
 
@@ -1859,9 +1861,9 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [IntrumentConfiguration](#vega.IntrumentConfiguration) |  | New market instrument configuration |
-| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | risk | [RiskConfiguration](#vega.RiskConfiguration) |  | New market risk configuration |
-| metadata | [string](#string) | repeated | New market meta data, tags |
+| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
+| metadata | [string](#string) | repeated | Optional new market meta data, tags |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -1900,7 +1902,6 @@ To be implemented
 | ----- | ---- | ----- | ----------- |
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal. Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters. |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed). Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. |
-| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition. |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |

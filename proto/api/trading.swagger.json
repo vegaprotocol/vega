@@ -1686,7 +1686,7 @@
       "properties": {
         "maturity": {
           "type": "string",
-          "title": "Future product maturity"
+          "title": "Future product maturity (ISO8601/RFC3339 timestamp)"
         },
         "asset": {
           "type": "string",
@@ -2017,6 +2017,10 @@
           "type": "number",
           "format": "float",
           "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."
+        },
+        "marginConfiguration": {
+          "$ref": "#/definitions/vegaScalingFactors",
+          "title": "Scaling factors for all markets created via governance"
         }
       }
     },
@@ -2025,6 +2029,10 @@
       "properties": {
         "changes": {
           "$ref": "#/definitions/vegaAssetSource"
+        },
+        "validationTimestamp": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "title": "To be implemented"
@@ -2044,21 +2052,21 @@
           "$ref": "#/definitions/vegaIntrumentConfiguration",
           "title": "New market instrument configuration"
         },
+        "risk": {
+          "$ref": "#/definitions/vegaRiskConfiguration",
+          "title": "New market risk configuration"
+        },
         "decimalPlaces": {
           "type": "string",
           "format": "uint64",
           "title": "Decimal places used for the new market"
-        },
-        "risk": {
-          "$ref": "#/definitions/vegaRiskConfiguration",
-          "title": "New market risk configuration"
         },
         "metadata": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "title": "New market meta data, tags"
+          "title": "Optional new market meta data, tags"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -2356,10 +2364,6 @@
           "type": "string",
           "format": "int64",
           "description": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed).\nConstrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters."
-        },
-        "validationTimestamp": {
-          "type": "string",
-          "format": "int64"
         },
         "updateMarket": {
           "$ref": "#/definitions/vegaUpdateMarket",

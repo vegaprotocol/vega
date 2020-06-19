@@ -166,10 +166,10 @@ func testOnTickPending(t *testing.T) {
 							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
+					ValidationTimestamp: validTS.Unix(),
 				},
 			},
-			ClosingTimestamp:    closeTS.Unix(),
-			ValidationTimestamp: validTS.Unix(),
+			ClosingTimestamp: closeTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -253,10 +253,10 @@ func testOnTickSubmit(t *testing.T) {
 							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
+					ValidationTimestamp: validTS.Unix(),
 				},
 			},
-			ClosingTimestamp:    closeTS.Unix(),
-			ValidationTimestamp: validTS.Unix(),
+			ClosingTimestamp: closeTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -345,10 +345,10 @@ func testOnTickSubmitRetry(t *testing.T) {
 							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
+					ValidationTimestamp: validTS.Unix(),
 				},
 			},
-			ClosingTimestamp:    closeTS.Unix(),
-			ValidationTimestamp: validTS.Unix(),
+			ClosingTimestamp: closeTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -452,10 +452,10 @@ func testOnTickWithNodes(t *testing.T) {
 							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
+					ValidationTimestamp: validTS.Unix(),
 				},
 			},
-			ClosingTimestamp:    closeTS.Unix(),
-			ValidationTimestamp: validTS.Unix(),
+			ClosingTimestamp: closeTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -582,10 +582,10 @@ func testOnTickReject(t *testing.T) {
 							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
+					ValidationTimestamp: validTS.Unix(),
 				},
 			},
-			ClosingTimestamp:    closeTS.Unix(),
-			ValidationTimestamp: validTS.Unix(),
+			ClosingTimestamp: closeTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)
@@ -924,10 +924,10 @@ func testProcessAssetProposalSuccess(t *testing.T) {
 							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
+					ValidationTimestamp: validTS.Unix(),
 				},
 			},
-			ClosingTimestamp:    closeTS.Unix(),
-			ValidationTimestamp: validTS.Unix(),
+			ClosingTimestamp: closeTS.Unix(),
 		},
 	}
 	payload, err := proto.Marshal(data)

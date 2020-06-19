@@ -12,6 +12,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -162,7 +163,6 @@ func NewMarket(
 		now.UnixNano(),
 		mkt.GetId(),
 	)
-	z := time.Hour
 	settleEngine := settlement.New(
 		log,
 		settlementConfig,
@@ -1524,4 +1524,66 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 			asset: {Long: 0.15, Short: 0.25},
 		},
 	}
+}
+
+func assignProduct(
+	parameters *governance.NetworkParameters,
+	source *types.IntrumentConfiguration,
+	target *types.Instrument,
+) error {
+
+	if future := source.GetFuture(); future != nil {
+		target.Product = &types.Instrument_Future{
+			Future: &types.Future{
+				Asset:    future.Asset,
+				Maturity: future.Maturity,
+				Oracle: &types.Future_EthereumEvent{
+					EthereumEvent: &types.EthereumEvent{
+						ContractID: parameters.FutureOracle.ContractID,
+						Event:      parameters.FutureOracle.Event,
+						Value:      parameters.FutureOracle.Value,
+					},
+				},
+			},
+		}
+		return nil
+	}
+	return ErrProductTypeNotSupported
+}
+
+func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
+	if continuous := definition.GetContinuous(); continuous != nil {
+		target.TradingMode = &types.Market_Continuous{
+			Continuous: continuous,
+		}
+		return nil
+	} else if descrete := definition.GetDiscrete(); descrete != nil {
+		target.TradingMode = &types.Market_Discrete{
+			Discrete: descrete,
+		}
+		return nil
+	}
+	return ErrInvalidTradingMode
+}
+
+func makeInstrument(
+	parameters *governance.NetworkParameters,
+	input *types.IntrumentConfiguration,
+	tags []string,
+) (*types.Instrument, error) {
+
+	result := &types.Instrument{
+		Name:      input.Name,
+		Code:      input.Code,
+		BaseName:  input.BaseName,
+		QuoteName: input.QuoteName,
+		Metadata: &types.InstrumentMetadata{
+			Tags: tags,
+		},
+	}
+
+	if err := assignProduct(parameters, input, result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }

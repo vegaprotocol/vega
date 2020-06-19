@@ -4721,7 +4721,7 @@
                   <td>maturity</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Future product maturity </p></td>
+                  <td><p>Future product maturity (ISO8601/RFC3339 timestamp) </p></td>
                 </tr>
 
                 <tr>
@@ -4992,6 +4992,13 @@
                   <td><p>Minimum balance required for a party to be able to cast a vote. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
                 </tr>
 
+                <tr>
+                  <td>marginConfiguration</td>
+                  <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
+                  <td></td>
+                  <td><p>Scaling factors for all markets created via governance </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -5012,6 +5019,13 @@
                 <tr>
                   <td>changes</td>
                   <td><a href="#vega.AssetSource">AssetSource</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>validationTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5119,13 +5133,6 @@
                 </tr>
 
                 <tr>
-                  <td>decimalPlaces</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p>Decimal places used for the new market </p></td>
-                </tr>
-
-                <tr>
                   <td>risk</td>
                   <td><a href="#vega.RiskConfiguration">RiskConfiguration</a></td>
                   <td></td>
@@ -5133,10 +5140,17 @@
                 </tr>
 
                 <tr>
+                  <td>decimalPlaces</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Decimal places used for the new market </p></td>
+                </tr>
+
+                <tr>
                   <td>metadata</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>New market meta data, tags </p></td>
+                  <td><p>Optional new market meta data, tags </p></td>
                 </tr>
 
                 <tr>
@@ -5181,22 +5195,22 @@
                 </tr>
 
                 <tr>
-                  <td>decimalPlaces</td>
+                  <td>risk</td>
                   <td>
                     <ul>
 
-                      <li>int_lt: 100</li>
+                      <li>msg_exists: true</li>
 
                     </ul>
                   </td>
                 </tr>
 
                 <tr>
-                  <td>risk</td>
+                  <td>decimalPlaces</td>
                   <td>
                     <ul>
 
-                      <li>msg_exists: true</li>
+                      <li>int_lt: 150</li>
 
                     </ul>
                   </td>
@@ -5341,13 +5355,6 @@ Constrained by <tt>minCloseInSeconds</tt> and <tt>maxCloseInSeconds</tt> network
                   <td></td>
                   <td><p>Timestamp (Unix time in seconds) when proposal gets enacted (if passed).
 Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network parameters. </p></td>
-                </tr>
-
-                <tr>
-                  <td>validationTimestamp</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>TODO: this should be moved into <tt>NewAsset</tt> definition. </p></td>
                 </tr>
 
                 <tr>

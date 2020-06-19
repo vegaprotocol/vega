@@ -24,6 +24,13 @@ var (
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
 	ErrNoMarketID = errors.New("no valid market id was supplied")
+
+	// ErrProductTypeNotSupported is returned if product type supplied via governance is not yet supported
+	// (this error should really never occur)
+	ErrProductTypeNotSupported = errors.New("product type is not supported")
+
+	// ErrInvalidTradingMode is returned if supplied trading is not valid (has to be either continuous or descrete)
+	ErrInvalidTradingMode = errors.New("trading mode is invalid")
 )
 
 // OrderBuf ...
@@ -248,7 +255,52 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 	return err
 }
 
-func (e *Engine) ValidateMarket(definition *types.NewMarketConfiguration) error {
+func (e *Engine) addMarket(marketConfig *types.Market) error {
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		e.log.Error("Failed to get current Vega network time", logging.Error(err))
+		return err
+	}
+
+	marketRecord, err := NewMarket(
+		e.log,
+		e.Config.Risk,
+		e.Config.Position,
+		e.Config.Settlement,
+		e.Config.Matching,
+		e.collateral,
+		e.party,
+		marketConfig,
+		e.candleBuf,
+		e.marginLevelsBuf,
+		e.settleBuf,
+		now,
+		e.broker,
+		e.idgen,
+	)
+	if err != nil {
+		e.log.Error("Failed to instantiate market",
+			logging.String("market-id", marketConfig.Id),
+			logging.Error(err),
+		)
+	}
+
+	e.markets[marketConfig.Id] = marketRecord
+
+	// create market accounts
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		return err
+	}
+
+	// ignore response ids here + this cannot fail
+	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+
+	// wire up party engine to new market
+	e.party.addMarket(*marketRecord.mkt)
+	e.markets[marketConfig.Id].partyEngine = e.party
+
+	e.marketBuf.Add(*marketConfig)
 	return nil
 }
 
@@ -256,110 +308,29 @@ func (e *Engine) createMarket(marketID string, definition *types.NewMarketConfig
 	if len(marketID) == 0 {
 		return ErrNoMarketID
 	}
-	if err := e.ValidateMarket(definition); err != nil {
+	if err := governance.ValidateNewMarket(definition); err != nil {
 		return err
 	}
-
-	var mkt *Market
-	var err error
-
-	now, _ := e.time.GetTimeNow()
-	mkt, err = NewMarket(
-		e.log,
-		e.Config.Risk,
-		e.Config.Position,
-		e.Config.Settlement,
-		e.Config.Matching,
-		e.collateral,
-		e.party,
-		marketConfig,
-		e.candleBuf,
-		e.marginLevelsBuf,
-		e.settleBuf,
-		now,
-		e.broker,
-		e.idgen,
-	)
-	if err != nil {
-		e.log.Error("Failed to instantiate market",
-			logging.String("market-id", marketConfig.Id),
-			logging.Error(err),
-		)
-	}
-
-	e.markets[marketConfig.Id] = mkt
-
-	// create market accounts
-	asset, err := marketConfig.GetAsset()
+	networkParams := e.governance.GetNetworkParameters()
+	instrument, err := makeInstrument(&networkParams, definition.Instrument, definition.Metadata)
 	if err != nil {
 		return err
 	}
-
-	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
-
-	// wire up party engine to new market
-	e.party.addMarket(*mkt.mkt)
-	e.markets[mkt.mkt.Id].partyEngine = e.party
-
-	// Save to market proto to buffer
-	e.marketBuf.Add(*marketConfig)
-	return nil
+	market := &types.Market{
+		Id:                 marketID,
+		DecimalPlaces:      definition.DecimalPlaces,
+		TradableInstrument: &types.TradableInstrument{Instrument: instrument},
+	}
+	if err := assignTradingMode(definition, market); err != nil {
+		return err
+	}
+	return e.addMarket(market)
 }
 
 // SubmitMarket will submit a new market configuration to the network
+//TODO: remove me once all markets are created via governance
 func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
-
-	// TODO: Check for existing market in MarketStore by Name.
-	// if __TBC_MarketExists__(marketConfig.Name) {
-	// 	return ErrMarketAlreadyExist
-	// }
-
-	var mkt *Market
-	var err error
-
-	now, _ := e.time.GetTimeNow()
-	mkt, err = NewMarket(
-		e.log,
-		e.Config.Risk,
-		e.Config.Position,
-		e.Config.Settlement,
-		e.Config.Matching,
-		e.collateral,
-		e.party,
-		marketConfig,
-		e.candleBuf,
-		e.marginLevelsBuf,
-		e.settleBuf,
-		now,
-		e.broker,
-		e.idgen,
-	)
-	if err != nil {
-		e.log.Error("Failed to instantiate market",
-			logging.String("market-id", marketConfig.Id),
-			logging.Error(err),
-		)
-	}
-
-	e.markets[marketConfig.Id] = mkt
-
-	// create market accounts
-	asset, err := marketConfig.GetAsset()
-	if err != nil {
-		return err
-	}
-
-	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
-
-	// wire up party engine to new market
-	e.party.addMarket(*mkt.mkt)
-	e.markets[mkt.mkt.Id].partyEngine = e.party
-
-	// Save to market proto to buffer
-	e.marketBuf.Add(*marketConfig)
-	return nil
+	return e.addMarket(marketConfig)
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.

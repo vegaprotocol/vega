@@ -519,7 +519,7 @@ union Oracle = EthereumEvent
 "A Future product"
 type Future {
 
-  "The maturity date of the product (string)"
+  "The maturity date of the product (ISO8601/RFC3339 timestamp)"
   maturity: String!
 
   "The name of the asset (string)"
@@ -1137,14 +1137,14 @@ type Risk {
 
 "Future product configuration"
 input FutureProductInput {
-  "Future product maturity"
+  "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
   asset: String!
 }
 
 type FutureProduct {
-  "Future product maturity"
+  "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
   asset: String!

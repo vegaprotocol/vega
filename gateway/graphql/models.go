@@ -62,7 +62,7 @@ func (EthereumEvent) IsOracle() {}
 
 // A Future product
 type Future struct {
-	// The maturity date of the product (string)
+	// The maturity date of the product (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// The name of the asset (string)
 	Asset string `json:"asset"`
@@ -73,7 +73,7 @@ type Future struct {
 func (Future) IsProduct() {}
 
 type FutureProduct struct {
-	// Future product maturity
+	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
 	Asset string `json:"asset"`
@@ -81,7 +81,7 @@ type FutureProduct struct {
 
 // Future product configuration
 type FutureProductInput struct {
-	// Future product maturity
+	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
 	Asset string `json:"asset"`
