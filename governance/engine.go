@@ -11,18 +11,21 @@ import (
 )
 
 var (
-	ErrProposalNotFound    = errors.New("proposal not found")
-	ErrProposalIsDuplicate = errors.New("proposal with given ID already exists")
-	// Validation errors
-
-	ErrProposalCloseTimeTooSoon   = errors.New("proposal closes too soon")
-	ErrProposalCloseTimeTooLate   = errors.New("proposal closes too late")
-	ErrProposalEnactTimeTooSoon   = errors.New("proposal enactment times too soon")
-	ErrProposalEnactTimeTooLate   = errors.New("proposal enactment times too late")
-	ErrProposalInsufficientTokens = errors.New("proposal requires more tokens than party has")
-
-	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
-	ErrVotePeriodExpired       = errors.New("proposal voting has been closed")
+	ErrProposalInvalidState                    = errors.New("proposal state not valid, only open can be submitted")
+	ErrProposalNotFound                        = errors.New("found no open proposal with the id")
+	ErrProposalIsDuplicate                     = errors.New("proposal with given ID already exists")
+	ErrProposalCloseTimeTooSoon                = errors.New("proposal closes too soon")
+	ErrProposalCloseTimeTooLate                = errors.New("proposal closes too late")
+	ErrProposalEnactTimeTooSoon                = errors.New("proposal enactment time is too soon")
+	ErrProposalEnactTimeTooLate                = errors.New("proposal enactment time is too late")
+	ErrProposalInsufficientTokens              = errors.New("party requires more tokens to submit a proposal")
+	ErrProposalMinPaticipationStakeTooLow      = errors.New("proposal minimum participation stake is too low")
+	ErrProposalMinPaticipationStakeInvalid     = errors.New("proposal minimum participation stake is out of bounds [0..1]")
+	ErrProposalMinRequiredMajorityStakeTooLow  = errors.New("proposal minimum required majority stake is too low")
+	ErrProposalMinRequiredMajorityStakeInvalid = errors.New("proposal minimum required majority stake is out of bounds [0.5..1]")
+	ErrVoterInsufficientTokens                 = errors.New("vote requires more tokens than party has")
+	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
+	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
 )
 
 // Accounts ...
@@ -44,43 +47,38 @@ type VoteBuf interface {
 	Add(types.Vote)
 }
 
+// Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	accs          Accounts
-	buf           Buffer
-	vbuf          VoteBuf
-	log           *logging.Logger
-	mu            sync.Mutex
-	currentTime   time.Time
-	proposals     map[string]*governanceData
-	proposalRefs  map[string]*governanceData
-	networkParams NetworkParameters
+	mu  sync.Mutex
+	log *logging.Logger
+
+	accounts    Accounts
+	buf         Buffer
+	vbuf        VoteBuf
+	currentTime time.Time
+
+	activeProposals map[string]*proposalData
+	networkParams   NetworkParameters
 }
 
-type governanceData struct {
+type proposalData struct {
 	*types.Proposal
 	yes map[string]*types.Vote
 	no  map[string]*types.Vote
 }
 
+// NewEngine creates new governance engine instance
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, now time.Time) *Engine {
-	log.Debug("Governance parameters",
-		logging.String("MinClose", params.minClose.String()),
-		logging.String("MaxClose", params.maxClose.String()),
-		logging.String("MinEnact", params.minEnact.String()),
-		logging.String("MaxEnact", params.maxEnact.String()),
-		logging.Uint64("MinParticipationStake", params.minParticipationStake),
-	)
 	return &Engine{
-		Config:        cfg,
-		accs:          accs,
-		buf:           buf,
-		vbuf:          vbuf,
-		log:           log,
-		currentTime:   now,
-		proposals:     map[string]*governanceData{},
-		proposalRefs:  map[string]*governanceData{},
-		networkParams: *params,
+		Config:          cfg,
+		accounts:        accs,
+		buf:             buf,
+		vbuf:            vbuf,
+		log:             log,
+		currentTime:     now,
+		activeProposals: map[string]*proposalData{},
+		networkParams:   *params,
 	}
 }
 
@@ -100,131 +98,173 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.mu.Unlock()
 }
 
-// OnChainTimeUpdate - update curtime, expire proposals
+// OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	e.currentTime = t
-	now := t.Unix()
-
-	totalStake := e.accs.GetTotalTokens()
-	counter := newStakeCounter(e.log, e.accs)
-
 	var toBeEnacted []*types.Proposal
-	for k, p := range e.proposals {
-		if p.Terms.ClosingTimestamp < now {
-			e.closeProposal(p, counter, totalStake)
-		}
-		if p.State == types.Proposal_STATE_PASSED && p.Terms.EnactmentTimestamp < now {
-			toBeEnacted = append(toBeEnacted, p.Proposal)
-			delete(e.proposals, k)
-			delete(e.proposalRefs, p.Reference)
+	if len(e.activeProposals) > 0 {
+		now := t.Unix()
+
+		totalStake := e.accounts.GetTotalTokens()
+		counter := newStakeCounter(e.log, e.accounts)
+
+		for id, proposal := range e.activeProposals {
+			if proposal.Terms.ClosingTimestamp < now {
+				e.closeProposal(proposal, counter, totalStake)
+			}
+
+			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
+				delete(e.activeProposals, id)
+			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
+				toBeEnacted = append(toBeEnacted, proposal.Proposal)
+				delete(e.activeProposals, id)
+			}
 		}
 	}
 	return toBeEnacted
 }
 
-func (e *Engine) AddProposal(p types.Proposal) error {
-	// @TODO -> we probably should keep proposals in memory here
-	if cp, ok := e.proposals[p.ID]; ok && cp.State == p.State {
-		return ErrProposalIsDuplicate
+// SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
+// Only open can be submitted and validated at this point. No further validation happens.
+func (e *Engine) SubmitProposal(proposal types.Proposal) error {
+	if _, exists := e.activeProposals[proposal.ID]; exists {
+		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}
-	if _, ok := e.proposalRefs[p.Reference]; ok {
-		return ErrProposalIsDuplicate
-	}
-	var err error
-	if err = e.validateProposal(p); err != nil {
-		p.State = types.Proposal_STATE_REJECTED
-	}
-	if p.State != types.Proposal_STATE_OPEN {
-		delete(e.proposals, p.ID)
-		delete(e.proposalRefs, p.Reference)
-	} else {
-		pv := governanceData{
-			Proposal: &p,
-			yes:      map[string]*types.Vote{},
-			no:       map[string]*types.Vote{},
+	// Proposals ought to be read from the chain only once: when the proposal submission transaction is processed.
+	// After that they should be read from the core’s internal state (which can only be updated deterministically by transactions on the chain...
+	if proposal.State == types.Proposal_STATE_OPEN {
+		err := e.validateOpenProposal(proposal)
+		if err != nil {
+			proposal.State = types.Proposal_STATE_REJECTED
+		} else {
+			e.activeProposals[proposal.ID] = &proposalData{
+				Proposal: &proposal,
+				yes:      map[string]*types.Vote{},
+				no:       map[string]*types.Vote{},
+			}
 		}
-		e.proposals[p.ID] = &pv
-		e.proposalRefs[p.Reference] = &pv
+		e.buf.Add(proposal)
+		return err
 	}
-	e.buf.Add(p)
-	return err
+	return ErrProposalInvalidState
 }
 
-func (e *Engine) validateProposal(p types.Proposal) error {
-	tok, err := e.accs.GetPartyTokenAccount(p.PartyID)
+func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
+	if terms.GetNewMarket() != nil {
+		return &e.networkParams.newMarkets, nil
+	}
+	return nil, ErrNoNetworkParams
+}
+
+// validates proposals read from the chain
+func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
+	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
 		return err
 	}
-	if tok.Balance < 1 {
-		return ErrProposalInsufficientTokens
-	}
-	if p.Terms.ClosingTimestamp < e.currentTime.Add(e.networkParams.minClose).Unix() {
+	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
 		return ErrProposalCloseTimeTooSoon
 	}
-	if p.Terms.ClosingTimestamp > e.currentTime.Add(e.networkParams.maxClose).Unix() {
+	if proposal.Terms.ClosingTimestamp > e.currentTime.Add(params.MaxClose).Unix() {
 		return ErrProposalCloseTimeTooLate
 	}
-	if p.Terms.EnactmentTimestamp < e.currentTime.Add(e.networkParams.minEnact).Unix() {
+	if proposal.Terms.EnactmentTimestamp < e.currentTime.Add(params.MinEnact).Unix() {
 		return ErrProposalEnactTimeTooSoon
 	}
-	if p.Terms.EnactmentTimestamp > e.currentTime.Add(e.networkParams.maxEnact).Unix() {
+	if proposal.Terms.EnactmentTimestamp > e.currentTime.Add(params.MaxEnact).Unix() {
 		return ErrProposalEnactTimeTooLate
 	}
-
+	proposerTokens, err := getGovernanceTokens(e.accounts, proposal.PartyID)
+	if err != nil {
+		return err
+	}
+	totalTokens := e.accounts.GetTotalTokens()
+	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
+		return ErrProposalInsufficientTokens
+	}
 	return nil
 }
 
-func (e *Engine) AddVote(v types.Vote) error {
-	p, err := e.validateVote(v)
+// AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
+func (e *Engine) AddVote(vote types.Vote) error {
+	proposal, err := e.validateVote(vote)
 	if err != nil {
 		return err
 	}
 	// we only want to count the last vote, so add to yes/no map, delete from the other
 	// if the party hasn't cast a vote yet, the delete is just a noop
-	if v.Value == types.Vote_VALUE_YES {
-		delete(p.no, v.PartyID)
-		p.yes[v.PartyID] = &v
+	if vote.Value == types.Vote_VALUE_YES {
+		delete(proposal.no, vote.PartyID)
+		proposal.yes[vote.PartyID] = &vote
 	} else {
-		delete(p.yes, v.PartyID)
-		p.no[v.PartyID] = &v
+		delete(proposal.yes, vote.PartyID)
+		proposal.no[vote.PartyID] = &vote
 	}
-	e.vbuf.Add(v)
+	e.vbuf.Add(vote)
 	return nil
 }
 
-func (e *Engine) validateVote(v types.Vote) (*governanceData, error) {
-	tacc, err := e.accs.GetPartyTokenAccount(v.PartyID)
+func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
+	proposal, found := e.activeProposals[vote.ProposalID]
+	if !found {
+		return nil, ErrProposalNotFound
+	} else if proposal.State == types.Proposal_STATE_PASSED {
+		return nil, ErrProposalPassed
+	}
+
+	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
 		return nil, err
 	}
-	if tacc.Balance == 0 {
+
+	voterTokens, err := getGovernanceTokens(e.accounts, vote.PartyID)
+	if err != nil {
+		return nil, err
+	}
+	totalTokens := e.accounts.GetTotalTokens()
+	if float32(voterTokens) < float32(totalTokens)*params.MinVoterBalance {
 		return nil, ErrVoterInsufficientTokens
 	}
-	p, ok := e.proposals[v.ProposalID]
-	if !ok {
-		return nil, ErrProposalNotFound
-	}
-	if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
-		return nil, ErrVotePeriodExpired
-	}
-	return p, nil
+
+	return proposal, nil
 }
 
-func (e *Engine) closeProposal(data *governanceData, counter *stakeCounter, totalStake uint64) {
-	proposal := data.Proposal
+// sets proposal in either declined or passed state
+func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, totalStake uint64) error {
+	if proposal.State == types.Proposal_STATE_OPEN {
+		proposal.State = types.Proposal_STATE_DECLINED // declined unless passed
 
-	yes := counter.countVotes(data.yes)
-	no := counter.countVotes(data.no)
-
-	proposal.State = types.Proposal_STATE_DECLINED
-	if yes > no {
-		participationStake := float64(yes + no)
-		minParticipationStake := float64(proposal.Terms.MinParticipationStake*totalStake) / 100
-		if participationStake >= minParticipationStake {
-			proposal.State = types.Proposal_STATE_PASSED
+		params, err := e.getProposalParams(proposal.Terms)
+		if err != nil {
+			return err
 		}
+
+		yes := counter.countVotes(proposal.yes)
+		no := counter.countVotes(proposal.no)
+		totalVotes := float32(yes + no)
+
+		// yes          > (yes + no)* required majority ratio
+		if float32(yes) > totalVotes*params.RequiredMajority &&
+			//(yes+no) >= (yes + no + novote)* required participation ratio
+			totalVotes >= float32(totalStake)*params.RequiredParticipation {
+			proposal.State = types.Proposal_STATE_PASSED
+			e.log.Debug("Proposal passed", logging.String("proposal-id", proposal.ID))
+		} else if totalVotes == 0 {
+			e.log.Info("Proposal declined - no votes", logging.String("proposal-id", proposal.ID))
+		} else {
+			e.log.Info(
+				"Proposal declined",
+				logging.String("proposal-id", proposal.ID),
+				logging.Uint64("yes-votes", yes),
+				logging.Float32("min-yes-required", totalVotes*params.RequiredMajority),
+				logging.Float32("total-votes", totalVotes),
+				logging.Float32("min-total-votes-required", float32(totalStake)*params.RequiredParticipation),
+				logging.Float32("tokens", float32(totalStake)),
+			)
+		}
+		e.buf.Add(*proposal.Proposal)
 	}
-	e.buf.Add(*proposal)
+	return nil
 }
 
 // stakeCounter caches token balance per party and counts votes
@@ -254,16 +294,24 @@ func (s *stakeCounter) getTokens(partyID string) uint64 {
 	if balance, found := s.balances[partyID]; found {
 		return balance
 	}
-	account, err := s.accounts.GetPartyTokenAccount(partyID)
+	balance, err := getGovernanceTokens(s.accounts, partyID)
 	if err != nil {
 		s.log.Error(
-			"Failed to get account for party",
+			"Failed to get governance tokens balance for party",
 			logging.String("party-id", partyID),
 			logging.Error(err),
 		)
 		// not much we can do with the error as there is nowhere to buble up the error on tick
 		return 0
 	}
-	s.balances[partyID] = account.Balance
-	return account.Balance
+	s.balances[partyID] = balance
+	return balance
+}
+
+func getGovernanceTokens(accounts Accounts, partyID string) (uint64, error) {
+	account, err := accounts.GetPartyTokenAccount(partyID)
+	if err != nil {
+		return 0, err
+	}
+	return account.Balance, nil
 }

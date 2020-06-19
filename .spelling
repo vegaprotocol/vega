@@ -5,9 +5,12 @@
 # where filename is relative to this configuration file
 api
 barnabee
+base64
 blockchain
+datetime
 Ed25519
-Enums
+enum
+enums
 github
 GitLab
 Golang
@@ -26,7 +29,9 @@ Suzdalnitski
 syslog
 tamlyn10
 Tendermint
+tendermint
 testnet
+tradable
 traderbot
 unexported
 vega

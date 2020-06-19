@@ -9,13 +9,24 @@ import "proto/markets.proto";
 import "proto/assets.proto";
 
 message NetworkConfiguration {
+  // Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
   int64 minCloseInSeconds = 1;
+  // Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
   int64 maxCloseInSeconds = 2;
 
-  int64 minEnactInSeconds  = 3;
-  int64 maxEnactInSeconds  = 4;
+  // Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+  int64 minEnactInSeconds = 3;
+  // Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
+  int64 maxEnactInSeconds = 4;
 
-  uint64 minParticipationStake = 5;
+  // Participation level required for any proposal to pass. Value from `0` to `1`.
+  float requiredParticipation = 5;
+  // Majority level required for any proposal to pass. Value from `0.5` to `1`.
+  float requiredMajority = 6;
+  // Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`.
+  float minProposerBalance = 7;
+  // Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`.
+  float minVoterBalance = 8;
 }
 
 message UpdateMarket {
@@ -34,23 +45,34 @@ message NewAsset {
 }
 
 message ProposalTerms {
-  // Timestamp (Unix time in seconds) when voting closes for this proposal
-  int64 closingTimestamp       = 1 [(validator.field) = {int_gt: 0}];
-  // Timestamp (Unix time in seconds) when proposal gets enacted (if passed)
-  int64 enactmentTimestamp     = 2 [(validator.field) = {int_gt: 0}];
-  uint64 minParticipationStake = 3 [(validator.field) = {int_gt: 0, int_lt: 101}];
-  int64 validationTimestamp    = 4;
+  // Timestamp (Unix time in seconds) when voting closes for this proposal.
+  // Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters.
+  int64 closingTimestamp      = 1 [(validator.field) = {int_gt: 0}];
+  // Timestamp (Unix time in seconds) when proposal gets enacted (if passed).
+  // Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters.
+  int64 enactmentTimestamp    = 2 [(validator.field) = {int_gt: 0}];
+
+  int64 validationTimestamp = 5; //TODO: this should be moved into `NewAsset` definition.
+
+  // Actual changes being proposed
   oneof change {
+    // Proposal change for modifying an existing market on Vega.
     UpdateMarket  updateMarket  = 101;
+    // Proposal change for creating new market on Vega.
     NewMarket     newMarket     = 102;
+    // Proposal change for updating Vega network parameters.
     UpdateNetwork updateNetwork = 103;
+    // Proposal change for creating new assets on Vega.
     NewAsset      newAsset      = 104;
   };
 }
 
 message GovernanceData {
+  // Proposal
   Proposal proposal = 1;
+  // All "yes" votes in favour of the proposal above.
   repeated Vote yes = 2;
+  // All "no" votes against the proposal above.
   repeated Vote no = 3;
 }
 
@@ -66,7 +88,7 @@ message Proposal {
     // Default value, always invalid.
     STATE_UNSPECIFIED = 0;
 
-    // Proposal could not be enacted after being accepted by the network.
+    // Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.
     STATE_FAILED = 1;
 
     // Proposal is open for voting.
@@ -75,21 +97,31 @@ message Proposal {
     // Proposal has gained enough support to be executed.
     STATE_PASSED = 3;
 
-    // Proposal wasn't accepted (validation failed, author not allowed to submit proposals).
+    // Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).
     STATE_REJECTED = 4;
 
-    // Proposal didn't get enough votes.
+    // Proposal didn't get enough votes (either failing to gain required participation or majority level).
     STATE_DECLINED = 5;
 
     // Proposal has been executed and the changes under this proposal have now been applied.
     STATE_ENACTED = 6;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/helpers_enum.go
+    //       - gateway/graphql/schema.graphql (enum ProposalState)
   }
 
+  // Proposal unique identifier.
   string        ID        = 1;
+  // Proposal reference.
   string        reference = 2;
+  // Proposal author, identifier of the party submitting the proposal.
   string        partyID   = 3 [(validator.field) = {string_not_empty : true}];
+  // Proposal state (see Proposal.State definition)
   State         state     = 4 [(validator.field) = {is_in_enum: true}];
+  // Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
   int64         timestamp = 5;
+  // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
   ProposalTerms terms     = 6 [(validator.field) = {msg_exists: true}];
 }
 
@@ -104,10 +136,18 @@ message Vote {
 
     // A vote in favour of the proposal.
     VALUE_YES = 2;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/helpers_enum.go
+    //       - gateway/graphql/schema.graphql (enum VoteValue)
   }
 
+  // Voter's party identifier.
   string partyID    = 1 [(validator.field) = {string_not_empty : true}];
+  // Actual vote.
   Value  value      = 2 [(validator.field) = {is_in_enum : true}];
+  // Identifier of the proposal being voted on.
   string proposalID = 3 [(validator.field) = {string_not_empty : true}];
+  // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network.
   int64  timestamp  = 4;
 }

@@ -40,6 +40,8 @@ const (
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
 	OrderEvent
 	AccountEvent
+	PartyEvent
+	TradeEvent
 )
 
 var (
@@ -55,6 +57,8 @@ var (
 		MarketEvent:        "MarketEvent",
 		OrderEvent:         "OrderEvent",
 		AccountEvent:       "AccountEvent",
+		PartyEvent:         "PartyEvent",
+		TradeEvent:         "TradeEvent",
 	}
 )
 
@@ -75,6 +79,12 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Account:
 		e := NewAccountEvent(ctx, tv)
+		return e, nil
+	case types.Party:
+		e := NewPartyEvent(ctx, tv)
+		return e, nil
+	case types.Trade:
+		e := NewTradeEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.21.0
+
+*2020-06-18*
+
+A follow-on from 0.20.1, this release includes a fix for the GraphQL API returning inconsistent values for the `side` field on orders, leading to Vega Console failing to submit orders. As a bonus there is another GraphQL improvement, and two fixes that return more correct values for filled network orders and expired orders.
+
+### Improvements
+
+- 💥 [#1820](https://github.com/vegaprotocol/vega/pull/1820) GraphQL: Non existent parties no longer return a GraphQL error
+- 💥 [#1784](https://github.com/vegaprotocol/vega/pull/1784) GraphQL: Update schema and fix enum mappings from Proto
+- 💥 [#1761](https://github.com/vegaprotocol/vega/pull/1761) Governance: Improve processing of Proposals
+- [#1822](https://github.com/vegaprotocol/vega/pull/1822) Remove duplicate updates to `createdAt`
+- [#1818](https://github.com/vegaprotocol/vega/pull/1818) Trades: Replace buffer with events
+- [#1812](https://github.com/vegaprotocol/vega/pull/1812) Governance: Improve logging
+- [#1810](https://github.com/vegaprotocol/vega/pull/1810) Execution: Set order status for fully filled network orders to be `FILLED`
+- [#1803](https://github.com/vegaprotocol/vega/pull/1803) Matching: Set `updatedAt` when orders expire
+- [#1780](https://github.com/vegaprotocol/vega/pull/1780) APIs: Reject `NETWORK` orders
+- [#1792](https://github.com/vegaprotocol/vega/pull/1792) Update Golang to 1.14 and tendermint to 0.33.5
+
+## 0.20.1
+
+*2020-06-18*
+
+This release fixes one small bug that was causing many closed streams, which was a problem for API clients.
+
+## Improvements
+
+- [#1813](https://github.com/vegaprotocol/vega/pull/1813) Set `PartyEvent` type to party event
+
+## 0.20.0
+
+*2020-06-15*
+
+This release contains a lot of fixes to APIs, and a minor new addition to the statistics endpoint. Potentially breaking changes are now labelled with 💥. If you have implemented a client that fetches candles, places orders or amends orders, please check below.
+
+### Features
+- [#1730](https://github.com/vegaprotocol/vega/pull/1730) `ChainID` added to statistics endpoint
+- 💥 [#1734](https://github.com/vegaprotocol/vega/pull/1734) Start adding `TraceID` to core events
+
+### Improvements
+- 💥 [#1721](https://github.com/vegaprotocol/vega/pull/1721) Improve API responses for `GetProposalById`
+- 💥 [#1724](https://github.com/vegaprotocol/vega/pull/1724) New Order: Type no longer defaults to LIMIT orders
+- 💥 [#1728](https://github.com/vegaprotocol/vega/pull/1728) `PrepareAmend` no longer accepts expiry time
+- 💥 [#1760](https://github.com/vegaprotocol/vega/pull/1760) Add proto enum zero value "unspecified" to Side
+- 💥 [#1764](https://github.com/vegaprotocol/vega/pull/1764) Candles: Interval no longer defaults to 1 minute
+- 💥 [#1773](https://github.com/vegaprotocol/vega/pull/1773) Add proto enum zero value "unspecified" to `Order.Status`
+- 💥 [#1776](https://github.com/vegaprotocol/vega/pull/1776) Add prefixes to enums, add proto zero value "unspecified" to `Trade.Type`
+- 💥 [#1781](https://github.com/vegaprotocol/vega/pull/1781) Add prefix and UNSPECIFIED to `ChainStatus`, `AccountType`, `TransferType`
+- [#1714](https://github.com/vegaprotocol/vega/pull/1714) Extend governance error handling
+- [#1726](https://github.com/vegaprotocol/vega/pull/1726) Mark Price was not always correctly updated on a partial fill
+- [#1734](https://github.com/vegaprotocol/vega/pull/1734) Feature/1577 hash context propagation
+- [#1741](https://github.com/vegaprotocol/vega/pull/1741) Fix incorrect timestamps for proposals retrieved by GraphQL
+- [#1743](https://github.com/vegaprotocol/vega/pull/1743) Orders amended to be GTT now return GTT in the response
+- [#1745](https://github.com/vegaprotocol/vega/pull/1745) Votes blob is now base64 encoded
+- [#1747](https://github.com/vegaprotocol/vega/pull/1747) Markets created from proposals now have the same ID as the proposal that created them
+- [#1750](https://github.com/vegaprotocol/vega/pull/1750) Added datetime to governance votes
+- [#1751](https://github.com/vegaprotocol/vega/pull/1751) Fix a bug in governance vote counting
+- [#1752](https://github.com/vegaprotocol/vega/pull/1752) Fix incorrect validation on new orders
+- [#1757](https://github.com/vegaprotocol/vega/pull/1757) Fix incorrect party ID validation on new orders
+- [#1758](https://github.com/vegaprotocol/vega/pull/1758) Fix issue where markets created via governance were not tradable
+- [#1763](https://github.com/vegaprotocol/vega/pull/1763) Expiration settlement date for market changed to 30/10/2020-22:59:59
+- [#1777](https://github.com/vegaprotocol/vega/pull/1777) Create `README.md`
+- [#1764](https://github.com/vegaprotocol/vega/pull/1764) Add proto enum zero value "unspecified" to Interval
+- [#1767](https://github.com/vegaprotocol/vega/pull/1767) Feature/1692 order event
+- [#1787](https://github.com/vegaprotocol/vega/pull/1787) Feature/1697 account event
+- [#1788](https://github.com/vegaprotocol/vega/pull/1788) Check for unspecified Vote value
+- [#1794](https://github.com/vegaprotocol/vega/pull/1794) Feature/1696 party event
+
 ## 0.19.0
 
 *2020-05-26*

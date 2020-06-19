@@ -16,6 +16,8 @@ type Subscriber interface {
 	Closed() <-chan struct{}
 	C() chan<- events.Event
 	Types() []events.Type
+	SetID(id int)
+	ID() int
 }
 
 type subscription struct {
@@ -103,6 +105,21 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 // Subscribe registers a new subscriber, returning the key
 func (b *Broker) Subscribe(s Subscriber, req bool) int {
 	b.mu.Lock()
+	k := b.sub(s, req)
+	b.mu.Unlock()
+	return k
+}
+
+func (b *Broker) SubscribeBatch(req bool, subs ...Subscriber) {
+	b.mu.Lock()
+	for _, s := range subs {
+		k := b.sub(s, req)
+		s.SetID(k)
+	}
+	b.mu.Unlock()
+}
+
+func (b *Broker) sub(s Subscriber, req bool) int {
 	k := b.getKey()
 	sub := subscription{
 		Subscriber: s,
@@ -113,14 +130,12 @@ func (b *Broker) Subscribe(s Subscriber, req bool) int {
 	if len(types) == 0 {
 		types = []events.Type{events.All}
 	}
-	// get subscribed types:
 	for _, t := range types {
 		if _, ok := b.tSubs[t]; !ok {
 			b.tSubs[t] = map[int]*subscription{}
 		}
 		b.tSubs[t][k] = &sub
 	}
-	b.mu.Unlock()
 	return k
 }
 

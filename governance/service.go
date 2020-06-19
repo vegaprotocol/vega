@@ -276,6 +276,7 @@ func (s *Svc) GetNewAssetProposals(inState *types.Proposal_State) []*types.Gover
 func (s *Svc) PrepareProposal(
 	ctx context.Context, party string, reference string, terms *types.ProposalTerms,
 ) (*types.Proposal, error) {
+
 	if err := s.validateTerms(terms); err != nil {
 		return nil, err
 	}

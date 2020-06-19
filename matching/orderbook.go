@@ -379,6 +379,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			// when they get cancelled as this would required unnecessary computation that
 			// can be delayed for later.
 			order.Status = types.Order_STATUS_EXPIRED
+			order.UpdatedAt = expirationTimestamp
 			out = append(out, *order)
 		}
 	}

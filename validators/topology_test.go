@@ -12,7 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/crypto"
-	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/libs/bytes"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -37,7 +37,7 @@ func getTestTop(t *testing.T) *testTop {
 			defer func() { ch <- struct{}{} }()
 			return &tmctypes.ResultStatus{
 				ValidatorInfo: tmctypes.ValidatorInfo{
-					Address: cmn.HexBytes([]byte("addresstm")),
+					Address: bytes.HexBytes([]byte("addresstm")),
 					PubKey:  tmTestPubKey(),
 				},
 			}, nil
@@ -48,7 +48,7 @@ func getTestTop(t *testing.T) *testTop {
 			defer func() { ch <- struct{}{} }()
 			return []*tmtypes.Validator{
 				&tmtypes.Validator{
-					Address: cmn.HexBytes([]byte("addresstm")),
+					Address: bytes.HexBytes([]byte("addresstm")),
 					PubKey:  tmTestPubKey(),
 				},
 			}, nil

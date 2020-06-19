@@ -950,7 +950,7 @@
         "STATE_ENACTED"
       ],
       "default": "STATE_UNSPECIFIED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal could not be enacted after being accepted by the network.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (validation failed, author not allowed to submit proposals).\n - STATE_DECLINED: Proposal didn't get enough votes.\n - STATE_ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
     },
     "VoteValue": {
       "type": "string",
@@ -1664,19 +1664,22 @@
       "type": "object",
       "properties": {
         "proposal": {
-          "$ref": "#/definitions/vegaProposal"
+          "$ref": "#/definitions/vegaProposal",
+          "title": "Proposal"
         },
         "yes": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaVote"
-          }
+          },
+          "description": "All \"yes\" votes in favour of the proposal above."
         },
         "no": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaVote"
-          }
+          },
+          "description": "All \"no\" votes against the proposal above."
         }
       }
     },
@@ -1923,23 +1926,43 @@
       "properties": {
         "minCloseInSeconds": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
         },
         "maxCloseInSeconds": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
         },
         "minEnactInSeconds": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
         },
         "maxEnactInSeconds": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
         },
-        "minParticipationStake": {
-          "type": "string",
-          "format": "uint64"
+        "requiredParticipation": {
+          "type": "number",
+          "format": "float",
+          "description": "Participation level required for any proposal to pass. Value from `0` to `1`."
+        },
+        "requiredMajority": {
+          "type": "number",
+          "format": "float",
+          "description": "Majority level required for any proposal to pass. Value from `0.5` to `1`."
+        },
+        "minProposerBalance": {
+          "type": "number",
+          "format": "float",
+          "description": "Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`."
+        },
+        "minVoterBalance": {
+          "type": "number",
+          "format": "float",
+          "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."
         }
       }
     },
@@ -2210,23 +2233,29 @@
       "type": "object",
       "properties": {
         "ID": {
-          "type": "string"
+          "type": "string",
+          "description": "Proposal unique identifier."
         },
         "reference": {
-          "type": "string"
+          "type": "string",
+          "description": "Proposal reference."
         },
         "partyID": {
-          "type": "string"
+          "type": "string",
+          "description": "Proposal author, identifier of the party submitting the proposal."
         },
         "state": {
-          "$ref": "#/definitions/ProposalState"
+          "$ref": "#/definitions/ProposalState",
+          "title": "Proposal state (see Proposal.State definition)"
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network."
         },
         "terms": {
-          "$ref": "#/definitions/vegaProposalTerms"
+          "$ref": "#/definitions/vegaProposalTerms",
+          "description": "Proposal configuration and the actual change that is meant to be executed when proposal is enacted."
         }
       }
     },
@@ -2236,32 +2265,32 @@
         "closingTimestamp": {
           "type": "string",
           "format": "int64",
-          "title": "Timestamp (Unix time in seconds) when voting closes for this proposal"
+          "description": "Timestamp (Unix time in seconds) when voting closes for this proposal.\nConstrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters."
         },
         "enactmentTimestamp": {
           "type": "string",
           "format": "int64",
-          "title": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed)"
-        },
-        "minParticipationStake": {
-          "type": "string",
-          "format": "uint64"
+          "description": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed).\nConstrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters."
         },
         "validationTimestamp": {
           "type": "string",
           "format": "int64"
         },
         "updateMarket": {
-          "$ref": "#/definitions/vegaUpdateMarket"
+          "$ref": "#/definitions/vegaUpdateMarket",
+          "description": "Proposal change for modifying an existing market on Vega."
         },
         "newMarket": {
-          "$ref": "#/definitions/vegaNewMarket"
+          "$ref": "#/definitions/vegaNewMarket",
+          "description": "Proposal change for creating new market on Vega."
         },
         "updateNetwork": {
-          "$ref": "#/definitions/vegaUpdateNetwork"
+          "$ref": "#/definitions/vegaUpdateNetwork",
+          "description": "Proposal change for updating Vega network parameters."
         },
         "newAsset": {
-          "$ref": "#/definitions/vegaNewAsset"
+          "$ref": "#/definitions/vegaNewAsset",
+          "description": "Proposal change for creating new assets on Vega."
         }
       }
     },
@@ -2586,17 +2615,21 @@
       "type": "object",
       "properties": {
         "partyID": {
-          "type": "string"
+          "type": "string",
+          "description": "Voter's party identifier."
         },
         "value": {
-          "$ref": "#/definitions/VoteValue"
+          "$ref": "#/definitions/VoteValue",
+          "description": "Actual vote."
         },
         "proposalID": {
-          "type": "string"
+          "type": "string",
+          "description": "Identifier of the proposal being voted on."
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network."
         }
       }
     }

@@ -47,6 +47,8 @@ var (
 	ErrInvalidAmendRemainQuantity = errors.New("incorrect remaining qty for a reduce by amend")
 	// ErrEmptyMarketID is returned if processed market has an empty id
 	ErrEmptyMarketID = errors.New("invalid market id (empty)")
+	// ErrInvalidOrderType is returned if processed order has an invalid order type
+	ErrInvalidOrderType = errors.New("invalid order type")
 
 	networkPartyID = "network"
 )
@@ -78,8 +80,6 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	partyBuf        PartyBuf
-	tradeBuf        TradeBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
@@ -123,8 +123,6 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candleBuf CandleBuf,
-	partyBuf PartyBuf,
-	tradeBuf TradeBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
 	now time.Time,
@@ -187,8 +185,6 @@ func NewMarket(
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
-		partyBuf:           partyBuf,
-		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
 		marginLevelsBuf:    marginLevelsBuf,
 		settleBuf:          settlementBuf,
@@ -354,7 +350,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// set those at the begining as even rejected order get through the buffers
 	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
 
@@ -364,6 +359,14 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMarketClosed
+	}
+
+	if order.Type == types.Order_TYPE_NETWORK {
+		// adding order to the buffer first
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_TYPE
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidOrderType
 	}
 
 	// Validate market
@@ -515,7 +518,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			m.tradeBuf.Add(*trade)
+			m.broker.Send(events.NewTradeEvent(ctx, *trade))
 
 			// Save to trade buffer for generating candles etc
 			err := m.candleBuf.AddTrade(*trade)
@@ -752,7 +755,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// 0 out the BAD trader position
 			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
-			m.tradeBuf.Add(*trade)
+			m.broker.Send(events.NewTradeEvent(ctx, *trade))
 
 			// Save to trade buffer for generating candles etc
 			err = m.candleBuf.AddTrade(*trade)
@@ -851,7 +854,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		order.Size = tSize
 		order.Remaining = 0
 		order.Side = nSide
-		order.Status = types.Order_STATUS_ACTIVE // ensure the status is always active
+		order.Status = types.Order_STATUS_FILLED // An order with no remaining must be filled
 		m.idgen.SetID(&order)
 
 		// this is the party order
@@ -900,7 +903,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Timestamp: partyOrder.CreatedAt,
 			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
-		m.tradeBuf.Add(trade)
+		m.broker.Send(events.NewTradeEvent(ctx, trade))
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()

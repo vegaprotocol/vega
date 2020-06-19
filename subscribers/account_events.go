@@ -29,7 +29,7 @@ func NewAccountSub(ctx context.Context, store AccountStore) *AccountSub {
 		buf:   map[string]*types.Account{},
 	}
 	a.running = true
-	go a.loop(ctx)
+	go a.loop(a.ctx)
 	return a
 }
 

@@ -19,7 +19,7 @@ steps:
   # ====== Pipeline for pull requests ======
 
   - name: build-PR
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     pull: always
     volumes:
       - name: gocache
@@ -43,7 +43,7 @@ steps:
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       # Build normal executable
-      - ./script/build.sh -t linux/amd64
+      - ./script/build.sh -a build -t linux/amd64
       # Build executable for sytstem-tests, with custom Governance parameters. 8760h is 24*365 hours.
       - env
           VEGA_GOVERNANCE_MIN_CLOSE=5s
@@ -51,7 +51,7 @@ steps:
           VEGA_GOVERNANCE_MIN_ENACT=5s
           VEGA_GOVERNANCE_MAX_ENACT=8760h
           VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=1
-          ./script/build.sh -t linux/amd64 -s "-systemtests"
+          ./script/build.sh -a build -t linux/amd64 -s "-systemtests"
     depends_on:
       - fetch
     when:
@@ -72,7 +72,7 @@ steps:
         - pull_request
 
   - name: test-PR
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     volumes:
       - name: gocache
         path: /go/cache
@@ -86,7 +86,7 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       - make retest
-      # More small checks. Run all, instead of exitng after first failure.
+      # More small checks. Run all, instead of exiting after first failure.
       - failed=""
       - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
           echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
@@ -159,7 +159,7 @@ steps:
   # ====== Pipeline for main branches (master, develop) and tags ======
 
   - name: build-branch
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     pull: always
     volumes:
       - name: gocache
@@ -182,7 +182,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build.sh -t linux/amd64
+      - ./script/build.sh -a build -t linux/amd64
     depends_on:
       - fetch
     when:
@@ -192,7 +192,7 @@ steps:
         - refs/tags/*
 
   - name: deploy_devnet
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     volumes:
       - name: gopkg
         path: /go/pkg
@@ -272,7 +272,7 @@ steps:
         - refs/tags/*
 
   - name: build-multiarch
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:latest
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:1.14.4
     pull: always
     volumes:
       - name: gocache
@@ -293,7 +293,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build.sh -T
+      - ./script/build.sh -a build -T
     depends_on:
       - build-branch
     when:
@@ -317,12 +317,12 @@ steps:
       - build-multiarch
 
   - name: changelog_slack
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     environment:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - /usr/local/bin/changelog-slack.sh "$$DRONE_TAG" "$$SLACK_HOOK_URL"
+      - /usr/local/bin/changelog-slack.sh "$$DRONE_TAG" "$$SLACK_HOOK_URL" "#engineering"
     when:
       event: tag
     depends_on:

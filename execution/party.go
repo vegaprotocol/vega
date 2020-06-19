@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -28,13 +29,13 @@ type Party struct {
 	log           *logging.Logger
 	collateral    Collateral
 	markets       []types.Market
-	partyBuf      PartyBuf
+	broker        Broker
 	partyByMarket map[string]map[string]struct{}
 	mu            sync.Mutex
 }
 
 // NewParty instantiates a new party
-func NewParty(log *logging.Logger, col Collateral, markets []types.Market, partyBuf PartyBuf) *Party {
+func NewParty(log *logging.Logger, col Collateral, markets []types.Market, broker Broker) *Party {
 	partyByMarket := map[string]map[string]struct{}{}
 	for _, v := range markets {
 		partyByMarket[v.Id] = map[string]struct{}{}
@@ -43,7 +44,7 @@ func NewParty(log *logging.Logger, col Collateral, markets []types.Market, party
 		log:           log,
 		collateral:    col,
 		markets:       markets,
-		partyBuf:      partyBuf,
+		broker:        broker,
 		partyByMarket: partyByMarket,
 	}
 }
@@ -83,7 +84,7 @@ func (p *Party) MakeGeneralAccounts(ctx context.Context, partyID string) (map[st
 	}
 
 	// ignore errors as they can only happen when the party already exists
-	p.partyBuf.Add(types.Party{Id: partyID})
+	p.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 
 	result := map[string]Void{}
 

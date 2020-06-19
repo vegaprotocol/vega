@@ -52,8 +52,6 @@ type marketTestSetup struct {
 	core            *execution.Market
 	party           *execution.Party
 	candles         *mocks.MockCandleBuf
-	trades          *tradeStub
-	parties         *mocks.MockPartyBuf
 	accounts        *accStub
 	marginLevelsBuf *marginsStub
 	settle          *SettleStub
@@ -79,16 +77,13 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	ctrl := gomock.NewController(&reporter)
 	candles := mocks.NewMockCandleBuf(ctrl)
-	parties := mocks.NewMockPartyBuf(ctrl)
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
 	broker := NewBrokerStub()
-	trades := NewTradeStub()
 
 	// this can happen any number of times, just set the mock up to accept all of them
 	// Over time, these mocks will be replaced with stubs that store all elements to a map
-	parties.EXPECT().Add(gomock.Any()).AnyTimes()
 	// again: allow all calls, replace with stub over time
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
@@ -104,8 +99,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		market:          market,
 		ctrl:            ctrl,
 		candles:         candles,
-		trades:          trades,
-		parties:         parties,
 		marginLevelsBuf: marginLevelsBuf,
 		settle:          NewSettlementStub(),
 		lossSoc:         lossBuf,
@@ -125,8 +118,6 @@ type executionTestSetup struct {
 	log             *logging.Logger
 	ctrl            *gomock.Controller
 	candles         *mocks.MockCandleBuf
-	trades          *tradeStub
-	parties         *mocks.MockPartyBuf
 	markets         *mocks.MockMarketBuf
 	timesvc         *timeStub
 	marketdata      *mocks.MockMarketDataBuf
@@ -170,9 +161,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
 	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
-	execsetup.trades = NewTradeStub()
 	execsetup.settle = buffer.NewSettlement()
-	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
@@ -189,11 +178,10 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	execsetup.candles.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	execsetup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
-	execsetup.parties.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)
