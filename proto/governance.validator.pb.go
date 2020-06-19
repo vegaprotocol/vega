@@ -44,6 +44,12 @@ func (this *RiskConfiguration) Validate() error {
 	return nil
 }
 func (this *FutureProduct) Validate() error {
+	if this.Maturity == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Maturity", fmt.Errorf(`value '%v' must not be an empty string`, this.Maturity))
+	}
+	if this.Asset == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Asset", fmt.Errorf(`value '%v' must not be an empty string`, this.Asset))
+	}
 	return nil
 }
 func (this *IntrumentConfiguration) Validate() error {

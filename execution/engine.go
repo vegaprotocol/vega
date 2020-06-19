@@ -21,6 +21,9 @@ var (
 	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
 	// because proposed changes cannot be processed by the system
 	ErrUnknownProposalChange = errors.New("unknown proposal change")
+
+	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
+	ErrNoMarketID = errors.New("no valid market id was supplied")
 )
 
 // OrderBuf ...
@@ -245,6 +248,65 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 	return err
 }
 
+func (e *Engine) ValidateMarket(definition *types.NewMarketConfiguration) error {
+	return nil
+}
+
+func (e *Engine) createMarket(marketID string, definition *types.NewMarketConfiguration) error {
+	if len(marketID) == 0 {
+		return ErrNoMarketID
+	}
+	if err := e.ValidateMarket(definition); err != nil {
+		return err
+	}
+
+	var mkt *Market
+	var err error
+
+	now, _ := e.time.GetTimeNow()
+	mkt, err = NewMarket(
+		e.log,
+		e.Config.Risk,
+		e.Config.Position,
+		e.Config.Settlement,
+		e.Config.Matching,
+		e.collateral,
+		e.party,
+		marketConfig,
+		e.candleBuf,
+		e.marginLevelsBuf,
+		e.settleBuf,
+		now,
+		e.broker,
+		e.idgen,
+	)
+	if err != nil {
+		e.log.Error("Failed to instantiate market",
+			logging.String("market-id", marketConfig.Id),
+			logging.Error(err),
+		)
+	}
+
+	e.markets[marketConfig.Id] = mkt
+
+	// create market accounts
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		return err
+	}
+
+	// ignore response ids here + this cannot fail
+	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+
+	// wire up party engine to new market
+	e.party.addMarket(*mkt.mkt)
+	e.markets[mkt.mkt.Id].partyEngine = e.party
+
+	// Save to market proto to buffer
+	e.marketBuf.Add(*marketConfig)
+	return nil
+}
+
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 
@@ -453,8 +515,8 @@ func (e *Engine) enactProposal(proposal *types.Proposal) error {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
 		}
-		newMarket.Changes.Id = proposal.ID // reusing proposal ID for market ID
-		if err := e.SubmitMarket(newMarket.Changes); err != nil {
+		// reusing proposal ID for market ID
+		if err := e.createMarket(proposal.ID, newMarket.Changes); err != nil {
 			return err
 		}
 		proposal.State = types.Proposal_STATE_ENACTED

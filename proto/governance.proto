@@ -60,9 +60,9 @@ message RiskConfiguration {
 // Future product configuration
 message FutureProduct {
   // Future product maturity
-  string maturity = 1;
+  string maturity = 1  [(validator.field) = {string_not_empty : true}];
   // Product asset name
-  string asset = 2;
+  string asset = 2  [(validator.field) = {string_not_empty : true}];
 }
 
 message IntrumentConfiguration {
