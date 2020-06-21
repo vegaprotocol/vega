@@ -39,7 +39,7 @@ type TimeService interface {
 }
 
 func validateAsset(asset string) error {
-	//@TODO: call proper asset validation once implemented
+	//@TODO: call proper asset validation (once implemented)
 	return nil
 }
 
