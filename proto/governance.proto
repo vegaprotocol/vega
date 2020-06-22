@@ -106,7 +106,7 @@ message Proposal {
     STATE_ENACTED = 6;
 
     // waiting for validators validation of the proposal
-    WAITING_FOR_NODE_VOTE = 7;
+    STATE_WAITING_FOR_NODE_VOTE = 7;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go

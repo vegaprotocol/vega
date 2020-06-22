@@ -86,10 +86,8 @@ func NewNodeValidation(
 }
 
 // returns validated proposal by all nodes
-func (n *NodeValidation) OnChainTimeUpdate(t time.Time) []*types.Proposal {
+func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Proposal, rejected []*types.Proposal) {
 	n.currentTimestamp = t
-
-	accepted := []*types.Proposal{}
 
 	// check that any proposal is ready
 	for k, prop := range n.nodeProposals {
@@ -104,6 +102,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 					logging.Int("vote-count", len(prop.votes)),
 					logging.Int("node-count", n.top.Len()),
 				)
+				rejected = append(rejected, prop.Proposal)
 			} else {
 				// proposal was accepted by all nodes, returns it to the governance engine
 				accepted = append(accepted, prop.Proposal)
@@ -136,7 +135,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 		}
 	}
 
-	return accepted
+	return accepted, rejected
 }
 
 // AddNodeVote registers a vote from a validator node for a given proposal

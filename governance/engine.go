@@ -163,12 +163,19 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 	}
 
 	// then get all proposal accepted through node validation, and start their vote time.
-	for _, p := range e.nodeProposalValidation.OnChainTimeUpdate(t) {
+	accepted, rejected := e.nodeProposalValidation.OnChainTimeUpdate(t)
+	for _, p := range accepted {
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.ID))
 		p.State = types.Proposal_STATE_OPEN
-		e.buf.Add(p)
+		e.buf.Add(*p)
 		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
+	}
+	for _, p := range rejected {
+		e.log.Info("proposal has not been validated by nodes",
+			logging.String("proposal-id", p.ID))
+		p.State = types.Proposal_STATE_REJECTED
+		e.buf.Add(*p)
 	}
 
 	// flush here for now
@@ -190,13 +197,13 @@ func (e *Engine) SubmitProposal(p types.Proposal) error {
 		} else {
 			// now if it's a 2 steps proposal, start the node votes
 			if e.isTwoStepsProposal(&p) {
-				p.State = types.PROPOSAL_STATE_WAITING_FOR_NODE_VOTE
+				p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
 				err = e.startTwoStepsProposal(&p)
 			} else {
 				e.startProposal(&p)
 			}
 		}
-		e.buf.Add(*p)
+		e.buf.Add(p)
 		return err
 	}
 	return ErrProposalInvalidState
@@ -208,7 +215,6 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		yes:      map[string]*types.Vote{},
 		no:       map[string]*types.Vote{},
 	}
-	e.buf.Add(*p)
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {

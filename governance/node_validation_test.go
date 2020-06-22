@@ -122,7 +122,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	// no we call time update once.
 	// this will call the commander to send the NodeVote
 	// and return 0 validatedProposals
-	validatedProposals := nv.OnChainTimeUpdate(now.Add(1 * time.Second))
+	validatedProposals, _ := nv.OnChainTimeUpdate(now.Add(1 * time.Second))
 	assert.Len(t, validatedProposals, 0)
 
 	// no we submit the vote
@@ -137,7 +137,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	assert.NoError(t, err)
 
 	//we call time update once more now that the proposal should have all node votes
-	validatedProposals = nv.OnChainTimeUpdate(now.Add(1 * time.Second))
+	validatedProposals, _ = nv.OnChainTimeUpdate(now.Add(1 * time.Second))
 	assert.Len(t, validatedProposals, 1)
 }
 
