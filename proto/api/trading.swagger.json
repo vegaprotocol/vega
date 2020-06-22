@@ -947,10 +947,11 @@
         "STATE_PASSED",
         "STATE_REJECTED",
         "STATE_DECLINED",
-        "STATE_ENACTED"
+        "STATE_ENACTED",
+        "STATE_WAITING_FOR_NODE_VOTE"
       ],
       "default": "STATE_UNSPECIFIED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal has been executed and the changes under this proposal have now been applied."
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_WAITING_FOR_NODE_VOTE: waiting for validators validation of the proposal"
     },
     "RiskConfigurationModel": {
       "type": "string",

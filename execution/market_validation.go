@@ -1,4 +1,4 @@
-package governance
+package execution
 
 import (
 	"time"
@@ -31,12 +31,6 @@ var (
 	// ErrTradingModeInvalid is returned if selected trading mode is not supported
 	ErrTradingModeInvalid = errors.New("selected trading mode is not supported")
 )
-
-// TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
-type TimeService interface {
-	GetTimeNow() (time.Time, error)
-}
 
 func validateAsset(asset string) error {
 	//@TODO: call proper asset validation (once implemented)
@@ -107,7 +101,7 @@ func validateTradingMode(terms *types.NewMarketConfiguration) error {
 }
 
 // ValidateNewMarket checks new market proposal terms
-func ValidateNewMarket(time TimeService, terms *types.NewMarketConfiguration) error {
+func validateNewMarket(time TimeService, terms *types.NewMarketConfiguration) error {
 	if err := validateInstrument(time, terms.Instrument); err != nil {
 		return err
 	}

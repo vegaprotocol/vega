@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
@@ -49,7 +48,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	broker := mocks.NewMockBroker(ctrl)
 	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	settleBuf.EXPECT().Flush().AnyTimes()
-	marginLevelsBuf := buffer.NewMarginLevels()
 	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	lossBuf.EXPECT().Flush().AnyTimes()
@@ -66,7 +64,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore,
-		marginLevelsBuf, settleBuf, now, broker, execution.NewIDGen())
+		settleBuf, now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()

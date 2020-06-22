@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -41,6 +42,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 )
@@ -252,6 +254,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts)
 	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore)
 	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore)
+	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -336,9 +339,18 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
-	broker := broker.New(l.ctx)
-	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub)
+	l.broker = broker.New(l.ctx)
+	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub)
+
+	now, _ := l.timeService.GetTimeNow()
+
+	//  create collateral
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, l.lossSocBuf, now)
+	if err != nil {
+		log.Error("unable to initialise collateral", logging.Error(err))
+		return err
+	}
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -348,21 +360,26 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.candleBuf,
 		l.marketBuf,
 		l.marketDataBuf,
-		l.marginLevelsBuf,
 		l.settleBuf,
 		l.lossSocBuf,
-		l.proposalBuf,
-		l.voteBuf,
 		l.mktscfg,
-		broker,
+		l.collateral,
+		l.broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
 	l.topology = validators.NewTopology(l.Log, nil)
 
+	netParams := governance.DefaultNetworkParameters(l.Log)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.proposalBuf, l.voteBuf, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
+	if err != nil {
+		log.Error("unable to initialise governance", logging.Error(err))
+		return err
+	}
+
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.proposalBuf, !l.noStores)
 	if err != nil {
 		return err
 	}

@@ -217,6 +217,8 @@ type ComplexityRoot struct {
 		TimeInForce     func(childComplexity int) int
 		Trades          func(childComplexity int) int
 		Type            func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+		Version         func(childComplexity int) int
 	}
 
 	Party struct {
@@ -491,6 +493,8 @@ type OrderResolver interface {
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
 	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
 	RejectionReason(ctx context.Context, obj *proto.Order) (*RejectionReason, error)
+	Version(ctx context.Context, obj *proto.Order) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *proto.Party, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
@@ -1364,6 +1368,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Type(childComplexity), true
+
+	case "Order.updatedAt":
+		if e.complexity.Order.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Order.UpdatedAt(childComplexity), true
+
+	case "Order.version":
+		if e.complexity.Order.Version == nil {
+			break
+		}
+
+		return e.complexity.Order.Version(childComplexity), true
 
 	case "Party.accounts":
 		if e.complexity.Party.Accounts == nil {
@@ -3324,6 +3342,12 @@ type Order {
 
   "Reason for the order to be rejected"
   rejectionReason: RejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "UpdatedAt is the last time the order was altered"
+  updatedAt: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -8396,6 +8420,74 @@ func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field gr
 	res := resTmp.(*RejectionReason)
 	fc.Result = res
 	return ec.marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_version(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Version(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
@@ -15821,6 +15913,34 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Order_rejectionReason(ctx, field, obj)
+				return res
+			})
+		case "version":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_version(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "updatedAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_updatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:

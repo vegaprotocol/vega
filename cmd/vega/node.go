@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/governance"
@@ -94,6 +95,7 @@ type NodeCommand struct {
 	accountSub     *subscribers.AccountSub
 	partySub       *subscribers.PartySub
 	tradeSub       *subscribers.TradeSub
+	marginLevelSub *subscribers.MarginLevelSub
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
@@ -134,7 +136,10 @@ type NodeCommand struct {
 
 	executionEngine *execution.Engine
 	processor       *processor.Processor
-	mktscfg         []proto.Market
+	governance      *governance.Engine
+	collateral      *collateral.Engine
+
+	mktscfg []proto.Market
 
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string

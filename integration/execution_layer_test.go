@@ -581,7 +581,7 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 		}
 
 		partyID, marketID := val(row, 0), val(row, 1)
-		ml, err := execsetup.marginLevelsBuf.getMarginByPartyAndMarket(partyID, marketID)
+		ml, err := execsetup.broker.getMarginByPartyAndMarket(partyID, marketID)
 		if err != nil {
 			return err
 		}

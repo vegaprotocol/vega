@@ -23,10 +23,10 @@ type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
 }
 
-// MarginLevelsBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
-type MarginLevelsBuf interface {
-	Add(types.MarginLevels)
+// Broker the event bus broker
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
+type Broker interface {
+	Send(events.Event)
 }
 
 type marginChange struct {
@@ -45,7 +45,7 @@ type Engine struct {
 	factors          *types.RiskResult
 	waiting          bool
 	ob               Orderbook
-	marginsLevelsBuf MarginLevelsBuf
+	broker           Broker
 
 	currTime int64
 	mktID    string
@@ -59,7 +59,7 @@ func NewEngine(
 	model Model,
 	initialFactors *types.RiskResult,
 	ob Orderbook,
-	mlBuf MarginLevelsBuf,
+	broker Broker,
 	initialTime int64,
 	mktID string,
 ) *Engine {
@@ -75,7 +75,7 @@ func NewEngine(
 		model:            model,
 		waiting:          false,
 		ob:               ob,
-		marginsLevelsBuf: mlBuf,
+		broker:           broker,
 		currTime:         initialTime,
 		mktID:            mktID,
 	}
@@ -127,6 +127,7 @@ func (e *Engine) CalculateFactors(now time.Time) {
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
 func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (events.Risk, error) {
+	ctx := context.TODO()
 	if evt == nil {
 		return nil, nil
 	}
@@ -159,7 +160,7 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (ev
 	}
 
 	// propagate margins levels to the buffer
-	e.marginsLevelsBuf.Add(*margins)
+	e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 
 	// margins are sufficient, nothing to update
 	if curBalance >= margins.InitialMargin {
@@ -227,7 +228,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.CollateralReleaseLevel {
 			// propagate margins then continue
-			e.marginsLevelsBuf.Add(*margins)
+			e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 			continue
 		}
 
@@ -267,7 +268,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 
 		// propage margins to the buffers
-		e.marginsLevelsBuf.Add(*margins)
+		e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 
 		risk := &marginChange{
 			Margin:   evt,

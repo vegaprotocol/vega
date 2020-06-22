@@ -1993,7 +1993,8 @@ Proposal can enter Failed state from any other state.
 | STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
 | STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements). |
 | STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
-| STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
+| STATE_ENACTED | 6 |  |
+| STATE_WAITING_FOR_NODE_VOTE | 7 | waiting for validators validation of the proposal |
 
 
 

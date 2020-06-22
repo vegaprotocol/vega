@@ -34,7 +34,7 @@ func (m *MarketEvent) loop() {
 			m.Halt()
 			return
 		case e := <-m.ch:
-			if m.running {
+			if m.isRunning() {
 				if me, ok := e.(ME); ok {
 					m.write(me)
 				}

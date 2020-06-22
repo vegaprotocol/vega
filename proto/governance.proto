@@ -171,8 +171,10 @@ message Proposal {
     // Proposal didn't get enough votes (either failing to gain required participation or majority level).
     STATE_DECLINED = 5;
 
-    // Proposal has been executed and the changes under this proposal have now been applied.
     STATE_ENACTED = 6;
+
+    // waiting for validators validation of the proposal
+    STATE_WAITING_FOR_NODE_VOTE = 7;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
