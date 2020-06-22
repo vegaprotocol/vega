@@ -68,6 +68,39 @@ func NewFooEngine(fooBuf FooBuffer) *fooEngine {
 }
 ```
 
+5. Type mapping: It's a common thing to need to map one type onto another (e.g. `log.DebugLevel` mapped onto a string representation). We use protobuf types throughout, many of which contain `oneof` fields. When we assign these values, we use a `switch` statement. This denotes that the code maps a `oneof` because:
+    a) Only one case applies
+    b) A switch performs better. The more `if`'s are needed, the slower the mapping becomes.
+    c) The use of `if`'s and `else`'s makes the code look more complex than it really is. `if-else` hint at more complex logic (checking if a map contains an entry, checking for errors, etc...). Type mapping is just a matter of extracting the typed data, and assigning it.
+
+Compare the following:
+
+```go
+func ifMap(assignTo T, oneOf Tb) {
+    if a := oneOf.A(); a != nil {
+        assignTo.A = a
+    } else if b := oneOf.B(); b != nil {
+        assignTo.B = b
+    } else {
+        return ErrUnmappableType
+    }
+}
+
+func switchMap(assignTo T, oneOf Tb) {
+    switch t := oneOf.Field.(type) {
+    case *A:
+        assignTo.A = t
+    case *B:
+        assignTo.B = t
+    default:
+        return ErrUnmappableType
+    }
+}
+```
+
+The latter not only looks cleaner, it results in fewer function calls (the `if` equivalent will call all getters until a non-nil value is returned), it's easier to maintain (adding another value is a 2 line change), and clearly communicates what this function does. Instantly, anyone looking at this code can tell that there's no business logic involved.
+
+
 ## Protobuf
 
 In addition to the Golang code review standards, we want to be consistent:
