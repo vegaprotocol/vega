@@ -341,7 +341,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.broker = broker.New(l.ctx)
 	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub)
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
