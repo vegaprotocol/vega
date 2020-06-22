@@ -18,12 +18,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type MLEvent interface {
+	events.Event
+	MarginLevels() types.MarginLevels
+}
+
 type testEngine struct {
 	*risk.Engine
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
-	mlbuf     *mocks.MockMarginLevelsBuf
+	broker    *mocks.MockBroker
 }
 
 // implements the events.Margin interface
@@ -94,10 +99,12 @@ func testMarginLevelsTS(t *testing.T) {
 	ts := time.Date(2018, time.January, 23, 0, 0, 0, 0, time.UTC)
 	eng.OnTimeUpdate(ts)
 
-	eng.mlbuf.EXPECT().Add(gomock.Any()).Times(1).
-		Do(func(l types.MarginLevels) {
-			assert.Equal(t, ts.UnixNano(), l.Timestamp)
-		})
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
+		mle, ok := e.(MLEvent)
+		assert.True(t, ok)
+		ml := mle.MarginLevels()
+		assert.Equal(t, ts.UnixNano(), ml.Timestamp)
+	})
 
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
@@ -124,7 +131,7 @@ func testMarginTopup(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	eng.mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -167,7 +174,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 func testMarginNoop(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
-	eng.mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -192,7 +199,7 @@ func testMarginNoop(t *testing.T) {
 func testMarginOverflow(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
-	eng.mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -274,8 +281,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
-	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	broker := mocks.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fil it with the orders
 
@@ -300,7 +307,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, mlbuf, 0, "mktid")
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, broker, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -379,8 +386,8 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
-	mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	broker := mocks.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fil it with the orders
 
@@ -405,7 +412,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, mlbuf, 0, "mktid")
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, broker, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -442,8 +449,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
-	mlbuf := mocks.NewMockMarginLevelsBuf(ctrl)
-	// mlbuf.EXPECT().Add(gomock.Any()).AnyTimes()
+	broker := mocks.NewMockBroker(ctrl)
 
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
@@ -452,7 +458,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		model,
 		initialRisk,
 		ob,
-		mlbuf,
+		broker,
 		0,
 		"mktid",
 	)
@@ -461,7 +467,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		ctrl:      ctrl,
 		model:     model,
 		orderbook: ob,
-		mlbuf:     mlbuf,
+		broker:    broker,
 	}
 }
 

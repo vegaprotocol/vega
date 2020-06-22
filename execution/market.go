@@ -80,9 +80,8 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	candleBuf       CandleBuf
-	marginLevelsBuf MarginLevelsBuf
-	settleBuf       SettlementBuf
+	candleBuf CandleBuf
+	settleBuf SettlementBuf
 
 	broker Broker
 	closed bool
@@ -123,7 +122,6 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candleBuf CandleBuf,
-	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
 	now time.Time,
 	broker Broker,
@@ -158,7 +156,7 @@ func NewMarket(
 		tradableInstrument.RiskModel,
 		getInitialFactors(log, mkt, asset),
 		book,
-		marginLevelsBuf,
+		broker,
 		now.UnixNano(),
 		mkt.GetId(),
 	)
@@ -186,7 +184,6 @@ func NewMarket(
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
 		candleBuf:          candleBuf,
-		marginLevelsBuf:    marginLevelsBuf,
 		settleBuf:          settlementBuf,
 		broker:             broker,
 	}
@@ -907,7 +904,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()
-		m.marginLevelsBuf.Add(marginLevels)
+		m.broker.Send(events.NewMarginLevelsEvent(ctx, marginLevels))
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("trader closed-out with success",

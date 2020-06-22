@@ -66,13 +66,6 @@ type MarketDataBuf interface {
 	Flush()
 }
 
-// MarginLevelsBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
-type MarginLevelsBuf interface {
-	Add(types.MarginLevels)
-	Flush()
-}
-
 // LossSocializationBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution LossSocializationBuf
 type LossSocializationBuf interface {
@@ -110,14 +103,13 @@ type Engine struct {
 	governance *governance.Engine
 	idgen      *IDgenerator
 
-	candleBuf       CandleBuf
-	marketBuf       MarketBuf
-	marketDataBuf   MarketDataBuf
-	marginLevelsBuf MarginLevelsBuf
-	settleBuf       SettlementBuf
-	lossSocBuf      LossSocializationBuf
-	proposalBuf     ProposalBuf
-	voteBuf         VoteBuf
+	candleBuf     CandleBuf
+	marketBuf     MarketBuf
+	marketDataBuf MarketDataBuf
+	settleBuf     SettlementBuf
+	lossSocBuf    LossSocializationBuf
+	proposalBuf   ProposalBuf
+	voteBuf       VoteBuf
 
 	broker Broker
 	time   TimeService
@@ -132,7 +124,6 @@ func NewEngine(
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
 	marketDataBuf MarketDataBuf,
-	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
 	proposalBuf ProposalBuf,
@@ -160,23 +151,22 @@ func NewEngine(
 	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
 
 	e := &Engine{
-		log:             log,
-		Config:          executionConfig,
-		markets:         map[string]*Market{},
-		candleBuf:       candleBuf,
-		marketBuf:       marketBuf,
-		time:            time,
-		collateral:      cengine,
-		governance:      gengine,
-		party:           NewParty(log, cengine, pmkts, broker),
-		marketDataBuf:   marketDataBuf,
-		marginLevelsBuf: marginLevelsBuf,
-		settleBuf:       settleBuf,
-		lossSocBuf:      lossSocBuf,
-		proposalBuf:     proposalBuf,
-		voteBuf:         voteBuf,
-		idgen:           NewIDGen(),
-		broker:          broker,
+		log:           log,
+		Config:        executionConfig,
+		markets:       map[string]*Market{},
+		candleBuf:     candleBuf,
+		marketBuf:     marketBuf,
+		time:          time,
+		collateral:    cengine,
+		governance:    gengine,
+		party:         NewParty(log, cengine, pmkts, broker),
+		marketDataBuf: marketDataBuf,
+		settleBuf:     settleBuf,
+		lossSocBuf:    lossSocBuf,
+		proposalBuf:   proposalBuf,
+		voteBuf:       voteBuf,
+		idgen:         NewIDGen(),
+		broker:        broker,
 	}
 
 	// Add initial markets and flush to stores (if they're configured)
@@ -267,7 +257,6 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.party,
 		marketConfig,
 		e.candleBuf,
-		e.marginLevelsBuf,
 		e.settleBuf,
 		now,
 		e.broker,
@@ -516,9 +505,6 @@ func (e *Engine) Generate() error {
 	// governance
 	e.proposalBuf.Flush()
 	e.voteBuf.Flush()
-
-	// margins levels
-	e.marginLevelsBuf.Flush()
 
 	// Transfers
 	// @TODO this event will be generated with a block context that has the trace ID
