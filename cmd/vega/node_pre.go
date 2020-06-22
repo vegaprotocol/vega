@@ -338,9 +338,18 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
-	broker := broker.New(l.ctx)
-	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub)
+	l.broker = broker.New(l.ctx)
+	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub)
+
+	now, _ := l.timeService.GetTimeNow()
+
+	//  create collateral
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, l.lossSocBuf, now)
+	if err != nil {
+		log.Error("unable to initialise collateral", logging.Error(err))
+		return err
+	}
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -355,20 +364,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.lossSocBuf,
 		l.mktscfg,
 		l.collateral,
-		broker,
+		l.broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
 	l.topology = validators.NewTopology(l.Log, nil)
 
-	now, _ := l.timeService.GetTimeNow()
-
-	//  create collateral
-	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, l.lossSocBuf, now)
-	if err != nil {
-		log.Error("unable to initialise collateral", logging.Error(err))
-		return err
-	}
 	netParams := governance.DefaultNetworkParameters(l.Log)
 	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.proposalBuf, l.voteBuf, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
 	if err != nil {
