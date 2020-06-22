@@ -255,7 +255,7 @@ func (e *Engine) addMarket(marketConfig *types.Market) error {
 		return err
 	}
 
-	marketRecord, err := NewMarket(
+	mkt, err := NewMarket(
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
@@ -278,7 +278,7 @@ func (e *Engine) addMarket(marketConfig *types.Market) error {
 		)
 	}
 
-	e.markets[marketConfig.Id] = marketRecord
+	e.markets[marketConfig.Id] = mkt
 
 	// create market accounts
 	asset, err := marketConfig.GetAsset()
@@ -290,7 +290,7 @@ func (e *Engine) addMarket(marketConfig *types.Market) error {
 	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
-	e.party.addMarket(*marketRecord.mkt)
+	e.party.addMarket(*mkt.mkt)
 	e.markets[marketConfig.Id].partyEngine = e.party
 
 	e.marketBuf.Add(*marketConfig)

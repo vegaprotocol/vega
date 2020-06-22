@@ -1539,11 +1539,12 @@ func assignProduct(
 	target *types.Instrument,
 ) error {
 
-	if future := source.GetFuture(); future != nil {
+	switch product := source.Product.(type) {
+	case *types.IntrumentConfiguration_Future:
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Asset:    future.Asset,
-				Maturity: future.Maturity,
+				Asset:    product.Future.Asset,
+				Maturity: product.Future.Maturity,
 				Oracle: &types.Future_EthereumEvent{
 					EthereumEvent: &types.EthereumEvent{
 						ContractID: parameters.FutureOracle.ContractID,
@@ -1553,9 +1554,10 @@ func assignProduct(
 				},
 			},
 		}
-		return nil
+	default:
+		return ErrProductTypeNotSupported
 	}
-	return ErrProductTypeNotSupported
+	return nil
 }
 
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
