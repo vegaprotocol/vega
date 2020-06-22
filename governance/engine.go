@@ -136,6 +136,9 @@ func (e *Engine) SubmitProposal(proposal types.Proposal) error {
 		err := e.validateOpenProposal(proposal)
 		if err != nil {
 			proposal.State = types.Proposal_STATE_REJECTED
+			if e.log.GetLevel() == logging.DebugLevel {
+				e.log.Debug("Proposal rejected", logging.String("proposal-id", proposal.ID))
+			}
 		} else {
 			e.activeProposals[proposal.ID] = &proposalData{
 				Proposal: &proposal,
