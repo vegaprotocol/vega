@@ -114,6 +114,36 @@ func (b *brokerStub) GetAccounts() []events.Acc {
 	return s
 }
 
+func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (proto.MarginLevels, error) {
+	batch := b.GetBatch(events.MarginLevelsEvent)
+	mapped := map[string]map[string]proto.MarginLevels{}
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.MarginLevels:
+			ml := et.MarginLevels()
+			if _, ok := mapped[ml.PartyID]; !ok {
+				mapped[ml.PartyID] = map[string]proto.MarginLevels{}
+			}
+			mapped[ml.PartyID][ml.MarketID] = ml
+		case events.MarginLevels:
+			ml := et.MarginLevels()
+			if _, ok := mapped[ml.PartyID]; !ok {
+				mapped[ml.PartyID] = map[string]proto.MarginLevels{}
+			}
+			mapped[ml.PartyID][ml.MarketID] = ml
+		}
+	}
+	mkts, ok := mapped[partyID]
+	if !ok {
+		return proto.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
+	}
+	ml, ok := mkts[marketID]
+	if !ok {
+		return proto.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
+	}
+	return ml, nil
+}
+
 func (b *brokerStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {

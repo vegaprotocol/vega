@@ -48,7 +48,7 @@ func (t *TransferResponse) loop() {
 			t.Halt() // cleanup what we can
 			return
 		case e := <-t.ch:
-			if t.running {
+			if t.isRunning() {
 				t.Push(e)
 			}
 		}

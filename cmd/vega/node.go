@@ -94,6 +94,7 @@ type NodeCommand struct {
 	accountSub     *subscribers.AccountSub
 	partySub       *subscribers.PartySub
 	tradeSub       *subscribers.TradeSub
+	marginLevelSub *subscribers.MarginLevelSub
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
