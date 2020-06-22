@@ -40,7 +40,7 @@ func (a *AccountSub) loop(ctx context.Context) {
 			a.Halt()
 			return
 		case e := <-a.ch:
-			if a.running {
+			if a.isRunning() {
 				a.Push(e)
 			}
 		}

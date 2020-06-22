@@ -43,7 +43,7 @@ func (o *OrderEvent) loop(ctx context.Context) {
 			o.Halt()
 			return
 		case e := <-o.ch:
-			if o.running {
+			if o.isRunning() {
 				o.Push(e)
 			}
 		}

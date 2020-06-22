@@ -39,7 +39,7 @@ func (m *MarginLevelSub) loop(ctx context.Context) {
 			m.Halt()
 			return
 		case e := <-m.ch:
-			if m.running {
+			if m.isRunning() {
 				m.Push(e)
 			}
 		}
