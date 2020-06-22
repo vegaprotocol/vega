@@ -62,41 +62,45 @@ func validateInstrument(timeSvc TimeService, instrument *types.IntrumentConfigur
 	if instrument.BaseName == instrument.QuoteName {
 		return ErrInvalidSecurity
 	}
-	if instrument.GetProduct() == nil {
+
+	switch product := instrument.Product.(type) {
+	case nil:
 		return ErrNoProduct
-	}
-	if future := instrument.GetFuture(); future != nil {
-		if err := validateFuture(timeSvc, future); err != nil {
-			return err
-		}
-	} else {
+	case *types.IntrumentConfiguration_Future:
+		return validateFuture(timeSvc, product.Future)
+	default:
 		return ErrProductInvalid
 	}
-	return nil
 }
 
 func validateRiskModel(risk *types.RiskConfiguration) error {
 	if risk.Model == types.RiskConfiguration_MODEL_UNSPECIFIED {
 		return ErrInvalidRiskModelType
-	} else if risk.Model == types.RiskConfiguration_MODEL_SIMPLE {
-		if risk.GetSimple() == nil {
+	}
+
+	switch risk.Parameters.(type) {
+	case *types.RiskConfiguration_Simple:
+		if risk.Model != types.RiskConfiguration_MODEL_SIMPLE {
 			return ErrIncompatibleRiskParameters
 		}
-	} else if risk.Model == types.RiskConfiguration_MODEL_LOG_NORMAL {
-		if risk.GetLogNormal() == nil {
+	case *types.RiskConfiguration_LogNormal:
+		if risk.Model != types.RiskConfiguration_MODEL_LOG_NORMAL {
 			return ErrIncompatibleRiskParameters
 		}
-	} else {
+	default:
 		return ErrRiskModelTypeNotSupported
 	}
 	return nil
 }
 
 func validateTradingMode(terms *types.NewMarketConfiguration) error {
-	if terms.GetTradingMode() == nil {
+	switch terms.TradingMode.(type) {
+	case nil:
 		return ErrNoTradingMode
-	}
-	if terms.GetContinuous() == nil && terms.GetDiscrete() == nil {
+	case *types.NewMarketConfiguration_Continuous:
+	case *types.NewMarketConfiguration_Discrete:
+		break
+	default:
 		return ErrTradingModeInvalid
 	}
 	return nil

@@ -1564,9 +1564,9 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 			Continuous: continuous,
 		}
 		return nil
-	} else if descrete := definition.GetDiscrete(); descrete != nil {
+	} else if discrete := definition.GetDiscrete(); discrete != nil {
 		target.TradingMode = &types.Market_Discrete{
-			Discrete: descrete,
+			Discrete: discrete,
 		}
 		return nil
 	}
