@@ -12,9 +12,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const invalidProposalTerms = "invalid proposal terms"
+
 var (
 	// ErrInvalidProposalTerms is returned if basic validation has failed
-	ErrInvalidProposalTerms = errors.New("invalid proposal terms")
+	ErrInvalidProposalTerms = errors.New(invalidProposalTerms)
 
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
@@ -47,41 +49,23 @@ type Plugin interface {
 	GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData
 }
 
-type networkParameters struct {
-	minCloseInSeconds     int64
-	maxCloseInSeconds     int64
-	minEnactInSeconds     int64
-	maxEnactInSeconds     int64
-	minParticipationStake uint64
-}
-
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
 	log    *logging.Logger
 	mu     sync.Mutex
 	plugin Plugin
-
-	parameters networkParameters
 }
 
 // NewService creates new governance service instance
 func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	cfg.initParams() // ensures params are set
 
 	return &Svc{
 		Config: cfg,
 		log:    log,
 		plugin: plugin,
-		parameters: networkParameters{
-			minCloseInSeconds:     cfg.params.DefaultMinClose,
-			maxCloseInSeconds:     cfg.params.DefaultMaxClose,
-			minEnactInSeconds:     cfg.params.DefaultMinEnact,
-			maxEnactInSeconds:     cfg.params.DefaultMaxEnact,
-			minParticipationStake: cfg.params.DefaultMinParticipation,
-		},
 	}
 }
 
@@ -97,7 +81,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.mu.Lock()
-	cfg.params = s.Config.params
 	s.Config = cfg
 	s.mu.Unlock()
 }
@@ -293,6 +276,7 @@ func (s *Svc) GetNewAssetProposals(inState *types.Proposal_State) []*types.Gover
 func (s *Svc) PrepareProposal(
 	ctx context.Context, party string, reference string, terms *types.ProposalTerms,
 ) (*types.Proposal, error) {
+
 	if err := s.validateTerms(terms); err != nil {
 		return nil, err
 	}
@@ -302,7 +286,7 @@ func (s *Svc) PrepareProposal(
 	return &types.Proposal{
 		Reference: reference,
 		PartyID:   party,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     terms,
 	}, nil
 }
@@ -317,12 +301,10 @@ func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
 	return vote, nil
 }
 
-// validateTerms performs sanity checks:
-// - network time restrictions parameters (voting duration, enactment date time);
-// - network minimum participation requirement parameter.
+// validateTerms performs trivial sanity check
 func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	if err := terms.Validate(); err != nil {
-		return ErrInvalidProposalTerms
+		return errors.Wrap(err, invalidProposalTerms)
 	}
 
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)

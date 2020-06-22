@@ -120,7 +120,7 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
-	if order.Side == types.Side_Buy {
+	if order.Side == types.Side_SIDE_BUY {
 		pos.buy += int64(order.Remaining)
 	} else {
 		pos.sell += int64(order.Remaining)
@@ -137,12 +137,35 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 	if !found {
 		err = ErrPositionNotFound
 	} else {
-		if order.Side == types.Side_Buy {
+		if order.Side == types.Side_SIDE_BUY {
 			pos.buy -= int64(order.Remaining)
 		} else {
 			pos.sell -= int64(order.Remaining)
 		}
 	}
+	timer.EngineTimeCounterAdd()
+	return
+}
+
+// AmendOrder unregisters the original order and then registers the newly amended order
+// this method is a quicker way of handling seperate unregsiter+register pairs
+func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
+	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
+
+	pos, found := e.positions[originalOrder.PartyID]
+	if !found {
+		// If we can't find the original, we can't amend it
+		err = ErrPositionNotFound
+		return
+	}
+	if originalOrder.Side == types.Side_SIDE_BUY {
+		pos.buy -= int64(originalOrder.Remaining)
+		pos.buy += int64(newOrder.Remaining)
+	} else {
+		pos.sell -= int64(originalOrder.Remaining)
+		pos.sell += int64(newOrder.Remaining)
+	}
+
 	timer.EngineTimeCounterAdd()
 	return
 }

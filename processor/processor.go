@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -45,18 +46,18 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
-	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
-	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
-	Withdraw(*types.Withdraw) error
+	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
+	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
 	EnactProposal(proposal *types.Proposal) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	AddProposal(types.Proposal) error
+	SubmitProposal(types.Proposal) error
 	AddVote(types.Vote) error
 	AddNodeVote(*types.NodeVote) error
 	OnChainTimeUpdate(time.Time) []*types.Proposal
@@ -118,6 +119,7 @@ type ProposalBuf interface {
 
 type nodeProposal struct {
 	*types.Proposal
+	ctx       context.Context
 	votes     map[string]struct{}
 	validTime time.Time
 	assetID   string
@@ -307,7 +309,7 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		Type:        orderSubmission.Type,
 		ExpiresAt:   orderSubmission.ExpiresAt,
 		Reference:   orderSubmission.Reference,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		CreatedAt:   0,
 		Remaining:   orderSubmission.Size,
 	}
@@ -447,7 +449,7 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 
 // Process performs validation and then sends the command and data to
 // the underlying blockchain service handlers e.g. submit order, etc.
-func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
+func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Command) error {
 	// first is that a signed or unsigned command?
 	switch cmd {
 	case blockchain.SubmitOrderCommand:
@@ -455,25 +457,25 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		err = p.submitOrder(order)
+		err = p.submitOrder(ctx, order)
 	case blockchain.CancelOrderCommand:
 		order, err := p.getOrderCancellation(data)
 		if err != nil {
 			return err
 		}
-		return p.cancelOrder(order)
+		return p.cancelOrder(ctx, order)
 	case blockchain.AmendOrderCommand:
 		order, err := p.getOrderAmendment(data)
 		if err != nil {
 			return err
 		}
-		return p.amendOrder(order)
+		return p.amendOrder(ctx, order)
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
 			return err
 		}
-		return p.exec.Withdraw(withdraw)
+		return p.exec.Withdraw(ctx, withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
@@ -508,7 +510,7 @@ func (p *Processor) Process(data []byte, cmd blockchain.Command) error {
 		if err != nil {
 			return err
 		}
-		return p.exec.NotifyTraderAccount(notify)
+		return p.exec.NotifyTraderAccount(ctx, notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
@@ -533,7 +535,7 @@ func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration
 	return cmd, nil
 }
 
-func (p *Processor) submitOrder(o *types.Order) error {
+func (p *Processor) submitOrder(ctx context.Context, o *types.Order) error {
 	p.stat.IncTotalCreateOrder()
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Processor received a SUBMIT ORDER request", logging.Order(*o))
@@ -542,7 +544,7 @@ func (p *Processor) submitOrder(o *types.Order) error {
 	o.CreatedAt = p.currentTimestamp.UnixNano()
 
 	// Submit the create order request to the execution engine
-	conf, err := p.exec.SubmitOrder(o)
+	conf, err := p.exec.SubmitOrder(ctx, o)
 	if conf != nil {
 
 		if p.log.GetLevel() == logging.DebugLevel {
@@ -569,14 +571,14 @@ func (p *Processor) submitOrder(o *types.Order) error {
 	return err
 }
 
-func (p *Processor) cancelOrder(order *types.OrderCancellation) error {
+func (p *Processor) cancelOrder(ctx context.Context, order *types.OrderCancellation) error {
 	p.stat.IncTotalCancelOrder()
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderID))
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := p.exec.CancelOrder(order)
+	msg, err := p.exec.CancelOrder(ctx, order)
 	if err != nil {
 		p.log.Error("error on cancelling order",
 			logging.String("order-id", order.OrderID),
@@ -591,7 +593,7 @@ func (p *Processor) cancelOrder(order *types.OrderCancellation) error {
 	return nil
 }
 
-func (p *Processor) amendOrder(order *types.OrderAmendment) error {
+func (p *Processor) amendOrder(ctx context.Context, order *types.OrderAmendment) error {
 	p.stat.IncTotalAmendOrder()
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Blockchain service received a AMEND ORDER request",
@@ -599,7 +601,7 @@ func (p *Processor) amendOrder(order *types.OrderAmendment) error {
 	}
 
 	// Submit the Amendment new order request to the Vega trading core
-	_, err := p.exec.AmendOrder(order)
+	_, err := p.exec.AmendOrder(ctx, order)
 	if err != nil {
 		p.log.Error("Error amending order",
 			logging.String("order", order.String()),
@@ -640,7 +642,8 @@ func (p *Processor) SubmitProposal(proposal *types.Proposal) error {
 	}
 	// TODO(JEREMY): use hash of the signature here.
 	p.idgen.SetProposalID(proposal)
-	return p.gov.AddProposal(*proposal)
+	proposal.Timestamp = p.currentTimestamp.UnixNano()
+	return p.gov.SubmitProposal(*proposal)
 }
 
 // VoteOnProposal sends proposal vote to governance engine
@@ -651,6 +654,7 @@ func (p *Processor) VoteOnProposal(vote *types.Vote) error {
 			logging.String("vote-party", vote.PartyID),
 			logging.String("vote-value", vote.Value.String()))
 	}
+	vote.Timestamp = p.currentTimestamp.UnixNano()
 	return p.gov.AddVote(*vote)
 }
 
@@ -660,7 +664,7 @@ func (p *Processor) onTick(t time.Time) {
 	acceptedProposals := p.gov.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
 		if err := p.exec.EnactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_FAILED
+			proposal.State = types.Proposal_STATE_FAILED
 			p.log.Error("unable to enact proposal",
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
@@ -669,5 +673,4 @@ func (p *Processor) onTick(t time.Time) {
 	}
 	// governance flush
 	p.proposalBuf.Flush()
-
 }

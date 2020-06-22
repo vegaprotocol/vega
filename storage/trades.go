@@ -413,6 +413,10 @@ func (ts *Trade) notify(items []types.Trade) error {
 func (ts *Trade) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error) {
 	results := make(map[string][]byte)
 	for _, trade := range batch {
+		if trade.Type == types.Trade_TYPE_UNSPECIFIED {
+			ts.log.Error("attempting to store a trade with UNSPECIFIED Type (tradeBatchToMap)")
+			return nil, ErrUnspecifiedType
+		}
 		tradeBuf, err := proto.Marshal(&trade)
 		if err != nil {
 			return nil, err

@@ -1,13 +1,16 @@
 package core_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
@@ -67,7 +70,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			Amount:   u64val(row, 1),
 		}
 
-		err := execsetup.engine.NotifyTraderAccount(&notif)
+		err := execsetup.engine.NotifyTraderAccount(context.Background(), &notif)
 		if err != nil {
 			return err
 		}
@@ -82,7 +85,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 
 			if !traderHaveGeneralAccount(execsetup.accs[val(row, 0)], asset) {
 				acc := account{
-					Type:    proto.AccountType_GENERAL,
+					Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
 					Balance: u64val(row, 1),
 					Asset:   asset,
 				}
@@ -90,7 +93,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			}
 
 			acc := account{
-				Type:    proto.AccountType_MARGIN,
+				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: 0,
 				Market:  mkt.Name,
 				Asset:   asset,
@@ -108,7 +111,7 @@ func iExpectTheTradersToHaveNewGeneralAccount(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		_, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		_, err := execsetup.broker.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return fmt.Errorf("missing general account for trader=%v asset=%v", val(row, 0), val(row, 1))
 		}
@@ -120,7 +123,7 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 	balance, _ := strconv.ParseUint(arg2, 10, 0)
 	for _, mkt := range execsetup.mkts {
 		asset, _ := mkt.GetAsset()
-		acc, err := execsetup.accounts.getTraderGeneralAccount(arg1, asset)
+		acc, err := execsetup.broker.getTraderGeneralAccount(arg1, asset)
 		if err != nil {
 			return err
 		}
@@ -134,8 +137,13 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 func haveOnlyOneAccountPerAsset(arg1 string) error {
 	assets := map[string]struct{}{}
 
-	for _, acc := range execsetup.accounts.data {
-		if acc.Owner == arg1 && acc.Type == proto.AccountType_GENERAL {
+	accs := execsetup.broker.GetAccounts()
+	data := make([]proto.Account, 0, len(accs))
+	for _, a := range accs {
+		data = append(data, a.Account())
+	}
+	for _, acc := range data {
+		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL {
 			if _, ok := assets[acc.Asset]; ok {
 				return fmt.Errorf("trader=%v have multiple account for asset=%v", arg1, acc.Asset)
 			}
@@ -148,8 +156,13 @@ func haveOnlyOneAccountPerAsset(arg1 string) error {
 func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
-	for _, acc := range execsetup.accounts.data {
-		if acc.Owner == arg1 && acc.Type == proto.AccountType_MARGIN {
+	accs := execsetup.broker.GetAccounts()
+	data := make([]proto.Account, 0, len(accs))
+	for _, a := range accs {
+		data = append(data, a.Account())
+	}
+	for _, acc := range data {
+		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
 			}
@@ -167,7 +180,7 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 		Amount:   amount,
 	}
 
-	err := execsetup.engine.NotifyTraderAccount(&notif)
+	err := execsetup.engine.NotifyTraderAccount(context.Background(), &notif)
 	if err != nil {
 		return err
 	}
@@ -177,7 +190,7 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 	balance, _ := strconv.ParseUint(balancestr, 10, 0)
-	acc, err := execsetup.accounts.getTraderGeneralAccount(trader, asset)
+	acc, err := execsetup.broker.getTraderGeneralAccount(trader, asset)
 	if err != nil {
 		return err
 	}
@@ -198,7 +211,7 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 		Asset:   asset,
 	}
 
-	err := execsetup.engine.Withdraw(&notif)
+	err := execsetup.engine.Withdraw(context.Background(), &notif)
 	if err != nil {
 		return err
 	}
@@ -223,6 +236,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -235,7 +249,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		result, err := execsetup.engine.SubmitOrder(&order)
+		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
 			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
 		}
@@ -263,6 +277,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -276,7 +291,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		if _, err := execsetup.engine.SubmitOrder(&order); err == nil {
+		if _, err := execsetup.engine.SubmitOrder(context.Background(), &order); err == nil {
 			return fmt.Errorf("expected trader %s to not exist", order.PartyID)
 		}
 	}
@@ -299,6 +314,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		}
 
 		order := proto.Order{
+			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -312,7 +328,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		result, err := execsetup.engine.SubmitOrder(&order)
+		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
 			return err
 		}
@@ -329,7 +345,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -340,7 +356,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(&cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -354,7 +370,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -365,7 +381,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(&cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -379,7 +395,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -390,7 +406,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			MarketID: o.MarketID,
 		}
 
-		_, err = execsetup.engine.CancelOrder(&cancel)
+		_, err = execsetup.engine.CancelOrder(context.Background(), &cancel)
 		if err != nil {
 			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
 		}
@@ -405,7 +421,7 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		generalAccount, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		generalAccount, err := execsetup.broker.getTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -415,7 +431,7 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 		if generalAccount.GetBalance() != u64val(row, 4) {
 			hasError = true
 		}
-		marginAccount, err := execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		marginAccount, err := execsetup.broker.getTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
@@ -434,7 +450,12 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
-	for _, v := range execsetup.accounts.data {
+	batch := execsetup.broker.GetAccounts()
+	data := make([]types.Account, 0, len(batch))
+	for _, e := range batch {
+		data = append(data, e.Account())
+	}
+	for _, v := range data {
 		if v.Asset != collateral.TokenAsset {
 			cumul += uint64(v.Balance)
 		}
@@ -456,7 +477,13 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), proto.AccountType_value[val(row, 3)])
 
 		var ledgerEntry *proto.LedgerEntry
-		for _, v := range execsetup.transfers.data {
+		transferEvents := execsetup.broker.GetTransferResponses()
+		data := make([]*types.TransferResponse, 0, len(transferEvents))
+		for _, e := range transferEvents {
+			data = append(data, e.TransferResponses()...)
+		}
+
+		for _, v := range data {
 			for _, _v := range v.GetTransfers() {
 				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
 					if _v.Amount != u64val(row, 5) {
@@ -479,13 +506,13 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 	}
 
-	execsetup.transfers.Flush()
+	execsetup.broker.ResetType(events.TransferResponses)
 	return nil
 }
 
 func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.accounts.getMarketSettlementAccount(market)
+	acc, err := execsetup.broker.getMarketSettlementAccount(market)
 	if err != nil {
 		return err
 	}
@@ -497,7 +524,7 @@ func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string
 
 func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.accounts.getMarketInsurancePoolAccount(market)
+	acc, err := execsetup.broker.getMarketInsurancePoolAccount(market)
 	if err != nil {
 		return err
 	}
@@ -532,11 +559,11 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(&order)
+		_, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 6), err)
 		}
@@ -587,6 +614,11 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			continue
 		}
 
+		oty, err := ordertypeval(row, 6)
+		if err != nil {
+			return err
+		}
+
 		order := proto.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -596,11 +628,11 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        oty,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(&order)
+		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
 		}
@@ -619,9 +651,11 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 			continue
 		}
 
-		for _, v := range execsetup.orders.data {
+		data := execsetup.broker.GetOrderEvents()
+		for _, o := range data {
+			v := o.Order()
 			if v.PartyID == val(row, 0) && v.MarketID == val(row, 1) &&
-				v.Status == proto.Order_Rejected && v.Reason.String() == val(row, 2) {
+				v.Status == proto.Order_STATUS_REJECTED && v.Reason.String() == val(row, 2) {
 				ordCnt -= 1
 			}
 		}
@@ -704,7 +738,8 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 		}
 		ok := false
 		party, side, volume := val(row, 0), sideval(row, 1), u64val(row, 2)
-		for _, v := range execsetup.trades.data {
+		data := execsetup.broker.getTrades()
+		for _, v := range data {
 			if (v.Buyer == party || v.Seller == party) && v.Aggressor == side && v.Size == volume {
 				ok = true
 				break
@@ -728,10 +763,10 @@ func theFollowingTradesHappened(trades *gherkin.DataTable) error {
 		}
 		ok := false
 		buyer, seller, price, volume := val(row, 0), val(row, 1), u64val(row, 2), u64val(row, 3)
-		for _, v := range execsetup.trades.data {
+		data := execsetup.broker.getTrades()
+		for _, v := range data {
 			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == volume {
-				ok = true
-				break
+				return nil
 			}
 		}
 
@@ -750,7 +785,7 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -780,7 +815,7 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			TimeInForce: tif,
 		}
 
-		_, err = execsetup.engine.AmendOrder(&amend)
+		_, err = execsetup.engine.AmendOrder(context.Background(), &amend)
 		if err != nil && success {
 			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyID, o.Reference, err)
 		}
@@ -800,7 +835,7 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.orders.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -818,9 +853,12 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 }
 
 func dumpTransfers() error {
-	for _, _v := range execsetup.transfers.data {
-		for _, v := range _v.GetTransfers() {
-			fmt.Printf("transfer: %v\n", *v)
+	transferEvents := execsetup.broker.GetTransferResponses()
+	for _, e := range transferEvents {
+		for _, t := range e.TransferResponses() {
+			for _, v := range t.GetTransfers() {
+				fmt.Printf("transfer: %v\n", *v)
+			}
 		}
 	}
 	return nil
@@ -829,7 +867,7 @@ func dumpTransfers() error {
 func accountID(marketID, partyID, asset string, _ty int32) string {
 	ty := proto.AccountType(_ty)
 	idbuf := make([]byte, 256)
-	if ty == proto.AccountType_GENERAL {
+	if ty == proto.AccountType_ACCOUNT_TYPE_GENERAL {
 		marketID = ""
 	}
 	if partyID == "market" {
@@ -939,7 +977,8 @@ func executedTrades(trades *gherkin.DataTable) error {
 			size := u64val(row, 2)
 			counterparty := val(row, 3)
 			var found bool = false
-			for _, v := range execsetup.trades.data {
+			data := execsetup.broker.getTrades()
+			for _, v := range data {
 				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
 					found = true
 					break
@@ -957,8 +996,10 @@ func executedTrades(trades *gherkin.DataTable) error {
 }
 
 func dumpOrders() error {
-	for n, o := range execsetup.orders.data {
-		fmt.Printf("order %s: %v\n", n, o)
+	data := execsetup.broker.GetOrderEvents()
+	for _, v := range data {
+		o := *v.Order()
+		fmt.Printf("order %s: %v\n", o.Id, o)
 	}
 	return nil
 }

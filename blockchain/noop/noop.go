@@ -46,6 +46,7 @@ type NOOPChain struct {
 	proc        Processor
 	service     ApplicationService
 	genesisTime time.Time
+	chainID     string
 	txs         chan []byte
 
 	totalTxLastBatch uint64
@@ -124,10 +125,14 @@ func (n *NOOPChain) GetGenesisTime(context.Context) (time.Time, error) {
 	return n.genesisTime, nil
 }
 
+func (n *NOOPChain) GetChainID(context.Context) (string, error) {
+	return n.chainID, nil
+}
+
 func (n *NOOPChain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
 		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.32.9",
+			Version: "0.33.5",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,

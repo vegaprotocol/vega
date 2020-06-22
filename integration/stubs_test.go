@@ -11,6 +11,186 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+type brokerStub struct {
+	mu   sync.Mutex
+	err  error
+	data map[events.Type][]events.Event
+}
+
+func NewBrokerStub() *brokerStub {
+	return &brokerStub{
+		data: map[events.Type][]events.Event{},
+	}
+}
+
+func (b *brokerStub) Send(e events.Event) {
+	b.mu.Lock()
+	if _, ok := b.data[e.Type()]; !ok {
+		b.data[e.Type()] = []events.Event{}
+	}
+	b.data[e.Type()] = append(b.data[e.Type()], e)
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) GetBatch(t events.Type) []events.Event {
+	b.mu.Lock()
+	r := b.data[t]
+	b.mu.Unlock()
+	return r
+}
+
+// utility func:
+func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
+	batch := b.GetBatch(events.TransferResponses)
+	if len(batch) == 0 {
+		return nil
+	}
+	b.mu.Lock()
+	ret := make([]events.TransferResponse, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.TransferResponse:
+			ret = append(ret, *et)
+		case events.TransferResponse:
+			ret = append(ret, et)
+		}
+	}
+	b.mu.Unlock()
+	return ret
+}
+
+func (b *brokerStub) GetOrderEvents() []events.Order {
+	batch := b.GetBatch(events.OrderEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.Order, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Order:
+			ret = append(ret, *et)
+		case events.Order:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
+func (b *brokerStub) GetTradeEvents() []events.Trade {
+	batch := b.GetBatch(events.TradeEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.Trade, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Trade:
+			ret = append(ret, *et)
+		case events.Trade:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
+func (b *brokerStub) GetAccounts() []events.Acc {
+	batch := b.GetBatch(events.AccountEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make(map[string]events.Acc, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Acc:
+			ret[et.Account().Id] = *et
+		case events.Acc:
+			ret[et.Account().Id] = et
+		}
+	}
+	s := make([]events.Acc, 0, len(ret))
+	for _, e := range ret {
+		s = append(s, e)
+	}
+	return s
+}
+
+func (b *brokerStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_INSURANCE {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getMarketSettlementAccount(market string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_SETTLEMENT {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+			return v, nil
+		}
+	}
+
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
+	data := b.GetOrderEvents()
+	for _, o := range data {
+		v := o.Order()
+		if v.Reference == ref && v.PartyID == party {
+			return *v, nil
+		}
+	}
+	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+}
+
+func (b *brokerStub) getTrades() []proto.Trade {
+	data := b.GetTradeEvents()
+	trades := make([]proto.Trade, 0, len(data))
+	for _, t := range data {
+		trades = append(trades, t.Trade())
+	}
+	return trades
+}
+
+func (b *brokerStub) ResetType(t events.Type) {
+	b.mu.Lock()
+	b.data[t] = []events.Event{}
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) Reset() {
+	b.mu.Lock()
+	b.data = map[events.Type][]events.Event{}
+	b.mu.Unlock()
+}
+
 type marginsStub struct {
 	data map[string]map[string]proto.MarginLevels
 	mu   sync.Mutex
@@ -66,7 +246,7 @@ func (d *accStub) Add(acc proto.Account) {
 
 func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_MARGIN && v.MarketID == market {
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
 			return v, nil
 		}
 	}
@@ -75,7 +255,7 @@ func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, 
 
 func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_SETTLEMENT {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			return v, nil
 		}
 	}
@@ -84,7 +264,7 @@ func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, erro
 
 func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_INSURANCE {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_INSURANCE {
 			return v, nil
 		}
 	}
@@ -93,7 +273,7 @@ func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, e
 
 func (s *accStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
 	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {
+		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return v, nil
 		}
 	}

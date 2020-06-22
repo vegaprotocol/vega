@@ -48,20 +48,6 @@ func (mr *MockGovernanceEngineMockRecorder) AddNodeVote(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddNodeVote), arg0)
 }
 
-// AddProposal mocks base method
-func (m *MockGovernanceEngine) AddProposal(arg0 proto.Proposal) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProposal", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddProposal indicates an expected call of AddProposal
-func (mr *MockGovernanceEngineMockRecorder) AddProposal(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).AddProposal), arg0)
-}
-
 // AddVote mocks base method
 func (m *MockGovernanceEngine) AddVote(arg0 proto.Vote) error {
 	m.ctrl.T.Helper()
@@ -88,4 +74,18 @@ func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 time.Time) []*proto.Propos
 func (mr *MockGovernanceEngineMockRecorder) OnChainTimeUpdate(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainTimeUpdate", reflect.TypeOf((*MockGovernanceEngine)(nil).OnChainTimeUpdate), arg0)
+}
+
+// SubmitProposal mocks base method
+func (m *MockGovernanceEngine) SubmitProposal(arg0 proto.Proposal) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitProposal", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitProposal indicates an expected call of SubmitProposal
+func (mr *MockGovernanceEngineMockRecorder) SubmitProposal(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).SubmitProposal), arg0)
 }

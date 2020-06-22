@@ -4,7 +4,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | tau/long | lamd/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | BTC      | ETH       | ETH   | 9400000   | simple     | 0.1      | 0.2        | 0  | 0 | 0     | 5              | 4              | 3.2           | 9400000         |
     And the following traders:
       | name       | amount     |
@@ -14,20 +14,20 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
     # setting mark price
     And traders place following orders:
       | trader     | market id | type | volume | price    | trades | type  | tif |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | LIMIT | GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | TYPE_LIMIT | TIF_GTC |
 
 
     # setting order book
     And traders place following orders with references:
       | trader     | market id | type | volume | price    | trades | type  | tif | reference |
-      | sellSideMM | ETH/DEC19 | sell | 10     | 15000000 | 0      | LIMIT | GTC | sell1     |
-      | sellSideMM | ETH/DEC19 | sell | 14     | 14000000 | 0      | LIMIT | GTC | sell2     |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | LIMIT | GTC | sell3     |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 0      | LIMIT | GTC | buy1      |
-      | buySideMM  | ETH/DEC19 | buy  | 3      | 9600000  | 0      | LIMIT | GTC | buy2      |
-      | buySideMM  | ETH/DEC19 | buy  | 9      | 9000000  | 0      | LIMIT | GTC | buy3      |
-      | buySideMM  | ETH/DEC19 | buy  | 50     | 8700000  | 0      | LIMIT | GTC | buy4      |
+      | sellSideMM | ETH/DEC19 | sell | 10     | 15000000 | 0      | TYPE_LIMIT | TIF_GTC | sell1     |
+      | sellSideMM | ETH/DEC19 | sell | 14     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | sell2     |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC | sell3     |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 0      | TYPE_LIMIT | TIF_GTC | buy1      |
+      | buySideMM  | ETH/DEC19 | buy  | 3      | 9600000  | 0      | TYPE_LIMIT | TIF_GTC | buy2      |
+      | buySideMM  | ETH/DEC19 | buy  | 9      | 9000000  | 0      | TYPE_LIMIT | TIF_GTC | buy3      |
+      | buySideMM  | ETH/DEC19 | buy  | 50     | 8700000  | 0      | TYPE_LIMIT | TIF_GTC | buy4      |
 
 
   Scenario:
@@ -40,7 +40,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
     # placing test order
     Then traders place following orders:
       | trader  | market id | type | volume | price   | trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3      | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3      | TYPE_LIMIT | TIF_GTC |
     And "trader1" general account for asset "ETH" balance is "671600040"
     And executed trades:
       | buyer     | price    | size | seller  |
@@ -49,8 +49,8 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | buySideMM | 9000000  | 9    | trader1 |
 
     Then the following transfers happened:
-      | from   | to      | fromType   | toType | id        | amount  | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 | 2800000 | ETH   |
+      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2800000 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
@@ -71,11 +71,11 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | sellSideMM | sell3     |
     And traders place following orders:
       | trader     | market id | type | volume | price    | trades | type  | tif |
-      | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0      | LIMIT | GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0      | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell | 10     | 10000000 | 0      | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell | 14     | 8800000  | 0      | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 8400000  | 0      | LIMIT | GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0      | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 10     | 10000000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 14     | 8800000  | 0      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 8400000  | 0      | TYPE_LIMIT | TIF_GTC |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
@@ -91,13 +91,13 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
     # updating mark price to 80
     Then traders place following orders:
       | trader     | market id | type | volume | price   | trades | type  | tif |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 8000000 | 0      | LIMIT | GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 8000000 | 1      | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 8000000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 8000000 | 1      | TYPE_LIMIT | TIF_GTC |
 
     # MTM
     And the following transfers happened:
-      | from   | to      | fromType   | toType | id        | amount   | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 | 13000000 | ETH   |
+      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 13000000 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
@@ -112,7 +112,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
       | trader  | market id | type | volume | price   | trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  | 13     | 9000000 | 2      | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | buy  | 13     | 9000000 | 2      | TYPE_LIMIT | TIF_GTC |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 0      | 0             | 6200000     |

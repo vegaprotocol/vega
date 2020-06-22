@@ -98,14 +98,14 @@ func (mr *MockTradingDataClientMockRecorder) CandlesSubscribe(arg0, arg1 interfa
 }
 
 // GetNetworkParametersProposals mocks base method
-func (m *MockTradingDataClient) GetNetworkParametersProposals(arg0 context.Context, arg1 *api.GetProposalsByStateRequest, arg2 ...grpc.CallOption) (*api.GetGovernanceDataResponse, error) {
+func (m *MockTradingDataClient) GetNetworkParametersProposals(arg0 context.Context, arg1 *api.GetNetworkParametersProposalsRequest, arg2 ...grpc.CallOption) (*api.GetNetworkParametersProposalsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetNetworkParametersProposals", varargs...)
-	ret0, _ := ret[0].(*api.GetGovernanceDataResponse)
+	ret0, _ := ret[0].(*api.GetNetworkParametersProposalsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -118,14 +118,14 @@ func (mr *MockTradingDataClientMockRecorder) GetNetworkParametersProposals(arg0,
 }
 
 // GetNewAssetProposals mocks base method
-func (m *MockTradingDataClient) GetNewAssetProposals(arg0 context.Context, arg1 *api.GetProposalsByStateRequest, arg2 ...grpc.CallOption) (*api.GetGovernanceDataResponse, error) {
+func (m *MockTradingDataClient) GetNewAssetProposals(arg0 context.Context, arg1 *api.GetNewAssetProposalsRequest, arg2 ...grpc.CallOption) (*api.GetNewAssetProposalsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetNewAssetProposals", varargs...)
-	ret0, _ := ret[0].(*api.GetGovernanceDataResponse)
+	ret0, _ := ret[0].(*api.GetNewAssetProposalsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -138,14 +138,14 @@ func (mr *MockTradingDataClientMockRecorder) GetNewAssetProposals(arg0, arg1 int
 }
 
 // GetNewMarketProposals mocks base method
-func (m *MockTradingDataClient) GetNewMarketProposals(arg0 context.Context, arg1 *api.GetProposalsByStateRequest, arg2 ...grpc.CallOption) (*api.GetGovernanceDataResponse, error) {
+func (m *MockTradingDataClient) GetNewMarketProposals(arg0 context.Context, arg1 *api.GetNewMarketProposalsRequest, arg2 ...grpc.CallOption) (*api.GetNewMarketProposalsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetNewMarketProposals", varargs...)
-	ret0, _ := ret[0].(*api.GetGovernanceDataResponse)
+	ret0, _ := ret[0].(*api.GetNewMarketProposalsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -158,14 +158,14 @@ func (mr *MockTradingDataClientMockRecorder) GetNewMarketProposals(arg0, arg1 in
 }
 
 // GetProposalByID mocks base method
-func (m *MockTradingDataClient) GetProposalByID(arg0 context.Context, arg1 *api.GetProposalByIDRequest, arg2 ...grpc.CallOption) (*api.GetProposalResponse, error) {
+func (m *MockTradingDataClient) GetProposalByID(arg0 context.Context, arg1 *api.GetProposalByIDRequest, arg2 ...grpc.CallOption) (*api.GetProposalByIDResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetProposalByID", varargs...)
-	ret0, _ := ret[0].(*api.GetProposalResponse)
+	ret0, _ := ret[0].(*api.GetProposalByIDResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -178,14 +178,14 @@ func (mr *MockTradingDataClientMockRecorder) GetProposalByID(arg0, arg1 interfac
 }
 
 // GetProposalByReference mocks base method
-func (m *MockTradingDataClient) GetProposalByReference(arg0 context.Context, arg1 *api.GetProposalByReferenceRequest, arg2 ...grpc.CallOption) (*api.GetProposalResponse, error) {
+func (m *MockTradingDataClient) GetProposalByReference(arg0 context.Context, arg1 *api.GetProposalByReferenceRequest, arg2 ...grpc.CallOption) (*api.GetProposalByReferenceResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetProposalByReference", varargs...)
-	ret0, _ := ret[0].(*api.GetProposalResponse)
+	ret0, _ := ret[0].(*api.GetProposalByReferenceResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -198,14 +198,14 @@ func (mr *MockTradingDataClientMockRecorder) GetProposalByReference(arg0, arg1 i
 }
 
 // GetProposals mocks base method
-func (m *MockTradingDataClient) GetProposals(arg0 context.Context, arg1 *api.GetProposalsByStateRequest, arg2 ...grpc.CallOption) (*api.GetGovernanceDataResponse, error) {
+func (m *MockTradingDataClient) GetProposals(arg0 context.Context, arg1 *api.GetProposalsRequest, arg2 ...grpc.CallOption) (*api.GetProposalsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetProposals", varargs...)
-	ret0, _ := ret[0].(*api.GetGovernanceDataResponse)
+	ret0, _ := ret[0].(*api.GetProposalsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -218,14 +218,14 @@ func (mr *MockTradingDataClientMockRecorder) GetProposals(arg0, arg1 interface{}
 }
 
 // GetProposalsByParty mocks base method
-func (m *MockTradingDataClient) GetProposalsByParty(arg0 context.Context, arg1 *api.GetProposalsByPartyRequest, arg2 ...grpc.CallOption) (*api.GetGovernanceDataResponse, error) {
+func (m *MockTradingDataClient) GetProposalsByParty(arg0 context.Context, arg1 *api.GetProposalsByPartyRequest, arg2 ...grpc.CallOption) (*api.GetProposalsByPartyResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetProposalsByParty", varargs...)
-	ret0, _ := ret[0].(*api.GetGovernanceDataResponse)
+	ret0, _ := ret[0].(*api.GetProposalsByPartyResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -238,14 +238,14 @@ func (mr *MockTradingDataClientMockRecorder) GetProposalsByParty(arg0, arg1 inte
 }
 
 // GetUpdateMarketProposals mocks base method
-func (m *MockTradingDataClient) GetUpdateMarketProposals(arg0 context.Context, arg1 *api.GetUpdateMarketProposalsRequest, arg2 ...grpc.CallOption) (*api.GetGovernanceDataResponse, error) {
+func (m *MockTradingDataClient) GetUpdateMarketProposals(arg0 context.Context, arg1 *api.GetUpdateMarketProposalsRequest, arg2 ...grpc.CallOption) (*api.GetUpdateMarketProposalsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetUpdateMarketProposals", varargs...)
-	ret0, _ := ret[0].(*api.GetGovernanceDataResponse)
+	ret0, _ := ret[0].(*api.GetUpdateMarketProposalsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -278,14 +278,14 @@ func (mr *MockTradingDataClientMockRecorder) GetVegaTime(arg0, arg1 interface{},
 }
 
 // GetVotesByParty mocks base method
-func (m *MockTradingDataClient) GetVotesByParty(arg0 context.Context, arg1 *api.GetVotesByPartyRequest, arg2 ...grpc.CallOption) (*api.GetVotesResponse, error) {
+func (m *MockTradingDataClient) GetVotesByParty(arg0 context.Context, arg1 *api.GetVotesByPartyRequest, arg2 ...grpc.CallOption) (*api.GetVotesByPartyResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetVotesByParty", varargs...)
-	ret0, _ := ret[0].(*api.GetVotesResponse)
+	ret0, _ := ret[0].(*api.GetVotesByPartyResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

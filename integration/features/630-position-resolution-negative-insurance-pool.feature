@@ -3,7 +3,7 @@ Feature: Regression test for issue 630
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/short | tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | ETH      | BTC       | BTC   |       100 | simple     |        0.2 |      0.1 |  0 | 0.016 |   2.0 |            1.4 |            1.2 |           1.1 |              42 |
 
   Scenario: Trader is being closed out.
@@ -21,15 +21,15 @@ Feature: Regression test for issue 630
 # setup orderbook
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | sellSideProvider | ETH/DEC19 | sell |    200 | 10000 |                0 | LIMIT | GTC |
-      | buySideProvider  | ETH/DEC19 | buy  |    200 |     1 |                0 | LIMIT | GTC |
+      | sellSideProvider | ETH/DEC19 | sell |    200 | 10000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/DEC19 | buy  |    200 |     1 |                0 | TYPE_LIMIT | TIF_GTC |
     And All balances cumulated are worth "2240000"
     Then the margins levels for the traders are:
       | trader           | id        | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 |        2000 |   2200 |    2400 |    2800 |
     Then traders place following orders:
       | trader    | id        | type      | volume | price | resulting trades | type  | tif |
-      | traderGuy | ETH/DEC19 | buy       |    100 | 10000 |                1 | LIMIT | GTC |
+      | traderGuy | ETH/DEC19 | buy       |    100 | 10000 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
      | trader           | asset | id        | margin | general |
      | traderGuy        | BTC   | ETH/DEC19 |      0 |  0 |

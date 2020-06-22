@@ -55,17 +55,17 @@ func Format(t time.Time) string {
 // RoundToNearest round an actual time to the nearest interval
 func RoundToNearest(t time.Time, interval types.Interval) time.Time {
 	switch interval {
-	case types.Interval_I1M:
+	case types.Interval_INTERVAL_I1M:
 		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, time.UTC)
-	case types.Interval_I5M:
+	case types.Interval_INTERVAL_I5M:
 		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, time.UTC)
-	case types.Interval_I15M:
+	case types.Interval_INTERVAL_I15M:
 		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, time.UTC)
-	case types.Interval_I1H:
+	case types.Interval_INTERVAL_I1H:
 		return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.UTC)
-	case types.Interval_I6H:
+	case types.Interval_INTERVAL_I6H:
 		return time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, time.UTC)
-	case types.Interval_I1D:
+	case types.Interval_INTERVAL_I1D:
 		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	default:
 		return t

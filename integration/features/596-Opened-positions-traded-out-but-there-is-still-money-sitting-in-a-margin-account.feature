@@ -3,7 +3,7 @@ Feature: Regression test for issue 596
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/short |               tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long |               tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | ETH      | BTC       | BTC   |       100 | forward    |      0.001 | 0.00011407711613050422 |  0 | 0.016 |   2.0 |            1.4 |            1.2 |           1.1 |              42 |
 
   Scenario: Traded out position but monies left in margin account
@@ -22,23 +22,23 @@ Feature: Regression test for issue 596
     And "chris" general accounts balance is "10000"
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     15 |   104 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     30 |   105 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     20 |    99 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     14 |    97 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     20 |    96 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     5  |    95 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     15 |   104 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     30 |   105 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    99 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     14 |    97 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    96 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     5  |    95 |                0 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    848 |    9152 |
       | barney | BTC   | ETH/DEC19 |    594 |    9406 |
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | chris  | ETH/DEC19 | buy  |     50 |   110 |                3 | LIMIT | GTC |
+      | chris  | ETH/DEC19 | buy  |     50 |   110 |                3 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    933 |    9007 |
@@ -48,7 +48,7 @@ Feature: Regression test for issue 596
 # then chris is trading out
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | chris  | ETH/DEC19 | sell |     50 |    90 |                4 | LIMIT | GTC |
+      | chris  | ETH/DEC19 | sell |     50 |    90 |                4 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |   1283 |    9007 |
@@ -73,16 +73,16 @@ Feature: Regression test for issue 596
     And "chris" general accounts balance is "10000"
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     15 |   104 |                0 | LIMIT | GTC |
-      | edd    | ETH/DEC19 | sell |     30 |   105 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     20 |    99 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     14 |    97 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     20 |    96 |                0 | LIMIT | GTC |
-      | barney | ETH/DEC19 | buy  |     5  |    95 |                0 | LIMIT | GTC |
+      | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     15 |   104 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     30 |   105 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    99 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     14 |    97 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    96 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     5  |    95 |                0 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    848 |    9152 |
@@ -90,7 +90,7 @@ Feature: Regression test for issue 596
 # Chris place an order for a volume of 60, but only 2 trades happen at that price
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference            |
-      | chris  | ETH/DEC19 | buy  |     60 |   102 |                2 | LIMIT | GTC | chris-id-1-to-cancel |
+      | chris  | ETH/DEC19 | buy  |     60 |   102 |                2 | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    961 |    9019 |
@@ -103,7 +103,7 @@ Feature: Regression test for issue 596
 # then chris is trading out
     Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | chris  | ETH/DEC19 | sell |     40 |    90 |                3 | LIMIT | GTC |
+      | chris  | ETH/DEC19 | sell |     40 |    90 |                3 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |   1161 |    9019 |
@@ -112,7 +112,7 @@ Feature: Regression test for issue 596
     And All balances cumulated are worth "30000"
    Then traders place following orders:
       | trader | id        | type | volume | price | resulting trades | type  | tif |
-      | barney | ETH/DEC19 | buy  |      1 |   105 |                1 | LIMIT | GTC |
+      | barney | ETH/DEC19 | buy  |      1 |   105 |                1 | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 |    921 |    9019 |

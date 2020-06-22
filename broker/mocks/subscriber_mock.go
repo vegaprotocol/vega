@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	events "code.vegaprotocol.io/vega/events"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,10 +34,10 @@ func (m *MockSubscriber) EXPECT() *MockSubscriberMockRecorder {
 }
 
 // C mocks base method
-func (m *MockSubscriber) C() chan<- interface{} {
+func (m *MockSubscriber) C() chan<- events.Event {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "C")
-	ret0, _ := ret[0].(chan<- interface{})
+	ret0, _ := ret[0].(chan<- events.Event)
 	return ret0
 }
 
@@ -60,8 +61,22 @@ func (mr *MockSubscriberMockRecorder) Closed() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Closed", reflect.TypeOf((*MockSubscriber)(nil).Closed))
 }
 
+// ID mocks base method
+func (m *MockSubscriber) ID() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockSubscriberMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockSubscriber)(nil).ID))
+}
+
 // Push mocks base method
-func (m *MockSubscriber) Push(arg0 interface{}) {
+func (m *MockSubscriber) Push(arg0 events.Event) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Push", arg0)
 }
@@ -70,6 +85,18 @@ func (m *MockSubscriber) Push(arg0 interface{}) {
 func (mr *MockSubscriberMockRecorder) Push(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockSubscriber)(nil).Push), arg0)
+}
+
+// SetID mocks base method
+func (m *MockSubscriber) SetID(arg0 int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetID", arg0)
+}
+
+// SetID indicates an expected call of SetID
+func (mr *MockSubscriberMockRecorder) SetID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetID", reflect.TypeOf((*MockSubscriber)(nil).SetID), arg0)
 }
 
 // Skip mocks base method
@@ -84,4 +111,18 @@ func (m *MockSubscriber) Skip() <-chan struct{} {
 func (mr *MockSubscriberMockRecorder) Skip() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Skip", reflect.TypeOf((*MockSubscriber)(nil).Skip))
+}
+
+// Types mocks base method
+func (m *MockSubscriber) Types() []events.Type {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Types")
+	ret0, _ := ret[0].([]events.Type)
+	return ret0
+}
+
+// Types indicates an expected call of Types
+func (mr *MockSubscriberMockRecorder) Types() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Types", reflect.TypeOf((*MockSubscriber)(nil).Types))
 }

@@ -20,13 +20,14 @@ import (
 
 var (
 	orderSubmission = types.OrderSubmission{
+		Type:        types.Order_TYPE_LIMIT,
 		Id:          "order_id",
 		MarketID:    "market_id",
 		PartyID:     "party",
 		Price:       10000,
 		Size:        1,
 		Side:        types.Side(1),
-		TimeInForce: types.Order_GTT,
+		TimeInForce: types.Order_TIF_GTT,
 	}
 )
 
@@ -57,6 +58,7 @@ func TestPrepareCancelOrder(t *testing.T) {
 func TestCreateOrder(t *testing.T) {
 	t.Run("Create order - successful", testOrderSuccess)
 	t.Run("Create order - error expiry set for non gtt", testCreateOrderFailExpirySetForNonGTT)
+	t.Run("Create order - error use network order type", testCreateOrderFailNetworkOrderType)
 }
 
 func TestGetByOrderID(t *testing.T) {
@@ -144,7 +146,7 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	order.ExpiresAt = 12346
-	order.TimeInForce = types.Order_GTC
+	order.TimeInForce = types.Order_TIF_GTC
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.EqualError(t, err, orders.ErrNonGTTOrderWithExpiry.Error())
 
@@ -152,6 +154,22 @@ func testCreateOrderFailExpirySetForNonGTT(t *testing.T) {
 	order.ExpiresAt = 0
 	err = svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
+}
+
+func testCreateOrderFailNetworkOrderType(t *testing.T) {
+	// now
+	now := vegatime.Now()
+	// expires 2 hours from now
+	expires := now.Add(time.Hour * 2)
+	order := orderSubmission
+	order.ExpiresAt = expires.UnixNano()
+	order.Type = types.Order_TYPE_NETWORK
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
+	assert.EqualError(t, err, orders.ErrUnAuthorizedOrderType.Error())
 }
 
 func testPrepareCancelOrderSuccess(t *testing.T) {
@@ -177,7 +195,7 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
 		TimeInForce: orderSubmission.TimeInForce,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Remaining:   orderSubmission.Size,
 		Version:     execution.InitialOrderVersion,
 	}
@@ -201,7 +219,7 @@ func testGetByOrderIDFirstVersion(t *testing.T) {
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
 		TimeInForce: orderSubmission.TimeInForce,
-		Status:      types.Order_Active,
+		Status:      types.Order_STATUS_ACTIVE,
 		Remaining:   orderSubmission.Size,
 		Version:     execution.InitialOrderVersion,
 	}

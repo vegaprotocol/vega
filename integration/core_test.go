@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -124,7 +125,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	mktsetup = getMarketTestSetup(mkt)
 	// create the party engine, and add to the test setup
 	// so we can register parties and their account balances
-	mktsetup.party = execution.NewParty(log, mktsetup.colE, []proto.Market{*mkt}, mktsetup.parties)
+	mktsetup.party = execution.NewParty(log, mktsetup.colE, []proto.Market{*mkt}, mktsetup.broker)
 	m, err := execution.NewMarket(
 		log,
 		risk.NewDefaultConfig(),
@@ -135,13 +136,10 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.party, // party-engine here!
 		mkt,
 		mktsetup.candles,
-		mktsetup.orders,
-		mktsetup.parties,
-		mktsetup.trades,
-		mktsetup.transfer,
 		mktsetup.marginLevelsBuf,
 		NewSettlementStub(),
 		time.Now(),
+		mktsetup.broker,
 		execution.NewIDGen(),
 	)
 	if err != nil {
@@ -154,11 +152,11 @@ func theMarket(mSetup *gherkin.DataTable) error {
 
 func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 	// we currently have N accounts, creating system accounts should create 2 more accounts
-	current := len(mktsetup.accounts.data)
+	current := len(mktsetup.broker.GetAccounts())
 	// this should create market accounts, currently same way it's done in execution engine (register market)
 	asset, _ := mktsetup.market.GetAsset()
-	_, _ = mktsetup.colE.CreateMarketAccounts(mktsetup.core.GetID(), asset, 0)
-	if len(mktsetup.accounts.data) != current+2 {
+	_, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
+	if len(mktsetup.broker.GetAccounts()) != current+2 {
 		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err
@@ -194,19 +192,19 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		asset, _ := mktsetup.market.GetAsset()
 		// get the account balance, ensure we can set the margin balance in this step if we want to
 		// and get the account ID's so we can keep track of the state correctly
-		general := mktsetup.colE.CreatePartyGeneralAccount(row.Cells[0].Value, asset)
-		margin, _ := mktsetup.colE.CreatePartyMarginAccount(row.Cells[0].Value, market, asset)
-		_ = mktsetup.colE.IncrementBalance(margin, marginBal)
+		general := mktsetup.colE.CreatePartyGeneralAccount(context.Background(), row.Cells[0].Value, asset)
+		margin, _ := mktsetup.colE.CreatePartyMarginAccount(context.Background(), row.Cells[0].Value, market, asset)
+		_ = mktsetup.colE.IncrementBalance(context.Background(), margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
-			proto.AccountType_MARGIN: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_MARGIN: &proto.Account{
 				Id:      margin,
-				Type:    proto.AccountType_MARGIN,
+				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: marginBal,
 			},
-			proto.AccountType_GENERAL: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_GENERAL: &proto.Account{
 				Id:      general,
-				Type:    proto.AccountType_GENERAL,
+				Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
 				Balance: generalBal,
 			},
 		}
@@ -215,7 +213,7 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 			Amount:   uint64(generalBal),
 		}
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.party.NotifyTraderAccountWithTopUpAmount(notif, generalBal)
+		_ = mktsetup.party.NotifyTraderAccountWithTopUpAmount(context.Background(), notif, generalBal)
 	}
 	return nil
 }
@@ -242,9 +240,9 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 		// 	nil,
 		// )
 
-		side := proto.Side_Buy
+		side := proto.Side_SIDE_BUY
 		if row.Cells[1].Value == "sell" {
-			side = proto.Side_Sell
+			side = proto.Side_SIDE_SELL
 		}
 		vol, err := strconv.Atoi(row.Cells[2].Value)
 		if err != nil {
@@ -267,11 +265,11 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			Size:        uint64(vol),
 			Remaining:   uint64(vol),
 			ExpiresAt:   tomorrow.Unix(),
-			Type:        proto.Order_LIMIT,
-			TimeInForce: proto.Order_GTT,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
-		result, err := core.SubmitOrder(&order)
+		result, err := core.SubmitOrder(context.TODO(), &order)
 		if err != nil {
 			return err
 		}
@@ -298,16 +296,16 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 			return err
 		}
 		accounts := mktsetup.traderAccs[trader]
-		acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+		acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_ACCOUNT_TYPE_MARGIN].Id)
 		if err != nil {
 			return err
 		}
 		// sync margin account state
-		mktsetup.traderAccs[trader][proto.AccountType_MARGIN] = acc
+		mktsetup.traderAccs[trader][proto.AccountType_ACCOUNT_TYPE_MARGIN] = acc
 		if acc.Balance != margin {
 			return fmt.Errorf("expected %s margin account balance to be %d instead saw %d", trader, margin, acc.Balance)
 		}
-		acc, err = mktsetup.colE.GetAccountByID(accounts[proto.AccountType_GENERAL].Id)
+		acc, err = mktsetup.colE.GetAccountByID(accounts[proto.AccountType_ACCOUNT_TYPE_GENERAL].Id)
 		if err != nil {
 			return err
 		}
@@ -315,14 +313,14 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 			return fmt.Errorf("expected %s general account balance to be %d, instead saw %d", trader, general, acc.Balance)
 		}
 		// sync general account state
-		mktsetup.traderAccs[trader][proto.AccountType_GENERAL] = acc
+		mktsetup.traderAccs[trader][proto.AccountType_ACCOUNT_TYPE_GENERAL] = acc
 	}
 	return nil
 }
 
 func hasNotBeenAddedToTheMarket(trader string) error {
 	accounts := mktsetup.traderAccs[trader]
-	acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+	acc, err := mktsetup.colE.GetAccountByID(accounts[proto.AccountType_ACCOUNT_TYPE_MARGIN].Id)
 	if err != nil || acc.Balance == 0 {
 		return nil
 	}

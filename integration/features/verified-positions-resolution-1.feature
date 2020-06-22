@@ -1,9 +1,9 @@
-Feature: Position esolution case 1
+Feature: Position resolution case 1
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/short | tau/long | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | ETH      | BTC       | BTC   |        94 | simple     |          0 |        0 |  0 | 0.016 |   2.0 |              5 |              4 |           3.2 |              42 |
 
   Scenario: https://docs.google.com/spreadsheets/d/1D433fpt7FUCk04dZ9FHDVy-4hA6Bw_a2/edit#gid=956988479
@@ -22,13 +22,13 @@ Feature: Position esolution case 1
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:
       | trader           | id        | type | volume | price | resulting trades | type  | tif | reference       |
-      | sellSideProvider | ETH/DEC19 | sell |    290 |   150 |                0 | LIMIT | GTC | sell-provider-1 |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   140 |                0 | LIMIT | GTC | buy-provider-1  |
+      | sellSideProvider | ETH/DEC19 | sell |    290 |   150 |                0 | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   140 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
 # insurance pool generation - trade
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | designatedLooser | ETH/DEC19 | buy  |    290 |   150 |                1 | LIMIT | GTC |
+      | designatedLooser | ETH/DEC19 | buy  |    290 |   150 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # insurance pool generation - modify order book
     Then traders cancels the following orders reference:
@@ -36,13 +36,13 @@ Feature: Position esolution case 1
       | buySideProvider  | buy-provider-1  |
     Then traders place following orders with references:
       | trader          | id        | type | volume | price | resulting trades | type  | tif | reference      |
-      | buySideProvider | ETH/DEC19 | buy  |      1 |    40 |                0 | LIMIT | GTC | buy-provider-2 |
+      | buySideProvider | ETH/DEC19 | buy  |      1 |    40 |                0 | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
       | trader           | id        | type | volume | price | resulting trades | type  | tif |
-      | sellSideProvider | ETH/DEC19 | sell |      1 |   120 |                0 | LIMIT | GTC |
-      | buySideProvider  | ETH/DEC19 | buy  |      1 |   120 |                1 | LIMIT | GTC |
+      | sellSideProvider | ETH/DEC19 | sell |      1 |   120 |                0 | TYPE_LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   120 |                1 | TYPE_LIMIT | TIF_GTC |
 
 # check positions
     Then position API produce the following:
@@ -56,3 +56,14 @@ Feature: Position esolution case 1
 
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance is "0" for the market "ETH/DEC19"
+
+# now we check what's left in the orderbook
+# we expect 1 order at price of 40 to be left there on the buy side
+# we sell a first time 1 to consume the book
+# then try to sell 1 again with low price -> result in no trades -> buy side empty
+# We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
+   Then traders place following orders:
+      | trader           | id          | type  | volume | price | resulting trades  | type  | tif |
+      | sellSideProvider | ETH/DEC19   | sell  |     1  |   40  |                1  | TYPE_LIMIT | TIF_FOK |
+      | sellSideProvider | ETH/DEC19   | sell  |     1  |    1  |                0  | TYPE_LIMIT | TIF_FOK |
+      | buySideProvider  | ETH/DEC19   | buy   |     1  | 1000  |                0  | TYPE_LIMIT | TIF_FOK |

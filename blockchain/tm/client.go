@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/tendermint/tendermint/rpc/client"
+	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -18,7 +18,7 @@ var (
 )
 
 type Client struct {
-	tmclt *client.HTTP
+	tmclt *tmclihttp.HTTP
 }
 
 func NewClient(cfg Config) (*Client, error) {
@@ -28,8 +28,12 @@ func NewClient(cfg Config) (*Client, error) {
 	if len(cfg.ClientEndpoint) <= 0 {
 		return nil, ErrEmptyClientEndpoint
 	}
+	clt, err := tmclihttp.New(cfg.ClientAddr, cfg.ClientEndpoint)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
-		tmclt: client.NewHTTP(cfg.ClientAddr, cfg.ClientEndpoint),
+		tmclt: clt,
 	}, nil
 }
 
@@ -42,13 +46,22 @@ func (c *Client) SendTransaction(ctx context.Context, bytes []byte) (bool, error
 	return true, nil
 }
 
-// GetGenesisTime will retrieve the genesis time from the blockchain
+// GetGenesisTime retrieves the genesis time from the blockchain
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := c.tmclt.Genesis()
 	if err != nil {
 		return vegatime.Now(), err
 	}
 	return res.Genesis.GenesisTime.UTC(), nil
+}
+
+// GetChainID retrieves the chainID from the blockchain
+func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
+	res, err := c.tmclt.Genesis()
+	if err != nil {
+		return "", err
+	}
+	return res.Genesis.ChainID, nil
 }
 
 // GetStatus returns the current status of the chain
@@ -76,7 +89,7 @@ func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 }
 
 func (c *Client) Validators() ([]*tmtypes.Validator, error) {
-	res, err := c.tmclt.Validators(nil)
+	res, err := c.tmclt.Validators(nil, 0, 100)
 	if err != nil {
 		return nil, err
 	}

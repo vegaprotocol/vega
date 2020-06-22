@@ -4,7 +4,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | tau/long | lamd/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
+      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
       | ETH/DEC19 | BTC      | ETH       | ETH   | 9400000   | simple     | 0.1      | 0.2        | 0  | 0 | 0     | 5              | 4              | 3.2           | 9400000         |
     And the following traders:
       | name       | amount     |
@@ -14,16 +14,16 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     # setting mark price
     And traders place following orders:
       | trader     | market id | type | volume | price    | trades | type  | tif |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | LIMIT | GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | TYPE_LIMIT | TIF_GTC |
 
 
     # setting order book
     And traders place following orders:
       | trader     | market id | type | volume | price    | trades | type  | tif |
-      | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | LIMIT | GTC |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC |
 
 
   Scenario:
@@ -36,7 +36,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     # placing test order
     Then traders place following orders:
       | trader  | market id | type | volume | price    | trades | type  | tif |
-      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | TYPE_LIMIT | TIF_GTC |
     And "trader1" general account for asset "ETH" balance is "946440000"
     And executed trades:
       | buyer   | price    | size | seller     |
@@ -44,8 +44,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | trader1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers happened:
-      | from   | to      | fromType   | toType | id        | amount  | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 | 5600000 | ETH   |
+      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin   | general   |
@@ -61,12 +61,12 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     # updating mark price to 160
     Then traders place following orders:
       | trader     | market id | type | volume | price    | trades | type  | tif |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0      | LIMIT | GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1      | LIMIT | GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1      | TYPE_LIMIT | TIF_GTC |
 
     And the following transfers happened:
-      | from   | to      | fromType   | toType | id        | amount   | asset |
-      | market | trader1 | SETTLEMENT | MARGIN | ETH/DEC19 | 26000000 | ETH   |
+      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin   | general   |
@@ -81,7 +81,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
     Then traders place following orders:
       | trader  | market id | type | volume | price   | trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell | 13     | 8000000 | 0      | LIMIT | GTC |
+      | trader1 | ETH/DEC19 | sell | 13     | 8000000 | 0      | TYPE_LIMIT | TIF_GTC |
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin   | general   |
       | trader1 | ETH   | ETH/DEC19 | 85160000 | 946440000 |

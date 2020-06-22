@@ -35,8 +35,8 @@ type OrderBook struct {
 }
 
 func isPersistent(o *types.Order) bool {
-	return o.GetType() == types.Order_LIMIT &&
-		(o.GetTimeInForce() == types.Order_GTC || o.GetTimeInForce() == types.Order_GTT)
+	return o.GetType() == types.Order_TYPE_LIMIT &&
+		(o.GetTimeInForce() == types.Order_TIF_GTC || o.GetTimeInForce() == types.Order_TIF_GTT)
 }
 
 // NewOrderBook create an order book with a given name
@@ -92,7 +92,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		return 0, ErrInvalidVolume
 	}
 	vol := volume
-	if side == types.Side_Sell {
+	if side == types.Side_SIDE_SELL {
 		levels := b.sell.getLevels()
 		for i := len(levels) - 1; i >= 0; i-- {
 			lvl := levels[i]
@@ -142,12 +142,12 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
-	return b.buy.BestPriceAndVolume(types.Side_Buy)
+	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
 func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
-	return b.sell.BestPriceAndVolume(types.Side_Sell)
+	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
 }
 
 // CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -156,18 +156,21 @@ func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
 	if order.MarketID != b.marketID {
-		b.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("order-book", b.marketID))
-		return nil, types.OrderError_INVALID_MARKET_ID
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Market ID mismatch",
+				logging.Order(*order),
+				logging.String("order-book", b.marketID))
+		}
+		return nil, types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
 	}
 
 	// Validate Order ID must be present
 	if err := validateOrderID(order.Id); err != nil {
-		b.log.Error("Order ID missing or invalid",
-			logging.Order(*order),
-			logging.String("order-book", b.marketID))
-
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Order ID missing or invalid",
+				logging.Order(*order),
+				logging.String("order-book", b.marketID))
+		}
 		return nil, err
 	}
 
@@ -177,7 +180,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	order.Status = types.Order_Cancelled
+	order.Status = types.Order_STATUS_CANCELLED
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -186,33 +189,54 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 }
 
 // AmendOrder amend an order which is an active order on the book
-func (b *OrderBook) AmendOrder(order *types.Order) error {
-	if err := b.validateOrder(order); err != nil {
-		b.log.Error("Order validation failure",
-			logging.Order(*order),
-			logging.Error(err),
-			logging.String("order-book", b.marketID))
+func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
+	if originalOrder == nil {
+		return types.ErrOrderNotFound
+	}
 
+	// If the creation date for the 2 orders is different, something went wrong
+	if originalOrder.CreatedAt != amendedOrder.CreatedAt {
+		return types.ErrOrderOutOfSequence
+	}
+
+	if err := b.validateOrder(amendedOrder); err != nil {
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Order validation failure",
+				logging.Order(*amendedOrder),
+				logging.Error(err),
+				logging.String("order-book", b.marketID))
+		}
 		return err
 	}
 
-	if order.Side == types.Side_Buy {
-		if err := b.buy.amendOrder(order); err != nil {
-			b.log.Error("Failed to amend (buy side)",
-				logging.Order(*order),
-				logging.Error(err),
-				logging.String("order-book", b.marketID))
-
+	if amendedOrder.Side == types.Side_SIDE_BUY {
+		if err := b.buy.amendOrder(amendedOrder); err != nil {
+			if b.log.GetLevel() == logging.DebugLevel {
+				b.log.Debug("Failed to amend (buy side)",
+					logging.Order(*amendedOrder),
+					logging.Error(err),
+					logging.String("order-book", b.marketID))
+			}
 			return err
 		}
 	} else {
-		if err := b.sell.amendOrder(order); err != nil {
-			b.log.Error("Failed to amend (sell side)",
-				logging.Order(*order),
-				logging.Error(err),
-				logging.String("order-book", b.marketID))
-
+		if err := b.sell.amendOrder(amendedOrder); err != nil {
+			if b.log.GetLevel() == logging.DebugLevel {
+				b.log.Debug("Failed to amend (sell side)",
+					logging.Order(*amendedOrder),
+					logging.Error(err),
+					logging.String("order-book", b.marketID))
+			}
 			return err
+		}
+	}
+
+	// If we have changed the ExpiresAt or TIF then update Expiry table
+	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
+		originalOrder.TimeInForce != amendedOrder.TimeInForce {
+		b.removePendingGttOrder(*originalOrder)
+		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
+			b.insertExpiringOrder(*amendedOrder)
 		}
 	}
 	return nil
@@ -251,7 +275,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if isPersistent(order) && order.Remaining > 0 && err == nil {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if order.TimeInForce == types.Order_GTT {
+		if order.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*order)
 		}
 
@@ -264,19 +288,19 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// Was the aggressive order fully filled?
 	if order.Remaining == 0 {
-		order.Status = types.Order_Filled
+		order.Status = types.Order_STATUS_FILLED
 	}
 
 	// What is an Immediate or Cancel Order?
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
-	if order.TimeInForce == types.Order_IOC && order.Remaining > 0 {
+	if order.TimeInForce == types.Order_TIF_IOC && order.Remaining > 0 {
 		// Stopped as not filled at all
 		if order.Remaining == order.Size {
-			order.Status = types.Order_Stopped
+			order.Status = types.Order_STATUS_STOPPED
 		} else {
 			// IOC so we set status as Cancelled.
-			order.Status = types.Order_PartiallyFilled
+			order.Status = types.Order_STATUS_PARTIALLY_FILLED
 		}
 	}
 
@@ -284,18 +308,18 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// Fill or kill (FOK) is a type of time-in-force designation used in trading that instructs
 	// the protocol to execute an order immediately and completely or not at all.
 	// The order must be filled in its entirety or cancelled (killed).
-	if order.TimeInForce == types.Order_FOK && order.Remaining == order.Size {
+	if order.TimeInForce == types.Order_TIF_FOK && order.Remaining == order.Size {
 		// FOK and didnt trade at all we set status as Stopped
-		order.Status = types.Order_Stopped
+		order.Status = types.Order_STATUS_STOPPED
 	}
 
 	for idx := range impactedOrders {
 		if impactedOrders[idx].Remaining == 0 {
-			impactedOrders[idx].Status = types.Order_Filled
+			impactedOrders[idx].Status = types.Order_STATUS_FILLED
 
 			// Ensure any fully filled impacted GTT orders are removed
 			// from internal matching engine pending orders list
-			if impactedOrders[idx].TimeInForce == types.Order_GTT {
+			if impactedOrders[idx].TimeInForce == types.Order_TIF_GTT {
 				b.removePendingGttOrder(*impactedOrders[idx])
 			}
 
@@ -306,10 +330,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// if we did hit a wash trade, set the status to stopped
 	if err != nil && err == ErrWashTrade {
-		order.Status = types.Order_Stopped
+		order.Status = types.Order_STATUS_STOPPED
 	}
 
-	if order.Status == types.Order_Active {
+	if order.Status == types.Order_STATUS_ACTIVE {
 		b.ordersByID[order.Id] = order
 	}
 
@@ -323,11 +347,12 @@ func (b *OrderBook) DeleteOrder(
 	order *types.Order) (*types.Order, error) {
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
 	if err != nil {
-		b.log.Error("Failed to remove order",
-			logging.Order(*order),
-			logging.Error(err),
-			logging.String("order-book", b.marketID))
-
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Failed to remove order",
+				logging.Order(*order),
+				logging.Error(err),
+				logging.String("order-book", b.marketID))
+		}
 		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
@@ -353,7 +378,8 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			// so it was already deleted, we do not remove them from the expiringOrders
 			// when they get cancelled as this would required unnecessary computation that
 			// can be delayed for later.
-			order.Status = types.Order_Expired
+			order.Status = types.Order_STATUS_EXPIRED
+			order.UpdatedAt = expirationTimestamp
 			out = append(out, *order)
 		}
 	}
@@ -370,8 +396,10 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
 func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 	if err := validateOrderID(orderID); err != nil {
-		b.log.Error("Order ID missing or invalid",
-			logging.String("order-id", orderID))
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Order ID missing or invalid",
+				logging.String("order-id", orderID))
+		}
 		return nil, err
 	}
 	order, exists := b.ordersByID[orderID]
@@ -399,17 +427,18 @@ func (b *OrderBook) RemoveDistressedOrders(
 		for _, o := range orders {
 			confirm, err := b.CancelOrder(o)
 			if err != nil {
-				b.log.Error(
-					"Failed to cancel a given order for party",
-					logging.Order(*o),
-					logging.String("party", party.Party()),
-					logging.Error(err),
-				)
+				if b.log.GetLevel() == logging.DebugLevel {
+					b.log.Debug(
+						"Failed to cancel a given order for party",
+						logging.Order(*o),
+						logging.String("party", party.Party()),
+						logging.Error(err))
+				}
 				// let's see whether we need to handle this further down
 				continue
 			}
 			// here we set the status of the order as stopped as the system triggered it as well.
-			confirm.Order.Status = types.Order_Stopped
+			confirm.Order.Status = types.Order_STATUS_STOPPED
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}
@@ -417,14 +446,14 @@ func (b *OrderBook) RemoveDistressedOrders(
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
-	if orderSide == types.Side_Buy {
+	if orderSide == types.Side_SIDE_BUY {
 		return b.buy
 	}
 	return b.sell
 }
 
 func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
-	if orderSide == types.Side_Buy {
+	if orderSide == types.Side_SIDE_BUY {
 		return b.sell
 	}
 	return b.buy

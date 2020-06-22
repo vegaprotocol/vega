@@ -73,12 +73,12 @@ func testObserveCandleStoreEmpty(t *testing.T) {
 		"ETH/APR19",
 	}
 	intervals := []types.Interval{
-		types.Interval_I1M,
-		types.Interval_I5M,
-		types.Interval_I15M,
-		types.Interval_I1H,
-		types.Interval_I6H,
-		types.Interval_I1D,
+		types.Interval_INTERVAL_I1M,
+		types.Interval_INTERVAL_I5M,
+		types.Interval_INTERVAL_I15M,
+		types.Interval_INTERVAL_I1H,
+		types.Interval_INTERVAL_I6H,
+		types.Interval_INTERVAL_I1D,
 	}
 	for f, market := range markets {
 		// set up expected calls
@@ -111,12 +111,12 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 		"ETH/APR19",
 	}
 	intervals := []types.Interval{
-		types.Interval_I1M,
-		types.Interval_I5M,
-		types.Interval_I15M,
-		types.Interval_I1H,
-		types.Interval_I6H,
-		types.Interval_I1D,
+		types.Interval_INTERVAL_I1M,
+		types.Interval_INTERVAL_I5M,
+		types.Interval_INTERVAL_I15M,
+		types.Interval_INTERVAL_I1H,
+		types.Interval_INTERVAL_I6H,
+		types.Interval_INTERVAL_I1D,
 	}
 	expectedCandles := map[string][]*types.Candle{
 		markets[0]: make([]*types.Candle, 0, len(intervals)),
@@ -174,12 +174,12 @@ func testObserveCandlesRetries(t *testing.T) {
 		"ETH/APR19",
 	}
 	intervals := []types.Interval{
-		types.Interval_I1M,
-		types.Interval_I5M,
-		types.Interval_I15M,
-		types.Interval_I1H,
-		types.Interval_I6H,
-		types.Interval_I1D,
+		types.Interval_INTERVAL_I1M,
+		types.Interval_INTERVAL_I5M,
+		types.Interval_INTERVAL_I15M,
+		types.Interval_INTERVAL_I1H,
+		types.Interval_INTERVAL_I6H,
+		types.Interval_INTERVAL_I1D,
 	}
 	chWrite := func(ch chan<- *types.Candle) {
 		// an empty literal is all we need

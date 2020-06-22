@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
@@ -145,6 +146,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 	l.setupBuffers()
+	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
 		l.Log.Info("node setted up without badger store support")
@@ -245,11 +247,19 @@ func (l *NodeCommand) loadMarketsConfig() error {
 	return nil
 }
 
+func (l *NodeCommand) setupSubscibers() {
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore)
+	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore)
+}
+
 func (l *NodeCommand) setupBuffers() {
 	l.orderBuf = buffer.NewOrder(l.orderStore)
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
@@ -328,24 +338,24 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
+	broker := broker.New(l.ctx)
+	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
+	broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub)
+
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.orderBuf,
-		l.tradeBuf,
 		l.candleBuf,
 		l.marketBuf,
-		l.partyBuf,
-		l.accountBuf,
-		l.transferBuf,
 		l.marketDataBuf,
 		l.marginLevelsBuf,
 		l.settleBuf,
 		l.lossSocBuf,
 		l.mktscfg,
 		l.collateral,
+		broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander := nodewallet.NewCommander(l.ctx, nil)
@@ -354,13 +364,13 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	now, _ := l.timeService.GetTimeNow()
 
 	//  create collateral
-	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.accountBuf, l.lossSocBuf, now)
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, l.lossSocBuf, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return err
 	}
-
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.proposalBuf, l.voteBuf, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
+	netParams := governance.DefaultNetworkParameters(l.Log)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.proposalBuf, l.voteBuf, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
@@ -428,15 +438,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	return
-}
-
-// SetUlimits sets limits (within OS-specified limits):
-// * nofile - max number of open files - for badger LSM tree
-func (l *NodeCommand) SetUlimits() error {
-	return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
-		Max: l.conf.UlimitNOFile,
-		Cur: l.conf.UlimitNOFile,
-	})
 }
 
 func getTerminalPassphrase() (string, error) {

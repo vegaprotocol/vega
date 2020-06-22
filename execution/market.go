@@ -43,6 +43,12 @@ var (
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
 	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
 	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
+	// ErrInvalidAmendRemainQuantity signals incorrect remaining qty for a reduce by amend
+	ErrInvalidAmendRemainQuantity = errors.New("incorrect remaining qty for a reduce by amend")
+	// ErrEmptyMarketID is returned if processed market has an empty id
+	ErrEmptyMarketID = errors.New("invalid market id (empty)")
+	// ErrInvalidOrderType is returned if processed order has an invalid order type
+	ErrInvalidOrderType = errors.New("invalid order type")
 
 	networkPartyID = "network"
 )
@@ -74,14 +80,11 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	orderBuf        OrderBuf
-	partyBuf        PartyBuf
-	tradeBuf        TradeBuf
-	transferBuf     TransferBuf
 	candleBuf       CandleBuf
 	marginLevelsBuf MarginLevelsBuf
 	settleBuf       SettlementBuf
 
+	broker Broker
 	closed bool
 }
 
@@ -120,15 +123,16 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candleBuf CandleBuf,
-	orderBuf OrderBuf,
-	partyBuf PartyBuf,
-	tradeBuf TradeBuf,
-	transferBuf TransferBuf,
 	marginLevelsBuf MarginLevelsBuf,
 	settlementBuf SettlementBuf,
 	now time.Time,
+	broker Broker,
 	idgen *IDgenerator,
 ) (*Market, error) {
+
+	if len(mkt.Id) == 0 {
+		return nil, ErrEmptyMarketID
+	}
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
 	if err != nil {
@@ -181,15 +185,11 @@ func NewMarket(
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
-		orderBuf:           orderBuf,
-		partyBuf:           partyBuf,
-		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
-		transferBuf:        transferBuf,
 		marginLevelsBuf:    marginLevelsBuf,
 		settleBuf:          settlementBuf,
+		broker:             broker,
 	}
-
 	return market, nil
 }
 
@@ -233,6 +233,7 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
+	ctx := context.TODO()
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
@@ -255,13 +256,17 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	// TODO(): handle market start time
 
-	m.log.Debug("Calculating risk factors (if required)",
-		logging.String("market-id", m.mkt.Id))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Calculating risk factors (if required)",
+			logging.String("market-id", m.mkt.Id))
+	}
 
 	m.risk.CalculateFactors(t)
 
-	m.log.Debug("Calculated risk factors and updated positions (maybe)",
-		logging.String("market-id", m.mkt.Id))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Calculated risk factors and updated positions (maybe)",
+			logging.String("market-id", m.mkt.Id))
+	}
 
 	err := m.candleBuf.Flush(m.mkt.Id, t)
 	if err != nil {
@@ -280,7 +285,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.FinalSettlement(m.GetID(), positions)
+			transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 			if err != nil {
 				m.log.Error(
 					"Failed to get ledger movements after settling closed market",
@@ -288,39 +293,44 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				m.transferBuf.Add(transfers)
+				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
+				// this will be next block
+				evt := events.NewTransferResponse(ctx, transfers)
+				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
-						m.log.Debug(
-							"Got transfers on market close",
-							logging.String("transfer", fmt.Sprintf("%v", *v)),
-							logging.String("market-id", m.GetID()),
-						)
+						if m.log.GetLevel() == logging.DebugLevel {
+							m.log.Debug(
+								"Got transfers on market close",
+								logging.String("transfer", fmt.Sprintf("%v", *v)),
+								logging.String("market-id", m.GetID()))
+						}
 					}
 				}
 
 				asset, _ := m.mkt.GetAsset()
 				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
+				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 				if err != nil {
 					m.log.Error("Clear market error",
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					m.transferBuf.Add(clearMarketTransfers)
+					evt := events.NewTransferResponse(ctx, clearMarketTransfers)
+					m.broker.Send(evt)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
-							m.log.Debug(
-								"Market cleared with success",
-								logging.String("transfer", fmt.Sprintf("%v", *v)),
-								logging.String("market-id", m.GetID()),
-							)
+							if m.log.GetLevel() == logging.DebugLevel {
+								m.log.Debug(
+									"Market cleared with success",
+									logging.String("transfer", fmt.Sprintf("%v", *v)),
+									logging.String("market-id", m.GetID()))
+							}
 						}
 					}
 				}
-
 			}
 		}
 	}
@@ -330,7 +340,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 }
 
 // SubmitOrder submits the given order
-func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -340,27 +350,36 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	// set those at the begining as even rejected order get through the buffers
 	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
 	order.Version = InitialOrderVersion
 
 	if m.closed {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_MARKET_CLOSED
-		m.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMarketClosed
+	}
+
+	if order.Type == types.Order_TYPE_NETWORK {
+		// adding order to the buffer first
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_TYPE
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidOrderType
 	}
 
 	// Validate market
 	if order.MarketID != m.mkt.Id {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_INVALID_MARKET_ID
-		m.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 
-		m.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("market", m.mkt.Id))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Market ID mismatch",
+				logging.Order(*order),
+				logging.String("market", m.mkt.Id))
+		}
 
 		return nil, types.ErrInvalidMarketID
 	}
@@ -370,9 +389,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_INVALID_PARTY_ID
-		m.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_PARTY_ID
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
@@ -380,7 +399,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	// ensure party have a general account, and margin account is / can be created
 	asset, _ := m.mkt.GetAsset()
-	_, err := m.collateral.CreatePartyMarginAccount(order.PartyID, order.MarketID, asset)
+	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.PartyID, order.MarketID, asset)
 	if err != nil {
 		m.log.Error("Margin account verification failed",
 			logging.String("party-id", order.PartyID),
@@ -388,9 +407,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			logging.String("asset", asset),
 		)
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_MISSING_GENERAL_ACCOUNT
-		m.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMissingGeneralAccountForParty
 	}
 
@@ -398,18 +417,20 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_INTERNAL_ERROR
-		m.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 
-		m.log.Error("Unable to register potential trader position",
-			logging.String("market-id", m.GetID()),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to register potential trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 		return nil, ErrMarginCheckFailed
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(pos, order); err != nil {
+	if err = m.checkMarginForOrder(ctx, pos, order); err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -418,9 +439,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 
 		// adding order to the buffer first
-		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
-		m.orderBuf.Add(*order)
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		m.log.Error("Unable to check/add margin for trader",
 			logging.String("market-id", m.GetID()),
@@ -437,17 +458,19 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
-		order.Status = types.Order_Rejected
+		order.Status = types.Order_STATUS_REJECTED
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
 		} else {
 			// should not happend but still...
-			order.Reason = types.OrderError_INTERNAL_ERROR
+			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
-		m.orderBuf.Add(*order)
-		m.log.Error("Failure after submitting order to matching engine",
-			logging.Order(*order),
-			logging.Error(err))
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after submitting order to matching engine",
+				logging.Order(*order),
+				logging.Error(err))
+		}
 
 		return nil, err
 	}
@@ -456,7 +479,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// or if the order was stopped because of a wash trade
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC || order.Status == types.Order_Stopped) &&
+	if (order.TimeInForce == types.Order_TIF_FOK || order.TimeInForce == types.Order_TIF_IOC || order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0 {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
@@ -467,14 +490,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Insert aggressive remaining order
-	m.orderBuf.Add(*order)
+	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// set the `updatedAt` value as these orders have changed
 			order.UpdatedAt = m.currentTime.UnixNano()
-			m.orderBuf.Add(*order)
+			m.broker.Send(events.NewOrderEvent(ctx, order))
 		}
 	}
 
@@ -486,7 +509,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
-			if order.Side == types.Side_Buy {
+			if order.Side == types.Side_SIDE_BUY {
 				trade.BuyOrder = order.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -494,7 +517,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			m.tradeBuf.Add(*trade)
+			m.broker.Send(events.NewTradeEvent(ctx, *trade))
 
 			// Save to trade buffer for generating candles etc
 			err := m.candleBuf.AddTrade(*trade)
@@ -511,14 +534,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 
 		// now let's get the transfers for MTM settlement
-		events := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleMTM(m.markPrice, events)
+		evts := m.position.UpdateMarkPrice(m.markPrice)
+		settle := m.settlement.SettleMTM(m.markPrice, evts)
 
 		// Only process collateral and risk once per order, not for every trade
-		margins := m.collateralAndRisk(settle)
+		margins := m.collateralAndRisk(ctx, settle)
 		if len(margins) > 0 {
 
-			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
+			transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug(
 					"Updated margin balances",
@@ -528,19 +551,21 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				)
 				for _, tr := range transfers {
 					for _, v := range tr.GetTransfers() {
-						m.log.Debug(
-							"Ensured margin on order with success",
-							logging.String("transfer", fmt.Sprintf("%v", *v)),
-							logging.String("market-id", m.GetID()),
-						)
+						if m.log.GetLevel() == logging.DebugLevel {
+							m.log.Debug(
+								"Ensured margin on order with success",
+								logging.String("transfer", fmt.Sprintf("%v", *v)),
+								logging.String("market-id", m.GetID()))
+						}
 					}
 				}
 			}
 			if err == nil && len(transfers) > 0 {
-				m.transferBuf.Add(transfers)
+				evt := events.NewTransferResponse(ctx, transfers)
+				m.broker.Send(evt)
 			}
 			if len(closed) > 0 {
-				err = m.resolveClosedOutTraders(closed, order)
+				err = m.resolveClosedOutTraders(ctx, closed, order)
 				if err != nil {
 					m.log.Error("unable to close out traders",
 						logging.String("market-id", m.GetID()),
@@ -558,7 +583,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
-func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o *types.Order) error {
+func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) error {
 	if len(distressedMarginEvts) == 0 {
 		return nil
 	}
@@ -567,9 +592,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
-		m.log.Warn("closing out trader",
-			logging.String("party-id", v.Party()),
-			logging.String("market-id", m.GetID()))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("closing out trader",
+				logging.String("party-id", v.Party()),
+				logging.String("market-id", m.GetID()))
+		}
 		distressedPos = append(distressedPos, v)
 	}
 	// cancel pending orders for traders
@@ -586,7 +613,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// and remove the orders from the positions engine
 	for _, o := range rmorders {
 		o.UpdatedAt = m.currentTime.UnixNano()
-		m.orderBuf.Add(*o)
+		m.broker.Send(events.NewOrderEvent(ctx, o))
 		if _, err := m.position.UnregisterOrder(o); err != nil {
 			m.log.Error("unable to unregister order for a distressed party",
 				logging.String("party-id", o.PartyID),
@@ -608,10 +635,11 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			for _, v := range okPos {
-				m.log.Debug("previously distressed party have now an acceptable margin",
-					logging.String("market-id", mktID),
-					logging.String("party-id", v.Party()),
-				)
+				if m.log.GetLevel() == logging.DebugLevel {
+					m.log.Debug("previously distressed party have now an acceptable margin",
+						logging.String("market-id", mktID),
+						logging.String("party-id", v.Party()))
+				}
 			}
 		}
 	}
@@ -642,7 +670,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
 		var movements *types.TransferResponse
-		movements, err = m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
+		movements, err = m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -651,7 +679,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			return err
 		}
 		if len(movements.Transfers) > 0 {
-			m.transferBuf.Add([]*types.TransferResponse{movements})
+			evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
+			m.broker.Send(evt)
 		}
 		return nil
 	}
@@ -662,32 +691,33 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	no := types.Order{
 		MarketID:    m.GetID(),
 		Remaining:   size,
-		Status:      types.Order_Active,
-		PartyID:     networkPartyID,  // network is not a party as such
-		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
+		Status:      types.Order_STATUS_ACTIVE,
+		PartyID:     networkPartyID,       // network is not a party as such
+		Side:        types.Side_SIDE_SELL, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
-		TimeInForce: types.Order_FOK,            // this is an all-or-nothing order, so TIF == FOK
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK,        // this is an all-or-nothing order, so TIF == FOK
+		Type:        types.Order_TYPE_NETWORK,
 	}
 	no.Size = no.Remaining
 	m.idgen.SetID(&no)
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
-		no.Side = types.Side_Buy
+		no.Side = types.Side_SIDE_BUY
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&no)
 	if err != nil {
-		m.log.Error("Failure after submitting order to matching engine",
-			logging.Order(no),
-			logging.Error(err))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after submitting order to matching engine",
+				logging.Order(no),
+				logging.Error(err))
+		}
 		return err
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
-	m.orderBuf.Add(no)
+	m.broker.Send(events.NewOrderEvent(ctx, &no))
 
 	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
 	// in the book to 0 out the positions.
@@ -703,7 +733,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			order.UpdatedAt = m.currentTime.UnixNano()
-			m.orderBuf.Add(*order)
+			m.broker.Send(events.NewOrderEvent(ctx, order))
 		}
 	}
 
@@ -711,7 +741,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
-			if no.Side == types.Side_Buy {
+			if no.Side == types.Side_SIDE_BUY {
 				trade.BuyOrder = no.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -722,9 +752,9 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			// setup the type of the trade to network
 			// this trade did happen with a GOOD trader to
 			// 0 out the BAD trader position
-			trade.Type = types.Trade_NETWORK_CLOSE_OUT_GOOD
+			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
-			m.tradeBuf.Add(*trade)
+			m.broker.Send(events.NewTradeEvent(ctx, *trade))
 
 			// Save to trade buffer for generating candles etc
 			err = m.candleBuf.AddTrade(*trade)
@@ -741,7 +771,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	if err = m.zeroOutNetwork(closedMPs, &no, o); err != nil {
+	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -753,7 +783,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	m.settlement.RemoveDistressed(closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
-	movements, err := m.collateral.RemoveDistressed(closedMPs, m.GetID(), asset)
+	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
@@ -762,7 +792,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		return err
 	}
 	if len(movements.Transfers) > 0 {
-		m.transferBuf.Add([]*types.TransferResponse{movements})
+		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
+		m.broker.Send(evt)
 	}
 	// get the updated positions
 	evt := m.position.Positions()
@@ -773,7 +804,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
 
-	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
+	_, responses, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug(
 			"ledger movements after MTM on traders who closed out distressed",
@@ -782,24 +813,24 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 	}
 	// send transfer to buffer
-	m.transferBuf.Add(responses)
+	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	return err
 }
 
-func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, initial *types.Order) error {
+func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
 	marketID := m.GetID()
 	order := types.Order{
 		MarketID:    marketID,
-		Status:      types.Order_Filled,
+		Status:      types.Order_STATUS_FILLED,
 		PartyID:     networkPartyID,
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
-		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
-		Type:        types.Order_NETWORK,
+		TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
+		Type:        types.Order_TYPE_NETWORK,
 	}
 
 	asset, _ := m.mkt.GetAsset()
@@ -810,11 +841,11 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 	}
 
 	for i, trader := range traders {
-		tSide, nSide := types.Side_Sell, types.Side_Sell // one of them will have to sell
+		tSide, nSide := types.Side_SIDE_SELL, types.Side_SIDE_SELL // one of them will have to sell
 		if trader.Size() < 0 {
-			tSide = types.Side_Buy
+			tSide = types.Side_SIDE_BUY
 		} else {
-			nSide = types.Side_Buy
+			nSide = types.Side_SIDE_BUY
 		}
 		tSize := uint64(math.Abs(float64(trader.Size())))
 
@@ -822,7 +853,7 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 		order.Size = tSize
 		order.Remaining = 0
 		order.Side = nSide
-		order.Status = types.Order_Active // ensure the status is always active
+		order.Status = types.Order_STATUS_FILLED // An order with no remaining must be filled
 		m.idgen.SetID(&order)
 
 		// this is the party order
@@ -830,27 +861,27 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			MarketID:    marketID,
 			Size:        tSize,
 			Remaining:   0,
-			Status:      types.Order_Filled,
+			Status:      types.Order_STATUS_FILLED,
 			PartyID:     trader.Party(),
 			Side:        tSide,             // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
-			TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
-			Type:        types.Order_NETWORK,
+			TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
+			Type:        types.Order_TYPE_NETWORK,
 		}
 		m.idgen.SetID(&partyOrder)
 
 		// store the trader order, too
-		m.orderBuf.Add(partyOrder)
-		m.orderBuf.Add(order)
+		m.broker.Send(events.NewOrderEvent(ctx, &partyOrder))
+		m.broker.Send(events.NewOrderEvent(ctx, &order))
 
 		// now let's create the trade between the party and network
 		var (
 			buyOrder  *types.Order
 			sellOrder *types.Order
 		)
-		if order.Side == types.Side_Buy {
+		if order.Side == types.Side_SIDE_BUY {
 			buyOrder = &order
 			sellOrder = &partyOrder
 		} else {
@@ -869,23 +900,24 @@ func (m *Market) zeroOutNetwork(traders []events.MarketPosition, settleOrder, in
 			Buyer:     buyOrder.PartyID,
 			Seller:    sellOrder.PartyID,
 			Timestamp: partyOrder.CreatedAt,
-			Type:      types.Trade_NETWORK_CLOSE_OUT_BAD,
+			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
-		m.tradeBuf.Add(trade)
+		m.broker.Send(events.NewTradeEvent(ctx, trade))
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()
 		m.marginLevelsBuf.Add(marginLevels)
 
-		m.log.Warn("trader closed-out with success",
-			logging.String("party-id", trader.Party()),
-			logging.String("market-id", m.GetID()))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("trader closed-out with success",
+				logging.String("party-id", trader.Party()),
+				logging.String("market-id", m.GetID()))
+		}
 	}
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -901,11 +933,13 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
 	if err != nil {
-		m.log.Error("unable to top up margin on new order",
-			logging.String("party-id", order.PartyID),
-			logging.String("market-id", order.MarketID),
-			logging.Error(err),
-		)
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("unable to top up margin on new order",
+				logging.String("party-id", order.PartyID),
+				logging.String("market-id", order.MarketID),
+				logging.Error(err),
+			)
+		}
 		return ErrMarginCheckInsufficient
 	} else if riskUpdate == nil {
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -915,19 +949,22 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(m.GetID(), riskUpdate)
+		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferBuf.Add([]*types.TransferResponse{transfer})
+		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
+		m.broker.Send(evt)
 
 		if closePos != nil {
 			// if closePose is not nil then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
 
-			m.log.Error("party did not have enough collateral to reach the InitialMargin",
-				logging.Order(*order),
-				logging.String("market-id", m.GetID()))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("party did not have enough collateral to reach the InitialMargin",
+					logging.Order(*order),
+					logging.String("market-id", m.GetID()))
+			}
 
 			return ErrMarginCheckInsufficient
 		}
@@ -943,7 +980,6 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -986,10 +1022,10 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
+func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
 	asset, _ := m.mkt.GetAsset()
-	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle, asset)
+	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if err != nil {
 		m.log.Error(
 			"Failed to process mark to market settlement (collateral)",
@@ -1006,11 +1042,12 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		)
 	}
 	// sending response to buffer
-	m.transferBuf.Add(response)
+	evt := events.NewTransferResponse(ctx, response)
+	m.broker.Send(evt)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(context.Background(), evts, m.markPrice)
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
 	if len(riskUpdates) == 0 {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
@@ -1023,7 +1060,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 }
 
 // CancelOrder cancels the given order
-func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1033,11 +1070,12 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 
 	// Validate Market
 	if oc.MarketID != m.mkt.Id {
-		m.log.Error("Market ID mismatch",
-			logging.String("party-id", oc.PartyID),
-			logging.String("order-id", oc.OrderID),
-			logging.String("market", m.mkt.Id))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Market ID mismatch",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id))
+		}
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -1046,19 +1084,32 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 		return nil, err
 	}
 
+	// Only allow the original order creator to cancel their order
+	if order.PartyID != oc.PartyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Party ID mismatch",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
-		m.log.Error("Failure after cancel order from matching engine",
-			logging.String("party-id", oc.PartyID),
-			logging.String("order-id", oc.OrderID),
-			logging.String("market", m.mkt.Id))
-		logging.Error(err)
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after cancel order from matching engine",
+				logging.String("party-id", oc.PartyID),
+				logging.String("order-id", oc.OrderID),
+				logging.String("market", m.mkt.Id),
+				logging.Error(err))
+		}
 		return nil, err
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
 	cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
-	m.orderBuf.Add(*cancellation.Order)
+	m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
 	_, err = m.position.UnregisterOrder(cancellation.Order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -1070,7 +1121,9 @@ func (m *Market) CancelOrder(oc *types.OrderCancellation) (*types.OrderCancellat
 }
 
 // CancelOrderByID locates order by its Id and cancels it
+// @TODO This function should not exist. Needs to be removed
 func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
+	ctx := context.TODO()
 	order, err := m.matching.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
@@ -1080,11 +1133,11 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 		PartyID:  order.PartyID,
 		MarketID: order.MarketID,
 	}
-	return m.CancelOrder(&cancellation)
+	return m.CancelOrder(ctx, &cancellation)
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1097,21 +1150,34 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// order book in the matching engine for this market
 	existingOrder, err := m.matching.GetOrderByID(orderAmendment.OrderID)
 	if err != nil {
-		m.log.Error("Invalid order ID",
-			logging.String("id", orderAmendment.GetOrderID()),
-			logging.String("party", orderAmendment.GetPartyID()),
-			logging.String("market", orderAmendment.GetMarketID()),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Invalid order ID",
+				logging.String("id", orderAmendment.GetOrderID()),
+				logging.String("party", orderAmendment.GetPartyID()),
+				logging.String("market", orderAmendment.GetMarketID()),
+				logging.Error(err))
+		}
 
 		return nil, types.ErrInvalidOrderID
 	}
 
+	// We can only amend this order if we created it
+	if existingOrder.PartyID != orderAmendment.PartyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Invalid party ID",
+				logging.String("original party id:", existingOrder.PartyID),
+				logging.String("amend party id:", orderAmendment.PartyID))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
-		m.log.Error("Market ID mismatch",
-			logging.String("market-id", m.mkt.Id),
-			logging.Order(*existingOrder))
-
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Market ID mismatch",
+				logging.String("market-id", m.mkt.Id),
+				logging.Order(*existingOrder))
+		}
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -1132,7 +1198,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 			MarketID: existingOrder.MarketID,
 		}
 
-		confirm, err := m.CancelOrder(&orderCancel)
+		confirm, err := m.CancelOrder(ctx, &orderCancel)
 		if err != nil {
 			return nil, err
 		}
@@ -1141,23 +1207,38 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		}, nil
 	}
 
+	// if expiration has changed and is before the original creation time, reject this amend
+	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < existingOrder.CreatedAt {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Amended expiry before original creation time",
+				logging.Int64("original order created at ts:", existingOrder.CreatedAt),
+				logging.Int64("amended expiry ts:", amendedOrder.ExpiresAt),
+				logging.Order(*existingOrder))
+		}
+		return nil, types.ErrInvalidExpirationDatetime
+	}
+
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
+		// Update the exiting message in place before we cancel it
+		m.orderAmendInPlace(existingOrder, amendedOrder)
 		cancellation, err := m.matching.CancelOrder(amendedOrder)
 		if cancellation == nil || err != nil {
-			m.log.Error("Failure after cancel order from matching engine",
-				logging.String("party-id", amendedOrder.PartyID),
-				logging.String("order-id", amendedOrder.Id),
-				logging.String("market", m.mkt.Id))
-			logging.Error(err)
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failure to cancel order from matching engine",
+					logging.String("party-id", amendedOrder.PartyID),
+					logging.String("order-id", amendedOrder.Id),
+					logging.String("market", m.mkt.Id),
+					logging.Error(err))
+			}
 			return nil, err
 		}
 
 		// Update the order in our stores (will be marked as cancelled)
 		// set the proper status
-		cancellation.Order.Status = types.Order_Expired
-		m.orderBuf.Add(*cancellation.Order)
+		cancellation.Order.Status = types.Order_STATUS_EXPIRED
+		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
 		_, err = m.position.UnregisterOrder(cancellation.Order)
 		if err != nil {
 			m.log.Error("Failure unregistering order in positions engine (amendOrder)",
@@ -1195,11 +1276,45 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 	// If nothing changed, amend in place to update updatedAt and version number
 	if !priceShift && !sizeIncrease && !sizeDecrease && !expiryChange && !timeInForceChange {
-		ret, err := m.orderAmendInPlace(amendedOrder)
+		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
-			m.orderBuf.Add(*amendedOrder)
+			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 		}
 		return ret, err
+	}
+
+	// Update potential new position after the amend
+	pos, err := m.position.AmendOrder(existingOrder, amendedOrder)
+	if err != nil {
+		// adding order to the buffer first
+		amendedOrder.Status = types.Order_STATUS_REJECTED
+		amendedOrder.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
+		m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to amend potential trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		return nil, ErrMarginCheckFailed
+	}
+
+	// Perform check and allocate margin
+	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+		// Undo the position registering
+		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+		if err1 != nil {
+			m.log.Error("Unable to unregister potential amended trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err1))
+		}
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to check/add margin for trader",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		return nil, ErrMarginCheckFailed
 	}
 
 	// if increase in size or change in price
@@ -1207,7 +1322,7 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	if priceShift || sizeIncrease {
 		ret, err := m.orderCancelReplace(existingOrder, amendedOrder)
 		if err == nil {
-			m.orderBuf.Add(*amendedOrder)
+			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 		}
 		return ret, err
 	}
@@ -1215,34 +1330,23 @@ func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
-		if sizeDecrease && amendedOrder.Remaining < existingOrder.Remaining {
-			// reduce the position with the difference
-			diffRemaining := existingOrder.Remaining - amendedOrder.Remaining
-			o := types.Order{
-				PartyID:   existingOrder.PartyID,
-				Side:      existingOrder.Side,
-				Remaining: diffRemaining,
+		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Order amendment not allowed when reducing to a larger amount", logging.Order(*existingOrder))
 			}
-			_, err = m.position.UnregisterOrder(&o)
-			if err != nil {
-				m.log.Error("Failure unregistering order in positions engine (cancel)",
-					logging.Order(o),
-					logging.Error(err))
-
-				return nil, err
-			}
+			return nil, ErrInvalidAmendRemainQuantity
 		}
-
-		ret, err := m.orderAmendInPlace(amendedOrder)
+		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
-			m.orderBuf.Add(*amendedOrder)
+			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 		}
 		return ret, err
 	}
 
-	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Order amendment not allowed", logging.Order(*existingOrder))
+	}
 	return nil, types.ErrEditNotAllowed
-
 }
 
 func (m *Market) validateOrderAmendment(
@@ -1250,7 +1354,7 @@ func (m *Market) validateOrderAmendment(
 	amendment *types.OrderAmendment,
 ) error {
 	// check TIF and expiracy
-	if amendment.TimeInForce == types.Order_GTT {
+	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
 			return errors.New("cannot amend to order type GTT without an expiryAt value")
 		}
@@ -1259,13 +1363,13 @@ func (m *Market) validateOrderAmendment(
 		if amendment.ExpiresAt.Value <= order.CreatedAt {
 			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
 		}
-	} else if amendment.TimeInForce == types.Order_GTC {
+	} else if amendment.TimeInForce == types.Order_TIF_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != nil {
 			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
 		}
-	} else if amendment.TimeInForce == types.Order_FOK ||
-		amendment.TimeInForce == types.Order_IOC {
+	} else if amendment.TimeInForce == types.Order_TIF_FOK ||
+		amendment.TimeInForce == types.Order_TIF_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return errors.New("amend order, TIF FOK and IOC are not allowed")
 	}
@@ -1283,6 +1387,7 @@ func (m *Market) applyOrderAmendment(
 
 	// initialize order with the existing order data
 	order = &types.Order{
+		Type:        existingOrder.Type,
 		Id:          existingOrder.Id,
 		MarketID:    existingOrder.MarketID,
 		PartyID:     existingOrder.PartyID,
@@ -1317,7 +1422,7 @@ func (m *Market) applyOrderAmendment(
 	// apply tif
 	if amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
 		order.TimeInForce = amendment.TimeInForce
-		if amendment.TimeInForce != types.Order_GTT {
+		if amendment.TimeInForce != types.Order_TIF_GTT {
 			order.ExpiresAt = 0
 		}
 	}
@@ -1330,15 +1435,19 @@ func (m *Market) applyOrderAmendment(
 func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
 
-	m.log.Debug("Cancel/replace order")
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Cancel/replace order")
+	}
 
 	cancellation, err := m.matching.CancelOrder(existingOrder)
 	if cancellation == nil {
 		if err != nil {
-			m.log.Error("Failed to cancel order from matching engine during CancelReplace",
-				logging.OrderWithTag(*existingOrder, "existing-order"),
-				logging.OrderWithTag(*newOrder, "new-order"),
-				logging.Error(err))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failed to cancel order from matching engine during CancelReplace",
+					logging.OrderWithTag(*existingOrder, "existing-order"),
+					logging.OrderWithTag(*newOrder, "new-order"),
+					logging.Error(err))
+			}
 		} else {
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
@@ -1350,20 +1459,17 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 	return
 }
 
-func (m *Market) orderAmendInPlace(amendOrder *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
-	_, err := m.position.RegisterOrder(amendOrder)
+	err := m.matching.AmendOrder(originalOrder, amendOrder)
 	if err != nil {
-		return nil, err
-	}
-
-	err = m.matching.AmendOrder(amendOrder)
-	if err != nil {
-		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
-			logging.OrderWithTag(*amendOrder, "new-order"),
-			logging.Error(err))
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after amend order from matching engine (amend-in-place)",
+				logging.OrderWithTag(*amendOrder, "new-order"),
+				logging.Error(err))
+		}
 		return nil, err
 	}
 	return &types.OrderConfirmation{
@@ -1384,12 +1490,13 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, 
 			order := order
 			_, err = m.position.UnregisterOrder(&order)
 			if err != nil {
-				m.log.Error("Failure unregistering order in positions engine (cancel)",
-					logging.Order(order),
-					logging.Error(err))
+				if m.log.GetLevel() == logging.DebugLevel {
+					m.log.Debug("Failure unregistering order in positions engine (cancel)",
+						logging.Order(order),
+						logging.Error(err))
+				}
 			}
 		}
-
 	}
 
 	timer.EngineTimeCounterAdd()

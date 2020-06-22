@@ -71,21 +71,21 @@ func TestProposals(t *testing.T) {
 		ID:        "prop-1",
 		Reference: "prop-ref1",
 		PartyID:   party,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}, {
 		ID:        "prop-2",
 		Reference: "prop-ref2",
 		PartyID:   party,
-		State:     types.Proposal_FAILED,
+		State:     types.Proposal_STATE_FAILED,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewAsset{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}, {
 		ID:        "prop-3",
 		Reference: "prop-ref2", // colliding reference
 		PartyID:   party,
-		State:     types.Proposal_REJECTED,
+		State:     types.Proposal_STATE_REJECTED,
 		Terms: &types.ProposalTerms{Change: &types.ProposalTerms_UpdateMarket{
 			UpdateMarket: &types.UpdateMarket{},
 		}},
@@ -94,14 +94,14 @@ func TestProposals(t *testing.T) {
 		ID:        "prop-4",
 		Reference: "prop-ref4",
 		PartyID:   party,
-		State:     types.Proposal_PASSED,
+		State:     types.Proposal_STATE_PASSED,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}, {
 		ID:        "prop-5",
 		Reference: "prop-ref5",
 		PartyID:   party,
-		State:     types.Proposal_ENACTED,
+		State:     types.Proposal_STATE_ENACTED,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
@@ -112,7 +112,7 @@ func TestProposals(t *testing.T) {
 		loaded := plugin.GetProposalsByParty(party, nil)
 		assert.Len(t, loaded, len(proposals))
 
-		selector := types.Proposal_REJECTED
+		selector := types.Proposal_STATE_REJECTED
 		loaded = plugin.GetProposalsByParty(party, &selector)
 		assert.Len(t, loaded, 1)
 		assert.Equal(t, proposals[2], *loaded[0].Proposal)
@@ -195,11 +195,11 @@ func TestVotes(t *testing.T) {
 	votes1 := []types.Vote{{
 		PartyID:    party1,
 		ProposalID: proposal1ID,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    party1,
 		ProposalID: proposal1ID,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}}
 	plugin.vCh <- votes1
 	<-wait4Party1Votes
@@ -220,7 +220,7 @@ func TestVotes(t *testing.T) {
 	plugin.pCh <- []types.Proposal{{
 		ID:        proposal1ID,
 		PartyID:   party1,
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}}
@@ -244,11 +244,11 @@ func TestVotes(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    party2,
 		ProposalID: proposal1ID,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}, {
 		PartyID:    party1,
 		ProposalID: proposal2ID,
-		Value:      types.Vote_NO,
+		Value:      types.Vote_VALUE_NO,
 	}}
 	<-wait4Party1Votes
 	plugin.UnsubscribePartyVotes(party1, party1VotesSub)
@@ -275,7 +275,7 @@ func TestVotes(t *testing.T) {
 	plugin.vCh <- []types.Vote{{
 		PartyID:    party3,
 		ProposalID: proposal1ID,
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}}
 	<-wait4Party3Votes
 	plugin.UnsubscribePartyVotes(party3, party3VotesSub)
@@ -302,14 +302,14 @@ func testNewProposalChangingVoteSuccess(t *testing.T) {
 		ID:        "prop-ID",
 		Reference: "prop-ref",
 		PartyID:   "prop-party-ID",
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_UpdateNetwork{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
 	vote := types.Vote{
 		ProposalID: proposal.ID,
 		PartyID:    "vote-party-ID",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}
 	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
 	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
@@ -330,7 +330,7 @@ func testNewProposalChangingVoteSuccess(t *testing.T) {
 	assert.Empty(t, p.No) // no votes against were cast yet
 
 	// same party now votes no
-	vote.Value = types.Vote_NO
+	vote.Value = types.Vote_VALUE_NO
 	plugin.vCh <- []types.Vote{vote}
 	plugin.vCh <- []types.Vote{}
 	plugin.pBuf.EXPECT().Unsubscribe(1).Times(1)
@@ -354,14 +354,14 @@ func testNewProposalFirstVoteSuccess(t *testing.T) {
 		ID:        "prop-ID",
 		Reference: "prop-ref",
 		PartyID:   "prop-party-ID",
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewAsset{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
 	vote := types.Vote{
 		ProposalID: proposal.ID,
 		PartyID:    "vote-party-ID",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}
 	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
 	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
@@ -400,14 +400,14 @@ func testNewProposalThenVoteSuccess(t *testing.T) {
 		ID:        "prop-ID",
 		Reference: "prop-ref",
 		PartyID:   "prop-party-ID",
-		State:     types.Proposal_OPEN,
+		State:     types.Proposal_STATE_OPEN,
 		Terms:     &types.ProposalTerms{Change: &types.ProposalTerms_NewMarket{}},
 		Timestamp: time.Now().Add(3600 * time.Second).Unix(),
 	}
 	vote := types.Vote{
 		ProposalID: proposal.ID,
 		PartyID:    "vote-party-ID",
-		Value:      types.Vote_YES,
+		Value:      types.Vote_VALUE_YES,
 	}
 	plugin.pBuf.EXPECT().Subscribe().Times(1).Return(plugin.pCh, 1)
 	plugin.vBuf.EXPECT().Subscribe().Times(1).Return(plugin.vCh, 1)
@@ -433,7 +433,7 @@ func testNewProposalThenVoteSuccess(t *testing.T) {
 	assert.Equal(t, proposal, *pRef.Proposal)
 
 	// proposal is open, should get it from the open proposals
-	state := types.Proposal_OPEN
+	state := types.Proposal_STATE_OPEN
 	open := plugin.GetProposals(&state)
 	assert.NotEmpty(t, open)
 	assert.Equal(t, 1, len(open))

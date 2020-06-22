@@ -1,9 +1,6 @@
 package gql
 
 import (
-	"math"
-	"strings"
-
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
@@ -42,12 +39,10 @@ var (
 	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
 	// ErrNilContinuousTradingTickSize ...
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
-	// ErrnilScalingFactors...
+	// ErrNilScalingFactors ...
 	ErrNilScalingFactors = errors.New("nil scaling factors")
-	// ErrNilMarginCalculator
+	// ErrNilMarginCalculator ...
 	ErrNilMarginCalculator = errors.New("nil margin calculator")
-	// ErrParticipationStake ...
-	ErrParticipationStake = errors.New("minimum participation stake contains too large value")
 	// ErrInvalidTickSize ...
 	ErrInvalidTickSize = errors.New("invalid tick size")
 	// ErrInvalidDecimalPlaces ...
@@ -509,21 +504,15 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 
 // IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
-	if !a.IsValid() {
-		return types.AccountType_ALL
-	}
-	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
+	at, _ := convertAccountTypeToProto(a)
+	return at
 }
 
 // ProposalTermsFromProto ...
 func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) {
-	if terms.MinParticipationStake > math.MaxInt32 {
-		return nil, ErrParticipationStake
-	}
 	result := &ProposalTerms{
-		ClosingDatetime:       timestampToString(terms.ClosingTimestamp),
-		EnactmentDatetime:     timestampToString(terms.EnactmentTimestamp),
-		MinParticipationStake: int(terms.MinParticipationStake),
+		ClosingDatetime:   secondsTSToDatetime(terms.ClosingTimestamp),
+		EnactmentDatetime: secondsTSToDatetime(terms.EnactmentTimestamp),
 	}
 	if terms.GetUpdateMarket() != nil {
 		result.Change = nil
@@ -684,7 +673,6 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 		return nil, ErrInvalidDecimalPlaces
 	}
 	result := &types.Market{
-		Id:                 m.ID,
 		Name:               m.Name,
 		TradableInstrument: ti,
 		DecimalPlaces:      uint64(m.DecimalPlaces),
@@ -698,19 +686,18 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 
 // IntoProto ...
 func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
-	closing, err := parseTimestamp(p.ClosingDatetime)
+	closing, err := datetimeToSecondsTS(p.ClosingDatetime)
 	if err != nil {
 		return nil, err
 	}
-	enactment, err := parseTimestamp(p.EnactmentDatetime)
+	enactment, err := datetimeToSecondsTS(p.EnactmentDatetime)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &types.ProposalTerms{
-		ClosingTimestamp:      closing,
-		EnactmentTimestamp:    enactment,
-		MinParticipationStake: uint64(p.MinParticipationStake),
+		ClosingTimestamp:   closing,
+		EnactmentTimestamp: enactment,
 	}
 	if p.UpdateMarket != nil {
 		result.Change = &types.ProposalTerms_UpdateMarket{}
@@ -749,56 +736,17 @@ func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalSta
 
 // IntoProtoValue ...
 func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
-	switch s {
-	case ProposalStateFailed:
-		return types.Proposal_FAILED, nil
-	case ProposalStateOpen:
-		return types.Proposal_OPEN, nil
-	case ProposalStatePassed:
-		return types.Proposal_PASSED, nil
-	case ProposalStateDeclined:
-		return types.Proposal_DECLINED, nil
-	case ProposalStateRejected:
-		return types.Proposal_REJECTED, nil
-	case ProposalStateEnacted:
-		return types.Proposal_ENACTED, nil
-	}
-	return types.Proposal_State(-1), ErrInvalidProposalState
-}
-
-// ProposalStateFromProto ...
-func ProposalStateFromProto(state types.Proposal_State) (ProposalState, error) {
-	switch state {
-	case types.Proposal_FAILED:
-		return ProposalStateFailed, nil
-	case types.Proposal_OPEN:
-		return ProposalStateOpen, nil
-	case types.Proposal_PASSED:
-		return ProposalStatePassed, nil
-	case types.Proposal_DECLINED:
-		return ProposalStateDeclined, nil
-	case types.Proposal_REJECTED:
-		return ProposalStateRejected, nil
-	case types.Proposal_ENACTED:
-		return ProposalStateEnacted, nil
-	}
-	return ProposalState(""), ErrInvalidProposalState
-}
-
-// VoteValueFromProto ...
-func VoteValueFromProto(v types.Vote_Value) VoteValue {
-	if v == types.Vote_YES {
-		return VoteValueYes
-	}
-	return VoteValueNo
+	return convertProposalStateToProto(s)
 }
 
 // ProposalVoteFromProto ...
 func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
+	value, _ := convertVoteValueFromProto(v.Value)
 	return &ProposalVote{
 		Vote: &Vote{
-			Party: caster,
-			Value: VoteValueFromProto(v.Value),
+			Party:    caster,
+			Value:    value,
+			Datetime: nanoTSToDatetime(v.Timestamp),
 		},
 		ProposalID: v.ProposalID,
 	}

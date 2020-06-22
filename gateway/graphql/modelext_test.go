@@ -1,7 +1,6 @@
 package gql_test
 
 import (
-	"math"
 	"testing"
 
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
@@ -459,7 +458,6 @@ func TestModelConverters(t *testing.T) {
 	t.Run("MarketInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.MarketInput{
-			ID:   "abcdefg",
 			Name: "test-market",
 			TradableInstrument: &gql.TradableInstrumentInput{
 				Instrument: &gql.InstrumentInput{
@@ -512,20 +510,18 @@ func TestModelConverters(t *testing.T) {
 	t.Run("ProposalTermsInput.IntoProto nil change", func(t *testing.T) {
 
 		proposal := &gql.ProposalTermsInput{
-			ClosingDatetime:       "2020-09-30T07:28:06+00:00",
-			EnactmentDatetime:     "2020-10-30T07:28:06+00:00",
-			MinParticipationStake: 10,
+			ClosingDatetime:   "2020-09-30T07:28:06+00:00",
+			EnactmentDatetime: "2020-10-30T07:28:06+00:00",
 		}
 		proposalProto, err := proposal.IntoProto()
 		assert.Nil(t, proposalProto)
 		assert.Error(t, err)
-		assert.Equal(t, gql.ErrInvalidChange, err)
+		assert.EqualError(t, gql.ErrInvalidChange, err.Error())
 	})
 
 	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.MarketInput{
-			ID:   "abcdefg",
 			Name: "test-market",
 			TradableInstrument: &gql.TradableInstrumentInput{
 				Instrument: &gql.InstrumentInput{
@@ -576,9 +572,8 @@ func TestModelConverters(t *testing.T) {
 		assert.Nil(t, err)
 
 		proposal := &gql.ProposalTermsInput{
-			ClosingDatetime:       "2020-09-30T07:28:06+00:00",
-			EnactmentDatetime:     "2020-10-30T07:28:06+00:00",
-			MinParticipationStake: 10,
+			ClosingDatetime:   "2020-09-30T07:28:06+00:00",
+			EnactmentDatetime: "2020-10-30T07:28:06+00:00",
 			NewMarket: &gql.NewMarketInput{
 				Market: &mkt,
 			},
@@ -588,19 +583,7 @@ func TestModelConverters(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("ProposalTermsFromProto invalid stake", func(t *testing.T) {
-		terms := &proto.ProposalTerms{
-			ClosingTimestamp:      1234567,
-			EnactmentTimestamp:    1234568,
-			MinParticipationStake: math.MaxInt32 * 2,
-		}
-		protoTerms, err := gql.ProposalTermsFromProto(terms)
-		assert.Nil(t, protoTerms)
-		assert.Error(t, err)
-		assert.Equal(t, gql.ErrParticipationStake, err)
-	})
-
-	t.Run("ProposalTermsFromProto invalid stake", func(t *testing.T) {
+	t.Run("ProposalTermsFromProto valid data", func(t *testing.T) {
 		pm := &proto.Market{
 			TradableInstrument: &proto.TradableInstrument{
 				Instrument: &proto.Instrument{
@@ -640,9 +623,8 @@ func TestModelConverters(t *testing.T) {
 		}
 
 		terms := &proto.ProposalTerms{
-			ClosingTimestamp:      1234567,
-			EnactmentTimestamp:    1234568,
-			MinParticipationStake: 10,
+			ClosingTimestamp:   1234567,
+			EnactmentTimestamp: 1234568,
 			Change: &proto.ProposalTerms_NewMarket{
 				NewMarket: &proto.NewMarket{
 					Changes: pm,

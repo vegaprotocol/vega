@@ -93,6 +93,7 @@ type BlockchainClient interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	CreateOrder(ctx context.Context, order *types.Order) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
+	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
@@ -293,6 +294,10 @@ func (h *tradingDataService) Candles(ctx context.Context,
 		return nil, err
 	}
 
+	if request.Interval == types.Interval_INTERVAL_UNSPECIFIED {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
 	c, err := h.CandleService.GetCandles(ctx, request.MarketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandles, err)
@@ -460,7 +465,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 	}
 
 	// Call tendermint via rpc client
-	backlogLength, numPeers, gt, err := h.getTendermintStats(ctx)
+	backlogLength, numPeers, gt, chainID, err := h.getTendermintStats(ctx)
 	if err != nil {
 		return nil, err // getTendermintStats already returns an API error
 	}
@@ -508,6 +513,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		CandleSubscriptions:      uint32(h.CandleService.GetCandleSubscribersCount()),
 		AccountSubscriptions:     uint32(h.AccountsService.GetAccountSubscribersCount()),
 		MarketDataSubscriptions:  uint32(h.MarketService.GetMarketDataSubscribersCount()),
+		ChainID:                  chainID,
 	}, nil
 }
 
@@ -1145,7 +1151,7 @@ func (h *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*pr
 func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("PartyByID", startTime)
-	pty, err := validateParty(ctx, req.PartyID, h.PartyService)
+	pty, err := validateParty(ctx, h.log, req.PartyID, h.PartyService)
 	if err != nil {
 		return nil, err // validateParty already returns an API error, no need to additionally wrap
 	}
@@ -1246,7 +1252,7 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	return mkt, nil
 }
 
-func validateParty(ctx context.Context, partyID string, partyService PartyService) (*types.Party, error) {
+func validateParty(ctx context.Context, log *logging.Logger, partyID string, partyService PartyService) (*types.Party, error) {
 	var pty *types.Party
 	var err error
 	if len(partyID) == 0 {
@@ -1254,16 +1260,22 @@ func validateParty(ctx context.Context, partyID string, partyService PartyServic
 	}
 	pty, err = partyService.GetByID(ctx, partyID)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrPartyServiceGetByID, err)
+		// we just log the error here, then return an nil error.
+		// right now the only error possible is about not finding a party
+		// we just not an actual error
+		log.Debug("error getting party by ID",
+			logging.Error(err),
+			logging.String("party-id", partyID))
+		err = nil
 	}
 	return pty, err
 }
 
 func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLength int,
-	numPeers int, genesis *time.Time, err error) {
+	numPeers int, genesis *time.Time, chainID string, err error) {
 
 	if h.Stats == nil || h.Stats.Blockchain == nil {
-		return 0, 0, nil, apiError(codes.Internal, ErrChainNotConnected)
+		return 0, 0, nil, "", apiError(codes.Internal, ErrChainNotConnected)
 	}
 
 	refused := "connection refused"
@@ -1272,30 +1284,35 @@ func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 	backlogLength, err = h.Client.GetUnconfirmedTxCount(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return 0, 0, nil, nil
+			return 0, 0, nil, "", nil
 		}
-		return 0, 0, nil, apiError(codes.Internal, ErrBlockchainBacklogLength, err)
+		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
 	// Net info provides peer stats etc (block chain network info) == number of peers
 	netInfo, err := h.Client.GetNetworkInfo(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return backlogLength, 0, nil, nil
+			return backlogLength, 0, nil, "", nil
 		}
-		return backlogLength, 0, nil, apiError(codes.Internal, ErrBlockchainNetworkInfo, err)
+		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainNetworkInfo, err)
 	}
 
 	// Genesis retrieves the current genesis date/time for the blockchain
 	genesisTime, err := h.Client.GetGenesisTime(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return backlogLength, 0, nil, nil
+			return backlogLength, 0, nil, "", nil
 		}
-		return backlogLength, 0, nil, apiError(codes.Internal, ErrBlockchainGenesisTime, err)
+		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainGenesisTime, err)
 	}
 
-	return backlogLength, netInfo.NPeers, &genesisTime, nil
+	chainId, err := h.Client.GetChainID(ctx)
+	if err != nil {
+		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainChainID, err)
+	}
+
+	return backlogLength, netInfo.NPeers, &genesisTime, chainId, nil
 }
 
 func (h *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*types.Order, error) {
@@ -1362,168 +1379,168 @@ func (h *tradingDataService) OrderVersionsByID(
 }
 
 func (h *tradingDataService) GetProposals(_ context.Context,
-	in *protoapi.GetProposalsByStateRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
+	in *protoapi.GetProposalsRequest,
+) (*protoapi.GetProposalsResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
-	if in.State != nil {
-		inState = &in.State.Value
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
 	}
-	return &protoapi.GetGovernanceDataResponse{
+	return &protoapi.GetProposalsResponse{
 		Data: h.governanceService.GetProposals(inState),
 	}, nil
 }
 
 func (h *tradingDataService) GetProposalsByParty(_ context.Context,
 	in *protoapi.GetProposalsByPartyRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
+) (*protoapi.GetProposalsByPartyResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposalsByParty", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
-	if in.State != nil {
-		inState = &in.State.Value
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
 	}
-	return &protoapi.GetGovernanceDataResponse{
+	return &protoapi.GetProposalsByPartyResponse{
 		Data: h.governanceService.GetProposalsByParty(in.PartyID, inState),
 	}, nil
 }
 
 func (h *tradingDataService) GetVotesByParty(_ context.Context,
 	in *protoapi.GetVotesByPartyRequest,
-) (*protoapi.GetVotesResponse, error) {
+) (*protoapi.GetVotesByPartyResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetVotesByParty", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
-	return &protoapi.GetVotesResponse{
+	return &protoapi.GetVotesByPartyResponse{
 		Votes: h.governanceService.GetVotesByParty(in.PartyID),
 	}, nil
 }
 
 func (h *tradingDataService) GetNewMarketProposals(_ context.Context,
-	in *protoapi.GetProposalsByStateRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
+	in *protoapi.GetNewMarketProposalsRequest,
+) (*protoapi.GetNewMarketProposalsResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNewMarketProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
 	var inState *types.Proposal_State
-	if in.State != nil {
-		inState = &in.State.Value
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
 	}
-	return &protoapi.GetGovernanceDataResponse{
+	return &protoapi.GetNewMarketProposalsResponse{
 		Data: h.governanceService.GetNewMarketProposals(inState),
 	}, nil
 }
 
 func (h *tradingDataService) GetUpdateMarketProposals(_ context.Context,
 	in *protoapi.GetUpdateMarketProposalsRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
+) (*protoapi.GetUpdateMarketProposalsResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetUpdateMarketProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
 	var inState *types.Proposal_State
-	if in.State != nil {
-		inState = &in.State.Value
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
 	}
-	return &protoapi.GetGovernanceDataResponse{
+	return &protoapi.GetUpdateMarketProposalsResponse{
 		Data: h.governanceService.GetUpdateMarketProposals(in.MarketID, inState),
 	}, nil
 }
 
 func (h *tradingDataService) GetNetworkParametersProposals(_ context.Context,
-	in *protoapi.GetProposalsByStateRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
+	in *protoapi.GetNetworkParametersProposalsRequest,
+) (*protoapi.GetNetworkParametersProposalsResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNetworkParametersProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
-	if in.State != nil {
-		inState = &in.State.Value
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
 	}
-	return &protoapi.GetGovernanceDataResponse{
+	return &protoapi.GetNetworkParametersProposalsResponse{
 		Data: h.governanceService.GetNetworkParametersProposals(inState),
 	}, nil
 }
 
 func (h *tradingDataService) GetNewAssetProposals(_ context.Context,
-	in *protoapi.GetProposalsByStateRequest,
-) (*protoapi.GetGovernanceDataResponse, error) {
+	in *protoapi.GetNewAssetProposalsRequest,
+) (*protoapi.GetNewAssetProposalsResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetNewAssetProposals", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	var inState *types.Proposal_State
-	if in.State != nil {
-		inState = &in.State.Value
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
 	}
-	return &protoapi.GetGovernanceDataResponse{
+	return &protoapi.GetNewAssetProposalsResponse{
 		Data: h.governanceService.GetNewAssetProposals(inState),
 	}, nil
 }
 
 func (h *tradingDataService) GetProposalByID(_ context.Context,
 	in *protoapi.GetProposalByIDRequest,
-) (*protoapi.GetProposalResponse, error) {
+) (*protoapi.GetProposalByIDResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByID", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	proposal, err := h.governanceService.GetProposalByID(in.ProposalID)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMissingProposalID, err)
 	}
-	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
+	return &protoapi.GetProposalByIDResponse{Data: proposal}, nil
 }
 
 func (h *tradingDataService) GetProposalByReference(_ context.Context,
 	in *protoapi.GetProposalByReferenceRequest,
-) (*protoapi.GetProposalResponse, error) {
+) (*protoapi.GetProposalByReferenceResponse, error) {
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("GetProposalByReference", startTime)
 
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	proposal, err := h.governanceService.GetProposalByReference(in.Reference)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, ErrMissingProposalReference, err)
 	}
-	return &protoapi.GetProposalResponse{Proposal: proposal}, nil
+	return &protoapi.GetProposalByReferenceResponse{Data: proposal}, nil
 }
 
 func (h *tradingDataService) ObserveGovernance(
@@ -1556,7 +1573,7 @@ func (h *tradingDataService) ObserveGovernance(
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		case <-h.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
+			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -1567,6 +1584,11 @@ func (h *tradingDataService) ObservePartyProposals(
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("ObservePartyProposals", startTime)
+
+	if err := in.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if h.log.GetLevel() == logging.DebugLevel {
@@ -1590,7 +1612,7 @@ func (h *tradingDataService) ObservePartyProposals(
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		case <-h.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
+			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -1602,6 +1624,11 @@ func (h *tradingDataService) ObservePartyVotes(
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("ObservePartyVotes", startTime)
+
+	if err := in.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if h.log.GetLevel() == logging.DebugLevel {
@@ -1625,7 +1652,7 @@ func (h *tradingDataService) ObservePartyVotes(
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		case <-h.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
+			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -1637,6 +1664,11 @@ func (h *tradingDataService) ObserveProposalVotes(
 
 	startTime := vegatime.Now()
 	defer metrics.APIRequestAndTimeGRPC("ObserveProposalVotes", startTime)
+
+	if err := in.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if h.log.GetLevel() == logging.DebugLevel {
@@ -1660,7 +1692,7 @@ func (h *tradingDataService) ObserveProposalVotes(
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		case <-h.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
+			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }

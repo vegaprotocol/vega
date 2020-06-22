@@ -47,6 +47,7 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 
 	req := &protoapi.SubmitOrderRequest{
 		Submission: &types.OrderSubmission{
+			Type:     types.Order_TYPE_LIMIT,
 			MarketID: "nonexistantmarket",
 		},
 	}
@@ -100,7 +101,7 @@ func getTestGRPCServer(
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
 	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
 	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.32.9"},
+		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.5"},
 		SyncInfo:      tmctypes.SyncInfo{},
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
@@ -286,7 +287,7 @@ func TestPrepareProposal(t *testing.T) {
 			},
 		},
 	})
-	assert.Contains(t, err.Error(), "Internal error")
+	assert.Contains(t, err.Error(), "InvalidArgument")
 	assert.Nil(t, proposal)
 
 	g.Stop()

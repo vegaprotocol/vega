@@ -1,6 +1,7 @@
 package processor_test
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
@@ -368,18 +369,18 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().Withdraw(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().SubmitOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
-	proc.eng.EXPECT().AmendOrder(gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().Withdraw(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
+	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().AddProposal(gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
+	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
 		assert.NoError(t, err)
-		assert.NoError(t, proc.Process(payload, cmd), "Failed to process %v command payload", cmd)
+		assert.NoError(t, proc.Process(context.TODO(), payload, cmd), "Failed to process %v command payload", cmd)
 	}
 }
 
