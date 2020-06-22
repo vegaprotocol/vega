@@ -40,7 +40,7 @@ func (t *TradeSub) loop(ctx context.Context) {
 			t.Halt()
 			return
 		case e := <-t.ch:
-			if t.running {
+			if t.isRunning() {
 				t.Push(e)
 			}
 		}

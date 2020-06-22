@@ -65,13 +65,6 @@ type MarketDataBuf interface {
 	Flush()
 }
 
-// MarginLevelsBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
-type MarginLevelsBuf interface {
-	Add(types.MarginLevels)
-	Flush()
-}
-
 // LossSocializationBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution LossSocializationBuf
 type LossSocializationBuf interface {
@@ -94,12 +87,11 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	candleBuf       CandleBuf
-	marketBuf       MarketBuf
-	marketDataBuf   MarketDataBuf
-	marginLevelsBuf MarginLevelsBuf
-	settleBuf       SettlementBuf
-	lossSocBuf      LossSocializationBuf
+	candleBuf     CandleBuf
+	marketBuf     MarketBuf
+	marketDataBuf MarketDataBuf
+	settleBuf     SettlementBuf
+	lossSocBuf    LossSocializationBuf
 
 	broker Broker
 	time   TimeService
@@ -114,7 +106,6 @@ func NewEngine(
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
 	marketDataBuf MarketDataBuf,
-	marginLevelsBuf MarginLevelsBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
 	pmkts []types.Market,
@@ -126,20 +117,19 @@ func NewEngine(
 	log.SetLevel(executionConfig.Level.Get())
 
 	e := &Engine{
-		log:             log,
-		Config:          executionConfig,
-		markets:         map[string]*Market{},
-		candleBuf:       candleBuf,
-		marketBuf:       marketBuf,
-		time:            time,
-		collateral:      collateral,
-		party:           NewParty(log, collateral, pmkts, broker),
-		marketDataBuf:   marketDataBuf,
-		marginLevelsBuf: marginLevelsBuf,
-		settleBuf:       settleBuf,
-		lossSocBuf:      lossSocBuf,
-		idgen:           NewIDGen(),
-		broker:          broker,
+		log:           log,
+		Config:        executionConfig,
+		markets:       map[string]*Market{},
+		candleBuf:     candleBuf,
+		marketBuf:     marketBuf,
+		time:          time,
+		collateral:    collateral,
+		party:         NewParty(log, collateral, pmkts, broker),
+		marketDataBuf: marketDataBuf,
+		settleBuf:     settleBuf,
+		lossSocBuf:    lossSocBuf,
+		idgen:         NewIDGen(),
+		broker:        broker,
 	}
 
 	var err error
@@ -230,7 +220,6 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.party,
 		marketConfig,
 		e.candleBuf,
-		e.marginLevelsBuf,
 		e.settleBuf,
 		now,
 		e.broker,
@@ -465,9 +454,6 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 
 // Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
-
-	// margins levels
-	e.marginLevelsBuf.Flush()
 
 	// Transfers
 	// @TODO this event will be generated with a block context that has the trace ID

@@ -41,6 +41,10 @@ func (b *Base) Resume() {
 	}
 }
 
+func (b Base) isRunning() bool {
+	return b.running
+}
+
 // C returns the event channel for optional subscribers
 func (b *Base) C() chan<- events.Event {
 	return b.ch
