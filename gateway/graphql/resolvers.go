@@ -1105,6 +1105,18 @@ func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderSt
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
+
+func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (string, error) {
+	if obj.UpdatedAt <= 0 {
+		return "", nil
+	}
+	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+}
+
+func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
+}
+
 func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
