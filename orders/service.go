@@ -9,7 +9,6 @@ import (
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -158,10 +157,9 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	}
 
 	if sub.TimeInForce == types.Order_TIF_GTT {
-		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
-		if err != nil {
-			s.log.Error("unable to get expiration time", logging.Error(err))
-			return err
+		if sub.ExpiresAt <= 0 {
+			s.log.Error("invalid expiration time")
+			return ErrInvalidExpirationDT
 		}
 	}
 
@@ -229,21 +227,6 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 		}
 	}
 	return nil
-}
-
-func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
-	exp := vegatime.UnixNano(expiresAt)
-
-	now, err := s.timeService.GetTimeNow()
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	if exp.Before(now) || exp.Equal(now) {
-		return time.Time{}, ErrInvalidExpirationDT
-	}
-
-	return exp, nil
 }
 
 // GetByOrderID find an order using its orderID
