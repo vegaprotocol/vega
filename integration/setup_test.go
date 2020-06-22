@@ -47,16 +47,15 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 }
 
 type marketTestSetup struct {
-	market          *proto.Market
-	ctrl            *gomock.Controller
-	core            *execution.Market
-	party           *execution.Party
-	candles         *mocks.MockCandleBuf
-	accounts        *accStub
-	marginLevelsBuf *marginsStub
-	settle          *SettleStub
-	proposal        *ProposalStub
-	votes           *VoteStub
+	market   *proto.Market
+	ctrl     *gomock.Controller
+	core     *execution.Market
+	party    *execution.Party
+	candles  *mocks.MockCandleBuf
+	accounts *accStub
+	settle   *SettleStub
+	proposal *ProposalStub
+	votes    *VoteStub
 	// TODO(jeremy): will need a stub at some point for that
 	lossSoc *mocks.MockLossSocializationBuf
 
@@ -92,20 +91,18 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		lossBuf,
 		time.Now(),
 	)
-	marginLevelsBuf := NewMarginsStub()
 	candles.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	setup := &marketTestSetup{
-		market:          market,
-		ctrl:            ctrl,
-		candles:         candles,
-		marginLevelsBuf: marginLevelsBuf,
-		settle:          NewSettlementStub(),
-		lossSoc:         lossBuf,
-		accountIDs:      map[string]struct{}{},
-		traderAccs:      map[string]map[proto.AccountType]*proto.Account{},
-		colE:            colE,
-		broker:          broker,
+		market:     market,
+		ctrl:       ctrl,
+		candles:    candles,
+		settle:     NewSettlementStub(),
+		lossSoc:    lossBuf,
+		accountIDs: map[string]struct{}{},
+		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
+		colE:       colE,
+		broker:     broker,
 	}
 
 	return setup
@@ -114,18 +111,17 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 type executionTestSetup struct {
 	engine *execution.Engine
 
-	cfg             execution.Config
-	log             *logging.Logger
-	ctrl            *gomock.Controller
-	candles         *mocks.MockCandleBuf
-	markets         *mocks.MockMarketBuf
-	timesvc         *timeStub
-	marketdata      *mocks.MockMarketDataBuf
-	marginLevelsBuf *marginsStub
-	settle          *buffer.Settlement
-	proposal        *ProposalStub
-	votes           *VoteStub
-	lossSoc         *buffer.LossSocialization
+	cfg        execution.Config
+	log        *logging.Logger
+	ctrl       *gomock.Controller
+	candles    *mocks.MockCandleBuf
+	markets    *mocks.MockMarketBuf
+	timesvc    *timeStub
+	marketdata *mocks.MockMarketDataBuf
+	settle     *buffer.Settlement
+	proposal   *ProposalStub
+	votes      *VoteStub
+	lossSoc    *buffer.LossSocialization
 
 	positionPlugin *plugins.Positions
 
@@ -167,7 +163,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
 	execsetup.marketdata = mocks.NewMockMarketDataBuf(ctrl)
-	execsetup.marginLevelsBuf = NewMarginsStub()
 	execsetup.lossSoc = buffer.NewLossSocialization()
 	execsetup.proposal = NewProposalStub()
 	execsetup.votes = NewVoteStub()
@@ -181,7 +176,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.marketdata, execsetup.marginLevelsBuf, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.marketdata, execsetup.settle, execsetup.lossSoc, execsetup.proposal, execsetup.votes, mkts, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)
