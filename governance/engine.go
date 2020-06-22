@@ -193,9 +193,9 @@ func (e *Engine) SubmitProposal(p types.Proposal) error {
 	if p.State == types.Proposal_STATE_OPEN {
 		err := e.validateOpenProposal(p)
 		if err != nil {
-			proposal.State = types.Proposal_STATE_REJECTED
+			p.State = types.Proposal_STATE_REJECTED
 			if e.log.GetLevel() == logging.DebugLevel {
-				e.log.Debug("Proposal rejected", logging.String("proposal-id", proposal.ID))
+				e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID))
 			}
 		} else {
 			// now if it's a 2 steps proposal, start the node votes
