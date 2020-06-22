@@ -22,6 +22,10 @@ type tstEngine struct {
 	accs            *mocks.MockAccounts
 	buf             *mocks.MockBuffer
 	vbuf            *mocks.MockVoteBuf
+	top             *mocks.MockValidatorTopology
+	wal             *mocks.MockWallet
+	cmd             *mocks.MockCommander
+	assets          *mocks.MockAssets
 	proposalCounter uint // to streamline proposal generation
 }
 
@@ -179,6 +183,7 @@ func testClosingTime(t *testing.T) {
 	party := eng.makeValidParty("a-valid-party", 1)
 
 	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(p types.Proposal) {
+		fmt.Printf("STATE  %v\n", p.State.String())
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
@@ -187,6 +192,7 @@ func testClosingTime(t *testing.T) {
 	tooEarly := eng.newOpenProposal(party.Id, now)
 	tooEarly.Terms.ClosingTimestamp = now.Unix()
 	err := eng.SubmitProposal(tooEarly)
+	fmt.Printf("ERROR: %v\n", err)
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalCloseTimeTooSoon.Error())
 
@@ -665,15 +671,46 @@ func getTestEngine(t *testing.T) *tstEngine {
 	accs := mocks.NewMockAccounts(ctrl)
 	buf := mocks.NewMockBuffer(ctrl)
 	vbuf := mocks.NewMockVoteBuf(ctrl)
+	top := mocks.NewMockValidatorTopology(ctrl)
+	wal := mocks.NewMockWallet(ctrl)
+	cmd := mocks.NewMockCommander(ctrl)
+	assets := mocks.NewMockAssets(ctrl)
+
+	wal.EXPECT().Get(gomock.Any()).Times(1).Return(testVegaWallet{
+		chain: "vega",
+	}, true)
+
+	buf.EXPECT().Flush().AnyTimes()
+	vbuf.EXPECT().Flush().AnyTimes()
 	log := logging.NewTestLogger()
-	eng := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, buf, vbuf, time.Now())
+	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, buf, vbuf, top, wal, cmd, assets, time.Now(), true) // started as a validator
+	assert.NotNil(t, eng)
+	assert.NoError(t, err)
 	return &tstEngine{
 		Engine: eng,
 		ctrl:   ctrl,
 		accs:   accs,
 		buf:    buf,
 		vbuf:   vbuf,
+		cmd:    cmd,
+		assets: assets,
+		top:    top,
+		wal:    wal,
 	}
+}
+
+type testVegaWallet struct {
+	chain string
+	key   []byte
+	sig   []byte
+}
+
+func (w testVegaWallet) Chain() string { return w.chain }
+func (w testVegaWallet) Sign([]byte) ([]byte, error) {
+	return w.sig, nil
+}
+func (w testVegaWallet) PubKeyOrAddress() []byte {
+	return w.key
 }
 
 func newValidMarketTerms() *types.ProposalTerms_NewMarket {

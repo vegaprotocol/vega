@@ -6,7 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -73,20 +72,6 @@ type LossSocializationBuf interface {
 	Flush()
 }
 
-// ProposalBuf...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution ProposalBuf
-type ProposalBuf interface {
-	Add(types.Proposal)
-	Flush()
-}
-
-// VoteBuf...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution VoteBuf
-type VoteBuf interface {
-	Add(types.Vote)
-	Flush()
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(event events.Event)
@@ -100,7 +85,6 @@ type Engine struct {
 	markets    map[string]*Market
 	party      *Party
 	collateral *collateral.Engine
-	governance *governance.Engine
 	idgen      *IDgenerator
 
 	candleBuf     CandleBuf
@@ -108,8 +92,6 @@ type Engine struct {
 	marketDataBuf MarketDataBuf
 	settleBuf     SettlementBuf
 	lossSocBuf    LossSocializationBuf
-	proposalBuf   ProposalBuf
-	voteBuf       VoteBuf
 
 	broker Broker
 	time   TimeService
@@ -126,29 +108,13 @@ func NewEngine(
 	marketDataBuf MarketDataBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
-	proposalBuf ProposalBuf,
-	voteBuf VoteBuf,
 	pmkts []types.Market,
+	collateral *collateral.Engine,
 	broker Broker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
-
-	now, err := time.GetTimeNow()
-	if err != nil {
-		log.Error("unable to get the time now", logging.Error(err))
-		return nil
-	}
-	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, broker, lossSocBuf, now)
-	if err != nil {
-		log.Error("unable to initialise collateral", logging.Error(err))
-		return nil
-	}
-
-	networkParameters := governance.DefaultNetworkParameters(log) //TODO: store the parameters so proposals can update them
-	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
 
 	e := &Engine{
 		log:           log,
@@ -157,18 +123,16 @@ func NewEngine(
 		candleBuf:     candleBuf,
 		marketBuf:     marketBuf,
 		time:          time,
-		collateral:    cengine,
-		governance:    gengine,
-		party:         NewParty(log, cengine, pmkts, broker),
+		collateral:    collateral,
+		party:         NewParty(log, collateral, pmkts, broker),
 		marketDataBuf: marketDataBuf,
 		settleBuf:     settleBuf,
 		lossSocBuf:    lossSocBuf,
-		proposalBuf:   proposalBuf,
-		voteBuf:       voteBuf,
 		idgen:         NewIDGen(),
 		broker:        broker,
 	}
 
+	var err error
 	// Add initial markets and flush to stores (if they're configured)
 	if len(pmkts) > 0 {
 		for _, mkt := range pmkts {
@@ -208,7 +172,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
-	e.governance.ReloadConf(e.Config.Governance)
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
@@ -409,17 +372,6 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
-	acceptedProposals := e.governance.OnChainTimeUpdate(t)
-	for _, proposal := range acceptedProposals {
-		if err := e.enactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_STATE_FAILED
-			e.log.Error("unable to enact proposal",
-				logging.String("proposal-id", proposal.ID),
-				logging.Error(err))
-		}
-		e.proposalBuf.Add(*proposal)
-	}
-
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
 		mkt := mkt
@@ -433,7 +385,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) enactProposal(proposal *types.Proposal) error {
+func (e *Engine) EnactProposal(proposal *types.Proposal) error {
 	if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil {
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
@@ -502,9 +454,6 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 
 // Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
-	// governance
-	e.proposalBuf.Flush()
-	e.voteBuf.Flush()
 
 	// Transfers
 	// @TODO this event will be generated with a block context that has the trace ID
@@ -522,40 +471,4 @@ func (e *Engine) Generate() error {
 	}
 	e.marketDataBuf.Flush()
 	return nil
-}
-
-// SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
-func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Submitting proposal",
-			logging.String("proposal-id", proposal.ID),
-			logging.String("proposal-reference", proposal.Reference),
-			logging.String("proposal-party", proposal.PartyID),
-			logging.String("proposal-terms", proposal.Terms.String()))
-	}
-
-	now, err := e.time.GetTimeNow()
-	if err != nil {
-		return errors.Wrap(err, "failed to submit a proposal")
-	}
-
-	proposal.Timestamp = now.UnixNano()
-	e.idgen.SetProposalID(proposal)
-	return e.governance.SubmitProposal(*proposal)
-}
-
-// VoteOnProposal sends proposal vote to governance engine
-func (e *Engine) VoteOnProposal(ctx context.Context, vote *types.Vote) error {
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Voting on proposal",
-			logging.String("proposal-id", vote.ProposalID),
-			logging.String("vote-party", vote.PartyID),
-			logging.String("vote-value", vote.Value.String()))
-	}
-	now, err := e.time.GetTimeNow()
-	if err != nil {
-		return errors.Wrap(err, "failed to vote on a proposal")
-	}
-	vote.Timestamp = now.UnixNano()
-	return e.governance.AddVote(*vote)
 }

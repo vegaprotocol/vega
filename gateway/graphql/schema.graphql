@@ -854,6 +854,12 @@ type Order {
 
   "Reason for the order to be rejected"
   rejectionReason: RejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "UpdatedAt is the last time the order was altered"
+  updatedAt: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
