@@ -5,8 +5,10 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -49,16 +51,23 @@ type Plugin interface {
 	GetNewAssetProposals(inState *types.Proposal_State) []*types.GovernanceData
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/governance EventBus
+type EventBus interface {
+	Subscribe(s broker.Subscriber, req bool) int
+	Unsubscribe(id int)
+}
+
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
 	log    *logging.Logger
 	mu     sync.Mutex
 	plugin Plugin
+	bus    EventBus
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
+func NewService(log *logging.Logger, cfg Config, plugin Plugin, bus EventBus) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -66,6 +75,7 @@ func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 		Config: cfg,
 		log:    log,
 		plugin: plugin,
+		bus:    bus,
 	}
 }
 
@@ -152,6 +162,35 @@ func streamGovernance(ctx context.Context,
 	return true
 }
 
+func (s *Svc) ObserveGovernanceSub(ctx context.Context, retries int) <-chan []types.GovernanceData {
+	out := make(chan []types.GovernanceData)
+	sub := subscribers.NewGovernanceSub(ctx)
+	id := s.bus.Subscribe(sub, true)
+	ctx, cfunc := context.WithCancel(ctx)
+	go func() {
+		defer func() {
+			s.bus.Unsubscribe(id)
+			close(out)
+			cfunc()
+		}()
+		ret := retries
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case out <- sub.GetGovernanceData():
+				ret = retries
+			default:
+				if ret == 0 {
+					return
+				}
+				ret--
+			}
+		}
+	}()
+	return out
+}
+
 // ObserveGovernance streams all governance updates
 func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData {
 	var cancelContext func()
@@ -170,6 +209,35 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types
 		}
 	}()
 	return output
+}
+
+func (s *Svc) ObservePartyProposalsSub(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData {
+	ctx, cfunc := context.WithCancel(ctx)
+	sub := subscribers.NewGovernanceSub(ctx, subscribers.Proposals(subscribers.ByPartyID(partyID)))
+	out := make(chan []types.GovernanceData)
+	id := s.bus.Subscribe(sub, true)
+	go func() {
+		defer func() {
+			cfunc()
+			s.bus.Unsubscribe(id)
+			close(out)
+		}()
+		ret := retries
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case out <- sub.GetGovernanceData():
+				ret = retries
+			default:
+				if ret == 0 {
+					return
+				}
+				ret--
+			}
+		}
+	}()
+	return out
 }
 
 // ObservePartyProposals streams proposals submitted by the specific party

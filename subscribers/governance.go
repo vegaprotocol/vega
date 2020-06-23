@@ -133,7 +133,7 @@ func (g *GovernanceSub) Push(e events.Event) {
 		gd.Proposal = &prop
 	case VoteE:
 		vote := et.Vote()
-		gd = g.getData(vote.ProposalID)
+		gd := g.getData(vote.ProposalID)
 		if vote.Value == types.Vote_VALUE_YES {
 			delete(gd.NoParty, vote.PartyID)
 			gd.YesParty[vote.PartyID] = &vote
@@ -168,10 +168,10 @@ func (g *GovernanceSub) Types() []events.Type {
 
 // GetGovernanceData - returns current data, this is a VALUE RECEIVER for a reason
 // pointer recevers would cause data races
-func (g GovernanceSub) GetGovernanceData() []*types.GovernanceData {
+func (g GovernanceSub) GetGovernanceData() []types.GovernanceData {
 	data := g.combined
 	// create a copy
-	ret := make([]*types.GovernanceData, 0, len(data))
+	ret := make([]types.GovernanceData, 0, len(data))
 	// copy the votes
 	for _, d := range data {
 		cpy := *d
@@ -185,7 +185,7 @@ func (g GovernanceSub) GetGovernanceData() []*types.GovernanceData {
 			vc := *v
 			cpy.No = append(cpy.No, &vc)
 		}
-		ret = append(ret, &cpy)
+		ret = append(ret, cpy)
 	}
 	return ret
 }

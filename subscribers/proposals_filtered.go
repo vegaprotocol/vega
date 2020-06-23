@@ -90,6 +90,6 @@ func (p *ProposalFilteredSub) Flush() {
 func (p ProposalFilteredSub) Types() []events.Type {
 	return []events.Type{
 		events.ProposalEvent,
-		events.TimeEvent,
+		events.TimeUpdate,
 	}
 }

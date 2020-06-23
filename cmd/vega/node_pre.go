@@ -428,7 +428,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
 
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.governancePlugin)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.governancePlugin, l.broker)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
