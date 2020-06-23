@@ -1901,7 +1901,7 @@ To be implemented
 | ----- | ---- | ----- | ----------- |
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal. Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters. |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed). Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. |
-| validationTimestamp | [int64](#int64) |  |  |
+| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition. |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
