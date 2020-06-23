@@ -32,7 +32,7 @@ type TransferResponse struct {
 
 func NewTransferResponse(ctx context.Context, store TransferResponseStore) *TransferResponse {
 	s := &TransferResponse{
-		Base:  newBase(ctx, 0),
+		Base:  NewBase(ctx, 0),
 		store: store,
 		trs:   []*types.TransferResponse{},
 	}

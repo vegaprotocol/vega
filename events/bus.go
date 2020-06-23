@@ -46,6 +46,7 @@ const (
 	ProposalEvent
 	VoteEvent
 	MarketDataEvent
+	NodeSignatureEvent
 )
 
 var (
@@ -67,6 +68,7 @@ var (
 		ProposalEvent:      "ProposalEvent",
 		VoteEvent:          "VoteEvent",
 		MarketDataEvent:    "MarketDataEvent",
+		NodeSignatureEvent: "NodeSignatureEvent",
 	}
 )
 
@@ -105,6 +107,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.MarketData:
 		e := NewMarketDataEvent(ctx, tv)
+		return e, nil
+	case types.NodeSignature:
+		e := NewNodeSignatureEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

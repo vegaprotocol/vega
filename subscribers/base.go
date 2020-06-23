@@ -15,7 +15,7 @@ type Base struct {
 	id      int
 }
 
-func newBase(ctx context.Context, buf int) *Base {
+func NewBase(ctx context.Context, buf int) *Base {
 	ctx, cfunc := context.WithCancel(ctx)
 	return &Base{
 		ctx:   ctx,
