@@ -43,6 +43,7 @@ const (
 	PartyEvent
 	TradeEvent
 	MarginLevelsEvent
+	ProposalEvent
 )
 
 var (
@@ -61,6 +62,7 @@ var (
 		PartyEvent:         "PartyEvent",
 		TradeEvent:         "TradeEvent",
 		MarginLevelsEvent:  "MarginLevelsEvent",
+		ProposalEvent:      "ProposalEvent",
 	}
 )
 
@@ -90,6 +92,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.MarginLevels:
 		e := NewMarginLevelsEvent(ctx, tv)
+		return e, nil
+	case types.Proposal:
+		e := NewProposalEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
