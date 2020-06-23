@@ -91,13 +91,11 @@ func validateTradingMode(terms *types.NewMarketConfiguration) error {
 	switch terms.TradingMode.(type) {
 	case nil:
 		return ErrNoTradingMode
-	case *types.NewMarketConfiguration_Continuous:
-	case *types.NewMarketConfiguration_Discrete:
-		break
+	case *types.NewMarketConfiguration_Continuous, *types.NewMarketConfiguration_Discrete:
+		return nil
 	default:
 		return ErrTradingModeInvalid
 	}
-	return nil
 }
 
 // ValidateNewMarket checks new market proposal terms

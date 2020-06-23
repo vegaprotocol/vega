@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor"
@@ -33,6 +34,7 @@ type procTest struct {
 	top         *mocks.MockValidatorTopology
 	gov         *mocks.MockGovernanceEngine
 	proposalBuf *mocks.MockProposalBuf
+	log         *logging.Logger
 }
 
 type stubWallet struct {
@@ -78,6 +80,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		top:         top,
 		gov:         gov,
 		proposalBuf: proposalBuf,
+		log:         log,
 	}
 }
 
@@ -115,6 +118,7 @@ func testOnTickEmpty(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
+	proc.gov.EXPECT().GetNetworkParameters().Times(1).Return(*governance.DefaultNetworkParameters(proc.log))
 	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return([]*types.Proposal{})
 	proc.proposalBuf.EXPECT().Flush().Times(1)
 	proc.tickCB(time.Now())
