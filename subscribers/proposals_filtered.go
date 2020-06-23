@@ -7,18 +7,14 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// Filter - a callback to be applied to the proposals we're interested in
-// some common filter calls will be provided
-type Filter func(p types.Proposal) bool
-
 type ProposalFilteredSub struct {
 	*Base
-	filters []Filter
+	filters []ProposalFilter
 	matched []types.Proposal
 }
 
 // ByProposalID - filter proposal events by proposal ID
-func ByProposalID(id string) Filter {
+func ByProposalID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
 		if p.ID == id {
 			return true
@@ -28,7 +24,7 @@ func ByProposalID(id string) Filter {
 }
 
 // ByPartyID - filter proposals by partyID
-func ByPartyID(id string) Filter {
+func ByPartyID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
 		if p.PartyID == id {
 			return true
@@ -38,7 +34,7 @@ func ByPartyID(id string) Filter {
 }
 
 // ByState - filter events given proposal state
-func ByState(s types.Proposal_State) Filter {
+func ByState(s types.Proposal_State) ProposalFilter {
 	return func(p types.Proposal) bool {
 		if p.State == s {
 			return true
@@ -47,7 +43,7 @@ func ByState(s types.Proposal_State) Filter {
 	}
 }
 
-func NewProposalFilteredSub(ctx context.Context, filters ...Filter) *ProposalFilteredSub {
+func NewProposalFilteredSub(ctx context.Context, filters ...ProposalFilter) *ProposalFilteredSub {
 	p := ProposalFilteredSub{
 		Base:    newBase(ctx, 10),
 		filters: filters,

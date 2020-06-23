@@ -6,7 +6,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type Porposal struct {
+type Proposal struct {
 	*Base
 	p types.Proposal
 }
@@ -20,4 +20,14 @@ func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
 
 func (p *Proposal) Proposal() types.Proposal {
 	return p.p
+}
+
+// ProposalID - for combined subscriber, communal interface
+func (p *Proposal) ProposalID() string {
+	return p.p.ID
+}
+
+// PartyID - for combined subscriber, communal interface
+func (p *Proposal) PartyID() string {
+	return p.p.PartyID
 }

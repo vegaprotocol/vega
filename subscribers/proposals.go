@@ -8,6 +8,7 @@ import (
 )
 
 type PropE interface {
+	GovernanceEvent
 	Proposal() types.Proposal
 }
 
