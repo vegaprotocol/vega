@@ -24,7 +24,7 @@ type AccountSub struct {
 
 func NewAccountSub(ctx context.Context, store AccountStore) *AccountSub {
 	a := &AccountSub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10),
 		store: store,
 		buf:   map[string]*types.Account{},
 	}

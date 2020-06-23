@@ -4,7 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/subscribers"
+
 	"github.com/pkg/errors"
 )
 
@@ -12,70 +15,47 @@ var (
 	ErrNoSignaturesForID = errors.New("no signatures for id")
 )
 
-type Notary struct {
-	sigs map[string][]types.NodeSignature
-	buf  NotaryBuf
-	mu   sync.RWMutex
-
-	ch  <-chan [][]types.NodeSignature
-	ref int
+type NodeSignatureEvent interface {
+	events.Event
+	NodeSignature() types.NodeSignature
 }
 
-func NewNotary(buf NotaryBuf) *Notary {
+type Notary struct {
+	*subscribers.Base
+
+	sigs map[string][]types.NodeSignature
+	mu   sync.RWMutex
+	ch   chan types.NodeSignature
+}
+
+func NewNotary(ctx context.Context) *Notary {
 	return &Notary{
-		buf:  buf,
+		Base: subscribers.NewBase(ctx, 10),
 		sigs: map[string][]types.NodeSignature{},
 	}
 }
 
-// Start - start running the consume loop for the plugin
-func (n *Notary) Start(ctx context.Context) {
-	n.mu.Lock()
-	running := true
-	if n.ch == nil {
-		n.ch, n.ref = n.buf.Subscribe()
-		running = false
+func (n *Notary) Push(e events.Event) {
+	nse, ok := e.(NodeSignatureEvent)
+	if !ok {
+		return
 	}
-	if !running {
-		go n.consume(ctx)
-	}
-	n.mu.Unlock()
-}
-
-// Stop - stop running the plugin. Does not set channels to nil to avoid data-race in consume loop
-func (n *Notary) Stop() {
-	n.mu.Lock()
-	if n.ref != 0 {
-		n.buf.Unsubscribe(n.ref)
-		n.ref = 0
-	}
-	n.mu.Unlock()
+	n.ch <- nse.NodeSignature()
 }
 
 func (n *Notary) consume(ctx context.Context) {
-	defer func() {
-		n.Stop()
-		n.ch = nil
-	}()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case sigs, ok := <-n.ch:
+		case sig, ok := <-n.ch:
 			if !ok {
 				// channel is closed
 				return
 			}
-			// support empty slices for testing
-			if len(sigs) == 0 {
-				continue
-			}
 			n.mu.Lock()
-			for _, v := range sigs {
-				if len(v) > 0 {
-					n.sigs[v[0].ID] = v
-				}
-			}
+			sigs := n.sigs[sig.ID]
+			n.sigs[sig.ID] = append(sigs, sig)
 			n.mu.Unlock()
 		}
 	}

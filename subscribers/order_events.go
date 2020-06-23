@@ -26,7 +26,7 @@ type OrderEvent struct {
 
 func NewOrderEvent(ctx context.Context, log *logging.Logger, store OrderStore) *OrderEvent {
 	o := OrderEvent{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10),
 		log:   log,
 		store: store,
 		buf:   []types.Order{},

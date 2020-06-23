@@ -19,7 +19,7 @@ type MarketEvent struct {
 
 func NewMarketEvent(ctx context.Context, log *logging.Logger) *MarketEvent {
 	m := &MarketEvent{
-		Base: newBase(ctx, 10), // the size of the buffer can be tweaked, maybe use config?
+		Base: NewBase(ctx, 10), // the size of the buffer can be tweaked, maybe use config?
 		log:  log,
 	}
 	m.running = true

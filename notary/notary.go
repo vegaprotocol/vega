@@ -1,6 +1,7 @@
 package notary
 
 import (
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -10,7 +11,20 @@ import (
 var (
 	ErrAggregateSigAlreadyStartedForResource = errors.New("aggregate signature already started for resource")
 	ErrUnknownResourceID                     = errors.New("unknown resource ID")
+	ErrNotAValidatorSignature                = errors.New("not a validator signature")
 )
+
+// ValidatorTopology...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/notary ValidatorTopology
+type ValidatorTopology interface {
+	Exists([]byte) bool
+	Len() int
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/notary Broker
+type Broker interface {
+	Send(event events.Event)
+}
 
 // Notary will aggregate all signatures of a node for
 // a specific Command
@@ -20,10 +34,9 @@ type Notary struct {
 	log *logging.Logger
 
 	// resource to be signed -> signatures
-	sigs map[idKind]map[nodeSig]struct{}
-
-	// list of all the nodes pubkeys
-	nodes map[string]struct{}
+	sigs   map[idKind]map[nodeSig]struct{}
+	top    ValidatorTopology
+	broker Broker
 }
 
 type idKind struct {
@@ -37,21 +50,14 @@ type nodeSig struct {
 	sig  string
 }
 
-func New(log *logging.Logger, cfg Config) *Notary {
+func New(log *logging.Logger, cfg Config, top ValidatorTopology) *Notary {
+	log = log.Named(namedLogger)
 	return &Notary{
-		cfg:   cfg,
-		log:   log,
-		sigs:  map[idKind]map[nodeSig]struct{}{},
-		nodes: map[string]struct{}{},
+		cfg:  cfg,
+		log:  log,
+		sigs: map[idKind]map[nodeSig]struct{}{},
+		top:  top,
 	}
-}
-
-func (n *Notary) AddNodePubKey(key []byte) {
-	n.nodes[string(key)] = struct{}{}
-}
-
-func (n *Notary) DelNodePubKey(key []byte) {
-	delete(n.nodes, string(key))
 }
 
 func (n *Notary) StartAggregate(resID string, kind types.NodeSignatureKind) error {
@@ -67,6 +73,12 @@ func (n *Notary) AddSig(resID string, kind types.NodeSignatureKind, pubKey []byt
 	if !ok {
 		return nil, false, ErrUnknownResourceID
 	}
+
+	// not a validator signature
+	if !n.top.Exists(pubKey) {
+		return nil, false, ErrNotAValidatorSignature
+	}
+
 	sigs[nodeSig{string(pubKey), string(sig)}] = struct{}{}
 
 	sigsout, ok := n.isSigned(resID, kind)
@@ -75,7 +87,7 @@ func (n *Notary) AddSig(resID string, kind types.NodeSignatureKind, pubKey []byt
 
 func (n *Notary) isSigned(resID string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool) {
 	// early exit if we don't have enough sig anyway
-	if float64(len(n.sigs[idKind{resID, kind}]))/float64(len(n.nodes)) < n.cfg.SignaturesRequiredPercent {
+	if float64(len(n.sigs[idKind{resID, kind}]))/float64(n.top.Len()) < n.cfg.SignaturesRequiredPercent {
 		return nil, false
 	}
 
@@ -87,7 +99,7 @@ func (n *Notary) isSigned(resID string, kind types.NodeSignatureKind) ([]types.N
 		// add it to the map
 		// we may have a node which have been unregistered there, hence
 		// us checkung
-		if _, ok := n.nodes[k.node]; ok {
+		if n.top.Exists([]byte(k.node)) {
 			sig[k.node] = struct{}{}
 			out = append(out, types.NodeSignature{
 				ID:   resID,
@@ -98,8 +110,7 @@ func (n *Notary) isSigned(resID string, kind types.NodeSignatureKind) ([]types.N
 	}
 
 	// now we check the number of required node sigs
-	if float64(len(sig))/float64(len(n.nodes)) >= n.cfg.SignaturesRequiredPercent {
-		delete(n.sigs, idKind{resID, kind})
+	if float64(len(sig))/float64(n.top.Len()) >= n.cfg.SignaturesRequiredPercent {
 		return out, true
 	}
 

@@ -45,6 +45,7 @@ const (
 	MarginLevelsEvent
 	ProposalEvent
 	VoteEvent
+	NodeSignatureEvent
 )
 
 var (
@@ -65,6 +66,7 @@ var (
 		MarginLevelsEvent:  "MarginLevelsEvent",
 		ProposalEvent:      "ProposalEvent",
 		VoteEvent:          "VoteEvent",
+		NodeSignatureEvent: "NodeSignatureEvent",
 	}
 )
 
@@ -100,6 +102,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Vote:
 		e := NewVoteEvent(ctx, tv)
+		return e, nil
+	case types.NodeSignature:
+		e := NewNodeSignatureEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
