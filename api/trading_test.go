@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/mocks"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/governance"
@@ -107,11 +108,9 @@ func getTestGRPCServer(
 	}, nil)
 	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
 
-	_, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
-		if err != nil {
-			cancel()
-		}
+		cancel()
 	}()
 
 	// Account Store
@@ -218,8 +217,9 @@ func getTestGRPCServer(
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
 	// stub...
 	governancePlugin := plugins.NewGovernance(nil, nil)
+	broker := broker.New(ctx)
 
-	governanceService := governance.NewService(logger, conf.Governance, governancePlugin)
+	governanceService := governance.NewService(logger, conf.Governance, governancePlugin, broker)
 
 	g = api.NewGRPCServer(
 		logger,

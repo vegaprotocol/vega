@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -40,6 +41,8 @@ type GovernanceSub struct {
 	vfilters []VoteFilter
 	combined []*types.GovernanceData
 	byPID    map[string]*types.GovernanceData
+	changed  map[string]types.GovernanceData
+	mu       sync.Mutex
 }
 
 // Governance - vararg to set governance filters
@@ -70,6 +73,7 @@ func NewGovernanceSub(ctx context.Context, filters ...Filter) *GovernanceSub {
 		pfilters: []ProposalFilter{},
 		vfilters: []VoteFilter{},
 		combined: []*types.GovernanceData{},
+		changed:  map[string]types.GovernanceData{},
 		byPID:    map[string]*types.GovernanceData{},
 	}
 	for _, f := range filters {
@@ -126,11 +130,13 @@ func (g *GovernanceSub) Push(e events.Event) {
 			return
 		}
 	}
+	g.mu.Lock()
 	switch et := e.(type) {
 	case PropE:
 		prop := et.Proposal()
 		gd := g.getData(prop.ID)
 		gd.Proposal = &prop
+		g.changed[prop.ID] = *gd
 	case VoteE:
 		vote := et.Vote()
 		gd := g.getData(vote.ProposalID)
@@ -141,7 +147,9 @@ func (g *GovernanceSub) Push(e events.Event) {
 			delete(gd.YesParty, vote.PartyID)
 			gd.NoParty[vote.PartyID] = &vote
 		}
+		g.changed[vote.ProposalID] = *gd
 	}
+	g.mu.Unlock()
 }
 
 func (g *GovernanceSub) getData(id string) *types.GovernanceData {
@@ -168,24 +176,31 @@ func (g *GovernanceSub) Types() []events.Type {
 
 // GetGovernanceData - returns current data, this is a VALUE RECEIVER for a reason
 // pointer recevers would cause data races
-func (g GovernanceSub) GetGovernanceData() []types.GovernanceData {
-	data := g.combined
+func (g *GovernanceSub) GetGovernanceData() []types.GovernanceData {
+	g.mu.Lock()
+	if len(g.changed) == 0 {
+		return nil
+	}
+	// copy the map of changed proposals, and return that subset
+	data := g.changed
+	// reset the changes, so next time we call, there's nothing to worry about
+	g.changed = map[string]types.GovernanceData{}
+	g.mu.Unlock()
 	// create a copy
 	ret := make([]types.GovernanceData, 0, len(data))
 	// copy the votes
 	for _, d := range data {
-		cpy := *d
-		cpy.Yes = make([]*types.Vote, 0, len(cpy.YesParty))
-		for _, v := range cpy.YesParty {
+		d.Yes = make([]*types.Vote, 0, len(d.YesParty))
+		for _, v := range d.YesParty {
 			vc := *v
-			cpy.Yes = append(cpy.Yes, &vc)
+			d.Yes = append(d.Yes, &vc)
 		}
-		cpy.No = make([]*types.Vote, 0, len(cpy.NoParty))
-		for _, v := range cpy.NoParty {
+		d.No = make([]*types.Vote, 0, len(d.NoParty))
+		for _, v := range d.NoParty {
 			vc := *v
-			cpy.No = append(cpy.No, &vc)
+			d.No = append(d.No, &vc)
 		}
-		ret = append(ret, cpy)
+		ret = append(ret, d)
 	}
 	return ret
 }

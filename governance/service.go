@@ -175,10 +175,14 @@ func (s *Svc) ObserveGovernanceSub(ctx context.Context, retries int) <-chan []ty
 		}()
 		ret := retries
 		for {
+			data := sub.GetGovernanceData()
+			if len(data) == 0 {
+				continue
+			}
 			select {
 			case <-ctx.Done():
 				return
-			case out <- sub.GetGovernanceData():
+			case out <- data:
 				ret = retries
 			default:
 				if ret == 0 {
@@ -224,10 +228,14 @@ func (s *Svc) ObservePartyProposalsSub(ctx context.Context, retries int, partyID
 		}()
 		ret := retries
 		for {
+			data := sub.GetGovernanceData()
+			if len(data) == 0 {
+				continue
+			}
 			select {
 			case <-ctx.Done():
 				return
-			case out <- sub.GetGovernanceData():
+			case out <- data:
 				ret = retries
 			default:
 				if ret == 0 {
