@@ -1559,18 +1559,19 @@ func assignProduct(
 }
 
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
-	if continuous := definition.GetContinuous(); continuous != nil {
+	switch mode := definition.TradingMode.(type) {
+	case *types.NewMarketConfiguration_Continuous:
 		target.TradingMode = &types.Market_Continuous{
-			Continuous: continuous,
+			Continuous: mode.Continuous,
 		}
-		return nil
-	} else if discrete := definition.GetDiscrete(); discrete != nil {
+	case *types.NewMarketConfiguration_Discrete:
 		target.TradingMode = &types.Market_Discrete{
-			Discrete: discrete,
+			Discrete: mode.Discrete,
 		}
-		return nil
+	default:
+		return ErrInvalidTradingMode
 	}
-	return ErrInvalidTradingMode
+	return nil
 }
 
 func makeInstrument(
