@@ -266,7 +266,7 @@ func (e *Engine) createMarket(
 	if err := validateNewMarket(e.time, definition); err != nil {
 		return err
 	}
-	instrument, err := makeInstrument(parameters, definition.Instrument, definition.Metadata)
+	instrument, err := createInstrument(parameters, definition.Instrument, definition.Metadata)
 	if err != nil {
 		return err
 	}

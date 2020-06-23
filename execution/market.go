@@ -1574,7 +1574,7 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 	return nil
 }
 
-func makeInstrument(
+func createInstrument(
 	parameters *governance.NetworkParameters,
 	input *types.IntrumentConfiguration,
 	tags []string,
