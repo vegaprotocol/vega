@@ -417,3 +417,71 @@ func TestAmendWrongPartyID(t *testing.T) {
 	assert.Nil(t, amended)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
+
+func TestPartialFilledWashTrade(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
+
+	orderSell1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        15,
+		Price:       55,
+		Remaining:   15,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-sell-order",
+	}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	orderSell2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        15,
+		Price:       53,
+		Remaining:   15,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), orderSell2)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// This order should partially fill and then be rejected
+	orderBuy1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        30,
+		Price:       60,
+		Remaining:   30,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), orderBuy1)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_REJECTED)
+	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
+
+}
