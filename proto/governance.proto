@@ -111,16 +111,17 @@ message UpdateNetwork {
 // To be implemented
 message NewAsset {
   AssetSource changes = 1 [(validator.field) = {msg_exists: true}];
-  int64 validationTimestamp = 2;
 }
 
 message ProposalTerms {
   // Timestamp (Unix time in seconds) when voting closes for this proposal.
   // Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters.
-  int64 closingTimestamp      = 1 [(validator.field) = {int_gt: 0}];
+  int64 closingTimestamp    = 1 [(validator.field) = {int_gt: 0}];
   // Timestamp (Unix time in seconds) when proposal gets enacted (if passed).
   // Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters.
-  int64 enactmentTimestamp    = 2 [(validator.field) = {int_gt: 0}];
+  int64 enactmentTimestamp  = 2 [(validator.field) = {int_gt: 0}];
+
+  int64 validationTimestamp = 3;
 
   // Actual changes being proposed
   oneof change {

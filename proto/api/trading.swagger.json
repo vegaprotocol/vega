@@ -2025,10 +2025,6 @@
       "properties": {
         "changes": {
           "$ref": "#/definitions/vegaAssetSource"
-        },
-        "validationTimestamp": {
-          "type": "string",
-          "format": "int64"
         }
       },
       "title": "To be implemented"
@@ -2360,6 +2356,10 @@
           "type": "string",
           "format": "int64",
           "description": "Timestamp (Unix time in seconds) when proposal gets enacted (if passed).\nConstrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters."
+        },
+        "validationTimestamp": {
+          "type": "string",
+          "format": "int64"
         },
         "updateMarket": {
           "$ref": "#/definitions/vegaUpdateMarket",

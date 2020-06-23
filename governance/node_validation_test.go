@@ -84,10 +84,10 @@ func testOnChainTimeUpdate(t *testing.T) {
 	p := &types.Proposal{
 		Reference: "REF",
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_BuiltinAsset{
 							BuiltinAsset: builtinAsset,
@@ -208,10 +208,10 @@ func testNodeVoteNotAValidator(t *testing.T) {
 	p := &types.Proposal{
 		Reference: "REF",
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_BuiltinAsset{
 							BuiltinAsset: builtinAsset,
@@ -264,10 +264,10 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 	p := &types.Proposal{
 		Reference: "REF",
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_BuiltinAsset{
 							BuiltinAsset: builtinAsset,
@@ -324,10 +324,10 @@ func testNodeVoteOK(t *testing.T) {
 	p := &types.Proposal{
 		Reference: "REF",
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_BuiltinAsset{
 							BuiltinAsset: builtinAsset,
@@ -372,12 +372,9 @@ func testStartErrorCheckProposalFailed(t *testing.T) {
 	// first closing time < validation time
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: 1,
-			Change: &types.ProposalTerms_NewAsset{
-				NewAsset: &types.NewAsset{
-					ValidationTimestamp: 2,
-				},
-			},
+			ClosingTimestamp:    1,
+			ValidationTimestamp: 2,
+			Change:              &types.ProposalTerms_NewAsset{},
 		},
 	}
 
@@ -405,10 +402,10 @@ func testStartOK(t *testing.T) {
 	// first closing time < validation time
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_BuiltinAsset{
 							BuiltinAsset: builtinAsset,
@@ -451,10 +448,10 @@ func testStartErrorDuplicate(t *testing.T) {
 	p := &types.Proposal{
 		Reference: "ref",
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_BuiltinAsset{
 							BuiltinAsset: builtinAsset,
@@ -494,10 +491,10 @@ func testStartErrorUnableToInstanciateAsset(t *testing.T) {
 	// first closing time < validation time
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: now.Add(24 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(24 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					ValidationTimestamp: now.Add(700 * time.Minute).Unix(),
 					Changes: &types.AssetSource{
 						Source: &types.AssetSource_Erc20{
 							Erc20: &types.ERC20{

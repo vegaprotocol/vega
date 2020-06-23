@@ -176,30 +176,31 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 
 // Start the node validation of a proposal
 func (n *NodeValidation) Start(p *types.Proposal) error {
-	switch change := p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewAsset:
-		_, ok := n.nodeProposals[p.Reference]
-		if ok {
-			return ErrProposalReferenceDuplicate
-		}
-
-		if err := n.checkProposal(p.Terms.ClosingTimestamp, change.NewAsset); err != nil {
-			return err
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		np := &nodeProposal{
-			Proposal:   p,
-			votes:      map[string]struct{}{},
-			validTime:  time.Unix(change.NewAsset.ValidationTimestamp, 0),
-			validState: notValidatedProposal,
-			cancel:     cancel,
-		}
-		n.nodeProposals[p.Reference] = np
-		return n.start(ctx, np)
-	default:
+	if !n.IsNodeValidationRequired(p) {
 		n.log.Error("no node validation required", logging.String("ref", p.Reference))
 		return ErrNoNodeValidationRequired
 	}
+
+	_, ok := n.nodeProposals[p.Reference]
+	if ok {
+		return ErrProposalReferenceDuplicate
+	}
+
+	if err := n.checkProposal(p); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	np := &nodeProposal{
+		Proposal:   p,
+		votes:      map[string]struct{}{},
+		validTime:  time.Unix(p.Terms.ValidationTimestamp, 0),
+		validState: notValidatedProposal,
+		cancel:     cancel,
+	}
+	n.nodeProposals[p.Reference] = np
+
+	return n.start(ctx, np)
 }
 
 // start proposal specific validation and instanciation
@@ -290,12 +291,12 @@ func (n *NodeValidation) validateAsset(ctx context.Context, np *nodeProposal, pr
 	}
 }
 
-func (n *NodeValidation) checkProposal(closingTimestamp int64, prop *types.NewAsset) error {
-	if closingTimestamp < prop.ValidationTimestamp {
+func (n *NodeValidation) checkProposal(prop *types.Proposal) error {
+	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
 		return ErrProposalValidationTimestampInvalid
 	}
 	minValid, maxValid := n.currentTimestamp.Add(minValidationPeriod*time.Second), n.currentTimestamp.Add(maxValidationPeriod*time.Second)
-	if prop.ValidationTimestamp < minValid.Unix() || prop.ValidationTimestamp > maxValid.Unix() {
+	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
 		return ErrProposalValidationTimestampInvalid
 	}
 	return nil

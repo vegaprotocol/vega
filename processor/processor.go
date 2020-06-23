@@ -623,11 +623,11 @@ func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
 	if asset == nil {
 		return nil
 	}
-	if prop.Terms.ClosingTimestamp < asset.ValidationTimestamp {
+	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
 		return ErrProposalValidationTimestampInvalid
 	}
 	minValid, maxValid := p.currentTimestamp.Add(minValidationPeriod*time.Second), p.currentTimestamp.Add(maxValidationPeriod*time.Second)
-	if asset.ValidationTimestamp < minValid.Unix() || asset.ValidationTimestamp > maxValid.Unix() {
+	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
 		return ErrProposalValidationTimestampInvalid
 	}
 	return nil
