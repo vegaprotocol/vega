@@ -581,6 +581,14 @@
                 </li>
 
                 <li>
+                  <a href="#vega.GovernanceData.NoPartyEntry"><span class="badge">M</span>GovernanceData.NoPartyEntry</a>
+                </li>
+
+                <li>
+                  <a href="#vega.GovernanceData.YesPartyEntry"><span class="badge">M</span>GovernanceData.YesPartyEntry</a>
+                </li>
+
+                <li>
                   <a href="#vega.NetworkConfiguration"><span class="badge">M</span>NetworkConfiguration</a>
                 </li>
 
@@ -4716,6 +4724,82 @@
                   <td><a href="#vega.Vote">Vote</a></td>
                   <td>repeated</td>
                   <td><p>All &#34;no&#34; votes against the proposal above. </p></td>
+                </tr>
+
+                <tr>
+                  <td>yesParty</td>
+                  <td><a href="#vega.GovernanceData.YesPartyEntry">GovernanceData.YesPartyEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>All latest YES votes by party (guaranteed to be unique) </p></td>
+                </tr>
+
+                <tr>
+                  <td>noParty</td>
+                  <td><a href="#vega.GovernanceData.NoPartyEntry">GovernanceData.NoPartyEntry</a></td>
+                  <td>repeated</td>
+                  <td><p>All latest NO votes by party (unique) </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.GovernanceData.NoPartyEntry">GovernanceData.NoPartyEntry</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.GovernanceData.YesPartyEntry">GovernanceData.YesPartyEntry</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>

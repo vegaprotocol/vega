@@ -129,27 +129,34 @@ func (g *GovernanceSub) Push(e events.Event) {
 	switch et := e.(type) {
 	case PropE:
 		prop := et.Proposal()
-		gd, ok := g.byPID[prop.ID]
-		if !ok {
-			gd = &types.GovernanceData{}
-			g.byPID[prop.ID] = gd
-			g.combined = append(g.combined, gd)
-		}
+		gd := g.getData(prop.ID)
 		gd.Proposal = &prop
 	case VoteE:
 		vote := et.Vote()
-		gd, ok := g.byPID[vote.ProposalID]
-		if !ok {
-			gd = &types.GovernanceData{}
-			g.byPID[vote.ProposalID] = gd
-			g.combined = append(g.combined, gd)
-		}
+		gd = g.getData(vote.ProposalID)
 		if vote.Value == types.Vote_VALUE_YES {
-			gd.Yes = append(gd.Yes, &vote)
+			delete(gd.NoParty, vote.PartyID)
+			gd.YesParty[vote.PartyID] = &vote
 		} else {
-			gd.No = append(gd.No, &vote)
+			delete(gd.YesParty, vote.PartyID)
+			gd.NoParty[vote.PartyID] = &vote
 		}
 	}
+}
+
+func (g *GovernanceSub) getData(id string) *types.GovernanceData {
+	gd, ok := g.byPID[id]
+	if !ok {
+		gd = &types.GovernanceData{
+			Yes:      []*types.Vote{},
+			No:       []*types.Vote{},
+			YesParty: map[string]*types.Vote{},
+			NoParty:  map[string]*types.Vote{},
+		}
+		g.byPID[id] = gd
+		g.combined = append(g.combined, gd)
+	}
+	return gd
 }
 
 func (g *GovernanceSub) Types() []events.Type {
@@ -157,4 +164,28 @@ func (g *GovernanceSub) Types() []events.Type {
 		events.ProposalEvent,
 		events.VoteEvent,
 	}
+}
+
+// GetGovernanceData - returns current data, this is a VALUE RECEIVER for a reason
+// pointer recevers would cause data races
+func (g GovernanceSub) GetGovernanceData() []*types.GovernanceData {
+	data := g.combined
+	// create a copy
+	ret := make([]*types.GovernanceData, 0, len(data))
+	// copy the votes
+	for _, d := range data {
+		cpy := *d
+		cpy.Yes = make([]*types.Vote, 0, len(cpy.YesParty))
+		for _, v := range cpy.YesParty {
+			vc := *v
+			cpy.Yes = append(cpy.Yes, &vc)
+		}
+		cpy.No = make([]*types.Vote, 0, len(cpy.NoParty))
+		for _, v := range cpy.NoParty {
+			vc := *v
+			cpy.No = append(cpy.No, &vc)
+		}
+		ret = append(ret, &cpy)
+	}
+	return ret
 }
