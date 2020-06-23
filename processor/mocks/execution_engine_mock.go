@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	governance "code.vegaprotocol.io/vega/governance"
 	proto "code.vegaprotocol.io/vega/proto"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -65,17 +66,17 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1 interface{}) *
 }
 
 // EnactProposal mocks base method
-func (m *MockExecutionEngine) EnactProposal(arg0 *proto.Proposal) error {
+func (m *MockExecutionEngine) EnactProposal(arg0 *proto.Proposal, arg1 *governance.NetworkParameters) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnactProposal", arg0)
+	ret := m.ctrl.Call(m, "EnactProposal", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnactProposal indicates an expected call of EnactProposal
-func (mr *MockExecutionEngineMockRecorder) EnactProposal(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) EnactProposal(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnactProposal", reflect.TypeOf((*MockExecutionEngine)(nil).EnactProposal), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnactProposal", reflect.TypeOf((*MockExecutionEngine)(nil).EnactProposal), arg0, arg1)
 }
 
 // Generate mocks base method

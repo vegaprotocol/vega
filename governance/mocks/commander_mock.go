@@ -8,7 +8,7 @@ import (
 	blockchain "code.vegaprotocol.io/vega/blockchain"
 	nodewallet "code.vegaprotocol.io/vega/nodewallet"
 	gomock "github.com/golang/mock/gomock"
-	proto "github.com/golang/protobuf/proto"
+	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	reflect "reflect"
 )
 
@@ -36,7 +36,7 @@ func (m *MockCommander) EXPECT() *MockCommanderMockRecorder {
 }
 
 // Command mocks base method
-func (m *MockCommander) Command(arg0 nodewallet.Wallet, arg1 blockchain.Command, arg2 proto.Message) error {
+func (m *MockCommander) Command(arg0 nodewallet.Wallet, arg1 blockchain.Command, arg2 protoiface.MessageV1) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Command", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	governance "code.vegaprotocol.io/vega/governance"
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -60,6 +61,20 @@ func (m *MockGovernanceEngine) AddVote(arg0 proto.Vote) error {
 func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0)
+}
+
+// GetNetworkParameters mocks base method
+func (m *MockGovernanceEngine) GetNetworkParameters() governance.NetworkParameters {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetworkParameters")
+	ret0, _ := ret[0].(governance.NetworkParameters)
+	return ret0
+}
+
+// GetNetworkParameters indicates an expected call of GetNetworkParameters
+func (mr *MockGovernanceEngineMockRecorder) GetNetworkParameters() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkParameters", reflect.TypeOf((*MockGovernanceEngine)(nil).GetNetworkParameters))
 }
 
 // OnChainTimeUpdate mocks base method
