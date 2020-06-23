@@ -179,6 +179,7 @@ func (g *GovernanceSub) Types() []events.Type {
 func (g *GovernanceSub) GetGovernanceData() []types.GovernanceData {
 	g.mu.Lock()
 	if len(g.changed) == 0 {
+		g.mu.Unlock()
 		return nil
 	}
 	// copy the map of changed proposals, and return that subset
