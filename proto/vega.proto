@@ -356,16 +356,16 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
-// message NotifyTraderAccount {
-//   string traderID = 1;
-//   uint64 amount = 2;
-// }
+message NotifyTraderAccount {
+  string traderID = 1;
+  uint64 amount = 2;
+}
 
-// message Withdraw {
-//   string partyID = 1;
-//   uint64 amount = 2;
-//   string asset = 3;
-// }
+message Withdraw {
+  string partyID = 1;
+  uint64 amount = 2;
+  string asset = 3;
+}
 
 message OrderAmendment {
   // required to find the order, not being updated
