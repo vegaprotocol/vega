@@ -18,14 +18,6 @@ var (
 	// ErrProductMaturityIsPast is returned if product maturity is not in future
 	ErrProductMaturityIsPast = errors.New("product maturity date is in the past")
 
-	// ErrInvalidRiskModelType is returned if invalid risk model type is selected
-	ErrInvalidRiskModelType = errors.New("invalid risk model selected")
-	// ErrRiskModelTypeNotSupported is returned if selected risk model has not yet been implemented
-	ErrRiskModelTypeNotSupported = errors.New("selected risk model is not supported")
-	// ErrIncompatibleRiskParameters is returned if selected risk model is not
-	// compatible with supplied risk model parameters
-	ErrIncompatibleRiskParameters = errors.New("risk model parameters are not compatible with selected risk model")
-
 	// ErrNoTradingMode is returned if trading mode is nil
 	ErrNoTradingMode = errors.New("no trading mode has been selected")
 	// ErrTradingModeInvalid is returned if selected trading mode is not supported
@@ -67,26 +59,6 @@ func validateInstrument(timeSvc TimeService, instrument *types.InstrumentConfigu
 	}
 }
 
-func validateRiskModel(risk *types.RiskConfiguration) error {
-	if risk.Model == types.RiskConfiguration_MODEL_UNSPECIFIED {
-		return ErrInvalidRiskModelType
-	}
-
-	switch risk.Parameters.(type) {
-	case *types.RiskConfiguration_Simple:
-		if risk.Model != types.RiskConfiguration_MODEL_SIMPLE {
-			return ErrIncompatibleRiskParameters
-		}
-	case *types.RiskConfiguration_LogNormal:
-		if risk.Model != types.RiskConfiguration_MODEL_LOG_NORMAL {
-			return ErrIncompatibleRiskParameters
-		}
-	default:
-		return ErrRiskModelTypeNotSupported
-	}
-	return nil
-}
-
 func validateTradingMode(terms *types.NewMarketConfiguration) error {
 	switch terms.TradingMode.(type) {
 	case nil:
@@ -101,9 +73,6 @@ func validateTradingMode(terms *types.NewMarketConfiguration) error {
 // ValidateNewMarket checks new market proposal terms
 func validateNewMarket(time TimeService, terms *types.NewMarketConfiguration) error {
 	if err := validateInstrument(time, terms.Instrument); err != nil {
-		return err
-	}
-	if err := validateRiskModel(terms.Risk); err != nil {
 		return err
 	}
 	if err := validateTradingMode(terms); err != nil {

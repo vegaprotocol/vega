@@ -543,36 +543,28 @@ func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.Instr
 }
 
 // RiskConfigurationFromProto ...
-func RiskConfigurationFromProto(risk *types.RiskConfiguration) (*Risk, error) {
-	switch risk.Model {
-	case types.RiskConfiguration_MODEL_SIMPLE:
-		if simple := risk.GetSimple(); simple != nil {
-			return &Risk{
-				Model: RiskModelTypeSimple,
-				SimpleParameters: &SimpleRiskModelParams{
-					FactorLong:  simple.FactorLong,
-					FactorShort: simple.FactorShort,
-				},
-			}, nil
-		}
-
-	case types.RiskConfiguration_MODEL_LOG_NORMAL:
-		if logNormal := risk.GetLogNormal(); logNormal != nil {
-			return &Risk{
-				Model: RiskModelTypeLogNormal,
-				LogNormalParameters: &LogNormalRiskModel{
-					RiskAversionParameter: logNormal.RiskAversionParameter,
-					Tau:                   logNormal.Tau,
-					Params: &LogNormalModelParams{
-						Mu:    logNormal.Params.Mu,
-						R:     logNormal.Params.R,
-						Sigma: logNormal.Params.Sigma,
-					},
-				},
-			}, nil
-		}
+func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
+	switch params := newMarket.RiskParameters.(type) {
+	case *types.NewMarketConfiguration_Simple:
+		return &SimpleRiskModel{
+			Params: &SimpleRiskModelParams{
+				FactorLong:  params.Simple.FactorLong,
+				FactorShort: params.Simple.FactorShort,
+			},
+		}, nil
+	case *types.NewMarketConfiguration_LogNormal:
+		return &LogNormalRiskModel{
+			RiskAversionParameter: params.LogNormal.RiskAversionParameter,
+			Tau:                   params.LogNormal.Tau,
+			Params: &LogNormalModelParams{
+				Mu:    params.LogNormal.Params.Mu,
+				R:     params.LogNormal.Params.R,
+				Sigma: params.LogNormal.Params.Sigma,
+			},
+		}, nil
+	default:
+		return nil, ErrInvalidRiskConfiguration
 	}
-	return nil, ErrInvalidRiskConfiguration
 }
 
 // NewMarketFromProto ...
@@ -580,7 +572,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 	if newMarket == nil {
 		return nil, ErrNilMarket
 	}
-	risk, err := RiskConfigurationFromProto(newMarket.Risk)
+	risk, err := RiskConfigurationFromProto(newMarket)
 	if err != nil {
 		return nil, err
 	}
@@ -596,9 +588,9 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 			BaseName:  newMarket.Instrument.BaseName,
 			QuoteName: newMarket.Instrument.QuoteName,
 		},
-		DecimalPlaces: int(newMarket.DecimalPlaces),
-		Risk:          risk,
-		TradingMode:   mode,
+		DecimalPlaces:  int(newMarket.DecimalPlaces),
+		RiskParameters: risk,
+		TradingMode:    mode,
 	}
 	result.Instrument.assignProductFromProto(newMarket.Instrument)
 	return result, nil
@@ -656,8 +648,8 @@ func (l *LogNormalModelParamsInput) IntoProto() *types.LogNormalModelParams {
 }
 
 // IntoProto ...
-func (l *LogNormalRiskModelInput) IntoProto() *types.RiskConfiguration_LogNormal {
-	return &types.RiskConfiguration_LogNormal{
+func (l *LogNormalRiskModelInput) IntoProto() *types.NewMarketConfiguration_LogNormal {
+	return &types.NewMarketConfiguration_LogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			RiskAversionParameter: l.RiskAversionParameter,
 			Tau:                   l.Tau,
@@ -667,8 +659,8 @@ func (l *LogNormalRiskModelInput) IntoProto() *types.RiskConfiguration_LogNormal
 }
 
 // IntoProto ...
-func (s *SimpleRiskModelParamsInput) IntoProto() *types.RiskConfiguration_Simple {
-	return &types.RiskConfiguration_Simple{
+func (s *SimpleRiskModelParamsInput) IntoProto() *types.NewMarketConfiguration_Simple {
+	return &types.NewMarketConfiguration_Simple{
 		Simple: &types.SimpleModelParams{
 			FactorLong:  s.FactorLong,
 			FactorShort: s.FactorShort,
@@ -677,23 +669,15 @@ func (s *SimpleRiskModelParamsInput) IntoProto() *types.RiskConfiguration_Simple
 }
 
 // IntoProto ...
-func (r *RiskInput) IntoProto() (*types.RiskConfiguration, error) {
-	if r.Model == RiskModelTypeSimple {
-		if r.SimpleParameters != nil {
-			return &types.RiskConfiguration{
-				Model:      types.RiskConfiguration_MODEL_SIMPLE,
-				Parameters: r.SimpleParameters.IntoProto(),
-			}, nil
-		}
-	} else if r.Model == RiskModelTypeLogNormal {
-		if r.LogNormalParameters != nil {
-			return &types.RiskConfiguration{
-				Model:      types.RiskConfiguration_MODEL_LOG_NORMAL,
-				Parameters: r.LogNormalParameters.IntoProto(),
-			}, nil
-		}
+func (r *RiskParametersInput) IntoProto(target *types.NewMarketConfiguration) error {
+	if r.Simple != nil {
+		target.RiskParameters = r.Simple.IntoProto()
+		return nil
+	} else if r.LogNormal != nil {
+		target.RiskParameters = r.LogNormal.IntoProto()
+		return nil
 	}
-	return nil, ErrNilRiskModel
+	return ErrNilRiskModel
 }
 
 // TradingModeIntoProto ...
@@ -736,15 +720,14 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if err != nil {
 		return nil, err
 	}
-	risk, err := n.Risk.IntoProto()
-	if err != nil {
-		return nil, err
-	}
 
 	result := &types.NewMarketConfiguration{
 		Instrument:    instrument,
-		Risk:          risk,
 		DecimalPlaces: uint64(n.DecimalPlaces),
+	}
+
+	if err := n.RiskParameters.IntoProto(result); err != nil {
+		return nil, err
 	}
 	if err := n.TradingModeIntoProto(result); err != nil {
 		return nil, err

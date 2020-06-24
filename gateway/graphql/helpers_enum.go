@@ -393,29 +393,3 @@ func convertVoteValueFromProto(x types.Vote_Value) (VoteValue, error) {
 		return VoteValueNo, err
 	}
 }
-
-// convertRiskModelTypeToProto converts a GraphQL enum to a Proto enum
-func convertRiskModelTypeToProto(x RiskModelType) (types.RiskConfiguration_Model, error) {
-	switch x {
-	case RiskModelTypeSimple:
-		return types.RiskConfiguration_MODEL_SIMPLE, nil
-	case RiskModelTypeLogNormal:
-		return types.RiskConfiguration_MODEL_LOG_NORMAL, nil
-	default:
-		err := fmt.Errorf("failed to convert RiskModelType from GraphQL to Proto: %v", x)
-		return types.RiskConfiguration_MODEL_UNSPECIFIED, err
-	}
-}
-
-// convertRiskModelTypeFromProto converts a Proto enum to a GraphQL enum
-func convertRiskModelTypeFromProto(x types.RiskConfiguration_Model) (RiskModelType, error) {
-	switch x {
-	case types.RiskConfiguration_MODEL_SIMPLE:
-		return RiskModelTypeSimple, nil
-	case types.RiskConfiguration_MODEL_LOG_NORMAL:
-		return RiskModelTypeLogNormal, nil
-	default:
-		err := fmt.Errorf("failed to convert RiskModelType from Proto to GraphQL: %v", x)
-		return RiskModelTypeSimple, err
-	}
-}

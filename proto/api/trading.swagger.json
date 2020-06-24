@@ -1733,6 +1733,30 @@
         }
       }
     },
+    "vegaInstrumentConfiguration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Instrument name"
+        },
+        "code": {
+          "type": "string",
+          "title": "Instrument code"
+        },
+        "baseName": {
+          "type": "string",
+          "title": "Base security used as the reference"
+        },
+        "quoteName": {
+          "type": "string",
+          "title": "Quote (secondary) security"
+        },
+        "future": {
+          "$ref": "#/definitions/vegaFutureProduct"
+        }
+      }
+    },
     "vegaInstrumentMetadata": {
       "type": "object",
       "properties": {
@@ -1757,30 +1781,6 @@
       ],
       "default": "INTERVAL_UNSPECIFIED",
       "title": "- INTERVAL_UNSPECIFIED: Default value, always invalid\n - INTERVAL_I1M: 1 minute\n - INTERVAL_I5M: 5 minutes\n - INTERVAL_I15M: 15 minutes\n - INTERVAL_I1H: 1 hour\n - INTERVAL_I6H: 6 hours\n - INTERVAL_I1D: 1 day"
-    },
-    "vegaInstrumentConfiguration": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "title": "Instrument name"
-        },
-        "code": {
-          "type": "string",
-          "title": "Instrument code"
-        },
-        "baseName": {
-          "type": "string",
-          "title": "Base security used as the reference"
-        },
-        "quoteName": {
-          "type": "string",
-          "title": "Quote (secondary) security"
-        },
-        "future": {
-          "$ref": "#/definitions/vegaFutureProduct"
-        }
-      }
     },
     "vegaLedgerEntry": {
       "type": "object",

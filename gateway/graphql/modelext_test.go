@@ -465,9 +465,8 @@ func TestModelConverters(t *testing.T) {
 					Asset:    "Ethereum/Ether",
 				},
 			},
-			Risk: &gql.RiskInput{
-				Model: gql.RiskModelTypeSimple,
-				SimpleParameters: &gql.SimpleRiskModelParamsInput{
+			RiskParameters: &gql.RiskParametersInput{
+				Simple: &gql.SimpleRiskModelParamsInput{
 					FactorLong:  0.1,
 					FactorShort: 0.2,
 				},
@@ -508,9 +507,8 @@ func TestModelConverters(t *testing.T) {
 					Asset:    "Ethereum/Ether",
 				},
 			},
-			Risk: &gql.RiskInput{
-				Model: gql.RiskModelTypeSimple,
-				SimpleParameters: &gql.SimpleRiskModelParamsInput{
+			RiskParameters: &gql.RiskParametersInput{
+				Simple: &gql.SimpleRiskModelParamsInput{
 					FactorLong:  0.1,
 					FactorShort: 0.2,
 				},
@@ -550,17 +548,14 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 			},
-			Risk: &proto.RiskConfiguration{
-				Model: proto.RiskConfiguration_MODEL_LOG_NORMAL,
-				Parameters: &proto.RiskConfiguration_LogNormal{
-					LogNormal: &proto.LogNormalRiskModel{
-						RiskAversionParameter: 0.01,
-						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.LogNormalModelParams{
-							Mu:    0,
-							R:     0.016,
-							Sigma: 0.09,
-						},
+			RiskParameters: &proto.NewMarketConfiguration_LogNormal{
+				LogNormal: &proto.LogNormalRiskModel{
+					RiskAversionParameter: 0.01,
+					Tau:                   1.0 / 365.25 / 24,
+					Params: &proto.LogNormalModelParams{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
 					},
 				},
 			},

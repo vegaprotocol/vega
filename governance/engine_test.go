@@ -729,17 +729,14 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 						},
 					},
 				},
-				Risk: &types.RiskConfiguration{
-					Model: types.RiskConfiguration_MODEL_LOG_NORMAL,
-					Parameters: &types.RiskConfiguration_LogNormal{
-						LogNormal: &types.LogNormalRiskModel{
-							RiskAversionParameter: 0.01,
-							Tau:                   0.00011407711613050422,
-							Params: &types.LogNormalModelParams{
-								Mu:    0,
-								R:     0.016,
-								Sigma: 0.09,
-							},
+				RiskParameters: &types.NewMarketConfiguration_LogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: 0.01,
+						Tau:                   0.00011407711613050422,
+						Params: &types.LogNormalModelParams{
+							Mu:    0,
+							R:     0.016,
+							Sigma: 0.09,
 						},
 					},
 				},
