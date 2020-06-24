@@ -150,8 +150,7 @@ type NodeCommand struct {
 	topology *validators.Topology
 
 	// plugins
-	settlePlugin     *plugins.Positions
-	governancePlugin *plugins.Governance
+	settlePlugin *plugins.Positions
 }
 
 // Init initialises the node command.

@@ -7,29 +7,104 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+type ProposalType int
+
 type PropE interface {
 	GovernanceEvent
 	Proposal() types.Proposal
 }
 
-type ProposalSub struct {
+const (
+	NewMarketProposal ProposalType = iota
+	NewAssetPropopsal
+	UpdateMarketProposal
+	UpdateNetworkProposal
+)
+
+type ProposalFilteredSub struct {
 	*Base
-	all  []*types.Proposal
-	byID map[string]*types.Proposal
+	filters []ProposalFilter
+	matched []types.Proposal
 }
 
-func NewProposalSub(ctx context.Context) *ProposalSub {
-	p := ProposalSub{
-		Base: newBase(ctx, 10),
-		all:  []*types.Proposal{},
-		byID: map[string]*types.Proposal{},
+// ByProposalID - filter proposal events by proposal ID
+func ProposalByID(id string) ProposalFilter {
+	return func(p types.Proposal) bool {
+		if p.ID == id {
+			return true
+		}
+		return false
+	}
+}
+
+// ProposalByPartyID - filter proposals submitted by given party
+func ProposalByPartyID(id string) ProposalFilter {
+	return func(p types.Proposal) bool {
+		if p.PartyID == id {
+			return true
+		}
+		return false
+	}
+}
+
+// ProposalByState - filter proposals by state
+func ProposalByState(s types.Proposal_State) ProposalFilter {
+	return func(p types.Proposal) bool {
+		if p.State == s {
+			return true
+		}
+		return false
+	}
+}
+
+// ProposalByReference - filter out proposals by reference
+func ProposalByReference(ref string) ProposalFilter {
+	return func(p types.Proposal) bool {
+		if p.Reference == ref {
+			return true
+		}
+		return false
+	}
+}
+
+func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
+	return func(p types.Proposal) bool {
+		for _, t := range ptypes {
+			switch t {
+			case NewMarketProposal:
+				if nm := p.Terms.GetNewMarket(); nm != nil {
+					return true
+				}
+			case NewAssetPropopsal:
+				if na := p.Terms.GetNewAsset(); na != nil {
+					return true
+				}
+			case UpdateMarketProposal:
+				if um := p.Terms.GetUpdateMarket(); um != nil {
+					return true
+				}
+			case UpdateNetworkProposal:
+				if un := p.Terms.GetUpdateNetwork(); un != nil {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+func NewProposalFilteredSub(ctx context.Context, filters ...ProposalFilter) *ProposalFilteredSub {
+	p := ProposalFilteredSub{
+		Base:    newBase(ctx, 10),
+		filters: filters,
+		matched: []types.Proposal{},
 	}
 	p.running = true
 	go p.loop(p.ctx)
 	return &p
 }
 
-func (p *ProposalSub) loop(ctx context.Context) {
+func (p *ProposalFilteredSub) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -43,23 +118,26 @@ func (p *ProposalSub) loop(ctx context.Context) {
 	}
 }
 
-func (p *ProposalSub) Push(e events.Event) {
+func (p *ProposalFilteredSub) Push(e events.Event) {
 	switch et := e.(type) {
 	case TimeEvent:
 		p.Flush()
 	case PropE:
 		prop := et.Proposal()
-		p.byID[prop.ID] = &prop
-		p.all = append(p.all, &prop)
+		for _, f := range p.filters {
+			if !f(prop) {
+				return
+			}
+		}
+		p.matched = append(p.matched, prop)
 	}
 }
 
-func (p *ProposalSub) Flush() {
-	p.all = make([]*types.Proposal, 0, cap(p.all))
-	p.byID = make(map[string]*types.Proposal, len(p.byID))
+func (p *ProposalFilteredSub) Flush() {
+	p.matched = make([]types.Proposal, 0, cap(p.matched))
 }
 
-func (p ProposalSub) Types() []events.Type {
+func (p ProposalFilteredSub) Types() []events.Type {
 	return []events.Type{
 		events.ProposalEvent,
 		events.TimeUpdate,
