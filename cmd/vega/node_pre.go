@@ -255,6 +255,8 @@ func (l *NodeCommand) setupSubscibers() {
 	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore)
 	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore)
 	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore)
+	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx)
+	l.voteSub = subscribers.NewVoteSub(l.ctx, false)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -341,7 +343,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.broker = broker.New(l.ctx)
 	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub)
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -371,7 +373,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.topology = validators.NewTopology(l.Log, nil)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.proposalBuf, l.voteBuf, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.proposalBuf, l.voteBuf, l.broker, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err

@@ -1,11 +1,13 @@
 package governance
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
@@ -35,6 +37,12 @@ var (
 	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
 	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
 )
+
+// Broker - event bus
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/governance Broker
+type Broker interface {
+	Send(e events.Event)
+}
 
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
@@ -93,6 +101,7 @@ type Engine struct {
 	networkParams          NetworkParameters
 	isValidator            bool
 	nodeProposalValidation *NodeValidation
+	broker                 Broker
 }
 
 type proposalData struct {
@@ -101,7 +110,7 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, top ValidatorTopology, wallet Wallet, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, broker Broker, top ValidatorTopology, wallet Wallet, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
 	nodeValidation, err := NewNodeValidation(log, top, wallet, cmd, assets, now, isValidator)
@@ -119,6 +128,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		activeProposals:        map[string]*proposalData{},
 		networkParams:          *params,
 		nodeProposalValidation: nodeValidation,
+		broker:                 broker,
 	}, nil
 }
 
@@ -140,6 +150,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
+	ctx := context.TODO()
 	e.currentTime = t
 	var toBeEnacted []*types.Proposal
 	if len(e.activeProposals) > 0 {
@@ -168,6 +179,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.ID))
 		p.State = types.Proposal_STATE_OPEN
+		e.broker.Send(events.NewProposalEvent(ctx, *p))
 		e.buf.Add(*p)
 		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
 	}
@@ -175,6 +187,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 		e.log.Info("proposal has not been validated by nodes",
 			logging.String("proposal-id", p.ID))
 		p.State = types.Proposal_STATE_REJECTED
+		e.broker.Send(events.NewProposalEvent(ctx, *p))
 		e.buf.Add(*p)
 	}
 
@@ -187,6 +200,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
 func (e *Engine) SubmitProposal(p types.Proposal) error {
+	ctx := context.TODO()
 	if _, exists := e.activeProposals[p.ID]; exists {
 		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}
@@ -203,6 +217,7 @@ func (e *Engine) SubmitProposal(p types.Proposal) error {
 				e.startProposal(&p)
 			}
 		}
+		e.broker.Send(events.NewProposalEvent(ctx, p))
 		e.buf.Add(p)
 		return err
 	}
@@ -267,6 +282,7 @@ func (e *Engine) AddNodeVote(v *types.NodeVote) error {
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
 func (e *Engine) AddVote(vote types.Vote) error {
+	ctx := context.TODO()
 	proposal, err := e.validateVote(vote)
 	if err != nil {
 		return err
@@ -280,6 +296,7 @@ func (e *Engine) AddVote(vote types.Vote) error {
 		delete(proposal.yes, vote.PartyID)
 		proposal.no[vote.PartyID] = &vote
 	}
+	e.broker.Send(events.NewVoteEvent(ctx, vote))
 	e.vbuf.Add(vote)
 	return nil
 }
@@ -311,6 +328,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 
 // sets proposal in either declined or passed state
 func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, totalStake uint64) error {
+	ctx := context.TODO()
 	if proposal.State == types.Proposal_STATE_OPEN {
 		proposal.State = types.Proposal_STATE_DECLINED // declined unless passed
 
@@ -342,6 +360,7 @@ func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, to
 				logging.Float32("tokens", float32(totalStake)),
 			)
 		}
+		e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 		e.buf.Add(*proposal.Proposal)
 	}
 	return nil
