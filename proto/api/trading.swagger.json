@@ -953,17 +953,6 @@
       "default": "STATE_UNSPECIFIED",
       "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_WAITING_FOR_NODE_VOTE: waiting for validators validation of the proposal"
     },
-    "RiskConfigurationModel": {
-      "type": "string",
-      "enum": [
-        "MODEL_UNSPECIFIED",
-        "MODEL_SIMPLE",
-        "MODEL_LOG_NORMAL"
-      ],
-      "default": "MODEL_UNSPECIFIED",
-      "description": "- MODEL_UNSPECIFIED: Default value, always invalid.\n - MODEL_SIMPLE: Simple risk model\n - MODEL_LOG_NORMAL: Log normal risk model",
-      "title": "Predefined risk models"
-    },
     "VoteValue": {
       "type": "string",
       "enum": [
@@ -2044,9 +2033,13 @@
           "$ref": "#/definitions/vegaIntrumentConfiguration",
           "title": "New market instrument configuration"
         },
-        "risk": {
-          "$ref": "#/definitions/vegaRiskConfiguration",
-          "title": "New market risk configuration"
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams",
+          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel",
+          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
         },
         "decimalPlaces": {
           "type": "string",
@@ -2376,23 +2369,6 @@
         "newAsset": {
           "$ref": "#/definitions/vegaNewAsset",
           "description": "Proposal change for creating new assets on Vega."
-        }
-      }
-    },
-    "vegaRiskConfiguration": {
-      "type": "object",
-      "properties": {
-        "model": {
-          "$ref": "#/definitions/RiskConfigurationModel",
-          "title": "Selected risk model"
-        },
-        "simple": {
-          "$ref": "#/definitions/vegaSimpleModelParams",
-          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
-        },
-        "logNormal": {
-          "$ref": "#/definitions/vegaLogNormalRiskModel",
-          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
         }
       }
     },

@@ -119,13 +119,11 @@
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
-    - [RiskConfiguration](#vega.RiskConfiguration)
     - [UpdateMarket](#vega.UpdateMarket)
     - [UpdateNetwork](#vega.UpdateNetwork)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
-    - [RiskConfiguration.Model](#vega.RiskConfiguration.Model)
     - [Vote.Value](#vega.Vote.Value)
 
 
@@ -1860,7 +1858,8 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [IntrumentConfiguration](#vega.IntrumentConfiguration) |  | New market instrument configuration |
-| risk | [RiskConfiguration](#vega.RiskConfiguration) |  | New market risk configuration |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
+| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
@@ -1906,23 +1905,6 @@ To be implemented
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
 | newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
-
-
-
-
-
-
-<a name="vega.RiskConfiguration"></a>
-
-### RiskConfiguration
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| model | [RiskConfiguration.Model](#vega.RiskConfiguration.Model) |  | Selected risk model |
-| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
-| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 
 
 
@@ -1995,19 +1977,6 @@ Proposal can enter Failed state from any other state.
 | STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
 | STATE_ENACTED | 6 |  |
 | STATE_WAITING_FOR_NODE_VOTE | 7 | waiting for validators validation of the proposal |
-
-
-
-<a name="vega.RiskConfiguration.Model"></a>
-
-### RiskConfiguration.Model
-Predefined risk models
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| MODEL_UNSPECIFIED | 0 | Default value, always invalid. |
-| MODEL_SIMPLE | 1 | Simple risk model |
-| MODEL_LOG_NORMAL | 2 | Log normal risk model |
 
 
 

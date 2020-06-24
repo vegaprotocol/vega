@@ -36,30 +36,6 @@ message UpdateMarket {
   //TODO
 }
 
-
-message RiskConfiguration {
-  // Predefined risk models
-  enum Model {
-    // Default value, always invalid.
-    MODEL_UNSPECIFIED = 0;
-    // Simple risk model
-    MODEL_SIMPLE = 1;
-    // Log normal risk model
-    MODEL_LOG_NORMAL = 2;
-  
-    // @TODO: replace this enum with one defined in the risk package once it is ready
-  }
-  // Selected risk model
-  Model model = 1 [(validator.field) = {is_in_enum : true}];
-  // Risk model parameters
-  oneof parameters {
-    // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
-    SimpleModelParams simple = 100;
-    // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
-    LogNormalRiskModel logNormal = 101;
-  }
-}
-
 // Future product configuration
 message FutureProduct {
   // Future product maturity (ISO8601/RFC3339 timestamp)
@@ -88,8 +64,13 @@ message IntrumentConfiguration {
 message NewMarketConfiguration {
   // New market instrument configuration
   IntrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
-  // New market risk configuration
-  RiskConfiguration risk = 2 [(validator.field) = {msg_exists: true}];
+  // New market risk model parameters
+  oneof riskParameters {
+    // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
+    SimpleModelParams simple = 100;
+    // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
+    LogNormalRiskModel logNormal = 101;
+  }
   // Decimal places used for the new market
   uint64 decimalPlaces = 3 [(validator.field) = {int_lt: 150}];
   // Optional new market meta data, tags

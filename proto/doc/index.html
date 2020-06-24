@@ -613,10 +613,6 @@
                 </li>
 
                 <li>
-                  <a href="#vega.RiskConfiguration"><span class="badge">M</span>RiskConfiguration</a>
-                </li>
-
-                <li>
                   <a href="#vega.UpdateMarket"><span class="badge">M</span>UpdateMarket</a>
                 </li>
 
@@ -631,10 +627,6 @@
 
                 <li>
                   <a href="#vega.Proposal.State"><span class="badge">E</span>Proposal.State</a>
-                </li>
-
-                <li>
-                  <a href="#vega.RiskConfiguration.Model"><span class="badge">E</span>RiskConfiguration.Model</a>
                 </li>
 
                 <li>
@@ -5126,10 +5118,17 @@
                 </tr>
 
                 <tr>
-                  <td>risk</td>
-                  <td><a href="#vega.RiskConfiguration">RiskConfiguration</a></td>
+                  <td>simple</td>
+                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
                   <td></td>
-                  <td><p>New market risk configuration </p></td>
+                  <td><p>Simple risk model parameters, valid only if MODEL_SIMPLE is selected </p></td>
+                </tr>
+
+                <tr>
+                  <td>logNormal</td>
+                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
+                  <td></td>
+                  <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
                 </tr>
 
                 <tr>
@@ -5178,17 +5177,6 @@
 
                 <tr>
                   <td>instrument</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>risk</td>
                   <td>
                     <ul>
 
@@ -5430,71 +5418,6 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
-        <h3 id="vega.RiskConfiguration">RiskConfiguration</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>model</td>
-                  <td><a href="#vega.RiskConfiguration.Model">RiskConfiguration.Model</a></td>
-                  <td></td>
-                  <td><p>Selected risk model </p></td>
-                </tr>
-
-                <tr>
-                  <td>simple</td>
-                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
-                  <td></td>
-                  <td><p>Simple risk model parameters, valid only if MODEL_SIMPLE is selected </p></td>
-                </tr>
-
-                <tr>
-                  <td>logNormal</td>
-                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
-                  <td></td>
-                  <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>model</td>
-                  <td>
-                    <ul>
-
-                      <li>is_in_enum: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
         <h3 id="vega.UpdateMarket">UpdateMarket</h3>
         <p>TODO</p>
 
@@ -5703,35 +5626,6 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>STATE_WAITING_FOR_NODE_VOTE</td>
                 <td>7</td>
                 <td><p>waiting for validators validation of the proposal</p></td>
-              </tr>
-
-          </tbody>
-        </table>
-
-        <h3 id="vega.RiskConfiguration.Model">RiskConfiguration.Model</h3>
-        <p>Predefined risk models</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-
-              <tr>
-                <td>MODEL_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>Default value, always invalid.</p></td>
-              </tr>
-
-              <tr>
-                <td>MODEL_SIMPLE</td>
-                <td>1</td>
-                <td><p>Simple risk model</p></td>
-              </tr>
-
-              <tr>
-                <td>MODEL_LOG_NORMAL</td>
-                <td>2</td>
-                <td><p>Log normal risk model</p></td>
               </tr>
 
           </tbody>
