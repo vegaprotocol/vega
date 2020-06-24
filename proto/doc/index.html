@@ -6659,14 +6659,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>createdAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>status</td>
                   <td><a href="#vega.Order.Status">Order.Status</a></td>
                   <td></td>
-                  <td><p>If <tt>status</tt> is <tt>Rejected</tt>, check <tt>reason</tt>. </p></td>
+                  <td><p>If <tt>status</tt> is <tt>STATUS_REJECTED</tt>, check <tt>reason</tt>. </p></td>
                 </tr>
 
                 <tr>
@@ -8219,7 +8219,7 @@ after each successful amend </p></td>
         </table>
 
         <h3 id="vega.Order.Status">Order.Status</h3>
-        <p></p>
+        <p>Order Status</p><p>See <a href="https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for details.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -8229,56 +8229,56 @@ after each successful amend </p></td>
               <tr>
                 <td>STATUS_INVALID</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_ACTIVE</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>used for active unfilled or partially filled orders</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_EXPIRED</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>used for expired GTT orders</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_CANCELLED</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>used for orders cancelled by the party that created the order</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_STOPPED</td>
                 <td>4</td>
-                <td><p></p></td>
+                <td><p>used for unfilled FOK or IOC orders, and for orders that were stopped by the network</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_FILLED</td>
                 <td>5</td>
-                <td><p></p></td>
+                <td><p>used for closed fully filled orders</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_REJECTED</td>
                 <td>6</td>
-                <td><p></p></td>
+                <td><p>used for orders when not enough collateral was available to fill the margin requirements</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_PARTIALLY_FILLED</td>
                 <td>7</td>
-                <td><p></p></td>
+                <td><p>used for closed partially filled IOC orders</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Order.TimeInForce">Order.TimeInForce</h3>
-        <p>Order Time in Force</p>
+        <p>Order Time in Force</p><p>See <a href="https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for details.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -8622,7 +8622,7 @@ after each successful amend </p></td>
     <h2 id="scalar-value-types">Scalar Value Types</h2>
     <table class="scalar-value-types-table">
       <thead>
-        <tr><td>.proto Type</td><td>Notes</td><td>C++ Type</td><td>Java Type</td><td>Python Type</td></tr>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
       </thead>
       <tbody>
 
@@ -8632,6 +8632,10 @@ after each successful amend </p></td>
             <td>double</td>
             <td>double</td>
             <td>float</td>
+            <td>float64</td>
+            <td>double</td>
+            <td>float</td>
+            <td>Float</td>
           </tr>
 
           <tr id="float">
@@ -8640,6 +8644,10 @@ after each successful amend </p></td>
             <td>float</td>
             <td>float</td>
             <td>float</td>
+            <td>float32</td>
+            <td>float</td>
+            <td>float</td>
+            <td>Float</td>
           </tr>
 
           <tr id="int32">
@@ -8648,6 +8656,10 @@ after each successful amend </p></td>
             <td>int32</td>
             <td>int</td>
             <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
           </tr>
 
           <tr id="int64">
@@ -8656,6 +8668,10 @@ after each successful amend </p></td>
             <td>int64</td>
             <td>long</td>
             <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
           </tr>
 
           <tr id="uint32">
@@ -8664,6 +8680,10 @@ after each successful amend </p></td>
             <td>uint32</td>
             <td>int</td>
             <td>int/long</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
           </tr>
 
           <tr id="uint64">
@@ -8672,6 +8692,10 @@ after each successful amend </p></td>
             <td>uint64</td>
             <td>long</td>
             <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum or Fixnum (as required)</td>
           </tr>
 
           <tr id="sint32">
@@ -8680,6 +8704,10 @@ after each successful amend </p></td>
             <td>int32</td>
             <td>int</td>
             <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
           </tr>
 
           <tr id="sint64">
@@ -8688,6 +8716,10 @@ after each successful amend </p></td>
             <td>int64</td>
             <td>long</td>
             <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
           </tr>
 
           <tr id="fixed32">
@@ -8696,6 +8728,10 @@ after each successful amend </p></td>
             <td>uint32</td>
             <td>int</td>
             <td>int</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
           </tr>
 
           <tr id="fixed64">
@@ -8704,6 +8740,10 @@ after each successful amend </p></td>
             <td>uint64</td>
             <td>long</td>
             <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
           </tr>
 
           <tr id="sfixed32">
@@ -8712,6 +8752,10 @@ after each successful amend </p></td>
             <td>int32</td>
             <td>int</td>
             <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
           </tr>
 
           <tr id="sfixed64">
@@ -8720,6 +8764,10 @@ after each successful amend </p></td>
             <td>int64</td>
             <td>long</td>
             <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
           </tr>
 
           <tr id="bool">
@@ -8728,6 +8776,10 @@ after each successful amend </p></td>
             <td>bool</td>
             <td>boolean</td>
             <td>boolean</td>
+            <td>bool</td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>TrueClass/FalseClass</td>
           </tr>
 
           <tr id="string">
@@ -8736,6 +8788,10 @@ after each successful amend </p></td>
             <td>string</td>
             <td>String</td>
             <td>str/unicode</td>
+            <td>string</td>
+            <td>string</td>
+            <td>string</td>
+            <td>String (UTF-8)</td>
           </tr>
 
           <tr id="bytes">
@@ -8744,6 +8800,10 @@ after each successful amend </p></td>
             <td>string</td>
             <td>ByteString</td>
             <td>str</td>
+            <td>[]byte</td>
+            <td>ByteString</td>
+            <td>string</td>
+            <td>String (ASCII-8BIT)</td>
           </tr>
 
       </tbody>
