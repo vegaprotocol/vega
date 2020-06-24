@@ -14,16 +14,15 @@ type PropE interface {
 
 type ProposalSub struct {
 	*Base
-	all         []*types.Proposal
-	byID        map[string]*types.Proposal
-	byReference map[string]*types.Proposal
+	all  []*types.Proposal
+	byID map[string]*types.Proposal
 }
 
 func NewProposalSub(ctx context.Context) *ProposalSub {
 	p := ProposalSub{
 		Base: newBase(ctx, 10),
-		all:  []types.Proposal{},
-		byID: map[string]types.Proposal{},
+		all:  []*types.Proposal{},
+		byID: map[string]*types.Proposal{},
 	}
 	p.running = true
 	go p.loop(p.ctx)
@@ -50,14 +49,14 @@ func (p *ProposalSub) Push(e events.Event) {
 		p.Flush()
 	case PropE:
 		prop := et.Proposal()
-		p.all = append(p.all, prop)
-		p.byID[prop.ID] = prop
+		p.byID[prop.ID] = &prop
+		p.all = append(p.all, &prop)
 	}
 }
 
 func (p *ProposalSub) Flush() {
-	p.all = make([]types.Proposal, 0, cap(p.all))
-	p.byID = make(map[string]types.Proposal, len(p.byID))
+	p.all = make([]*types.Proposal, 0, cap(p.all))
+	p.byID = make(map[string]*types.Proposal, len(p.byID))
 }
 
 func (p ProposalSub) Types() []events.Type {
