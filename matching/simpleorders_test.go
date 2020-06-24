@@ -532,7 +532,7 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, order2.Status, types.Order_STATUS_STOPPED)
+	assert.Equal(t, order2.Status, types.Order_STATUS_REJECTED)
 }
 
 func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T) {
@@ -584,7 +584,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, int(len(confirm.Trades)))
-	assert.Equal(t, order2.Status, types.Order_STATUS_STOPPED)
+	assert.Equal(t, order2.Status, types.Order_STATUS_REJECTED)
 	assert.Equal(t, int(order2.Remaining), 1)
 }
 
@@ -637,7 +637,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, int(len(confirm.Trades)))
-	assert.Equal(t, order2.Status, types.Order_STATUS_STOPPED)
+	assert.Equal(t, order2.Status, types.Order_STATUS_REJECTED)
 	assert.Equal(t, int(order2.Remaining), 1)
 }
 
