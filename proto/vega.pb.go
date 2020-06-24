@@ -290,6 +290,8 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 }
 
 // Order Time in Force
+//
+// See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
 type Order_TimeInForce int32
 
 const (
@@ -365,16 +367,27 @@ func (Order_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{6, 1}
 }
 
+// Order Status
+//
+// See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
 type Order_Status int32
 
 const (
-	Order_STATUS_INVALID          Order_Status = 0
-	Order_STATUS_ACTIVE           Order_Status = 1
-	Order_STATUS_EXPIRED          Order_Status = 2
-	Order_STATUS_CANCELLED        Order_Status = 3
-	Order_STATUS_STOPPED          Order_Status = 4
-	Order_STATUS_FILLED           Order_Status = 5
-	Order_STATUS_REJECTED         Order_Status = 6
+	// Default value, always invalid
+	Order_STATUS_INVALID Order_Status = 0
+	// used for active unfilled or partially filled orders
+	Order_STATUS_ACTIVE Order_Status = 1
+	// used for expired GTT orders
+	Order_STATUS_EXPIRED Order_Status = 2
+	// used for orders cancelled by the party that created the order
+	Order_STATUS_CANCELLED Order_Status = 3
+	// used for unfilled FOK or IOC orders, and for orders that were stopped by the network
+	Order_STATUS_STOPPED Order_Status = 4
+	// used for closed fully filled orders
+	Order_STATUS_FILLED Order_Status = 5
+	// used for orders when not enough collateral was available to fill the margin requirements
+	Order_STATUS_REJECTED Order_Status = 6
+	// used for closed partially filled IOC orders
 	Order_STATUS_PARTIALLY_FILLED Order_Status = 7
 )
 
@@ -728,8 +741,9 @@ type Order struct {
 	Remaining   uint64            `protobuf:"varint,7,opt,name=remaining,proto3" json:"remaining,omitempty"`
 	TimeInForce Order_TimeInForce `protobuf:"varint,8,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
 	Type        Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	CreatedAt   int64             `protobuf:"varint,10,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	// If `status` is `Rejected`, check `reason`.
+	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	CreatedAt int64 `protobuf:"varint,10,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// If `status` is `STATUS_REJECTED`, check `reason`.
 	Status    Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
 	ExpiresAt int64        `protobuf:"varint,12,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
 	Reference string       `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
