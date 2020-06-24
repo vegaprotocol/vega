@@ -214,11 +214,11 @@ func (cs *ChainStatus) start(ctx context.Context) {
 			// if status changed to disconnect, we try to call the onChainDisconnect
 			// callback
 			if currentStatus == types.ChainStatus_CHAIN_STATUS_DISCONNECTED && cs.onChainDisconnect != nil && !cs.starting {
-				cs.log.Info("Chain is disconnected, we'll try to reconnect",
-					logging.Int("retries-left", cs.retriesCount),
-				)
 
-				if cs.retriesCount <= 0 {
+				if cs.retriesCount > 0 {
+					cs.log.Info("Chain is disconnected, we'll try to reconnect",
+						logging.Int("retries-left", cs.retriesCount))
+				} else {
 					cs.cfgMu.Lock()
 					cs.log.Info("Chain is still disconnected, shutting down now",
 						logging.Int("retries-count", int(cs.config.Retries)),
