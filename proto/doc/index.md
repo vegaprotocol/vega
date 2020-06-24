@@ -112,7 +112,7 @@
 - [proto/governance.proto](#proto/governance.proto)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
-    - [IntrumentConfiguration](#vega.IntrumentConfiguration)
+    - [InstrumentConfiguration](#vega.InstrumentConfiguration)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
@@ -1777,9 +1777,9 @@ Future product configuration
 
 
 
-<a name="vega.IntrumentConfiguration"></a>
+<a name="vega.InstrumentConfiguration"></a>
 
-### IntrumentConfiguration
+### InstrumentConfiguration
 
 
 
@@ -1857,7 +1857,7 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instrument | [IntrumentConfiguration](#vega.IntrumentConfiguration) |  | New market instrument configuration |
+| instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |

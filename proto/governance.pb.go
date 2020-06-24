@@ -302,7 +302,7 @@ func (m *FutureProduct) GetAsset() string {
 	return ""
 }
 
-type IntrumentConfiguration struct {
+type InstrumentConfiguration struct {
 	// Instrument name
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Instrument code
@@ -314,100 +314,100 @@ type IntrumentConfiguration struct {
 	// Product specification
 	//
 	// Types that are valid to be assigned to Product:
-	//	*IntrumentConfiguration_Future
-	Product              isIntrumentConfiguration_Product `protobuf_oneof:"product"`
-	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
-	XXX_unrecognized     []byte                           `json:"-"`
-	XXX_sizecache        int32                            `json:"-"`
+	//	*InstrumentConfiguration_Future
+	Product              isInstrumentConfiguration_Product `protobuf_oneof:"product"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
 }
 
-func (m *IntrumentConfiguration) Reset()         { *m = IntrumentConfiguration{} }
-func (m *IntrumentConfiguration) String() string { return proto.CompactTextString(m) }
-func (*IntrumentConfiguration) ProtoMessage()    {}
-func (*IntrumentConfiguration) Descriptor() ([]byte, []int) {
+func (m *InstrumentConfiguration) Reset()         { *m = InstrumentConfiguration{} }
+func (m *InstrumentConfiguration) String() string { return proto.CompactTextString(m) }
+func (*InstrumentConfiguration) ProtoMessage()    {}
+func (*InstrumentConfiguration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c891e73c7d2524a3, []int{3}
 }
 
-func (m *IntrumentConfiguration) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IntrumentConfiguration.Unmarshal(m, b)
+func (m *InstrumentConfiguration) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_InstrumentConfiguration.Unmarshal(m, b)
 }
-func (m *IntrumentConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IntrumentConfiguration.Marshal(b, m, deterministic)
+func (m *InstrumentConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_InstrumentConfiguration.Marshal(b, m, deterministic)
 }
-func (m *IntrumentConfiguration) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IntrumentConfiguration.Merge(m, src)
+func (m *InstrumentConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InstrumentConfiguration.Merge(m, src)
 }
-func (m *IntrumentConfiguration) XXX_Size() int {
-	return xxx_messageInfo_IntrumentConfiguration.Size(m)
+func (m *InstrumentConfiguration) XXX_Size() int {
+	return xxx_messageInfo_InstrumentConfiguration.Size(m)
 }
-func (m *IntrumentConfiguration) XXX_DiscardUnknown() {
-	xxx_messageInfo_IntrumentConfiguration.DiscardUnknown(m)
+func (m *InstrumentConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_InstrumentConfiguration.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IntrumentConfiguration proto.InternalMessageInfo
+var xxx_messageInfo_InstrumentConfiguration proto.InternalMessageInfo
 
-func (m *IntrumentConfiguration) GetName() string {
+func (m *InstrumentConfiguration) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *IntrumentConfiguration) GetCode() string {
+func (m *InstrumentConfiguration) GetCode() string {
 	if m != nil {
 		return m.Code
 	}
 	return ""
 }
 
-func (m *IntrumentConfiguration) GetBaseName() string {
+func (m *InstrumentConfiguration) GetBaseName() string {
 	if m != nil {
 		return m.BaseName
 	}
 	return ""
 }
 
-func (m *IntrumentConfiguration) GetQuoteName() string {
+func (m *InstrumentConfiguration) GetQuoteName() string {
 	if m != nil {
 		return m.QuoteName
 	}
 	return ""
 }
 
-type isIntrumentConfiguration_Product interface {
-	isIntrumentConfiguration_Product()
+type isInstrumentConfiguration_Product interface {
+	isInstrumentConfiguration_Product()
 }
 
-type IntrumentConfiguration_Future struct {
+type InstrumentConfiguration_Future struct {
 	Future *FutureProduct `protobuf:"bytes,100,opt,name=future,proto3,oneof"`
 }
 
-func (*IntrumentConfiguration_Future) isIntrumentConfiguration_Product() {}
+func (*InstrumentConfiguration_Future) isInstrumentConfiguration_Product() {}
 
-func (m *IntrumentConfiguration) GetProduct() isIntrumentConfiguration_Product {
+func (m *InstrumentConfiguration) GetProduct() isInstrumentConfiguration_Product {
 	if m != nil {
 		return m.Product
 	}
 	return nil
 }
 
-func (m *IntrumentConfiguration) GetFuture() *FutureProduct {
-	if x, ok := m.GetProduct().(*IntrumentConfiguration_Future); ok {
+func (m *InstrumentConfiguration) GetFuture() *FutureProduct {
+	if x, ok := m.GetProduct().(*InstrumentConfiguration_Future); ok {
 		return x.Future
 	}
 	return nil
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
-func (*IntrumentConfiguration) XXX_OneofWrappers() []interface{} {
+func (*InstrumentConfiguration) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*IntrumentConfiguration_Future)(nil),
+		(*InstrumentConfiguration_Future)(nil),
 	}
 }
 
 type NewMarketConfiguration struct {
 	// New market instrument configuration
-	Instrument *IntrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
+	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -454,7 +454,7 @@ func (m *NewMarketConfiguration) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NewMarketConfiguration proto.InternalMessageInfo
 
-func (m *NewMarketConfiguration) GetInstrument() *IntrumentConfiguration {
+func (m *NewMarketConfiguration) GetInstrument() *InstrumentConfiguration {
 	if m != nil {
 		return m.Instrument
 	}
@@ -1033,7 +1033,7 @@ func init() {
 	proto.RegisterType((*NetworkConfiguration)(nil), "vega.NetworkConfiguration")
 	proto.RegisterType((*UpdateMarket)(nil), "vega.UpdateMarket")
 	proto.RegisterType((*FutureProduct)(nil), "vega.FutureProduct")
-	proto.RegisterType((*IntrumentConfiguration)(nil), "vega.IntrumentConfiguration")
+	proto.RegisterType((*InstrumentConfiguration)(nil), "vega.InstrumentConfiguration")
 	proto.RegisterType((*NewMarketConfiguration)(nil), "vega.NewMarketConfiguration")
 	proto.RegisterType((*NewMarket)(nil), "vega.NewMarket")
 	proto.RegisterType((*UpdateNetwork)(nil), "vega.UpdateNetwork")

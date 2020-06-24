@@ -37,7 +37,7 @@ func (this *FutureProduct) Validate() error {
 	}
 	return nil
 }
-func (this *IntrumentConfiguration) Validate() error {
+func (this *InstrumentConfiguration) Validate() error {
 	if this.Name == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Name", fmt.Errorf(`value '%v' must not be an empty string`, this.Name))
 	}
@@ -50,7 +50,7 @@ func (this *IntrumentConfiguration) Validate() error {
 	if this.QuoteName == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("QuoteName", fmt.Errorf(`value '%v' must not be an empty string`, this.QuoteName))
 	}
-	if oneOfNester, ok := this.GetProduct().(*IntrumentConfiguration_Future); ok {
+	if oneOfNester, ok := this.GetProduct().(*InstrumentConfiguration_Future); ok {
 		if oneOfNester.Future != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Future); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Future", err)

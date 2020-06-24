@@ -717,12 +717,12 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 	return &types.ProposalTerms_NewMarket{
 		NewMarket: &types.NewMarket{
 			Changes: &types.NewMarketConfiguration{
-				Instrument: &types.IntrumentConfiguration{
+				Instrument: &types.InstrumentConfiguration{
 					Name:      "June 2020 GBP vs VUSD future",
 					Code:      "CRYPTO:GBPVUSD/JUN20",
 					BaseName:  "GBP",
 					QuoteName: "VUSD",
-					Product: &types.IntrumentConfiguration_Future{
+					Product: &types.InstrumentConfiguration_Future{
 						Future: &types.FutureProduct{
 							Maturity: "2030-06-30T22:59:59Z",
 							Asset:    "VUSD",

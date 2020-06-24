@@ -530,7 +530,7 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 
 	return mkt, nil
 }
-func (i *IntrumentConfiguration) assignProductFromProto(instrument *types.IntrumentConfiguration) error {
+func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
 	if future := instrument.GetFuture(); future != nil {
 		i.FutureProduct = &FutureProduct{
 			Asset:    future.Asset,
@@ -590,7 +590,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 	}
 
 	result := &NewMarket{
-		Instrument: &IntrumentConfiguration{
+		Instrument: &InstrumentConfiguration{
 			Name:      newMarket.Instrument.Name,
 			Code:      newMarket.Instrument.Code,
 			BaseName:  newMarket.Instrument.BaseName,
@@ -625,8 +625,8 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 }
 
 // IntoProto ...
-func (i *IntrumentConfigurationInput) IntoProto() (*types.IntrumentConfiguration, error) {
-	result := &types.IntrumentConfiguration{
+func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfiguration, error) {
+	result := &types.InstrumentConfiguration{
 		Name:      i.Name,
 		Code:      i.Code,
 		BaseName:  i.BaseName,
@@ -634,7 +634,7 @@ func (i *IntrumentConfigurationInput) IntoProto() (*types.IntrumentConfiguration
 	}
 
 	if i.FutureProduct != nil {
-		result.Product = &types.IntrumentConfiguration_Future{
+		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
 				Asset:    i.FutureProduct.Asset,
 				Maturity: i.FutureProduct.Maturity,

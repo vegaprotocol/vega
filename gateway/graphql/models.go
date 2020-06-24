@@ -117,13 +117,7 @@ type Instrument struct {
 	Product Product `json:"product"`
 }
 
-// A set of metadata to associate to an instruments
-type InstrumentMetadata struct {
-	// An arbitrary list of tags to associated to associate to the Instrument (string list)
-	Tags []*string `json:"tags"`
-}
-
-type IntrumentConfiguration struct {
+type InstrumentConfiguration struct {
 	// Full and fairly descriptive name for the instrument
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
@@ -136,7 +130,7 @@ type IntrumentConfiguration struct {
 	FutureProduct *FutureProduct `json:"futureProduct"`
 }
 
-type IntrumentConfigurationInput struct {
+type InstrumentConfigurationInput struct {
 	// Full and fairly descriptive name for the instrument
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
@@ -147,6 +141,12 @@ type IntrumentConfigurationInput struct {
 	QuoteName string `json:"quoteName"`
 	// Future product specification
 	FutureProduct *FutureProductInput `json:"futureProduct"`
+}
+
+// A set of metadata to associate to an instruments
+type InstrumentMetadata struct {
+	// An arbitrary list of tags to associated to associate to the Instrument (string list)
+	Tags []*string `json:"tags"`
 }
 
 // Parameters for the log normal risk model
@@ -236,11 +236,11 @@ type Market struct {
 
 type NewMarket struct {
 	// New market instrument configuration
-	Instrument *IntrumentConfiguration `json:"instrument"`
+	Instrument *InstrumentConfiguration `json:"instrument"`
 	// Decimal places used for the new market
 	DecimalPlaces int `json:"decimalPlaces"`
 	// New market risk configuration
-	Risk *Risk `json:"risk"`
+	RiskParameters RiskModel `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []*string `json:"metadata"`
 	// Trading mode
@@ -252,11 +252,11 @@ func (NewMarket) IsProposalChange() {}
 // Allows creating new markets on the network
 type NewMarketInput struct {
 	// New market instrument configuration
-	Instrument *IntrumentConfigurationInput `json:"instrument"`
+	Instrument *InstrumentConfigurationInput `json:"instrument"`
 	// Decimal places used for the new market
 	DecimalPlaces int `json:"decimalPlaces"`
 	// New market risk configuration
-	Risk *RiskInput `json:"risk"`
+	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []*string `json:"metadata"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
@@ -334,20 +334,11 @@ type ProposalVote struct {
 	ProposalID string `json:"proposalID"`
 }
 
-type Risk struct {
-	Model RiskModelType `json:"model"`
+type RiskParametersInput struct {
 	// Simple risk model parameters. Set only if risk model is Simple
-	SimpleParameters *SimpleRiskModelParams `json:"simpleParameters"`
+	Simple *SimpleRiskModelParamsInput `json:"simple"`
 	// Log normal risk model parameters. Set only if risk model is LogNormal
-	LogNormalParameters *LogNormalRiskModel `json:"logNormalParameters"`
-}
-
-type RiskInput struct {
-	Model RiskModelType `json:"model"`
-	// Simple risk model parameters. Set only if risk model is Simple
-	SimpleParameters *SimpleRiskModelParamsInput `json:"simpleParameters"`
-	// Log normal risk model parameters. Set only if risk model is LogNormal
-	LogNormalParameters *LogNormalRiskModelInput `json:"logNormalParameters"`
+	LogNormal *LogNormalRiskModelInput `json:"logNormal"`
 }
 
 type ScalingFactors struct {
@@ -895,50 +886,6 @@ func (e *RejectionReason) UnmarshalGQL(v interface{}) error {
 }
 
 func (e RejectionReason) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-// Predefined risk models
-type RiskModelType string
-
-const (
-	// Simple risk model
-	RiskModelTypeSimple RiskModelType = "Simple"
-	// Log normal risk model
-	RiskModelTypeLogNormal RiskModelType = "LogNormal"
-)
-
-var AllRiskModelType = []RiskModelType{
-	RiskModelTypeSimple,
-	RiskModelTypeLogNormal,
-}
-
-func (e RiskModelType) IsValid() bool {
-	switch e {
-	case RiskModelTypeSimple, RiskModelTypeLogNormal:
-		return true
-	}
-	return false
-}
-
-func (e RiskModelType) String() string {
-	return string(e)
-}
-
-func (e *RiskModelType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RiskModelType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RiskModelType", str)
-	}
-	return nil
-}
-
-func (e RiskModelType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

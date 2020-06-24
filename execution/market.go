@@ -1533,12 +1533,12 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 
 func assignProduct(
 	parameters *governance.NetworkParameters,
-	source *types.IntrumentConfiguration,
+	source *types.InstrumentConfiguration,
 	target *types.Instrument,
 ) error {
 
 	switch product := source.Product.(type) {
-	case *types.IntrumentConfiguration_Future:
+	case *types.InstrumentConfiguration_Future:
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
 				Asset:    product.Future.Asset,
@@ -1576,7 +1576,7 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 
 func createInstrument(
 	parameters *governance.NetworkParameters,
-	input *types.IntrumentConfiguration,
+	input *types.InstrumentConfiguration,
 	tags []string,
 ) (*types.Instrument, error) {
 

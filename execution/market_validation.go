@@ -52,7 +52,7 @@ func validateFuture(timeSvc TimeService, future *types.FutureProduct) error {
 	return validateAsset(future.Asset)
 }
 
-func validateInstrument(timeSvc TimeService, instrument *types.IntrumentConfiguration) error {
+func validateInstrument(timeSvc TimeService, instrument *types.InstrumentConfiguration) error {
 	if instrument.BaseName == instrument.QuoteName {
 		return ErrInvalidSecurity
 	}
@@ -60,7 +60,7 @@ func validateInstrument(timeSvc TimeService, instrument *types.IntrumentConfigur
 	switch product := instrument.Product.(type) {
 	case nil:
 		return ErrNoProduct
-	case *types.IntrumentConfiguration_Future:
+	case *types.InstrumentConfiguration_Future:
 		return validateFuture(timeSvc, product.Future)
 	default:
 		return ErrProductInvalid

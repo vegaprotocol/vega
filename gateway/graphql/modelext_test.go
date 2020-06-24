@@ -455,7 +455,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("NewMarketInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.NewMarketInput{
-			Instrument: &gql.IntrumentConfigurationInput{
+			Instrument: &gql.InstrumentConfigurationInput{
 				Name:      "abcXyz",
 				Code:      "abccode",
 				BaseName:  "abc",
@@ -498,7 +498,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.NewMarketInput{
-			Instrument: &gql.IntrumentConfigurationInput{
+			Instrument: &gql.InstrumentConfigurationInput{
 				Code:      "abccode",
 				Name:      "abcXyz",
 				BaseName:  "abc",
@@ -538,12 +538,12 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("ProposalTermsFromProto valid data", func(t *testing.T) {
 		pm := &proto.NewMarketConfiguration{
-			Instrument: &proto.IntrumentConfiguration{
+			Instrument: &proto.InstrumentConfiguration{
 				Name:      "December 2020 ETH vs VUSD future",
 				Code:      "CRYPTO:ETHVUSD/DEC20",
 				BaseName:  "ETH",
 				QuoteName: "VUSD",
-				Product: &proto.IntrumentConfiguration_Future{
+				Product: &proto.InstrumentConfiguration_Future{
 					Future: &proto.FutureProduct{
 						Asset:    "VUSD",
 						Maturity: "2020-12-31T23:59:59Z",

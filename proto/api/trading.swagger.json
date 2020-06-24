@@ -1758,7 +1758,7 @@
       "default": "INTERVAL_UNSPECIFIED",
       "title": "- INTERVAL_UNSPECIFIED: Default value, always invalid\n - INTERVAL_I1M: 1 minute\n - INTERVAL_I5M: 5 minutes\n - INTERVAL_I15M: 15 minutes\n - INTERVAL_I1H: 1 hour\n - INTERVAL_I6H: 6 hours\n - INTERVAL_I1D: 1 day"
     },
-    "vegaIntrumentConfiguration": {
+    "vegaInstrumentConfiguration": {
       "type": "object",
       "properties": {
         "name": {
@@ -2030,7 +2030,7 @@
       "type": "object",
       "properties": {
         "instrument": {
-          "$ref": "#/definitions/vegaIntrumentConfiguration",
+          "$ref": "#/definitions/vegaInstrumentConfiguration",
           "title": "New market instrument configuration"
         },
         "simple": {

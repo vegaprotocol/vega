@@ -44,7 +44,7 @@ message FutureProduct {
   string asset = 2  [(validator.field) = {string_not_empty : true}];
 }
 
-message IntrumentConfiguration {
+message InstrumentConfiguration {
   // Instrument name
   string name = 1 [(validator.field) = {string_not_empty : true}];
   // Instrument code
@@ -63,7 +63,7 @@ message IntrumentConfiguration {
 
 message NewMarketConfiguration {
   // New market instrument configuration
-  IntrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
+  InstrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected

@@ -1088,14 +1088,6 @@ enum AccountType {
   General
 }
 
-"Predefined risk models"
-enum RiskModelType {
-  "Simple risk model"
-  Simple
-  "Log normal risk model"
-  LogNormal
-}
-
 input SimpleRiskModelParamsInput {
   "Risk factor for long"
   factorLong: Float!
@@ -1121,20 +1113,11 @@ input LogNormalRiskModelInput {
   params: LogNormalModelParamsInput!
 }
 
-input RiskInput {
-  model: RiskModelType!
+input RiskParametersInput {
   "Simple risk model parameters. Set only if risk model is Simple"
-  simpleParameters: SimpleRiskModelParamsInput
+  simple: SimpleRiskModelParamsInput
   "Log normal risk model parameters. Set only if risk model is LogNormal"
-  logNormalParameters: LogNormalRiskModelInput
-}
-
-type Risk {
-  model: RiskModelType!
-  "Simple risk model parameters. Set only if risk model is Simple"
-  simpleParameters: SimpleRiskModelParams
-  "Log normal risk model parameters. Set only if risk model is LogNormal"
-  logNormalParameters: LogNormalRiskModel
+  logNormal: LogNormalRiskModelInput
 }
 
 "Future product configuration"
@@ -1152,7 +1135,7 @@ type FutureProduct {
   asset: String!
 }
 
-input IntrumentConfigurationInput {
+input InstrumentConfigurationInput {
   "Full and fairly descriptive name for the instrument"
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
@@ -1165,7 +1148,7 @@ input IntrumentConfigurationInput {
   futureProduct: FutureProductInput
 }
 
-type IntrumentConfiguration {
+type InstrumentConfiguration {
   "Full and fairly descriptive name for the instrument"
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
@@ -1197,11 +1180,11 @@ Allows creating new markets on the network
 """
 input NewMarketInput {
   "New market instrument configuration"
-  instrument: IntrumentConfigurationInput!
+  instrument: InstrumentConfigurationInput!
   "Decimal places used for the new market"
   decimalPlaces: Int!
   "New market risk configuration"
-  risk: RiskInput!
+  riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String]!
 
@@ -1213,11 +1196,11 @@ input NewMarketInput {
 
 type NewMarket {
   "New market instrument configuration"
-  instrument: IntrumentConfiguration!
+  instrument: InstrumentConfiguration!
   "Decimal places used for the new market"
   decimalPlaces: Int!
   "New market risk configuration"
-  risk: Risk!
+  riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String]!
   "Trading mode"
