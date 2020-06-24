@@ -96,6 +96,8 @@ type NodeCommand struct {
 	partySub       *subscribers.PartySub
 	tradeSub       *subscribers.TradeSub
 	marginLevelSub *subscribers.MarginLevelSub
+	governanceSub  *subscribers.GovernanceDataSub
+	voteSub        *subscribers.VoteSub
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
@@ -107,8 +109,6 @@ type NodeCommand struct {
 	marginLevelsBuf *buffer.MarginLevels
 	settleBuf       *buffer.Settlement
 	lossSocBuf      *buffer.LossSocialization
-	proposalBuf     *buffer.Proposal
-	voteBuf         *buffer.Vote
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -148,8 +148,7 @@ type NodeCommand struct {
 	topology *validators.Topology
 
 	// plugins
-	settlePlugin     *plugins.Positions
-	governancePlugin *plugins.Governance
+	settlePlugin *plugins.Positions
 }
 
 // Init initialises the node command.

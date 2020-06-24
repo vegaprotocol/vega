@@ -104,6 +104,8 @@
 
 - [proto/governance.proto](#proto/governance.proto)
     - [GovernanceData](#vega.GovernanceData)
+    - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
+    - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
@@ -1735,6 +1737,40 @@
 | proposal | [Proposal](#vega.Proposal) |  | Proposal |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique) |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique) |
+
+
+
+
+
+
+<a name="vega.GovernanceData.NoPartyEntry"></a>
+
+### GovernanceData.NoPartyEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="vega.GovernanceData.YesPartyEntry"></a>
+
+### GovernanceData.YesPartyEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Vote](#vega.Vote) |  |  |
 
 
 

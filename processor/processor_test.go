@@ -22,17 +22,16 @@ import (
 
 type procTest struct {
 	*processor.Processor
-	eng         *mocks.MockExecutionEngine
-	ts          *mocks.MockTimeService
-	stat        *mocks.MockStats
-	tickCB      func(time.Time)
-	ctrl        *gomock.Controller
-	cmd         *mocks.MockCommander
-	wallet      *mocks.MockWallet
-	assets      *mocks.MockAssets
-	top         *mocks.MockValidatorTopology
-	gov         *mocks.MockGovernanceEngine
-	proposalBuf *mocks.MockProposalBuf
+	eng    *mocks.MockExecutionEngine
+	ts     *mocks.MockTimeService
+	stat   *mocks.MockStats
+	tickCB func(time.Time)
+	ctrl   *gomock.Controller
+	cmd    *mocks.MockCommander
+	wallet *mocks.MockWallet
+	assets *mocks.MockAssets
+	top    *mocks.MockValidatorTopology
+	gov    *mocks.MockGovernanceEngine
 }
 
 type stubWallet struct {
@@ -53,7 +52,6 @@ func getTestProcessor(t *testing.T) *procTest {
 	assets := mocks.NewMockAssets(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	gov := mocks.NewMockGovernanceEngine(ctrl)
-	proposalBuf := mocks.NewMockProposalBuf(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(time.Time)
@@ -63,21 +61,20 @@ func getTestProcessor(t *testing.T) *procTest {
 	wal := getTestStubWallet()
 	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
 
-	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, proposalBuf, true)
+	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, true)
 	assert.NoError(t, err)
 	return &procTest{
-		Processor:   proc,
-		eng:         eng,
-		ts:          ts,
-		stat:        stat,
-		tickCB:      cb,
-		ctrl:        ctrl,
-		cmd:         cmd,
-		wallet:      wallet,
-		assets:      assets,
-		top:         top,
-		gov:         gov,
-		proposalBuf: proposalBuf,
+		Processor: proc,
+		eng:       eng,
+		ts:        ts,
+		stat:      stat,
+		tickCB:    cb,
+		ctrl:      ctrl,
+		cmd:       cmd,
+		wallet:    wallet,
+		assets:    assets,
+		top:       top,
+		gov:       gov,
 	}
 }
 
@@ -115,8 +112,7 @@ func testOnTickEmpty(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
-	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return([]*types.Proposal{})
-	proc.proposalBuf.EXPECT().Flush().Times(1)
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).Times(1).Return([]*types.Proposal{})
 	proc.tickCB(time.Now())
 }
 
@@ -373,8 +369,8 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
 	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.gov.EXPECT().AddVote(gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
