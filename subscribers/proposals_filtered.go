@@ -62,9 +62,9 @@ func ProposalByReference(ref string) ProposalFilter {
 	}
 }
 
-func ProposalByChange(types ...ProposalType) ProposalFilter {
+func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 	return func(p types.Proposal) bool {
-		for _, t := range types {
+		for _, t := range ptypes {
 			switch t {
 			case NewMarketProposal:
 				if nm := p.Terms.GetNewMarket(); nm != nil {

@@ -57,6 +57,18 @@ type EventBus interface {
 	Unsubscribe(id int)
 }
 
+// GovernanceDataSub - the subscriber that will be aggregating all governance data, used in non-stream calls
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/vega/governance GovernanceDataSub
+type GovernanceDataSub interface {
+	Filter(uniqueVotes bool, filters ...subscribers.ProposalFilter) []*types.GovernanceData
+}
+
+// VoteSub - subscriber containing all votes, which we can filter out
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/vega/governance VoteSub
+type VoteSub interface {
+	Filter(filters ...subscribers.VoteFilter) []*types.Vote
+}
+
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
