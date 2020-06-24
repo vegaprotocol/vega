@@ -23,10 +23,10 @@ service trading {
   rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
 
   // Request balance increase
-  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+  // rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
 
   // Request withdrawal
-  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+  // rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
@@ -39,6 +39,17 @@ service trading {
 
   // Prepare a vote to be put on the chain (via SubmitTransaction)
   rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
+
+  // Get an aggregate of signature from all the node of the network
+  rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
+}
+
+message GetNodeSignaturesAggregateRequest {
+  string ID = 1;
+}
+
+message GetNodeSignaturesAggregateResponse {
+  repeated vega.NodeSignature signatures = 1;
 }
 
 message SubmitTransactionRequest {
@@ -49,21 +60,21 @@ message SubmitTransactionResponse {
   bool success = 1;
 }
 
-message WithdrawRequest {
-  vega.Withdraw withdraw = 1;
-}
+// message WithdrawRequest {
+//   vega.Withdraw withdraw = 1;
+// }
 
-message WithdrawResponse {
-  bool success = 1;
-}
+// message WithdrawResponse {
+//   bool success = 1;
+// }
 
-message NotifyTraderAccountRequest {
-  vega.NotifyTraderAccount notif = 1;
-}
+// message NotifyTraderAccountRequest {
+//   vega.NotifyTraderAccount notif = 1;
+// }
 
-message NotifyTraderAccountResponse {
-  bool submitted = 1;
-}
+// message NotifyTraderAccountResponse {
+//   bool submitted = 1;
+// }
 
 message PrepareSubmitOrderResponse {
   bytes blob = 1;
@@ -199,7 +210,7 @@ service trading_data {
 
   // Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
   rpc GetNetworkParametersProposals(GetNetworkParametersProposalsRequest) returns (GetNetworkParametersProposalsResponse);
-  
+
   // Get governance data (proposals and votes) for proposals aiming to create new assets
   rpc GetNewAssetProposals(GetNewAssetProposalsRequest) returns (GetNewAssetProposalsResponse);
 
@@ -211,7 +222,7 @@ service trading_data {
 
   // Subscribe to a stream of all governance updates
   rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
-  
+
   // Subscribe to a stream of proposal updates
   rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.GovernanceData);
 
@@ -611,7 +622,7 @@ message PrepareVoteResponse {
 
 message OrderByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
-  
+
   // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 2;
 }
