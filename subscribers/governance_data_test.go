@@ -182,7 +182,9 @@ func testNoFilterVotes(t *testing.T) {
 	}
 	assert.Equal(t, len(parties), len(raw))
 	assert.Equal(t, len(parties), len(last))
-	no := last[len(last)-1]
+	// no := last[len(last)-1]
+	special := sub.Filter(true, subscribers.ProposalByID(props[len(props)-1]))
+	no := special[0]
 	assert.Empty(t, no.Yes)
 	assert.NotEmpty(t, no.No)
 }
