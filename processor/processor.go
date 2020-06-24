@@ -58,10 +58,10 @@ type ExecutionEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	SubmitProposal(types.Proposal) error
-	AddVote(types.Vote) error
+	SubmitProposal(context.Context, types.Proposal) error
+	AddVote(context.Context, types.Vote) error
 	AddNodeVote(*types.NodeVote) error
-	OnChainTimeUpdate(time.Time) []*types.Proposal
+	OnChainTimeUpdate(context.Context, time.Time) []*types.Proposal
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -481,13 +481,13 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 		if err != nil {
 			return err
 		}
-		return p.SubmitProposal(proposal)
+		return p.SubmitProposal(ctx, proposal)
 	case blockchain.VoteCommand:
 		vote, err := p.getVoteSubmission(data)
 		if err != nil {
 			return err
 		}
-		return p.VoteOnProposal(vote)
+		return p.VoteOnProposal(ctx, vote)
 	case blockchain.RegisterNodeCommand:
 		node, err := p.getNodeRegistration(data)
 		if err != nil {
@@ -632,7 +632,7 @@ func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
 }
 
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
-func (p *Processor) SubmitProposal(proposal *types.Proposal) error {
+func (p *Processor) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Submitting proposal",
 			logging.String("proposal-id", proposal.ID),
@@ -643,11 +643,11 @@ func (p *Processor) SubmitProposal(proposal *types.Proposal) error {
 	// TODO(JEREMY): use hash of the signature here.
 	p.idgen.SetProposalID(proposal)
 	proposal.Timestamp = p.currentTimestamp.UnixNano()
-	return p.gov.SubmitProposal(*proposal)
+	return p.gov.SubmitProposal(ctx, *proposal)
 }
 
 // VoteOnProposal sends proposal vote to governance engine
-func (p *Processor) VoteOnProposal(vote *types.Vote) error {
+func (p *Processor) VoteOnProposal(ctx context.Context, vote *types.Vote) error {
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("Voting on proposal",
 			logging.String("proposal-id", vote.ProposalID),
@@ -655,14 +655,14 @@ func (p *Processor) VoteOnProposal(vote *types.Vote) error {
 			logging.String("vote-value", vote.Value.String()))
 	}
 	vote.Timestamp = p.currentTimestamp.UnixNano()
-	return p.gov.AddVote(*vote)
+	return p.gov.AddVote(ctx, *vote)
 }
 
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
 	ctx := context.TODO()
 	p.idgen.NewBatch()
-	acceptedProposals := p.gov.OnChainTimeUpdate(t)
+	acceptedProposals := p.gov.OnChainTimeUpdate(ctx, t)
 	for _, proposal := range acceptedProposals {
 		if err := p.exec.EnactProposal(proposal); err != nil {
 			proposal.State = types.Proposal_STATE_FAILED

@@ -131,8 +131,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
-	ctx := context.TODO()
+func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*types.Proposal {
 	e.currentTime = t
 	var toBeEnacted []*types.Proposal
 	if len(e.activeProposals) > 0 {
@@ -143,7 +142,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 
 		for id, proposal := range e.activeProposals {
 			if proposal.Terms.ClosingTimestamp < now {
-				e.closeProposal(proposal, counter, totalStake)
+				e.closeProposal(ctx, proposal, counter, totalStake)
 			}
 
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
@@ -177,8 +176,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
-func (e *Engine) SubmitProposal(p types.Proposal) error {
-	ctx := context.TODO()
+func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal) error {
 	if _, exists := e.activeProposals[p.ID]; exists {
 		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}
@@ -258,8 +256,7 @@ func (e *Engine) AddNodeVote(v *types.NodeVote) error {
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(vote types.Vote) error {
-	ctx := context.TODO()
+func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 	proposal, err := e.validateVote(vote)
 	if err != nil {
 		return err
@@ -303,8 +300,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 }
 
 // sets proposal in either declined or passed state
-func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, totalStake uint64) error {
-	ctx := context.TODO()
+func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, counter *stakeCounter, totalStake uint64) error {
 	if proposal.State == types.Proposal_STATE_OPEN {
 		proposal.State = types.Proposal_STATE_DECLINED // declined unless passed
 

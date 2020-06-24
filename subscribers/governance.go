@@ -42,7 +42,7 @@ type GovernanceSub struct {
 	combined []*types.GovernanceData
 	byPID    map[string]*types.GovernanceData
 	changed  map[string]types.GovernanceData
-	mu       sync.Mutex
+	mu       *sync.Mutex
 }
 
 // Governance - vararg to set governance filters
@@ -75,6 +75,7 @@ func NewGovernanceSub(ctx context.Context, filters ...Filter) *GovernanceSub {
 		combined: []*types.GovernanceData{},
 		changed:  map[string]types.GovernanceData{},
 		byPID:    map[string]*types.GovernanceData{},
+		mu:       &sync.Mutex{},
 	}
 	for _, f := range filters {
 		f(&g)

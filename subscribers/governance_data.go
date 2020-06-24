@@ -10,7 +10,7 @@ import (
 
 type GovernanceDataSub struct {
 	*Base
-	mu        sync.Mutex
+	mu        *sync.Mutex
 	proposals map[string]types.Proposal
 	byPID     map[string]*types.GovernanceData
 	all       []*types.GovernanceData
@@ -19,6 +19,7 @@ type GovernanceDataSub struct {
 func NewGovernanceDataSub(ctx context.Context) *GovernanceDataSub {
 	gd := &GovernanceDataSub{
 		Base:      newBase(ctx, 10),
+		mu:        &sync.Mutex{},
 		proposals: map[string]types.Proposal{},
 		byPID:     map[string]*types.GovernanceData{},
 		all:       []*types.GovernanceData{},
@@ -33,6 +34,7 @@ func (g *GovernanceDataSub) loop(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			g.Halt()
+			return
 		case e := <-g.ch:
 			if g.isRunning() {
 				g.Push(e)

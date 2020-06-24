@@ -10,7 +10,7 @@ import (
 
 type VoteSub struct {
 	*Base
-	mu      sync.Mutex
+	mu      *sync.Mutex
 	all     []types.Vote
 	filters []VoteFilter
 	stream  bool
@@ -38,6 +38,7 @@ func VoteByProposalID(id string) VoteFilter {
 func NewVoteSub(ctx context.Context, stream bool, filters ...VoteFilter) *VoteSub {
 	v := &VoteSub{
 		Base:    newBase(ctx, 10),
+		mu:      &sync.Mutex{},
 		all:     []types.Vote{},
 		filters: filters,
 		stream:  stream,

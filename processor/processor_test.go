@@ -112,7 +112,7 @@ func testOnTickEmpty(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
-	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return([]*types.Proposal{})
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).Times(1).Return([]*types.Proposal{})
 	proc.tickCB(time.Now())
 }
 
@@ -369,8 +369,8 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
 	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.gov.EXPECT().AddVote(gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
