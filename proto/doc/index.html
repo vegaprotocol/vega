@@ -227,6 +227,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetNodeSignaturesAggregateRequest"><span class="badge">M</span>GetNodeSignaturesAggregateRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNodeSignaturesAggregateResponse"><span class="badge">M</span>GetNodeSignaturesAggregateResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -1304,6 +1312,54 @@
                 <tr>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>signatures</td>
+                  <td><a href="#vega.NodeSignature">vega.NodeSignature</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -4144,6 +4200,13 @@
                 <td><a href="#api.PrepareVoteRequest">PrepareVoteRequest</a></td>
                 <td><a href="#api.PrepareVoteResponse">PrepareVoteResponse</a></td>
                 <td><p>Prepare a vote to be put on the chain (via SubmitTransaction)</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNodeSignaturesAggregate</td>
+                <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
+                <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
+                <td><p>Get an aggregate of signature from all the node of the network</p></td>
               </tr>
 
           </tbody>
