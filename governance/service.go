@@ -217,7 +217,7 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types
 
 func (s *Svc) ObservePartyProposalsSub(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData {
 	ctx, cfunc := context.WithCancel(ctx)
-	sub := subscribers.NewGovernanceSub(ctx, subscribers.Proposals(subscribers.ByPartyID(partyID)))
+	sub := subscribers.NewGovernanceSub(ctx, subscribers.Proposals(subscribers.ProposalByPartyID(partyID)))
 	out := make(chan []types.GovernanceData)
 	id := s.bus.Subscribe(sub, true)
 	go func() {
@@ -267,6 +267,40 @@ func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID st
 	return output
 }
 
+func (s *Svc) ObservePartyVotesSub(ctx context.Context, retries int, partyID string) <-chan []types.Vote {
+	out := make(chan []types.Vote)
+	// new subscriber, in "stream mode" (changes only), filtered by party ID
+	sub := subscribers.NewVoteSub(ctx, true, subscribers.VoteByPartyID(partyID))
+	id := s.bus.Subscribe(sub, true)
+	ctx, cfunc := context.WithCancel(ctx)
+	go func() {
+		defer func() {
+			s.bus.Unsubscribe(id)
+			close(out)
+			cfunc()
+		}()
+		ret := retries
+		for {
+			data := sub.GetData()
+			if len(data) == 0 {
+				continue
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case out <- data:
+				ret = retries
+			default:
+				if ret == 0 {
+					return
+				}
+				ret--
+			}
+		}
+	}()
+	return out
+}
+
 // ObservePartyVotes streams votes cast by the specific party
 func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []types.Vote {
 	var cancelContext func()
@@ -283,6 +317,40 @@ func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string
 		streamVotes(ctx, retries, input, output, s.log)
 	}()
 	return output
+}
+
+func (s *Svc) ObserveProposalVotesSub(ctx context.Context, retries int, proposalID string) <-chan []types.Vote {
+	out := make(chan []types.Vote)
+	// new subscriber, in "stream mode" (changes only), filtered by proposal ID
+	sub := subscribers.NewVoteSub(ctx, true, subscribers.VoteByProposalID(proposalID))
+	id := s.bus.Subscribe(sub, true)
+	ctx, cfunc := context.WithCancel(ctx)
+	go func() {
+		defer func() {
+			s.bus.Unsubscribe(id)
+			close(out)
+			cfunc()
+		}()
+		ret := retries
+		for {
+			data := sub.GetData()
+			if len(data) == 0 {
+				continue
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case out <- data:
+				ret = retries
+			default:
+				if ret == 0 {
+					return
+				}
+				ret--
+			}
+		}
+	}()
+	return out
 }
 
 // ObserveProposalVotes streams votes cast for/against specific proposal

@@ -14,7 +14,7 @@ type ProposalFilteredSub struct {
 }
 
 // ByProposalID - filter proposal events by proposal ID
-func ByProposalID(id string) ProposalFilter {
+func ProposalByID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
 		if p.ID == id {
 			return true
@@ -23,8 +23,8 @@ func ByProposalID(id string) ProposalFilter {
 	}
 }
 
-// ByPartyID - filter proposals by partyID
-func ByPartyID(id string) ProposalFilter {
+// ProposalByPartyID - filter proposals submitted by given party
+func ProposalByPartyID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
 		if p.PartyID == id {
 			return true
@@ -33,8 +33,8 @@ func ByPartyID(id string) ProposalFilter {
 	}
 }
 
-// ByState - filter events given proposal state
-func ByState(s types.Proposal_State) ProposalFilter {
+// ProposalByState - filter proposals by state
+func ProposalByState(s types.Proposal_State) ProposalFilter {
 	return func(p types.Proposal) bool {
 		if p.State == s {
 			return true

@@ -14,8 +14,9 @@ type PropE interface {
 
 type ProposalSub struct {
 	*Base
-	all  []types.Proposal
-	byID map[string]types.Proposal
+	all         []*types.Proposal
+	byID        map[string]*types.Proposal
+	byReference map[string]*types.Proposal
 }
 
 func NewProposalSub(ctx context.Context) *ProposalSub {
