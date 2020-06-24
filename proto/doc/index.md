@@ -16,6 +16,8 @@
     - [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse)
     - [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest)
     - [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse)
+    - [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest)
+    - [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByIDResponse](#api.GetProposalByIDResponse)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
@@ -377,6 +379,36 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateRequest"></a>
+
+### GetNodeSignaturesAggregateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateResponse"></a>
+
+### GetNodeSignaturesAggregateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| signatures | [vega.NodeSignature](#vega.NodeSignature) | repeated |  |
 
 
 
@@ -1559,6 +1591,7 @@
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
 
 
 <a name="api.trading_data"></a>
