@@ -19,10 +19,10 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
-	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -41,6 +41,18 @@ import (
 type GRPCServer interface {
 	Start()
 	Stop()
+}
+
+type govStub struct{}
+
+type voteStub struct{}
+
+func (g govStub) Filter(_ bool, filters ...subscribers.ProposalFilter) []*types.GovernanceData {
+	return nil
+}
+
+func (v voteStub) Filter(filters ...subscribers.VoteFilter) []*types.Vote {
+	return nil
 }
 
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
@@ -216,10 +228,10 @@ func getTestGRPCServer(
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
 	// stub...
-	governancePlugin := plugins.NewGovernance(nil, nil)
+	gov, vote := govStub{}, voteStub{}
 	broker := broker.New(ctx)
 
-	governanceService := governance.NewService(logger, conf.Governance, governancePlugin, broker)
+	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
 
 	g = api.NewGRPCServer(
 		logger,
