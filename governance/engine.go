@@ -51,20 +51,6 @@ type Accounts interface {
 	GetTotalTokens() uint64
 }
 
-// Buffer ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance Buffer
-type Buffer interface {
-	Add(types.Proposal)
-	Flush()
-}
-
-// VoteBuf...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buffer_mock.go -package mocks code.vegaprotocol.io/vega/governance VoteBuf
-type VoteBuf interface {
-	Add(types.Vote)
-	Flush()
-}
-
 // ValidatorTopology...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/governance ValidatorTopology
 type ValidatorTopology interface {
@@ -94,8 +80,6 @@ type Engine struct {
 	mu                     sync.Mutex
 	log                    *logging.Logger
 	accs                   Accounts
-	buf                    Buffer
-	vbuf                   VoteBuf
 	currentTime            time.Time
 	activeProposals        map[string]*proposalData
 	networkParams          NetworkParameters
@@ -110,7 +94,7 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, buf Buffer, vbuf VoteBuf, broker Broker, top ValidatorTopology, wallet Wallet, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, wallet Wallet, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
 	nodeValidation, err := NewNodeValidation(log, top, wallet, cmd, assets, now, isValidator)
@@ -121,8 +105,6 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 	return &Engine{
 		Config:                 cfg,
 		accs:                   accs,
-		buf:                    buf,
-		vbuf:                   vbuf,
 		log:                    log,
 		currentTime:            now,
 		activeProposals:        map[string]*proposalData{},
@@ -180,7 +162,6 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 			logging.String("proposal-id", p.ID))
 		p.State = types.Proposal_STATE_OPEN
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
-		e.buf.Add(*p)
 		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
 	}
 	for _, p := range rejected {
@@ -188,12 +169,9 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 			logging.String("proposal-id", p.ID))
 		p.State = types.Proposal_STATE_REJECTED
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
-		e.buf.Add(*p)
 	}
 
 	// flush here for now
-	e.buf.Flush()
-	e.vbuf.Flush()
 	return toBeEnacted
 }
 
@@ -218,7 +196,6 @@ func (e *Engine) SubmitProposal(p types.Proposal) error {
 			}
 		}
 		e.broker.Send(events.NewProposalEvent(ctx, p))
-		e.buf.Add(p)
 		return err
 	}
 	return ErrProposalInvalidState
@@ -297,7 +274,6 @@ func (e *Engine) AddVote(vote types.Vote) error {
 		proposal.no[vote.PartyID] = &vote
 	}
 	e.broker.Send(events.NewVoteEvent(ctx, vote))
-	e.vbuf.Add(vote)
 	return nil
 }
 
@@ -361,7 +337,6 @@ func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, to
 			)
 		}
 		e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-		e.buf.Add(*proposal.Proposal)
 	}
 	return nil
 }

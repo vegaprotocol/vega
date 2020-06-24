@@ -21,8 +21,6 @@ type tstEngine struct {
 	*governance.Engine
 	ctrl            *gomock.Controller
 	accs            *mocks.MockAccounts
-	buf             *mocks.MockBuffer
-	vbuf            *mocks.MockVoteBuf
 	broker          *mocks.MockBroker
 	top             *mocks.MockValidatorTopology
 	wal             *mocks.MockWallet
@@ -57,7 +55,6 @@ func testSubmitValidProposal(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(eng.newOpenProposal(party.Id, time.Now()))
 	assert.NoError(t, err)
 }
@@ -113,7 +110,6 @@ func testProposalState(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.SubmitProposal(eng.newOpenProposal(party.Id, time.Now()))
 	assert.NoError(t, err)
 }
@@ -133,7 +129,6 @@ func testProposalDuplicate(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 
 	original := eng.newOpenProposal(party.Id, time.Now())
 	err := eng.SubmitProposal(original)
@@ -168,7 +163,6 @@ func testProposerStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, noAccountPartyID, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(eng.newOpenProposal(noAccountPartyID, time.Now()))
 	assert.Error(t, err)
 	assert.EqualError(t, err, notFoundError.Error())
@@ -182,7 +176,6 @@ func testProposerStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, emptyParty.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.SubmitProposal(eng.newOpenProposal(emptyParty.Id, time.Now()))
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalInsufficientTokens.Error())
@@ -197,7 +190,6 @@ func testProposerStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, poshParty.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.SubmitProposal(eng.newOpenProposal(poshParty.Id, time.Now()))
 	assert.NoError(t, err)
 }
@@ -215,7 +207,6 @@ func testClosingTime(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
 
 	now := time.Now()
 	tooEarly := eng.newOpenProposal(party.Id, now)
@@ -239,7 +230,6 @@ func testClosingTime(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.SubmitProposal(eng.newOpenProposal(party.Id, now))
 	assert.NoError(t, err)
 }
@@ -257,7 +247,6 @@ func testEnactmentTime(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
 
 	now := time.Now()
 	beforeClosingTime := eng.newOpenProposal(party.Id, now)
@@ -283,7 +272,6 @@ func testEnactmentTime(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.SubmitProposal(atClosingTime)
 }
 
@@ -321,7 +309,6 @@ func testVoteProposalID(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, emptyProposer.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	rejectedProposal := eng.newOpenProposal(emptyProposer.Id, time.Now())
 	err = eng.SubmitProposal(rejectedProposal)
 	assert.Error(t, err)
@@ -342,7 +329,6 @@ func testVoteProposalID(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, goodProposer.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	openProposal := eng.newOpenProposal(goodProposer.Id, time.Now())
 	err = eng.SubmitProposal(openProposal)
 	assert.NoError(t, err)
@@ -354,7 +340,6 @@ func testVoteProposalID(t *testing.T) {
 		assert.Equal(t, openProposal.ID, vote.ProposalID)
 		assert.Equal(t, voter.Id, vote.PartyID)
 	})
-	eng.vbuf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.AddVote(types.Vote{
 		PartyID:    voter.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
@@ -378,7 +363,6 @@ func testVoterStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, proposer.Id, p.PartyID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(openProposal)
 	assert.NoError(t, err)
 
@@ -410,7 +394,6 @@ func testVoterStake(t *testing.T) {
 		assert.Equal(t, openProposal.ID, vote.ProposalID)
 		assert.Equal(t, validAccount.Id, vote.PartyID)
 	})
-	eng.vbuf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.AddVote(types.Vote{
 		PartyID:    validAccount.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
@@ -435,7 +418,6 @@ func testVotingDeclinedProposal(t *testing.T) {
 		assert.Equal(t, proposer.Id, p.PartyID)
 		assert.Equal(t, declined.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(declined)
 	assert.NoError(t, err)
 
@@ -446,7 +428,6 @@ func testVotingDeclinedProposal(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, declined.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	afterClose := time.Unix(declined.Terms.ClosingTimestamp, 0).Add(time.Hour)
 	accepted := eng.OnChainTimeUpdate(afterClose)
 	assert.Empty(t, accepted) // nothing was accepted
@@ -477,7 +458,6 @@ func testVotingPassedProposal(t *testing.T) {
 		assert.Equal(t, proposer.Id, p.PartyID)
 		assert.Equal(t, passed.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(passed)
 	assert.NoError(t, err)
 
@@ -490,7 +470,6 @@ func testVotingPassedProposal(t *testing.T) {
 		assert.Equal(t, passed.ID, vote.ProposalID)
 		assert.Equal(t, voter1.Id, vote.PartyID)
 	})
-	eng.vbuf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.AddVote(types.Vote{
 		PartyID:    voter1.Id,
 		Value:      types.Vote_VALUE_YES, // matters!
@@ -506,7 +485,6 @@ func testVotingPassedProposal(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
 		assert.Equal(t, passed.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	eng.OnChainTimeUpdate(afterClosing)
 
 	voter2 := eng.makeValidPartyTimes("voter2", 1, 0)
@@ -552,7 +530,6 @@ func testProposalDeclined(t *testing.T) {
 		assert.Equal(t, proposer.Id, p.PartyID)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(proposal)
 	assert.NoError(t, err)
 
@@ -563,7 +540,6 @@ func testProposalDeclined(t *testing.T) {
 		assert.Equal(t, proposal.ID, vote.ProposalID)
 		assert.Equal(t, voter.Id, vote.PartyID)
 	})
-	eng.vbuf.EXPECT().Add(gomock.Any()).Times(2)
 	err = eng.AddVote(types.Vote{
 		PartyID:    voter.Id,
 		Value:      types.Vote_VALUE_YES, // matters!
@@ -586,7 +562,6 @@ func testProposalDeclined(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	eng.OnChainTimeUpdate(afterClosing)
 
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
@@ -612,7 +587,6 @@ func testProposalPassed(t *testing.T) {
 		assert.Equal(t, proposerVoter.Id, p.PartyID)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	err := eng.SubmitProposal(proposal)
 	assert.NoError(t, err)
 
@@ -623,7 +597,6 @@ func testProposalPassed(t *testing.T) {
 		assert.Equal(t, proposal.ID, vote.ProposalID)
 		assert.Equal(t, proposerVoter.Id, vote.PartyID)
 	})
-	eng.vbuf.EXPECT().Add(gomock.Any()).Times(1)
 	err = eng.AddVote(types.Vote{
 		PartyID:    proposerVoter.Id,
 		Value:      types.Vote_VALUE_YES, // matters!
@@ -639,7 +612,6 @@ func testProposalPassed(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(1)
 	eng.OnChainTimeUpdate(afterClosing)
 
 	modified := proposal
@@ -693,7 +665,6 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			p := pe.Proposal()
 			assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		})
-		eng.buf.EXPECT().Add(gomock.Any()).Times(2)
 		toBePassed := eng.newOpenProposal(partyA, now)
 		err := eng.SubmitProposal(toBePassed)
 		assert.NoError(t, err)
@@ -720,7 +691,6 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			vote := ve.Vote()
 			assert.Equal(t, id, vote.ProposalID)
 		})
-		eng.vbuf.EXPECT().Add(gomock.Any()).Times(2)
 		err := eng.AddVote(types.Vote{
 			PartyID:    partyA,
 			Value:      types.Vote_VALUE_YES, // matters!
@@ -741,7 +711,6 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			vote := ve.Vote()
 			assert.Equal(t, id, vote.ProposalID)
 		})
-		eng.vbuf.EXPECT().Add(gomock.Any()).Times(2)
 		err := eng.AddVote(types.Vote{
 			PartyID:    partyA,
 			Value:      types.Vote_VALUE_NO, // matters!
@@ -773,7 +742,6 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			assert.FailNow(t, "unexpected proposal state")
 		}
 	})
-	eng.buf.EXPECT().Add(gomock.Any()).Times(howMany * 2)
 	eng.OnChainTimeUpdate(afterClosing)
 	assert.Equal(t, howMany, howManyPassed)
 	assert.Equal(t, howMany, howManyDeclined)
@@ -790,8 +758,6 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	cfg := governance.NewDefaultConfig()
 	accs := mocks.NewMockAccounts(ctrl)
-	buf := mocks.NewMockBuffer(ctrl)
-	vbuf := mocks.NewMockVoteBuf(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	wal := mocks.NewMockWallet(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
@@ -802,18 +768,14 @@ func getTestEngine(t *testing.T) *tstEngine {
 		chain: "vega",
 	}, true)
 
-	buf.EXPECT().Flush().AnyTimes()
-	vbuf.EXPECT().Flush().AnyTimes()
 	log := logging.NewTestLogger()
-	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, buf, vbuf, broker, top, wal, cmd, assets, time.Now(), true) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, top, wal, cmd, assets, time.Now(), true) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
 		Engine: eng,
 		ctrl:   ctrl,
 		accs:   accs,
-		buf:    buf,
-		vbuf:   vbuf,
 		broker: broker,
 		cmd:    cmd,
 		assets: assets,

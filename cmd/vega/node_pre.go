@@ -274,8 +274,6 @@ func (l *NodeCommand) setupBuffers() {
 	l.marginLevelsBuf.Register(l.riskStore)
 	l.settleBuf = buffer.NewSettlement()
 	l.lossSocBuf = buffer.NewLossSocialization()
-	l.proposalBuf = buffer.NewProposal()
-	l.voteBuf = buffer.NewVote()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -373,7 +371,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.topology = validators.NewTopology(l.Log, nil)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.proposalBuf, l.voteBuf, l.broker, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
@@ -381,7 +379,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.proposalBuf, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, !l.noStores)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
@@ -110,11 +111,10 @@ type ValidatorTopology interface {
 	Len() int
 }
 
-// ProposalBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buffer_mock.go -package mocks code.vegaprotocol.io/vega/processor ProposalBuf
-type ProposalBuf interface {
-	Add(types.Proposal)
-	Flush()
+// Broker - the event bus
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/processor Broker
+type Broker interface {
+	Send(e events.Event)
 }
 
 type nodeProposal struct {
@@ -146,11 +146,11 @@ type Processor struct {
 	previousTimestamp time.Time
 	top               ValidatorTopology
 	idgen             *IDgenerator
-	proposalBuf       ProposalBuf
+	broker            Broker
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, proposalBuf ProposalBuf, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -173,7 +173,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		isValidator: isValidator,
 		vegaWallet:  vegaWallet,
 		gov:         gov,
-		proposalBuf: proposalBuf,
+		broker:      broker,
 		idgen:       NewIDGen(),
 	}
 	ts.NotifyOnTick(p.onTick)
@@ -660,6 +660,7 @@ func (p *Processor) VoteOnProposal(vote *types.Vote) error {
 
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
+	ctx := context.TODO()
 	p.idgen.NewBatch()
 	acceptedProposals := p.gov.OnChainTimeUpdate(t)
 	for _, proposal := range acceptedProposals {
@@ -669,8 +670,6 @@ func (p *Processor) onTick(t time.Time) {
 				logging.String("proposal-id", proposal.ID),
 				logging.Error(err))
 		}
-		p.proposalBuf.Add(*proposal)
+		p.broker.Send(events.NewProposalEvent(ctx, *proposal))
 	}
-	// governance flush
-	p.proposalBuf.Flush()
 }
