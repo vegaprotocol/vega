@@ -77,7 +77,7 @@ func (n *Notary) GetByID(id string) ([]types.NodeSignature, error) {
 	return nil, ErrNoSignaturesForID
 }
 
-func (t *Notary) Types() []events.Type {
+func (n *Notary) Types() []events.Type {
 	return []events.Type{
 		events.NodeSignatureEvent,
 	}
