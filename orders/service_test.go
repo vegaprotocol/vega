@@ -102,7 +102,6 @@ func testPrepareOrderSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	// ensure the blockchain client is not called
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
@@ -119,7 +118,6 @@ func testPrepareOrderRefSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	// ensure the blockchain client is not called
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
@@ -136,7 +134,6 @@ func testOrderSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
 }
@@ -167,7 +164,6 @@ func testCreateOrderFailNetworkOrderType(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.EqualError(t, err, orders.ErrUnAuthorizedOrderType.Error())
 }

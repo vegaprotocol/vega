@@ -191,6 +191,8 @@ func (this *GovernanceData) Validate() error {
 			}
 		}
 	}
+	// Validation of proto3 map<> fields is unsupported.
+	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
 func (this *Proposal) Validate() error {

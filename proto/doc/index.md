@@ -112,6 +112,8 @@
 - [proto/governance.proto](#proto/governance.proto)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
+    - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
+    - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
     - [InstrumentConfiguration](#vega.InstrumentConfiguration)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
@@ -1771,6 +1773,40 @@ Future product configuration
 | proposal | [Proposal](#vega.Proposal) |  | Proposal |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique) |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique) |
+
+
+
+
+
+
+<a name="vega.GovernanceData.NoPartyEntry"></a>
+
+### GovernanceData.NoPartyEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="vega.GovernanceData.YesPartyEntry"></a>
+
+### GovernanceData.YesPartyEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Vote](#vega.Vote) |  |  |
 
 
 
@@ -2513,8 +2549,8 @@ Proposal can enter Failed state from any other state.
 | remaining | [uint64](#uint64) |  |  |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
-| createdAt | [int64](#int64) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  | If `status` is `Rejected`, check `reason`. |
+| createdAt | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| status | [Order.Status](#vega.Order.Status) |  | If `status` is `STATUS_REJECTED`, check `reason`. |
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
@@ -3010,18 +3046,20 @@ Proposal can enter Failed state from any other state.
 <a name="vega.Order.Status"></a>
 
 ### Order.Status
+Order Status
 
+See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| STATUS_INVALID | 0 |  |
-| STATUS_ACTIVE | 1 |  |
-| STATUS_EXPIRED | 2 |  |
-| STATUS_CANCELLED | 3 |  |
-| STATUS_STOPPED | 4 |  |
-| STATUS_FILLED | 5 |  |
-| STATUS_REJECTED | 6 |  |
-| STATUS_PARTIALLY_FILLED | 7 |  |
+| STATUS_INVALID | 0 | Default value, always invalid |
+| STATUS_ACTIVE | 1 | used for active unfilled or partially filled orders |
+| STATUS_EXPIRED | 2 | used for expired GTT orders |
+| STATUS_CANCELLED | 3 | used for orders cancelled by the party that created the order |
+| STATUS_STOPPED | 4 | used for unfilled FOK or IOC orders, and for orders that were stopped by the network |
+| STATUS_FILLED | 5 | used for closed fully filled orders |
+| STATUS_REJECTED | 6 | used for orders when not enough collateral was available to fill the margin requirements |
+| STATUS_PARTIALLY_FILLED | 7 | used for closed partially filled IOC orders |
 
 
 
@@ -3029,6 +3067,8 @@ Proposal can enter Failed state from any other state.
 
 ### Order.TimeInForce
 Order Time in Force
+
+See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |

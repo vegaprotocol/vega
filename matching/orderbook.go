@@ -330,7 +330,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// if we did hit a wash trade, set the status to stopped
 	if err != nil && err == ErrWashTrade {
-		order.Status = types.Order_STATUS_STOPPED
+		order.Status = types.Order_STATUS_REJECTED
 	}
 
 	if order.Status == types.Order_STATUS_ACTIVE {

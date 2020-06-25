@@ -49,6 +49,8 @@ var (
 	ErrEmptyMarketID = errors.New("invalid market id (empty)")
 	// ErrInvalidOrderType is returned if processed order has an invalid order type
 	ErrInvalidOrderType = errors.New("invalid order type")
+	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
+	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
 
 	networkPartyID = "network"
 )
@@ -349,6 +351,14 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	m.idgen.SetID(order)
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
+
+	// Check the expiry time is valid
+	if order.ExpiresAt > 0 && order.ExpiresAt < order.CreatedAt {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidExpiresAtTime
+	}
 
 	if m.closed {
 		// adding order to the buffer first

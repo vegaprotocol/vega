@@ -262,7 +262,7 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			Price:       uint64(price),
 			Size:        uint64(vol),
 			Remaining:   uint64(vol),
-			ExpiresAt:   tomorrow.Unix(),
+			ExpiresAt:   tomorrow.UnixNano(),
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),

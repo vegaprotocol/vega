@@ -124,6 +124,12 @@ message GovernanceData {
   repeated Vote yes = 2;
   // All "no" votes against the proposal above.
   repeated Vote no = 3;
+
+  // All latest YES votes by party (guaranteed to be unique)
+  map<string, Vote> yesParty = 4;
+
+  // All latest NO votes by party (unique)
+  map<string, Vote> noParty = 5;
 }
 
 message Proposal {
