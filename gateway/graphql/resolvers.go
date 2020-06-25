@@ -109,6 +109,7 @@ type TradingDataClient interface {
 	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyProposalsClient, error)
 	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyVotesClient, error)
 	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveProposalVotesClient, error)
+	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -216,9 +217,29 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*myProposalResolver)(r)
 }
 
+// NodeSignature ...
+func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
+	return (*myNodeSignatureResolver)(r)
+}
+
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*types.NodeSignature, error) {
+	if len(resourceID) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+
+	req := &protoapi.GetNodeSignaturesAggregateRequest{
+		ID: resourceID,
+	}
+	res, err := r.tradingDataClient.GetNodeSignaturesAggregate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Signatures, nil
+}
 
 func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, error) {
 	if id != nil {
@@ -598,6 +619,21 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID
 }
 
 // END: Market Resolver
+
+type myNodeSignatureResolver VegaResolverRoot
+
+func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *types.NodeSignature) (*string, error) {
+	sig := base64.StdEncoding.EncodeToString(obj.Sig)
+	return &sig, nil
+}
+
+func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *types.NodeSignature) (*NodeSignatureKind, error) {
+	kind, err := convertNodeSignatureKindFromProto(obj.Kind)
+	if err != nil {
+		return nil, err
+	}
+	return &kind, nil
+}
 
 // BEGIN: Party Resolver
 

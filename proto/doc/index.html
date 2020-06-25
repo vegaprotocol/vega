@@ -4202,13 +4202,6 @@
                 <td><p>Prepare a vote to be put on the chain (via SubmitTransaction)</p></td>
               </tr>
 
-              <tr>
-                <td>GetNodeSignaturesAggregate</td>
-                <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
-                <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
-                <td><p>Get an aggregate of signature from all the node of the network</p></td>
-              </tr>
-
           </tbody>
         </table>
 
@@ -4548,6 +4541,13 @@
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
                 <td><a href="#vega.TransferResponse">.vega.TransferResponse</a> stream</td>
                 <td><p>Subscribe to a stream of Transfer Responses</p></td>
+              </tr>
+
+              <tr>
+                <td>GetNodeSignaturesAggregate</td>
+                <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
+                <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
+                <td><p>Get an aggregate of signature from all the node of the network</p></td>
               </tr>
 
           </tbody>
@@ -8420,14 +8420,20 @@ after each successful amend </p></td>
           <tbody>
 
               <tr>
-                <td>NODE_SIGNATURE_KIND_ASSET_NEW</td>
+                <td>NODE_SIGNATURE_KIND_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
 
               <tr>
-                <td>NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL</td>
+                <td>NODE_SIGNATURE_KIND_ASSET_NEW</td>
                 <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL</td>
+                <td>2</td>
                 <td><p></p></td>
               </tr>
 
