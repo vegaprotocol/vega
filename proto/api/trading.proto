@@ -273,7 +273,6 @@ message GetNodeSignaturesAggregateResponse {
   repeated vega.NodeSignature signatures = 1;
 }
 
-
 message OptionalProposalState {
   vega.Proposal.State value = 1;
 }
