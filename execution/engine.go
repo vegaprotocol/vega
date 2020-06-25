@@ -440,7 +440,7 @@ func (e *Engine) Generate() error {
 	ctx := context.TODO()
 
 	// Market data is added to buffer on Generate
-	// do this before the time event -> time event fluishes
+	// do this before the time event -> time event flushes
 	for _, v := range e.markets {
 		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
 	}

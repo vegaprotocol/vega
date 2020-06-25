@@ -106,7 +106,6 @@ type NodeCommand struct {
 	marketBuf       *buffer.Market
 	accountBuf      *buffer.Account
 	candleBuf       *buffer.Candle
-	marketDataBuf   *buffer.MarketData
 	marginLevelsBuf *buffer.MarginLevels
 	settleBuf       *buffer.Settlement
 	lossSocBuf      *buffer.LossSocialization
