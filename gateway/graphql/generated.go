@@ -2757,6 +2757,7 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
+  "Return a list of aggregated node signature for a given resource ID"
   nodeSignatures(
     resourceId: String!
   ): [NodeSignature!]
