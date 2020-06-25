@@ -118,8 +118,7 @@ func testOnTickEmpty(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
-	proc.gov.EXPECT().GetNetworkParameters().Times(1).Return(*governance.DefaultNetworkParameters(proc.log))
-	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return([]*types.Proposal{})
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any()).Times(1).Return([]*governance.Proposal{})
 	proc.proposalBuf.EXPECT().Flush().Times(1)
 	proc.tickCB(time.Now())
 }

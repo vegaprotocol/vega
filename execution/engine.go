@@ -6,7 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -202,7 +201,8 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 	return err
 }
 
-func (e *Engine) addMarket(marketConfig *types.Market) error {
+// SubmitMarket will submit a new market configuration to the network
+func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	now, err := e.time.GetTimeNow()
 	if err != nil {
 		e.log.Error("Failed to get current Vega network time", logging.Error(err))
@@ -248,43 +248,6 @@ func (e *Engine) addMarket(marketConfig *types.Market) error {
 
 	e.marketBuf.Add(*marketConfig)
 	return nil
-}
-
-func (e *Engine) createMarket(
-	marketID string,
-	definition *types.NewMarketConfiguration,
-	parameters *governance.NetworkParameters,
-) error {
-
-	if len(marketID) == 0 {
-		return ErrNoMarketID
-	}
-	if _, found := e.markets[marketID]; found {
-		return ErrMarketAlreadyExist
-	}
-
-	if err := validateNewMarket(e.time, definition); err != nil {
-		return err
-	}
-	instrument, err := createInstrument(parameters, definition.Instrument, definition.Metadata)
-	if err != nil {
-		return err
-	}
-	market := &types.Market{
-		Id:                 marketID,
-		DecimalPlaces:      definition.DecimalPlaces,
-		TradableInstrument: &types.TradableInstrument{Instrument: instrument},
-	}
-	if err := assignTradingMode(definition, market); err != nil {
-		return err
-	}
-	return e.addMarket(market)
-}
-
-// SubmitMarket will submit a new market configuration to the network
-//TODO: remove me once all markets are being created exclusively via governance
-func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
-	return e.addMarket(marketConfig)
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
@@ -418,29 +381,6 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 		}
 	}
 	timer.EngineTimeCounterAdd()
-}
-
-func (e *Engine) EnactProposal(proposal *types.Proposal, parameters *governance.NetworkParameters) error {
-	if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil {
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
-		}
-		// reusing proposal ID for market ID
-		if err := e.createMarket(proposal.ID, newMarket.Changes, parameters); err != nil {
-			return err
-		}
-		proposal.State = types.Proposal_STATE_ENACTED
-		return nil
-	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
-
-		return errors.New("update market enactment is not implemented")
-	} else if updateNetwork := proposal.Terms.GetUpdateNetwork(); updateNetwork != nil {
-
-		return errors.New("update network enactment is not implemented")
-	}
-	// This error shouldn't be possible here,if we reach this point the governance engine
-	// has failed to perform the correct validation on the proposal itself
-	return ErrUnknownProposalChange
 }
 
 // Process any data updates (including state changes)

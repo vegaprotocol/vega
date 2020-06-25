@@ -78,10 +78,10 @@ func (mr *MockGovernanceEngineMockRecorder) GetNetworkParameters() *gomock.Call 
 }
 
 // OnChainTimeUpdate mocks base method
-func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 time.Time) []*proto.Proposal {
+func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 time.Time) []*governance.Proposal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnChainTimeUpdate", arg0)
-	ret0, _ := ret[0].([]*proto.Proposal)
+	ret0, _ := ret[0].([]*governance.Proposal)
 	return ret0
 }
 

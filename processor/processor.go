@@ -36,6 +36,7 @@ var (
 	ErrRegisterNodePubKeyDoesNotMatch               = errors.New("node register key does not match")
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
 	ErrVegaWalletRequired                           = errors.New("vega wallet required")
+	ErrProposalCorrupted                            = errors.New("proposal internal data corrupted")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -53,7 +54,7 @@ type ExecutionEngine interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
 	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
-	EnactProposal(proposal *types.Proposal, parameters *governance.NetworkParameters) error
+	SubmitMarket(marketConfig *types.Market) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
@@ -61,7 +62,7 @@ type GovernanceEngine interface {
 	SubmitProposal(types.Proposal) error
 	AddVote(types.Vote) error
 	AddNodeVote(*types.NodeVote) error
-	OnChainTimeUpdate(time.Time) []*types.Proposal
+	OnChainTimeUpdate(time.Time) []*governance.Proposal
 	GetNetworkParameters() governance.NetworkParameters
 }
 
@@ -660,19 +661,46 @@ func (p *Processor) VoteOnProposal(vote *types.Vote) error {
 	return p.gov.AddVote(*vote)
 }
 
+func (p *Processor) enactNewMarket(proposal *governance.Proposal) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("enacting new market proposal", logging.String("proposal-id", proposal.ID))
+	}
+	if market, ok := proposal.Data.(*types.Market); ok {
+		if err := p.exec.SubmitMarket(market); err != nil {
+			p.log.Error("failed to submit new market",
+				logging.String("market-id", market.Id),
+				logging.Error(err))
+			return err
+		}
+	} else {
+		p.log.Error("proposal payload is not valid", logging.String("proposal-id", proposal.ID))
+		return ErrProposalCorrupted
+	}
+	return nil
+}
+
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
 	p.idgen.NewBatch()
 	acceptedProposals := p.gov.OnChainTimeUpdate(t)
-	networkParams := p.gov.GetNetworkParameters()
+
 	for _, proposal := range acceptedProposals {
-		if err := p.exec.EnactProposal(proposal, &networkParams); err != nil {
+		switch proposal.Terms.Change.(type) {
+		case *types.ProposalTerms_NewMarket:
+			if err := p.enactNewMarket(proposal); err != nil {
+				proposal.State = types.Proposal_STATE_FAILED
+			} else {
+				proposal.State = types.Proposal_STATE_ENACTED
+			}
+		case *types.ProposalTerms_UpdateMarket:
+			p.log.Error("update market enactment is not implemented")
+		case *types.ProposalTerms_UpdateNetwork:
+			p.log.Error("update network enactment is not implemented")
+		default:
 			proposal.State = types.Proposal_STATE_FAILED
-			p.log.Error("unable to enact proposal",
-				logging.String("proposal-id", proposal.ID),
-				logging.Error(err))
+			p.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", proposal.ID))
 		}
-		p.proposalBuf.Add(*proposal)
+		p.proposalBuf.Add(*proposal.Proposal)
 	}
 	// governance flush
 	p.proposalBuf.Flush()

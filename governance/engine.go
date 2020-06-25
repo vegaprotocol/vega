@@ -80,6 +80,19 @@ type Assets interface {
 	Get(assetID string) (assets.Asset, error)
 }
 
+// TimeService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
+type TimeService interface {
+	GetTimeNow() (time.Time, error)
+}
+
+// Proposal is a wrapper over Proposal defined in proto interface + payload data
+// required to complete proposal enactment
+type Proposal struct {
+	*types.Proposal
+	Data interface{}
+}
+
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
@@ -96,7 +109,7 @@ type Engine struct {
 }
 
 type proposalData struct {
-	*types.Proposal
+	*Proposal
 	yes map[string]*types.Vote
 	no  map[string]*types.Vote
 }
@@ -144,10 +157,22 @@ func (e *Engine) GetNetworkParameters() NetworkParameters {
 	return e.networkParams
 }
 
+func (e *Engine) preEnactProposal(proposal *Proposal) error {
+	switch change := proposal.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		market, err := createMarket(proposal.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime)
+		if err != nil {
+			return err
+		}
+		proposal.Data = market
+	}
+	return nil
+}
+
 // OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
+func (e *Engine) OnChainTimeUpdate(t time.Time) []*Proposal {
 	e.currentTime = t
-	var toBeEnacted []*types.Proposal
+	var toBeEnacted []*Proposal
 	if len(e.activeProposals) > 0 {
 		now := t.Unix()
 
@@ -162,7 +187,14 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) []*types.Proposal {
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
 				delete(e.activeProposals, id)
 			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
-				toBeEnacted = append(toBeEnacted, proposal.Proposal)
+				if err := e.preEnactProposal(proposal.Proposal); err != nil {
+					proposal.State = types.Proposal_STATE_FAILED
+					e.log.Error("proposal enactment has failed",
+						logging.String("proposal-id", proposal.ID),
+						logging.Error(err))
+				} else {
+					toBeEnacted = append(toBeEnacted, proposal.Proposal)
+				}
 				delete(e.activeProposals, id)
 			}
 		}
@@ -220,7 +252,7 @@ func (e *Engine) SubmitProposal(p types.Proposal) error {
 
 func (e *Engine) startProposal(p *types.Proposal) {
 	e.activeProposals[p.ID] = &proposalData{
-		Proposal: p,
+		Proposal: &Proposal{p, nil},
 		yes:      map[string]*types.Vote{},
 		no:       map[string]*types.Vote{},
 	}
@@ -351,7 +383,7 @@ func (e *Engine) closeProposal(proposal *proposalData, counter *stakeCounter, to
 				logging.Float32("tokens", float32(totalStake)),
 			)
 		}
-		e.buf.Add(*proposal.Proposal)
+		e.buf.Add(*proposal.Proposal.Proposal)
 	}
 	return nil
 }

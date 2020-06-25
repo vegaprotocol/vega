@@ -12,7 +12,6 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -50,13 +49,6 @@ var (
 	ErrEmptyMarketID = errors.New("invalid market id (empty)")
 	// ErrInvalidOrderType is returned if processed order has an invalid order type
 	ErrInvalidOrderType = errors.New("invalid order type")
-
-	// ErrProductTypeNotSupported is returned if product type supplied via governance is not yet supported
-	// (this error should really never occur)
-	ErrProductTypeNotSupported = errors.New("product type is not supported")
-
-	// ErrInvalidTradingMode is returned if supplied trading is not valid (has to be either continuous or descrete)
-	ErrInvalidTradingMode = errors.New("trading mode is invalid")
 
 	networkPartyID = "network"
 )
@@ -1529,69 +1521,4 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 			asset: {Long: 0.15, Short: 0.25},
 		},
 	}
-}
-
-func assignProduct(
-	parameters *governance.NetworkParameters,
-	source *types.InstrumentConfiguration,
-	target *types.Instrument,
-) error {
-
-	switch product := source.Product.(type) {
-	case *types.InstrumentConfiguration_Future:
-		target.Product = &types.Instrument_Future{
-			Future: &types.Future{
-				Asset:    product.Future.Asset,
-				Maturity: product.Future.Maturity,
-				Oracle: &types.Future_EthereumEvent{
-					EthereumEvent: &types.EthereumEvent{
-						ContractID: parameters.FutureOracle.ContractID,
-						Event:      parameters.FutureOracle.Event,
-						Value:      parameters.FutureOracle.Value,
-					},
-				},
-			},
-		}
-	default:
-		return ErrProductTypeNotSupported
-	}
-	return nil
-}
-
-func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
-	switch mode := definition.TradingMode.(type) {
-	case *types.NewMarketConfiguration_Continuous:
-		target.TradingMode = &types.Market_Continuous{
-			Continuous: mode.Continuous,
-		}
-	case *types.NewMarketConfiguration_Discrete:
-		target.TradingMode = &types.Market_Discrete{
-			Discrete: mode.Discrete,
-		}
-	default:
-		return ErrInvalidTradingMode
-	}
-	return nil
-}
-
-func createInstrument(
-	parameters *governance.NetworkParameters,
-	input *types.InstrumentConfiguration,
-	tags []string,
-) (*types.Instrument, error) {
-
-	result := &types.Instrument{
-		Name:      input.Name,
-		Code:      input.Code,
-		BaseName:  input.BaseName,
-		QuoteName: input.QuoteName,
-		Metadata: &types.InstrumentMetadata{
-			Tags: tags,
-		},
-	}
-
-	if err := assignProduct(parameters, input, result); err != nil {
-		return nil, err
-	}
-	return result, nil
 }

@@ -77,6 +77,7 @@ type NetworkParameters struct {
 	NewMarkets          ProposalParameters
 	MarginConfiguration ScalingFactors
 	FutureOracle        FutureOracle
+	InitialMarkPrice    uint64
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
@@ -85,6 +86,7 @@ func DefaultNetworkParameters(log *logging.Logger) *NetworkParameters {
 		NewMarkets:          defaultNewMarketParameters(log),
 		MarginConfiguration: defaultMarginConfiguration(),
 		FutureOracle:        defaultFutureOracle(),
+		InitialMarkPrice:    1,
 	}
 }
 
