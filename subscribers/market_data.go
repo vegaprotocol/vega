@@ -72,7 +72,7 @@ func (m *MarketDataSub) flush() {
 	m.store.SaveBatch(data)
 }
 
-func (m MarketDataSub) Types() []events.Type {
+func (m *MarketDataSub) Types() []events.Type {
 	return []events.Type{
 		events.MarketDataEvent,
 		events.TimeUpdate,
