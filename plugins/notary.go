@@ -32,6 +32,7 @@ func NewNotary(ctx context.Context) *Notary {
 	n := &Notary{
 		Base: subscribers.NewBase(ctx, 10),
 		sigs: map[string][]types.NodeSignature{},
+		ch:   make(chan types.NodeSignature, 100),
 	}
 
 	go n.consume()
