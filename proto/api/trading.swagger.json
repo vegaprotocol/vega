@@ -1024,9 +1024,11 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaNodeSignature"
-          }
+          },
+          "title": "The list of signatures"
         }
-      }
+      },
+      "title": "The response of the GetNodeSIgnatureAggregate rpc"
     },
     "apiGetProposalByIDResponse": {
       "type": "object",
@@ -2015,16 +2017,20 @@
       "type": "object",
       "properties": {
         "ID": {
-          "type": "string"
+          "type": "string",
+          "title": "The ID of the resource being signed"
         },
         "sig": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "The signature"
         },
         "kind": {
-          "$ref": "#/definitions/vegaNodeSignatureKind"
+          "$ref": "#/definitions/vegaNodeSignatureKind",
+          "title": "The kind of resource being signed"
         }
-      }
+      },
+      "description": "A message reprensenting a signature from a validator\nmeant to be used by foreign chain in order to recognise\na decision taken by the vega network."
     },
     "vegaNodeSignatureKind": {
       "type": "string",
@@ -2033,7 +2039,9 @@
         "NODE_SIGNATURE_KIND_ASSET_NEW",
         "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
       ],
-      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED"
+      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
+      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: represents a unspecified / missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: represents a signature for a new asset whitelisting\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: represents a signature for a asset withdrawal",
+      "title": "The kind of the signature created by a node\neg: for a new asset whitelisting, withdrawal"
     },
     "vegaOrder": {
       "type": "object",

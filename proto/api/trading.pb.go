@@ -502,7 +502,10 @@ func (m *AmendOrderRequest) GetAmendment() *proto1.OrderAmendment {
 	return nil
 }
 
+// The request message to specify the ID of the resource we want to retrieve
+// the aggregated signatures for
 type GetNodeSignaturesAggregateRequest struct {
+	// The ID of the resource
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -541,7 +544,9 @@ func (m *GetNodeSignaturesAggregateRequest) GetID() string {
 	return ""
 }
 
+// The response of the GetNodeSIgnatureAggregate rpc
 type GetNodeSignaturesAggregateResponse struct {
+	// The list of signatures
 	Signatures           []*proto1.NodeSignature `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`

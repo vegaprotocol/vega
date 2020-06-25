@@ -522,14 +522,25 @@ message SignedBundle {
   }
 }
 
+// The kind of the signature created by a node
+// eg: for a new asset whitelisting, withdrawal
 enum NodeSignatureKind {
+  // represents a unspecified / missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
+  // represents a signature for a new asset whitelisting
   NODE_SIGNATURE_KIND_ASSET_NEW = 1;
+  // represents a signature for a asset withdrawal
   NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
 }
 
+// A message reprensenting a signature from a validator
+// meant to be used by foreign chain in order to recognise
+// a decision taken by the vega network.
 message NodeSignature {
+  // The ID of the resource being signed
   string ID = 1;
+  // The signature
   bytes sig = 2;
+  // The kind of resource being signed
   NodeSignatureKind kind = 3;
 }

@@ -259,11 +259,17 @@ service trading_data {
   // Get an aggregate of signature from all the node of the network
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
 }
+
+// The request message to specify the ID of the resource we want to retrieve
+// the aggregated signatures for
 message GetNodeSignaturesAggregateRequest {
+  // The ID of the resource
   string ID = 1;
 }
 
+// The response of the GetNodeSIgnatureAggregate rpc
 message GetNodeSignaturesAggregateResponse {
+  // The list of signatures
   repeated vega.NodeSignature signatures = 1;
 }
 

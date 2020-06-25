@@ -289,11 +289,16 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5}
 }
 
+// The kind of the signature created by a node
+// eg: for a new asset whitelisting, withdrawal
 type NodeSignatureKind int32
 
 const (
-	NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED      NodeSignatureKind = 0
-	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW        NodeSignatureKind = 1
+	// represents a unspecified / missing value from the input
+	NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED NodeSignatureKind = 0
+	// represents a signature for a new asset whitelisting
+	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW NodeSignatureKind = 1
+	// represents a signature for a asset withdrawal
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL NodeSignatureKind = 2
 )
 
@@ -3037,9 +3042,15 @@ func (*SignedBundle) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// A message reprensenting a signature from a validator
+// meant to be used by foreign chain in order to recognise
+// a decision taken by the vega network.
 type NodeSignature struct {
-	ID                   string            `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	Sig                  []byte            `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
+	// The ID of the resource being signed
+	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// The signature
+	Sig []byte `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
+	// The kind of resource being signed
 	Kind                 NodeSignatureKind `protobuf:"varint,3,opt,name=kind,proto3,enum=vega.NodeSignatureKind" json:"kind,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
