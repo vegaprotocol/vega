@@ -126,7 +126,7 @@ type NetworkConfiguration struct {
 	MinProposerBalance float32 `protobuf:"fixed32,7,opt,name=minProposerBalance,proto3" json:"minProposerBalance,omitempty"`
 	// Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`.
 	MinVoterBalance float32 `protobuf:"fixed32,8,opt,name=minVoterBalance,proto3" json:"minVoterBalance,omitempty"`
-	// Scaling factors for all markets created via governance
+	// Scaling factors for all markets created via governance.
 	MarginConfiguration  *ScalingFactors `protobuf:"bytes,9,opt,name=marginConfiguration,proto3" json:"marginConfiguration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`

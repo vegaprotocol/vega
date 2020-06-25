@@ -2021,7 +2021,7 @@
         },
         "marginConfiguration": {
           "$ref": "#/definitions/vegaScalingFactors",
-          "title": "Scaling factors for all markets created via governance"
+          "description": "Scaling factors for all markets created via governance."
         }
       }
     },
