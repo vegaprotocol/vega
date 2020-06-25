@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
@@ -139,12 +140,19 @@ type GovernanceDataService interface {
 }
 
 // RiskService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_service_mock.go -package mocks code.vegaprotocol.io/vega/api  RiskService
 type RiskService interface {
 	ObserveMarginLevels(
 		ctx context.Context, retries int, partyID, marketID string,
 	) (<-chan []types.MarginLevels, uint64)
 	GetMarginLevelsSubscribersCount() int32
 	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
+}
+
+// Notary ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NotaryService
+type NotaryService interface {
+	GetByID(id string) ([]types.NodeSignature, error)
 }
 
 type tradingDataService struct {
@@ -160,10 +168,33 @@ type tradingDataService struct {
 	PartyService            PartyService
 	AccountsService         AccountsService
 	RiskService             RiskService
+	NotaryService           NotaryService
 	TransferResponseService TransferResponseService
 	governanceService       GovernanceDataService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
+}
+
+func (h *tradingDataService) GetNodeSignaturesAggregate(ctx context.Context,
+	req *protoapi.GetNodeSignaturesAggregateRequest) (*protoapi.GetNodeSignaturesAggregateResponse, error) {
+	if len(req.ID) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+	}
+
+	sigs, err := h.NotaryService.GetByID(req.ID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	out := make([]*types.NodeSignature, 0, len(sigs))
+	for _, v := range sigs {
+		v := v
+		out = append(out, &v)
+	}
+
+	return &protoapi.GetNodeSignaturesAggregateResponse{
+		Signatures: out,
+	}, nil
 }
 
 // OrdersByMarket provides a list of orders for a given market.

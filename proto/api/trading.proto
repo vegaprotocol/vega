@@ -39,17 +39,6 @@ service trading {
 
   // Prepare a vote to be put on the chain (via SubmitTransaction)
   rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
-
-  // Get an aggregate of signature from all the node of the network
-  rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
-}
-
-message GetNodeSignaturesAggregateRequest {
-  string ID = 1;
-}
-
-message GetNodeSignaturesAggregateResponse {
-  repeated vega.NodeSignature signatures = 1;
 }
 
 message SubmitTransactionRequest {
@@ -266,7 +255,18 @@ service trading_data {
 
   // Subscribe to a stream of Transfer Responses
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+
+  // Get an aggregate of signature from all the node of the network
+  rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
 }
+message GetNodeSignaturesAggregateRequest {
+  string ID = 1;
+}
+
+message GetNodeSignaturesAggregateResponse {
+  repeated vega.NodeSignature signatures = 1;
+}
+
 
 message OptionalProposalState {
   vega.Proposal.State value = 1;

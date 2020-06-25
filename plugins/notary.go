@@ -29,10 +29,13 @@ type Notary struct {
 }
 
 func NewNotary(ctx context.Context) *Notary {
-	return &Notary{
+	n := &Notary{
 		Base: subscribers.NewBase(ctx, 10),
 		sigs: map[string][]types.NodeSignature{},
 	}
+
+	go n.consume()
+	return n
 }
 
 func (n *Notary) Push(e events.Event) {
@@ -43,13 +46,16 @@ func (n *Notary) Push(e events.Event) {
 	n.ch <- nse.NodeSignature()
 }
 
-func (n *Notary) consume(ctx context.Context) {
+func (n *Notary) consume() {
+	defer func() { close(n.ch) }()
 	for {
 		select {
-		case <-ctx.Done():
+		case <-n.Closed():
 			return
 		case sig, ok := <-n.ch:
 			if !ok {
+				// cleanup base
+				n.Halt()
 				// channel is closed
 				return
 			}
@@ -68,4 +74,10 @@ func (n *Notary) GetByID(id string) ([]types.NodeSignature, error) {
 		return v, nil
 	}
 	return nil, ErrNoSignaturesForID
+}
+
+func (t *Notary) Types() []events.Type {
+	return []events.Type{
+		events.NodeSignatureEvent,
+	}
 }

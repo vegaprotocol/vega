@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -341,7 +342,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.broker = broker.New(l.ctx)
 	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub)
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.notaryPlugin)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -377,6 +378,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
+	l.notary = notary.New(l.Log, l.conf.Notary, l.topology)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
+
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
 	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, !l.noStores)
@@ -389,6 +393,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
 	l.settlePlugin.Start(l.ctx) // open channel from the start
+	l.notaryPlugin = plugins.NewNotary(l.ctx)
 
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)
@@ -436,6 +441,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
+	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
 	return
 }
 

@@ -2029,10 +2029,11 @@
     "vegaNodeSignatureKind": {
       "type": "string",
       "enum": [
+        "NODE_SIGNATURE_KIND_UNSPECIFIED",
         "NODE_SIGNATURE_KIND_ASSET_NEW",
         "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
       ],
-      "default": "NODE_SIGNATURE_KIND_ASSET_NEW"
+      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED"
     },
     "vegaOrder": {
       "type": "object",

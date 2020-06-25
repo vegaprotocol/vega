@@ -9,8 +9,8 @@ import (
 	api "code.vegaprotocol.io/vega/proto/api"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 )
 
@@ -157,6 +157,26 @@ func (mr *MockTradingDataClientMockRecorder) GetNewMarketProposals(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewMarketProposals", reflect.TypeOf((*MockTradingDataClient)(nil).GetNewMarketProposals), varargs...)
 }
 
+// GetNodeSignaturesAggregate mocks base method
+func (m *MockTradingDataClient) GetNodeSignaturesAggregate(arg0 context.Context, arg1 *api.GetNodeSignaturesAggregateRequest, arg2 ...grpc.CallOption) (*api.GetNodeSignaturesAggregateResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNodeSignaturesAggregate", varargs...)
+	ret0, _ := ret[0].(*api.GetNodeSignaturesAggregateResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodeSignaturesAggregate indicates an expected call of GetNodeSignaturesAggregate
+func (mr *MockTradingDataClientMockRecorder) GetNodeSignaturesAggregate(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeSignaturesAggregate", reflect.TypeOf((*MockTradingDataClient)(nil).GetNodeSignaturesAggregate), varargs...)
+}
+
 // GetProposalByID mocks base method
 func (m *MockTradingDataClient) GetProposalByID(arg0 context.Context, arg1 *api.GetProposalByIDRequest, arg2 ...grpc.CallOption) (*api.GetProposalByIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -258,7 +278,7 @@ func (mr *MockTradingDataClientMockRecorder) GetUpdateMarketProposals(arg0, arg1
 }
 
 // GetVegaTime mocks base method
-func (m *MockTradingDataClient) GetVegaTime(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.VegaTimeResponse, error) {
+func (m *MockTradingDataClient) GetVegaTime(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.VegaTimeResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -458,7 +478,7 @@ func (mr *MockTradingDataClientMockRecorder) MarketDepthSubscribe(arg0, arg1 int
 }
 
 // Markets mocks base method
-func (m *MockTradingDataClient) Markets(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.MarketsResponse, error) {
+func (m *MockTradingDataClient) Markets(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.MarketsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -498,7 +518,7 @@ func (mr *MockTradingDataClientMockRecorder) MarketsDataSubscribe(arg0, arg1 int
 }
 
 // ObserveGovernance mocks base method
-func (m *MockTradingDataClient) ObserveGovernance(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (api.TradingData_ObserveGovernanceClient, error) {
+func (m *MockTradingDataClient) ObserveGovernance(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (api.TradingData_ObserveGovernanceClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -738,7 +758,7 @@ func (mr *MockTradingDataClientMockRecorder) OrdersSubscribe(arg0, arg1 interfac
 }
 
 // Parties mocks base method
-func (m *MockTradingDataClient) Parties(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*api.PartiesResponse, error) {
+func (m *MockTradingDataClient) Parties(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.PartiesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -838,7 +858,7 @@ func (mr *MockTradingDataClientMockRecorder) PositionsSubscribe(arg0, arg1 inter
 }
 
 // Statistics mocks base method
-func (m *MockTradingDataClient) Statistics(arg0 context.Context, arg1 *empty.Empty, arg2 ...grpc.CallOption) (*proto.Statistics, error) {
+func (m *MockTradingDataClient) Statistics(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*proto.Statistics, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {

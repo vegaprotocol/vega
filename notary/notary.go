@@ -60,6 +60,20 @@ func New(log *logging.Logger, cfg Config, top ValidatorTopology) *Notary {
 	}
 }
 
+// ReloadConf updates the internal configuration of the collateral engine
+func (n *Notary) ReloadConf(cfg Config) {
+	n.log.Info("reloading configuration")
+	if n.log.GetLevel() != cfg.Level.Get() {
+		n.log.Info("updating log level",
+			logging.String("old", n.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		n.log.SetLevel(cfg.Level.Get())
+	}
+
+	n.cfg = cfg
+}
+
 func (n *Notary) StartAggregate(resID string, kind types.NodeSignatureKind) error {
 	if _, ok := n.sigs[idKind{resID, kind}]; ok {
 		return ErrAggregateSigAlreadyStartedForResource

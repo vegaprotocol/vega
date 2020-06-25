@@ -1591,7 +1591,6 @@
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
-| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
 
 
 <a name="api.trading_data"></a>
@@ -1648,6 +1647,7 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
 
 
 
@@ -3025,8 +3025,9 @@ Proposal can enter Failed state from any other state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| NODE_SIGNATURE_KIND_ASSET_NEW | 0 |  |
-| NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 1 |  |
+| NODE_SIGNATURE_KIND_UNSPECIFIED | 0 |  |
+| NODE_SIGNATURE_KIND_ASSET_NEW | 1 |  |
+| NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 2 |  |
 
 
 

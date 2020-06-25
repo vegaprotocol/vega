@@ -68,7 +68,7 @@ func Votes(f ...VoteFilter) Filter {
 
 func NewGovernanceSub(ctx context.Context, filters ...Filter) *GovernanceSub {
 	g := GovernanceSub{
-		Base:     newBase(ctx, 10),
+		Base:     NewBase(ctx, 10),
 		gfilters: []GovernanceFilter{},
 		pfilters: []ProposalFilter{},
 		vfilters: []VoteFilter{},
