@@ -289,6 +289,15 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
 	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
 		return ErrProposalInsufficientTokens
 	}
+	return e.validateChange(proposal.Terms)
+}
+
+// validates proposed change
+func (e *Engine) validateChange(terms *types.ProposalTerms) error {
+	switch change := terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes)
+	}
 	return nil
 }
 
