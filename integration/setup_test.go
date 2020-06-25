@@ -117,7 +117,6 @@ type executionTestSetup struct {
 	candles    *mocks.MockCandleBuf
 	markets    *mocks.MockMarketBuf
 	timesvc    *timeStub
-	marketdata *mocks.MockMarketDataBuf
 	settle     *buffer.Settlement
 	proposal   *ProposalStub
 	votes      *VoteStub
@@ -163,7 +162,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
-	execsetup.marketdata = mocks.NewMockMarketDataBuf(ctrl)
 	execsetup.lossSoc = buffer.NewLossSocialization()
 	execsetup.proposal = NewProposalStub()
 	execsetup.votes = NewVoteStub()
@@ -172,15 +170,13 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, execsetup.lossSoc, time.Now(),
 	)
 
-	execsetup.marketdata.EXPECT().Flush().AnyTimes()
-	execsetup.marketdata.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	execsetup.candles.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	execsetup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.marketdata, execsetup.settle, execsetup.lossSoc, mkts, execsetup.collateral, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.settle, execsetup.lossSoc, mkts, execsetup.collateral, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)
