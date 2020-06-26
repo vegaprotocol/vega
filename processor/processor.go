@@ -714,7 +714,7 @@ func (p *Processor) onTick(t time.Time) {
 							logging.Error(err))
 						proposal.State = types.Proposal_STATE_FAILED
 					} else {
-						sig, err := asset.SignBridgeWhitelisting()
+						_, sig, err := asset.SignBridgeWhitelisting()
 						if err != nil {
 							p.log.Error("unable to sign whitelisting transaction",
 								logging.String("asset-id", proposal.ID),

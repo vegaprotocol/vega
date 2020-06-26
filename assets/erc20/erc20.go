@@ -1,15 +1,24 @@
 package erc20
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+)
+
+const (
+	MAX_NONCE             = 100000000
+	whitelistContractName = "whitelist_asset"
 )
 
 var (
@@ -91,8 +100,79 @@ func (b *ERC20) Validate() error {
 	return nil
 }
 
-func (b *ERC20) SignBridgeWhitelisting() ([]byte, error) {
-	return nil, nil
+// SignBridgewhitelisting create and sign the message to
+// be sent to the bridge to whitelist the asset
+// return the generated message and the signature for this message
+func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
+	typAddr, err := abi.NewType("address", "", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	typString, err := abi.NewType("string", "", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	typU256, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	typBytes, err := abi.NewType("bytes", "", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "address",
+			Type: typAddr,
+		},
+		{
+			Name: "nonce",
+			Type: typU256,
+		},
+		{
+			Name: "func_name",
+			Type: typString,
+		},
+	})
+
+	nonce, err := rand.Int(rand.Reader, big.NewInt(MAX_NONCE))
+	if err != nil {
+		return nil, nil, err
+	}
+	addr := ethcmn.HexToAddress(b.address)
+	buf, err := args.Pack([]interface{}{addr, nonce, whitelistContractName}...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bridgeAddr := ethcmn.HexToAddress(b.wallet.BridgeAddress())
+	args2 := abi.Arguments([]abi.Argument{
+		{
+			Name: "bytes",
+			Type: typBytes,
+		},
+		{
+			Name: "address",
+			Type: typAddr,
+		},
+	})
+
+	msg, err = args2.Pack(buf, bridgeAddr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// hash our message before signing it
+	hash := crypto.Keccak256(msg)
+
+	// now sign the message using our wallet private key
+	sig, err = b.wallet.Sign(hash)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return msg, sig, nil
 }
 
 func (b *ERC20) ValidateWithdrawal() error {

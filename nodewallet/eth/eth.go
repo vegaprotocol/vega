@@ -19,6 +19,7 @@ type ETHClient interface {
 }
 
 type Wallet struct {
+	cfg Config
 	acc accounts.Account
 	ks  *keystore.KeyStore
 	clt ETHClient
@@ -54,6 +55,7 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 		return nil, err
 	}
 	return &Wallet{
+		cfg: cfg,
 		acc: acc,
 		ks:  ks,
 		clt: ethclt,
@@ -75,4 +77,8 @@ func (w *Wallet) PubKeyOrAddress() []byte {
 
 func (w *Wallet) Client() ETHClient {
 	return w.clt
+}
+
+func (w *Wallet) BridgeAddress() string {
+	return w.cfg.BridgeAddress
 }
