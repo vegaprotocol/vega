@@ -136,12 +136,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.mu.Unlock()
 }
 
-// GetNetworkParameters returns current state of network parameters defined for governance
-func (e *Engine) GetNetworkParameters() NetworkParameters {
-	//TODO: add synchronisation once it is possible to update network parameters
-	return e.networkParams
-}
-
 func (e *Engine) preEnactProposal(proposal *Proposal) error {
 	switch change := proposal.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
