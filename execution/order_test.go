@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -487,22 +486,32 @@ func TestPartialFilledWashTrade(t *testing.T) {
 }
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderId string, sizeDelta int64, price uint64,
-	tif types.Order_TimeInForce, expiresAt int64) {
+	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
 	amend := &types.OrderAmendment{
-		OrderID:   orderId,
-		PartyID:   party,
-		MarketID:  tm.market.GetID(),
-		Price:     &types.Price{Value: price},
-		SizeDelta: sizeDelta,
+		OrderID:     orderId,
+		PartyID:     party,
+		MarketID:    tm.market.GetID(),
+		SizeDelta:   sizeDelta,
+		TimeInForce: tif,
 	}
+
+	if price > 0 {
+		amend.Price = &types.Price{Value: price}
+	}
+
+	if expiresAt > 0 {
+		amend.ExpiresAt = &types.Timestamp{Value: expiresAt}
+	}
+
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
-	assert.NotNil(t, amended)
-	assert.NoError(t, err)
+	if pass {
+		assert.NotNil(t, amended)
+		assert.NoError(t, err)
+	}
 }
 
-func sendOrder(t *testing.T, tm *testMarket, orderType types.Order_Type, tif types.Order_TimeInForce, expiresAt int64, side types.Side, party string,
+func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce, expiresAt int64, side types.Side, party string,
 	size uint64, price uint64) string {
-	now := time.Unix(10, 0)
 	order := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        orderType,
@@ -525,65 +534,140 @@ func sendOrder(t *testing.T, tm *testMarket, orderType types.Order_Type, tif typ
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
+	// Move time forward one second
+	//	*now = now.Add(time.Second)
+	//	tm.market.OnChainTimeUpdate(*now)
+
 	return confirmation.GetOrder().Id
 }
 
-func TestMarginBreach(t *testing.T) {
+func TestAmendToFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt)
 
-	addAccount(tm, "a8")
-	addAccount(tm, "9a")
-	addAccount(tm, "b2")
-	addAccount(tm, "5f")
-	addAccount(tm, "8e")
-	addAccount(tm, "90")
+	addAccount(tm, "party1")
+	addAccount(tm, "party2")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 
-	ex := now.UnixNano() + 10000000000
-	ex2 := ex - 10000000000
-
 	// test_AmendMarketOrderFail
-	orderId := sendOrder(t, tm, types.Order_TYPE_MARKET, types.Order_TIF_IOC, 0, types.Side_SIDE_BUY, "a8", 15, 0) // 1 - a8
-	amendOrder(t, tm, "a8", orderId, 10, 5, types.Order_TIF_UNSPECIFIED, 0)
+	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100) // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)  // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)  // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50)    // 1 - a8
+	amendOrder(t, tm, "party2", orderId, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
+}
 
-	// test_AmendSubExpireTimeGTTOrder
-	orderId = sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 30) // 2 - a8
-	amendOrder(t, tm, "a8", orderId, 0, 0, types.Order_TIF_GTT, ex2)
+func TestMarginBreach(t *testing.T) {
+	/*	now := time.Unix(10, 0)
+		closingAt := time.Unix(10000000000, 0)
+		tm := getTestMarket(t, now, closingAt)
 
-	// test_AmendPastExpireNoTIFGTTOrder
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 30) // 3 - a8
+		addAccount(tm, "a8")
+		addAccount(tm, "9a")
+		addAccount(tm, "b2")
+		addAccount(tm, "5f")
+		addAccount(tm, "8e")
+		addAccount(tm, "90")
+		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+		tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 30) // 4 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "9a", 21, 20)   // 5 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "9a", 26, 22)   // 6 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 5, 30)   // 7 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30)  // 8 - 9a Need to cancel this one
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30)  // 9 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30)  // 10 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "9a", 10, 30) // 11 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "9a", 21, 22)   // 12 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "b2", 21, 22)   // 13 - b2
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "5f", 5, 10)    // 14 - 5f
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 40) // 15 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "a8", 10, 40)  // 16 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 45) // 17 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 1, 50)  // 18 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 55) // 19 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 20, 61) // 20 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 5, 62)  // 21 - a8
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_BUY, "9a", 1, 30)   // 22 - 9a
-	sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "8e", 5, 25)    // 23 - 8e
-	sendOrder(t, tm, types.Order_TYPE_MARKET, types.Order_TIF_IOC, 0, types.Side_SIDE_SELL, "a8", 5, 0)   // 24 - a8
+		ex := now.UnixNano() + 10000000000
+		ex2 := ex + 10000000000
+		ex3 := ex - 10000000000
 
-	toAmend := sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_BUY, "90", 2, 20) // 25 - 90
+		// test_AmendMarketOrderFail
+		orderId := sendOrder(t, tm, &now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, 0, types.Side_SIDE_BUY, "a8", 15, 0) // 1 - a8
+		amendOrder(t, tm, "a8", orderId, 10, 5, types.Order_TIF_UNSPECIFIED, 0, false)
 
-	amendOrder(t, tm, "90", toAmend, 1500, 5000) // 25 - 90
+		// test_AmendSubExpireTimeGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 30) // 2 - a8
+		amendOrder(t, tm, "a8", orderId, 0, 0, types.Order_TIF_GTT, ex2, true)
 
-	fmt.Print("Done")
-	//sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "8e", 21, 22)       // 26 - 8e
-	//sendOrder(t, tm, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_BUY, "a8", 200, 20)     // 27 - a8
+		// test_AmendPastExpireNoTIFGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 30) // 3 - a8
+		amendOrder(t, tm, "a8", orderId, 0, 0, types.Order_TIF_GTT, ex3, true)
 
+		// test_AmendPriceGTCOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "9a", 21, 22) // 4 - 9a
+		amendOrder(t, tm, "9a", orderId, 0, 20, types.Order_TIF_UNSPECIFIED, 0, true)
+
+		// test_AmendSizeIncreaseGTCOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "9a", 21, 22) // 6 - 9a
+		amendOrder(t, tm, "9a", orderId, 5, 22, types.Order_TIF_UNSPECIFIED, 0, true)
+
+		// test_AmendSizeReduceGTCOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30) // 7 - 9a
+		amendOrder(t, tm, "9a", orderId, -5, 30, types.Order_TIF_GTC, 0, true)
+
+		// test_AmendInvSizeGTCOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30) // 8 - 9a Need to cancel this one
+		amendOrder(t, tm, "9a", orderId, -15, 30, types.Order_TIF_GTC, 0, true)
+
+		// test_AmendSizeToZeroGTCOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30) // 9 - 9a
+		amendOrder(t, tm, "9a", orderId, -10, 30, types.Order_TIF_GTC, 0, true)
+
+		// test_AmendTraderGTCOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "9a", 10, 30) // 10 - 9a
+		amendOrder(t, tm, "b2", orderId, 0, 31, types.Order_TIF_GTC, 0, false)
+
+		// test_AmendGTCToGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, ex, types.Side_SIDE_SELL, "9a", 10, 30) // 11 - 9a
+		amendOrder(t, tm, "9a", orderId, 0, 31, types.Order_TIF_GTT, ex2, true)
+
+		// test_AmendPriceDifferentPubKey
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "9a", 21, 22) // 12 - 9a
+		amendOrder(t, tm, "b2", orderId, 0, 30, types.Order_TIF_UNSPECIFIED, 0, false)
+
+		// test_AmendPriceTaintedKey
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "b2", 21, 22) // 13 - b2
+
+		//  test_AmendGTCMarginCheckFail
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "5f", 5, 10) // 14 - 5f
+		amendOrder(t, tm, "5f", orderId, 800000000000, 500, types.Order_TIF_UNSPECIFIED, 0, false)
+
+		// test_AmendPastExpireTIFGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 40) // 15 - a8
+		amendOrder(t, tm, "a8", orderId, 0, 0, types.Order_TIF_GTT, ex2, true)
+
+		// test_AmendOrderGTT_ToGTC
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 40) // 16 - a8
+		amendOrder(t, tm, "a8", orderId, 0, 0, types.Order_TIF_GTC, 0, true)
+
+		// test_AmendGTCToGTTExpireOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "a8", 10, 45) // 17 - a8
+		amendOrder(t, tm, "a8", orderId, 0, 0, types.Order_TIF_GTT, ex3, true)
+
+		// test_AmendSizeGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 50) // 18 - a8
+		amendOrder(t, tm, "a8", orderId, -9, 0, types.Order_TIF_UNSPECIFIED, 0, true)
+
+		// test_AmendGTTOrderToZero
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 55) // 19 - a8
+		amendOrder(t, tm, "a8", orderId, -10, 0, types.Order_TIF_UNSPECIFIED, 0, true)
+
+		// test_AmendPriceThenSizeGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 20, 60) // 20 - a8
+		amendOrder(t, tm, "a8", orderId, 0, 61, types.Order_TIF_UNSPECIFIED, 0, true)
+		amendOrder(t, tm, "a8", orderId, 10, 0, types.Order_TIF_UNSPECIFIED, 0, true)
+
+		// test_AmendBothPriceSizeGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_SELL, "a8", 10, 62) // 21 - a8
+		amendOrder(t, tm, "a8", orderId, -5, 62, types.Order_TIF_UNSPECIFIED, 0, true)
+
+		// test_AmendFilledGTTOrder
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_BUY, "9a", 1, 30) // 22 - 9a
+		amendOrder(t, tm, "9a", orderId, 2, 0, types.Order_TIF_UNSPECIFIED, 0, false)
+
+		// test_AmendFilledGTC
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "8e", 5, 25)  // 23 - 8e
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, 0, types.Side_SIDE_SELL, "a8", 5, 0) // 24 - a8
+		amendOrder(t, tm, "8e", orderId, 2, 0, types.Order_TIF_UNSPECIFIED, 0, false)
+
+		// test_AmendGTTMarginCheckFail
+		orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, ex, types.Side_SIDE_BUY, "90", 2, 10) // 25 - 90
+		amendOrder(t, tm, "90", orderId, 15000000000000, 5000, types.Order_TIF_UNSPECIFIED, 0, true)                        // 25 - 90
+	*/
 }
