@@ -203,6 +203,9 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
+	if len(marketConfig.Id) == 0 {
+		return ErrNoMarketID
+	}
 	now, err := e.time.GetTimeNow()
 	if err != nil {
 		e.log.Error("Failed to get current Vega network time", logging.Error(err))
