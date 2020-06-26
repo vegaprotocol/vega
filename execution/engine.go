@@ -247,7 +247,6 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
-	e.markets[marketConfig.Id].partyEngine = e.party
 
 	e.marketBuf.Add(*marketConfig)
 	return nil
