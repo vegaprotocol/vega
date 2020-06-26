@@ -487,6 +487,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.PropagateChainEventRequest"><span class="badge">M</span>PropagateChainEventRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.PropagateChainEventResponse"><span class="badge">M</span>PropagateChainEventResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.SubmitOrderRequest"><span class="badge">M</span>SubmitOrderRequest</a>
                 </li>
 
@@ -571,6 +579,33 @@
 
                 <li>
                   <a href="#vega.ERC20"><span class="badge">M</span>ERC20</a>
+                </li>
+
+
+
+
+            </ul>
+          </li>
+
+
+          <li>
+            <a href="#proto%2fchain_events.proto">proto/chain_events.proto</a>
+            <ul>
+
+                <li>
+                  <a href="#vega.AssetList"><span class="badge">M</span>AssetList</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ChainEvent"><span class="badge">M</span>ChainEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Deposit"><span class="badge">M</span>Deposit</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Withdrawal"><span class="badge">M</span>Withdrawal</a>
                 </li>
 
 
@@ -3815,6 +3850,54 @@
 
 
 
+        <h3 id="api.PropagateChainEventRequest">PropagateChainEventRequest</h3>
+        <p>The request for a new event sent by the blockchain queue to be propagated into vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>evt</td>
+                  <td><a href="#vega.ChainEvent">vega.ChainEvent</a></td>
+                  <td></td>
+                  <td><p>The event </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PropagateChainEventResponse">PropagateChainEventResponse</h3>
+        <p>The response for a new event sent to vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>Did the event get accepted by the node successfully </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.SubmitOrderRequest">SubmitOrderRequest</h3>
         <p></p>
 
@@ -4212,6 +4295,13 @@
                 <td><a href="#api.PrepareVoteRequest">PrepareVoteRequest</a></td>
                 <td><a href="#api.PrepareVoteResponse">PrepareVoteResponse</a></td>
                 <td><p>Prepare a vote to be put on the chain (via SubmitTransaction)</p></td>
+              </tr>
+
+              <tr>
+                <td>PropagateChainEvent</td>
+                <td><a href="#api.PropagateChainEventRequest">PropagateChainEventRequest</a></td>
+                <td><a href="#api.PropagateChainEventResponse">PropagateChainEventResponse</a></td>
+                <td><p>chain events</p></td>
               </tr>
 
           </tbody>
@@ -4752,6 +4842,202 @@
 
                 <tr>
                   <td>contractAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <div class="file-heading">
+        <h2 id="proto/chain_events.proto">proto/chain_events.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+
+        <h3 id="vega.AssetList">AssetList</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ChainEvent">ChainEvent</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>txHash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>index</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>block</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>builtinAsset</td>
+                  <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.ERC20">ERC20</a></td>
+                  <td></td>
+                  <td><p>ERC1155 erc1155 = 103;
+Ether ether = 104; </p></td>
+                </tr>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.Deposit">Deposit</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.Withdrawal">Withdrawal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>assetList</td>
+                  <td><a href="#vega.AssetList">AssetList</a></td>
+                  <td></td>
+                  <td><p>AssetDelist assetDelist = 1004;
+DepositMinimumSet depositMinimumSet = 1005; </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Deposit">Deposit</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sourcePartyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>targetPartyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Withdrawal">Withdrawal</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sourcePartyId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>targetPartyId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>referenceNonce</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
