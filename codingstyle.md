@@ -68,10 +68,10 @@ func NewFooEngine(fooBuf FooBuffer) *fooEngine {
 }
 ```
 
-5. Type mapping: It's a common thing to need to map one type onto another (e.g. `log.DebugLevel` mapped onto a string representation). We use protobuf types throughout, many of which contain `oneof` fields. When we assign these values, we use a `switch` statement. This denotes that the code maps a `oneof` because:
-    a) Only one case applies
-    b) A switch performs better. The more `if`'s are needed, the slower the mapping becomes.
-    c) The use of `if`'s and `else`'s makes the code look more complex than it really is. `if-else` hint at more complex logic (checking if a map contains an entry, checking for errors, etc...). Type mapping is just a matter of extracting the typed data, and assigning it.
+5. Type mapping: It's a common thing to need to map one type onto another (e.g. `log.DebugLevel` mapped onto a string representation). We use protobuf types throughout, many of which contain `oneof` fields. When we assign these values, we use a `switch` statement for more than 2 cases. This denotes that the code maps a `oneof` because:
+
+    * a) A switch might performs better for multiple cases.
+    * b) With multiple `if`'s and `else`'s, code looks more complex than it really is. `if-else` hint at more complex logic (checking if a map contains an entry, checking for errors, etc...). Type mapping is just a matter of extracting the typed data, and assigning it.
 
 Compare the following:
 
@@ -97,8 +97,6 @@ func switchMap(assignTo T, oneOf Tb) {
     }
 }
 ```
-
-The latter not only looks cleaner, it results in fewer function calls (the `if` equivalent will call all getters until a non-nil value is returned), it's easier to maintain (adding another value is a 2 line change), and clearly communicates what this function does. Instantly, anyone looking at this code can tell that there's no business logic involved.
 
 
 ## Protobuf
