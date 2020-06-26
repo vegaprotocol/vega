@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,9 +35,9 @@ func (m *MockNotary) EXPECT() *MockNotaryMockRecorder {
 }
 
 // AddSig mocks base method
-func (m *MockNotary) AddSig(arg0 string, arg1 proto.NodeSignatureKind, arg2, arg3 []byte) ([]proto.NodeSignature, bool, error) {
+func (m *MockNotary) AddSig(arg0 context.Context, arg1 []byte, arg2 proto.NodeSignature) ([]proto.NodeSignature, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSig", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "AddSig", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]proto.NodeSignature)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -44,9 +45,9 @@ func (m *MockNotary) AddSig(arg0 string, arg1 proto.NodeSignatureKind, arg2, arg
 }
 
 // AddSig indicates an expected call of AddSig
-func (mr *MockNotaryMockRecorder) AddSig(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockNotaryMockRecorder) AddSig(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSig", reflect.TypeOf((*MockNotary)(nil).AddSig), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSig", reflect.TypeOf((*MockNotary)(nil).AddSig), arg0, arg1, arg2)
 }
 
 // StartAggregate mocks base method
