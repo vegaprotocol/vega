@@ -93,17 +93,17 @@ func (mr *MockExecutionEngineMockRecorder) NotifyTraderAccount(arg0, arg1 interf
 }
 
 // SubmitMarket mocks base method
-func (m *MockExecutionEngine) SubmitMarket(arg0 *proto.Market) error {
+func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitMarket", arg0)
+	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitMarket indicates an expected call of SubmitMarket
-func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1)
 }
 
 // SubmitOrder mocks base method

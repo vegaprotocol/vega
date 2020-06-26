@@ -118,6 +118,10 @@ func NewEngine(
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
+	// this is here because we're creating some markets here
+	// this isn't going to be the case in the final version
+	// so I'm using Background rather than TODO
+	ctx := context.Background()
 
 	e := &Engine{
 		log:           log,
@@ -140,7 +144,7 @@ func NewEngine(
 	if len(pmkts) > 0 {
 		for _, mkt := range pmkts {
 			mkt := mkt
-			err = e.SubmitMarket(&mkt)
+			err = e.SubmitMarket(ctx, &mkt)
 			if err != nil {
 				e.log.Panic("Unable to submit market",
 					logging.Error(err))
@@ -202,7 +206,7 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 }
 
 // SubmitMarket will submit a new market configuration to the network
-func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
+func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if len(marketConfig.Id) == 0 {
 		return ErrNoMarketID
 	}
@@ -243,7 +247,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)

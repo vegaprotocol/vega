@@ -55,7 +55,7 @@ type ExecutionEngine interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
 	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
-	SubmitMarket(marketConfig *types.Market) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
@@ -660,12 +660,12 @@ func (p *Processor) VoteOnProposal(ctx context.Context, vote *types.Vote) error 
 	return p.gov.AddVote(ctx, *vote)
 }
 
-func (p *Processor) enactNewMarket(proposal *governance.Proposal) error {
+func (p *Processor) enactNewMarket(ctx context.Context, proposal *governance.Proposal) error {
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("enacting new market proposal", logging.String("proposal-id", proposal.ID))
 	}
 	if market := proposal.NewMarketData(); market != nil {
-		if err := p.exec.SubmitMarket(market); err != nil {
+		if err := p.exec.SubmitMarket(ctx, market); err != nil {
 			p.log.Error("failed to submit new market",
 				logging.String("market-id", market.Id),
 				logging.Error(err))
@@ -686,7 +686,7 @@ func (p *Processor) onTick(t time.Time) {
 	for _, proposal := range acceptedProposals {
 		switch proposal.Terms.Change.(type) {
 		case *types.ProposalTerms_NewMarket:
-			if err := p.enactNewMarket(proposal); err != nil {
+			if err := p.enactNewMarket(ctx, proposal); err != nil {
 				proposal.State = types.Proposal_STATE_FAILED
 			} else {
 				proposal.State = types.Proposal_STATE_ENACTED
