@@ -257,6 +257,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore)
 	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx)
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false)
+	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -266,9 +267,6 @@ func (l *NodeCommand) setupBuffers() {
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
-
-	l.marketDataBuf = buffer.NewMarketData()
-	l.marketDataBuf.Register(l.marketDataStore)
 
 	l.marginLevelsBuf = buffer.NewMarginLevels()
 	l.marginLevelsBuf.Register(l.riskStore)
@@ -341,7 +339,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.broker = broker.New(l.ctx)
 	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub)
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -359,7 +357,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.timeService,
 		l.candleBuf,
 		l.marketBuf,
-		l.marketDataBuf,
 		l.settleBuf,
 		l.lossSocBuf,
 		l.mktscfg,

@@ -98,6 +98,7 @@ type NodeCommand struct {
 	marginLevelSub *subscribers.MarginLevelSub
 	governanceSub  *subscribers.GovernanceDataSub
 	voteSub        *subscribers.VoteSub
+	marketDataSub  *subscribers.MarketDataSub
 
 	orderBuf        *buffer.Order
 	tradeBuf        *buffer.Trade
@@ -105,7 +106,6 @@ type NodeCommand struct {
 	marketBuf       *buffer.Market
 	accountBuf      *buffer.Account
 	candleBuf       *buffer.Candle
-	marketDataBuf   *buffer.MarketData
 	marginLevelsBuf *buffer.MarginLevels
 	settleBuf       *buffer.Settlement
 	lossSocBuf      *buffer.LossSocialization
