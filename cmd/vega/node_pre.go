@@ -377,7 +377,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	l.notary = notary.New(l.Log, l.conf.Notary, l.topology)
+	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
 
 	// TODO(jeremy): for now we assume a node started without the stores support

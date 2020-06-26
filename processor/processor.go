@@ -122,7 +122,7 @@ type Broker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	AddSig(resID string, kind types.NodeSignatureKind, pubKey []byte, sig []byte) ([]types.NodeSignature, bool, error)
+	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -523,7 +523,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		_, _, err = p.notary.AddSig(ns.ID, ns.Kind, pubkey, ns.Sig)
+		_, _, err = p.notary.AddSig(ctx, pubkey, *ns)
 		return err
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)

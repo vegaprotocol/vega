@@ -1,6 +1,7 @@
 package notary_test
 
 import (
+	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -14,14 +15,17 @@ import (
 
 type testNotary struct {
 	*notary.Notary
-	ctrl *gomock.Controller
-	top  *mocks.MockValidatorTopology
+	ctrl   *gomock.Controller
+	top    *mocks.MockValidatorTopology
+	broker *mocks.MockBroker
 }
 
 func getTestNotary(t *testing.T) *testNotary {
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
-	notr := notary.New(logging.NewTestLogger(), notary.NewDefaultConfig(), top)
+	broker := mocks.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	notr := notary.New(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker)
 	return &testNotary{
 		Notary: notr,
 		top:    top,
@@ -42,8 +46,14 @@ func testAddKeyForKOResource(t *testing.T) {
 	key := []byte(string("123456"))
 	sig := []byte(string("123456"))
 
+	ns := types.NodeSignature{
+		Sig:  sig,
+		ID:   resID,
+		Kind: kind,
+	}
+
 	// first try to add a key for invalid resource
-	_, ok, err := notr.AddSig(resID, kind, key, sig)
+	_, ok, err := notr.AddSig(context.Background(), key, ns)
 	assert.EqualError(t, err, notary.ErrUnknownResourceID.Error())
 	assert.False(t, ok)
 
@@ -67,8 +77,14 @@ func testAddKeyForOKResource(t *testing.T) {
 
 	notr.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 
+	ns := types.NodeSignature{
+		Sig:  sig,
+		ID:   resID,
+		Kind: kind,
+	}
+
 	// first try to add a key for invalid resource
-	_, ok, err := notr.AddSig(resID, kind, key, sig)
+	_, ok, err := notr.AddSig(context.Background(), key, ns)
 	assert.EqualError(t, err, notary.ErrNotAValidatorSignature.Error())
 	assert.False(t, ok)
 }
@@ -88,8 +104,14 @@ func testAddKeyFinalize(t *testing.T) {
 	err := notr.StartAggregate(resID, kind)
 	assert.NoError(t, err)
 
+	ns := types.NodeSignature{
+		Sig:  sig,
+		ID:   resID,
+		Kind: kind,
+	}
+
 	// first try to add a key for invalid resource
-	sigs, ok, err := notr.AddSig(resID, kind, key, sig)
+	sigs, ok, err := notr.AddSig(context.Background(), key, ns)
 	assert.NoError(t, err, notary.ErrUnknownResourceID.Error())
 	assert.True(t, ok)
 	assert.Len(t, sigs, 1)

@@ -1,6 +1,8 @@
 package notary
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -50,13 +52,14 @@ type nodeSig struct {
 	sig  string
 }
 
-func New(log *logging.Logger, cfg Config, top ValidatorTopology) *Notary {
+func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker) *Notary {
 	log = log.Named(namedLogger)
 	return &Notary{
-		cfg:  cfg,
-		log:  log,
-		sigs: map[idKind]map[nodeSig]struct{}{},
-		top:  top,
+		cfg:    cfg,
+		log:    log,
+		sigs:   map[idKind]map[nodeSig]struct{}{},
+		top:    top,
+		broker: broker,
 	}
 }
 
@@ -82,8 +85,8 @@ func (n *Notary) StartAggregate(resID string, kind types.NodeSignatureKind) erro
 	return nil
 }
 
-func (n *Notary) AddSig(resID string, kind types.NodeSignatureKind, pubKey []byte, sig []byte) ([]types.NodeSignature, bool, error) {
-	sigs, ok := n.sigs[idKind{resID, kind}]
+func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error) {
+	sigs, ok := n.sigs[idKind{ns.ID, ns.Kind}]
 	if !ok {
 		return nil, false, ErrUnknownResourceID
 	}
@@ -93,9 +96,10 @@ func (n *Notary) AddSig(resID string, kind types.NodeSignatureKind, pubKey []byt
 		return nil, false, ErrNotAValidatorSignature
 	}
 
-	sigs[nodeSig{string(pubKey), string(sig)}] = struct{}{}
+	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
+	n.broker.Send(events.NewNodeSignatureEvent(ctx, ns))
 
-	sigsout, ok := n.isSigned(resID, kind)
+	sigsout, ok := n.isSigned(ns.ID, ns.Kind)
 	return sigsout, ok, nil
 }
 
