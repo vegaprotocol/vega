@@ -168,6 +168,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*Proposal
 			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
 				if err := e.preEnactProposal(proposal.Proposal); err != nil {
 					proposal.State = types.Proposal_STATE_FAILED
+					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal.Proposal))
 					e.log.Error("proposal enactment has failed",
 						logging.String("proposal-id", proposal.ID),
 						logging.Error(err))
