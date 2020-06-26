@@ -80,13 +80,6 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
-// Proposal is a wrapper over Proposal defined in proto interface + payload data
-// required to complete proposal enactment
-type Proposal struct {
-	*types.Proposal
-	Data interface{}
-}
-
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
@@ -156,7 +149,7 @@ func (e *Engine) preEnactProposal(proposal *Proposal) error {
 		if err != nil {
 			return err
 		}
-		proposal.Data = market
+		proposal.data = market
 	}
 	return nil
 }

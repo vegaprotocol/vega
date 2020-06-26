@@ -664,7 +664,7 @@ func (p *Processor) enactNewMarket(proposal *governance.Proposal) error {
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("enacting new market proposal", logging.String("proposal-id", proposal.ID))
 	}
-	if market, ok := proposal.Data.(*types.Market); ok {
+	if market := proposal.NewMarketData(); market != nil {
 		if err := p.exec.SubmitMarket(market); err != nil {
 			p.log.Error("failed to submit new market",
 				logging.String("market-id", market.Id),
@@ -672,7 +672,7 @@ func (p *Processor) enactNewMarket(proposal *governance.Proposal) error {
 			return err
 		}
 	} else {
-		p.log.Error("proposal payload is not valid", logging.String("proposal-id", proposal.ID))
+		p.log.Error("new market proposal payload is not valid", logging.String("proposal-id", proposal.ID))
 		return ErrProposalCorrupted
 	}
 	return nil
