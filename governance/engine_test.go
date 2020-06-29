@@ -501,7 +501,7 @@ func testVotingPassedProposal(t *testing.T) {
 	// no calculations, no state change, simply removed from governance engine
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, passed.ID, tobeEnacted[0].ID)
+	assert.Equal(t, passed.ID, tobeEnacted[0].Proposal().ID)
 
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter2.Id,
@@ -625,7 +625,7 @@ func testProposalPassed(t *testing.T) {
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, proposal.ID, tobeEnacted[0].ID)
+	assert.Equal(t, proposal.ID, tobeEnacted[0].Proposal().ID)
 }
 
 func testMultipleProposalsLifecycle(t *testing.T) {
@@ -750,7 +750,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, howMany)
 	for i := 0; i < howMany; i++ {
-		_, found := passed[tobeEnacted[i].ID]
+		_, found := passed[tobeEnacted[i].Proposal().ID]
 		assert.True(t, found)
 	}
 }

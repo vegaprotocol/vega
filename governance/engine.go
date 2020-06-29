@@ -95,7 +95,7 @@ type Engine struct {
 }
 
 type proposalData struct {
-	*Proposal
+	*types.Proposal
 	yes map[string]*types.Vote
 	no  map[string]*types.Vote
 }
@@ -136,22 +136,30 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) preEnactProposal(proposal *Proposal) error {
-	switch change := proposal.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
-		market, err := createMarket(proposal.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime)
-		if err != nil {
-			return err
-		}
-		proposal.data = market
+func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, err error) {
+	te = &ToEnact{
+		p: p,
 	}
-	return nil
+	defer func() {
+		if err != nil {
+			p.State = types.Proposal_STATE_FAILED
+		}
+	}()
+	switch change := p.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		mkt, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime)
+		if err != nil {
+			return nil, err
+		}
+		te.m = mkt
+	}
+	return
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*Proposal {
+func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact {
 	e.currentTime = t
-	var toBeEnacted []*Proposal
+	var toBeEnacted []*ToEnact
 	if len(e.activeProposals) > 0 {
 		now := t.Unix()
 
@@ -166,14 +174,14 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*Proposal
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
 				delete(e.activeProposals, id)
 			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
-				if err := e.preEnactProposal(proposal.Proposal); err != nil {
-					proposal.State = types.Proposal_STATE_FAILED
-					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal.Proposal))
+				enact, err := e.preEnactProposal(proposal.Proposal)
+				if err != nil {
+					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 					e.log.Error("proposal enactment has failed",
 						logging.String("proposal-id", proposal.ID),
 						logging.Error(err))
 				} else {
-					toBeEnacted = append(toBeEnacted, proposal.Proposal)
+					toBeEnacted = append(toBeEnacted, enact)
 				}
 				delete(e.activeProposals, id)
 			}
@@ -230,7 +238,7 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal) error {
 
 func (e *Engine) startProposal(p *types.Proposal) {
 	e.activeProposals[p.ID] = &proposalData{
-		Proposal: &Proposal{p, nil},
+		Proposal: p,
 		yes:      map[string]*types.Vote{},
 		no:       map[string]*types.Vote{},
 	}
@@ -370,7 +378,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, coun
 				logging.Float32("tokens", float32(totalStake)),
 			)
 		}
-		e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal.Proposal))
+		e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 	}
 	return nil
 }

@@ -65,10 +65,10 @@ func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1 interface{}) *gom
 }
 
 // OnChainTimeUpdate mocks base method
-func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) []*governance.Proposal {
+func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) []*governance.ToEnact {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnChainTimeUpdate", arg0, arg1)
-	ret0, _ := ret[0].([]*governance.Proposal)
+	ret0, _ := ret[0].([]*governance.ToEnact)
 	return ret0
 }
 

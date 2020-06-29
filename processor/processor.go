@@ -63,7 +63,7 @@ type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.Proposal) error
 	AddVote(context.Context, types.Vote) error
 	AddNodeVote(*types.NodeVote) error
-	OnChainTimeUpdate(context.Context, time.Time) []*governance.Proposal
+	OnChainTimeUpdate(context.Context, time.Time) []*governance.ToEnact
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -660,45 +660,31 @@ func (p *Processor) VoteOnProposal(ctx context.Context, vote *types.Vote) error 
 	return p.gov.AddVote(ctx, *vote)
 }
 
-func (p *Processor) enactNewMarket(ctx context.Context, proposal *governance.Proposal) error {
-	if p.log.GetLevel() == logging.DebugLevel {
-		p.log.Debug("enacting new market proposal", logging.String("proposal-id", proposal.ID))
-	}
-	if market := proposal.NewMarketData(); market != nil {
-		if err := p.exec.SubmitMarket(ctx, market); err != nil {
-			p.log.Error("failed to submit new market",
-				logging.String("market-id", market.Id),
-				logging.Error(err))
-			return err
-		}
-	} else {
-		p.log.Error("new market proposal payload is not valid", logging.String("proposal-id", proposal.ID))
-		return ErrProposalCorrupted
-	}
-	return nil
-}
-
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
 	ctx := context.TODO()
 	p.idgen.NewBatch()
 	acceptedProposals := p.gov.OnChainTimeUpdate(ctx, t)
-	for _, proposal := range acceptedProposals {
-		switch proposal.Terms.Change.(type) {
-		case *types.ProposalTerms_NewMarket:
-			if err := p.enactNewMarket(ctx, proposal); err != nil {
-				proposal.State = types.Proposal_STATE_FAILED
-			} else {
-				proposal.State = types.Proposal_STATE_ENACTED
+	for _, toEnact := range acceptedProposals {
+		prop := toEnact.Proposal()
+		switch {
+		case toEnact.IsNewMarket():
+			mkt := toEnact.NewMarket()
+			prop.State = types.Proposal_STATE_ENACTED
+			if err := p.exec.SubmitMarket(ctx, mkt); err != nil {
+				prop.State = types.Proposal_STATE_FAILED
+				p.log.Error("failed to submit new market",
+					logging.String("market-id", mkt.Id),
+					logging.Error(err))
 			}
-		case *types.ProposalTerms_UpdateMarket:
+		case toEnact.IsUpdateMarket():
 			p.log.Error("update market enactment is not implemented")
-		case *types.ProposalTerms_UpdateNetwork:
+		case toEnact.IsUpdateNetwork():
 			p.log.Error("update network enactment is not implemented")
 		default:
-			proposal.State = types.Proposal_STATE_FAILED
-			p.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", proposal.ID))
+			prop.State = types.Proposal_STATE_FAILED
+			p.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", prop.ID))
 		}
-		p.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+		p.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
 }
