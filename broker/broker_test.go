@@ -138,7 +138,11 @@ func testSkipOptional(t *testing.T) {
 	defer tstBroker.Finish()
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
-	sub.EXPECT().Types().Times(2).Return(nil)
+	twg := sync.WaitGroup{}
+	twg.Add(2)
+	sub.EXPECT().Types().Times(2).Return(nil).Do(func() {
+		twg.Done()
+	})
 	k1 := tstBroker.Subscribe(sub, false)
 	assert.NotZero(t, k1)
 
@@ -167,12 +171,13 @@ func testSkipOptional(t *testing.T) {
 	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
 	// because there's a loop calling functions that are returning the channels we're closing here
 	tstBroker.Unsubscribe(k1)
+	// ensure unsubscribe has returned
+	twg.Wait()
 	close(closedCh)
 	close(skipCh)
 	assert.Equal(t, events[0], <-cCh)
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
-	close(cCh)
 }
 
 func testStopCtx(t *testing.T) {

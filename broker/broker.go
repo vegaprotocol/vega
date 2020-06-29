@@ -80,8 +80,9 @@ func (b *Broker) Send(event events.Event) {
 				if sub.required {
 					sub.Push(event)
 				} else {
+					ch := sub.C()
 					select {
-					case sub.C() <- event:
+					case ch <- event:
 						continue
 					default:
 						// skip this event
