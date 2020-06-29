@@ -3,6 +3,7 @@ package broker_test
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"code.vegaprotocol.io/vega/broker"
@@ -203,7 +204,7 @@ func testSubscriberSkip(t *testing.T) {
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	skipCh, closeCh := make(chan struct{}), make(chan struct{})
-	skip := true
+	skip := int64(0)
 	events := []*evt{
 		broker.randomEvt(),
 		broker.randomEvt(),
@@ -214,9 +215,9 @@ func testSubscriberSkip(t *testing.T) {
 		wg.Done()
 	})
 	sub.EXPECT().Skip().AnyTimes().DoAndReturn(func() <-chan struct{} {
-		if skip {
+		// ensure at least all events + 1 skip are called
+		if s := atomic.AddInt64(&skip, 1); s == 1 {
 			// skip the first one
-			skip = false
 			ch := make(chan struct{})
 			// return closed channel, so this subscriber is marked to skip events
 			close(ch)
