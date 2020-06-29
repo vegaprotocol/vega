@@ -51,14 +51,21 @@ func New(ctx context.Context) *Broker {
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
 	b.mu.Lock()
+	subs := b.getSubsByType(event.Type())
+	b.mu.Unlock()
+	if len(subs) == 0 {
+		return
+	}
 	// push the event out in a routine
 	// unlock the mutex once done
-	go func() {
-		subs := b.getSubsByType(event.Type())
+	go func(subs map[int]*subscription) {
 		unsub := make([]int, 0, len(subs))
 		defer func() {
-			b.rmSubs(unsub...)
-			b.mu.Unlock()
+			if len(unsub) > 0 {
+				b.mu.Lock()
+				b.rmSubs(unsub...)
+				b.mu.Unlock()
+			}
 		}()
 		for k, sub := range subs {
 			select {
@@ -83,7 +90,7 @@ func (b *Broker) Send(event events.Event) {
 				}
 			}
 		}
-	}()
+	}(subs)
 }
 
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {

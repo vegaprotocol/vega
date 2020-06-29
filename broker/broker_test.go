@@ -112,14 +112,22 @@ func testAutoUnsubscribe(t *testing.T) {
 	// set up sub to be closed
 	skipCh := make(chan struct{})
 	closedCh := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	defer func() {
 		close(skipCh)
 	}()
 	close(closedCh) // close the closed channel, so the subscriber is marked as closed when we try to send an event
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
+	sub.EXPECT().Closed().AnyTimes().Return(closedCh).Do(func() {
+		// indicator this function has been called already
+		wg.Done()
+	})
 	// send an event, the subscriber should be marked as closed, and automatically unsubscribed
 	broker.Send(broker.randomEvt())
+	// introduce some wait mechanism here, because the unsubscribe call acquires its own lock now
+	// so it's possible we haven't unsubscribed yet... the waitgroup should introduce enough time
+	wg.Wait()
 	// now try and subscribe again, the key should be reused
 	k2 := broker.Subscribe(sub, false)
 	assert.Equal(t, k1, k2)
