@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
@@ -37,6 +38,7 @@ var (
 	ErrRegisterNodePubKeyDoesNotMatch               = errors.New("node register key does not match")
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
 	ErrVegaWalletRequired                           = errors.New("vega wallet required")
+	ErrProposalCorrupted                            = errors.New("proposal internal data corrupted")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -54,7 +56,7 @@ type ExecutionEngine interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
 	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
-	EnactProposal(proposal *types.Proposal) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
@@ -62,7 +64,7 @@ type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.Proposal) error
 	AddVote(context.Context, types.Vote) error
 	AddNodeVote(*types.NodeVote) error
-	OnChainTimeUpdate(context.Context, time.Time) []*types.Proposal
+	OnChainTimeUpdate(context.Context, time.Time) []*governance.ToEnact
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -683,61 +685,61 @@ func (p *Processor) onTick(t time.Time) {
 	ctx := context.TODO()
 	p.idgen.NewBatch()
 	acceptedProposals := p.gov.OnChainTimeUpdate(ctx, t)
-	for _, proposal := range acceptedProposals {
-		switch proposal.Terms.Change.(type) {
-		case *types.ProposalTerms_NewMarket:
-			if err := p.exec.EnactProposal(proposal); err != nil {
-				proposal.State = types.Proposal_STATE_FAILED
-				p.log.Error("unable to enact proposal",
-					logging.String("proposal-id", proposal.ID),
+	for _, toEnact := range acceptedProposals {
+		prop := toEnact.Proposal()
+		switch {
+		case toEnact.IsNewMarket():
+			mkt := toEnact.NewMarket()
+			prop.State = types.Proposal_STATE_ENACTED
+			if err := p.exec.SubmitMarket(ctx, mkt); err != nil {
+				prop.State = types.Proposal_STATE_FAILED
+				p.log.Error("failed to submit new market",
+					logging.String("market-id", mkt.Id),
 					logging.Error(err))
 			}
-		case *types.ProposalTerms_NewAsset:
-			// new asset was accepted, send it to the notary now
-			// to aggregate all nodes sigs
-			err := p.notary.StartAggregate(
-				proposal.ID,
-				types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
-			)
-			if err != nil {
-				proposal.State = types.Proposal_STATE_FAILED
-				p.log.Error("unable to start notary aggregate of signautres",
-					logging.String("asset-id", proposal.ID),
+		case toEnact.IsNewAsset():
+			if err := p.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+				prop.State = types.Proposal_STATE_FAILED
+				p.log.Error("unable to enact proposal",
+					logging.String("proposal-id", prop.ID),
 					logging.Error(err))
-			} else {
-				if p.isValidator {
-					asset, err := p.assets.Get(proposal.ID)
+			} else if p.isValidator {
+				asset, err := p.assets.Get(prop.ID)
+				if err != nil {
+					// this should not happen
+					p.log.Error("invalid asset is getting enacted",
+						logging.String("asset-id", prop.ID),
+						logging.Error(err))
+					prop.State = types.Proposal_STATE_FAILED
+				} else {
+					_, sig, err := asset.SignBridgeWhitelisting()
 					if err != nil {
-						// this should not happen
-						p.log.Error("invalid asset is getting enacted",
-							logging.String("asset-id", proposal.ID),
+						p.log.Error("unable to sign whitelisting transaction",
+							logging.String("asset-id", prop.ID),
 							logging.Error(err))
-						proposal.State = types.Proposal_STATE_FAILED
+						prop.State = types.Proposal_STATE_FAILED
 					} else {
-						_, sig, err := asset.SignBridgeWhitelisting()
-						if err != nil {
-							p.log.Error("unable to sign whitelisting transaction",
-								logging.String("asset-id", proposal.ID),
+						payload := &types.NodeSignature{
+							ID:   prop.ID,
+							Sig:  sig,
+							Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+						}
+						if err := p.cmd.Command(p.vegaWallet, blockchain.NodeSignatureCommand, payload); err != nil {
+							// do nothing for now, we'll need a retry mechanism for this and all command soon
+							p.log.Error("unable to send command",
 								logging.Error(err))
-							proposal.State = types.Proposal_STATE_FAILED
-						} else {
-							payload := &types.NodeSignature{
-								ID:   proposal.ID,
-								Sig:  sig,
-								Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
-							}
-							if err := p.cmd.Command(p.vegaWallet, blockchain.NodeSignatureCommand, payload); err != nil {
-								// do nothing for now, we'll need a retry mechanism for this and all command soon
-								p.log.Error("unable to send command",
-									logging.Error(err))
-							}
 						}
 					}
 				}
 			}
+		case toEnact.IsUpdateMarket():
+			p.log.Error("update market enactment is not implemented")
+		case toEnact.IsUpdateNetwork():
+			p.log.Error("update network enactment is not implemented")
 		default:
-			p.log.Error("unsupported proposal type")
+			prop.State = types.Proposal_STATE_FAILED
+			p.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", prop.ID))
 		}
-		p.broker.Send(events.NewProposalEvent(ctx, *proposal))
+		p.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
 }

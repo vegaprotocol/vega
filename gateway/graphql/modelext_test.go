@@ -10,20 +10,16 @@ import (
 
 func TestModelConverters(t *testing.T) {
 
-	t.Run("DiscreteTrading.IntoProto nil duration", func(t *testing.T) {
-		dt := &gql.DiscreteTrading{}
-		pdt, err := dt.IntoProto()
-		assert.Nil(t, pdt)
-		assert.NotNil(t, err)
-		assert.Equal(t, gql.ErrNilDiscreteTradingDuration, err)
-	})
 	t.Run("DiscreteTrading.IntoProto", func(t *testing.T) {
 
-		dt := &gql.DiscreteTrading{Duration: intptr(123)}
+		dt := &gql.DiscreteTrading{
+			Duration: 123,
+			TickSize: 42,
+		}
 		pdt, err := dt.IntoProto()
 		assert.NotNil(t, pdt)
 		assert.Nil(t, err)
-		assert.Equal(t, int64(*dt.Duration), pdt.Discrete.Duration)
+		assert.Equal(t, int64(dt.Duration), pdt.Discrete.DurationNs)
 	})
 
 	t.Run("Future.IntoProto nil oracle", func(t *testing.T) {
@@ -130,7 +126,7 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("Market.IntoProto", func(t *testing.T) {
 		mkt := gql.Market{
-			TradingMode: &gql.ContinuousTrading{TickSize: intptr(123)},
+			TradingMode: &gql.ContinuousTrading{TickSize: 123},
 			TradableInstrument: &gql.TradableInstrument{
 				Instrument: &gql.Instrument{
 					Product: &gql.Future{
@@ -154,6 +150,7 @@ func TestModelConverters(t *testing.T) {
 			},
 		}
 		pmkt, err := mkt.IntoProto()
+		assert.NoError(t, err)
 		assert.NotNil(t, pmkt)
 		assert.Nil(t, err)
 	})
@@ -189,7 +186,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("TradingModeFromProto Discrete", func(t *testing.T) {
 		ptm := &proto.Market_Discrete{
 			Discrete: &proto.DiscreteTrading{
-				Duration: 42,
+				DurationNs: 42,
 			},
 		}
 		tm, err := gql.TradingModeFromProto(ptm)
@@ -455,50 +452,28 @@ func TestModelConverters(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("MarketInput.IntoProto", func(t *testing.T) {
+	t.Run("NewMarketInput.IntoProto", func(t *testing.T) {
 
-		mkt := gql.MarketInput{
-			Name: "test-market",
-			TradableInstrument: &gql.TradableInstrumentInput{
-				Instrument: &gql.InstrumentInput{
-					ID:               "abcID",
-					Code:             "abccode",
-					Name:             "abcXyz",
-					BaseName:         "abc",
-					QuoteName:        "Xyz",
-					InitialMarkPrice: "123",
-					Metadata: &gql.InstrumentMetadatInput{
-						Tags: []*string{stringptr("tag:1"), stringptr("tag:2")},
-					},
-					FutureProduct: &gql.FutureInput{
-						Maturity: "asdasdas",
-						Asset:    "Ethereum/Ether",
-						EthereumOracle: &gql.EthereumEventInput{
-							ContractID: "asdas",
-							Event:      "aerasd",
-						},
-					},
-				},
-				SimpleRiskModel: &gql.SimpleRiskModelInput{
-					Params: &gql.SimpleRiskModelParamsInput{
-						FactorLong:  0.1,
-						FactorShort: 0.2,
-					},
-				},
-				MarginCalculator: &gql.MarginCalculatorInput{
-					ScalingFactors: &gql.ScalingFactorsInput{
-						SearchLevel:       1.1,
-						InitialMargin:     1.2,
-						CollateralRelease: 1.4,
-					},
+		mkt := gql.NewMarketInput{
+			Instrument: &gql.InstrumentConfigurationInput{
+				Name:      "abcXyz",
+				Code:      "abccode",
+				BaseName:  "abc",
+				QuoteName: "Xyz",
+				FutureProduct: &gql.FutureProductInput{
+					Maturity: "asdasdas",
+					Asset:    "Ethereum/Ether",
 				},
 			},
-
-			ContinuousTradingMode: &gql.ContinuousTradingInput{
+			RiskParameters: &gql.RiskParametersInput{
+				Simple: &gql.SimpleRiskModelParamsInput{
+					FactorLong:  0.1,
+					FactorShort: 0.2,
+				},
+			},
+			Metadata: []*string{stringptr("tag:1"), stringptr("tag:2")},
+			ContinuousTrading: &gql.ContinuousTradingInput{
 				TickSize: 10,
-			},
-			DiscreteTradingMode: &gql.DiscreteTradingInput{
-				Duration: 100,
 			},
 			DecimalPlaces: 5,
 		}
@@ -521,49 +496,27 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("ProposalTermsInput.IntoProto", func(t *testing.T) {
 
-		mkt := gql.MarketInput{
-			Name: "test-market",
-			TradableInstrument: &gql.TradableInstrumentInput{
-				Instrument: &gql.InstrumentInput{
-					ID:               "abcID",
-					Code:             "abccode",
-					Name:             "abcXyz",
-					BaseName:         "abc",
-					QuoteName:        "Xyz",
-					InitialMarkPrice: "123",
-					// Metadata for this instrument
-					Metadata: &gql.InstrumentMetadatInput{
-						Tags: []*string{stringptr("tag:1"), stringptr("tag:2")},
-					},
-					FutureProduct: &gql.FutureInput{
-						Maturity: "asdasdas",
-						Asset:    "Ethereum/Ether",
-						EthereumOracle: &gql.EthereumEventInput{
-							ContractID: "asdas",
-							Event:      "aerasd",
-						},
-					},
-				},
-				SimpleRiskModel: &gql.SimpleRiskModelInput{
-					Params: &gql.SimpleRiskModelParamsInput{
-						FactorLong:  0.1,
-						FactorShort: 0.2,
-					},
-				},
-				MarginCalculator: &gql.MarginCalculatorInput{
-					ScalingFactors: &gql.ScalingFactorsInput{
-						SearchLevel:       1.1,
-						InitialMargin:     1.2,
-						CollateralRelease: 1.4,
-					},
+		mkt := gql.NewMarketInput{
+			Instrument: &gql.InstrumentConfigurationInput{
+				Code:      "abccode",
+				Name:      "abcXyz",
+				BaseName:  "abc",
+				QuoteName: "Xyz",
+				FutureProduct: &gql.FutureProductInput{
+					Maturity: "asdasdas",
+					Asset:    "Ethereum/Ether",
 				},
 			},
-
-			ContinuousTradingMode: &gql.ContinuousTradingInput{
-				TickSize: 10,
+			RiskParameters: &gql.RiskParametersInput{
+				Simple: &gql.SimpleRiskModelParamsInput{
+					FactorLong:  0.1,
+					FactorShort: 0.2,
+				},
 			},
-			DiscreteTradingMode: &gql.DiscreteTradingInput{
+			Metadata: []*string{stringptr("tag:1"), stringptr("tag:2")},
+			DiscreteTrading: &gql.DiscreteTradingInput{
 				Duration: 100,
+				TickSize: 10,
 			},
 			DecimalPlaces: 5,
 		}
@@ -574,9 +527,7 @@ func TestModelConverters(t *testing.T) {
 		proposal := &gql.ProposalTermsInput{
 			ClosingDatetime:   "2020-09-30T07:28:06+00:00",
 			EnactmentDatetime: "2020-10-30T07:28:06+00:00",
-			NewMarket: &gql.NewMarketInput{
-				Market: &mkt,
-			},
+			NewMarket:         &mkt,
 		}
 		proposalProto, err := proposal.IntoProto()
 		assert.NotNil(t, proposalProto)
@@ -584,45 +535,43 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("ProposalTermsFromProto valid data", func(t *testing.T) {
-		pm := &proto.Market{
-			TradableInstrument: &proto.TradableInstrument{
-				Instrument: &proto.Instrument{
-					Metadata: &proto.InstrumentMetadata{},
-					Product: &proto.Instrument_Future{
-						Future: &proto.Future{
-							Oracle: &proto.Future_EthereumEvent{
-								EthereumEvent: &proto.EthereumEvent{},
-							},
-						},
-					},
-				},
-				MarginCalculator: &proto.MarginCalculator{
-					ScalingFactors: &proto.ScalingFactors{
-						SearchLevel:       1.1,
-						InitialMargin:     1.2,
-						CollateralRelease: 1.4,
-					},
-				},
-				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
-					LogNormalRiskModel: &proto.LogNormalRiskModel{
-						RiskAversionParameter: 0.01,
-						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.LogNormalModelParams{
-							Mu:    0,
-							R:     0.016,
-							Sigma: 0.09,
-						},
+		pm := &proto.NewMarketConfiguration{
+			Instrument: &proto.InstrumentConfiguration{
+				Name:      "December 2020 ETH vs VUSD future",
+				Code:      "CRYPTO:ETHVUSD/DEC20",
+				BaseName:  "ETH",
+				QuoteName: "VUSD",
+				Product: &proto.InstrumentConfiguration_Future{
+					Future: &proto.FutureProduct{
+						Asset:    "VUSD",
+						Maturity: "2020-12-31T23:59:59Z",
 					},
 				},
 			},
-			TradingMode: &proto.Market_Continuous{
+			RiskParameters: &proto.NewMarketConfiguration_LogNormal{
+				LogNormal: &proto.LogNormalRiskModel{
+					RiskAversionParameter: 0.01,
+					Tau:                   1.0 / 365.25 / 24,
+					Params: &proto.LogNormalModelParams{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
+					},
+				},
+			},
+			Metadata: []string{
+				"asset_class:fx/crypto",
+				"product:futures",
+			},
+			DecimalPlaces: 5,
+			TradingMode: &proto.NewMarketConfiguration_Continuous{
 				Continuous: &proto.ContinuousTrading{
 					TickSize: 42,
 				},
 			},
 		}
 
-		terms := &proto.ProposalTerms{
+		protoTerms, err := gql.ProposalTermsFromProto(&proto.ProposalTerms{
 			ClosingTimestamp:   1234567,
 			EnactmentTimestamp: 1234568,
 			Change: &proto.ProposalTerms_NewMarket{
@@ -630,10 +579,9 @@ func TestModelConverters(t *testing.T) {
 					Changes: pm,
 				},
 			},
-		}
-		protoTerms, err := gql.ProposalTermsFromProto(terms)
-		assert.NotNil(t, protoTerms)
+		})
 		assert.NoError(t, err)
+		assert.NotNil(t, protoTerms)
 	})
 }
 

@@ -74,6 +74,12 @@ type Assets interface {
 	Get(assetID string) (assets.Asset, error)
 }
 
+// TimeService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
+type TimeService interface {
+	GetTimeNow() (time.Time, error)
+}
+
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
@@ -130,10 +136,30 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.mu.Unlock()
 }
 
+func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, err error) {
+	te = &ToEnact{
+		p: p,
+	}
+	defer func() {
+		if err != nil {
+			p.State = types.Proposal_STATE_FAILED
+		}
+	}()
+	switch change := p.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		mkt, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime)
+		if err != nil {
+			return nil, err
+		}
+		te.m = mkt
+	}
+	return
+}
+
 // OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*types.Proposal {
+func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact {
 	e.currentTime = t
-	var toBeEnacted []*types.Proposal
+	var toBeEnacted []*ToEnact
 	if len(e.activeProposals) > 0 {
 		now := t.Unix()
 
@@ -148,7 +174,15 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*types.Pr
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
 				delete(e.activeProposals, id)
 			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
-				toBeEnacted = append(toBeEnacted, proposal.Proposal)
+				enact, err := e.preEnactProposal(proposal.Proposal)
+				if err != nil {
+					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+					e.log.Error("proposal enactment has failed",
+						logging.String("proposal-id", proposal.ID),
+						logging.Error(err))
+				} else {
+					toBeEnacted = append(toBeEnacted, enact)
+				}
 				delete(e.activeProposals, id)
 			}
 		}
@@ -220,7 +254,7 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	if terms.GetNewMarket() != nil {
-		return &e.networkParams.newMarkets, nil
+		return &e.networkParams.NewMarkets, nil
 	}
 	return nil, ErrNoNetworkParams
 }
@@ -250,6 +284,15 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
 	totalTokens := e.accs.GetTotalTokens()
 	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
 		return ErrProposalInsufficientTokens
+	}
+	return e.validateChange(proposal.Terms)
+}
+
+// validates proposed change
+func (e *Engine) validateChange(terms *types.ProposalTerms) error {
+	switch change := terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes)
 	}
 	return nil
 }

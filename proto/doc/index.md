@@ -105,12 +105,15 @@
     - [ERC20](#vega.ERC20)
 
 - [proto/governance.proto](#proto/governance.proto)
+    - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
     - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
+    - [InstrumentConfiguration](#vega.InstrumentConfiguration)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
+    - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
@@ -1762,6 +1765,22 @@ The response of the GetNodeSIgnatureAggregate rpc
 
 
 
+<a name="vega.FutureProduct"></a>
+
+### FutureProduct
+Future product configuration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp) |
+| asset | [string](#string) |  | Product asset name |
+
+
+
+
+
+
 <a name="vega.GovernanceData"></a>
 
 ### GovernanceData
@@ -1813,6 +1832,25 @@ The response of the GetNodeSIgnatureAggregate rpc
 
 
 
+<a name="vega.InstrumentConfiguration"></a>
+
+### InstrumentConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | Instrument name |
+| code | [string](#string) |  | Instrument code |
+| baseName | [string](#string) |  | Base security used as the reference |
+| quoteName | [string](#string) |  | Quote (secondary) security |
+| future | [FutureProduct](#vega.FutureProduct) |  |  |
+
+
+
+
+
+
 <a name="vega.NetworkConfiguration"></a>
 
 ### NetworkConfiguration
@@ -1829,6 +1867,7 @@ The response of the GetNodeSIgnatureAggregate rpc
 | requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
 | minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
+| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
 
 
 
@@ -1858,7 +1897,28 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [Market](#vega.Market) |  |  |
+| changes | [NewMarketConfiguration](#vega.NewMarketConfiguration) |  |  |
+
+
+
+
+
+
+<a name="vega.NewMarketConfiguration"></a>
+
+### NewMarketConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
+| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
+| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
+| metadata | [string](#string) | repeated | Optional new market meta data, tags |
+| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
+| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
 
 
@@ -2025,7 +2085,8 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| duration | [int64](#int64) |  |  |
+| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
+| tickSize | [uint64](#uint64) |  |  |
 
 
 
@@ -2193,8 +2254,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | 32 pseudo-random upper-case letters and digits |
-| name | [string](#string) |  | a human-understandable name for the Market, perhaps including a currency pair and a maturity date |
+| id | [string](#string) |  |  |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |

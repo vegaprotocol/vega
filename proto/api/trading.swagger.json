@@ -1616,9 +1616,14 @@
     "vegaDiscreteTrading": {
       "type": "object",
       "properties": {
-        "duration": {
+        "durationNs": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
+        },
+        "tickSize": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -1675,6 +1680,20 @@
           "$ref": "#/definitions/vegaEthereumEvent"
         }
       }
+    },
+    "vegaFutureProduct": {
+      "type": "object",
+      "properties": {
+        "maturity": {
+          "type": "string",
+          "title": "Future product maturity (ISO8601/RFC3339 timestamp)"
+        },
+        "asset": {
+          "type": "string",
+          "title": "Product asset name"
+        }
+      },
+      "title": "Future product configuration"
     },
     "vegaGovernanceData": {
       "type": "object",
@@ -1740,6 +1759,30 @@
         },
         "future": {
           "$ref": "#/definitions/vegaFuture"
+        }
+      }
+    },
+    "vegaInstrumentConfiguration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Instrument name"
+        },
+        "code": {
+          "type": "string",
+          "title": "Instrument code"
+        },
+        "baseName": {
+          "type": "string",
+          "title": "Base security used as the reference"
+        },
+        "quoteName": {
+          "type": "string",
+          "title": "Quote (secondary) security"
+        },
+        "future": {
+          "$ref": "#/definitions/vegaFutureProduct"
         }
       }
     },
@@ -1872,12 +1915,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "32 pseudo-random upper-case letters and digits"
-        },
-        "name": {
-          "type": "string",
-          "title": "a human-understandable name for the Market, perhaps including a currency pair and a maturity date"
+          "type": "string"
         },
         "tradableInstrument": {
           "$ref": "#/definitions/vegaTradableInstrument"
@@ -1993,6 +2031,10 @@
           "type": "number",
           "format": "float",
           "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."
+        },
+        "marginConfiguration": {
+          "$ref": "#/definitions/vegaScalingFactors",
+          "description": "Scaling factors for all markets created via governance."
         }
       }
     },
@@ -2009,7 +2051,42 @@
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaMarket"
+          "$ref": "#/definitions/vegaNewMarketConfiguration"
+        }
+      }
+    },
+    "vegaNewMarketConfiguration": {
+      "type": "object",
+      "properties": {
+        "instrument": {
+          "$ref": "#/definitions/vegaInstrumentConfiguration",
+          "title": "New market instrument configuration"
+        },
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams",
+          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel",
+          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
+        },
+        "decimalPlaces": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Decimal places used for the new market"
+        },
+        "metadata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Optional new market meta data, tags"
+        },
+        "continuous": {
+          "$ref": "#/definitions/vegaContinuousTrading"
+        },
+        "discrete": {
+          "$ref": "#/definitions/vegaDiscreteTrading"
         }
       }
     },

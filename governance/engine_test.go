@@ -501,7 +501,7 @@ func testVotingPassedProposal(t *testing.T) {
 	// no calculations, no state change, simply removed from governance engine
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, passed.ID, tobeEnacted[0].ID)
+	assert.Equal(t, passed.ID, tobeEnacted[0].Proposal().ID)
 
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter2.Id,
@@ -625,7 +625,7 @@ func testProposalPassed(t *testing.T) {
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, proposal.ID, tobeEnacted[0].ID)
+	assert.Equal(t, proposal.ID, tobeEnacted[0].Proposal().ID)
 }
 
 func testMultipleProposalsLifecycle(t *testing.T) {
@@ -750,7 +750,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, howMany)
 	for i := 0; i < howMany; i++ {
-		_, found := passed[tobeEnacted[i].ID]
+		_, found := passed[tobeEnacted[i].Proposal().ID]
 		assert.True(t, found)
 	}
 }
@@ -802,56 +802,35 @@ func (w testVegaWallet) PubKeyOrAddress() []byte {
 func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 	return &types.ProposalTerms_NewMarket{
 		NewMarket: &types.NewMarket{
-			Changes: &types.Market{
-				Id:            "a-unit-test-market",
-				DecimalPlaces: 5,
-				Name:          "a-unit-test-market-name",
-				TradingMode: &types.Market_Continuous{
-					Continuous: &types.ContinuousTrading{
-						TickSize: 0,
+			Changes: &types.NewMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name:      "June 2020 GBP vs VUSD future",
+					Code:      "CRYPTO:GBPVUSD/JUN20",
+					BaseName:  "GBP",
+					QuoteName: "VUSD",
+					Product: &types.InstrumentConfiguration_Future{
+						Future: &types.FutureProduct{
+							Maturity: "2030-06-30T22:59:59Z",
+							Asset:    "VUSD",
+						},
 					},
 				},
-				TradableInstrument: &types.TradableInstrument{
-					Instrument: &types.Instrument{
-						Id:        "Crypto/GBPVUSD/Futures/Jun20",
-						Code:      "CRYPTO:GBPVUSD/JUN20",
-						Name:      "June 2020 GBP vs VUSD future",
-						BaseName:  "GBP",
-						QuoteName: "VUSD",
-						Metadata: &types.InstrumentMetadata{
-							Tags: []string{"asset_class:fx/crypto", "product:futures"},
-						},
-						InitialMarkPrice: 123321,
-						Product: &types.Instrument_Future{
-							Future: &types.Future{
-								Maturity: "2030-06-30T22:59:59Z",
-								Asset:    "VUSD",
-								Oracle: &types.Future_EthereumEvent{
-									EthereumEvent: &types.EthereumEvent{
-										ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-										Event:      "price_changed",
-									},
-								},
-							},
+				RiskParameters: &types.NewMarketConfiguration_LogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: 0.01,
+						Tau:                   0.00011407711613050422,
+						Params: &types.LogNormalModelParams{
+							Mu:    0,
+							R:     0.016,
+							Sigma: 0.09,
 						},
 					},
-					MarginCalculator: &types.MarginCalculator{
-						ScalingFactors: &types.ScalingFactors{
-							InitialMargin:     1.2,
-							CollateralRelease: 1.4,
-							SearchLevel:       1.1,
-						},
-					},
-					RiskModel: &types.TradableInstrument_LogNormalRiskModel{
-						LogNormalRiskModel: &types.LogNormalRiskModel{
-							RiskAversionParameter: 0.01,
-							Tau:                   0.00011407711613050422,
-							Params: &types.LogNormalModelParams{
-								Mu:    0,
-								R:     0.016,
-								Sigma: 0.09,
-							},
-						},
+				},
+				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces: 5,
+				TradingMode: &types.NewMarketConfiguration_Continuous{
+					Continuous: &types.ContinuousTrading{
+						TickSize: 10,
 					},
 				},
 			},

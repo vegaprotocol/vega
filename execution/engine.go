@@ -20,6 +20,9 @@ var (
 	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
 	// because proposed changes cannot be processed by the system
 	ErrUnknownProposalChange = errors.New("unknown proposal change")
+
+	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
+	ErrNoMarketID = errors.New("no valid market id was supplied")
 )
 
 // CandleBuf ...
@@ -99,6 +102,10 @@ func NewEngine(
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
+	// this is here because we're creating some markets here
+	// this isn't going to be the case in the final version
+	// so I'm using Background rather than TODO
+	ctx := context.Background()
 
 	e := &Engine{
 		log:        log,
@@ -120,7 +127,7 @@ func NewEngine(
 	if len(pmkts) > 0 {
 		for _, mkt := range pmkts {
 			mkt := mkt
-			err = e.SubmitMarket(&mkt)
+			err = e.SubmitMarket(ctx, &mkt)
 			if err != nil {
 				e.log.Panic("Unable to submit market",
 					logging.Error(err))
@@ -182,18 +189,17 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 }
 
 // SubmitMarket will submit a new market configuration to the network
-func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
+func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
+	if len(marketConfig.Id) == 0 {
+		return ErrNoMarketID
+	}
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		e.log.Error("Failed to get current Vega network time", logging.Error(err))
+		return err
+	}
 
-	// TODO: Check for existing market in MarketStore by Name.
-	// if __TBC_MarketExists__(marketConfig.Name) {
-	// 	return ErrMarketAlreadyExist
-	// }
-
-	var mkt *Market
-	var err error
-
-	now, _ := e.time.GetTimeNow()
-	mkt, err = NewMarket(
+	mkt, err := NewMarket(
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
@@ -210,7 +216,7 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
-			logging.String("market-name", marketConfig.GetName()),
+			logging.String("market-id", marketConfig.Id),
 			logging.Error(err),
 		)
 	}
@@ -224,13 +230,11 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
-	e.markets[mkt.mkt.Id].partyEngine = e.party
 
-	// Save to market proto to buffer
 	e.marketBuf.Add(*marketConfig)
 	return nil
 }
@@ -366,29 +370,6 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 		}
 	}
 	timer.EngineTimeCounterAdd()
-}
-
-func (e *Engine) EnactProposal(proposal *types.Proposal) error {
-	if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil {
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
-		}
-		newMarket.Changes.Id = proposal.ID // reusing proposal ID for market ID
-		if err := e.SubmitMarket(newMarket.Changes); err != nil {
-			return err
-		}
-		proposal.State = types.Proposal_STATE_ENACTED
-		return nil
-	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
-
-		return errors.New("update market enactment is not implemented")
-	} else if updateNetwork := proposal.Terms.GetUpdateNetwork(); updateNetwork != nil {
-
-		return errors.New("update network enactment is not implemented")
-	}
-	// This error shouldn't be possible here,if we reach this point the governance engine
-	// has failed to perform the correct validation on the proposal itself
-	return ErrUnknownProposalChange
 }
 
 // Process any data updates (including state changes)

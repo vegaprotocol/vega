@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	testMarketID   = "ABC123DEF456"
-	testMarketName = "ABCUSD/DEC99"
+	testMarketID = "ABC123DEF456"
 )
 
 func TestMarkets(t *testing.T) {
@@ -40,8 +39,7 @@ func TestMarkets(t *testing.T) {
 	marketStore.ReloadConf(config)
 
 	mkt := types.Market{
-		Id:   testMarketID,
-		Name: testMarketName,
+		Id: testMarketID,
 	}
 	err = marketStore.Post(&mkt)
 	assert.NoError(t, err)

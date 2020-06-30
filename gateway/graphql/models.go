@@ -32,28 +32,34 @@ type TradingMode interface {
 
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
-	// Size of an increment in price in terms of the quote currency (uint64)
-	TickSize *int `json:"tickSize"`
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
 }
 
 func (ContinuousTrading) IsTradingMode() {}
 
+// A mode where Vega try to execute order as soon as they are received
 type ContinuousTradingInput struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize int `json:"tickSize"`
 }
 
-// Some non continuous trading mode
+// Frequent batch auctions trading mode
 type DiscreteTrading struct {
-	// Duration of the trading (uint64)
-	Duration *int `json:"duration"`
+	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
+	Duration int `json:"duration"`
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
 }
 
 func (DiscreteTrading) IsTradingMode() {}
 
+// Frequent batch auctions trading mode
 type DiscreteTradingInput struct {
-	// Duration of the trading
+	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
+	// Size of an increment in price in terms of the quote currency
+	TickSize int `json:"tickSize"`
 }
 
 // An Ethereum oracle
@@ -66,16 +72,9 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
-type EthereumEventInput struct {
-	// The ID of the ethereum contract to use
-	ContractID string `json:"contractId"`
-	// Name of the Ethereum event to listen to
-	Event string `json:"event"`
-}
-
 // A Future product
 type Future struct {
-	// The maturity date of the product (string)
+	// The maturity date of the product (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// The name of the asset (string)
 	Asset string `json:"asset"`
@@ -85,13 +84,19 @@ type Future struct {
 
 func (Future) IsProduct() {}
 
-type FutureInput struct {
-	// The maturity date of the product
+type FutureProduct struct {
+	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
-	// The name of the asset
+	// Product asset name
 	Asset string `json:"asset"`
-	// The oracle used for this product
-	EthereumOracle *EthereumEventInput `json:"ethereumOracle"`
+}
+
+// Future product configuration
+type FutureProductInput struct {
+	// Future product maturity (ISO8601/RFC3339 timestamp)
+	Maturity string `json:"maturity"`
+	// Product asset name
+	Asset string `json:"asset"`
 }
 
 // Describe something that can be traded on Vega
@@ -112,27 +117,30 @@ type Instrument struct {
 	Product Product `json:"product"`
 }
 
-type InstrumentInput struct {
-	// Uniquely identify an instrument accrods all instruments available on Vega
-	ID string `json:"id"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
-	Code string `json:"code"`
+type InstrumentConfiguration struct {
 	// Full and fairly descriptive name for the instrument
 	Name string `json:"name"`
+	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
+	Code string `json:"code"`
 	// String representing the base (e.g. BTCUSD -> BTC is base)
 	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName        string `json:"quoteName"`
-	InitialMarkPrice string `json:"initialMarkPrice"`
-	// Metadata for this instrument
-	Metadata *InstrumentMetadatInput `json:"metadata"`
-	// A reference to or instance of a fully specified product, including all required product parameters for that product
-	FutureProduct *FutureInput `json:"futureProduct"`
+	QuoteName string `json:"quoteName"`
+	// Future product specification
+	FutureProduct *FutureProduct `json:"futureProduct"`
 }
 
-type InstrumentMetadatInput struct {
-	// An arbitrary list of tags to associated to associate to the Instrument
-	Tags []*string `json:"tags"`
+type InstrumentConfigurationInput struct {
+	// Full and fairly descriptive name for the instrument
+	Name string `json:"name"`
+	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
+	Code string `json:"code"`
+	// String representing the base (e.g. BTCUSD -> BTC is base)
+	BaseName string `json:"baseName"`
+	// String representing the quote (e.g. BTCUSD -> USD is quote)
+	QuoteName string `json:"quoteName"`
+	// Future product specification
+	FutureProduct *FutureProductInput `json:"futureProduct"`
 }
 
 // A set of metadata to associate to an instruments
@@ -186,11 +194,6 @@ type MarginCalculator struct {
 	ScalingFactors *ScalingFactors `json:"scalingFactors"`
 }
 
-type MarginCalculatorInput struct {
-	// The scaling factors that will be used for margin calculation
-	ScalingFactors *ScalingFactorsInput `json:"scalingFactors"`
-}
-
 // Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market struct {
 	// Market ID
@@ -231,24 +234,35 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
-// Input variation of market details same to those defined in Market type
-type MarketInput struct {
-	Name                  string                   `json:"name"`
-	TradableInstrument    *TradableInstrumentInput `json:"tradableInstrument"`
-	ContinuousTradingMode *ContinuousTradingInput  `json:"continuousTradingMode"`
-	DiscreteTradingMode   *DiscreteTradingInput    `json:"discreteTradingMode"`
-	DecimalPlaces         int                      `json:"decimalPlaces"`
-}
-
-// Allows creating new markets on the network
 type NewMarket struct {
-	Market *Market `json:"market"`
+	// New market instrument configuration
+	Instrument *InstrumentConfiguration `json:"instrument"`
+	// Decimal places used for the new market
+	DecimalPlaces int `json:"decimalPlaces"`
+	// New market risk configuration
+	RiskParameters RiskModel `json:"riskParameters"`
+	// Metadata for this instrument, tags
+	Metadata []*string `json:"metadata"`
+	// Trading mode
+	TradingMode TradingMode `json:"tradingMode"`
 }
 
 func (NewMarket) IsProposalChange() {}
 
+// Allows creating new markets on the network
 type NewMarketInput struct {
-	Market *MarketInput `json:"market"`
+	// New market instrument configuration
+	Instrument *InstrumentConfigurationInput `json:"instrument"`
+	// Decimal places used for the new market
+	DecimalPlaces int `json:"decimalPlaces"`
+	// New market risk configuration
+	RiskParameters *RiskParametersInput `json:"riskParameters"`
+	// Metadata for this instrument, tags
+	Metadata []*string `json:"metadata"`
+	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
+	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
+	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
+	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
 }
 
 type PreparedAmendOrder struct {
@@ -320,16 +334,14 @@ type ProposalVote struct {
 	ProposalID string `json:"proposalID"`
 }
 
-type ScalingFactors struct {
-	// the scaling factor that determines the margin level at which we have to search for more money
-	SearchLevel float64 `json:"searchLevel"`
-	// the scaling factor that determines the optimal margin level
-	InitialMargin float64 `json:"initialMargin"`
-	// The scaling factor that determines the overflow margin level
-	CollateralRelease float64 `json:"collateralRelease"`
+type RiskParametersInput struct {
+	// Simple risk model parameters. Set only if risk model is Simple
+	Simple *SimpleRiskModelParamsInput `json:"simple"`
+	// Log normal risk model parameters. Set only if risk model is LogNormal
+	LogNormal *LogNormalRiskModelInput `json:"logNormal"`
 }
 
-type ScalingFactorsInput struct {
+type ScalingFactors struct {
 	// the scaling factor that determines the margin level at which we have to search for more money
 	SearchLevel float64 `json:"searchLevel"`
 	// the scaling factor that determines the optimal margin level
@@ -345,11 +357,6 @@ type SimpleRiskModel struct {
 }
 
 func (SimpleRiskModel) IsRiskModel() {}
-
-type SimpleRiskModelInput struct {
-	// Params for the simple risk model
-	Params *SimpleRiskModelParamsInput `json:"params"`
-}
 
 // Parameters for the simple risk model
 type SimpleRiskModelParams struct {
@@ -374,14 +381,6 @@ type TradableInstrument struct {
 	RiskModel RiskModel `json:"riskModel"`
 	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
-}
-
-// Input variation of tradable instrument details
-type TradableInstrumentInput struct {
-	Instrument         *InstrumentInput         `json:"instrument"`
-	SimpleRiskModel    *SimpleRiskModelInput    `json:"simpleRiskModel"`
-	LogNormalRiskModel *LogNormalRiskModelInput `json:"logNormalRiskModel"`
-	MarginCalculator   *MarginCalculatorInput   `json:"marginCalculator"`
 }
 
 type TransactionSubmitted struct {

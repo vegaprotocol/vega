@@ -64,20 +64,6 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1)
 }
 
-// EnactProposal mocks base method
-func (m *MockExecutionEngine) EnactProposal(arg0 *proto.Proposal) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnactProposal", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// EnactProposal indicates an expected call of EnactProposal
-func (mr *MockExecutionEngineMockRecorder) EnactProposal(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnactProposal", reflect.TypeOf((*MockExecutionEngine)(nil).EnactProposal), arg0)
-}
-
 // Generate mocks base method
 func (m *MockExecutionEngine) Generate() error {
 	m.ctrl.T.Helper()
@@ -104,6 +90,20 @@ func (m *MockExecutionEngine) NotifyTraderAccount(arg0 context.Context, arg1 *pr
 func (mr *MockExecutionEngineMockRecorder) NotifyTraderAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockExecutionEngine)(nil).NotifyTraderAccount), arg0, arg1)
+}
+
+// SubmitMarket mocks base method
+func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitMarket indicates an expected call of SubmitMarket
+func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1)
 }
 
 // SubmitOrder mocks base method

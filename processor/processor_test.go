@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor"
@@ -115,7 +116,7 @@ func testOnTickEmpty(t *testing.T) {
 	proc := getTestProcessor(t)
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
-	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).Times(1).Return([]*types.Proposal{})
+	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).Times(1).Return([]*governance.ToEnact{})
 	proc.tickCB(time.Now())
 }
 

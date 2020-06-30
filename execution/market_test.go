@@ -88,7 +88,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 
 func getMarkets(closingAt time.Time) []types.Market {
 	mkt := types.Market{
-		Name: "ETHUSD/DEC19",
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
@@ -389,8 +388,7 @@ func TestSetMarketID(t *testing.T) {
 
 	t.Run("good market config", func(t *testing.T) {
 		marketcfg := &types.Market{
-			Id:   "", // ID will be generated
-			Name: "ETH/DEC19",
+			Id: "", // ID will be generated
 			TradableInstrument: &types.TradableInstrument{
 				Instrument: &types.Instrument{
 					Id:   "Crypto/ETHUSD/Futures/Dec19",

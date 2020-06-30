@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	governance "code.vegaprotocol.io/vega/governance"
 	proto "code.vegaprotocol.io/vega/proto"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -64,10 +65,10 @@ func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1 interface{}) *gom
 }
 
 // OnChainTimeUpdate mocks base method
-func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) []*proto.Proposal {
+func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) []*governance.ToEnact {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnChainTimeUpdate", arg0, arg1)
-	ret0, _ := ret[0].([]*proto.Proposal)
+	ret0, _ := ret[0].([]*governance.ToEnact)
 	return ret0
 }
 

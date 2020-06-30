@@ -585,6 +585,10 @@
             <ul>
 
                 <li>
+                  <a href="#vega.FutureProduct"><span class="badge">M</span>FutureProduct</a>
+                </li>
+
+                <li>
                   <a href="#vega.GovernanceData"><span class="badge">M</span>GovernanceData</a>
                 </li>
 
@@ -597,6 +601,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.InstrumentConfiguration"><span class="badge">M</span>InstrumentConfiguration</a>
+                </li>
+
+                <li>
                   <a href="#vega.NetworkConfiguration"><span class="badge">M</span>NetworkConfiguration</a>
                 </li>
 
@@ -606,6 +614,10 @@
 
                 <li>
                   <a href="#vega.NewMarket"><span class="badge">M</span>NewMarket</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NewMarketConfiguration"><span class="badge">M</span>NewMarketConfiguration</a>
                 </li>
 
                 <li>
@@ -4766,6 +4778,75 @@
       <p></p>
 
 
+        <h3 id="vega.FutureProduct">FutureProduct</h3>
+        <p>Future product configuration</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>maturity</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Future product maturity (ISO8601/RFC3339 timestamp) </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product asset name </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>maturity</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
         <h3 id="vega.GovernanceData">GovernanceData</h3>
         <p></p>
 
@@ -4880,6 +4961,118 @@
 
 
 
+        <h3 id="vega.InstrumentConfiguration">InstrumentConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Instrument name </p></td>
+                </tr>
+
+                <tr>
+                  <td>code</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Instrument code </p></td>
+                </tr>
+
+                <tr>
+                  <td>baseName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Base security used as the reference </p></td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Quote (secondary) security </p></td>
+                </tr>
+
+                <tr>
+                  <td>future</td>
+                  <td><a href="#vega.FutureProduct">FutureProduct</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>name</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>code</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>baseName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
         <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
         <p></p>
 
@@ -4944,6 +5137,13 @@
                   <td><a href="#float">float</a></td>
                   <td></td>
                   <td><p>Minimum balance required for a party to be able to cast a vote. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
+                </tr>
+
+                <tr>
+                  <td>marginConfiguration</td>
+                  <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
+                  <td></td>
+                  <td><p>Scaling factors for all markets created via governance. </p></td>
                 </tr>
 
             </tbody>
@@ -5016,7 +5216,7 @@
 
                 <tr>
                   <td>changes</td>
-                  <td><a href="#vega.Market">Market</a></td>
+                  <td><a href="#vega.NewMarketConfiguration">NewMarketConfiguration</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5043,6 +5243,110 @@
                     <ul>
 
                       <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.NewMarketConfiguration">NewMarketConfiguration</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>instrument</td>
+                  <td><a href="#vega.InstrumentConfiguration">InstrumentConfiguration</a></td>
+                  <td></td>
+                  <td><p>New market instrument configuration </p></td>
+                </tr>
+
+                <tr>
+                  <td>simple</td>
+                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
+                  <td></td>
+                  <td><p>Simple risk model parameters, valid only if MODEL_SIMPLE is selected </p></td>
+                </tr>
+
+                <tr>
+                  <td>logNormal</td>
+                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
+                  <td></td>
+                  <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
+                </tr>
+
+                <tr>
+                  <td>decimalPlaces</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Decimal places used for the new market </p></td>
+                </tr>
+
+                <tr>
+                  <td>metadata</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>Optional new market meta data, tags </p></td>
+                </tr>
+
+                <tr>
+                  <td>continuous</td>
+                  <td><a href="#vega.ContinuousTrading">ContinuousTrading</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>discrete</td>
+                  <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>instrument</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>decimalPlaces</td>
+                  <td>
+                    <ul>
+
+                      <li>int_lt: 150</li>
 
                     </ul>
                   </td>
@@ -5558,14 +5862,50 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
             <tbody>
 
                 <tr>
-                  <td>duration</td>
+                  <td>durationNs</td>
                   <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Duration in nanoseconds, maximum 1 month (2592000000000000 ns) </p></td>
+                </tr>
+
+                <tr>
+                  <td>tickSize</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>durationNs</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                      <li>int_lt: 2592000000000000</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -5927,14 +6267,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>32 pseudo-random upper-case letters and digits </p></td>
-                </tr>
-
-                <tr>
-                  <td>name</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>a human-understandable name for the Market, perhaps including a currency pair and a maturity date </p></td>
+                  <td><p> </p></td>
                 </tr>
 
                 <tr>
