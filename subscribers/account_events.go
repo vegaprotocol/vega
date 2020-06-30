@@ -20,7 +20,7 @@ type AccountStore interface {
 type AccountSub struct {
 	*Base
 	store AccountStore
-	mu    *sync.Mutex
+	mu    sync.Mutex
 	buf   map[string]*types.Account
 }
 
@@ -28,7 +28,6 @@ func NewAccountSub(ctx context.Context, store AccountStore) *AccountSub {
 	a := &AccountSub{
 		Base:  newBase(ctx, 10),
 		store: store,
-		mu:    &sync.Mutex{},
 		buf:   map[string]*types.Account{},
 	}
 	a.running = true
@@ -71,9 +70,13 @@ func (a *AccountSub) Types() []events.Type {
 	}
 }
 
-func (a AccountSub) flush() {
+func (a *AccountSub) flush() {
+	a.mu.Lock()
+	buf := a.buf
+	a.buf = map[string]*types.Account{}
+	a.mu.Unlock()
 	batch := make([]*types.Account, 0, len(a.buf))
-	for _, acc := range a.buf {
+	for _, acc := range buf {
 		batch = append(batch, acc)
 	}
 	_ = a.store.SaveBatch(batch)
