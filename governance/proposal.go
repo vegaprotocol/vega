@@ -18,7 +18,8 @@ func (t ToEnact) IsNewMarket() bool {
 }
 
 func (t ToEnact) IsNewAsset() bool {
-	return (t.a != nil)
+	a := t.p.Terms.GetNewAsset()
+	return (a != nil)
 }
 
 func (t ToEnact) IsUpdateMarket() bool {
@@ -30,7 +31,7 @@ func (t ToEnact) IsUpdateNetwork() bool {
 }
 
 func (t ToEnact) IsNewAssetSource() bool {
-	return (t.as != nil)
+	return t.IsNewAsset()
 }
 
 func (t *ToEnact) NewMarket() *types.Market {
