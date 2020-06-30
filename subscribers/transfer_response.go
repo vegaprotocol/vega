@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -26,6 +27,7 @@ type TransferResponseEvent interface {
 // produced during a block by vega
 type TransferResponse struct {
 	*Base
+	mu    sync.Mutex
 	store TransferResponseStore
 	trs   []*types.TransferResponse
 }
@@ -63,8 +65,10 @@ func (t *TransferResponse) Types() []events.Type {
 }
 
 func (t *TransferResponse) flush() error {
+	t.mu.Lock()
 	trs := t.trs
 	t.trs = []*types.TransferResponse{}
+	t.mu.Unlock()
 	if len(trs) == 0 {
 		return nil
 	}
@@ -77,6 +81,8 @@ func (t *TransferResponse) Push(e events.Event) {
 	case TimeEvent:
 		_ = t.flush()
 	case TransferResponseEvent:
+		t.mu.Lock()
 		t.trs = append(t.trs, te.TransferResponses()...)
+		t.mu.Unlock()
 	}
 }

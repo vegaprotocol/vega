@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -18,6 +19,7 @@ type TradeStore interface {
 
 type TradeSub struct {
 	*Base
+	mu    sync.Mutex
 	buf   []types.Trade
 	store TradeStore
 }
@@ -58,12 +60,16 @@ func (t *TradeSub) Push(e events.Event) {
 
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use
 func (t *TradeSub) write(e TE) {
+	t.mu.Lock()
 	t.buf = append(t.buf, e.Trade())
+	t.mu.Unlock()
 }
 
 func (t *TradeSub) flush() {
+	t.mu.Lock()
 	b := t.buf
 	t.buf = make([]types.Trade, 0, cap(b))
+	t.mu.Unlock()
 	_ = t.store.SaveBatch(b)
 }
 
