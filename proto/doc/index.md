@@ -16,6 +16,8 @@
     - [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse)
     - [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest)
     - [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse)
+    - [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest)
+    - [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByIDResponse](#api.GetProposalByIDResponse)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
@@ -147,6 +149,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [NodeRegistration](#vega.NodeRegistration)
+    - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
@@ -176,6 +179,7 @@
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -375,6 +379,37 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateRequest"></a>
+
+### GetNodeSignaturesAggregateRequest
+The request message to specify the ID of the resource we want to retrieve
+the aggregated signatures for
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The ID of the resource |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateResponse"></a>
+
+### GetNodeSignaturesAggregateResponse
+The response of the GetNodeSIgnatureAggregate rpc
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| signatures | [vega.NodeSignature](#vega.NodeSignature) | repeated | The list of signatures |
 
 
 
@@ -1613,6 +1648,7 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
 
 
 
@@ -2439,6 +2475,25 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.NodeSignature"></a>
+
+### NodeSignature
+A message reprensenting a signature from a validator
+meant to be used by foreign chain in order to recognise
+a decision taken by the vega network.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The ID of the resource being signed |
+| sig | [bytes](#bytes) |  | The signature |
+| kind | [NodeSignatureKind](#vega.NodeSignatureKind) |  | The kind of resource being signed |
+
+
+
+
+
+
 <a name="vega.NodeVote"></a>
 
 ### NodeVote
@@ -2963,6 +3018,20 @@ Proposal can enter Failed state from any other state.
 | INTERVAL_I1H | 3600 | 1 hour |
 | INTERVAL_I6H | 21600 | 6 hours |
 | INTERVAL_I1D | 86400 | 1 day |
+
+
+
+<a name="vega.NodeSignatureKind"></a>
+
+### NodeSignatureKind
+The kind of the signature created by a node
+eg: for a new asset whitelisting, withdrawal
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NODE_SIGNATURE_KIND_UNSPECIFIED | 0 | represents a unspecified / missing value from the input |
+| NODE_SIGNATURE_KIND_ASSET_NEW | 1 | represents a signature for a new asset whitelisting |
+| NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 2 | represents a signature for a asset withdrawal |
 
 
 

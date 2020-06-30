@@ -44,6 +44,7 @@ type ResolverRoot interface {
 	MarketData() MarketDataResolver
 	MarketDepth() MarketDepthResolver
 	Mutation() MutationResolver
+	NodeSignature() NodeSignatureResolver
 	Order() OrderResolver
 	Party() PartyResolver
 	Position() PositionResolver
@@ -183,6 +184,12 @@ type ComplexityRoot struct {
 		Market func(childComplexity int) int
 	}
 
+	NodeSignature struct {
+		ID        func(childComplexity int) int
+		Kind      func(childComplexity int) int
+		Signature func(childComplexity int) int
+	}
+
 	Order struct {
 		CreatedAt       func(childComplexity int) int
 		ExpiresAt       func(childComplexity int) int
@@ -280,6 +287,7 @@ type ComplexityRoot struct {
 		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
 		NewAssetProposals          func(childComplexity int, inState *ProposalState) int
 		NewMarketProposals         func(childComplexity int, inState *ProposalState) int
+		NodeSignatures             func(childComplexity int, resourceID string) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
 		OrderByReferenceID         func(childComplexity int, referenceID string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
@@ -454,6 +462,10 @@ type MutationResolver interface {
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
 	SubmitTransaction(ctx context.Context, data string, sig string, address *string, pubkey *string) (*TransactionSubmitted, error)
 }
+type NodeSignatureResolver interface {
+	Signature(ctx context.Context, obj *proto.NodeSignature) (*string, error)
+	Kind(ctx context.Context, obj *proto.NodeSignature) (*NodeSignatureKind, error)
+}
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
 	TimeInForce(ctx context.Context, obj *proto.Order) (OrderTimeInForce, error)
@@ -520,6 +532,7 @@ type QueryResolver interface {
 	UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*proto.GovernanceData, error)
 	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
+	NodeSignatures(ctx context.Context, resourceID string) ([]*proto.NodeSignature, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -1156,6 +1169,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMarket.Market(childComplexity), true
 
+	case "NodeSignature.id":
+		if e.complexity.NodeSignature.ID == nil {
+			break
+		}
+
+		return e.complexity.NodeSignature.ID(childComplexity), true
+
+	case "NodeSignature.kind":
+		if e.complexity.NodeSignature.Kind == nil {
+			break
+		}
+
+		return e.complexity.NodeSignature.Kind(childComplexity), true
+
+	case "NodeSignature.signature":
+		if e.complexity.NodeSignature.Signature == nil {
+			break
+		}
+
+		return e.complexity.NodeSignature.Signature(childComplexity), true
+
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
 			break
@@ -1625,6 +1659,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.NewMarketProposals(childComplexity, args["inState"].(*ProposalState)), true
+
+	case "Query.nodeSignatures":
+		if e.complexity.Query.NodeSignatures == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nodeSignatures_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NodeSignatures(childComplexity, args["resourceId"].(string)), true
 
 	case "Query.orderByID":
 		if e.complexity.Query.OrderByID == nil {
@@ -2710,6 +2756,32 @@ type Query {
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignatures(
+    resourceId: String!
+  ): [NodeSignature!]
+}
+
+"Represents a signature for the approval of a resource from a validator"
+type NodeSignature {
+  "The id of the resource being signed for"
+  id: String!
+
+  "The signature, as base64 encoding"
+  signature: String
+
+  "The kind of signature this is (e.g: withdrawal, new asset, etc)"
+  kind: NodeSignatureKind
+}
+
+"Represents the type signature provided by a node"
+enum NodeSignatureKind {
+  "A signature for proposing a new asset into the network"
+  AssetNew
+
+  "A signature for allowing a withdrawal of funds"
+  AssetWithdrawal
 }
 
 "Statistics about the node"
@@ -4445,6 +4517,20 @@ func (ec *executionContext) field_Query_newMarketProposals_args(ctx context.Cont
 		}
 	}
 	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_nodeSignatures_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["resourceId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["resourceId"] = arg0
 	return args, nil
 }
 
@@ -7384,6 +7470,102 @@ func (ec *executionContext) _NewMarket_market(ctx context.Context, field graphql
 	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *proto.NodeSignature) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NodeSignature",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field graphql.CollectedField, obj *proto.NodeSignature) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NodeSignature",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeSignature().Signature(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graphql.CollectedField, obj *proto.NodeSignature) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NodeSignature",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeSignature().Kind(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*NodeSignatureKind)
+	fc.Result = res
+	return ec.marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -9779,6 +9961,44 @@ func (ec *executionContext) _Query_newAssetProposals(ctx context.Context, field 
 	res := resTmp.([]*proto.GovernanceData)
 	fc.Result = res
 	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_nodeSignatures(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_nodeSignatures_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NodeSignatures(rctx, args["resourceId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.NodeSignature)
+	fc.Result = res
+	return ec.marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNodeSignatureᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15125,6 +15345,55 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var nodeSignatureImplementors = []string{"NodeSignature"}
+
+func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *proto.NodeSignature) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignatureImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeSignature")
+		case "id":
+			out.Values[i] = ec._NodeSignature_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "signature":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeSignature_signature(ctx, field, obj)
+				return res
+			})
+		case "kind":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeSignature_kind(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var orderImplementors = []string{"Order"}
 
 func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *proto.Order) graphql.Marshaler {
@@ -16158,6 +16427,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_newAssetProposals(ctx, field)
+				return res
+			})
+		case "nodeSignatures":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_nodeSignatures(ctx, field)
 				return res
 			})
 		case "__type":
@@ -17489,6 +17769,20 @@ func (ec *executionContext) unmarshalNMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return &res, err
 }
 
+func (ec *executionContext) marshalNNodeSignature2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v proto.NodeSignature) graphql.Marshaler {
+	return ec._NodeSignature(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v *proto.NodeSignature) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NodeSignature(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracle(ctx context.Context, sel ast.SelectionSet, v Oracle) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18544,6 +18838,70 @@ func (ec *executionContext) unmarshalONewMarketInput2ᚖcodeᚗvegaprotocolᚗio
 	}
 	res, err := ec.unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.NodeSignature) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNodeSignature(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, v interface{}) (NodeSignatureKind, error) {
+	var res NodeSignatureKind
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, sel ast.SelectionSet, v NodeSignatureKind) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, v interface{}) (*NodeSignatureKind, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, sel ast.SelectionSet, v *NodeSignatureKind) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Order) graphql.Marshaler {

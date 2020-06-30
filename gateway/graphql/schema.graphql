@@ -351,6 +351,32 @@ type Query {
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignatures(
+    resourceId: String!
+  ): [NodeSignature!]
+}
+
+"Represents a signature for the approval of a resource from a validator"
+type NodeSignature {
+  "The id of the resource being signed for"
+  id: String!
+
+  "The signature, as base64 encoding"
+  signature: String
+
+  "The kind of signature this is (e.g: withdrawal, new asset, etc)"
+  kind: NodeSignatureKind
+}
+
+"Represents the type signature provided by a node"
+enum NodeSignatureKind {
+  "A signature for proposing a new asset into the network"
+  AssetNew
+
+  "A signature for allowing a withdrawal of funds"
+  AssetWithdrawal
 }
 
 "Statistics about the node"

@@ -24,7 +24,7 @@ type PartySub struct {
 
 func NewPartySub(ctx context.Context, store PartyStore) *PartySub {
 	a := &PartySub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10),
 		store: store,
 		buf:   []types.Party{},
 	}

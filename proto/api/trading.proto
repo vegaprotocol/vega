@@ -199,7 +199,7 @@ service trading_data {
 
   // Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
   rpc GetNetworkParametersProposals(GetNetworkParametersProposalsRequest) returns (GetNetworkParametersProposalsResponse);
-  
+
   // Get governance data (proposals and votes) for proposals aiming to create new assets
   rpc GetNewAssetProposals(GetNewAssetProposalsRequest) returns (GetNewAssetProposalsResponse);
 
@@ -211,7 +211,7 @@ service trading_data {
 
   // Subscribe to a stream of all governance updates
   rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
-  
+
   // Subscribe to a stream of proposal updates
   rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.GovernanceData);
 
@@ -255,7 +255,24 @@ service trading_data {
 
   // Subscribe to a stream of Transfer Responses
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+
+  // Get an aggregate of signature from all the node of the network
+  rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
 }
+
+// The request message to specify the ID of the resource we want to retrieve
+// the aggregated signatures for
+message GetNodeSignaturesAggregateRequest {
+  // The ID of the resource
+  string ID = 1;
+}
+
+// The response of the GetNodeSIgnatureAggregate rpc
+message GetNodeSignaturesAggregateResponse {
+  // The list of signatures
+  repeated vega.NodeSignature signatures = 1;
+}
+
 
 message OptionalProposalState {
   vega.Proposal.State value = 1;
@@ -611,7 +628,7 @@ message PrepareVoteResponse {
 
 message OrderByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
-  
+
   // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 2;
 }

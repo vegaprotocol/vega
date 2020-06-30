@@ -24,7 +24,7 @@ type TradeSub struct {
 
 func NewTradeSub(ctx context.Context, store TradeStore) *TradeSub {
 	t := &TradeSub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10),
 		buf:   []types.Trade{},
 		store: store,
 	}
