@@ -3,6 +3,7 @@ package broker_test
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"code.vegaprotocol.io/vega/broker"
@@ -112,14 +113,22 @@ func testAutoUnsubscribe(t *testing.T) {
 	// set up sub to be closed
 	skipCh := make(chan struct{})
 	closedCh := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	defer func() {
 		close(skipCh)
 	}()
 	close(closedCh) // close the closed channel, so the subscriber is marked as closed when we try to send an event
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
+	sub.EXPECT().Closed().AnyTimes().Return(closedCh).Do(func() {
+		// indicator this function has been called already
+		wg.Done()
+	})
 	// send an event, the subscriber should be marked as closed, and automatically unsubscribed
 	broker.Send(broker.randomEvt())
+	// introduce some wait mechanism here, because the unsubscribe call acquires its own lock now
+	// so it's possible we haven't unsubscribed yet... the waitgroup should introduce enough time
+	wg.Wait()
 	// now try and subscribe again, the key should be reused
 	k2 := broker.Subscribe(sub, false)
 	assert.Equal(t, k1, k2)
@@ -130,7 +139,11 @@ func testSkipOptional(t *testing.T) {
 	defer tstBroker.Finish()
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
-	sub.EXPECT().Types().Times(2).Return(nil)
+	twg := sync.WaitGroup{}
+	twg.Add(2)
+	sub.EXPECT().Types().Times(2).Return(nil).Do(func() {
+		twg.Done()
+	})
 	k1 := tstBroker.Subscribe(sub, false)
 	assert.NotZero(t, k1)
 
@@ -159,12 +172,13 @@ func testSkipOptional(t *testing.T) {
 	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
 	// because there's a loop calling functions that are returning the channels we're closing here
 	tstBroker.Unsubscribe(k1)
+	// ensure unsubscribe has returned
+	twg.Wait()
 	close(closedCh)
 	close(skipCh)
 	assert.Equal(t, events[0], <-cCh)
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
-	close(cCh)
 }
 
 func testStopCtx(t *testing.T) {
@@ -190,7 +204,7 @@ func testSubscriberSkip(t *testing.T) {
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	skipCh, closeCh := make(chan struct{}), make(chan struct{})
-	skip := true
+	skip := int64(0)
 	events := []*evt{
 		broker.randomEvt(),
 		broker.randomEvt(),
@@ -201,9 +215,9 @@ func testSubscriberSkip(t *testing.T) {
 		wg.Done()
 	})
 	sub.EXPECT().Skip().AnyTimes().DoAndReturn(func() <-chan struct{} {
-		if skip {
+		// ensure at least all events + 1 skip are called
+		if s := atomic.AddInt64(&skip, 1); s == 1 {
 			// skip the first one
-			skip = false
 			ch := make(chan struct{})
 			// return closed channel, so this subscriber is marked to skip events
 			close(ch)
