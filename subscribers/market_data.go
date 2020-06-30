@@ -26,7 +26,7 @@ type MarketDataSub struct {
 
 func NewMarketDataSub(ctx context.Context, store Storage) *MarketDataSub {
 	md := &MarketDataSub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10),
 		buf:   []proto.MarketData{},
 		store: store,
 	}
