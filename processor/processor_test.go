@@ -33,6 +33,7 @@ type procTest struct {
 	assets *mocks.MockAssets
 	top    *mocks.MockValidatorTopology
 	gov    *mocks.MockGovernanceEngine
+	notary *mocks.MockNotary
 }
 
 type stubWallet struct {
@@ -53,6 +54,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	assets := mocks.NewMockAssets(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	gov := mocks.NewMockGovernanceEngine(ctrl)
+	notary := mocks.NewMockNotary(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(time.Time)
@@ -62,7 +64,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	wal := getTestStubWallet()
 	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
 
-	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, true)
+	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, true)
 	assert.NoError(t, err)
 	return &procTest{
 		Processor: proc,
@@ -76,6 +78,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		assets:    assets,
 		top:       top,
 		gov:       gov,
+		notary:    notary,
 	}
 }
 
@@ -377,7 +380,7 @@ func testProcessCommandSuccess(t *testing.T) {
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
 		assert.NoError(t, err)
-		assert.NoError(t, proc.Process(context.TODO(), payload, cmd), "Failed to process %v command payload", cmd)
+		assert.NoError(t, proc.Process(context.TODO(), payload, []byte("pubkey"), cmd), "Failed to process %v command payload", cmd)
 	}
 }
 

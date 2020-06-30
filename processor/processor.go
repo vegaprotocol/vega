@@ -28,6 +28,7 @@ var (
 	ErrProposalSubmissionPartyAndPubKeyDoesNotMatch = errors.New("proposal submission party and pubkey does not match")
 	ErrVoteSubmissionPartyAndPubKeyDoesNotMatch     = errors.New("vote submission party and pubkey does not match")
 	ErrWithdrawPartyAndPublKeyDoesNotMatch          = errors.New("withdraw party and pubkey does not match")
+	ErrNodeSignatureKeyDoesNotMatch                 = errors.New("node signature pubkey does not match")
 	ErrCommandKindUnknown                           = errors.New("unknown command kind when validating payload")
 	ErrUnknownNodeKey                               = errors.New("node pubkey unknown")
 	ErrUnknownProposal                              = errors.New("proposal unknown")
@@ -119,15 +120,11 @@ type Broker interface {
 	Send(e events.Event)
 }
 
-type nodeProposal struct {
-	*types.Proposal
-	ctx       context.Context
-	votes     map[string]struct{}
-	validTime time.Time
-	assetID   string
-	// use for the node internal validation
-	validState uint32
-	cancel     func()
+// Notary ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
+type Notary interface {
+	StartAggregate(resID string, kind types.NodeSignatureKind) error
+	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -149,10 +146,11 @@ type Processor struct {
 	top               ValidatorTopology
 	idgen             *IDgenerator
 	broker            Broker
+	notary            Notary
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -177,6 +175,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		gov:         gov,
 		broker:      broker,
 		idgen:       NewIDGen(),
+		notary:      notary,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -373,6 +372,15 @@ func (p *Processor) getVoteSubmission(payload []byte) (*types.Vote, error) {
 	return voteSubmission, nil
 }
 
+func (p *Processor) getNodeSignature(payload []byte) (*types.NodeSignature, error) {
+	ns := &types.NodeSignature{}
+	err := proto.Unmarshal(payload, ns)
+	if err != nil {
+		return nil, err
+	}
+	return ns, nil
+}
+
 // ValidateSigned - validates a signed transaction. This sits here because it's actual data processing
 // related. We need to unmarshal the payload to validate the partyID
 func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) error {
@@ -445,13 +453,19 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrRegisterNodePubKeyDoesNotMatch
 		}
 		return nil
+	case blockchain.NodeSignatureCommand:
+		_, err := p.getNodeSignature(data)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
 
 // Process performs validation and then sends the command and data to
 // the underlying blockchain service handlers e.g. submit order, etc.
-func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Command) error {
+func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd blockchain.Command) error {
 	// first is that a signed or unsigned command?
 	switch cmd {
 	case blockchain.SubmitOrderCommand:
@@ -500,13 +514,19 @@ func (p *Processor) Process(ctx context.Context, data []byte, cmd blockchain.Com
 			p.log.Warn("unable to register node",
 				logging.Error(err))
 		}
-		// p.nodes[hex.EncodeToString(node.PubKey)] = struct{}{}
 	case blockchain.NodeVoteCommand:
 		vote, err := p.getNodeVote(data)
 		if err != nil {
 			return err
 		}
 		return p.gov.AddNodeVote(vote)
+	case blockchain.NodeSignatureCommand:
+		ns, err := p.getNodeSignature(data)
+		if err != nil {
+			return err
+		}
+		_, _, err = p.notary.AddSig(ctx, pubkey, *ns)
+		return err
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -676,6 +696,41 @@ func (p *Processor) onTick(t time.Time) {
 				p.log.Error("failed to submit new market",
 					logging.String("market-id", mkt.Id),
 					logging.Error(err))
+			}
+		case toEnact.IsNewAsset():
+			if err := p.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+				prop.State = types.Proposal_STATE_FAILED
+				p.log.Error("unable to enact proposal",
+					logging.String("proposal-id", prop.ID),
+					logging.Error(err))
+			} else if p.isValidator {
+				asset, err := p.assets.Get(prop.ID)
+				if err != nil {
+					// this should not happen
+					p.log.Error("invalid asset is getting enacted",
+						logging.String("asset-id", prop.ID),
+						logging.Error(err))
+					prop.State = types.Proposal_STATE_FAILED
+				} else {
+					_, sig, err := asset.SignBridgeWhitelisting()
+					if err != nil {
+						p.log.Error("unable to sign whitelisting transaction",
+							logging.String("asset-id", prop.ID),
+							logging.Error(err))
+						prop.State = types.Proposal_STATE_FAILED
+					} else {
+						payload := &types.NodeSignature{
+							ID:   prop.ID,
+							Sig:  sig,
+							Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+						}
+						if err := p.cmd.Command(p.vegaWallet, blockchain.NodeSignatureCommand, payload); err != nil {
+							// do nothing for now, we'll need a retry mechanism for this and all command soon
+							p.log.Error("unable to send command",
+								logging.Error(err))
+						}
+					}
+				}
 			}
 		case toEnact.IsUpdateMarket():
 			p.log.Error("update market enactment is not implemented")

@@ -227,6 +227,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.GetNodeSignaturesAggregateRequest"><span class="badge">M</span>GetNodeSignaturesAggregateRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.GetNodeSignaturesAggregateResponse"><span class="badge">M</span>GetNodeSignaturesAggregateResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetProposalByIDRequest"><span class="badge">M</span>GetProposalByIDRequest</a>
                 </li>
 
@@ -767,6 +775,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NodeSignature"><span class="badge">M</span>NodeSignature</a>
+                </li>
+
+                <li>
                   <a href="#vega.NodeVote"><span class="badge">M</span>NodeVote</a>
                 </li>
 
@@ -877,6 +889,10 @@
 
                 <li>
                   <a href="#vega.Interval"><span class="badge">E</span>Interval</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NodeSignatureKind"><span class="badge">E</span>NodeSignatureKind</a>
                 </li>
 
                 <li>
@@ -1310,6 +1326,54 @@
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</h3>
+        <p>The request message to specify the ID of the resource we want to retrieve</p><p>the aggregated signatures for</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The ID of the resource </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</h3>
+        <p>The response of the GetNodeSIgnatureAggregate rpc</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>signatures</td>
+                  <td><a href="#vega.NodeSignature">vega.NodeSignature</a></td>
+                  <td>repeated</td>
+                  <td><p>The list of signatures </p></td>
                 </tr>
 
             </tbody>
@@ -4491,6 +4555,13 @@
                 <td><p>Subscribe to a stream of Transfer Responses</p></td>
               </tr>
 
+              <tr>
+                <td>GetNodeSignaturesAggregate</td>
+                <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
+                <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
+                <td><p>Get an aggregate of signature from all the node of the network</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -6930,6 +7001,44 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
+        <h3 id="vega.NodeSignature">NodeSignature</h3>
+        <p>A message reprensenting a signature from a validator</p><p>meant to be used by foreign chain in order to recognise</p><p>a decision taken by the vega network.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The ID of the resource being signed </p></td>
+                </tr>
+
+                <tr>
+                  <td>sig</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p>The signature </p></td>
+                </tr>
+
+                <tr>
+                  <td>kind</td>
+                  <td><a href="#vega.NodeSignatureKind">NodeSignatureKind</a></td>
+                  <td></td>
+                  <td><p>The kind of resource being signed </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.NodeVote">NodeVote</h3>
         <p></p>
 
@@ -8630,6 +8739,35 @@ after each successful amend </p></td>
                 <td>INTERVAL_I1D</td>
                 <td>86400</td>
                 <td><p>1 day</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.NodeSignatureKind">NodeSignatureKind</h3>
+        <p>The kind of the signature created by a node</p><p>eg: for a new asset whitelisting, withdrawal</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>NODE_SIGNATURE_KIND_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>represents a unspecified / missing value from the input</p></td>
+              </tr>
+
+              <tr>
+                <td>NODE_SIGNATURE_KIND_ASSET_NEW</td>
+                <td>1</td>
+                <td><p>represents a signature for a new asset whitelisting</p></td>
+              </tr>
+
+              <tr>
+                <td>NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL</td>
+                <td>2</td>
+                <td><p>represents a signature for a asset withdrawal</p></td>
               </tr>
 
           </tbody>

@@ -23,7 +23,7 @@ type MarginLevelSub struct {
 
 func NewMarginLevelSub(ctx context.Context, store Store) *MarginLevelSub {
 	m := MarginLevelSub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10),
 		store: store,
 		buf:   map[string]map[string]types.MarginLevels{},
 	}

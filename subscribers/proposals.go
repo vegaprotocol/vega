@@ -95,7 +95,7 @@ func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 
 func NewProposalFilteredSub(ctx context.Context, filters ...ProposalFilter) *ProposalFilteredSub {
 	p := ProposalFilteredSub{
-		Base:    newBase(ctx, 10),
+		Base:    NewBase(ctx, 10),
 		filters: filters,
 		matched: []types.Proposal{},
 	}

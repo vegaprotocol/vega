@@ -25,13 +25,6 @@ var (
 	ErrNoMarketID = errors.New("no valid market id was supplied")
 )
 
-// OrderBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution OrderBuf
-type OrderBuf interface {
-	Add(types.Order)
-	Flush() error
-}
-
 // CandleBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
 type CandleBuf interface {
@@ -61,13 +54,6 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// MarketDataBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketDataBuf
-type MarketDataBuf interface {
-	Add(types.MarketData)
-	Flush()
-}
-
 // LossSocializationBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution LossSocializationBuf
 type LossSocializationBuf interface {
@@ -90,11 +76,10 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	candleBuf     CandleBuf
-	marketBuf     MarketBuf
-	marketDataBuf MarketDataBuf
-	settleBuf     SettlementBuf
-	lossSocBuf    LossSocializationBuf
+	candleBuf  CandleBuf
+	marketBuf  MarketBuf
+	settleBuf  SettlementBuf
+	lossSocBuf LossSocializationBuf
 
 	broker Broker
 	time   TimeService
@@ -108,7 +93,6 @@ func NewEngine(
 	time TimeService,
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
-	marketDataBuf MarketDataBuf,
 	settleBuf SettlementBuf,
 	lossSocBuf LossSocializationBuf,
 	pmkts []types.Market,
@@ -124,19 +108,18 @@ func NewEngine(
 	ctx := context.Background()
 
 	e := &Engine{
-		log:           log,
-		Config:        executionConfig,
-		markets:       map[string]*Market{},
-		candleBuf:     candleBuf,
-		marketBuf:     marketBuf,
-		time:          time,
-		collateral:    collateral,
-		party:         NewParty(log, collateral, pmkts, broker),
-		marketDataBuf: marketDataBuf,
-		settleBuf:     settleBuf,
-		lossSocBuf:    lossSocBuf,
-		idgen:         NewIDGen(),
-		broker:        broker,
+		log:        log,
+		Config:     executionConfig,
+		markets:    map[string]*Market{},
+		candleBuf:  candleBuf,
+		marketBuf:  marketBuf,
+		time:       time,
+		collateral: collateral,
+		party:      NewParty(log, collateral, pmkts, broker),
+		settleBuf:  settleBuf,
+		lossSocBuf: lossSocBuf,
+		idgen:      NewIDGen(),
+		broker:     broker,
 	}
 
 	var err error
@@ -435,21 +418,22 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 
 // Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
+	ctx := context.TODO()
 
+	// Market data is added to buffer on Generate
+	// do this before the time event -> time event flushes
+	for _, v := range e.markets {
+		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
+	}
 	// Transfers
 	// @TODO this event will be generated with a block context that has the trace ID
 	// this will have the effect of flushing the transfer response buffer
 	now, _ := e.time.GetTimeNow()
-	evt := events.NewTime(context.Background(), now)
+	evt := events.NewTime(ctx, now)
 	e.broker.Send(evt)
 	// Markets
 	if err := e.marketBuf.Flush(); err != nil {
 		return errors.Wrap(err, "failed to flush markets buffer")
 	}
-	// Market data is added to buffer on Generate
-	for _, v := range e.markets {
-		e.marketDataBuf.Add(v.GetMarketData())
-	}
-	e.marketDataBuf.Flush()
 	return nil
 }

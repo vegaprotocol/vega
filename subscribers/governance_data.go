@@ -18,7 +18,7 @@ type GovernanceDataSub struct {
 
 func NewGovernanceDataSub(ctx context.Context) *GovernanceDataSub {
 	gd := &GovernanceDataSub{
-		Base:      newBase(ctx, 10),
+		Base:      NewBase(ctx, 10),
 		mu:        &sync.Mutex{},
 		proposals: map[string]types.Proposal{},
 		byPID:     map[string]*types.GovernanceData{},

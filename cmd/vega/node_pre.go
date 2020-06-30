@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -257,6 +258,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore)
 	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx)
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false)
+	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -266,9 +268,6 @@ func (l *NodeCommand) setupBuffers() {
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
-
-	l.marketDataBuf = buffer.NewMarketData()
-	l.marketDataBuf.Register(l.marketDataStore)
 
 	l.marginLevelsBuf = buffer.NewMarginLevels()
 	l.marginLevelsBuf.Register(l.riskStore)
@@ -339,9 +338,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
+	l.notaryPlugin = plugins.NewNotary(l.ctx)
+
 	l.broker = broker.New(l.ctx)
 	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub)
+	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -359,7 +360,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.timeService,
 		l.candleBuf,
 		l.marketBuf,
-		l.marketDataBuf,
 		l.settleBuf,
 		l.lossSocBuf,
 		l.mktscfg,
@@ -377,9 +377,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
+	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
+
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, !l.noStores)
 	if err != nil {
 		return err
 	}
@@ -436,6 +439,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
+	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
 	return
 }
 

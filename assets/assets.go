@@ -36,7 +36,7 @@ type Asset interface {
 	// exist on the target chain
 	Validate() error
 	// build the signature for whitelisting on the vega bridge
-	SignBridgeWhitelisting() ([]byte, error)
+	SignBridgeWhitelisting() ([]byte, []byte, error)
 	// ensure on the target chain that withdrawal on funds
 	// happended
 	ValidateWithdrawal() error // SignWithdrawal
