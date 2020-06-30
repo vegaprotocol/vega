@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -18,6 +19,7 @@ type Store interface {
 type MarginLevelSub struct {
 	*Base
 	store Store
+	mu    sync.Mutex
 	buf   map[string]map[string]types.MarginLevels
 }
 
@@ -50,18 +52,22 @@ func (m *MarginLevelSub) Push(e events.Event) {
 	switch te := e.(type) {
 	case MLE:
 		ml := te.MarginLevels()
+		m.mu.Lock()
 		if _, ok := m.buf[ml.PartyID]; !ok {
 			m.buf[ml.PartyID] = map[string]types.MarginLevels{}
 		}
 		m.buf[ml.PartyID][ml.MarketID] = ml
+		m.mu.Unlock()
 	case TimeEvent:
 		m.flush()
 	}
 }
 
 func (m *MarginLevelSub) flush() {
+	m.mu.Lock()
 	buf := m.buf
 	m.buf = map[string]map[string]types.MarginLevels{}
+	m.mu.Unlock()
 	batch := make([]types.MarginLevels, 0, len(buf))
 	for _, mm := range buf {
 		for _, ml := range mm {

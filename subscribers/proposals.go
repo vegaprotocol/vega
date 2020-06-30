@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -23,6 +24,7 @@ const (
 
 type ProposalFilteredSub struct {
 	*Base
+	mu      sync.Mutex
 	filters []ProposalFilter
 	matched []types.Proposal
 }
@@ -129,15 +131,19 @@ func (p *ProposalFilteredSub) Push(e events.Event) {
 				return
 			}
 		}
+		p.mu.Lock()
 		p.matched = append(p.matched, prop)
+		p.mu.Unlock()
 	}
 }
 
 func (p *ProposalFilteredSub) Flush() {
+	p.mu.Lock()
 	p.matched = make([]types.Proposal, 0, cap(p.matched))
+	p.mu.Unlock()
 }
 
-func (p ProposalFilteredSub) Types() []events.Type {
+func (p *ProposalFilteredSub) Types() []events.Type {
 	return []events.Type{
 		events.ProposalEvent,
 		events.TimeUpdate,

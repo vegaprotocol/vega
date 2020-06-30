@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -19,6 +20,7 @@ type OrderStore interface {
 
 type OrderEvent struct {
 	*Base
+	mu    sync.Mutex
 	log   *logging.Logger
 	store OrderStore
 	buf   []types.Order
@@ -61,7 +63,9 @@ func (o *OrderEvent) Push(e events.Event) {
 
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use
 func (o *OrderEvent) write(e OE) {
+	o.mu.Lock()
 	o.buf = append(o.buf, *e.Order())
+	o.mu.Unlock()
 	o.log.Debug("ORDER EVENT",
 		logging.String("trace-id", e.TraceID()),
 		logging.String("type", e.Type().String()),
@@ -70,8 +74,10 @@ func (o *OrderEvent) write(e OE) {
 }
 
 func (o *OrderEvent) flush() {
+	o.mu.Lock()
 	b := o.buf
 	o.buf = make([]types.Order, 0, cap(b))
+	o.mu.Unlock()
 	if err := o.store.SaveBatch(b); err != nil {
 		o.log.Error(
 			"Failed to store batch of orders",
