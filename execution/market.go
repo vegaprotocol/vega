@@ -500,6 +500,13 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// Insert aggressive remaining order
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
+	m.handleConfirmation(ctx, order, confirmation)
+
+	orderValidity = "valid" // used in deferred func.
+	return confirmation, nil
+}
+
+func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, confirmation *types.OrderConfirmation) {
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
@@ -582,9 +589,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			}
 		}
 	}
-
-	orderValidity = "valid" // used in deferred func.
-	return confirmation, nil
 }
 
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
@@ -1328,11 +1332,12 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		ret, err := m.orderCancelReplace(existingOrder, amendedOrder)
+		confirmation, err := m.orderCancelReplace(existingOrder, amendedOrder)
 		if err == nil {
+			m.handleConfirmation(ctx, amendedOrder, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 		}
-		return ret, err
+		return confirmation, err
 	}
 
 	// if decrease in size or change in expiration date

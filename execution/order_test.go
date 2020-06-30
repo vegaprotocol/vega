@@ -483,5 +483,78 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_REJECTED)
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
+}
 
+func amendOrder(t *testing.T, tm *testMarket, party string, orderId string, sizeDelta int64, price uint64,
+	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
+	amend := &types.OrderAmendment{
+		OrderID:     orderId,
+		PartyID:     party,
+		MarketID:    tm.market.GetID(),
+		SizeDelta:   sizeDelta,
+		TimeInForce: tif,
+	}
+
+	if price > 0 {
+		amend.Price = &types.Price{Value: price}
+	}
+
+	if expiresAt > 0 {
+		amend.ExpiresAt = &types.Timestamp{Value: expiresAt}
+	}
+
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	if pass {
+		assert.NotNil(t, amended)
+		assert.NoError(t, err)
+	}
+}
+
+func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce, expiresAt int64, side types.Side, party string,
+	size uint64, price uint64) string {
+	order := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        orderType,
+		TimeInForce: tif,
+		Side:        side,
+		PartyID:     party,
+		MarketID:    tm.market.GetID(),
+		Size:        size,
+		Price:       price,
+		Remaining:   size,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "",
+	}
+
+	if expiresAt > 0 {
+		order.ExpiresAt = expiresAt
+	}
+
+	confirmation, err := tm.market.SubmitOrder(context.Background(), order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Move time forward one second
+	//	*now = now.Add(time.Second)
+	//	tm.market.OnChainTimeUpdate(*now)
+
+	return confirmation.GetOrder().Id
+}
+
+func TestAmendToFill(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+
+	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes()
+
+	// test_AmendMarketOrderFail
+	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100) // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)  // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)  // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50)    // 1 - a8
+	amendOrder(t, tm, "party2", orderId, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
 }
