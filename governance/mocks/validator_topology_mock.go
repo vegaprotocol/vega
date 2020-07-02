@@ -59,3 +59,17 @@ func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockValidatorTopology)(nil).Len))
 }
+
+// SelfVegaPubKey mocks base method
+func (m *MockValidatorTopology) SelfVegaPubKey() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SelfVegaPubKey")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// SelfVegaPubKey indicates an expected call of SelfVegaPubKey
+func (mr *MockValidatorTopologyMockRecorder) SelfVegaPubKey() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelfVegaPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).SelfVegaPubKey))
+}

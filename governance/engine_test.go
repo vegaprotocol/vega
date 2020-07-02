@@ -24,7 +24,6 @@ type tstEngine struct {
 	accs            *mocks.MockAccounts
 	broker          *mocks.MockBroker
 	top             *mocks.MockValidatorTopology
-	wal             *mocks.MockWallet
 	cmd             *mocks.MockCommander
 	assets          *mocks.MockAssets
 	proposalCounter uint // to streamline proposal generation
@@ -760,17 +759,12 @@ func getTestEngine(t *testing.T) *tstEngine {
 	cfg := governance.NewDefaultConfig()
 	accs := mocks.NewMockAccounts(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)
-	wal := mocks.NewMockWallet(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 
-	wal.EXPECT().Get(gomock.Any()).Times(1).Return(testVegaWallet{
-		chain: "vega",
-	}, true)
-
 	log := logging.NewTestLogger()
-	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, top, wal, cmd, assets, time.Now(), true) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, top, cmd, assets, time.Now(), true) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
@@ -781,7 +775,6 @@ func getTestEngine(t *testing.T) *tstEngine {
 		cmd:    cmd,
 		assets: assets,
 		top:    top,
-		wal:    wal,
 	}
 }
 

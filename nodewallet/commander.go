@@ -20,6 +20,7 @@ type Chain interface {
 type Commander struct {
 	ctx context.Context
 	bc  Chain
+	wal Wallet
 }
 
 var (
@@ -27,16 +28,21 @@ var (
 
 	ErrCommandMustBeSigned        = errors.New("command requires a signature")
 	ErrPayloadNotNodeRegistration = errors.New("expected node registration payload")
+	ErrVegaWalletRequired         = errors.New("vega wallet required to start commander")
 )
 
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
 // chain argument can't be passed in in cmd package, but is used for tests
-func NewCommander(ctx context.Context, bc Chain) *Commander {
+func NewCommander(ctx context.Context, bc Chain, wal Wallet) (*Commander, error) {
+	if Blockchain(wal.Chain()) != Vega {
+		return nil, ErrVegaWalletRequired
+	}
 	return &Commander{
 		ctx: ctx,
 		bc:  bc,
-	}
+		wal: wal,
+	}, nil
 }
 
 // SetChain - currently need to hack around the chicken/egg problem
@@ -45,10 +51,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(key Wallet, cmd blockchain.Command, payload proto.Message) error {
-	if _, ok := unsigned[cmd]; key == nil && !ok {
-		return ErrCommandMustBeSigned
-	}
+func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error {
 	raw, err := proto.Marshal(payload)
 	if err != nil {
 		return err
@@ -57,7 +60,7 @@ func (c *Commander) Command(key Wallet, cmd blockchain.Command, payload proto.Me
 	if err != nil {
 		return err
 	}
-	sig, err := key.Sign(tx)
+	sig, err := c.wal.Sign(tx)
 	if err != nil {
 		return err
 	}
@@ -65,7 +68,7 @@ func (c *Commander) Command(key Wallet, cmd blockchain.Command, payload proto.Me
 		Data: tx,
 		Sig:  sig,
 		Auth: &types.SignedBundle_PubKey{
-			PubKey: key.PubKeyOrAddress(),
+			PubKey: c.wal.PubKeyOrAddress(),
 		},
 	}
 	_, err = c.bc.SubmitTransaction(c.ctx, wrapped)

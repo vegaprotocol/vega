@@ -367,11 +367,15 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	commander := nodewallet.NewCommander(l.ctx, nil)
+	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
+	commander, err := nodewallet.NewCommander(l.ctx, nil, wal)
+	if err != nil {
+		return err
+	}
 	l.topology = validators.NewTopology(l.Log, nil)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, l.nodeWallet, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now, !l.noStores)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err

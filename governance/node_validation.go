@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -43,7 +42,6 @@ type NodeValidation struct {
 	nodeProposals map[string]*nodeProposal
 	assets        Assets
 	cmd           Commander
-	vegaWallet    nodewallet.Wallet
 
 	currentTimestamp time.Time
 	isValidator      bool
@@ -61,17 +59,11 @@ type nodeProposal struct {
 func NewNodeValidation(
 	log *logging.Logger,
 	top ValidatorTopology,
-	wallet Wallet,
 	cmd Commander,
 	assets Assets,
 	now time.Time,
 	isValidator bool,
 ) (*NodeValidation, error) {
-
-	vegaWallet, ok := wallet.Get(nodewallet.Vega)
-	if !ok {
-		return nil, ErrVegaWalletRequired
-	}
 
 	return &NodeValidation{
 		log:              log,
@@ -79,7 +71,6 @@ func NewNodeValidation(
 		nodeProposals:    map[string]*nodeProposal{},
 		assets:           assets,
 		cmd:              cmd,
-		vegaWallet:       vegaWallet,
 		currentTimestamp: now,
 		isValidator:      isValidator,
 	}, nil
@@ -121,10 +112,10 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 			// if not a validator no need to send the vote
 			if n.isValidator {
 				nv := &types.NodeVote{
-					PubKey:    n.vegaWallet.PubKeyOrAddress(),
+					PubKey:    n.top.SelfVegaPubKey(),
 					Reference: prop.Reference,
 				}
-				if err := n.cmd.Command(n.vegaWallet, blockchain.NodeVoteCommand, nv); err != nil {
+				if err := n.cmd.Command(blockchain.NodeVoteCommand, nv); err != nil {
 					n.log.Error("unable to send command", logging.Error(err))
 					// @TODO keep in memory, retry later?
 					continue

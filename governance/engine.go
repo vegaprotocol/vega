@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -54,18 +53,14 @@ type Accounts interface {
 // ValidatorTopology...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/governance ValidatorTopology
 type ValidatorTopology interface {
+	SelfVegaPubKey() []byte
 	Exists([]byte) bool
 	Len() int
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/governance Wallet
-type Wallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/governance Commander
 type Commander interface {
-	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
+	Command(cmd blockchain.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
@@ -100,10 +95,10 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, wallet Wallet, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
-	nodeValidation, err := NewNodeValidation(log, top, wallet, cmd, assets, now, isValidator)
+	nodeValidation, err := NewNodeValidation(log, top, cmd, assets, now, isValidator)
 	if err != nil {
 		return nil, err
 	}

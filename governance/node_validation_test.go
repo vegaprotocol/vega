@@ -20,7 +20,6 @@ type testNodeValidation struct {
 	*governance.NodeValidation
 	ctrl   *gomock.Controller
 	top    *mocks.MockValidatorTopology
-	wal    *mocks.MockWallet
 	cmd    *mocks.MockCommander
 	assets *mocks.MockAssets
 }
@@ -28,16 +27,11 @@ type testNodeValidation struct {
 func getTestNodeValidation(t *testing.T) *testNodeValidation {
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
-	wal := mocks.NewMockWallet(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 
-	wal.EXPECT().Get(gomock.Any()).Times(1).Return(testVegaWallet{
-		chain: "vega",
-	}, true)
-
 	nv, err := governance.NewNodeValidation(
-		logging.NewTestLogger(), top, wal, cmd, assets, time.Now(), true)
+		logging.NewTestLogger(), top, cmd, assets, time.Now(), true)
 	assert.NotNil(t, nv)
 	assert.Nil(t, err)
 
@@ -45,7 +39,6 @@ func getTestNodeValidation(t *testing.T) *testNodeValidation {
 		NodeValidation: nv,
 		ctrl:           ctrl,
 		top:            top,
-		wal:            wal,
 		cmd:            cmd,
 		assets:         assets,
 	}
@@ -117,7 +110,8 @@ func testOnChainTimeUpdate(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	nv.top.EXPECT().Len().AnyTimes().Return(1)
-	nv.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	nv.top.EXPECT().SelfVegaPubKey().AnyTimes().Return([]byte("okkey"))
+	nv.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	// no we call time update once.
 	// this will call the commander to send the NodeVote
