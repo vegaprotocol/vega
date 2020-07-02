@@ -112,6 +112,7 @@ type ValidatorTopology interface {
 	Ready() bool
 	Exists(key []byte) bool
 	Len() int
+	AllPubKeys() [][]byte
 }
 
 // Broker - the event bus
