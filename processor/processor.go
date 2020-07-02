@@ -102,7 +102,7 @@ type Assets interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
+	Command(cmd blockchain.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
@@ -203,7 +203,7 @@ func (p *Processor) Begin() error {
 				ChainPubKey: chainPubKey,
 				PubKey:      p.vegaWallet.PubKeyOrAddress(),
 			}
-			if err := p.cmd.Command(p.vegaWallet, blockchain.RegisterNodeCommand, payload); err != nil {
+			if err := p.cmd.Command(blockchain.RegisterNodeCommand, payload); err != nil {
 				return err
 			}
 			p.hasRegistered = true
@@ -724,7 +724,7 @@ func (p *Processor) onTick(t time.Time) {
 							Sig:  sig,
 							Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 						}
-						if err := p.cmd.Command(p.vegaWallet, blockchain.NodeSignatureCommand, payload); err != nil {
+						if err := p.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
 							// do nothing for now, we'll need a retry mechanism for this and all command soon
 							p.log.Error("unable to send command",
 								logging.Error(err))

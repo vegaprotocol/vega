@@ -19,6 +19,7 @@ type testCommander struct {
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
 	chain *mocks.MockChain
+	wal   nodewallet.Wallet
 }
 
 type stubWallet struct {
@@ -32,17 +33,20 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
+	wal := &stubWallet{chain: string(nodewallet.Vega)}
+	cmd, err := nodewallet.NewCommander(ctx, chain, wal)
+	assert.NoError(t, err)
 	return &testCommander{
-		Commander: nodewallet.NewCommander(ctx, chain),
+		Commander: cmd,
 		ctx:       ctx,
 		cfunc:     cfunc,
 		ctrl:      ctrl,
 		chain:     chain,
+		wal:       wal,
 	}
 }
 
 func TestCommand(t *testing.T) {
-	t.Run("Unsigned command - Fail", testUnsignedCommandFail)
 	t.Run("Signed command - success", testSignedCommandSuccess)
 	t.Run("Signed command - signature not required", testSignedUnsignedSuccess)
 	t.Run("SetChain - dummy test for completeness", testSetChain)
@@ -54,26 +58,14 @@ func testSetChain(t *testing.T) {
 	commander.SetChain(&blockchain.Client{})
 }
 
-func testUnsignedCommandFail(t *testing.T) {
-	commander := getTestCommander(t)
-	defer commander.Finish()
-
-	cmd := blockchain.NodeVoteCommand
-	payload := &types.NodeVote{}
-	err := commander.Command(nil, cmd, payload)
-	assert.Error(t, err)
-	assert.Equal(t, nodewallet.ErrCommandMustBeSigned, err)
-}
-
 func testSignedCommandSuccess(t *testing.T) {
 	commander := getTestCommander(t)
 	defer commander.Finish()
 
 	cmd := blockchain.NodeVoteCommand
 	payload := &types.NodeVote{}
-	key := stubWallet{}
 	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
-	assert.NoError(t, commander.Command(&key, cmd, payload))
+	assert.NoError(t, commander.Command(cmd, payload))
 }
 
 func testSignedUnsignedSuccess(t *testing.T) {
@@ -82,10 +74,9 @@ func testSignedUnsignedSuccess(t *testing.T) {
 
 	// this command doesn't require a signature, let's sign it anyway
 	cmd := blockchain.NotifyTraderAccountCommand
-	payload := &types.NotifyTraderAccount{}
-	key := stubWallet{}
 	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
-	assert.NoError(t, commander.Command(&key, cmd, payload))
+	payload := &types.NotifyTraderAccount{}
+	assert.NoError(t, commander.Command(cmd, payload))
 }
 
 func (t *testCommander) Finish() {

@@ -132,7 +132,7 @@ func testBeginCommitSuccess(t *testing.T) {
 
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
@@ -168,7 +168,7 @@ func testBeginRegisterError(t *testing.T) {
 	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
 	}).Return(expErr)
@@ -187,7 +187,7 @@ func testBeginCallsCommanderOnce(t *testing.T) {
 	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(gomock.Any(), blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ nodewallet.Wallet, _ blockchain.Command, payload proto.Message) {
+	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
 		// check if the type is ok
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)

@@ -83,6 +83,15 @@ func (t *Topology) SelfChainPubKey() []byte {
 	return nil
 }
 
+func (t *Topology) SelfVegaPubKey() []byte {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.selfChain != nil {
+		return []byte(t.validators[string(t.selfChain.PubKey.Bytes())])
+	}
+	return nil
+}
+
 func (t *Topology) Ready() bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
