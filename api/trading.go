@@ -40,15 +40,22 @@ type GovernanceService interface {
 	PrepareVote(vote *types.Vote) (*types.Vote, error)
 }
 
+// EvtForwarder
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
+type EvtForwarder interface {
+	Forward(e *types.ChainEvent) error
+}
+
 type tradingService struct {
 	log               *logging.Logger
 	tradeOrderService TradeOrderService
 	accountService    AccountService
 	marketService     MarketService
 	governanceService GovernanceService
-	statusChecker     *monitoring.Status
+	evtForwarder      EvtForwarder
 
-	mu sync.Mutex
+	statusChecker *monitoring.Status
+	mu            sync.Mutex
 }
 
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
@@ -223,6 +230,19 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	return &protoapi.PrepareVoteResponse{
 		Blob: raw,
 		Vote: vote,
+	}, nil
+}
+
+func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
+	if req.Evt == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+	err := s.evtForwarder.Forward(req.Evt)
+	if err != nil {
+		return nil, apiError(codes.AlreadyExists, err)
+	}
+	return &protoapi.PropagateChainEventResponse{
+		Success: true,
 	}, nil
 }
 

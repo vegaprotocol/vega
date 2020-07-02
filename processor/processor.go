@@ -39,6 +39,7 @@ var (
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
 	ErrVegaWalletRequired                           = errors.New("vega wallet required")
 	ErrProposalCorrupted                            = errors.New("proposal internal data corrupted")
+	ErrChainEventFromNonValidator                   = errors.New("chain event emitted from a non-validator node")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -382,6 +383,32 @@ func (p *Processor) getNodeSignature(payload []byte) (*types.NodeSignature, erro
 	return ns, nil
 }
 
+func (p *Processor) getChainEvent(payload []byte) (*types.ChainEvent, error) {
+	ce := &types.ChainEvent{}
+	err := proto.Unmarshal(payload, ce)
+	if err != nil {
+		return nil, err
+	}
+	return ce, nil
+}
+
+func (p *Processor) getNodeVote(payload []byte) (*types.NodeVote, error) {
+	vote := &types.NodeVote{}
+	if err := proto.Unmarshal(payload, vote); err != nil {
+		return nil, err
+	}
+	return vote, nil
+}
+
+func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration, error) {
+	cmd := &types.NodeRegistration{}
+	err := proto.Unmarshal(payload, cmd)
+	if err != nil {
+		return nil, err
+	}
+	return cmd, nil
+}
+
 // ValidateSigned - validates a signed transaction. This sits here because it's actual data processing
 // related. We need to unmarshal the payload to validate the partyID
 func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) error {
@@ -460,6 +487,12 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return err
 		}
 		return nil
+	case blockchain.NodeSignatureCommand:
+		_, err := p.getChainEvent(data)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
@@ -528,6 +561,12 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		}
 		_, _, err = p.notary.AddSig(ctx, pubkey, *ns)
 		return err
+	case blockchain.ChainEventCommand:
+		ce, err := p.getChainEvent(data)
+		if err != nil {
+			return err
+		}
+		return p.processChainEvent(ctx, ce, pubkey)
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -541,21 +580,13 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 	return nil
 }
 
-func (p *Processor) getNodeVote(payload []byte) (*types.NodeVote, error) {
-	vote := &types.NodeVote{}
-	if err := proto.Unmarshal(payload, vote); err != nil {
-		return nil, err
+func (p *Processor) processChainEvent(ctx contnext.Context, ce *types.ChainEvent, pubkey []byte) error {
+	// first verify the event was emited by a validator
+	if !p.top.Exists(pubkey) {
+		return ErrChainEventFromNonValidator
 	}
-	return vote, nil
-}
 
-func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration, error) {
-	cmd := &types.NodeRegistration{}
-	err := proto.Unmarshal(payload, cmd)
-	if err != nil {
-		return nil, err
-	}
-	return cmd, nil
+	return nil
 }
 
 func (p *Processor) submitOrder(ctx context.Context, o *types.Order) error {

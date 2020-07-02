@@ -101,6 +101,41 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, nwall
 	return evtf, nil
 }
 
+// Ack will return true if the event is newly acknowledge
+// if the event already exist and was already acknowledge this will return false
+func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
+	key := string(e.hash([]byte(evt.String())))
+	_, ok, acked := e.getEvt(key)
+	if ok && acked {
+		// this was already acknowledged, nothing to be done, return false
+		return false
+	}
+	if ok {
+		// exists but was not acknowleded
+		// we just remove it from the non-acked table
+		delete(e.evts, string(key))
+	}
+
+	// now add it to the acknowledged evts
+	e.ackedEvts[key] = evt
+	return true
+}
+
+func (e *EvtForwarder) Forward(evt *types.ChainEvent) error {
+	key := string(e.hash([]byte(evt.String())))
+	_, ok, _ := e.getEvt(key)
+	if ok {
+		return ErrEvtAlreadyExist
+	}
+
+	e.evts[key] = tsEvt{ts: e.currentTime, evt: evt}
+	if e.isSender(evt) {
+		// we are selected to send the event, let's do it.
+		return e.send(evt)
+	}
+	return nil
+}
+
 func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -131,21 +166,6 @@ func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked
 	return nil, false, false
 }
 
-func (e *EvtForwarder) Forward(evt *types.ChainEvent) error {
-	key := string(e.hash([]byte(evt.String())))
-	_, ok, _ := e.getEvt(key)
-	if ok {
-		return ErrEvtAlreadyExist
-	}
-
-	e.evts[key] = tsEvt{ts: e.currentTime, evt: evt}
-	if e.isSender(evt) {
-		// we are selected to send the event, let's do it.
-		return e.send(evt)
-	}
-	return nil
-}
-
 func (e *EvtForwarder) send(evt *types.ChainEvent) error {
 	return e.cmd.Command(e.wallet, blockchain.ChainEventCommand, evt)
 }
@@ -157,26 +177,6 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
 	return node.node == e.self
-}
-
-// Ack will return true if the event is newly acknowledge
-// if the event already exist and was already acknowledge this will return false
-func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
-	key := string(e.hash([]byte(evt.String())))
-	_, ok, acked := e.getEvt(key)
-	if ok && acked {
-		// this was already acknowledged, nothing to be done, return false
-		return false
-	}
-	if ok {
-		// exists but was not acknowleded
-		// we just remove it from the non-acked table
-		delete(e.evts, string(key))
-	}
-
-	// now add it to the acknowledged evts
-	e.ackedEvts[key] = evt
-	return true
 }
 
 func (e *EvtForwarder) onTick(t time.Time) {
