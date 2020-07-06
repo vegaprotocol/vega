@@ -180,7 +180,7 @@ func TestPositionSpecSuite(t *testing.T) {
 		},
 		{
 			run: "Long trade up and down",
-			pos: events.NewSettlePositionEvent(ctx, "trader1", market, 100, []events.TradeSettlement{
+			pos: events.NewSettlePositionEvent(ctx, "trader1", market, 75, []events.TradeSettlement{
 				tradeStub{
 					size:  100,
 					price: 100,
@@ -201,7 +201,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			expect: expect{
 				OpenVolume:        25,
 				AverageEntryPrice: 80,
-				UnrealisedPNL:     500, // @TODO was: -125,
+				UnrealisedPNL:     -125,
 				RealisedPNL:       -2375,
 			},
 		},
@@ -299,7 +299,7 @@ func TestPositionSpecSuite(t *testing.T) {
 		},
 		{
 			run: "Scenario from Tamlyn's spreadsheet on Google Drive at https://drive.google.com/open?id=1XJESwh5cypALqlYludWobAOEH1Pz-1xS",
-			pos: events.NewSettlePositionEvent(ctx, "trader1", market, 100, []events.TradeSettlement{
+			pos: events.NewSettlePositionEvent(ctx, "trader1", market, 1010, []events.TradeSettlement{
 				tradeStub{
 					size:  5,
 					price: 1000,
@@ -348,7 +348,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			expect: expect{
 				OpenVolume:        2,
 				AverageEntryPrice: 1010,
-				UnrealisedPNL:     -1820, // @TODO was 0
+				UnrealisedPNL:     0,
 				RealisedPNL:       -446,
 			},
 		},
