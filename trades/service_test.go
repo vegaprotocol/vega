@@ -296,7 +296,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 		wg.Done()
 	})
 	// filter by market and party
-	ch, rref := svc.ObserveTrades(ctx, 0, &filterMarket, &buyer)
+	ch, rref := svc.ObserveTrades(ctx, 1, &filterMarket, &buyer)
 	// wait for data on channel
 	gotTrades := <-ch
 	// ensure we got the data we expected
