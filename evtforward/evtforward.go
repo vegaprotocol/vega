@@ -138,13 +138,11 @@ func (e *EvtForwarder) updateValidatorsList() {
 }
 
 func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked bool) {
-	evt, ok = e.ackedEvts[key]
-	if ok {
+	if evt, ok = e.ackedEvts[key]; ok {
 		return evt, true, true
 	}
 
-	tsEvt, ok := e.evts[key]
-	if ok {
+	if tsEvt, ok := e.evts[key]; ok {
 		return tsEvt.evt, true, false
 	}
 
@@ -182,9 +180,9 @@ func (e *EvtForwarder) onTick(t time.Time) {
 			e.evts[k] = tsEvt{ts: t, evt: evt.evt}
 			if e.isSender(evt.evt) {
 				// we are selected to send the event, let's do it.
-				err := e.send(evt.evt)
-				e.log.Error("unable to send event", logging.Error(err))
-				continue
+				if err := e.send(evt.evt); err != nil {
+					e.log.Error("unable to send event", logging.Error(err))
+				}
 			}
 		}
 	}
