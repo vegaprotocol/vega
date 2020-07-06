@@ -28,7 +28,6 @@ type testMarket struct {
 	collateraEngine *collateral.Engine
 	partyEngine     *execution.Party
 	candleStore     *mocks.MockCandleBuf
-	settleBuf       *mocks.MockSettlementBuf
 
 	broker *mocks.MockBroker
 
@@ -44,18 +43,12 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	matchingConfig := matching.NewDefaultConfig()
 
 	candleStore := mocks.NewMockCandleBuf(ctrl)
-	settleBuf := mocks.NewMockSettlementBuf(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
-	settleBuf.EXPECT().Add(gomock.Any()).AnyTimes()
-	settleBuf.EXPECT().Flush().AnyTimes()
-	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
-	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
-	lossBuf.EXPECT().Flush().AnyTimes()
 
 	// catch all expected calls
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, lossBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, broker)
@@ -64,7 +57,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore,
-		settleBuf, now, broker, execution.NewIDGen())
+		now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -80,7 +73,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		collateraEngine: collateralEngine,
 		partyEngine:     partyEngine,
 		candleStore:     candleStore,
-		settleBuf:       settleBuf,
 		broker:          broker,
 		now:             now,
 	}

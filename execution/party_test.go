@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewParty(t *testing.T) {
@@ -21,12 +21,9 @@ func TestNewParty(t *testing.T) {
 	trader2 := "B0b@f3tt"
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
-	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
-	lossBuf.EXPECT().Flush().AnyTimes()
 	broker := mocks.NewMockBroker(ctrl)
 
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, lossBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
@@ -94,12 +91,10 @@ func TestNewAccount(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
-	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
-	lossBuf.EXPECT().Flush().AnyTimes()
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, lossBuf, now)
+	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))

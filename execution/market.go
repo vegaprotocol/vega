@@ -547,7 +547,7 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 
 		// now let's get the transfers for MTM settlement
 		evts := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleMTM(m.markPrice, evts)
+		settle := m.settlement.SettleMTM(ctx, m.markPrice, evts)
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(ctx, settle)
@@ -673,7 +673,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 
 		// remove accounts, positions and return
 		// from settlement engine first
-		m.settlement.RemoveDistressed(closed)
+		m.settlement.RemoveDistressed(ctx, closed)
 		// then from positions
 		closedMPs = m.position.RemoveDistressed(closedMPs)
 		asset, _ := m.mkt.GetAsset()
@@ -789,7 +789,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	}
 	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
 	// insurance pool, which needs to happen before we settle the non-distressed traders
-	m.settlement.RemoveDistressed(closed)
+	m.settlement.RemoveDistressed(ctx, closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
 	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
@@ -808,7 +808,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	evt := m.position.Positions()
 
 	// settle MTM, the positions have changed
-	settle := m.settlement.SettleMTM(m.markPrice, evt)
+	settle := m.settlement.SettleMTM(ctx, m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway

@@ -40,13 +40,6 @@ type MarketBuf interface {
 	Flush() error
 }
 
-// SettlementBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
-type SettlementBuf interface {
-	Add([]events.SettlePosition)
-	Flush()
-}
-
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {

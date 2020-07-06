@@ -155,8 +155,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
-	ctx := context.TODO()
+func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
 	tCap := e.transferCap(positions)
@@ -241,8 +240,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 
 // RemoveDistressed - remove whatever settlement data we have for distressed traders
 // they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
-func (e *Engine) RemoveDistressed(evts []events.Margin) {
-	ctx := context.TODO()
+func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	e.mu.Lock()
 	for _, v := range evts {
 		key := v.Party()
