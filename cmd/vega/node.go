@@ -102,8 +102,8 @@ type NodeCommand struct {
 	governanceSub  *subscribers.GovernanceDataSub
 	voteSub        *subscribers.VoteSub
 	marketDataSub  *subscribers.MarketDataSub
+	newMarketSub   *subscribers.Market
 
-	marketBuf *buffer.Market
 	candleBuf *buffer.Candle
 
 	candleService     *candles.Svc

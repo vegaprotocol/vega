@@ -30,7 +30,7 @@ type Product interface {
 	GetAsset() string
 }
 
-// Broker
+// Broker - the event bus broker, send events here
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/settlement Broker
 type Broker interface {
 	Send(e events.Event)

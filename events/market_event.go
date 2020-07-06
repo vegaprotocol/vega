@@ -3,43 +3,27 @@ package events
 import (
 	"context"
 	"fmt"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
-type PosRes struct {
+type Market struct {
 	*Base
-	distressed, closed int
-	marketID           string
-	markPrice          uint64
+	m types.Market
 }
 
-func NewPositionResolution(ctx context.Context, distressed, closed int, markPrice uint64, marketID string) *PosRes {
-	base := newBase(ctx, PositionResolution)
-	return &PosRes{
-		Base:       base,
-		distressed: distressed,
-		closed:     closed,
-		markPrice:  markPrice,
-		marketID:   marketID,
+func NewMarketEvent(ctx context.Context, m types.Market) *Market {
+	return &Market{
+		Base: newBase(ctx, MarketCreatedEvent),
+		m:    m,
 	}
 }
 
-// MarketEvent implement the MarketEvent interface
-func (p PosRes) MarketEvent() string {
-	return fmt.Sprintf("Market %s entered position resolution, %d traders were distressed, %d of which were closed out at mark price %d", p.marketID, p.distressed, p.closed, p.markPrice)
+// MarketEvent -> is needs to be logged as a market event
+func (m Market) MarketEvent() string {
+	return fmt.Sprintf("Market ID %s created (%s)", m.m.Id, m.m.String())
 }
 
-func (p PosRes) MarketID() string {
-	return p.marketID
-}
-
-func (p PosRes) MarkPrice() uint64 {
-	return p.markPrice
-}
-
-func (p PosRes) Distressed() int {
-	return p.distressed
-}
-
-func (p PosRes) Closed() int {
-	return p.closed
+func (m Market) Market() types.Market {
+	return m.m
 }

@@ -33,13 +33,6 @@ type CandleBuf interface {
 	Start(marketID string, t time.Time) (map[string]types.Candle, error)
 }
 
-// MarketBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketBuf
-type MarketBuf interface {
-	Add(types.Market)
-	Flush() error
-}
-
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
@@ -63,7 +56,6 @@ type Engine struct {
 	idgen      *IDgenerator
 
 	candleBuf CandleBuf
-	marketBuf MarketBuf
 
 	broker Broker
 	time   TimeService
@@ -76,7 +68,6 @@ func NewEngine(
 	executionConfig Config,
 	time TimeService,
 	candleBuf CandleBuf,
-	marketBuf MarketBuf,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -94,7 +85,6 @@ func NewEngine(
 		Config:     executionConfig,
 		markets:    map[string]*Market{},
 		candleBuf:  candleBuf,
-		marketBuf:  marketBuf,
 		time:       time,
 		collateral: collateral,
 		party:      NewParty(log, collateral, pmkts, broker),
@@ -112,10 +102,6 @@ func NewEngine(
 				e.log.Panic("Unable to submit market",
 					logging.Error(err))
 			}
-		}
-		if err := e.marketBuf.Flush(); err != nil {
-			e.log.Error("unable to flush markets", logging.Error(err))
-			return nil
 		}
 	}
 
@@ -214,7 +200,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
 
-	e.marketBuf.Add(*marketConfig)
+	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
 	return nil
 }
 
@@ -411,8 +397,5 @@ func (e *Engine) Generate() error {
 	evt := events.NewTime(ctx, now)
 	e.broker.Send(evt)
 	// Markets
-	if err := e.marketBuf.Flush(); err != nil {
-		return errors.Wrap(err, "failed to flush markets buffer")
-	}
 	return nil
 }

@@ -49,13 +49,11 @@ func (b *brokerStub) Send(e events.Event) {
 				} else {
 					select {
 					case <-sub.Closed():
-						return
+						continue
 					case <-sub.Skip():
-						return
+						continue
 					case sub.C() <- e:
-						return
-					default:
-						return
+						continue
 					}
 				}
 			}

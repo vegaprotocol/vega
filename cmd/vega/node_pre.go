@@ -262,11 +262,11 @@ func (l *NodeCommand) setupSubscibers() {
 	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, true)
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
+	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 }
 
 func (l *NodeCommand) setupBuffers() {
 	l.candleBuf = buffer.NewCandle(l.candleStore)
-	l.marketBuf = buffer.NewMarket(l.marketStore)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -354,7 +354,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.conf.Execution,
 		l.timeService,
 		l.candleBuf,
-		l.marketBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,
