@@ -351,7 +351,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	now, _ := l.timeService.GetTimeNow()
 
 	//  create collateral
-	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, l.lossSocBuf, now)
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return err
@@ -365,7 +365,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.candleBuf,
 		l.marketBuf,
 		l.settleBuf,
-		l.lossSocBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,

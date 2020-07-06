@@ -25,7 +25,6 @@ type testEngine struct {
 	*collateral.Engine
 	ctrl               *gomock.Controller
 	broker             *mocks.MockBroker
-	lossBuf            *mocks.MockLossSocializationBuf
 	systemAccs         []*types.Account
 	marketInsuranceID  string
 	marketSettlementID string
@@ -33,6 +32,10 @@ type testEngine struct {
 
 type accEvt interface {
 	Account() types.Account
+}
+
+type lossEvt interface {
+	AmountLost() int64
 }
 
 func TestCollateralTransfer(t *testing.T) {
@@ -758,6 +761,9 @@ func testMTMSuccess(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		if _, ok := evt.(lossEvt); ok {
+			return
+		}
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1098,6 +1104,9 @@ func TestMTMLossSocialization(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		if _, ok := evt.(lossEvt); ok {
+			return
+		}
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1142,6 +1151,9 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		if _, ok := evt.(lossEvt); ok {
+			return
+		}
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1392,16 +1404,13 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEngine {
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
-	lossBuf := mocks.NewMockLossSocializationBuf(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// 2 new events expected
 	broker.EXPECT().Send(gomock.Any()).Times(2)
 	// system accounts created
-	lossBuf.EXPECT().Add(gomock.Any()).AnyTimes()
-	lossBuf.EXPECT().Flush().AnyTimes()
 
-	eng, err := collateral.New(logging.NewTestLogger(), conf, broker, lossBuf, time.Now())
+	eng, err := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
 	assert.Nil(t, err)
 
 	// create market and traders used for tests
@@ -1412,7 +1421,6 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 		Engine:             eng,
 		ctrl:               ctrl,
 		broker:             broker,
-		lossBuf:            lossBuf,
 		marketInsuranceID:  insID,
 		marketSettlementID: setID,
 		// systemAccs: accounts,

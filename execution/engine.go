@@ -54,13 +54,6 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// LossSocializationBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution LossSocializationBuf
-type LossSocializationBuf interface {
-	Add([]events.LossSocialization)
-	Flush()
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(event events.Event)
@@ -76,10 +69,9 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	candleBuf  CandleBuf
-	marketBuf  MarketBuf
-	settleBuf  SettlementBuf
-	lossSocBuf LossSocializationBuf
+	candleBuf CandleBuf
+	marketBuf MarketBuf
+	settleBuf SettlementBuf
 
 	broker Broker
 	time   TimeService
@@ -94,7 +86,6 @@ func NewEngine(
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
 	settleBuf SettlementBuf,
-	lossSocBuf LossSocializationBuf,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -117,7 +108,6 @@ func NewEngine(
 		collateral: collateral,
 		party:      NewParty(log, collateral, pmkts, broker),
 		settleBuf:  settleBuf,
-		lossSocBuf: lossSocBuf,
 		idgen:      NewIDGen(),
 		broker:     broker,
 	}
