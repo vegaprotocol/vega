@@ -40,6 +40,8 @@ var (
 	ErrVegaWalletRequired                           = errors.New("vega wallet required")
 	ErrProposalCorrupted                            = errors.New("proposal internal data corrupted")
 	ErrChainEventFromNonValidator                   = errors.New("chain event emitted from a non-validator node")
+	ErrUnsupportedChainEvent                        = errors.New("unsupprted chain event")
+	ErrNotAnAssetListChainEvent                     = errors.New("not an asset list chain event")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -129,6 +131,12 @@ type Notary interface {
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
 }
 
+// EvtForwarder ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/processor EvtForwarder
+type EvtForwarder interface {
+	Ack(*types.ChainEvent) bool
+}
+
 // Processor handle processing of all transaction sent through the node
 type Processor struct {
 	log *logging.Logger
@@ -149,10 +157,11 @@ type Processor struct {
 	idgen             *IDgenerator
 	broker            Broker
 	notary            Notary
+	evtfwd            EvtForwarder
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -178,6 +187,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		broker:      broker,
 		idgen:       NewIDGen(),
 		notary:      notary,
+		evtfwd:      evtfwd,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -487,7 +497,7 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return err
 		}
 		return nil
-	case blockchain.NodeSignatureCommand:
+	case blockchain.ChainEventCommand:
 		_, err := p.getChainEvent(data)
 		if err != nil {
 			return err
@@ -580,11 +590,54 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 	return nil
 }
 
-func (p *Processor) processChainEvent(ctx contnext.Context, ce *types.ChainEvent, pubkey []byte) error {
+func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
 	// first verify the event was emited by a validator
 	if !p.top.Exists(pubkey) {
 		return ErrChainEventFromNonValidator
 	}
+
+	// ack the new event then
+	if !p.evtfwd.Ack(ce) {
+		// there was an error, or this was already acked
+		// but that's not a big issue we just going to ignore that.
+		return nil
+	}
+
+	// OK the event was newly acknowledged, so now we need to
+	// figure out what to do with it.
+	switch ce.EventType.(type) {
+	case *types.ChainEvent_AssetList:
+		return p.processChainEventAssetList(ctx, ce)
+	case *types.ChainEvent_Deposit:
+		// handle deposits
+		return nil
+	case *types.ChainEvent_Withdrawal:
+		// handle withdrawal
+		return nil
+	default:
+		return ErrUnsupportedChainEvent
+	}
+
+}
+
+func (p *Processor) processChainEventAssetList(ctx context.Context, ce *types.ChainEvent) error {
+	al := ce.GetAssetList()
+	if al == nil {
+		return ErrNotAnAssetListChainEvent
+	}
+
+	// now check that this asset was actually an asset
+	// going through proposal
+	asset, err := p.assets.Get(al.VegaAssetID)
+	if err != nil {
+		p.log.Error("unable to get asset for finalizing whitelisting",
+			logging.Error(err),
+			logging.String("asset-id", al.VegaAssetID))
+		return err
+	}
+
+	// enable the asset in the collateral now.
+	_ = asset
 
 	return nil
 }

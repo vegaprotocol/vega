@@ -47,6 +47,20 @@ func (mr *MockValidatorTopologyMockRecorder) AddNodeRegistration(arg0 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeRegistration", reflect.TypeOf((*MockValidatorTopology)(nil).AddNodeRegistration), arg0)
 }
 
+// AllPubKeys mocks base method
+func (m *MockValidatorTopology) AllPubKeys() [][]byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AllPubKeys")
+	ret0, _ := ret[0].([][]byte)
+	return ret0
+}
+
+// AllPubKeys indicates an expected call of AllPubKeys
+func (mr *MockValidatorTopologyMockRecorder) AllPubKeys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllPubKeys", reflect.TypeOf((*MockValidatorTopology)(nil).AllPubKeys))
+}
+
 // Exists mocks base method
 func (m *MockValidatorTopology) Exists(arg0 []byte) bool {
 	m.ctrl.T.Helper()

@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -149,6 +150,7 @@ type NodeCommand struct {
 	assets   *assets.Service
 	topology *validators.Topology
 	notary   *notary.Notary
+	evtfwd   *evtforward.EvtForwarder
 
 	// plugins
 	settlePlugin *plugins.Positions

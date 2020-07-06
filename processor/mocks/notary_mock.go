@@ -5,11 +5,10 @@
 package mocks
 
 import (
-	context "context"
-	reflect "reflect"
-
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockNotary is a mock of Notary interface
