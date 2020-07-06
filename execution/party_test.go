@@ -24,6 +24,7 @@ func TestNewParty(t *testing.T) {
 	log := logging.NewTestLogger()
 	broker := mocks.NewMockBroker(ctrl)
 
+	broker.EXPECT().Send(gomock.Any()).Times(1)
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
