@@ -24,14 +24,15 @@ type PartySub struct {
 	buf   []types.Party
 }
 
-func NewPartySub(ctx context.Context, store PartyStore) *PartySub {
+func NewPartySub(ctx context.Context, store PartyStore, ack bool) *PartySub {
 	a := &PartySub{
-		Base:  NewBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   []types.Party{},
 	}
-	a.running = true
-	go a.loop(a.ctx)
+	if a.isRunning() {
+		go a.loop(a.ctx)
+	}
 	return a
 }
 

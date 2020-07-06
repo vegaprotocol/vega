@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -44,8 +45,8 @@ import (
 )
 
 type AccountStore interface {
-	buffer.AccountStore
 	accounts.AccountStore
+	SaveBatch([]*types.Account) error
 	Close() error
 	ReloadConf(storage.Config)
 }
@@ -58,16 +59,16 @@ type CandleStore interface {
 }
 
 type OrderStore interface {
-	buffer.OrderStore
 	orders.OrderStore
+	SaveBatch([]types.Order) error
 	GetMarketDepth(context.Context, string, uint64) (*proto.MarketDepth, error)
 	Close() error
 	ReloadConf(storage.Config)
 }
 
 type TradeStore interface {
-	buffer.TradeStore
 	trades.TradeStore
+	SaveBatch([]types.Trade) error
 	Close() error
 	ReloadConf(storage.Config)
 }
@@ -101,16 +102,9 @@ type NodeCommand struct {
 	governanceSub  *subscribers.GovernanceDataSub
 	voteSub        *subscribers.VoteSub
 	marketDataSub  *subscribers.MarketDataSub
+	newMarketSub   *subscribers.Market
 
-	orderBuf        *buffer.Order
-	tradeBuf        *buffer.Trade
-	partyBuf        *buffer.Party
-	marketBuf       *buffer.Market
-	accountBuf      *buffer.Account
-	candleBuf       *buffer.Candle
-	marginLevelsBuf *buffer.MarginLevels
-	settleBuf       *buffer.Settlement
-	lossSocBuf      *buffer.LossSocialization
+	candleBuf *buffer.Candle
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

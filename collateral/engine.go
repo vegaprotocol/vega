@@ -43,13 +43,6 @@ type Broker interface {
 	Send(event events.Event)
 }
 
-// LossSocializationBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/collateral LossSocializationBuf
-type LossSocializationBuf interface {
-	Add([]events.LossSocialization)
-	Flush()
-}
-
 // Engine is handling the power of the collateral
 type Engine struct {
 	Config
@@ -58,7 +51,6 @@ type Engine struct {
 
 	accs        map[string]*types.Account
 	broker      Broker
-	lossSocBuf  LossSocializationBuf
 	totalTokens uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
@@ -67,7 +59,7 @@ type Engine struct {
 }
 
 // New instantiates a new collateral engine
-func New(log *logging.Logger, conf Config, broker Broker, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
+func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -78,7 +70,6 @@ func New(log *logging.Logger, conf Config, broker Broker, lossSocBuf LossSociali
 		broker:      broker,
 		currentTime: now.UnixNano(),
 		idbuf:       make([]byte, 256),
-		lossSocBuf:  lossSocBuf,
 	}, nil
 }
 
@@ -312,7 +303,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.Int64("amount", lsevt.amountLost),
 				logging.String("market-id", lsevt.market))
 
-			e.lossSocBuf.Add([]events.LossSocialization{lsevt})
+			e.broker.Send(events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount)))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -378,8 +369,10 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				distr.Add(evt.Transfer())
 			}
 		}
-		evts := distr.Run()
-		e.lossSocBuf.Add(evts)
+		evts := distr.Run(ctx)
+		for _, evt := range evts {
+			e.broker.Send(evt)
+		}
 	}
 
 	// then we process all the wins
@@ -465,7 +458,6 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
-	e.lossSocBuf.Flush()
 	if settle.Balance > 0 {
 		return nil, nil, ErrSettlementBalanceNotZero
 	}

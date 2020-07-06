@@ -11,18 +11,35 @@ type Base struct {
 	cfunc   context.CancelFunc
 	sCh     chan struct{}
 	ch      chan events.Event
+	ack     bool
 	running bool
 	id      int
 }
 
-func NewBase(ctx context.Context, buf int) *Base {
+func NewBase(ctx context.Context, buf int, ack bool) *Base {
 	ctx, cfunc := context.WithCancel(ctx)
-	return &Base{
-		ctx:   ctx,
-		cfunc: cfunc,
-		sCh:   make(chan struct{}),
-		ch:    make(chan events.Event, buf),
+	b := &Base{
+		ctx:     ctx,
+		cfunc:   cfunc,
+		sCh:     make(chan struct{}),
+		ch:      make(chan events.Event, buf),
+		ack:     ack,
+		running: !ack, // assume the implementation will start a routine asap
 	}
+	if b.ack {
+		go b.cleanup()
+	}
+	return b
+}
+
+func (b *Base) cleanup() {
+	<-b.ctx.Done()
+	b.Halt()
+}
+
+// Ack returns whether or not this is a synchronous/async subscriber
+func (b *Base) Ack() bool {
+	return b.ack
 }
 
 // Pause the current subscriber will not receive events from the channel

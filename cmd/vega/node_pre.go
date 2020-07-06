@@ -252,30 +252,21 @@ func (l *NodeCommand) loadMarketsConfig() error {
 }
 
 func (l *NodeCommand) setupSubscibers() {
-	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
-	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore)
-	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts)
-	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore)
-	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore)
-	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore)
-	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx)
-	l.voteSub = subscribers.NewVoteSub(l.ctx, false)
-	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore)
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log, false)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore, true)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
+	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
+	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, true)
+	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, true)
+	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
+	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
+	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 }
 
 func (l *NodeCommand) setupBuffers() {
-	l.orderBuf = buffer.NewOrder(l.orderStore)
-	l.tradeBuf = buffer.NewTrade(l.tradeStore)
-	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
-	l.marketBuf = buffer.NewMarket(l.marketStore)
-
-	l.marginLevelsBuf = buffer.NewMarginLevels()
-	l.marginLevelsBuf.Register(l.riskStore)
-	l.settleBuf = buffer.NewSettlement()
-	l.lossSocBuf = buffer.NewLossSocialization()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -341,16 +332,17 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
+	// plugins
+	l.settlePlugin = plugins.NewPositions(l.ctx)
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 
 	l.broker = broker.New(l.ctx)
-	_ = l.broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	l.broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin)
 
 	now, _ := l.timeService.GetTimeNow()
 
 	//  create collateral
-	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, l.lossSocBuf, now)
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return err
@@ -362,9 +354,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.conf.Execution,
 		l.timeService,
 		l.candleBuf,
-		l.marketBuf,
-		l.settleBuf,
-		l.lossSocBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,
@@ -400,10 +389,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
-
-	// plugins
-	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
-	l.settlePlugin.Start(l.ctx) // open channel from the start
 
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)

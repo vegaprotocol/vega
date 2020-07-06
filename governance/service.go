@@ -25,7 +25,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/governance EventBus
 type EventBus interface {
-	Subscribe(s broker.Subscriber, req bool) int
+	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)
 }
 
@@ -151,8 +151,9 @@ func streamGovernance(ctx context.Context,
 // ObserveGovernance streams all governance updates
 func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData {
 	out := make(chan []types.GovernanceData)
-	sub := subscribers.NewGovernanceSub(ctx)
-	id := s.bus.Subscribe(sub, true)
+	// use non-acking subscriber
+	sub := subscribers.NewGovernanceSub(ctx, false)
+	id := s.bus.Subscribe(sub)
 	ctx, cfunc := context.WithCancel(ctx)
 	go func() {
 		defer func() {
@@ -185,9 +186,9 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types
 // ObservePartyProposals streams proposals submitted by the specific party
 func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData {
 	ctx, cfunc := context.WithCancel(ctx)
-	sub := subscribers.NewGovernanceSub(ctx, subscribers.Proposals(subscribers.ProposalByPartyID(partyID)))
+	sub := subscribers.NewGovernanceSub(ctx, false, subscribers.Proposals(subscribers.ProposalByPartyID(partyID)))
 	out := make(chan []types.GovernanceData)
-	id := s.bus.Subscribe(sub, true)
+	id := s.bus.Subscribe(sub)
 	go func() {
 		defer func() {
 			cfunc()
@@ -220,8 +221,9 @@ func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID st
 func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []types.Vote {
 	out := make(chan []types.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by party ID
-	sub := subscribers.NewVoteSub(ctx, true, subscribers.VoteByPartyID(partyID))
-	id := s.bus.Subscribe(sub, true)
+	// and make subscriber non-acking, missed votes are ignored
+	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByPartyID(partyID))
+	id := s.bus.Subscribe(sub)
 	ctx, cfunc := context.WithCancel(ctx)
 	go func() {
 		defer func() {
@@ -255,8 +257,8 @@ func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string
 func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID string) <-chan []types.Vote {
 	out := make(chan []types.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by proposal ID
-	sub := subscribers.NewVoteSub(ctx, true, subscribers.VoteByProposalID(proposalID))
-	id := s.bus.Subscribe(sub, true)
+	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByProposalID(proposalID))
+	id := s.bus.Subscribe(sub)
 	ctx, cfunc := context.WithCancel(ctx)
 	go func() {
 		defer func() {

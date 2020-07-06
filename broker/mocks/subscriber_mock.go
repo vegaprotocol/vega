@@ -33,6 +33,20 @@ func (m *MockSubscriber) EXPECT() *MockSubscriberMockRecorder {
 	return m.recorder
 }
 
+// Ack mocks base method
+func (m *MockSubscriber) Ack() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ack")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Ack indicates an expected call of Ack
+func (mr *MockSubscriberMockRecorder) Ack() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ack", reflect.TypeOf((*MockSubscriber)(nil).Ack))
+}
+
 // C mocks base method
 func (m *MockSubscriber) C() chan<- events.Event {
 	m.ctrl.T.Helper()

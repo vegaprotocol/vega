@@ -18,6 +18,7 @@ type Subscriber interface {
 	Types() []events.Type
 	SetID(id int)
 	ID() int
+	Ack() bool
 }
 
 type subscription struct {
@@ -111,20 +112,40 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 }
 
 // Subscribe registers a new subscriber, returning the key
-func (b *Broker) Subscribe(s Subscriber, req bool) int {
+func (b *Broker) Subscribe(s Subscriber) int {
 	b.mu.Lock()
-	k := b.sub(s, req)
+	k := b.subscribe(s)
 	b.mu.Unlock()
 	return k
 }
 
-func (b *Broker) SubscribeBatch(req bool, subs ...Subscriber) {
+func (b *Broker) SubscribeBatch(subs ...Subscriber) {
 	b.mu.Lock()
 	for _, s := range subs {
-		k := b.sub(s, req)
+		k := b.subscribe(s)
 		s.SetID(k)
 	}
 	b.mu.Unlock()
+}
+
+func (b *Broker) subscribe(s Subscriber) int {
+	k := b.getKey()
+	sub := subscription{
+		Subscriber: s,
+		required:   s.Ack(),
+	}
+	b.subs[k] = sub
+	types := sub.Types()
+	if len(types) == 0 {
+		types = []events.Type{events.All}
+	}
+	for _, t := range types {
+		if _, ok := b.tSubs[t]; !ok {
+			b.tSubs[t] = map[int]*subscription{}
+		}
+		b.tSubs[t][k] = &sub
+	}
+	return k
 }
 
 func (b *Broker) sub(s Subscriber, req bool) int {

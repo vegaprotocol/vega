@@ -16,16 +16,17 @@ type GovernanceDataSub struct {
 	all       []*types.GovernanceData
 }
 
-func NewGovernanceDataSub(ctx context.Context) *GovernanceDataSub {
+func NewGovernanceDataSub(ctx context.Context, ack bool) *GovernanceDataSub {
 	gd := &GovernanceDataSub{
-		Base:      NewBase(ctx, 10),
+		Base:      NewBase(ctx, 10, ack),
 		mu:        &sync.Mutex{},
 		proposals: map[string]types.Proposal{},
 		byPID:     map[string]*types.GovernanceData{},
 		all:       []*types.GovernanceData{},
 	}
-	gd.running = true
-	go gd.loop(ctx)
+	if gd.isRunning() {
+		go gd.loop(gd.ctx)
+	}
 	return gd
 }
 

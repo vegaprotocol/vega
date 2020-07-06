@@ -24,14 +24,15 @@ type AccountSub struct {
 	buf   map[string]*types.Account
 }
 
-func NewAccountSub(ctx context.Context, store AccountStore) *AccountSub {
+func NewAccountSub(ctx context.Context, store AccountStore, ack bool) *AccountSub {
 	a := &AccountSub{
-		Base:  NewBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   map[string]*types.Account{},
 	}
-	a.running = true
-	go a.loop(a.ctx)
+	if a.isRunning() {
+		go a.loop(a.ctx)
+	}
 	return a
 }
 

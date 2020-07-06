@@ -34,17 +34,17 @@ func (m *MockEventBus) EXPECT() *MockEventBusMockRecorder {
 }
 
 // Subscribe mocks base method
-func (m *MockEventBus) Subscribe(arg0 broker.Subscriber, arg1 bool) int {
+func (m *MockEventBus) Subscribe(arg0 broker.Subscriber) int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subscribe", arg0, arg1)
+	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(int)
 	return ret0
 }
 
 // Subscribe indicates an expected call of Subscribe
-func (mr *MockEventBusMockRecorder) Subscribe(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockEventBusMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockEventBus)(nil).Subscribe), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockEventBus)(nil).Subscribe), arg0)
 }
 
 // Unsubscribe mocks base method

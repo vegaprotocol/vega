@@ -1,6 +1,7 @@
 package collateral
 
 import (
+	"context"
 	"math"
 
 	"code.vegaprotocol.io/vega/events"
@@ -32,29 +33,24 @@ func (s *simpleDistributor) Add(req *types.Transfer) {
 	})
 }
 
-func (s *simpleDistributor) Run() []events.LossSocialization {
+func (s *simpleDistributor) Run(ctx context.Context) []*events.LossSoc {
 	if s.expectCollected == s.collected {
-		return []events.LossSocialization{}
+		return nil
 	}
 
 	var (
 		totalamount int64
-		evts        = make([]events.LossSocialization, 0, len(s.requests))
-		evt         *lossSocializationEvt
+		evts        = make([]*events.LossSoc, 0, len(s.requests))
+		evt         *events.LossSoc
 	)
 	for _, v := range s.requests {
 		totalamount += int64(math.Floor(v.amount))
-		evt = &lossSocializationEvt{
-			market: s.marketID,
-			party:  v.request.Owner,
-			// negative amount as this what they missing
-			amountLost: int64(math.Floor(v.amount)) - v.request.Amount.Amount,
-		}
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-v.request.Amount.Amount)
 		v.request.Amount.Amount = int64(math.Floor(v.amount))
 		s.log.Warn("loss socialization missing funds to be distributed",
-			logging.String("party-id", evt.party),
-			logging.Int64("amount", evt.amountLost),
-			logging.String("market-id", evt.market))
+			logging.String("party-id", evt.PartyID()),
+			logging.Int64("amount", evt.AmountLost()),
+			logging.String("market-id", evt.MarketID()))
 		evts = append(evts, evt)
 	}
 
@@ -62,7 +58,12 @@ func (s *simpleDistributor) Run() []events.LossSocialization {
 	if totalamount != s.collected {
 		// last one get the remaining bits
 		s.requests[len(s.requests)-1].request.Amount.Amount += s.collected - totalamount
-		evt.amountLost -= s.collected - totalamount
+		replace := events.NewLossSocializationEvent(
+			evt.Context(),
+			evt.PartyID(),
+			evt.MarketID(),
+			evt.AmountLost()-s.collected-totalamount)
+		*evt = *replace
 	}
 
 	return evts

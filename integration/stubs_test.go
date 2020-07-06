@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 )
@@ -15,17 +16,50 @@ type brokerStub struct {
 	mu   sync.Mutex
 	err  error
 	data map[events.Type][]events.Event
+	subT map[events.Type][]broker.Subscriber
 }
 
 func NewBrokerStub() *brokerStub {
 	return &brokerStub{
 		data: map[events.Type][]events.Event{},
+		subT: map[events.Type][]broker.Subscriber{},
 	}
+}
+
+func (b *brokerStub) Subscribe(sub broker.Subscriber) {
+	b.mu.Lock()
+	types := sub.Types()
+	for _, t := range types {
+		if _, ok := b.subT[t]; !ok {
+			b.subT[t] = []broker.Subscriber{}
+		}
+		b.subT[t] = append(b.subT[t], sub)
+	}
+	b.mu.Unlock()
 }
 
 func (b *brokerStub) Send(e events.Event) {
 	b.mu.Lock()
-	if _, ok := b.data[e.Type()]; !ok {
+	t := e.Type()
+	if subs, ok := b.subT[t]; ok {
+		go func() {
+			for _, sub := range subs {
+				if sub.Ack() {
+					sub.Push(e)
+				} else {
+					select {
+					case <-sub.Closed():
+						continue
+					case <-sub.Skip():
+						continue
+					case sub.C() <- e:
+						continue
+					}
+				}
+			}
+		}()
+	}
+	if _, ok := b.data[t]; !ok {
 		b.data[e.Type()] = []events.Event{}
 	}
 	b.data[e.Type()] = append(b.data[e.Type()], e)

@@ -17,13 +17,14 @@ type MarketEvent struct {
 	log *logging.Logger
 }
 
-func NewMarketEvent(ctx context.Context, log *logging.Logger) *MarketEvent {
+func NewMarketEvent(ctx context.Context, log *logging.Logger, ack bool) *MarketEvent {
 	m := &MarketEvent{
-		Base: NewBase(ctx, 10), // the size of the buffer can be tweaked, maybe use config?
+		Base: NewBase(ctx, 10, ack), // the size of the buffer can be tweaked, maybe use config?
 		log:  log,
 	}
-	m.running = true
-	go m.loop()
+	if m.isRunning() {
+		go m.loop()
+	}
 	return m
 }
 

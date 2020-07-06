@@ -485,10 +485,10 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
 }
 
-func amendOrder(t *testing.T, tm *testMarket, party string, orderId string, sizeDelta int64, price uint64,
+func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
 	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
 	amend := &types.OrderAmendment{
-		OrderID:     orderId,
+		OrderID:     orderID,
 		PartyID:     party,
 		MarketID:    tm.market.GetID(),
 		SizeDelta:   sizeDelta,

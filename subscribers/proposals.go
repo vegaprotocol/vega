@@ -95,14 +95,15 @@ func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 	}
 }
 
-func NewProposalFilteredSub(ctx context.Context, filters ...ProposalFilter) *ProposalFilteredSub {
+func NewProposalFilteredSub(ctx context.Context, ack bool, filters ...ProposalFilter) *ProposalFilteredSub {
 	p := ProposalFilteredSub{
-		Base:    NewBase(ctx, 10),
+		Base:    NewBase(ctx, 10, ack),
 		filters: filters,
 		matched: []types.Proposal{},
 	}
-	p.running = true
-	go p.loop(p.ctx)
+	if p.isRunning() {
+		go p.loop(p.ctx)
+	}
 	return &p
 }
 
