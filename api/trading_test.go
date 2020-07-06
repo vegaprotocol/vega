@@ -238,6 +238,8 @@ func getTestGRPCServer(
 	nplugin := plugins.NewNotary(context.Background())
 	notaryService := notary.NewService(logger, conf.Notary, nplugin)
 
+	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
+
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -254,6 +256,7 @@ func getTestGRPCServer(
 		riskService,
 		governanceService,
 		notaryService,
+		evtfwd,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

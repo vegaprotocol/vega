@@ -46,6 +46,7 @@ type GRPCServer struct {
 	riskService             *risk.Svc
 	governanceService       *governance.Svc
 	notaryService           *notary.Svc
+	evtfwd                  EvtForwarder
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -74,6 +75,7 @@ func NewGRPCServer(
 	riskService *risk.Svc,
 	governanceService *governance.Svc,
 	notaryService *notary.Svc,
+	evtfwd EvtForwarder,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -97,6 +99,7 @@ func NewGRPCServer(
 		riskService:             riskService,
 		governanceService:       governanceService,
 		notaryService:           notaryService,
+		evtfwd:                  evtfwd,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -189,6 +192,7 @@ func (g *GRPCServer) Start() {
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
 		governanceService: g.governanceService,
+		evtForwarder:      g.evtfwd,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc

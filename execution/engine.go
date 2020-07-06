@@ -165,6 +165,17 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		return err
 	}
 
+	// ensure the asset for this new market exisrts
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		return err
+	}
+	if !e.collateral.AssetExists(asset) {
+		e.log.Error("unable to create a market with an invalid asset",
+			logging.String("market-id", marketConfig.Id),
+			logging.String("asset-id", asset))
+	}
+
 	mkt, err := NewMarket(
 		e.log,
 		e.Config.Risk,
@@ -188,14 +199,12 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	e.markets[marketConfig.Id] = mkt
 
-	// create market accounts
-	asset, err := marketConfig.GetAsset()
+	// ignore response ids here + this cannot fail
+	_, _, err = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 	if err != nil {
+		// that should not happen as we verify that the asset exists before
 		return err
 	}
-
-	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)

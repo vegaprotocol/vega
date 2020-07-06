@@ -50,6 +50,11 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
+	collateralEngine.EnableAsset(types.Asset{
+		Symbol: "ETH",
+		ID:     "ETH",
+	})
+
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, broker)
 
@@ -64,7 +69,8 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	assert.NoError(t, err)
 
 	// ignore response ids here + this cannot fail
-	_, _ = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset, 0)
+	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset, 0)
+	assert.NoError(t, err)
 
 	return &testMarket{
 		market:          mktEngine,

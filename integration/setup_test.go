@@ -153,6 +153,14 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, time.Now(),
 	)
 
+	for _, mkt := range mkts {
+		asset, _ := mkt.GetAsset()
+		execsetup.collateral.EnableAsset(proto.Asset{
+			ID:     asset,
+			Symbol: asset,
+		})
+	}
+
 	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	execsetup.candles.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()

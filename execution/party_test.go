@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -25,6 +26,10 @@ func TestNewParty(t *testing.T) {
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
+	collateralEngine.EnableAsset(types.Asset{
+		Symbol: "ETH",
+		ID:     "ETH",
+	})
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
 	testMarketID := testMarket[0].Id
@@ -96,6 +101,10 @@ func TestNewAccount(t *testing.T) {
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
+	collateralEngine.EnableAsset(types.Asset{
+		Symbol: "ETH",
+		ID:     "ETH",
+	})
 
 	testMarket := getMarkets(now.AddDate(0, 0, 7))
 	testMarketID := testMarket[0].Id
