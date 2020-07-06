@@ -137,6 +137,11 @@ type EvtForwarder interface {
 	Ack(*types.ChainEvent) bool
 }
 
+// Collateral ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/processor Collateral
+type Collateral interface {
+}
+
 // Processor handle processing of all transaction sent through the node
 type Processor struct {
 	log *logging.Logger
@@ -158,10 +163,11 @@ type Processor struct {
 	broker            Broker
 	notary            Notary
 	evtfwd            EvtForwarder
+	col               Collateral
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -188,6 +194,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		idgen:       NewIDGen(),
 		notary:      notary,
 		evtfwd:      evtfwd,
+		col:         col,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil

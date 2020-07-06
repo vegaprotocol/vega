@@ -10,7 +10,6 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -29,22 +28,14 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
 type Commander interface {
-	Command(key nodewallet.Wallet, cmd blockchain.Command, payload proto.Message) error
+	Command(cmd blockchain.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *types.NodeRegistration) error
-	SelfChainPubKey() []byte
-	Ready() bool
+	SelfVegaPubKey() []byte
 	Exists(key []byte) bool
-	Len() int
 	AllPubKeys() [][]byte
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/evtforward NodeWallet
-type NodeWallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
 
 // EvtForwarder receive events from the blockchain queue
@@ -60,7 +51,6 @@ type EvtForwarder struct {
 	ackedEvts   map[string]*types.ChainEvent
 	evts        map[string]tsEvt
 	currentTime time.Time
-	wallet      nodewallet.Wallet
 	top         ValidatorTopology
 }
 
@@ -74,15 +64,10 @@ type nodeHash struct {
 	hash uint64
 }
 
-func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, nwallet NodeWallet, top ValidatorTopology) (*EvtForwarder, error) {
+func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) (*EvtForwarder, error) {
 	now, err := time.GetTimeNow()
 	if err != nil {
 		return nil, err
-	}
-
-	wallet, ok := nwallet.Get(nodewallet.Vega)
-	if !ok {
-		return nil, ErrMissingVegaWallet
 	}
 
 	evtf := &EvtForwarder{
@@ -90,13 +75,13 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, nwall
 		log:         log,
 		cmd:         cmd,
 		nodes:       []nodeHash{},
-		self:        string(wallet.PubKeyOrAddress()),
+		self:        string(top.SelfVegaPubKey()),
 		currentTime: now,
-		wallet:      wallet,
 		ackedEvts:   map[string]*types.ChainEvent{},
 		evts:        map[string]tsEvt{},
 		top:         top,
 	}
+	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
 	return evtf, nil
 }
@@ -167,11 +152,11 @@ func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked
 }
 
 func (e *EvtForwarder) send(evt *types.ChainEvent) error {
-	return e.cmd.Command(e.wallet, blockchain.ChainEventCommand, evt)
+	return e.cmd.Command(blockchain.ChainEventCommand, evt)
 }
 
 func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
-	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime)
+	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime.Unix())
 	h := e.hash([]byte(s))
 	e.mu.RLock()
 	node := e.nodes[h%uint64(len(e.nodes))]
