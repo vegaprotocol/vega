@@ -262,6 +262,9 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 			r.log.Error("unable to convert market from proto", logging.Error(err))
 			return nil, err
 		}
+		// add the market name explicitly here as it does not
+		// come anymore from the market framework
+		market.Name = market.TradableInstrument.Instrument.Name
 		m = append(m, market)
 	}
 
@@ -280,6 +283,9 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 		r.log.Error("unable to convert market from proto", logging.Error(err))
 		return nil, err
 	}
+	// add the market name explicitly here as it does not
+	// come anymore from the market framework
+	market.Name = market.TradableInstrument.Instrument.Name
 	return market, nil
 }
 
