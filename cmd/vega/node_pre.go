@@ -337,7 +337,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
