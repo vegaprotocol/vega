@@ -155,7 +155,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
-		execsetup.collateral.EnableAsset(proto.Asset{
+		execsetup.collateral.EnableAsset(context.Background(), proto.Asset{
 			ID:     asset,
 			Symbol: asset,
 		})

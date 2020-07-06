@@ -87,7 +87,8 @@ func testEnableAssetSuccess(t *testing.T) {
 		ID:     "MYASSET",
 		Symbol: "MYASSET",
 	}
-	err := eng.EnableAsset(asset)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 }
 
@@ -98,11 +99,12 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 		ID:     "MYASSET",
 		Symbol: "MYASSET",
 	}
-	err := eng.EnableAsset(asset)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
 	// now try to enable it again
-	err = eng.EnableAsset(asset)
+	err = eng.EnableAsset(context.Background(), asset)
 	assert.EqualError(t, err, collateral.ErrAssetAlreadyEnabled.Error())
 }
 
@@ -1451,8 +1453,10 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 	broker := mocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
-	// 2 new events expected
-	broker.EXPECT().Send(gomock.Any()).Times(2)
+	// 4 new events expected:
+	// 2 markets accounts
+	// 2 new assets
+	broker.EXPECT().Send(gomock.Any()).Times(4)
 	// system accounts created
 
 	eng, err := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
@@ -1463,14 +1467,14 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 		ID:     testMarketAsset,
 		Symbol: testMarketAsset,
 	}
-	err = eng.EnableAsset(asset)
+	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 	// ETH is added hardcoded in some places
 	asset = types.Asset{
 		ID:     "ETH",
 		Symbol: "ETH",
 	}
-	err = eng.EnableAsset(asset)
+	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
 	// create market and traders used for tests

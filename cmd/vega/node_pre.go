@@ -321,7 +321,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		}
 
 		assetD := asset.Data()
-		if err := col.EnableAsset(*assetD); err != nil {
+		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
 			return fmt.Errorf("unable to enable asset in colateral: %v", err)
 		}
 

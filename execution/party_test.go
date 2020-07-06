@@ -26,7 +26,7 @@ func TestNewParty(t *testing.T) {
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
-	collateralEngine.EnableAsset(types.Asset{
+	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Symbol: "ETH",
 		ID:     "ETH",
 	})
@@ -101,7 +101,7 @@ func TestNewAccount(t *testing.T) {
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.NoError(t, err)
-	collateralEngine.EnableAsset(types.Asset{
+	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Symbol: "ETH",
 		ID:     "ETH",
 	})

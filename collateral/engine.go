@@ -110,11 +110,12 @@ func (e *Engine) ReloadConf(cfg Config) {
 // this enable the asset to be used by new markets or
 // parties to deposit funds
 // FIXME(): use the ID later on
-func (e *Engine) EnableAsset(asset types.Asset) error {
+func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	if e.AssetExists(asset.Symbol) {
 		return ErrAssetAlreadyEnabled
 	}
 	e.enabledAssets[asset.Symbol] = asset
+	e.broker.Send(events.NewAssetEvent(ctx, asset))
 	return nil
 }
 

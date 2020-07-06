@@ -152,7 +152,7 @@ func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 	current := len(mktsetup.broker.GetAccounts())
 	// this should create market accounts, currently same way it's done in execution engine (register market)
 	asset, _ := mktsetup.market.GetAsset()
-	_ = mktsetup.colE.EnableAsset(proto.Asset{
+	_ = mktsetup.colE.EnableAsset(context.Background(), proto.Asset{
 		ID:     asset,
 		Symbol: asset,
 	})

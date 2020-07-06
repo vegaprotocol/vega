@@ -50,7 +50,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
-	collateralEngine.EnableAsset(types.Asset{
+	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Symbol: "ETH",
 		ID:     "ETH",
 	})
