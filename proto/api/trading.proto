@@ -71,6 +71,8 @@ message WithdrawRequest {
 
 message WithdrawResponse {
   bool success = 1;
+  //TODO: add this
+  uint64 withdrawalID =2;
 }
 
 message NotifyTraderAccountRequest {
@@ -287,6 +289,19 @@ message GetNodeSignaturesAggregateRequest {
 message GetNodeSignaturesAggregateResponse {
   // The list of signatures
   repeated vega.NodeSignature signatures = 1;
+  //TODO Add this:
+  uint64 amount = 2;
+  string referenceNonce = 3;
+  oneof withdrawal {
+        EthWithdrawal ethWithdrawal =4;
+        BTCWithdrawal btcWithdrawal =5;
+    }
+}
+
+message EthWithdrawal {
+    string assetSource = 1;
+    string assetID = 2;
+    uint32 expiryTimestamp = 3;
 }
 
 message OptionalProposalState {
