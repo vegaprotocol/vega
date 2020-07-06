@@ -75,9 +75,11 @@ func testSubUnsubSuccess(t *testing.T) {
 	reqSub := mocks.NewMockSubscriber(broker.ctrl)
 	// subscribe + unsubscribe -> 2 calls
 	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().Times(1).Return(false)
 	reqSub.EXPECT().Types().Times(2).Return(nil)
-	k1 := broker.Subscribe(sub, false)   // not required
-	k2 := broker.Subscribe(reqSub, true) // required
+	reqSub.EXPECT().Ack().Times(1).Return(true)
+	k1 := broker.Subscribe(sub)    // not required
+	k2 := broker.Subscribe(reqSub) // required
 	assert.NotZero(t, k1)
 	assert.NotZero(t, k2)
 	assert.NotEqual(t, k1, k2)
@@ -92,10 +94,12 @@ func testSubReuseKey(t *testing.T) {
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	sub.EXPECT().Types().Times(4).Return(nil)
-	k1 := broker.Subscribe(sub, false)
+	sub.EXPECT().Ack().Times(1).Return(false)
+	k1 := broker.Subscribe(sub)
+	sub.EXPECT().Ack().Times(1).Return(true)
 	assert.NotZero(t, k1)
 	broker.Unsubscribe(k1)
-	k2 := broker.Subscribe(sub, true)
+	k2 := broker.Subscribe(sub)
 	assert.Equal(t, k1, k2)
 	broker.Unsubscribe(k2)
 	// second unsubscribe is a no-op
@@ -108,7 +112,8 @@ func testAutoUnsubscribe(t *testing.T) {
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	// sub, auto-unsub, sub again
 	sub.EXPECT().Types().Times(3).Return(nil)
-	k1 := broker.Subscribe(sub, true)
+	sub.EXPECT().Ack().Times(1).Return(true)
+	k1 := broker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	// set up sub to be closed
 	skipCh := make(chan struct{})
@@ -130,7 +135,8 @@ func testAutoUnsubscribe(t *testing.T) {
 	// so it's possible we haven't unsubscribed yet... the waitgroup should introduce enough time
 	wg.Wait()
 	// now try and subscribe again, the key should be reused
-	k2 := broker.Subscribe(sub, false)
+	sub.EXPECT().Ack().Times(1).Return(false)
+	k2 := broker.Subscribe(sub)
 	assert.Equal(t, k1, k2)
 }
 
@@ -144,7 +150,8 @@ func testSkipOptional(t *testing.T) {
 	sub.EXPECT().Types().Times(2).Return(nil).Do(func() {
 		twg.Done()
 	})
-	k1 := tstBroker.Subscribe(sub, false)
+	sub.EXPECT().Ack().AnyTimes().Return(false)
+	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 
 	events := []*evt{
@@ -191,7 +198,8 @@ func testStopCtx(t *testing.T) {
 	// no calls sub are expected, we cancelled the context
 	broker.cfunc()
 	sub.EXPECT().Types().Times(2).Return(nil)
-	k1 := broker.Subscribe(sub, true) // required sub
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	broker.Send(broker.randomEvt())
 	// calling unsubscribe acquires lock, so we can ensure the Send call has returned
@@ -228,7 +236,8 @@ func testSubscriberSkip(t *testing.T) {
 	// we expect this call once, and only for the SECOND call
 	sub.EXPECT().Push(events[1]).Times(1)
 	sub.EXPECT().Types().Times(2).Return(nil)
-	k1 := broker.Subscribe(sub, true) // required sub
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	for _, e := range events {
 		broker.Send(e)
@@ -274,9 +283,12 @@ func testEventTypeSubscription(t *testing.T) {
 	different := events.Type(int(events.All) + int(events.TimeUpdate) + 1) // this value cannot exist as an events.Type value
 	diffSub.EXPECT().Types().Times(2).Return([]events.Type{different})
 	// subscribe the subscriberjk
-	k1 := broker.Subscribe(sub, true)     // required sub
-	k2 := broker.Subscribe(diffSub, true) // required sub, but won't be used anyway
-	k3 := broker.Subscribe(allSub, true)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	diffSub.EXPECT().Ack().AnyTimes().Return(true)
+	allSub.EXPECT().Ack().AnyTimes().Return(true)
+	k1 := broker.Subscribe(sub)     // required sub
+	k2 := broker.Subscribe(diffSub) // required sub, but won't be used anyway
+	k3 := broker.Subscribe(allSub)
 	assert.NotZero(t, k1)
 	assert.NotZero(t, k2)
 	assert.NotZero(t, k3)
