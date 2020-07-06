@@ -52,6 +52,7 @@ const (
 	SettleDistressedEvent
 	CandleEvent
 	MarketCreatedEvent
+	AssetEvent
 )
 
 var (
@@ -80,6 +81,7 @@ var (
 		SettleDistressedEvent:  "SettleDistressedEvent",
 		CandleEvent:            "CandleEvent",
 		MarketCreatedEvent:     "MarketCreatedEvent",
+		AssetEvent:             "AssetEvent",
 	}
 )
 
@@ -121,6 +123,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.NodeSignature:
 		e := NewNodeSignatureEvent(ctx, tv)
+		return e, nil
+	case types.Asset:
+		e := NewAssetEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

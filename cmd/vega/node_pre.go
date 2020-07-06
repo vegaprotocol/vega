@@ -40,7 +40,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 	"golang.org/x/crypto/ssh/terminal"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -174,53 +174,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 
-	// initialize the assets service now
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
-	if err != nil {
-		return err
-	}
-
-	// TODO: remove that once we have infrastructure to use token through governance
-	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
-	if err != nil {
-		return err
-	}
-
-	for _, v := range assetSrcs {
-		v := v
-		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
-		if err != nil {
-			return fmt.Errorf("error instanciating asset %v\n", err)
-		}
-
-		asset, err := l.assets.Get(aid)
-		if err != nil {
-			return fmt.Errorf("unable to get asset %v\n", err)
-		}
-
-		// just a simple backoff here
-		err = backoff.Retry(
-			func() error {
-				err := asset.Validate()
-				if !asset.IsValid() {
-					return err
-				}
-				return nil
-			},
-			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-		)
-		if err != nil {
-			return fmt.Errorf("unable to instanciate new asset %v", err)
-		}
-		if err := l.assets.Enable(aid); err != nil {
-			return fmt.Errorf("unable to enable asset: %v", err)
-		}
-		l.Log.Info("new asset added successfully",
-			logging.String("asset", asset.String()))
-
-		// TODO(): add it to collateral engine
-	}
-
 	return nil
 }
 
@@ -323,6 +276,62 @@ func (l *NodeCommand) setupStorages() (err error) {
 	return
 }
 
+func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
+	var err error
+	// initialize the assets service now
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove that once we have infrastructure to use token through governance
+	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range assetSrcs {
+		v := v
+		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
+		if err != nil {
+			return fmt.Errorf("error instanciating asset %v\n", err)
+		}
+
+		asset, err := l.assets.Get(aid)
+		if err != nil {
+			return fmt.Errorf("unable to get asset %v\n", err)
+		}
+
+		// just a simple backoff here
+		err = backoff.Retry(
+			func() error {
+				err := asset.Validate()
+				if !asset.IsValid() {
+					return err
+				}
+				return nil
+			},
+			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to instanciate new asset %v", err)
+		}
+		if err := l.assets.Enable(aid); err != nil {
+			return fmt.Errorf("unable to enable asset: %v", err)
+		}
+
+		assetD := asset.Data()
+		if err := col.EnableAsset(*assetD); err != nil {
+			return fmt.Errorf("unable to enable asset in colateral: %v", err)
+		}
+
+		l.Log.Info("new asset added successfully",
+			logging.String("asset", asset.String()))
+	}
+
+	return nil
+}
+
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -347,6 +356,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return err
 	}
+
+	// TODO(): remove wheen asset are fully loaded through governance
+	// after the collateral is loaded, we want to load all the assets
+	l.loadAssets(l.collateral)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
