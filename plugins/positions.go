@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/pkg/errors"
 )
@@ -15,6 +16,33 @@ var (
 	ErrMarketNotFound = errors.New("could not find market")
 	ErrPartyNotFound  = errors.New("party not found")
 )
+
+// SPE SettlePositionEvent
+type SPE interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Price() uint64
+	Trades() events.TradeSettlement
+}
+
+// SDE SettleDistressedEvent
+type SDE interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Margin() uint64
+	Price() uint64
+}
+
+// LSE LossSocializationEvent
+type LSE interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Amount() int64
+	AmountLost() int64
+}
 
 // PosBuffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/pos_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PosBuffer
@@ -32,6 +60,7 @@ type LossSocializationBuffer interface {
 
 // Positions plugin taking settlement data to build positions API data
 type Positions struct {
+	*subscribers.Base
 	mu    *sync.RWMutex
 	buf   PosBuffer
 	lsbuf LossSocializationBuffer
@@ -43,11 +72,24 @@ type Positions struct {
 }
 
 func NewPositions(buf PosBuffer, lsbuf LossSocializationBuffer) *Positions {
+	ctx := context.TODO()
 	return &Positions{
+		Base:  subscribers.NewBase(ctx, 10, true),
 		mu:    &sync.RWMutex{},
 		data:  map[string]map[string]Position{},
 		buf:   buf,
 		lsbuf: lsbuf,
+	}
+}
+
+func (p *Positions) Push(e events.Event) {
+	switch te := e.(type) {
+	case SPE:
+		p.updatePosition(te)
+	case SDE:
+		p.updateSettleDestressed(te)
+	case LSE:
+		p.applyLossSocializationEvent(te)
 	}
 }
 
@@ -109,6 +151,24 @@ func (p *Positions) consume(ctx context.Context) {
 	}
 }
 
+func (p *Positions) applyLossSocializationEvent(e LSE) {
+	p.mu.Lock()
+	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), e.AmountLost()
+	pos, ok := p.data[marketID][partyID]
+	if !ok {
+		return
+	}
+	if amountLoss < 0 {
+		pos.loss += float64(-amountLoss)
+	} else {
+		pos.adjustment += float64(amountLoss)
+	}
+	pos.RealisedPNLFP += float64(amountLoss)
+	pos.RealisedPNL += amountLoss
+	p.data[marketID][partyID] = pos
+	p.mu.Unlock()
+}
+
 func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 	for _, evt := range evts {
 		marketID, partyID, amountLoss := evt.MarketID(), evt.PartyID(), evt.AmountLost()
@@ -132,6 +192,21 @@ func (p *Positions) applyLossSocialization(evts []events.LossSocialization) {
 
 		p.data[marketID][partyID] = pos
 	}
+}
+
+func (p *Positions) updatePosition(e SPE) {
+	p.mu.Lock()
+	mID, tID := e.MarketID(), e.PartyID()
+	if _, ok := p.data[mID]; !ok {
+		p.data[mID] = map[string]Position{}
+	}
+	calc, ok := p.data[mID][tID]
+	if !ok {
+		calc = speToProto(e)
+	}
+	updateSettlePosition(&calc, e)
+	p.data[mID][tID] = calc
+	p.mu.Unlock()
 }
 
 func (p *Positions) updateData(raw []events.SettlePosition) {
@@ -248,6 +323,45 @@ func mtm(p *Position, markPrice uint64) {
 	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
 }
 
+func updateSettlePosition(p *Position, e SPE) {
+	for _, t := range e.Trades() {
+		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
+		_ = closeV(p, closedVolume, t.Price())
+		openV(p, openedVolume, t.Price())
+		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
+		p.RealisedPNL = int64(math.Round(p.RealisedPNLFP))
+	}
+	mtm(p, e.Price())
+	p.UnrealisedPNL = int64(math.Round(p.UnrealisedPNLFP))
+}
+
+func (p *Positions) updateSettleDestressed(e SDE) {
+	p.mu.Lock()
+	mID, tID := e.MarketID(), e.PartyID()
+	if _, ok := p.data[mID]; !ok {
+		p.data[mID] = map[string]Position{}
+	}
+	calc, ok := p.data[mID][tID]
+	if !ok {
+		calc = speToProto(e)
+	}
+	margin := e.Margin()
+	calc.RealisedPNL += calc.UnrealisedPNL
+	calc.RealisedPNLFP += calc.UnrealisedPNLFP
+	calc.OpenVolume = 0
+	calc.UnrealisedPNL = 0
+	calc.AverageEntryPrice = 0
+	// realised P&L includes whatever we had in margin account at this point
+	calc.RealisedPNL -= int64(margin)
+	calc.RealisedPNLFP -= float64(margin)
+	// @TODO average entry price shouldn't be affected(?)
+	// the volume now is zero, though, so we'll end up moving this position to storage
+	calc.UnrealisedPNLFP = 0
+	calc.AverageEntryPriceFP = 0
+	p.data[mID][tID] = calc
+	p.mu.Unlock()
+}
+
 func updatePosition(p *Position, e events.SettlePosition) {
 	// if this settlePosition event has a margin event embedded, that means we're dealing
 	// with a trader who was closed out...
@@ -289,6 +403,18 @@ type Position struct {
 	adjustment float64
 }
 
+func speToProto(e SPE) Position {
+	return Position{
+		Position: types.Position{
+			MarketID: e.MarketID(),
+			PartyID:  e.Party(),
+		},
+		AverageEntryPriceFP: 0,
+		RealisedPNLFP:       0,
+		UnrealisedPNLFP:     0,
+	}
+}
+
 func evtToProto(e events.SettlePosition) Position {
 	p := Position{
 		Position: types.Position{
@@ -310,4 +436,12 @@ func absUint64(v int64) uint64 {
 		v *= -1
 	}
 	return uint64(v)
+}
+
+func (p *Positions) Types() []events.Type {
+	return []events.Type{
+		events.SettlePositionEvent,
+		events.SettleDistressedEvent,
+		events.LossSocializationEvent,
+	}
 }

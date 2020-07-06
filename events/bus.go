@@ -47,6 +47,9 @@ const (
 	VoteEvent
 	MarketDataEvent
 	NodeSignatureEvent
+	LossSocializationEvent
+	SettlePositionEvent
+	SettleDistressedEvent
 )
 
 var (
@@ -55,20 +58,23 @@ var (
 	}
 
 	eventStrings = map[Type]string{
-		All:                "ALL",
-		TimeUpdate:         "TimeUpdate",
-		TransferResponses:  "TransferResponses",
-		PositionResolution: "PositionResolution",
-		MarketEvent:        "MarketEvent",
-		OrderEvent:         "OrderEvent",
-		AccountEvent:       "AccountEvent",
-		PartyEvent:         "PartyEvent",
-		TradeEvent:         "TradeEvent",
-		MarginLevelsEvent:  "MarginLevelsEvent",
-		ProposalEvent:      "ProposalEvent",
-		VoteEvent:          "VoteEvent",
-		MarketDataEvent:    "MarketDataEvent",
-		NodeSignatureEvent: "NodeSignatureEvent",
+		All:                    "ALL",
+		TimeUpdate:             "TimeUpdate",
+		TransferResponses:      "TransferResponses",
+		PositionResolution:     "PositionResolution",
+		MarketEvent:            "MarketEvent",
+		OrderEvent:             "OrderEvent",
+		AccountEvent:           "AccountEvent",
+		PartyEvent:             "PartyEvent",
+		TradeEvent:             "TradeEvent",
+		MarginLevelsEvent:      "MarginLevelsEvent",
+		ProposalEvent:          "ProposalEvent",
+		VoteEvent:              "VoteEvent",
+		MarketDataEvent:        "MarketDataEvent",
+		NodeSignatureEvent:     "NodeSignatureEvent",
+		LossSocializationEvent: "LossSocializationEvent",
+		SettlePositionEvent:    "SettlePositionEvent",
+		SettleDistressedEvent:  "SettleDistressedEvent",
 	}
 )
 

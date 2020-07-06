@@ -23,14 +23,15 @@ type MarginLevelSub struct {
 	buf   map[string]map[string]types.MarginLevels
 }
 
-func NewMarginLevelSub(ctx context.Context, store Store) *MarginLevelSub {
+func NewMarginLevelSub(ctx context.Context, store Store, ack bool) *MarginLevelSub {
 	m := MarginLevelSub{
-		Base:  NewBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   map[string]map[string]types.MarginLevels{},
 	}
-	m.running = true
-	go m.loop(m.ctx)
+	if m.isRunning() {
+		go m.loop(m.ctx)
+	}
 	return &m
 }
 

@@ -66,9 +66,9 @@ func Votes(f ...VoteFilter) Filter {
 	}
 }
 
-func NewGovernanceSub(ctx context.Context, filters ...Filter) *GovernanceSub {
+func NewGovernanceSub(ctx context.Context, ack bool, filters ...Filter) *GovernanceSub {
 	g := GovernanceSub{
-		Base:     NewBase(ctx, 10),
+		Base:     NewBase(ctx, 10, ack),
 		gfilters: []GovernanceFilter{},
 		pfilters: []ProposalFilter{},
 		vfilters: []VoteFilter{},
@@ -80,8 +80,9 @@ func NewGovernanceSub(ctx context.Context, filters ...Filter) *GovernanceSub {
 	for _, f := range filters {
 		f(&g)
 	}
-	g.running = true
-	go g.loop(g.ctx)
+	if g.isRunning() {
+		go g.loop(g.ctx)
+	}
 	return &g
 }
 

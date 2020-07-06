@@ -24,14 +24,15 @@ type TradeSub struct {
 	store TradeStore
 }
 
-func NewTradeSub(ctx context.Context, store TradeStore) *TradeSub {
+func NewTradeSub(ctx context.Context, store TradeStore, ack bool) *TradeSub {
 	t := &TradeSub{
-		Base:  NewBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		buf:   []types.Trade{},
 		store: store,
 	}
-	t.running = true
-	go t.loop(t.ctx)
+	if t.isRunning() {
+		go t.loop(t.ctx)
+	}
 	return t
 }
 

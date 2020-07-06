@@ -24,13 +24,15 @@ type MarketDataSub struct {
 	store Storage
 }
 
-func NewMarketDataSub(ctx context.Context, store Storage) *MarketDataSub {
+func NewMarketDataSub(ctx context.Context, store Storage, ack bool) *MarketDataSub {
 	md := &MarketDataSub{
-		Base:  NewBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		buf:   []proto.MarketData{},
 		store: store,
 	}
-	md.running = true
+	if md.isRunning() {
+		go md.loop(md.ctx)
+	}
 	return md
 }
 

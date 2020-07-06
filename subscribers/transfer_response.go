@@ -32,15 +32,21 @@ type TransferResponse struct {
 	trs   []*types.TransferResponse
 }
 
-func NewTransferResponse(ctx context.Context, store TransferResponseStore) *TransferResponse {
+func NewTransferResponse(ctx context.Context, store TransferResponseStore, ack bool) *TransferResponse {
 	s := &TransferResponse{
-		Base:  NewBase(ctx, 0),
+		Base:  NewBase(ctx, 0, ack),
 		store: store,
 		trs:   []*types.TransferResponse{},
 	}
-	s.running = true
-	go s.loop()
+	if s.isRunning() {
+		go s.loop()
+	}
 	return s
+}
+
+func (t *TransferResponse) cleanup() {
+	<-t.Closed()
+	t.Halt()
 }
 
 func (t *TransferResponse) loop() {

@@ -35,16 +35,17 @@ func VoteByProposalID(id string) VoteFilter {
 	}
 }
 
-func NewVoteSub(ctx context.Context, stream bool, filters ...VoteFilter) *VoteSub {
+func NewVoteSub(ctx context.Context, stream, ack bool, filters ...VoteFilter) *VoteSub {
 	v := &VoteSub{
-		Base:    NewBase(ctx, 10),
+		Base:    NewBase(ctx, 10, ack),
 		mu:      &sync.Mutex{},
 		all:     []types.Vote{},
 		filters: filters,
 		stream:  stream,
 	}
-	v.running = true
-	go v.loop(v.ctx)
+	if v.isRunning() {
+		go v.loop(v.ctx)
+	}
 	return v
 }
 

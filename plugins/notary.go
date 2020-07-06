@@ -30,7 +30,7 @@ type Notary struct {
 
 func NewNotary(ctx context.Context) *Notary {
 	n := &Notary{
-		Base: subscribers.NewBase(ctx, 10),
+		Base: subscribers.NewBase(ctx, 10, true),
 		sigs: map[string][]types.NodeSignature{},
 		ch:   make(chan types.NodeSignature, 100),
 	}
