@@ -11,7 +11,6 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/plugins"
-	"code.vegaprotocol.io/vega/plugins/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -27,8 +26,6 @@ type posPluginTst struct {
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
-	pos   *mocks.MockPosBuffer
-	ls    *mocks.MockLossSocializationBuffer
 }
 
 func TestMultipleTradesOfSameSize(t *testing.T) {
