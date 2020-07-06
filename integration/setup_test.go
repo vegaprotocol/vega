@@ -145,7 +145,6 @@ func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTe
 func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
-		execsetup.positionPlugin.Stop()
 		// execsetup = nil
 	} else if execsetup == nil {
 		execsetup = &executionTestSetup{}
@@ -179,8 +178,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.settle, execsetup.lossSoc, mkts, execsetup.collateral, execsetup.broker)
 
 	// instanciate position plugin
-	execsetup.positionPlugin = plugins.NewPositions(execsetup.settle, execsetup.lossSoc)
-	execsetup.positionPlugin.Start(context.Background())
+	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 
 	return execsetup
 }
