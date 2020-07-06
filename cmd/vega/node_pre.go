@@ -364,7 +364,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.timeService,
 		l.candleBuf,
 		l.marketBuf,
-		l.settleBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,

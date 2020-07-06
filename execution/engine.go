@@ -71,7 +71,6 @@ type Engine struct {
 
 	candleBuf CandleBuf
 	marketBuf MarketBuf
-	settleBuf SettlementBuf
 
 	broker Broker
 	time   TimeService
@@ -85,7 +84,6 @@ func NewEngine(
 	time TimeService,
 	candleBuf CandleBuf,
 	marketBuf MarketBuf,
-	settleBuf SettlementBuf,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -107,7 +105,6 @@ func NewEngine(
 		time:       time,
 		collateral: collateral,
 		party:      NewParty(log, collateral, pmkts, broker),
-		settleBuf:  settleBuf,
 		idgen:      NewIDGen(),
 		broker:     broker,
 	}
@@ -199,7 +196,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.party,
 		marketConfig,
 		e.candleBuf,
-		e.settleBuf,
 		now,
 		e.broker,
 		e.idgen,

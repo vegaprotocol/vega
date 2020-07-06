@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
@@ -53,7 +52,6 @@ type marketTestSetup struct {
 	party    *execution.Party
 	candles  *mocks.MockCandleBuf
 	accounts *accStub
-	settle   *SettleStub
 	proposal *ProposalStub
 	votes    *VoteStub
 	// TODO(jeremy): will need a stub at some point for that
@@ -92,7 +90,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		market:     market,
 		ctrl:       ctrl,
 		candles:    candles,
-		settle:     NewSettlementStub(),
 		accountIDs: map[string]struct{}{},
 		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
 		colE:       colE,
@@ -111,7 +108,6 @@ type executionTestSetup struct {
 	candles    *mocks.MockCandleBuf
 	markets    *mocks.MockMarketBuf
 	timesvc    *timeStub
-	settle     *buffer.Settlement
 	proposal   *ProposalStub
 	votes      *VoteStub
 	collateral *collateral.Engine
@@ -149,7 +145,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
 	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
-	execsetup.settle = buffer.NewSettlement()
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
@@ -167,10 +162,11 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, execsetup.settle, mkts, execsetup.collateral, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, execsetup.markets, mkts, execsetup.collateral, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
+	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
 	return execsetup
 }

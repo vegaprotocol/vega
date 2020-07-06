@@ -83,7 +83,6 @@ type Market struct {
 
 	// buffers
 	candleBuf CandleBuf
-	settleBuf SettlementBuf
 
 	broker Broker
 	closed bool
@@ -124,7 +123,6 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candleBuf CandleBuf,
-	settlementBuf SettlementBuf,
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
@@ -167,7 +165,7 @@ func NewMarket(
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
 		mkt.Id,
-		settlementBuf,
+		broker,
 	)
 	positionEngine := positions.New(log, positionConfig)
 
@@ -186,7 +184,6 @@ func NewMarket(
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
 		candleBuf:          candleBuf,
-		settleBuf:          settlementBuf,
 		broker:             broker,
 	}
 	return market, nil
