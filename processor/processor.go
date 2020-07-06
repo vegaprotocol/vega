@@ -39,6 +39,9 @@ var (
 	ErrProposalValidationTimestampInvalid           = errors.New("asset proposal validation timestamp invalid")
 	ErrVegaWalletRequired                           = errors.New("vega wallet required")
 	ErrProposalCorrupted                            = errors.New("proposal internal data corrupted")
+	ErrChainEventFromNonValidator                   = errors.New("chain event emitted from a non-validator node")
+	ErrUnsupportedChainEvent                        = errors.New("unsupprted chain event")
+	ErrNotAnAssetListChainEvent                     = errors.New("not an asset list chain event")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -112,6 +115,7 @@ type ValidatorTopology interface {
 	Ready() bool
 	Exists(key []byte) bool
 	Len() int
+	AllPubKeys() [][]byte
 }
 
 // Broker - the event bus
@@ -125,6 +129,17 @@ type Broker interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
+}
+
+// EvtForwarder ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/processor EvtForwarder
+type EvtForwarder interface {
+	Ack(*types.ChainEvent) bool
+}
+
+// Collateral ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/processor Collateral
+type Collateral interface {
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -147,10 +162,12 @@ type Processor struct {
 	idgen             *IDgenerator
 	broker            Broker
 	notary            Notary
+	evtfwd            EvtForwarder
+	col               Collateral
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, isValidator bool) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -176,6 +193,8 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		broker:      broker,
 		idgen:       NewIDGen(),
 		notary:      notary,
+		evtfwd:      evtfwd,
+		col:         col,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -381,6 +400,32 @@ func (p *Processor) getNodeSignature(payload []byte) (*types.NodeSignature, erro
 	return ns, nil
 }
 
+func (p *Processor) getChainEvent(payload []byte) (*types.ChainEvent, error) {
+	ce := &types.ChainEvent{}
+	err := proto.Unmarshal(payload, ce)
+	if err != nil {
+		return nil, err
+	}
+	return ce, nil
+}
+
+func (p *Processor) getNodeVote(payload []byte) (*types.NodeVote, error) {
+	vote := &types.NodeVote{}
+	if err := proto.Unmarshal(payload, vote); err != nil {
+		return nil, err
+	}
+	return vote, nil
+}
+
+func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration, error) {
+	cmd := &types.NodeRegistration{}
+	err := proto.Unmarshal(payload, cmd)
+	if err != nil {
+		return nil, err
+	}
+	return cmd, nil
+}
+
 // ValidateSigned - validates a signed transaction. This sits here because it's actual data processing
 // related. We need to unmarshal the payload to validate the partyID
 func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) error {
@@ -459,6 +504,12 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return err
 		}
 		return nil
+	case blockchain.ChainEventCommand:
+		_, err := p.getChainEvent(data)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
@@ -527,6 +578,12 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		}
 		_, _, err = p.notary.AddSig(ctx, pubkey, *ns)
 		return err
+	case blockchain.ChainEventCommand:
+		ce, err := p.getChainEvent(data)
+		if err != nil {
+			return err
+		}
+		return p.processChainEvent(ctx, ce, pubkey)
 	case blockchain.NotifyTraderAccountCommand:
 		notify, err := p.getNotifyTraderAccount(data)
 		if err != nil {
@@ -540,21 +597,56 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 	return nil
 }
 
-func (p *Processor) getNodeVote(payload []byte) (*types.NodeVote, error) {
-	vote := &types.NodeVote{}
-	if err := proto.Unmarshal(payload, vote); err != nil {
-		return nil, err
+func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
+	// first verify the event was emited by a validator
+	if !p.top.Exists(pubkey) {
+		return ErrChainEventFromNonValidator
 	}
-	return vote, nil
+
+	// ack the new event then
+	if !p.evtfwd.Ack(ce) {
+		// there was an error, or this was already acked
+		// but that's not a big issue we just going to ignore that.
+		return nil
+	}
+
+	// OK the event was newly acknowledged, so now we need to
+	// figure out what to do with it.
+	switch ce.EventType.(type) {
+	case *types.ChainEvent_AssetList:
+		return p.processChainEventAssetList(ctx, ce)
+	case *types.ChainEvent_Deposit:
+		// handle deposits
+		return nil
+	case *types.ChainEvent_Withdrawal:
+		// handle withdrawal
+		return nil
+	default:
+		return ErrUnsupportedChainEvent
+	}
+
 }
 
-func (p *Processor) getNodeRegistration(payload []byte) (*types.NodeRegistration, error) {
-	cmd := &types.NodeRegistration{}
-	err := proto.Unmarshal(payload, cmd)
-	if err != nil {
-		return nil, err
+func (p *Processor) processChainEventAssetList(ctx context.Context, ce *types.ChainEvent) error {
+	al := ce.GetAssetList()
+	if al == nil {
+		return ErrNotAnAssetListChainEvent
 	}
-	return cmd, nil
+
+	// now check that this asset was actually an asset
+	// going through proposal
+	asset, err := p.assets.Get(al.VegaAssetID)
+	if err != nil {
+		p.log.Error("unable to get asset for finalizing whitelisting",
+			logging.Error(err),
+			logging.String("asset-id", al.VegaAssetID))
+		return err
+	}
+
+	// enable the asset in the collateral now.
+	_ = asset
+
+	return nil
 }
 
 func (p *Processor) submitOrder(ctx context.Context, o *types.Order) error {

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/governance"
@@ -63,6 +64,7 @@ type Config struct {
 	NodeWallet nodewallet.Config
 	Assets     assets.Config
 	Notary     notary.Config
+	EvtForward evtforward.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -101,6 +103,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		NodeWallet:     nodewallet.NewDefaultConfig(defaultStoreDirPath),
 		Assets:         assets.NewDefaultConfig(defaultStoreDirPath),
 		Notary:         notary.NewDefaultConfig(),
+		EvtForward:     evtforward.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,

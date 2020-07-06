@@ -68,6 +68,16 @@ func (t *Topology) Exists(key []byte) bool {
 	return ok
 }
 
+func (t *Topology) AllPubKeys() [][]byte {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	keys := make([][]byte, 0, len(t.validators))
+	for _, key := range t.validators {
+		keys = append(keys, []byte(key))
+	}
+	return keys
+}
+
 func (t *Topology) SetChain(clt BlockchainClient) {
 	t.mu.Lock()
 	defer t.mu.Unlock()

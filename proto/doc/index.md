@@ -81,6 +81,8 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
+    - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
+    - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
@@ -103,6 +105,12 @@
     - [BuiltinAsset](#vega.BuiltinAsset)
     - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
+
+- [proto/chain_events.proto](#proto/chain_events.proto)
+    - [AssetList](#vega.AssetList)
+    - [ChainEvent](#vega.ChainEvent)
+    - [Deposit](#vega.Deposit)
+    - [Withdrawal](#vega.Withdrawal)
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FutureProduct](#vega.FutureProduct)
@@ -1392,6 +1400,36 @@ The response of the GetNodeSIgnatureAggregate rpc
 
 
 
+<a name="api.PropagateChainEventRequest"></a>
+
+### PropagateChainEventRequest
+The request for a new event sent by the blockchain queue to be propagated into vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| evt | [vega.ChainEvent](#vega.ChainEvent) |  | The event |
+
+
+
+
+
+
+<a name="api.PropagateChainEventResponse"></a>
+
+### PropagateChainEventResponse
+The response for a new event sent to vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| success | [bool](#bool) |  | Did the event get accepted by the node successfully |
+
+
+
+
+
+
 <a name="api.SubmitOrderRequest"></a>
 
 ### SubmitOrderRequest
@@ -1595,6 +1633,7 @@ The response of the GetNodeSIgnatureAggregate rpc
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
+| PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | chain events |
 
 
 <a name="api.trading_data"></a>
@@ -1743,6 +1782,94 @@ The response of the GetNodeSIgnatureAggregate rpc
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contractAddress | [string](#string) |  |  |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="proto/chain_events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/chain_events.proto
+
+
+
+<a name="vega.AssetList"></a>
+
+### AssetList
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.ChainEvent"></a>
+
+### ChainEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txHash | [string](#string) |  |  |
+| index | [uint64](#uint64) |  |  |
+| block | [uint64](#uint64) |  |  |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
+| erc20 | [ERC20](#vega.ERC20) |  | ERC1155 erc1155 = 103; Ether ether = 104; |
+| deposit | [Deposit](#vega.Deposit) |  |  |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
+| assetList | [AssetList](#vega.AssetList) |  | AssetDelist assetDelist = 1004; DepositMinimumSet depositMinimumSet = 1005; |
+
+
+
+
+
+
+<a name="vega.Deposit"></a>
+
+### Deposit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  |  |
+| sourcePartyID | [string](#string) |  |  |
+| targetPartyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.Withdrawal"></a>
+
+### Withdrawal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  |  |
+| sourcePartyId | [string](#string) |  |  |
+| targetPartyId | [string](#string) |  |  |
+| referenceNonce | [string](#string) |  |  |
 
 
 

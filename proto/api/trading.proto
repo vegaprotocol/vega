@@ -5,6 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 import "proto/vega.proto";
 import "proto/markets.proto";
 import "proto/governance.proto";
+import "proto/chain_events.proto";
 
 package api;
 
@@ -39,6 +40,21 @@ service trading {
 
   // Prepare a vote to be put on the chain (via SubmitTransaction)
   rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
+
+  // chain events
+  rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
+}
+
+// The request for a new event sent by the blockchain queue to be propagated into vega
+message PropagateChainEventRequest {
+  // The event
+  vega.ChainEvent evt = 1;
+}
+
+// The response for a new event sent to vega
+message PropagateChainEventResponse {
+  // Did the event get accepted by the node successfully
+  bool success = 1;
 }
 
 message SubmitTransactionRequest {
@@ -272,7 +288,6 @@ message GetNodeSignaturesAggregateResponse {
   // The list of signatures
   repeated vega.NodeSignature signatures = 1;
 }
-
 
 message OptionalProposalState {
   vega.Proposal.State value = 1;
