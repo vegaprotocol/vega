@@ -362,9 +362,12 @@ message NotifyTraderAccount {
 }
 
 message Withdraw {
-  string partyID = 1;
-  uint64 amount = 2;
-  string asset = 3;
+  string vegaPartyID = 1;
+  //target wallet
+  string targetID = 2;
+  uint64 amount = 3;
+  //vega assetID
+  string asset = 4;
 }
 
 message OrderAmendment {
