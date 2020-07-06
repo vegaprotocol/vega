@@ -265,17 +265,8 @@ func (l *NodeCommand) setupSubscibers() {
 }
 
 func (l *NodeCommand) setupBuffers() {
-	l.orderBuf = buffer.NewOrder(l.orderStore)
-	l.tradeBuf = buffer.NewTrade(l.tradeStore)
-	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
-
-	l.marginLevelsBuf = buffer.NewMarginLevels()
-	l.marginLevelsBuf.Register(l.riskStore)
-	l.settleBuf = buffer.NewSettlement()
-	l.lossSocBuf = buffer.NewLossSocialization()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {

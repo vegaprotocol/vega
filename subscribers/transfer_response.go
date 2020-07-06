@@ -44,11 +44,6 @@ func NewTransferResponse(ctx context.Context, store TransferResponseStore, ack b
 	return s
 }
 
-func (t *TransferResponse) cleanup() {
-	<-t.Closed()
-	t.Halt()
-}
-
 func (t *TransferResponse) loop() {
 	for {
 		select {
