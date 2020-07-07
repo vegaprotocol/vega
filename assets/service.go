@@ -25,6 +25,7 @@ func NewService(log *logging.Logger, cfg Config, plugin Plugin) *Svc {
 	log.SetLevel(cfg.Level.Get())
 
 	return &Svc{
+		cfg: cfg,
 		log: log,
 		p:   plugin,
 	}

@@ -199,12 +199,9 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	e.markets[marketConfig.Id] = mkt
 
-	// ignore response ids here + this cannot fail
-	_, _, err = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
-	if err != nil {
-		// that should not happen as we verify that the asset exists before
-		return err
-	}
+	// we ignore the reponse, this cannot fail as the asset
+	// is already proven to exists a few line before
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
