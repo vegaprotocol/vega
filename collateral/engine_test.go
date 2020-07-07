@@ -34,10 +34,6 @@ type accEvt interface {
 	Account() types.Account
 }
 
-type lossEvt interface {
-	AmountLost() int64
-}
-
 func TestCollateralTransfer(t *testing.T) {
 	t.Run("test creating new - should create market accounts", testNew)
 	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testTransferLoss)
@@ -480,6 +476,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	transfers := eng.getTestMTMTransfer(pos)
 	_, _, err = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
 	// this should return an error
@@ -611,6 +608,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	// quickly get the interface mocked for this test
 	transfers := getMTMTransfer(pos)
 	responses, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
@@ -760,10 +758,8 @@ func testMTMSuccess(t *testing.T) {
 		},
 	}
 
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
-		if _, ok := evt.(lossEvt); ok {
-			return
-		}
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1103,10 +1099,8 @@ func TestMTMLossSocialization(t *testing.T) {
 		},
 	}
 
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
-		if _, ok := evt.(lossEvt); ok {
-			return
-		}
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -1150,10 +1144,8 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 		},
 	}
 
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
-		if _, ok := evt.(lossEvt); ok {
-			return
-		}
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()

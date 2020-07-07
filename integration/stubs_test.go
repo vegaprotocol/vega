@@ -38,6 +38,39 @@ func (b *brokerStub) Subscribe(sub broker.Subscriber) {
 	b.mu.Unlock()
 }
 
+func (b *brokerStub) SendBatch(evts []events.Event) {
+	if len(evts) == 0 {
+		return
+	}
+	t := evts[0].Type()
+	b.mu.Lock()
+	if subs, ok := b.subT[t]; ok {
+		go func() {
+			for _, e := range evts {
+				for _, sub := range subs {
+					if sub.Ack() {
+						sub.Push(e)
+					} else {
+						select {
+						case <-sub.Closed():
+							continue
+						case <-sub.Skip():
+							continue
+						case sub.C() <- e:
+							continue
+						}
+					}
+				}
+			}
+		}()
+	}
+	if _, ok := b.data[t]; !ok {
+		b.data[t] = []events.Event{}
+	}
+	b.data[t] = append(b.data[t], evts...)
+	b.mu.Unlock()
+}
+
 func (b *brokerStub) Send(e events.Event) {
 	b.mu.Lock()
 	t := e.Type()
@@ -60,9 +93,9 @@ func (b *brokerStub) Send(e events.Event) {
 		}()
 	}
 	if _, ok := b.data[t]; !ok {
-		b.data[e.Type()] = []events.Event{}
+		b.data[t] = []events.Event{}
 	}
-	b.data[e.Type()] = append(b.data[e.Type()], e)
+	b.data[t] = append(b.data[t], e)
 	b.mu.Unlock()
 }
 

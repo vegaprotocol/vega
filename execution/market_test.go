@@ -46,6 +46,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	broker := mocks.NewMockBroker(ctrl)
 
 	// catch all expected calls
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)

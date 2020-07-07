@@ -49,6 +49,76 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
+// SendBatch sends a slice of events to subscribers that can handle the events in the slice
+// the events don't have to be of the same type, and most subscribers will ignore unknown events
+// but this will slow down those subscribers, so avoid doing silly things
+func (b *Broker) SendBatch(events []events.Event) {
+	if len(events) == 0 {
+		return
+	}
+	// We could ensure that the events are all of the same type but when
+	// pushing logging events in batch, this wouldn't work without additional
+	// logic, so we're assuming the caller knows what they're doing
+	// t := events[0].Type()
+	// for i := 1; i < len(events); i++ {
+	// 	if events[i].Type() != t {
+	// 		events = append(events[:i], events[i+1:]...)
+	// 		i--
+	// 	}
+	// }
+	b.mu.Lock()
+	subs := b.getSubsByType(events[0].Type())
+	b.mu.Unlock()
+	if len(subs) == 0 {
+		return
+	}
+	// push the event out in a routine
+	// unlock the mutex once done
+	go func(subs map[int]*subscription) {
+		unsub := make([]int, 0, len(subs))
+		// send each event
+		for _, event := range events {
+			for k, sub := range subs {
+				select {
+				case <-b.ctx.Done():
+					// broker context cancelled, we're done
+					return
+				case <-sub.Skip():
+					continue
+				case <-sub.Closed():
+					unsub = append(unsub, k)
+				default:
+					if sub.required {
+						sub.Push(event)
+					} else {
+						ch := sub.C()
+						select {
+						case ch <- event:
+							continue
+						default:
+							// skip this event
+							continue
+						}
+					}
+				}
+			}
+			// unsubscribed are excluded on next iteration
+			if len(unsub) > 0 {
+				b.mu.Lock()
+				b.rmSubs(unsub...)
+				b.mu.Lock()
+				for _, k := range unsub {
+					delete(subs, k)
+				}
+				if len(subs) == 0 {
+					return
+				}
+				unsub = unsub[:0]
+			}
+		}
+	}(subs)
+}
+
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
 	b.mu.Lock()

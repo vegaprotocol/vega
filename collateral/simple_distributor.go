@@ -33,14 +33,14 @@ func (s *simpleDistributor) Add(req *types.Transfer) {
 	})
 }
 
-func (s *simpleDistributor) Run(ctx context.Context) []*events.LossSoc {
+func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	if s.expectCollected == s.collected {
 		return nil
 	}
 
 	var (
 		totalamount int64
-		evts        = make([]*events.LossSoc, 0, len(s.requests))
+		evts        = make([]events.Event, 0, len(s.requests))
 		evt         *events.LossSoc
 	)
 	for _, v := range s.requests {
@@ -58,12 +58,11 @@ func (s *simpleDistributor) Run(ctx context.Context) []*events.LossSoc {
 	if totalamount != s.collected {
 		// last one get the remaining bits
 		s.requests[len(s.requests)-1].request.Amount.Amount += s.collected - totalamount
-		replace := events.NewLossSocializationEvent(
+		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
 			evt.AmountLost()-s.collected-totalamount)
-		*evt = *replace
 	}
 
 	return evts

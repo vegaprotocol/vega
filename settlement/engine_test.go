@@ -564,7 +564,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
-	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
