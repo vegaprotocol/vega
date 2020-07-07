@@ -659,7 +659,7 @@ func (m *AssetsResponse) GetAssets() []*proto1.Asset {
 
 // The request message to get an AssetByID
 type AssetByIDRequest struct {
-	// ID of the asset ot get
+	// ID of the asset to get
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -700,6 +700,7 @@ func (m *AssetByIDRequest) GetID() string {
 
 // The response message to get an AssetByID
 type AssetByIDResponse struct {
+	// The asset corresponding to the requested ID
 	Asset                *proto1.Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`

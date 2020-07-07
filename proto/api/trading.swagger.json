@@ -977,7 +977,8 @@
       "type": "object",
       "properties": {
         "asset": {
-          "$ref": "#/definitions/vegaAsset"
+          "$ref": "#/definitions/vegaAsset",
+          "title": "The asset corresponding to the requested ID"
         }
       },
       "title": "The response message to get an AssetByID"
@@ -1565,29 +1566,36 @@
       "type": "object",
       "properties": {
         "ID": {
-          "type": "string"
+          "type": "string",
+          "title": "The vega internal ID of the asset"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "The name of the asset (e.g: Great British Pound)"
         },
         "symbol": {
-          "type": "string"
+          "type": "string",
+          "title": "The symbol of the asset (e.g: GBP)"
         },
         "totalSupply": {
           "type": "string",
-          "title": "this may very much likely be a big.Int"
+          "title": "The total circulating supply for the asset"
         },
         "decimals": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "The number of decimal / precision handled by this asset"
         },
         "builtinAsset": {
-          "$ref": "#/definitions/vegaBuiltinAsset"
+          "$ref": "#/definitions/vegaBuiltinAsset",
+          "title": "A vega builtin asset (for testing purpose)"
         },
         "erc20": {
-          "$ref": "#/definitions/vegaERC20"
+          "$ref": "#/definitions/vegaERC20",
+          "title": "An ERC20 token based asset"
         }
-      }
+      },
+      "title": "The vega representation of an external asset"
     },
     "vegaAssetList": {
       "type": "object",
@@ -1612,19 +1620,24 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "The name of the asset (e.g: Great British Pound)"
         },
         "symbol": {
-          "type": "string"
+          "type": "string",
+          "title": "The symbol of the asset (e.g: GBP)"
         },
         "totalSupply": {
-          "type": "string"
+          "type": "string",
+          "title": "The total circulating supply for the asset"
         },
         "decimals": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "The number of decimal / precision handled by this asset"
         }
-      }
+      },
+      "title": "A vega internal asset"
     },
     "vegaCandle": {
       "type": "object",
@@ -1745,9 +1758,11 @@
       "type": "object",
       "properties": {
         "contractAddress": {
-          "type": "string"
+          "type": "string",
+          "title": "The address of the contract for the token, on the ethereum network"
         }
-      }
+      },
+      "title": "An ERC20 token based asset, living on the ethereum network"
     },
     "vegaEthereumEvent": {
       "type": "object",

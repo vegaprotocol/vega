@@ -255,7 +255,7 @@ The request message to get an AssetByID
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  | ID of the asset ot get |
+| ID | [string](#string) |  | ID of the asset to get |
 
 
 
@@ -270,7 +270,7 @@ The response message to get an AssetByID
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| asset | [vega.Asset](#vega.Asset) |  |  |
+| asset | [vega.Asset](#vega.Asset) |  | The asset corresponding to the requested ID |
 
 
 
@@ -1767,18 +1767,18 @@ The response for a new event sent to vega
 <a name="vega.Asset"></a>
 
 ### Asset
-
+The vega representation of an external asset
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| symbol | [string](#string) |  |  |
-| totalSupply | [string](#string) |  | this may very much likely be a big.Int |
-| decimals | [uint64](#uint64) |  |  |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
-| erc20 | [ERC20](#vega.ERC20) |  |  |
+| ID | [string](#string) |  | The vega internal ID of the asset |
+| name | [string](#string) |  | The name of the asset (e.g: Great British Pound) |
+| symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
+| totalSupply | [string](#string) |  | The total circulating supply for the asset |
+| decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A vega builtin asset (for testing purpose) |
+| erc20 | [ERC20](#vega.ERC20) |  | An ERC20 token based asset |
 
 
 
@@ -1804,15 +1804,15 @@ The response for a new event sent to vega
 <a name="vega.BuiltinAsset"></a>
 
 ### BuiltinAsset
-
+A vega internal asset
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| symbol | [string](#string) |  |  |
-| totalSupply | [string](#string) |  |  |
-| decimals | [uint64](#uint64) |  |  |
+| name | [string](#string) |  | The name of the asset (e.g: Great British Pound) |
+| symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
+| totalSupply | [string](#string) |  | The total circulating supply for the asset |
+| decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
 
 
 
@@ -1837,12 +1837,12 @@ The response for a new event sent to vega
 <a name="vega.ERC20"></a>
 
 ### ERC20
-
+An ERC20 token based asset, living on the ethereum network
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| contractAddress | [string](#string) |  |  |
+| contractAddress | [string](#string) |  | The address of the contract for the token, on the ethereum network |
 
 
 
