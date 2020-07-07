@@ -5058,7 +5058,7 @@
 
 
         <h3 id="vega.BTCDeposit">BTCDeposit</h3>
-        <p>A BTC deposit into vega</p>
+        <p>A Bitcoin deposit into vega</p>
 
 
           <table class="field-table">
@@ -5075,17 +5075,17 @@
                 </tr>
 
                 <tr>
-                  <td>sourcePartyId</td>
+                  <td>sourceBTCAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The party inititing the withdrawal </p></td>
+                  <td><p>The BTC wallet inititing the Deposit </p></td>
                 </tr>
 
                 <tr>
                   <td>targetPartyId</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The foreign chain native address </p></td>
+                  <td><p>The Vega public key of the target Vega user </p></td>
                 </tr>
 
             </tbody>
@@ -5096,7 +5096,7 @@
 
 
         <h3 id="vega.BTCEvent">BTCEvent</h3>
-        <p></p>
+        <p>An event from Bitcoin</p>
 
 
           <table class="field-table">
@@ -5141,7 +5141,7 @@
 
 
         <h3 id="vega.BTCWithdrawal">BTCWithdrawal</h3>
-        <p></p>
+        <p>A Bitcoin withdrawl from vega</p>
 
 
           <table class="field-table">
@@ -5165,10 +5165,10 @@
                 </tr>
 
                 <tr>
-                  <td>targetPartyId</td>
+                  <td>targetBTCAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The foreign chain native address </p></td>
+                  <td><p>Target BTC wallet address </p></td>
                 </tr>
 
                 <tr>
@@ -5186,7 +5186,7 @@
 
 
         <h3 id="vega.BitcoinAddress">BitcoinAddress</h3>
-        <p>An external blockchain address</p>
+        <p>Wrapper for a Bitcoin address (wallet)</p>
 
 
           <table class="field-table">
@@ -5199,7 +5199,7 @@
                   <td>address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>An external blockchain address </p></td>
+                  <td><p>A Bitcoin address </p></td>
                 </tr>
 
             </tbody>
@@ -5435,17 +5435,17 @@ usually a hash </p></td>
                 </tr>
 
                 <tr>
-                  <td>sourcePartyID</td>
+                  <td>sourceEthereumAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The party which initiated the deposit </p></td>
+                  <td><p>The ethereum wallet that initiated the deposit </p></td>
                 </tr>
 
                 <tr>
                   <td>targetPartyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The foreign chain native address </p></td>
+                  <td><p>The Vega public key of the target vega user </p></td>
                 </tr>
 
             </tbody>
@@ -5539,10 +5539,10 @@ usually a hash </p></td>
                 </tr>
 
                 <tr>
-                  <td>targetPartyId</td>
+                  <td>targetEthereumAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The foreign chain native address </p></td>
+                  <td><p>The target Ethereum wallet address </p></td>
                 </tr>
 
                 <tr>
@@ -5560,7 +5560,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.EthereumAddress">EthereumAddress</h3>
-        <p>An external blockchain address</p>
+        <p>Wrapper for an Ethereum address (wallet/contract)</p>
 
 
           <table class="field-table">
@@ -5573,7 +5573,7 @@ usually a hash </p></td>
                   <td>address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>An external blockchain address </p></td>
+                  <td><p>An Ethereum address </p></td>
                 </tr>
 
             </tbody>

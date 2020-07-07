@@ -1897,14 +1897,14 @@ A message to notify a new validator being added to the vega network
 <a name="vega.BTCDeposit"></a>
 
 ### BTCDeposit
-A BTC deposit into vega
+A Bitcoin deposit into vega
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
-| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
-| targetPartyId | [string](#string) |  | The foreign chain native address |
+| sourceBTCAddress | [string](#string) |  | The BTC wallet inititing the Deposit |
+| targetPartyId | [string](#string) |  | The Vega public key of the target Vega user |
 
 
 
@@ -1914,7 +1914,7 @@ A BTC deposit into vega
 <a name="vega.BTCEvent"></a>
 
 ### BTCEvent
-
+An event from Bitcoin
 
 
 | Field | Type | Label | Description |
@@ -1932,14 +1932,14 @@ A BTC deposit into vega
 <a name="vega.BTCWithdrawal"></a>
 
 ### BTCWithdrawal
-
+A Bitcoin withdrawl from vega
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
 | sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
-| targetPartyId | [string](#string) |  | The foreign chain native address |
+| targetBTCAddress | [string](#string) |  | Target BTC wallet address |
 | referenceNonce | [string](#string) |  | The nonce reference of the transaction |
 
 
@@ -1950,12 +1950,12 @@ A BTC deposit into vega
 <a name="vega.BitcoinAddress"></a>
 
 ### BitcoinAddress
-An external blockchain address
+Wrapper for a Bitcoin address (wallet)
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| address | [string](#string) |  | An external blockchain address |
+| address | [string](#string) |  | A Bitcoin address |
 
 
 
@@ -2071,8 +2071,8 @@ An asset deposit for an erc20 token
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
-| sourcePartyID | [string](#string) |  | The party which initiated the deposit |
-| targetPartyID | [string](#string) |  | The foreign chain native address |
+| sourceEthereumAddress | [string](#string) |  | The ethereum wallet that initiated the deposit |
+| targetPartyID | [string](#string) |  | The Vega public key of the target vega user |
 
 
 
@@ -2109,7 +2109,7 @@ An asset withdrawal for an erc20 token
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
 | sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
-| targetPartyId | [string](#string) |  | The foreign chain native address |
+| targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address |
 | referenceNonce | [string](#string) |  | The reference nonce used for the transaction |
 
 
@@ -2120,12 +2120,12 @@ An asset withdrawal for an erc20 token
 <a name="vega.EthereumAddress"></a>
 
 ### EthereumAddress
-An external blockchain address
+Wrapper for an Ethereum address (wallet/contract)
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| address | [string](#string) |  | An external blockchain address |
+| address | [string](#string) |  | An Ethereum address |
 
 
 

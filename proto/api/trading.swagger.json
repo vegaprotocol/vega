@@ -1625,16 +1625,16 @@
           "type": "string",
           "title": "The vega network internally ID of the asset"
         },
-        "sourcePartyId": {
+        "sourceBTCAddress": {
           "type": "string",
-          "title": "The party inititing the withdrawal"
+          "title": "The BTC wallet inititing the Deposit"
         },
         "targetPartyId": {
           "type": "string",
-          "title": "The foreign chain native address"
+          "title": "The Vega public key of the target Vega user"
         }
       },
-      "title": "A BTC deposit into vega"
+      "title": "A Bitcoin deposit into vega"
     },
     "vegaBTCEvent": {
       "type": "object",
@@ -1655,7 +1655,8 @@
         "withdrawal": {
           "$ref": "#/definitions/vegaBTCWithdrawal"
         }
-      }
+      },
+      "title": "An event from Bitcoin"
     },
     "vegaBTCWithdrawal": {
       "type": "object",
@@ -1668,25 +1669,26 @@
           "type": "string",
           "title": "The party inititing the withdrawal"
         },
-        "targetPartyId": {
+        "targetBTCAddress": {
           "type": "string",
-          "title": "The foreign chain native address"
+          "title": "Target BTC wallet address"
         },
         "referenceNonce": {
           "type": "string",
           "title": "The nonce reference of the transaction"
         }
-      }
+      },
+      "title": "A Bitcoin withdrawl from vega"
     },
     "vegaBitcoinAddress": {
       "type": "object",
       "properties": {
         "address": {
           "type": "string",
-          "title": "An external blockchain address"
+          "title": "A Bitcoin address"
         }
       },
-      "title": "An external blockchain address"
+      "title": "Wrapper for a Bitcoin address (wallet)"
     },
     "vegaBuiltinAsset": {
       "type": "object",
@@ -1890,13 +1892,13 @@
           "type": "string",
           "title": "The vega network internally ID of the asset"
         },
-        "sourcePartyID": {
+        "sourceEthereumAddress": {
           "type": "string",
-          "title": "The party which initiated the deposit"
+          "title": "The ethereum wallet that initiated the deposit"
         },
         "targetPartyID": {
           "type": "string",
-          "title": "The foreign chain native address"
+          "title": "The Vega public key of the target vega user"
         }
       },
       "title": "An asset deposit for an erc20 token"
@@ -1940,9 +1942,9 @@
           "type": "string",
           "title": "The party inititing the withdrawal"
         },
-        "targetPartyId": {
+        "targetEthereumAddress": {
           "type": "string",
-          "title": "The foreign chain native address"
+          "title": "The target Ethereum wallet address"
         },
         "referenceNonce": {
           "type": "string",
@@ -1956,10 +1958,10 @@
       "properties": {
         "address": {
           "type": "string",
-          "title": "An external blockchain address"
+          "title": "An Ethereum address"
         }
       },
-      "title": "An external blockchain address"
+      "title": "Wrapper for an Ethereum address (wallet/contract)"
     },
     "vegaEthereumEvent": {
       "type": "object",
