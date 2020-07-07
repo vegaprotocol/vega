@@ -294,12 +294,13 @@ message AssetsResponse {
 
 // The request message to get an AssetByID
 message AssetByIDRequest {
-  // ID of the asset ot get
+  // ID of the asset to get
   string ID = 1;
 }
 
 // The response message to get an AssetByID
 message AssetByIDResponse {
+  // The asset corresponding to the requested ID
   vega.Asset asset = 1;
 }
 

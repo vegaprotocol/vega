@@ -57,9 +57,9 @@ var (
 	ErrInvalidProposalState = errors.New("invalid proposal state")
 	// ErrInvalidRiskConfiguration ...
 	ErrInvalidRiskConfiguration = errors.New("invalid risk configuration")
-	// ErrNilAssetSource ...
+	// ErrNilAssetSource returned when an asset source is not specified at creation
 	ErrNilAssetSource = errors.New("nil asset source")
-	// ErrUnimplementedAssetSource ...
+	// ErrUnimplementedAssetSource returned when an asset source specified at creation is not recognised
 	ErrUnimplementedAssetSource = errors.New("unimplemented asset source")
 )
 
