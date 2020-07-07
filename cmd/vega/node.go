@@ -117,6 +117,7 @@ type NodeCommand struct {
 	riskService       *risk.Svc
 	governanceService *governance.Svc
 	notaryService     *notary.Svc
+	assetService      *assets.Svc
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -149,6 +150,7 @@ type NodeCommand struct {
 	// plugins
 	settlePlugin *plugins.Positions
 	notaryPlugin *plugins.Notary
+	assetPlugin  *plugins.Asset
 }
 
 // Init initialises the node command.
@@ -212,6 +214,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.governanceService,
 		l.notaryService,
 		l.evtfwd,
+		l.assetService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

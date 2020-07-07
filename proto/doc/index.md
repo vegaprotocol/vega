@@ -6,6 +6,10 @@
 - [proto/api/trading.proto](#proto/api/trading.proto)
     - [AccountsSubscribeRequest](#api.AccountsSubscribeRequest)
     - [AmendOrderRequest](#api.AmendOrderRequest)
+    - [AssetByIDRequest](#api.AssetByIDRequest)
+    - [AssetByIDResponse](#api.AssetByIDResponse)
+    - [AssetsRequest](#api.AssetsRequest)
+    - [AssetsResponse](#api.AssetsResponse)
     - [CancelOrderRequest](#api.CancelOrderRequest)
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
@@ -237,6 +241,61 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  |  |
+
+
+
+
+
+
+<a name="api.AssetByIDRequest"></a>
+
+### AssetByIDRequest
+The request message to get an AssetByID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | ID of the asset ot get |
+
+
+
+
+
+
+<a name="api.AssetByIDResponse"></a>
+
+### AssetByIDResponse
+The response message to get an AssetByID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| asset | [vega.Asset](#vega.Asset) |  |  |
+
+
+
+
+
+
+<a name="api.AssetsRequest"></a>
+
+### AssetsRequest
+The request to get the lit of all assets in vega
+
+
+
+
+
+
+<a name="api.AssetsResponse"></a>
+
+### AssetsResponse
+The response containing the list of all assets enabled in vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| assets | [vega.Asset](#vega.Asset) | repeated | The list of assets |
 
 
 
@@ -1691,6 +1750,8 @@ The response for a new event sent to vega
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
 | GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
+| AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its ID |
+| Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get the list of all assets in vega |
 
 
 

@@ -37,7 +37,7 @@ func NewAsset(ctx context.Context) (a *Asset) {
 }
 
 func (a *Asset) Push(e events.Event) {
-	ae, ok := e.(AssettEvent)
+	ae, ok := e.(AssetEvent)
 	if !ok {
 		return
 	}
@@ -59,7 +59,7 @@ func (a *Asset) consume() {
 			}
 			a.mu.Lock()
 			a.assets[asset.ID] = asset
-			n.mu.Unlock()
+			a.mu.Unlock()
 		}
 	}
 }
@@ -73,7 +73,7 @@ func (a *Asset) GetByID(id string) (*types.Asset, error) {
 	return nil, ErrNoAssetForID
 }
 
-func (a *Asset) GetAll() ([]types.Asset, error) {
+func (a *Asset) GetAll() []types.Asset {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	out := make([]types.Asset, 0, len(a.assets))
@@ -83,7 +83,7 @@ func (a *Asset) GetAll() ([]types.Asset, error) {
 	return out
 }
 
-func (n *Notary) Types() []events.Type {
+func (a *Asset) Types() []events.Type {
 	return []events.Type{
 		events.AssetEvent,
 	}

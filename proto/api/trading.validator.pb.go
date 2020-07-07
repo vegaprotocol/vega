@@ -96,6 +96,30 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
+func (this *AssetsRequest) Validate() error {
+	return nil
+}
+func (this *AssetsResponse) Validate() error {
+	for _, item := range this.Assets {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Assets", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *AssetByIDRequest) Validate() error {
+	return nil
+}
+func (this *AssetByIDResponse) Validate() error {
+	if this.Asset != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Asset); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Asset", err)
+		}
+	}
+	return nil
+}
 func (this *GetNodeSignaturesAggregateRequest) Validate() error {
 	return nil
 }

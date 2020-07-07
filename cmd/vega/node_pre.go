@@ -344,9 +344,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.ctx)
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
+	l.assetPlugin = plugins.NewAsset(l.ctx)
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -451,6 +452,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
+	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) })
 	return
 }
 

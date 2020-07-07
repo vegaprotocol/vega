@@ -973,6 +973,28 @@
         }
       }
     },
+    "apiAssetByIDResponse": {
+      "type": "object",
+      "properties": {
+        "asset": {
+          "$ref": "#/definitions/vegaAsset"
+        }
+      },
+      "title": "The response message to get an AssetByID"
+    },
+    "apiAssetsResponse": {
+      "type": "object",
+      "properties": {
+        "assets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAsset"
+          },
+          "title": "The list of assets"
+        }
+      },
+      "title": "The response containing the list of all assets enabled in vega"
+    },
     "apiCandlesResponse": {
       "type": "object",
       "properties": {
@@ -1538,6 +1560,34 @@
         "ACCOUNT_TYPE_GENERAL"
       ],
       "default": "ACCOUNT_TYPE_UNSPECIFIED"
+    },
+    "vegaAsset": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string",
+          "title": "this may very much likely be a big.Int"
+        },
+        "decimals": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "builtinAsset": {
+          "$ref": "#/definitions/vegaBuiltinAsset"
+        },
+        "erc20": {
+          "$ref": "#/definitions/vegaERC20"
+        }
+      }
     },
     "vegaAssetList": {
       "type": "object",

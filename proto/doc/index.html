@@ -187,6 +187,22 @@
                 </li>
 
                 <li>
+                  <a href="#api.AssetByIDRequest"><span class="badge">M</span>AssetByIDRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.AssetByIDResponse"><span class="badge">M</span>AssetByIDResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.AssetsRequest"><span class="badge">M</span>AssetsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.AssetsResponse"><span class="badge">M</span>AssetsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.CancelOrderRequest"><span class="badge">M</span>CancelOrderRequest</a>
                 </li>
 
@@ -1035,6 +1051,85 @@
                   <td><a href="#vega.OrderAmendment">vega.OrderAmendment</a></td>
                   <td></td>
                   <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.AssetByIDRequest">AssetByIDRequest</h3>
+        <p>The request message to get an AssetByID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>ID of the asset ot get </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.AssetByIDResponse">AssetByIDResponse</h3>
+        <p>The response message to get an AssetByID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#vega.Asset">vega.Asset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.AssetsRequest">AssetsRequest</h3>
+        <p>The request to get the lit of all assets in vega</p>
+
+
+
+
+
+        <h3 id="api.AssetsResponse">AssetsResponse</h3>
+        <p>The response containing the list of all assets enabled in vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>assets</td>
+                  <td><a href="#vega.Asset">vega.Asset</a></td>
+                  <td>repeated</td>
+                  <td><p>The list of assets </p></td>
                 </tr>
 
             </tbody>
@@ -4650,6 +4745,20 @@
                 <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
                 <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
                 <td><p>Get an aggregate of signature from all the node of the network</p></td>
+              </tr>
+
+              <tr>
+                <td>AssetByID</td>
+                <td><a href="#api.AssetByIDRequest">AssetByIDRequest</a></td>
+                <td><a href="#api.AssetByIDResponse">AssetByIDResponse</a></td>
+                <td><p>Get an asset by its ID</p></td>
+              </tr>
+
+              <tr>
+                <td>Assets</td>
+                <td><a href="#api.AssetsRequest">AssetsRequest</a></td>
+                <td><a href="#api.AssetsResponse">AssetsResponse</a></td>
+                <td><p>Get the list of all assets in vega</p></td>
               </tr>
 
           </tbody>
