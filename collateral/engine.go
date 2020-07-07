@@ -41,6 +41,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/collateral Broker
 type Broker interface {
 	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 // Engine is handling the power of the collateral
@@ -210,6 +211,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		expectCollected int64
 	)
 
+	// create batch of events
+	brokerEvts := make([]events.Event, 0, len(transfers))
 	// iterate over transfer until we get the first win, so we need we accumulated all loss
 	for i, evt := range transfers {
 		transfer := evt.Transfer()
@@ -303,7 +306,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.Int64("amount", lsevt.amountLost),
 				logging.String("market-id", lsevt.market))
 
-			e.broker.Send(events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount)))
+			brokerEvts = append(brokerEvts,
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount)))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -327,6 +331,9 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
+	if len(brokerEvts) > 0 {
+		e.broker.SendBatch(brokerEvts)
+	}
 	// if winidx is 0, this means we had now wind and loss, but may have some event which
 	// needs to be propagated forward so we return now.
 	if winidx == 0 {
@@ -370,9 +377,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			}
 		}
 		evts := distr.Run(ctx)
-		for _, evt := range evts {
-			e.broker.Send(evt)
-		}
+		e.broker.SendBatch(evts)
 	}
 
 	// then we process all the wins

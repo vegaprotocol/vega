@@ -43,6 +43,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 // Engine is the execution engine
