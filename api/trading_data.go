@@ -156,7 +156,7 @@ type NotaryService interface {
 }
 
 // AssetService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/asset_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NotaryService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/asset_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AssetService
 type AssetService interface {
 	GetByID(id string) (*types.Asset, error)
 	GetAll() ([]types.Asset, error)

@@ -57,6 +57,10 @@ var (
 	ErrInvalidProposalState = errors.New("invalid proposal state")
 	// ErrInvalidRiskConfiguration ...
 	ErrInvalidRiskConfiguration = errors.New("invalid risk configuration")
+	// ErrNilAssetSource ...
+	ErrNilAssetSource = errors.New("nil asset source")
+	// ErrUnimplementedAssetSource ...
+	ErrUnimplementedAssetSource = errors.New("unimplemented asset source")
 )
 
 // IntoProto ...
@@ -812,4 +816,49 @@ func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 func (a AccountType) IntoProto() types.AccountType {
 	at, _ := convertAccountTypeToProto(a)
 	return at
+}
+
+func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
+	return &BuiltinAsset{
+		Name:        ba.Name,
+		Symbol:      ba.Symbol,
+		TotalSupply: ba.TotalSupply,
+		Decimals:    int(ba.Decimals),
+	}
+}
+
+func ERC20FromProto(ea *types.ERC20) *Erc20 {
+	return &Erc20{
+		ContractAddress: ea.ContractAddress,
+	}
+}
+
+func AssetSourceFromProto(psource interface{}) (AssetSource, error) {
+	if psource == nil {
+		return nil, ErrNilAssetSource
+	}
+	switch asimpl := psource.(type) {
+	case *types.Asset_BuiltinAsset:
+		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
+	case *types.Asset_Erc20:
+		return ERC20FromProto(asimpl.Erc20), nil
+	default:
+		return nil, ErrUnimplementedAssetSource
+	}
+}
+
+func AssetFromProto(passet *types.Asset) (*Asset, error) {
+	source, err := AssetSourceFromProto(passet.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Asset{
+		ID:          passet.ID,
+		Name:        passet.Name,
+		Symbol:      passet.Symbol,
+		Decimals:    int(passet.Decimals),
+		TotalSupply: passet.TotalSupply,
+		Source:      source,
+	}, nil
 }

@@ -10,6 +10,11 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+// One of the possible asset sources
+type AssetSource interface {
+	IsAssetSource()
+}
+
 type Oracle interface {
 	IsOracle()
 }
@@ -29,6 +34,38 @@ type RiskModel interface {
 type TradingMode interface {
 	IsTradingMode()
 }
+
+// Represents an asset in vega
+type Asset struct {
+	// The id of the asset
+	ID string `json:"id"`
+	// The full name of the asset (e.g: Great British Pound)
+	Name string `json:"name"`
+	// The symbol of the asset (e.g: GBP)
+	Symbol string `json:"symbol"`
+	// The total supply of the market
+	TotalSupply string `json:"totalSupply"`
+	// The precision of the asset
+	Decimals int `json:"decimals"`
+	// The origin source of the asset (e.g: an erc20 asset)
+	Source AssetSource `json:"source"`
+}
+
+// A vega builtin asset, mostly for testing purpose
+type BuiltinAsset struct {
+	// The id of the asset
+	ID string `json:"id"`
+	// The full name of the asset (e.g: Great British Pound)
+	Name string `json:"name"`
+	// The symbol of the asset (e.g: GBP)
+	Symbol string `json:"symbol"`
+	// The total supply of the market
+	TotalSupply string `json:"totalSupply"`
+	// The precision of the asset
+	Decimals int `json:"decimals"`
+}
+
+func (BuiltinAsset) IsAssetSource() {}
 
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
@@ -61,6 +98,14 @@ type DiscreteTradingInput struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize int `json:"tickSize"`
 }
+
+// An asset originated from an Ethereum ERC20 Token
+type Erc20 struct {
+	// The address of the erc20 contract
+	ContractAddress string `json:"contractAddress"`
+}
+
+func (Erc20) IsAssetSource() {}
 
 // An Ethereum oracle
 type EthereumEvent struct {
