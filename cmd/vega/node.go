@@ -103,6 +103,7 @@ type NodeCommand struct {
 	voteSub        *subscribers.VoteSub
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
+	candleSub      *subscribers.CandleSub
 
 	candleBuf *buffer.Candle
 

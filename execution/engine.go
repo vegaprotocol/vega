@@ -25,14 +25,6 @@ var (
 	ErrNoMarketID = errors.New("no valid market id was supplied")
 )
 
-// CandleBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
-type CandleBuf interface {
-	AddTrade(types.Trade) error
-	Flush(marketID string, t time.Time) error
-	Start(marketID string, t time.Time) (map[string]types.Candle, error)
-}
-
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
@@ -56,8 +48,6 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	candleBuf CandleBuf
-
 	broker Broker
 	time   TimeService
 }
@@ -68,7 +58,6 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	time TimeService,
-	candleBuf CandleBuf,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -85,7 +74,6 @@ func NewEngine(
 		log:        log,
 		Config:     executionConfig,
 		markets:    map[string]*Market{},
-		candleBuf:  candleBuf,
 		time:       time,
 		collateral: collateral,
 		party:      NewParty(log, collateral, pmkts, broker),
@@ -186,7 +174,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.collateral,
 		e.party,
 		marketConfig,
-		e.candleBuf,
 		now,
 		e.broker,
 		e.idgen,

@@ -216,6 +216,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
+	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 }
 
 func (l *NodeCommand) setupBuffers() {
@@ -347,7 +348,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -367,7 +368,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.candleBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,
