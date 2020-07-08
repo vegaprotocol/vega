@@ -20,6 +20,7 @@ type CandleStore interface {
 type tradeBlock struct {
 	trades []types.Trade
 	time   time.Time
+	mID    string
 }
 
 type CandleSub struct {
@@ -49,6 +50,7 @@ func NewCandleSub(ctx context.Context, store CandleStore, ack bool) *CandleSub {
 		tCh:     make(chan tradeBlock, 1), // ensure we're one block behind
 		candles: map[string]map[string]types.Candle{},
 	}
+	go sub.internalLoop()
 	return sub
 }
 
@@ -57,8 +59,14 @@ func (c *CandleSub) internalLoop() {
 		select {
 		case <-c.Closed():
 			return
-		case trades := <-c.tCh:
-			c.updateCandles(trades)
+		case block := <-c.tCh:
+			if len(block.mID) > 0 {
+				if _, ok := c.candles[block.mID]; !ok {
+					c.candles[block.mID] = map[string]types.Candle{}
+				}
+			} else if len(block.trades) > 0 {
+				c.updateCandles(block)
+			}
 		}
 	}
 }
@@ -69,6 +77,10 @@ func (c *CandleSub) Push(e events.Event) {
 		c.mu.Lock()
 		c.buf = append(c.buf, te.Trade())
 		c.mu.Unlock()
+	case NME:
+		c.tCh <- tradeBlock{
+			mID: te.Market().Id,
+		}
 	case TimeEvent:
 		c.mu.Lock()
 		cpy := c.buf
@@ -85,6 +97,7 @@ func (c *CandleSub) Types() []events.Type {
 	return []events.Type{
 		events.TradeEvent,
 		events.TimeUpdate,
+		events.MarketCreatedEvent,
 	}
 }
 
