@@ -151,10 +151,10 @@ func streamGovernance(ctx context.Context,
 // ObserveGovernance streams all governance updates
 func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types.GovernanceData {
 	out := make(chan []types.GovernanceData)
+	ctx, cfunc := context.WithCancel(ctx)
 	// use non-acking subscriber
 	sub := subscribers.NewGovernanceSub(ctx, false)
 	id := s.bus.Subscribe(sub)
-	ctx, cfunc := context.WithCancel(ctx)
 	go func() {
 		defer func() {
 			s.bus.Unsubscribe(id)
@@ -219,12 +219,12 @@ func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID st
 
 // ObservePartyVotes streams votes cast by the specific party
 func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []types.Vote {
+	ctx, cfunc := context.WithCancel(ctx)
 	out := make(chan []types.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by party ID
 	// and make subscriber non-acking, missed votes are ignored
 	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByPartyID(partyID))
 	id := s.bus.Subscribe(sub)
-	ctx, cfunc := context.WithCancel(ctx)
 	go func() {
 		defer func() {
 			s.bus.Unsubscribe(id)
@@ -255,11 +255,11 @@ func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string
 
 // ObserveProposalVotes streams votes cast for/against specific proposal
 func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID string) <-chan []types.Vote {
+	ctx, cfunc := context.WithCancel(ctx)
 	out := make(chan []types.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by proposal ID
 	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByProposalID(proposalID))
 	id := s.bus.Subscribe(sub)
-	ctx, cfunc := context.WithCancel(ctx)
 	go func() {
 		defer func() {
 			s.bus.Unsubscribe(id)
