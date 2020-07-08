@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
@@ -147,7 +146,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
-	l.setupBuffers()
 	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
@@ -217,10 +215,6 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
-}
-
-func (l *NodeCommand) setupBuffers() {
-	l.candleBuf = buffer.NewCandle(l.candleStore)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
