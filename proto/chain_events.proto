@@ -49,9 +49,9 @@ message ERC20AssetDelist {
 message ERC20Deposit {
   // The vega network internally ID of the asset
   string vegaAssetID = 1;
-  // The party which initiated the deposit
-  string sourcePartyID = 2;
-  // The foreign chain native address
+  // The ethereum wallet that initiated the deposit
+  string sourceEthereumAddress = 2;
+  // The Vega public key of the target vega user
   string targetPartyID = 3;
 }
 
@@ -61,8 +61,8 @@ message ERC20Withdrawal {
   string vegaAssetID = 1;
   // The party inititing the withdrawal
   string sourcePartyId = 2;
-  // The foreign chain native address
-  string targetPartyId = 3;
+  // The target Ethereum wallet address
+  string targetEthereumAddress = 3;
   // The reference nonce used for the transaction
   string referenceNonce = 4;
 }
@@ -86,9 +86,9 @@ message ERC20Event {
 message BTCDeposit {
   // The vega network internally ID of the asset
   string vegaAssetID = 1;
-  // The party inititing the withdrawal
-  string sourcePartyId = 2;
-  // The foreign chain native address
+  // The BTC wallet inititing the Deposit
+  string sourceBTCAddress = 2;
+  // The Vega public key of the target Vega user
   string targetPartyId = 3;
 }
 
@@ -98,8 +98,8 @@ message BTCWithdrawal {
   string vegaAssetID = 1;
   // The party inititing the withdrawal
   string sourcePartyId = 2;
-  // The foreign chain native address
-  string targetPartyId = 3;
+  // Target BTC wallet address
+  string targetBTCAddress = 3;
   // The nonce reference of the transaction
   string referenceNonce = 4;
 }
