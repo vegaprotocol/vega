@@ -306,6 +306,11 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				}
 
 				asset, _ := m.mkt.GetAsset()
+				// FIXME(JEREMY): once deposit and withdrawal
+				// are implemented with the new method, the partyEngine
+				// will be removed, this call will need to be changed to
+				// use a slice of parties stored in the current market
+				// until we refactor collateral engine to work per market maybe
 				parties := m.partyEngine.GetByMarket(m.GetID())
 				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 				if err != nil {
@@ -389,6 +394,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, types.ErrInvalidMarketID
 	}
 
+	// TODO(): jeremy
+	// when new withdrawals and deposits are used only
+	// we will need to use the collateral engine
+	// and add a check in there to get the General account for
+	// this party and the market Asset
 	// Verify and add new parties
 	// party, _ := m.parties.GetByID(order.PartyID)
 	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
