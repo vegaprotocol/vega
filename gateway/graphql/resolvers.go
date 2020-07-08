@@ -110,6 +110,8 @@ type TradingDataClient interface {
 	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyVotesClient, error)
 	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveProposalVotesClient, error)
 	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
+	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
+	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -225,6 +227,39 @@ func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Asset(ctx context.Context, id string) (*Asset, error) {
+	if len(id) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &protoapi.AssetByIDRequest{
+		ID: id,
+	}
+	res, err := r.tradingDataClient.AssetByID(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return AssetFromProto(res.Asset)
+}
+
+func (r *myQueryResolver) Assets(ctx context.Context) ([]*Asset, error) {
+	req := &protoapi.AssetsRequest{}
+	res, err := r.tradingDataClient.Assets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*Asset, 0, len(res.Assets))
+	for _, v := range res.Assets {
+		a, err := AssetFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+
+	return out, nil
+
+}
 
 func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*types.NodeSignature, error) {
 	if len(resourceID) <= 0 {

@@ -6,6 +6,7 @@ import "proto/vega.proto";
 import "proto/markets.proto";
 import "proto/governance.proto";
 import "proto/chain_events.proto";
+import "proto/assets.proto";
 
 package api;
 
@@ -274,6 +275,33 @@ service trading_data {
 
   // Get an aggregate of signature from all the node of the network
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
+
+  // Get an asset by its ID
+  rpc AssetByID(AssetByIDRequest) returns (AssetByIDResponse);
+
+  // Get the list of all assets in vega
+  rpc Assets(AssetsRequest) returns (AssetsResponse);
+}
+
+// The request to get the lit of all assets in vega
+message AssetsRequest {}
+
+// The response containing the list of all assets enabled in vega
+message AssetsResponse {
+  // The list of assets
+  repeated vega.Asset assets = 1;
+}
+
+// The request message to get an AssetByID
+message AssetByIDRequest {
+  // ID of the asset to get
+  string ID = 1;
+}
+
+// The response message to get an AssetByID
+message AssetByIDResponse {
+  // The asset corresponding to the requested ID
+  vega.Asset asset = 1;
 }
 
 // The request message to specify the ID of the resource we want to retrieve

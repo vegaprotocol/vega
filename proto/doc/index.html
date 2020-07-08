@@ -187,6 +187,22 @@
                 </li>
 
                 <li>
+                  <a href="#api.AssetByIDRequest"><span class="badge">M</span>AssetByIDRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.AssetByIDResponse"><span class="badge">M</span>AssetByIDResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.AssetsRequest"><span class="badge">M</span>AssetsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.AssetsResponse"><span class="badge">M</span>AssetsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.CancelOrderRequest"><span class="badge">M</span>CancelOrderRequest</a>
                 </li>
 
@@ -1035,6 +1051,85 @@
                   <td><a href="#vega.OrderAmendment">vega.OrderAmendment</a></td>
                   <td></td>
                   <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.AssetByIDRequest">AssetByIDRequest</h3>
+        <p>The request message to get an AssetByID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>ID of the asset to get </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.AssetByIDResponse">AssetByIDResponse</h3>
+        <p>The response message to get an AssetByID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#vega.Asset">vega.Asset</a></td>
+                  <td></td>
+                  <td><p>The asset corresponding to the requested ID </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.AssetsRequest">AssetsRequest</h3>
+        <p>The request to get the lit of all assets in vega</p>
+
+
+
+
+
+        <h3 id="api.AssetsResponse">AssetsResponse</h3>
+        <p>The response containing the list of all assets enabled in vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>assets</td>
+                  <td><a href="#vega.Asset">vega.Asset</a></td>
+                  <td>repeated</td>
+                  <td><p>The list of assets </p></td>
                 </tr>
 
             </tbody>
@@ -4652,6 +4747,20 @@
                 <td><p>Get an aggregate of signature from all the node of the network</p></td>
               </tr>
 
+              <tr>
+                <td>AssetByID</td>
+                <td><a href="#api.AssetByIDRequest">AssetByIDRequest</a></td>
+                <td><a href="#api.AssetByIDResponse">AssetByIDResponse</a></td>
+                <td><p>Get an asset by its ID</p></td>
+              </tr>
+
+              <tr>
+                <td>Assets</td>
+                <td><a href="#api.AssetsRequest">AssetsRequest</a></td>
+                <td><a href="#api.AssetsResponse">AssetsResponse</a></td>
+                <td><p>Get the list of all assets in vega</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -4665,7 +4774,7 @@
 
 
         <h3 id="vega.Asset">Asset</h3>
-        <p></p>
+        <p>The vega representation of an external asset</p>
 
 
           <table class="field-table">
@@ -4678,49 +4787,49 @@
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The vega internal ID of the asset </p></td>
                 </tr>
 
                 <tr>
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The name of the asset (e.g: Great British Pound) </p></td>
                 </tr>
 
                 <tr>
                   <td>symbol</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The symbol of the asset (e.g: GBP) </p></td>
                 </tr>
 
                 <tr>
                   <td>totalSupply</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>this may very much likely be a big.Int </p></td>
+                  <td><p>The total circulating supply for the asset </p></td>
                 </tr>
 
                 <tr>
                   <td>decimals</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The number of decimal / precision handled by this asset </p></td>
                 </tr>
 
                 <tr>
                   <td>builtinAsset</td>
                   <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A vega builtin asset (for testing purpose) </p></td>
                 </tr>
 
                 <tr>
                   <td>erc20</td>
                   <td><a href="#vega.ERC20">ERC20</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An ERC20 token based asset </p></td>
                 </tr>
 
             </tbody>
@@ -4762,7 +4871,7 @@
 
 
         <h3 id="vega.BuiltinAsset">BuiltinAsset</h3>
-        <p></p>
+        <p>A vega internal asset</p>
 
 
           <table class="field-table">
@@ -4775,28 +4884,28 @@
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The name of the asset (e.g: Great British Pound) </p></td>
                 </tr>
 
                 <tr>
                   <td>symbol</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The symbol of the asset (e.g: GBP) </p></td>
                 </tr>
 
                 <tr>
                   <td>totalSupply</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The total circulating supply for the asset </p></td>
                 </tr>
 
                 <tr>
                   <td>decimals</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The number of decimal / precision handled by this asset </p></td>
                 </tr>
 
             </tbody>
@@ -4831,7 +4940,7 @@
 
 
         <h3 id="vega.ERC20">ERC20</h3>
-        <p></p>
+        <p>An ERC20 token based asset, living on the ethereum network</p>
 
 
           <table class="field-table">
@@ -4844,7 +4953,7 @@
                   <td>contractAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The address of the contract for the token, on the ethereum network </p></td>
                 </tr>
 
             </tbody>

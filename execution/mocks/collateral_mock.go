@@ -35,11 +35,12 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 }
 
 // CreatePartyGeneralAccount mocks base method
-func (m *MockCollateral) CreatePartyGeneralAccount(arg0 context.Context, arg1, arg2 string) string {
+func (m *MockCollateral) CreatePartyGeneralAccount(arg0 context.Context, arg1, arg2 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePartyGeneralAccount", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreatePartyGeneralAccount indicates an expected call of CreatePartyGeneralAccount

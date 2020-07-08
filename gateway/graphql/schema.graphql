@@ -356,6 +356,63 @@ type Query {
   nodeSignatures(
     resourceId: String!
   ): [NodeSignature!]
+
+  "An asset which is used in the vega network"
+  asset(
+   "Id of the asset"
+    assetId: String!
+  ): Asset
+
+  "The list of all assets in use in the vega network"
+  assets: [Asset!]
+}
+
+"Represents an asset in vega"
+type Asset {
+  "The id of the asset"
+  id: String!
+
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+
+  "The origin source of the asset (e.g: an erc20 asset)"
+  source: AssetSource!
+}
+
+"One of the possible asset sources"
+union AssetSource = BuiltinAsset | ERC20
+
+"An asset originated from an Ethereum ERC20 Token"
+type ERC20 {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+type BuiltinAsset {
+  "The id of the asset"
+  id: String!
+
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
 }
 
 "Represents a signature for the approval of a resource from a validator"

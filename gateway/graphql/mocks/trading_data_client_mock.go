@@ -57,6 +57,46 @@ func (mr *MockTradingDataClientMockRecorder) AccountsSubscribe(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsSubscribe), varargs...)
 }
 
+// AssetByID mocks base method
+func (m *MockTradingDataClient) AssetByID(arg0 context.Context, arg1 *api.AssetByIDRequest, arg2 ...grpc.CallOption) (*api.AssetByIDResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AssetByID", varargs...)
+	ret0, _ := ret[0].(*api.AssetByIDResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssetByID indicates an expected call of AssetByID
+func (mr *MockTradingDataClientMockRecorder) AssetByID(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssetByID", reflect.TypeOf((*MockTradingDataClient)(nil).AssetByID), varargs...)
+}
+
+// Assets mocks base method
+func (m *MockTradingDataClient) Assets(arg0 context.Context, arg1 *api.AssetsRequest, arg2 ...grpc.CallOption) (*api.AssetsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Assets", varargs...)
+	ret0, _ := ret[0].(*api.AssetsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Assets indicates an expected call of Assets
+func (mr *MockTradingDataClientMockRecorder) Assets(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Assets", reflect.TypeOf((*MockTradingDataClient)(nil).Assets), varargs...)
+}
+
 // Candles mocks base method
 func (m *MockTradingDataClient) Candles(arg0 context.Context, arg1 *api.CandlesRequest, arg2 ...grpc.CallOption) (*api.CandlesResponse, error) {
 	m.ctrl.T.Helper()

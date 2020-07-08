@@ -155,6 +155,13 @@ type NotaryService interface {
 	GetByID(id string) ([]types.NodeSignature, error)
 }
 
+// AssetService Provides access to assets approved/pending approval in the current network state
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/asset_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AssetService
+type AssetService interface {
+	GetByID(id string) (*types.Asset, error)
+	GetAll() ([]types.Asset, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -171,8 +178,36 @@ type tradingDataService struct {
 	NotaryService           NotaryService
 	TransferResponseService TransferResponseService
 	governanceService       GovernanceDataService
+	AssetService            AssetService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
+}
+
+func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
+	if len(req.ID) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+	}
+
+	asset, err := t.AssetService.GetByID(req.ID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	return &protoapi.AssetByIDResponse{
+		Asset: asset,
+	}, nil
+}
+
+func (t *tradingDataService) Assets(ctx context.Context, req *protoapi.AssetsRequest) (*protoapi.AssetsResponse, error) {
+	assets, _ := t.AssetService.GetAll()
+	out := make([]*types.Asset, 0, len(assets))
+	for _, v := range assets {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.AssetsResponse{
+		Assets: out,
+	}, nil
 }
 
 func (t *tradingDataService) GetNodeSignaturesAggregate(ctx context.Context,
