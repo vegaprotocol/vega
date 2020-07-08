@@ -111,10 +111,24 @@
     - [ERC20](#vega.ERC20)
 
 - [proto/chain_events.proto](#proto/chain_events.proto)
-    - [AssetList](#vega.AssetList)
+    - [AddValidator](#vega.AddValidator)
+    - [BTCDeposit](#vega.BTCDeposit)
+    - [BTCEvent](#vega.BTCEvent)
+    - [BTCWithdrawal](#vega.BTCWithdrawal)
+    - [BitcoinAddress](#vega.BitcoinAddress)
+    - [BuiltinAssetDeposit](#vega.BuiltinAssetDeposit)
+    - [BuiltinAssetEvent](#vega.BuiltinAssetEvent)
+    - [BuiltinAssetWithdrawal](#vega.BuiltinAssetWithdrawal)
     - [ChainEvent](#vega.ChainEvent)
-    - [Deposit](#vega.Deposit)
-    - [Withdrawal](#vega.Withdrawal)
+    - [ERC20AssetDelist](#vega.ERC20AssetDelist)
+    - [ERC20AssetList](#vega.ERC20AssetList)
+    - [ERC20Deposit](#vega.ERC20Deposit)
+    - [ERC20Event](#vega.ERC20Event)
+    - [ERC20Withdrawal](#vega.ERC20Withdrawal)
+    - [EthereumAddress](#vega.EthereumAddress)
+    - [Identifier](#vega.Identifier)
+    - [RemoveValidator](#vega.RemoveValidator)
+    - [ValidatorEvent](#vega.ValidatorEvent)
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FutureProduct](#vega.FutureProduct)
@@ -1865,15 +1879,133 @@ An ERC20 token based asset, living on the ethereum network
 
 
 
-<a name="vega.AssetList"></a>
+<a name="vega.AddValidator"></a>
 
-### AssetList
+### AddValidator
+A message to notify a new validator being added to the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Identifier](#vega.Identifier) |  | The identifier of this validator |
+
+
+
+
+
+
+<a name="vega.BTCDeposit"></a>
+
+### BTCDeposit
+A BTC deposit into vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
+| targetPartyId | [string](#string) |  | The foreign chain native address |
+
+
+
+
+
+
+<a name="vega.BTCEvent"></a>
+
+### BTCEvent
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  |  |
+| index | [uint64](#uint64) |  | The index of the transaction |
+| block | [uint64](#uint64) |  | The block in which the transaction happenned |
+| deposit | [BTCDeposit](#vega.BTCDeposit) |  |  |
+| withdrawal | [BTCWithdrawal](#vega.BTCWithdrawal) |  |  |
+
+
+
+
+
+
+<a name="vega.BTCWithdrawal"></a>
+
+### BTCWithdrawal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
+| targetPartyId | [string](#string) |  | The foreign chain native address |
+| referenceNonce | [string](#string) |  | The nonce reference of the transaction |
+
+
+
+
+
+
+<a name="vega.BitcoinAddress"></a>
+
+### BitcoinAddress
+An external blockchain address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  | An external blockchain address |
+
+
+
+
+
+
+<a name="vega.BuiltinAssetDeposit"></a>
+
+### BuiltinAssetDeposit
+A deposit for an vega builtin asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | A vega network internal asset ID |
+| partyID | [string](#string) |  | A vega party ID (pubkey) |
+| amount | [uint64](#uint64) |  | The amount to be deposited |
+
+
+
+
+
+
+<a name="vega.BuiltinAssetEvent"></a>
+
+### BuiltinAssetEvent
+An event related to a vega builtin asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposit | [BuiltinAssetDeposit](#vega.BuiltinAssetDeposit) |  |  |
+| withdrawal | [BuiltinAssetWithdrawal](#vega.BuiltinAssetWithdrawal) |  |  |
+
+
+
+
+
+
+<a name="vega.BuiltinAssetWithdrawal"></a>
+
+### BuiltinAssetWithdrawal
+A Withdrawal for a vega builtin asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | A vega network internal asset ID |
+| partyID | [string](#string) |  | A vega network party ID (pubkey) |
+| amount | [uint64](#uint64) |  | The amount to be withdrawan |
 
 
 
@@ -1883,54 +2015,165 @@ An ERC20 token based asset, living on the ethereum network
 <a name="vega.ChainEvent"></a>
 
 ### ChainEvent
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txHash | [string](#string) |  |  |
-| index | [uint64](#uint64) |  |  |
-| block | [uint64](#uint64) |  |  |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
-| erc20 | [ERC20](#vega.ERC20) |  | ERC1155 erc1155 = 103; Ether ether = 104; |
-| deposit | [Deposit](#vega.Deposit) |  |  |
-| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
-| assetList | [AssetList](#vega.AssetList) |  | AssetDelist assetDelist = 1004; DepositMinimumSet depositMinimumSet = 1005; |
-
-
-
-
-
-
-<a name="vega.Deposit"></a>
-
-### Deposit
-
+An event being forwarded to the vega network
+providing information on things happening on other networks
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  |  |
-| sourcePartyID | [string](#string) |  |  |
-| targetPartyID | [string](#string) |  |  |
+| txID | [string](#string) |  | The ID of the transaction in which the things happened usually a hash |
+| builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  |  |
+| erc20 | [ERC20Event](#vega.ERC20Event) |  |  |
+| btc | [BTCEvent](#vega.BTCEvent) |  |  |
+| validator | [ValidatorEvent](#vega.ValidatorEvent) |  |  |
 
 
 
 
 
 
-<a name="vega.Withdrawal"></a>
+<a name="vega.ERC20AssetDelist"></a>
 
-### Withdrawal
-
+### ERC20AssetDelist
+An asset blacklisting for a erc20 token
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  |  |
-| sourcePartyId | [string](#string) |  |  |
-| targetPartyId | [string](#string) |  |  |
-| referenceNonce | [string](#string) |  |  |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+
+
+
+
+
+
+<a name="vega.ERC20AssetList"></a>
+
+### ERC20AssetList
+An asset whitelisting for a erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+
+
+
+
+
+
+<a name="vega.ERC20Deposit"></a>
+
+### ERC20Deposit
+An asset deposit for an erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourcePartyID | [string](#string) |  | The party which initiated the deposit |
+| targetPartyID | [string](#string) |  | The foreign chain native address |
+
+
+
+
+
+
+<a name="vega.ERC20Event"></a>
+
+### ERC20Event
+An event related to an erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| index | [uint64](#uint64) |  | Index of the transaction |
+| block | [uint64](#uint64) |  | The block in which the transaction was added |
+| assetList | [ERC20AssetList](#vega.ERC20AssetList) |  |  |
+| assetDelist | [ERC20AssetDelist](#vega.ERC20AssetDelist) |  |  |
+| deposit | [ERC20Deposit](#vega.ERC20Deposit) |  |  |
+| withdrawal | [ERC20Withdrawal](#vega.ERC20Withdrawal) |  |  |
+
+
+
+
+
+
+<a name="vega.ERC20Withdrawal"></a>
+
+### ERC20Withdrawal
+An asset withdrawal for an erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
+| targetPartyId | [string](#string) |  | The foreign chain native address |
+| referenceNonce | [string](#string) |  | The reference nonce used for the transaction |
+
+
+
+
+
+
+<a name="vega.EthereumAddress"></a>
+
+### EthereumAddress
+An external blockchain address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  | An external blockchain address |
+
+
+
+
+
+
+<a name="vega.Identifier"></a>
+
+### Identifier
+A wrapper type on any possible network address supported by vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ethereumAddress | [EthereumAddress](#vega.EthereumAddress) |  |  |
+| bitcoinAddress | [BitcoinAddress](#vega.BitcoinAddress) |  |  |
+
+
+
+
+
+
+<a name="vega.RemoveValidator"></a>
+
+### RemoveValidator
+A message to notify a new validator being removed to the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Identifier](#vega.Identifier) |  | The identifier of this validator |
+
+
+
+
+
+
+<a name="vega.ValidatorEvent"></a>
+
+### ValidatorEvent
+An event related to validator management with foreign networks
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sourceID | [string](#string) |  | The source ID of the event |
+| add | [AddValidator](#vega.AddValidator) |  |  |
+| rm | [RemoveValidator](#vega.RemoveValidator) |  |  |
 
 
 

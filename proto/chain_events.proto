@@ -5,39 +5,170 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "proto/assets.proto";
 
-message AssetList {
+// A deposit for an vega builtin asset
+message BuiltinAssetDeposit {
+  // A vega network internal asset ID
+  string vegaAssetID = 1;
+  // A vega party ID (pubkey)
+  string partyID = 2;
+  // The amount to be deposited
+  uint64 amount = 3;
+}
+
+// A Withdrawal for a vega builtin asset
+message BuiltinAssetWithdrawal {
+  // A vega network internal asset ID
+  string vegaAssetID = 1;
+  // A vega network party ID (pubkey)
+  string partyID = 2;
+  // The amount to be withdrawan
+  uint64 amount = 3;
+}
+
+// An event related to a vega builtin asset
+message BuiltinAssetEvent {
+  oneof action {
+    BuiltinAssetDeposit deposit = 1001;
+    BuiltinAssetWithdrawal withdrawal = 1002;
+  }
+}
+
+// An asset whitelisting for a erc20 token
+message ERC20AssetList {
+  // The vega network internally ID of the asset
   string vegaAssetID = 1;
 }
 
-message Deposit {
+// An asset blacklisting for a erc20 token
+message ERC20AssetDelist {
+  // The vega network internally ID of the asset
   string vegaAssetID = 1;
+}
+
+// An asset deposit for an erc20 token
+message ERC20Deposit {
+  // The vega network internally ID of the asset
+  string vegaAssetID = 1;
+  // The party which initiated the deposit
   string sourcePartyID = 2;
+  // The foreign chain native address
   string targetPartyID = 3;
 }
 
-message Withdrawal {
+// An asset withdrawal for an erc20 token
+message ERC20Withdrawal {
+  // The vega network internally ID of the asset
   string vegaAssetID = 1;
+  // The party inititing the withdrawal
   string sourcePartyId = 2;
+  // The foreign chain native address
   string targetPartyId = 3;
+  // The reference nonce used for the transaction
   string referenceNonce = 4;
 }
 
-message ChainEvent {
-  string txHash = 1;
-  uint64 index = 2;
-  uint64 block = 3;
+// An event related to an erc20 token
+message ERC20Event {
+  // Index of the transaction
+  uint64 index = 1;
+  // The block in which the transaction was added
+  uint64 block = 2;
 
-  oneof eventSource {
-    vega.BuiltinAsset builtinAsset = 101;
-    vega.ERC20 erc20 = 102;
-    // ERC1155 erc1155 = 103;
-    // Ether ether = 104;
+  oneof action {
+    ERC20AssetList assetList = 1001;
+    ERC20AssetDelist assetDelist = 1002;
+    ERC20Deposit deposit = 1003;
+    ERC20Withdrawal withdrawal = 1004;
   }
-  oneof eventType {
-    Deposit deposit = 1001;
-    Withdrawal withdrawal = 1002;
-    AssetList assetList = 1003;
-    // AssetDelist assetDelist = 1004;
-    // DepositMinimumSet depositMinimumSet = 1005;
+}
+
+// A BTC deposit into vega
+message BTCDeposit {
+  // The vega network internally ID of the asset
+  string vegaAssetID = 1;
+  // The party inititing the withdrawal
+  string sourcePartyId = 2;
+  // The foreign chain native address
+  string targetPartyId = 3;
+}
+
+message BTCWithdrawal {
+  // The vega network internally ID of the asset
+  string vegaAssetID = 1;
+  // The party inititing the withdrawal
+  string sourcePartyId = 2;
+  // The foreign chain native address
+  string targetPartyId = 3;
+  // The nonce reference of the transaction
+  string referenceNonce = 4;
+}
+
+message BTCEvent {
+  // The index of the transaction
+  uint64 index = 1;
+  // The block in which the transaction happenned
+  uint64 block = 2;
+
+  oneof action {
+    BTCDeposit deposit = 1001;
+    BTCWithdrawal withdrawal = 1002;
+  }
+}
+
+// An external blockchain address
+message EthereumAddress {
+  // An external blockchain address
+  string address = 1;
+}
+
+// An external blockchain address
+message BitcoinAddress {
+  // An external blockchain address
+  string address = 1;
+}
+
+// A wrapper type on any possible network address supported by vega
+message Identifier {
+  oneof identifier {
+    EthereumAddress ethereumAddress = 1;
+    BitcoinAddress bitcoinAddress = 2;
+  }
+}
+
+// A message to notify a new validator being added to the vega network
+message AddValidator {
+  // The identifier of this validator
+  Identifier id = 1;
+}
+
+// A message to notify a new validator being removed to the vega network
+message RemoveValidator {
+  // The identifier of this validator
+  Identifier id = 1;
+}
+
+// An event related to validator management with foreign networks
+message ValidatorEvent {
+  // The source ID of the event
+  string sourceID = 1;
+
+  oneof action {
+    AddValidator add = 1001;
+    RemoveValidator rm = 1002;
+  }
+}
+
+// An event being forwarded to the vega network
+// providing information on things happening on other networks
+message ChainEvent {
+  // The ID of the transaction in which the things happened
+  // usually a hash
+  string txID = 1;
+
+  oneof event {
+    BuiltinAssetEvent builtin = 1001;
+    ERC20Event erc20 = 1002;
+    BTCEvent btc = 1003;
+    ValidatorEvent validator = 1004;
   }
 }
