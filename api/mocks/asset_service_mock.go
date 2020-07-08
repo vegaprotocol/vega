@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockAssetService is a mock of AssetService interface
@@ -56,10 +55,6 @@ func (m *MockAssetService) GetByID(arg0 string) (*proto.Asset, error) {
 	ret0, _ := ret[0].(*proto.Asset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
-}
-
-func (m *MockNotaryService) EXPECT() *MockNotaryServiceMockRecorder {
-	return m.recorder
 }
 
 // GetByID indicates an expected call of GetByID
