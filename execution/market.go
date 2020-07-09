@@ -889,7 +889,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 				logging.String("market-id", m.GetID()))
 		}
 	}
-	if len(tradeEvts) == 0 {
+	if len(tradeEvts) > 0 {
 		m.broker.SendBatch(tradeEvts)
 	}
 	return nil
