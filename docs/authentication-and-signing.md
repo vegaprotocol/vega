@@ -8,7 +8,7 @@ Note: this documentation does not cover the authentication provided by the soon-
 - [vega wallet](../wallet/README.md) is a service that can be run to manage your keys
 - As a convenience to client developers each Vega node exposes a number of GraphQL endpoints that can be used to generate an unsigned protocol buffer representing a transaction
 - This protocol buffer must be signed with a keypair, and then submitted to the node
-- This can be submitted to the node directly, using the `submitTransaction` endpoint, or in the same call as the signature by setting the [propagate](../wallet/README.md#propagate) option when signing a transactoin.
+- This can be submitted to the node directly, using the `submitTransaction` endpoint, or in the same call as the signature by setting the [propagate](../wallet/README.md#propagate) option when signing a transaction.
 
 The basic interaction between services is shown below:
 
