@@ -4,10 +4,11 @@ Authentication & Signing
 Note: this documentation does not cover the authentication provided by the soon-to-be-deprecated [`auth` package](../auth/).
 
 ## Workflow
-- Vega will soon require that all transactions are signed by a keypair
-- As a convenience to client developers each Vega node exposes a number of endpoints that can be used to generate an unsigned protocol buffer representing a transaction
-- This protocol buffer must be signed with a keypair, and then submitted to the node using the `submitTransaction` endpoint
+- Vega requires that all transactions are signed by a keypair
 - [vega wallet](../wallet/README.md) is a service that can be run to manage your keys
+- As a convenience to client developers each Vega node exposes a number of GraphQL endpoints that can be used to generate an unsigned protocol buffer representing a transaction
+- This protocol buffer must be signed with a keypair, and then submitted to the node
+- This can be submitted to the node directly, using the `submitTransaction` endpoint, or in the same call as the signature by setting the [propagate](../wallet/README.md#propagate) option when signing a transaction.
 
 The basic interaction between services is shown below:
 
@@ -63,6 +64,8 @@ sequenceDiagram
 	Wallet Service->>Wallet Service: Sign protobuf
 	Wallet Service->>Vega Node: Submit signed transaction
 ```
+
+This is implemented in the [Wallet service](../wallet/README.md#propagate) as the optional 'propagate' property provided when submitting a transaction to to the `messages` endpoint. 
 
 ### Clients can sign their own transactions
 The functionality provided by the wallet service can be integrated in to your Golang client. `vega` uses Ed25519 - visit the [wallet](../wallet/README.md) folder to find out more.
