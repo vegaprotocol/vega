@@ -32,8 +32,17 @@ type Commander interface {
 	Command(cmd blockchain.Command, payload proto.Message) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
+type ValidatorTopology interface {
+	Exists([]byte) bool
+	Len() int
+	IsValidator() bool
+	SelfVegaPubKey() []byte
+}
+
 type Resource interface {
 	GetID() string
+	Check() error
 }
 
 const (
@@ -60,27 +69,27 @@ type res struct {
 	cfunc context.CancelFunc
 	// the function to call one validation is done
 	cb func(interface{}, bool)
-	// the checker function
-	check func() error
 }
 
 type ExtResChecker struct {
 	log       *logging.Logger
 	resources map[string]*res
 	now       time.Time
-	top       *Topology
+	top       ValidatorTopology
 	cmd       Commander
 }
 
-func NewExtResChecker(log *logging.Logger, top *Topology, tsvc TimeService) (e *ExtResChecker) {
+func NewExtResChecker(log *logging.Logger, top ValidatorTopology, cmd Commander, tsvc TimeService) (e *ExtResChecker) {
 	defer func() {
-		tsvc.NotifyOnTick(e.onTick)
+		tsvc.NotifyOnTick(e.OnTick)
 	}()
 
 	now, _ := tsvc.GetTimeNow()
 	return &ExtResChecker{
 		log:       log,
 		now:       now,
+		cmd:       cmd,
+		top:       top,
 		resources: map[string]*res{},
 	}
 }
@@ -121,7 +130,6 @@ func (e *ExtResChecker) AddNodeCheck(nv *types.NodeVote) error {
 func (e *ExtResChecker) StartCheck(
 	r Resource,
 	cb func(interface{}, bool),
-	check func() error,
 	checkUntil time.Time,
 ) error {
 	id := r.GetID()
@@ -140,7 +148,7 @@ func (e *ExtResChecker) StartCheck(
 		state:      notValidated,
 		cfunc:      cfunc,
 		cb:         cb,
-		check:      check,
+		votes:      map[string]struct{}{},
 	}
 
 	e.resources[id] = res
@@ -173,7 +181,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 		)
 
 		// call checking
-		err = r.check()
+		err = r.res.Check()
 		if err != nil {
 			// we just log the error, but these are not criticals, as it may be
 			// things unrelated to the current node, and would recover later on.
@@ -195,7 +203,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 	}
 }
 
-func (e *ExtResChecker) onTick(t time.Time) {
+func (e *ExtResChecker) OnTick(t time.Time) {
 	e.now = t
 	topLen := e.top.Len()
 
