@@ -140,6 +140,9 @@ type EvtForwarder interface {
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/processor Collateral
 type Collateral interface {
+	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
+	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
+	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -594,58 +597,6 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
 	}
-	return nil
-}
-
-func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
-	// first verify the event was emited by a validator
-	if !p.top.Exists(pubkey) {
-		return ErrChainEventFromNonValidator
-	}
-
-	// ack the new event then
-	if !p.evtfwd.Ack(ce) {
-		// there was an error, or this was already acked
-		// but that's not a big issue we just going to ignore that.
-		return nil
-	}
-
-	// OK the event was newly acknowledged, so now we need to
-	// figure out what to do with it.
-	switch ce.EventType.(type) {
-	case *types.ChainEvent_AssetList:
-		return p.processChainEventAssetList(ctx, ce)
-	case *types.ChainEvent_Deposit:
-		// handle deposits
-		return nil
-	case *types.ChainEvent_Withdrawal:
-		// handle withdrawal
-		return nil
-	default:
-		return ErrUnsupportedChainEvent
-	}
-
-}
-
-func (p *Processor) processChainEventAssetList(ctx context.Context, ce *types.ChainEvent) error {
-	al := ce.GetAssetList()
-	if al == nil {
-		return ErrNotAnAssetListChainEvent
-	}
-
-	// now check that this asset was actually an asset
-	// going through proposal
-	asset, err := p.assets.Get(al.VegaAssetID)
-	if err != nil {
-		p.log.Error("unable to get asset for finalizing whitelisting",
-			logging.Error(err),
-			logging.String("asset-id", al.VegaAssetID))
-		return err
-	}
-
-	// enable the asset in the collateral now.
-	_ = asset
-
 	return nil
 }
 

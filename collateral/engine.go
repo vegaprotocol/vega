@@ -1079,6 +1079,20 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 	return nil
 }
 
+// Deposit will deposit the given amount into the party account
+func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint64) error {
+	if !e.AssetExists(asset) {
+		return ErrInvalidAssetID
+	}
+	// this will get or create the account basically
+	accID, err := e.CreatePartyGeneralAccount(ctx, partyID, asset)
+	if err != nil {
+		return err
+	}
+
+	return e.IncrementBalance(ctx, accID, amount)
+}
+
 // UpdateBalance will update the balance of a given account
 func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) error {
 	acc, ok := e.accs[id]
