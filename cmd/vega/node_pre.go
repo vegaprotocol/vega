@@ -380,8 +380,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
 
+	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
+
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, l.erc, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err

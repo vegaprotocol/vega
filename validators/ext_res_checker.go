@@ -142,7 +142,7 @@ func (e *ExtResChecker) StartCheck(
 	}
 
 	ctx, cfunc := context.WithCancel(context.Background())
-	res := &res{
+	rs := &res{
 		res:        r,
 		checkUntil: checkUntil,
 		state:      notValidated,
@@ -151,8 +151,15 @@ func (e *ExtResChecker) StartCheck(
 		votes:      map[string]struct{}{},
 	}
 
-	e.resources[id] = res
-	e.start(ctx, res)
+	e.resources[id] = rs
+
+	if e.top.IsValidator() {
+		go e.start(ctx, rs)
+	} else {
+		// if weare not a validator, let's just set to voteSent
+		// and wait for all validators to verify
+		atomic.StoreUint32(&rs.state, voteSent)
+	}
 	return nil
 }
 

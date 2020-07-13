@@ -66,7 +66,6 @@ type ExecutionEngine interface {
 type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.Proposal) error
 	AddVote(context.Context, types.Vote) error
-	AddNodeVote(*types.NodeVote) error
 	OnChainTimeUpdate(context.Context, time.Time) []*governance.ToEnact
 }
 
@@ -572,7 +571,10 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		return p.gov.AddNodeVote(vote)
+		_ = vote
+		//FIXME: call directly the ExtResChecker here
+		return nil
+		// return p.gov.AddNodeVote(vote)
 	case blockchain.NodeSignatureCommand:
 		ns, err := p.getNodeSignature(data)
 		if err != nil {

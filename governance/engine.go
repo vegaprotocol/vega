@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -71,9 +72,15 @@ type Assets interface {
 }
 
 // TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
+}
+
+// ExtResChecker ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ext_res_checker_mock.go -package mocks code.vegaprotocol.io/vega/governance ExtResChecker
+type ExtResChecker interface {
+	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
 // Engine is the governance engine that handles proposal and vote lifecycle.
@@ -95,10 +102,10 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, now time.Time) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
-	nodeValidation, err := NewNodeValidation(log, top, cmd, assets, now, top.IsValidator())
+	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
 	if err != nil {
 		return nil, err
 	}
@@ -290,10 +297,6 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) error {
 		return validateNewMarket(e.currentTime, change.NewMarket.Changes)
 	}
 	return nil
-}
-
-func (e *Engine) AddNodeVote(v *types.NodeVote) error {
-	return e.nodeProposalValidation.AddNodeVote(v)
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted

@@ -146,6 +146,7 @@ type NodeCommand struct {
 	topology *validators.Topology
 	notary   *notary.Notary
 	evtfwd   *evtforward.EvtForwarder
+	erc      *validators.ExtResChecker
 
 	// plugins
 	settlePlugin *plugins.Positions

@@ -25,6 +25,7 @@ type tstEngine struct {
 	broker          *mocks.MockBroker
 	top             *mocks.MockValidatorTopology
 	cmd             *mocks.MockCommander
+	erc             *mocks.MockExtResChecker
 	assets          *mocks.MockAssets
 	proposalCounter uint // to streamline proposal generation
 }
@@ -762,11 +763,12 @@ func getTestEngine(t *testing.T) *tstEngine {
 	cmd := mocks.NewMockCommander(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	erc := mocks.NewMockExtResChecker(ctrl)
 
 	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	log := logging.NewTestLogger()
-	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, top, cmd, assets, time.Now()) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, top, cmd, assets, erc, time.Now()) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
@@ -777,6 +779,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		cmd:    cmd,
 		assets: assets,
 		top:    top,
+		erc:    erc,
 	}
 }
 

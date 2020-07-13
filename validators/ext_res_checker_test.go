@@ -29,6 +29,7 @@ func getTestExtResChecker(t *testing.T) *testExtResChecker {
 	tsvc := mocks.NewMockTimeService(ctrl)
 
 	now := time.Now()
+	top.EXPECT().IsValidator().AnyTimes().Return(true)
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	nv := validators.NewExtResChecker(
@@ -197,6 +198,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	ch := make(chan struct{}, 1)
 	res := testRes{"resource-id-1", func() error {
+		ch <- struct{}{}
 		return nil
 	}}
 	checkUntil := erc.startTime.Add(700 * time.Second)
@@ -207,6 +209,9 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
+
+	// first wait once for the asset to be validated
+	<-ch
 
 	// first on chain time update, we send our own vote
 	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Times(1).Return(nil)
