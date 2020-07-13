@@ -46,11 +46,6 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     # then we make sure the insurance pool collected the funds
     And the insurance pool balance is "100" for the market "ETH/DEC19"
 
-    #check positions
-    Then position API produce the following:
-      | trader | volume | unrealisedPNL | realisedPNL |
-      | tt_15  | 0      | 0             | -100        |
-
     #Then dump orders
 
     #check positions
