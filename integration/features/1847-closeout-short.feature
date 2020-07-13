@@ -1,4 +1,4 @@
-Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTests.py)
+Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTests.py & https://github.com/vegaprotocol/scenario-runner/tree/develop/scenarios/QA/issues/86)
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
