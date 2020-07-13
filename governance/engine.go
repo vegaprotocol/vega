@@ -6,13 +6,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -49,20 +47,6 @@ type Broker interface {
 type Accounts interface {
 	GetPartyTokenAccount(id string) (*types.Account, error)
 	GetTotalTokens() uint64
-}
-
-// ValidatorTopology...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/governance ValidatorTopology
-type ValidatorTopology interface {
-	SelfVegaPubKey() []byte
-	Exists([]byte) bool
-	Len() int
-	IsValidator() bool
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/governance Commander
-type Commander interface {
-	Command(cmd blockchain.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
@@ -102,7 +86,7 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
 	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
