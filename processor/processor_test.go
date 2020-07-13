@@ -67,8 +67,9 @@ func getTestProcessor(t *testing.T) *procTest {
 	})
 	wal := getTestStubWallet()
 	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
-	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col, true)
+	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col)
 	assert.NoError(t, err)
 	return &procTest{
 		Processor: proc,

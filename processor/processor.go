@@ -116,6 +116,7 @@ type ValidatorTopology interface {
 	Exists(key []byte) bool
 	Len() int
 	AllPubKeys() [][]byte
+	IsValidator() bool
 }
 
 // Broker - the event bus
@@ -149,7 +150,6 @@ type Collateral interface {
 type Processor struct {
 	log *logging.Logger
 	Config
-	isValidator       bool
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
@@ -170,7 +170,7 @@ type Processor struct {
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -181,23 +181,22 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 	}
 
 	p := &Processor{
-		log:         log,
-		stat:        stat,
-		Config:      config,
-		exec:        exec,
-		time:        ts,
-		wallet:      wallet,
-		assets:      assets,
-		cmd:         cmd,
-		top:         top,
-		isValidator: isValidator,
-		vegaWallet:  vegaWallet,
-		gov:         gov,
-		broker:      broker,
-		idgen:       NewIDGen(),
-		notary:      notary,
-		evtfwd:      evtfwd,
-		col:         col,
+		log:        log,
+		stat:       stat,
+		Config:     config,
+		exec:       exec,
+		time:       ts,
+		wallet:     wallet,
+		assets:     assets,
+		cmd:        cmd,
+		top:        top,
+		vegaWallet: vegaWallet,
+		gov:        gov,
+		broker:     broker,
+		idgen:      NewIDGen(),
+		notary:     notary,
+		evtfwd:     evtfwd,
+		col:        col,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -217,7 +216,7 @@ func (p *Processor) Begin() error {
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
 	}
-	if !p.hasRegistered && p.isValidator && !p.top.Ready() {
+	if !p.hasRegistered && p.top.IsValidator() && !p.top.Ready() {
 		// get our tendermint pubkey
 		chainPubKey := p.top.SelfChainPubKey()
 		if chainPubKey != nil {
@@ -746,7 +745,7 @@ func (p *Processor) onTick(t time.Time) {
 				p.log.Error("unable to enact proposal",
 					logging.String("proposal-id", prop.ID),
 					logging.Error(err))
-			} else if p.isValidator {
+			} else if p.top.IsValidator() {
 				asset, err := p.assets.Get(prop.ID)
 				if err != nil {
 					// this should not happen

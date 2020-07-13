@@ -46,6 +46,20 @@ func (mr *MockValidatorTopologyMockRecorder) Exists(arg0 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockValidatorTopology)(nil).Exists), arg0)
 }
 
+// IsValidator mocks base method
+func (m *MockValidatorTopology) IsValidator() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsValidator")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsValidator indicates an expected call of IsValidator
+func (mr *MockValidatorTopologyMockRecorder) IsValidator() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidator", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidator))
+}
+
 // Len mocks base method
 func (m *MockValidatorTopology) Len() int {
 	m.ctrl.T.Helper()

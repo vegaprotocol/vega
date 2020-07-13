@@ -56,6 +56,7 @@ type ValidatorTopology interface {
 	SelfVegaPubKey() []byte
 	Exists([]byte) bool
 	Len() int
+	IsValidator() bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/governance Commander
@@ -84,7 +85,6 @@ type Engine struct {
 	currentTime            time.Time
 	activeProposals        map[string]*proposalData
 	networkParams          NetworkParameters
-	isValidator            bool
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 }
@@ -95,10 +95,10 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
-	nodeValidation, err := NewNodeValidation(log, top, cmd, assets, now, isValidator)
+	nodeValidation, err := NewNodeValidation(log, top, cmd, assets, now, top.IsValidator())
 	if err != nil {
 		return nil, err
 	}

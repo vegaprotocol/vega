@@ -378,10 +378,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, nil)
+	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
@@ -397,7 +397,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral)
 	if err != nil {
 		return err
 	}
