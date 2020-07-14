@@ -33,7 +33,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.5.1
-	github.com/tendermint/tendermint v0.33.5
+	github.com/tendermint/tendermint v0.33.6
 	github.com/vegaprotocol/modvendor v0.0.2 // indirect
 	github.com/vektah/gqlparser v1.3.1
 	github.com/vektah/gqlparser/v2 v2.0.1
