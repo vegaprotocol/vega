@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"code.vegaprotocol.io/vega/assets/common"
+	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -175,6 +176,10 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
+func (b *ERC20) ValidateWhitelist() error {
+	return nil
+}
+
 func (b *ERC20) ValidateWithdrawal() error {
 	return nil
 }
@@ -184,6 +189,27 @@ func (b *ERC20) SignWithdrawal() ([]byte, error) {
 }
 
 func (b *ERC20) ValidateDeposit() error {
+	bf, err := bridge.NewBridgeFilterer(
+		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+	if err != nil {
+		return err
+	}
+
+	iter, err := bf.FilterAssetDeposited(
+		&bind.FilterOpts{},
+		// user_address
+		[]ethcmn.Address{},
+		[]ethcmn.Address{},
+
+		//[]ethcmn.Address{ethcmn.HexToAddress("0x000000000000000000000000b89a165ea8b619c14312db316baaa80d2a98b493")},
+		// asset_source
+		//[]ethcmn.Address{ethcmn.HexToAddress("0x000000000000000000000000955c6789a7fbee203b4be0f01428e769308813f2")},
+		[]*big.Int{})
+
+	for iter.Next() {
+		fmt.Printf("%v - %v - %v\n", iter.Event.Amount, iter.Event.AssetId, iter.Event.AssetSource)
+	}
+
 	return nil
 }
 
