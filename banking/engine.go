@@ -16,7 +16,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
 type Assets interface {
-	Get(assetID string) (assets.Asset, error)
+	Get(assetID string) (*assets.Asset, error)
 }
 
 // Collateral ...
@@ -95,10 +95,12 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 
 func (e *Engine) DepositERC20(d *types.ERC20Deposit) error {
 	now, _ := e.tsvc.GetTimeNow()
+	asset, _ := e.assets.Get(d.VegaAssetID)
 	aa := &assetAction{
 		id:     id(d, now),
 		state:  pendingState,
 		erc20D: d,
+		asset:  asset,
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
@@ -129,20 +131,15 @@ func (e *Engine) OnTick(t time.Time) {
 
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
-	case aa.IsBuiltinAssetDeposit():
-		d := aa.BuiltinAssetDesposit()
-		return e.finalizeDeposit(ctx, d.PartyID, d.VegaAssetID, d.Amount)
-	case aa.IsERC20Deposit():
-		d := aa.ERC20Deposit()
-		_ = d
-		return e.finalizeDeposit(ctx, "", "", 0)
+	case aa.IsBuiltinAssetDeposit(), aa.IsERC20Deposit():
+		return e.finalizeDeposit(ctx, aa.deposit)
 	default:
 		return ErrUnknownAssetAction
 	}
 }
 
-func (e *Engine) finalizeDeposit(ctx context.Context, party, asset string, amount uint64) error {
-	return e.col.Deposit(ctx, party, asset, amount)
+func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
+	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
 }
 
 type HasVegaAssetID interface {

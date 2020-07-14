@@ -54,12 +54,12 @@ func (p *Processor) processChainEventBuiltinAsset(ctx context.Context, ce *types
 		if err := p.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
 			return err
 		}
-		return p.col.Deposit(ctx, act.Deposit.PartyID, act.Deposit.VegaAssetID, act.Deposit.Amount)
+		return p.banking.DepositBuiltinAsset(act.Deposit)
 	case *types.BuiltinAssetEvent_Withdrawal:
 		if err := p.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err
 		}
-		return p.col.Deposit(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
+		return p.col.Withdraw(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
 	default:
 		return ErrUnsupportedEventAction
 	}
@@ -82,7 +82,10 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
-		return errors.New("ERC20.Deposit not implemented")
+		if err := p.checkVegaAssetID(act.Deposit, "ERC20.AssetList"); err != nil {
+			return err
+		}
+		return p.banking.DepositERC20(act.Deposit)
 	case *types.ERC20Event_Withdrawal:
 		return errors.New("ERC20.Withdrawal not implemented")
 	default:

@@ -37,6 +37,7 @@ type procTest struct {
 	evtfwd *mocks.MockEvtForwarder
 	col    *mocks.MockCollateral
 	erc    *mocks.MockExtResChecker
+	bank   *mocks.MockBanking
 }
 
 type stubWallet struct {
@@ -61,6 +62,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
 	col := mocks.NewMockCollateral(ctrl)
 	erc := mocks.NewMockExtResChecker(ctrl)
+	bank := mocks.NewMockBanking(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(time.Time)
@@ -71,7 +73,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
 	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
-	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col, erc)
+	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col, erc, bank)
 	assert.NoError(t, err)
 	return &procTest{
 		Processor: proc,
@@ -89,6 +91,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		evtfwd:    evtfwd,
 		col:       col,
 		erc:       erc,
+		bank:      bank,
 	}
 }
 

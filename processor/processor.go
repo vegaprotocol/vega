@@ -151,6 +151,13 @@ type Collateral interface {
 	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
+// Banking ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
+type Banking interface {
+	DepositBuiltinAsset(*types.BuiltinAssetDeposit) error
+	DepositERC20(*types.ERC20Deposit) error
+}
+
 // Processor handle processing of all transaction sent through the node
 type Processor struct {
 	log *logging.Logger
@@ -173,10 +180,11 @@ type Processor struct {
 	evtfwd            EvtForwarder
 	col               Collateral
 	erc               ExtResChecker
+	banking           Banking
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, erc ExtResChecker) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, erc ExtResChecker, banking Banking) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -204,6 +212,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		evtfwd:     evtfwd,
 		col:        col,
 		erc:        erc,
+		banking:    banking,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil

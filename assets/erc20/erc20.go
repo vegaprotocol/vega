@@ -188,11 +188,11 @@ func (b *ERC20) SignWithdrawal() ([]byte, error) {
 	return nil, nil
 }
 
-func (b *ERC20) ValidateDeposit() error {
+func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit) (partyID, assetID string, amount uint64, err error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return err
+		return "", "", 0, err
 	}
 
 	iter, err := bf.FilterAssetDeposited(
@@ -210,7 +210,7 @@ func (b *ERC20) ValidateDeposit() error {
 		fmt.Printf("%v - %v - %v\n", iter.Event.Amount, iter.Event.AssetId, iter.Event.AssetSource)
 	}
 
-	return nil
+	return "", "", 0, nil
 }
 
 func (b *ERC20) String() string {

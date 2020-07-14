@@ -3,6 +3,7 @@ package banking
 import (
 	"errors"
 
+	"code.vegaprotocol.io/vega/assets"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -10,10 +11,19 @@ var (
 	ErrUnknownAssetAction = errors.New("unknown asset action")
 )
 
+type deposit struct {
+	amount  uint64
+	assetID string
+	partyID string
+}
+
 type assetAction struct {
 	id    string
 	state uint32
+	asset *assets.Asset
 
+	// all deposit related types
+	deposit  *deposit
 	builtinD *types.BuiltinAssetDeposit
 	erc20D   *types.ERC20Deposit
 }
@@ -61,10 +71,25 @@ func (t *assetAction) Check() error {
 }
 
 func (t *assetAction) checkBuiltinAssetDeposit() error {
-	// nothing to do
+	t.deposit = &deposit{
+		amount:  t.builtinD.Amount,
+		partyID: t.builtinD.PartyID,
+		assetID: t.builtinD.VegaAssetID,
+	}
 	return nil
 }
 
 func (t *assetAction) checkERC20Deposit() error {
+	asset, _ := t.asset.ERC20()
+	partyID, assetID, amount, err := asset.ValidateDeposit(t.erc20D)
+	if err != nil {
+		return err
+	}
+	t.deposit = &deposit{
+		amount:  amount,
+		partyID: partyID,
+		assetID: assetID,
+	}
+
 	return nil
 }
