@@ -50,7 +50,6 @@ const (
 	LossSocializationEvent
 	SettlePositionEvent
 	SettleDistressedEvent
-	CandleEvent
 	MarketCreatedEvent
 	AssetEvent
 )
@@ -79,7 +78,6 @@ var (
 		LossSocializationEvent: "LossSocializationEvent",
 		SettlePositionEvent:    "SettlePositionEvent",
 		SettleDistressedEvent:  "SettleDistressedEvent",
-		CandleEvent:            "CandleEvent",
 		MarketCreatedEvent:     "MarketCreatedEvent",
 		AssetEvent:             "AssetEvent",
 	}

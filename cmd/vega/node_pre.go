@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
@@ -147,7 +146,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
-	l.setupBuffers()
 	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
@@ -216,10 +214,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
-}
-
-func (l *NodeCommand) setupBuffers() {
-	l.candleBuf = buffer.NewCandle(l.candleStore)
+	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -347,7 +342,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -367,7 +362,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.candleBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,

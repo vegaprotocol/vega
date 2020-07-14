@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
@@ -52,7 +51,8 @@ type AccountStore interface {
 }
 
 type CandleStore interface {
-	buffer.CandleStore
+	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
+	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
 	candles.CandleStore
 	Close() error
 	ReloadConf(storage.Config)
@@ -103,8 +103,7 @@ type NodeCommand struct {
 	voteSub        *subscribers.VoteSub
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
-
-	candleBuf *buffer.Candle
+	candleSub      *subscribers.CandleSub
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

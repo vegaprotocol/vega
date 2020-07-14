@@ -27,7 +27,6 @@ type testMarket struct {
 
 	collateraEngine *collateral.Engine
 	partyEngine     *execution.Party
-	candleStore     *mocks.MockCandleBuf
 
 	broker *mocks.MockBroker
 
@@ -42,7 +41,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
 
-	candleStore := mocks.NewMockCandleBuf(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 
 	// catch all expected calls
@@ -59,11 +57,9 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, broker)
 
-	candleStore.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		collateralEngine, partyEngine, &mkts[0], candleStore,
-		now, broker, execution.NewIDGen())
+		collateralEngine, partyEngine, &mkts[0], now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -79,7 +75,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		ctrl:            ctrl,
 		collateraEngine: collateralEngine,
 		partyEngine:     partyEngine,
-		candleStore:     candleStore,
 		broker:          broker,
 		now:             now,
 	}
@@ -160,7 +155,6 @@ func TestMarketClosing(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	// check account gets updated
 	closed := tm.market.OnChainTimeUpdate(closingAt.Add(1 * time.Second))
 	assert.True(t, closed)
@@ -217,8 +211,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
-	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.Nil(t, err)
@@ -230,8 +222,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-
-	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	// update collateral time first, normally done by execution engin
 	futureTime := closingAt.Add(1 * time.Second)
@@ -250,7 +240,6 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
-	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	// submit orders
 	// party1 buys

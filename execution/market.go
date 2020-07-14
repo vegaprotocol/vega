@@ -81,9 +81,6 @@ type Market struct {
 	collateral  *collateral.Engine
 	partyEngine *Party
 
-	// buffers
-	candleBuf CandleBuf
-
 	broker Broker
 	closed bool
 }
@@ -122,7 +119,6 @@ func NewMarket(
 	collateralEngine *collateral.Engine,
 	partyEngine *Party,
 	mkt *types.Market,
-	candleBuf CandleBuf,
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
@@ -183,7 +179,6 @@ func NewMarket(
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
-		candleBuf:          candleBuf,
 		broker:             broker,
 	}
 	return market, nil
@@ -237,15 +232,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	m.risk.OnTimeUpdate(t)
 
-	// Only start candle generation once we have a non-zero(default) time from vega-time service
-	if m.currentTime.IsZero() {
-		_, err := m.candleBuf.Start(m.mkt.Id, t)
-		if err != nil {
-			m.log.Error("error when starting candle generation for market",
-				logging.String("market-id", m.mkt.Id), logging.Error(err))
-		}
-	}
-
 	closed = t.After(m.closingAt)
 	m.closed = closed
 	m.currentTime = t
@@ -262,14 +248,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Calculated risk factors and updated positions (maybe)",
 			logging.String("market-id", m.mkt.Id))
-	}
-
-	err := m.candleBuf.Flush(m.mkt.Id, t)
-	if err != nil {
-		m.log.Error("Failed to flush candles from buffer for market",
-			logging.String("market-id", m.mkt.Id),
-			logging.Error(err),
-		)
 	}
 
 	if closed {
@@ -529,6 +507,7 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 		m.setMarkPrice(confirmation.Trades[len(confirmation.Trades)-1])
 
 		// Insert all trades resulted from the executed order
+		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_SIDE_BUY {
@@ -539,21 +518,14 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			m.broker.Send(events.NewTradeEvent(ctx, *trade))
-
-			// Save to trade buffer for generating candles etc
-			err := m.candleBuf.AddTrade(*trade)
-			if err != nil {
-				m.log.Error("Failure adding trade to candle buffer after submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
 		}
+		m.broker.SendBatch(tradeEvts)
 
 		// now let's get the transfers for MTM settlement
 		evts := m.position.UpdateMarkPrice(m.markPrice)
@@ -756,8 +728,9 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 	}
 
-	if confirmation.Trades != nil {
+	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
+		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
 			if no.Side == types.Side_SIDE_BUY {
@@ -773,21 +746,13 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// 0 out the BAD trader position
 			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
-			m.broker.Send(events.NewTradeEvent(ctx, *trade))
-
-			// Save to trade buffer for generating candles etc
-			err = m.candleBuf.AddTrade(*trade)
-			if err != nil {
-				m.log.Error("Failure adding trade to candle buffer after submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
-			// we skip setting the mark price when the network is trading
+			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(trade)
 		}
+		m.broker.SendBatch(tradeEvts)
 	}
 
 	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o); err != nil {
@@ -859,6 +824,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		Timestamp: m.currentTime.UnixNano(),
 	}
 
+	tradeEvts := make([]events.Event, 0, len(traders))
 	for i, trader := range traders {
 		tSide, nSide := types.Side_SIDE_SELL, types.Side_SIDE_SELL // one of them will have to sell
 		if trader.Size() < 0 {
@@ -921,7 +887,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Timestamp: partyOrder.CreatedAt,
 			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
-		m.broker.Send(events.NewTradeEvent(ctx, trade))
+		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, trade))
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()
@@ -932,6 +898,9 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 				logging.String("party-id", trader.Party()),
 				logging.String("market-id", m.GetID()))
 		}
+	}
+	if len(tradeEvts) > 0 {
+		m.broker.SendBatch(tradeEvts)
 	}
 	return nil
 }
