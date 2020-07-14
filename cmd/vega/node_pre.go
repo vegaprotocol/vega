@@ -39,7 +39,6 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -48,6 +47,7 @@ import (
 	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func envConfigPath() string {

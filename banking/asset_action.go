@@ -22,6 +22,10 @@ type assetAction struct {
 	state uint32
 	asset *assets.Asset
 
+	// erc20 specifics
+	blockNumber uint64
+	txIndex     uint64
+
 	// all deposit related types
 	deposit  *deposit
 	builtinD *types.BuiltinAssetDeposit
@@ -81,7 +85,7 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	partyID, assetID, amount, err := asset.ValidateDeposit(t.erc20D)
+	partyID, assetID, amount, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}

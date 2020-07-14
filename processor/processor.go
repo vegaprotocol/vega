@@ -155,7 +155,7 @@ type Collateral interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
 	DepositBuiltinAsset(*types.BuiltinAssetDeposit) error
-	DepositERC20(*types.ERC20Deposit) error
+	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
 }
 
 // Processor handle processing of all transaction sent through the node

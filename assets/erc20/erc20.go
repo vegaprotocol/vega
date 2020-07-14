@@ -2,6 +2,7 @@ package erc20
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -24,6 +25,7 @@ const (
 
 var (
 	ErrMissingETHWalletFromNodeWallet = errors.New("missing eth wallet from node wallet")
+	ErrUnableToFindDeposit            = errors.New("unable to find deposit")
 )
 
 type ERC20 struct {
@@ -188,7 +190,7 @@ func (b *ERC20) SignWithdrawal() ([]byte, error) {
 	return nil, nil
 }
 
-func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit) (partyID, assetID string, amount uint64, err error) {
+func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) (partyID, assetID string, amount uint64, err error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
@@ -196,21 +198,35 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit) (partyID, assetID string,
 	}
 
 	iter, err := bf.FilterAssetDeposited(
-		&bind.FilterOpts{},
+		&bind.FilterOpts{
+			Start: blockNumber - 1,
+		},
 		// user_address
-		[]ethcmn.Address{},
-		[]ethcmn.Address{},
-
-		//[]ethcmn.Address{ethcmn.HexToAddress("0x000000000000000000000000b89a165ea8b619c14312db316baaa80d2a98b493")},
+		[]ethcmn.Address{ethcmn.HexToAddress(d.SourceEthereumAddress)},
 		// asset_source
-		//[]ethcmn.Address{ethcmn.HexToAddress("0x000000000000000000000000955c6789a7fbee203b4be0f01428e769308813f2")},
+		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
 		[]*big.Int{})
 
-	for iter.Next() {
-		fmt.Printf("%v - %v - %v\n", iter.Event.Amount, iter.Event.AssetId, iter.Event.AssetSource)
+	if err != nil {
+		return "", "", 0, err
 	}
 
-	return "", "", 0, nil
+	defer iter.Close()
+	var event *bridge.BridgeAssetDeposited
+	for iter.Next() {
+		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID &&
+			iter.Event.Raw.BlockNumber == blockNumber &&
+			uint64(iter.Event.Raw.TxIndex) == txIndex {
+			event = iter.Event
+			break
+		}
+	}
+
+	if event == nil {
+		return "", "", 0, ErrUnableToFindDeposit
+	}
+
+	return d.TargetPartyID, d.VegaAssetID, iter.Event.Amount.Uint64(), nil
 }
 
 func (b *ERC20) String() string {

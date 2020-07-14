@@ -93,14 +93,16 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) DepositERC20(d *types.ERC20Deposit) error {
+func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
 	asset, _ := e.assets.Get(d.VegaAssetID)
 	aa := &assetAction{
-		id:     id(d, now),
-		state:  pendingState,
-		erc20D: d,
-		asset:  asset,
+		id:          id(d, now),
+		state:       pendingState,
+		erc20D:      d,
+		asset:       asset,
+		blockNumber: blockNumber,
+		txIndex:     txIndex,
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
