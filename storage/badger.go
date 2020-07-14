@@ -85,7 +85,7 @@ func DefaultStoreOptions() ConfigOptions {
 		NumVersionsToKeep:       1,         // int
 		MaxTableSize:            64 << 20,  // int64, default 64<<20 (64MB)
 		LevelSizeMultiplier:     2,         // int, default 10
-		MaxLevels:               7,         // int
+		MaxLevels:               10,        // int
 		ValueThreshold:          16,        // int, default 32
 		NumMemtables:            1,         // int, default 5
 		NumLevelZeroTables:      1,         // int, default 5
