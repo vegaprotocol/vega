@@ -1,6 +1,7 @@
 package validators_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -118,7 +119,7 @@ func testNodeVoteInvalidProposalReference(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: "bad-id"})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: "bad-id"})
 	assert.EqualError(t, err, validators.ErrInvalidResourceIDForNodeVote.Error())
 }
 
@@ -137,7 +138,7 @@ func testNodeVoteNotAValidator(t *testing.T) {
 	assert.NoError(t, err)
 
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(false)
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: res.id})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id})
 	assert.EqualError(t, err, validators.ErrVoteFromNonValidator.Error())
 }
 
@@ -156,7 +157,7 @@ func testNodeVoteOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: res.id})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id})
 	assert.NoError(t, err)
 }
 
@@ -176,12 +177,12 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 
 	// first vote, all good
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 
 	// second vote, bad
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.EqualError(t, err, validators.ErrDuplicateVoteFromNode.Error())
 }
 
@@ -220,12 +221,12 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	// then we propagate our own vote
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: res.id, PubKey: selfPubKey})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: selfPubKey})
 	assert.NoError(t, err)
 
 	// second vote from another validator
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(&proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 
 	// call onTick again to get the callback called

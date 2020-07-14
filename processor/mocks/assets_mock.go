@@ -35,10 +35,10 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockAssets) Get(arg0 string) (assets.Asset, error) {
+func (m *MockAssets) Get(arg0 string) (*assets.Asset, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
-	ret0, _ := ret[0].(assets.Asset)
+	ret0, _ := ret[0].(*assets.Asset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

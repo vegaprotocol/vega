@@ -320,7 +320,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 			return fmt.Errorf("unable to enable asset: %v", err)
 		}
 
-		assetD := asset.Data()
+		assetD := asset.ProtoAsset()
 		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
 			return fmt.Errorf("unable to enable asset in colateral: %v", err)
 		}
@@ -399,7 +399,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc)
 	if err != nil {
 		return err
 	}

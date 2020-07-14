@@ -2,10 +2,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -77,7 +77,7 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 			return err
 		}
 		asset, _ := p.assets.Get(act.AssetList.VegaAssetID)
-		adata := asset.Data()
+		adata := asset.ProtoAsset()
 		return p.col.EnableAsset(ctx, *adata)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")

@@ -26,7 +26,7 @@ func New(id string, asset *types.BuiltinAsset) *Builtin {
 	}
 }
 
-func (b *Builtin) Data() *types.Asset {
+func (b *Builtin) ProtoAsset() *types.Asset {
 	return b.asset
 }
 

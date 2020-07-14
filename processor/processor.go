@@ -99,7 +99,7 @@ type Wallet interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
-	Get(assetID string) (assets.Asset, error)
+	Get(assetID string) (*assets.Asset, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
@@ -129,6 +129,12 @@ type Broker interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
+}
+
+// ExtResChecker ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc_mock.go -package mocks code.vegaprotocol.io/vega/processor ExtResChecker
+type ExtResChecker interface {
+	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
 }
 
 // EvtForwarder ...
@@ -166,10 +172,11 @@ type Processor struct {
 	notary            Notary
 	evtfwd            EvtForwarder
 	col               Collateral
+	erc               ExtResChecker
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, erc ExtResChecker) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -196,6 +203,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 		notary:     notary,
 		evtfwd:     evtfwd,
 		col:        col,
+		erc:        erc,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -572,9 +580,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 			return err
 		}
 		_ = vote
-		//FIXME: call directly the ExtResChecker here
-		return nil
-		// return p.gov.AddNodeVote(vote)
+		return p.erc.AddNodeCheck(ctx, vote)
 	case blockchain.NodeSignatureCommand:
 		ns, err := p.getNodeSignature(data)
 		if err != nil {
@@ -756,7 +762,18 @@ func (p *Processor) onTick(t time.Time) {
 						logging.Error(err))
 					prop.State = types.Proposal_STATE_FAILED
 				} else {
-					_, sig, err := asset.SignBridgeWhitelisting()
+					var (
+						sig []byte
+						err error
+					)
+					switch {
+					case asset.IsBuiltinAsset():
+						asset, _ := asset.BuiltinAsset()
+						_, sig, err = asset.SignBridgeWhitelisting()
+					case asset.IsERC20():
+						asset, _ := asset.ERC20()
+						_, sig, err = asset.SignBridgeWhitelisting()
+					}
 					if err != nil {
 						p.log.Error("unable to sign whitelisting transaction",
 							logging.String("asset-id", prop.ID),

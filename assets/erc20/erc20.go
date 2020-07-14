@@ -51,7 +51,7 @@ func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 	}, nil
 }
 
-func (b *ERC20) Data() *types.Asset {
+func (b *ERC20) ProtoAsset() *types.Asset {
 	return b.asset
 }
 
