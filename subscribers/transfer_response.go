@@ -77,13 +77,17 @@ func (t *TransferResponse) flush() error {
 }
 
 // Push - takes the event pushed by the broker
-func (t *TransferResponse) Push(e events.Event) {
-	switch te := e.(type) {
-	case TimeEvent:
-		_ = t.flush()
-	case TransferResponseEvent:
-		t.mu.Lock()
-		t.trs = append(t.trs, te.TransferResponses()...)
-		t.mu.Unlock()
+// in this case, transfer responses are already packaged into a single event
+// but this may change over time. In that case, the use of the mutex needs to be updated
+func (t *TransferResponse) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case TimeEvent:
+			_ = t.flush()
+		case TransferResponseEvent:
+			t.mu.Lock()
+			t.trs = append(t.trs, te.TransferResponses()...)
+			t.mu.Unlock()
+		}
 	}
 }

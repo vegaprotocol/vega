@@ -53,12 +53,14 @@ func (o *OrderEvent) loop(ctx context.Context) {
 	}
 }
 
-func (o *OrderEvent) Push(e events.Event) {
-	switch te := e.(type) {
-	case OE:
-		o.write(te)
-	case TimeEvent:
-		o.flush()
+func (o *OrderEvent) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case OE:
+			o.write(te)
+		case TimeEvent:
+			o.flush()
+		}
 	}
 }
 

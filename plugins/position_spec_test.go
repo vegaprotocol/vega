@@ -1,5 +1,3 @@
-// +build !race ignore
-
 package plugins_test
 
 import (

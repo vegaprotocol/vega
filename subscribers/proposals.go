@@ -121,20 +121,22 @@ func (p *ProposalFilteredSub) loop(ctx context.Context) {
 	}
 }
 
-func (p *ProposalFilteredSub) Push(e events.Event) {
-	switch et := e.(type) {
-	case TimeEvent:
-		p.Flush()
-	case PropE:
-		prop := et.Proposal()
-		for _, f := range p.filters {
-			if !f(prop) {
-				return
+func (p *ProposalFilteredSub) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch et := e.(type) {
+		case TimeEvent:
+			p.Flush()
+		case PropE:
+			prop := et.Proposal()
+			for _, f := range p.filters {
+				if !f(prop) {
+					return
+				}
 			}
+			p.mu.Lock()
+			p.matched = append(p.matched, prop)
+			p.mu.Unlock()
 		}
-		p.mu.Lock()
-		p.matched = append(p.matched, prop)
-		p.mu.Unlock()
 	}
 }
 

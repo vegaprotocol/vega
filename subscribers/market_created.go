@@ -46,9 +46,15 @@ func (m *Market) loop(ctx context.Context) {
 	}
 }
 
-func (m *Market) Push(e events.Event) {
-	if te, ok := e.(NME); ok {
-		m.store.SaveBatch([]types.Market{te.Market()})
+func (m *Market) Push(evts ...events.Event) {
+	batch := make([]types.Market, 0, len(evts))
+	for _, e := range evts {
+		if te, ok := e.(NME); ok {
+			batch = append(batch, te.Market())
+		}
+	}
+	if len(batch) > 0 {
+		_ = m.store.SaveBatch(batch)
 	}
 }
 

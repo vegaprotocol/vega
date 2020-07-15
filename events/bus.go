@@ -52,12 +52,14 @@ const (
 	SettleDistressedEvent
 	MarketCreatedEvent
 	AssetEvent
+	MarketTickEvent
 )
 
 var (
 	marketEvents = []Type{
 		PositionResolution,
 		MarketCreatedEvent,
+		MarketTickEvent,
 	}
 
 	eventStrings = map[Type]string{
@@ -80,6 +82,7 @@ var (
 		SettleDistressedEvent:  "SettleDistressedEvent",
 		MarketCreatedEvent:     "MarketCreatedEvent",
 		AssetEvent:             "AssetEvent",
+		MarketTickEvent:        "MarketTickEvent",
 	}
 )
 

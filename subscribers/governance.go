@@ -42,6 +42,7 @@ type GovernanceSub struct {
 	combined []*types.GovernanceData
 	byPID    map[string]*types.GovernanceData
 	changed  map[string]types.GovernanceData
+	update   chan struct{}
 	mu       *sync.Mutex
 }
 
@@ -66,6 +67,9 @@ func Votes(f ...VoteFilter) Filter {
 	}
 }
 
+// NewGovernanceSub creates a new governance data subscriber with specific filters
+// this subscriber is used by the governance service for gRPC streams, not for general use
+// @TODO this subscriber needs to move to the appropriate package
 func NewGovernanceSub(ctx context.Context, ack bool, filters ...Filter) *GovernanceSub {
 	g := GovernanceSub{
 		Base:     NewBase(ctx, 10, ack),
@@ -75,6 +79,7 @@ func NewGovernanceSub(ctx context.Context, ack bool, filters ...Filter) *Governa
 		combined: []*types.GovernanceData{},
 		changed:  map[string]types.GovernanceData{},
 		byPID:    map[string]*types.GovernanceData{},
+		update:   make(chan struct{}),
 		mu:       &sync.Mutex{},
 	}
 	for _, f := range filters {
@@ -98,6 +103,16 @@ func (g *GovernanceSub) loop(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (g *GovernanceSub) Halt() {
+	g.mu.Lock()
+	// update channel is  open, close it
+	if len(g.changed) == 0 {
+		close(g.update)
+	}
+	g.mu.Unlock()
+	g.Base.Halt()
 }
 
 func (g *GovernanceSub) filter(e GovernanceEvent) bool {
@@ -125,33 +140,46 @@ func (g *GovernanceSub) filter(e GovernanceEvent) bool {
 	return true
 }
 
-func (g *GovernanceSub) Push(e events.Event) {
-	// if this is a governance event, apply filters to only get events we need/want
-	if ge, ok := e.(GovernanceEvent); ok {
-		if !g.filter(ge) {
-			return
+func (g *GovernanceSub) Push(evts ...events.Event) {
+	for _, e := range evts {
+		// we only deal with GovernanceEvents, and only if the filter applies at that
+		ge, ok := e.(GovernanceEvent)
+		if !ok || !g.filter(ge) {
+			continue
 		}
-	}
-	g.mu.Lock()
-	switch et := e.(type) {
-	case PropE:
-		prop := et.Proposal()
-		gd := g.getData(prop.ID)
-		gd.Proposal = &prop
-		g.changed[prop.ID] = *gd
-	case VoteE:
-		vote := et.Vote()
-		gd := g.getData(vote.ProposalID)
-		if vote.Value == types.Vote_VALUE_YES {
-			delete(gd.NoParty, vote.PartyID)
-			gd.YesParty[vote.PartyID] = &vote
-		} else {
-			delete(gd.YesParty, vote.PartyID)
-			gd.NoParty[vote.PartyID] = &vote
+		// this data isn't stored ATM, so we'll acquire a lock per event
+		// meanwhile we can continue to serve the API, provided we get the data copied fast
+		// which, in getData, we do (lock, copy, unlock)
+		g.mu.Lock()
+		closeUpdate := false
+		if len(g.changed) == 0 { // no data has changed
+			closeUpdate = true
 		}
-		g.changed[vote.ProposalID] = *gd
+		switch et := e.(type) {
+		case PropE:
+			prop := et.Proposal()
+			gd := g.getData(prop.ID)
+			gd.Proposal = &prop
+			g.changed[prop.ID] = *gd
+		case VoteE:
+			vote := et.Vote()
+			gd := g.getData(vote.ProposalID)
+			if vote.Value == types.Vote_VALUE_YES {
+				delete(gd.NoParty, vote.PartyID)
+				gd.YesParty[vote.PartyID] = &vote
+			} else {
+				delete(gd.YesParty, vote.PartyID)
+				gd.NoParty[vote.PartyID] = &vote
+			}
+			g.changed[vote.ProposalID] = *gd
+		}
+		// data has changed for the first time
+		// close the signal channel
+		if closeUpdate && len(g.changed) > 0 {
+			close(g.update)
+		}
+		g.mu.Unlock()
 	}
-	g.mu.Unlock()
 }
 
 func (g *GovernanceSub) getData(id string) *types.GovernanceData {
@@ -176,18 +204,22 @@ func (g *GovernanceSub) Types() []events.Type {
 	}
 }
 
-// GetGovernanceData - returns current data, this is a VALUE RECEIVER for a reason
-// pointer recevers would cause data races
+// GetGovernanceData - returns current data, clears up the changed map
+// and reassignes the update channel.
+// This call will block until the update channel has been closed. This avoids a busy loop
+// in the caller (governance service). With this mechanism, we can just call this function
+// knowing it'll only return once governance data has well and truly been updated
 func (g *GovernanceSub) GetGovernanceData() []types.GovernanceData {
+	// block on channel. This call will wait for the update channel to be closed
+	<-g.update
 	g.mu.Lock()
-	if len(g.changed) == 0 {
-		g.mu.Unlock()
-		return nil
-	}
 	// copy the map of changed proposals, and return that subset
+	// no need to check if changed is empty -> update channel was closed!
 	data := g.changed
 	// reset the changes, so next time we call, there's nothing to worry about
 	g.changed = map[string]types.GovernanceData{}
+	// reset change indication channel
+	g.update = make(chan struct{})
 	g.mu.Unlock()
 	// create a copy
 	ret := make([]types.GovernanceData, 0, len(data))

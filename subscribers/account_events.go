@@ -50,18 +50,24 @@ func (a *AccountSub) loop(ctx context.Context) {
 	}
 }
 
-func (a *AccountSub) Push(e events.Event) {
-	switch et := e.(type) {
-	case AE:
-		acc := et.Account()
-		k := acc.Id
-		acc.Id = ""
-		a.mu.Lock()
-		a.buf[k] = &acc
-		a.mu.Unlock()
-	case TimeEvent:
-		a.flush()
+func (a *AccountSub) Push(evts ...events.Event) {
+	if len(evts) == 0 {
+		return
 	}
+	// lock now, this could be a batch in the future
+	a.mu.Lock()
+	for _, e := range evts {
+		switch et := e.(type) {
+		case AE:
+			acc := et.Account()
+			k := acc.Id
+			acc.Id = ""
+			a.buf[k] = &acc
+		case TimeEvent:
+			a.flush()
+		}
+	}
+	a.mu.Unlock()
 }
 
 func (a *AccountSub) Types() []events.Type {
@@ -72,13 +78,10 @@ func (a *AccountSub) Types() []events.Type {
 }
 
 func (a *AccountSub) flush() {
-	a.mu.Lock()
-	buf := a.buf
-	a.buf = map[string]*types.Account{}
-	a.mu.Unlock()
 	batch := make([]*types.Account, 0, len(a.buf))
-	for _, acc := range buf {
+	for _, acc := range a.buf {
 		batch = append(batch, acc)
 	}
+	a.buf = map[string]*types.Account{}
 	_ = a.store.SaveBatch(batch)
 }

@@ -250,71 +250,74 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			logging.String("market-id", m.mkt.Id))
 	}
 
-	if closed {
-		// call settlement and stuff
-		positions, err := m.settlement.Settle(t, m.markPrice)
+	timer.EngineTimeCounterAdd()
+
+	if !closed {
+		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
+		return
+	}
+	// market is closed, final settlement
+	// call settlement and stuff
+	positions, err := m.settlement.Settle(t, m.markPrice)
+	if err != nil {
+		m.log.Error(
+			"Failed to get settle positions on market close",
+			logging.Error(err),
+		)
+	} else {
+		transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 		if err != nil {
 			m.log.Error(
-				"Failed to get settle positions on market close",
+				"Failed to get ledger movements after settling closed market",
+				logging.String("market-id", m.GetID()),
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
+			// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
+			// this will be next block
+			evt := events.NewTransferResponse(ctx, transfers)
+			m.broker.Send(evt)
+			if m.log.GetLevel() == logging.DebugLevel {
+				// use transfers, unused var thingy
+				for _, v := range transfers {
+					if m.log.GetLevel() == logging.DebugLevel {
+						m.log.Debug(
+							"Got transfers on market close",
+							logging.String("transfer", fmt.Sprintf("%v", *v)),
+							logging.String("market-id", m.GetID()))
+					}
+				}
+			}
+
+			asset, _ := m.mkt.GetAsset()
+			// FIXME(JEREMY): once deposit and withdrawal
+			// are implemented with the new method, the partyEngine
+			// will be removed, this call will need to be changed to
+			// use a slice of parties stored in the current market
+			// until we refactor collateral engine to work per market maybe
+			parties := m.partyEngine.GetByMarket(m.GetID())
+			clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 			if err != nil {
-				m.log.Error(
-					"Failed to get ledger movements after settling closed market",
+				m.log.Error("Clear market error",
 					logging.String("market-id", m.GetID()),
-					logging.Error(err),
-				)
+					logging.Error(err))
 			} else {
-				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
-				// this will be next block
-				evt := events.NewTransferResponse(ctx, transfers)
+				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
-					for _, v := range transfers {
+					for _, v := range clearMarketTransfers {
 						if m.log.GetLevel() == logging.DebugLevel {
 							m.log.Debug(
-								"Got transfers on market close",
+								"Market cleared with success",
 								logging.String("transfer", fmt.Sprintf("%v", *v)),
 								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
-
-				asset, _ := m.mkt.GetAsset()
-				// FIXME(JEREMY): once deposit and withdrawal
-				// are implemented with the new method, the partyEngine
-				// will be removed, this call will need to be changed to
-				// use a slice of parties stored in the current market
-				// until we refactor collateral engine to work per market maybe
-				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
-				if err != nil {
-					m.log.Error("Clear market error",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				} else {
-					evt := events.NewTransferResponse(ctx, clearMarketTransfers)
-					m.broker.Send(evt)
-					if m.log.GetLevel() == logging.DebugLevel {
-						// use transfers, unused var thingy
-						for _, v := range clearMarketTransfers {
-							if m.log.GetLevel() == logging.DebugLevel {
-								m.log.Debug(
-									"Market cleared with success",
-									logging.String("transfer", fmt.Sprintf("%v", *v)),
-									logging.String("market-id", m.GetID()))
-							}
 						}
 					}
 				}
 			}
 		}
 	}
-
-	timer.EngineTimeCounterAdd()
 	return
 }
 

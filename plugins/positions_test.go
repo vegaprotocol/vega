@@ -1,5 +1,3 @@
-// +build !race ignore
-
 package plugins_test
 
 // No race condition checks on these tests, the channels are buffered to avoid actual issues
