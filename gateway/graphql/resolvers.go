@@ -896,7 +896,15 @@ func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceDa
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	return getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	if p == nil && err == nil {
+		// the api could return an nil party in some cases
+		// e.g: when a party does not exists in the stores
+		// this is not an error, but here we are not checking
+		// if a party exists or not, but what party did propose
+		p = &types.Party{Id: data.Proposal.PartyID}
+	}
+	return p, err
 }
 
 func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
