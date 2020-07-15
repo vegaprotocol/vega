@@ -20,7 +20,7 @@ type Assets interface {
 	Enable(assetID string) error
 }
 
-// Collateral ...
+// Collateral engine
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/banking Collateral
 type Collateral interface {
 	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
@@ -28,13 +28,13 @@ type Collateral interface {
 	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
-// ExtResChecker ...
+// ExtResChecker provide foreign chain resources validations
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ext_res_checker_mock.go -package mocks code.vegaprotocol.io/vega/banking ExtResChecker
 type ExtResChecker interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
-// TimeService ...
+// TimeService provide the time of the vega node using the tm time
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
@@ -147,7 +147,14 @@ func (e *Engine) OnTick(t time.Time) {
 			e.log.Error("network rejected banking action",
 				logging.String("action", v.String()))
 		}
-		// delete anyway
+		// delete anyway the action
+		// at this point the action was either rejected, so we do no need
+		// need to keep waiting for its validation, or accepted. in the case
+		// it's accepted it's then sent to the given collateral function
+		// (deposit, withdraw, whitelist), then an error can occur down the
+		// line in the collateral but if that happend there's no way for
+		// us to recover for this event, so we have no real reason to keep
+		// it in memory
 		delete(e.assetActs, k)
 	}
 }
@@ -170,9 +177,15 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
 func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
+		e.log.Error("invalid asset id used to finalise asset list",
+			logging.Error(err),
+			logging.String("asset-id", assetID))
 		return nil
 	}
 	if err := e.assets.Enable(assetID); err != nil {
+		e.log.Error("unable to enable asset",
+			logging.Error(err),
+			logging.String("asset-id", assetID))
 		return err
 	}
 	passet := asset.ProtoAsset()
