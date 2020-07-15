@@ -184,11 +184,7 @@ type HasVegaAssetID interface {
 	GetVegaAssetID() string
 }
 
-type Stringer interface {
-	String() string
-}
-
-func id(s Stringer, now time.Time) string {
+func id(s fmt.Stringer, now time.Time) string {
 	hasher := sha3.New256()
 	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), now.UnixNano())))
 	return string(hasher.Sum(nil))
