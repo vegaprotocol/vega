@@ -191,7 +191,9 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 			Start: blockNumber - 1,
 		},
 		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{})
+		[]*big.Int{},
+		[][32]byte{},
+	)
 
 	if err != nil {
 		return err
@@ -200,7 +202,7 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 	defer iter.Close()
 	var event *bridge.BridgeAssetWhitelisted
 	for iter.Next() {
-		if true {
+		if hex.EncodeToString(iter.Event.VegaId[:]) == w.VegaAssetID {
 			event = iter.Event
 			break
 		}

@@ -108,9 +108,15 @@
           "type": "uint256"
         },
         {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "vega_id",
+          "type": "bytes32"
+        },
+        {
           "indexed": false,
           "internalType": "uint256",
-          "name": "vega_id",
+          "name": "nonce",
           "type": "uint256"
         }
       ],
@@ -202,6 +208,15 @@
       "type": "function"
     },
     {
+      "constant": false,
+      "inputs": [],
+      "name": "kill",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "owner",
@@ -252,6 +267,11 @@
           "internalType": "uint256",
           "name": "asset_id",
           "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "vega_id",
+          "type": "bytes32"
         }
       ],
       "name": "whitelist_asset_admin",
@@ -297,9 +317,9 @@
       "name": "get_vega_id",
       "outputs": [
         {
-          "internalType": "uint256",
+          "internalType": "bytes32",
           "name": "",
-          "type": "uint256"
+          "type": "bytes32"
         }
       ],
       "payable": false,
@@ -333,6 +353,32 @@
       "type": "function"
     },
     {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "vega_id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "get_asset_source_and_asset_id",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "constant": false,
       "inputs": [
         {
@@ -346,8 +392,13 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
+          "internalType": "bytes32",
           "name": "vega_id",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "nonce",
           "type": "uint256"
         },
         {
@@ -443,6 +494,11 @@
         {
           "internalType": "uint256",
           "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "expiry",
           "type": "uint256"
         },
         {
