@@ -1,10 +1,8 @@
 package subscribers
 
 import (
-	"context"
 	"sync"
 
-	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -92,63 +90,5 @@ func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 			}
 		}
 		return false
-	}
-}
-
-func NewProposalFilteredSub(ctx context.Context, ack bool, filters ...ProposalFilter) *ProposalFilteredSub {
-	p := ProposalFilteredSub{
-		Base:    NewBase(ctx, 10, ack),
-		filters: filters,
-		matched: []types.Proposal{},
-	}
-	if p.isRunning() {
-		go p.loop(p.ctx)
-	}
-	return &p
-}
-
-func (p *ProposalFilteredSub) loop(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			p.Halt()
-			return
-		case e := <-p.ch:
-			if p.isRunning() {
-				p.Push(e)
-			}
-		}
-	}
-}
-
-func (p *ProposalFilteredSub) Push(evts ...events.Event) {
-	for _, e := range evts {
-		switch et := e.(type) {
-		case TimeEvent:
-			p.Flush()
-		case PropE:
-			prop := et.Proposal()
-			for _, f := range p.filters {
-				if !f(prop) {
-					return
-				}
-			}
-			p.mu.Lock()
-			p.matched = append(p.matched, prop)
-			p.mu.Unlock()
-		}
-	}
-}
-
-func (p *ProposalFilteredSub) Flush() {
-	p.mu.Lock()
-	p.matched = make([]types.Proposal, 0, cap(p.matched))
-	p.mu.Unlock()
-}
-
-func (p *ProposalFilteredSub) Types() []events.Type {
-	return []events.Type{
-		events.ProposalEvent,
-		events.TimeUpdate,
 	}
 }
