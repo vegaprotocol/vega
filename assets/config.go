@@ -36,7 +36,7 @@ func NewDefaultConfig(defaultRootPath string) Config {
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		DevAssetSourcesPath: filepath.Join(defaultRootPath, devAssetPath),
 		ERC20: ERC20Config{
-			BridgeAddress: "0x3EA59801698c6820328597F26d29fC3EaAa17AcA",
+			BridgeAddress: "0xf6C9d3e937fb2dA4995272C1aC3f3D466B7c23fC",
 		},
 	}
 }
