@@ -67,6 +67,18 @@ type BuiltinAsset struct {
 
 func (BuiltinAsset) IsAssetSource() {}
 
+// A vega builtin asset, mostly for testing purpose
+type BuiltinAssetInput struct {
+	// The full name of the asset (e.g: Great British Pound)
+	Name string `json:"name"`
+	// The symbol of the asset (e.g: GBP)
+	Symbol string `json:"symbol"`
+	// The total supply of the market
+	TotalSupply string `json:"totalSupply"`
+	// The precision of the asset
+	Decimals int `json:"decimals"`
+}
+
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
@@ -106,6 +118,12 @@ type Erc20 struct {
 }
 
 func (Erc20) IsAssetSource() {}
+
+// An asset originated from an Ethereum ERC20 Token
+type ERC20Input struct {
+	// The address of the erc20 contract
+	ContractAddress string `json:"contractAddress"`
+}
 
 // An Ethereum oracle
 type EthereumEvent struct {
@@ -279,6 +297,22 @@ type Market struct {
 	Data *proto.MarketData `json:"data"`
 }
 
+// A new asset proposal change
+type NewAsset struct {
+	// the source of the new Asset
+	Source AssetSource `json:"source"`
+}
+
+func (NewAsset) IsProposalChange() {}
+
+// A new asset to be added into vega
+type NewAssetInput struct {
+	// A new builtin assed to be created
+	BuiltinAsset *BuiltinAssetInput `json:"builtinAsset"`
+	// A new ERC20 asset to be created
+	Erc20 *ERC20Input `json:"erc20"`
+}
+
 type NewMarket struct {
 	// New market instrument configuration
 	Instrument *InstrumentConfiguration `json:"instrument"`
@@ -370,6 +404,8 @@ type ProposalTermsInput struct {
 	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
 	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+	// a new Asset proposal, this will create a new asset to be used in the vega network
+	NewAsset *NewAssetInput `json:"newAsset"`
 }
 
 type ProposalVote struct {

@@ -215,6 +215,10 @@ type ComplexityRoot struct {
 		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
 	}
 
+	NewAsset struct {
+		Source func(childComplexity int) int
+	}
+
 	NewMarket struct {
 		DecimalPlaces  func(childComplexity int) int
 		Instrument     func(childComplexity int) int
@@ -1344,6 +1348,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string)), true
+
+	case "NewAsset.source":
+		if e.complexity.NewAsset.Source == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Source(childComplexity), true
 
 	case "NewMarket.decimalPlaces":
 		if e.complexity.NewMarket.DecimalPlaces == nil {
@@ -3936,6 +3947,11 @@ input UpdateMarketInput {
   marketId: String!
 }
 
+"A new asset proposal change"
+type NewAsset {
+  "the source of the new Asset"
+  source: AssetSource!
+}
 
 "Allows submitting a proposal for changing governance network parameters"
 type UpdateNetwork {
@@ -4036,7 +4052,7 @@ input UpdateNetworkInput {
 }
 
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -4089,6 +4105,40 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateNetwork: UpdateNetworkInput
+
+  "a new Asset proposal, this will create a new asset to be used in the vega network"
+  newAsset: NewAssetInput
+
+}
+
+"A new asset to be added into vega"
+input NewAssetInput {
+  "A new builtin assed to be created"
+  builtinAsset: BuiltinAssetInput
+
+  "A new ERC20 asset to be created"
+  erc20: ERC20Input
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+input ERC20Input {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+input BuiltinAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
 }
 
 """
@@ -8401,6 +8451,40 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	res := resTmp.(*TransactionSubmitted)
 	fc.Result = res
 	return ec.marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewAsset_source(ctx context.Context, field graphql.CollectedField, obj *NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AssetSource)
+	fc.Result = res
+	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
@@ -14848,6 +14932,42 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputBuiltinAssetInput(ctx context.Context, obj interface{}) (BuiltinAssetInput, error) {
+	var it BuiltinAssetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "symbol":
+			var err error
+			it.Symbol, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "totalSupply":
+			var err error
+			it.TotalSupply, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decimals":
+			var err error
+			it.Decimals, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Context, obj interface{}) (ContinuousTradingInput, error) {
 	var it ContinuousTradingInput
 	var asMap = obj.(map[string]interface{})
@@ -14881,6 +15001,24 @@ func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Conte
 		case "tickSize":
 			var err error
 			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputERC20Input(ctx context.Context, obj interface{}) (ERC20Input, error) {
+	var it ERC20Input
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "contractAddress":
+			var err error
+			it.ContractAddress, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15016,6 +15154,30 @@ func (ec *executionContext) unmarshalInputLogNormalRiskModelInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewAssetInput(ctx context.Context, obj interface{}) (NewAssetInput, error) {
+	var it NewAssetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "builtinAsset":
+			var err error
+			it.BuiltinAsset, err = ec.unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "erc20":
+			var err error
+			it.Erc20, err = ec.unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, obj interface{}) (NewMarketInput, error) {
 	var it NewMarketInput
 	var asMap = obj.(map[string]interface{})
@@ -15097,6 +15259,12 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 		case "updateNetwork":
 			var err error
 			it.UpdateNetwork, err = ec.unmarshalOUpdateNetworkInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newAsset":
+			var err error
+			it.NewAsset, err = ec.unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15316,6 +15484,13 @@ func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._UpdateNetwork(ctx, sel, obj)
+	case NewAsset:
+		return ec._NewAsset(ctx, sel, &obj)
+	case *NewAsset:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NewAsset(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -16562,6 +16737,33 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "submitTransaction":
 			out.Values[i] = ec._Mutation_submitTransaction(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var newAssetImplementors = []string{"NewAsset", "ProposalChange"}
+
+func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet, obj *NewAsset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newAssetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewAsset")
+		case "source":
+			out.Values[i] = ec._NewAsset_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -19875,6 +20077,18 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOBuiltinAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx context.Context, v interface{}) (BuiltinAssetInput, error) {
+	return ec.unmarshalInputBuiltinAssetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx context.Context, v interface{}) (*BuiltinAssetInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOBuiltinAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalOCandle2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx context.Context, sel ast.SelectionSet, v proto.Candle) graphql.Marshaler {
 	return ec._Candle(ctx, sel, &v)
 }
@@ -19947,6 +20161,18 @@ func (ec *executionContext) unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotoco
 		return nil, nil
 	}
 	res, err := ec.unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOERC20Input2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx context.Context, v interface{}) (ERC20Input, error) {
+	return ec.unmarshalInputERC20Input(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx context.Context, v interface{}) (*ERC20Input, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOERC20Input2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx, v)
 	return &res, err
 }
 
@@ -20154,6 +20380,18 @@ func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Market(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx context.Context, v interface{}) (NewAssetInput, error) {
+	return ec.unmarshalInputNewAssetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx context.Context, v interface{}) (*NewAssetInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx context.Context, v interface{}) (NewMarketInput, error) {
