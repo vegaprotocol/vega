@@ -10,6 +10,7 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
@@ -37,7 +38,6 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -46,6 +46,7 @@ import (
 	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func envConfigPath() string {
@@ -315,7 +316,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 			return fmt.Errorf("unable to enable asset: %v", err)
 		}
 
-		assetD := asset.Data()
+		assetD := asset.ProtoAsset()
 		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
 			return fmt.Errorf("unable to enable asset in colateral: %v", err)
 		}
@@ -372,10 +373,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, nil)
+	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
+
+	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
@@ -389,9 +392,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
+	l.banking = banking.New(l.Log, l.collateral, l.erc, l.timeService)
+
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc, l.banking)
 	if err != nil {
 		return err
 	}
