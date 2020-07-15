@@ -14,6 +14,7 @@ type VoteSub struct {
 	all     []types.Vote
 	filters []VoteFilter
 	stream  bool
+	update  chan struct{}
 }
 
 // VoteByPartyID filters votes cast by given party
@@ -42,6 +43,7 @@ func NewVoteSub(ctx context.Context, stream, ack bool, filters ...VoteFilter) *V
 		all:     []types.Vote{},
 		filters: filters,
 		stream:  stream,
+		update:  make(chan struct{}),
 	}
 	if v.isRunning() {
 		go v.loop(v.ctx)
@@ -87,6 +89,11 @@ func (v *VoteSub) Push(evts ...events.Event) {
 		return
 	}
 	v.mu.Lock()
+	// no data in subscriber, first time adding
+	// close the update channel to signal callers they can call GetData
+	if len(v.all) == 0 {
+		close(v.update)
+	}
 	v.all = append(v.all, add...)
 	v.mu.Unlock()
 }
@@ -113,6 +120,8 @@ func (v VoteSub) Filter(filters ...VoteFilter) []*types.Vote {
 // GetData - either returns the full data-set, or just updates, depending on configuration
 func (v *VoteSub) GetData() []types.Vote {
 	if v.stream {
+		// wait for data to have changed
+		<-v.update
 		return v.getStreamData()
 	}
 	return v.getData()
@@ -130,6 +139,9 @@ func (v VoteSub) getData() []types.Vote {
 func (v *VoteSub) getStreamData() []types.Vote {
 	v.mu.Lock()
 	data := v.all
+	// GetData blocks on update channel prior to being called
+	// now we can create a new channel
+	v.update = make(chan struct{})
 	v.all = make([]types.Vote, 0, cap(data))
 	v.mu.Unlock()
 	if len(data) == 0 {
