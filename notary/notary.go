@@ -99,11 +99,11 @@ func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignatu
 	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
 	n.broker.Send(events.NewNodeSignatureEvent(ctx, ns))
 
-	sigsout, ok := n.isSigned(ns.ID, ns.Kind)
+	sigsout, ok := n.IsSigned(ns.ID, ns.Kind)
 	return sigsout, ok, nil
 }
 
-func (n *Notary) isSigned(resID string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool) {
+func (n *Notary) IsSigned(resID string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool) {
 	// early exit if we don't have enough sig anyway
 	if float64(len(n.sigs[idKind{resID, kind}]))/float64(n.top.Len()) < n.cfg.SignaturesRequiredPercent {
 		return nil, false

@@ -17,6 +17,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
+	Enable(assetID string) error
 }
 
 // Collateral ...
@@ -24,6 +25,7 @@ type Assets interface {
 type Collateral interface {
 	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
 	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
+	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
 // ExtResChecker ...
@@ -82,6 +84,18 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 	atomic.StoreUint32(&aa.state, newState)
 }
 
+func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		return nil
+	}
+	if err := e.assets.Enable(assetID); err != nil {
+		return err
+	}
+	passet := asset.ProtoAsset()
+	return e.col.EnableAsset(ctx, *passet)
+}
+
 func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 	now, _ := e.tsvc.GetTimeNow()
 	aa := &assetAction{
@@ -91,6 +105,10 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+}
+
+func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList) error {
+	return nil
 }
 
 func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {

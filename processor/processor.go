@@ -129,6 +129,7 @@ type Broker interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
+	IsSigned(string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
 // ExtResChecker ...
@@ -154,6 +155,8 @@ type Collateral interface {
 // Banking ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
+	EnableBuiltinAsset(context.Context, string) error
+	EnableERC20(context.Context, *types.ERC20AssetList) error
 	DepositBuiltinAsset(*types.BuiltinAssetDeposit) error
 	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
 }
@@ -739,6 +742,82 @@ func (p *Processor) VoteOnProposal(ctx context.Context, vote *types.Vote) error 
 	return p.gov.AddVote(ctx, *vote)
 }
 
+func (p *Processor) enactMarket(ctx context.Context, prop *types.Proposal, mkt *types.Market) {
+	prop.State = types.Proposal_STATE_ENACTED
+	if err := p.exec.SubmitMarket(ctx, mkt); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		p.log.Error("failed to submit new market",
+			logging.String("market-id", mkt.Id),
+			logging.Error(err))
+	}
+}
+
+func (p *Processor) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+	// first check if this asset is real
+	asset, err := p.assets.Get(prop.ID)
+	if err != nil {
+		// this should not happen
+		p.log.Error("invalid asset is getting enacted",
+			logging.String("asset-id", prop.ID),
+			logging.Error(err))
+		prop.State = types.Proposal_STATE_FAILED
+		return
+	}
+
+	// if this is a builtin asset nothing needs to be done, just start the asset
+	// straigh away
+	if asset.IsBuiltinAsset() {
+		err = p.banking.EnableBuiltinAsset(ctx, asset.ProtoAsset().ID)
+		if err != nil {
+			// this should not happen
+			p.log.Error("unable to get builtin asset enabled",
+				logging.String("asset-id", prop.ID),
+				logging.Error(err))
+			prop.State = types.Proposal_STATE_FAILED
+		}
+		return
+	}
+
+	// then instruct the notary to start getting signature from validators
+	if err := p.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		p.log.Error("unable to enact proposal",
+			logging.String("proposal-id", prop.ID),
+			logging.Error(err))
+		return
+	}
+
+	// if we are not a validator the job is done here
+	if !p.top.IsValidator() {
+		// nothing to do
+		return
+	}
+
+	var sig []byte
+	switch {
+	case asset.IsERC20():
+		asset, _ := asset.ERC20()
+		_, sig, err = asset.SignBridgeWhitelisting()
+	}
+	if err != nil {
+		p.log.Error("unable to sign whitelisting transaction",
+			logging.String("asset-id", prop.ID),
+			logging.Error(err))
+		prop.State = types.Proposal_STATE_FAILED
+		return
+	}
+	payload := &types.NodeSignature{
+		ID:   prop.ID,
+		Sig:  sig,
+		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+	}
+	if err := p.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
+		// do nothing for now, we'll need a retry mechanism for this and all command soon
+		p.log.Error("unable to send command for notary",
+			logging.Error(err))
+	}
+}
+
 // check the asset proposals on tick
 func (p *Processor) onTick(t time.Time) {
 	ctx := context.TODO()
@@ -748,60 +827,9 @@ func (p *Processor) onTick(t time.Time) {
 		prop := toEnact.Proposal()
 		switch {
 		case toEnact.IsNewMarket():
-			mkt := toEnact.NewMarket()
-			prop.State = types.Proposal_STATE_ENACTED
-			if err := p.exec.SubmitMarket(ctx, mkt); err != nil {
-				prop.State = types.Proposal_STATE_FAILED
-				p.log.Error("failed to submit new market",
-					logging.String("market-id", mkt.Id),
-					logging.Error(err))
-			}
+			p.enactMarket(ctx, prop, toEnact.NewMarket())
 		case toEnact.IsNewAsset():
-			if err := p.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
-				prop.State = types.Proposal_STATE_FAILED
-				p.log.Error("unable to enact proposal",
-					logging.String("proposal-id", prop.ID),
-					logging.Error(err))
-			} else if p.top.IsValidator() {
-				asset, err := p.assets.Get(prop.ID)
-				if err != nil {
-					// this should not happen
-					p.log.Error("invalid asset is getting enacted",
-						logging.String("asset-id", prop.ID),
-						logging.Error(err))
-					prop.State = types.Proposal_STATE_FAILED
-				} else {
-					var (
-						sig []byte
-						err error
-					)
-					switch {
-					case asset.IsBuiltinAsset():
-						asset, _ := asset.BuiltinAsset()
-						_, sig, err = asset.SignBridgeWhitelisting()
-					case asset.IsERC20():
-						asset, _ := asset.ERC20()
-						_, sig, err = asset.SignBridgeWhitelisting()
-					}
-					if err != nil {
-						p.log.Error("unable to sign whitelisting transaction",
-							logging.String("asset-id", prop.ID),
-							logging.Error(err))
-						prop.State = types.Proposal_STATE_FAILED
-					} else {
-						payload := &types.NodeSignature{
-							ID:   prop.ID,
-							Sig:  sig,
-							Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
-						}
-						if err := p.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
-							// do nothing for now, we'll need a retry mechanism for this and all command soon
-							p.log.Error("unable to send command",
-								logging.Error(err))
-						}
-					}
-				}
-			}
+			p.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
 			p.log.Error("update market enactment is not implemented")
 		case toEnact.IsUpdateNetwork():

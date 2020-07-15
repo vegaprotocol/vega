@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	ErrNotAnERC20Event        = errors.New("not an erc20 event")
-	ErrNotABuiltinAssetEvent  = errors.New("not an builtin asset event")
-	ErrUnsupportedEventAction = errors.New("unsupported event action")
+	ErrNotAnERC20Event                                = errors.New("not an erc20 event")
+	ErrNotABuiltinAssetEvent                          = errors.New("not an builtin asset event")
+	ErrUnsupportedEventAction                         = errors.New("unsupported event action")
+	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
 )
 
 func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
@@ -76,9 +77,14 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 		if err := p.checkVegaAssetID(act.AssetList, "ERC20.AssetList"); err != nil {
 			return err
 		}
-		asset, _ := p.assets.Get(act.AssetList.VegaAssetID)
-		adata := asset.ProtoAsset()
-		return p.col.EnableAsset(ctx, *adata)
+		// now check that the notary is GO for this asset
+		_, ok := p.notary.IsSigned(
+			act.AssetList.VegaAssetID,
+			types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
+		if !ok {
+			return ErrChainEventAssetListERC20WithoutEnoughSignature
+		}
+		return p.banking.EnableERC20(ctx, act.AssetList)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
