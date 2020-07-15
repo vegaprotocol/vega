@@ -84,7 +84,7 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}
-		return p.banking.EnableERC20(ctx, act.AssetList)
+		return p.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:

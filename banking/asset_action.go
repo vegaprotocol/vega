@@ -30,6 +30,9 @@ type assetAction struct {
 	deposit  *deposit
 	builtinD *types.BuiltinAssetDeposit
 	erc20D   *types.ERC20Deposit
+
+	// all asset list related types
+	erc20AL *types.ERC20AssetList
 }
 
 func (t *assetAction) GetID() string {
@@ -44,6 +47,10 @@ func (t *assetAction) IsERC20Deposit() bool {
 	return t.erc20D != nil
 }
 
+func (t *assetAction) IsERC20AssetList() bool {
+	return t.erc20AL != nil
+}
+
 func (t *assetAction) BuiltinAssetDesposit() *types.BuiltinAssetDeposit {
 	return t.builtinD
 }
@@ -52,12 +59,18 @@ func (t *assetAction) ERC20Deposit() *types.ERC20Deposit {
 	return t.erc20D
 }
 
+func (t *assetAction) ERC20AssetList() *types.ERC20AssetList {
+	return t.erc20AL
+}
+
 func (t *assetAction) String() string {
 	switch {
 	case t.IsBuiltinAssetDeposit():
 		return t.builtinD.String()
 	case t.IsERC20Deposit():
 		return t.erc20D.String()
+	case t.IsERC20AssetList():
+		return t.erc20AL.String()
 	default:
 		return ""
 	}
@@ -69,6 +82,8 @@ func (t *assetAction) Check() error {
 		return t.checkBuiltinAssetDeposit()
 	case t.IsERC20Deposit():
 		return t.checkERC20Deposit()
+	case t.IsERC20AssetList():
+		return t.checkERC20AssetList()
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -96,4 +111,9 @@ func (t *assetAction) checkERC20Deposit() error {
 	}
 
 	return nil
+}
+
+func (t *assetAction) checkERC20AssetList() error {
+	asset, _ := t.asset.ERC20()
+	return asset.ValidateWhitelist(t.erc20AL, t.blockNumber, t.txIndex)
 }

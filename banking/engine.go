@@ -85,15 +85,7 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 }
 
 func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
-	asset, err := e.assets.Get(assetID)
-	if err != nil {
-		return nil
-	}
-	if err := e.assets.Enable(assetID); err != nil {
-		return err
-	}
-	passet := asset.ProtoAsset()
-	return e.col.EnableAsset(ctx, *passet)
+	return e.finalizeAssetList(ctx, assetID)
 }
 
 func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
@@ -107,8 +99,19 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList) error {
-	return nil
+func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64) error {
+	now, _ := e.tsvc.GetTimeNow()
+	asset, _ := e.assets.Get(al.VegaAssetID)
+	aa := &assetAction{
+		id:          id(al, now),
+		state:       pendingState,
+		erc20AL:     al,
+		asset:       asset,
+		blockNumber: blockNumber,
+		txIndex:     txIndex,
+	}
+	e.assetActs[aa.id] = aa
+	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
 func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
@@ -153,6 +156,8 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit(), aa.IsERC20Deposit():
 		return e.finalizeDeposit(ctx, aa.deposit)
+	case aa.IsERC20AssetList():
+		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -160,6 +165,19 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
 	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
+}
+
+func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		return nil
+	}
+	if err := e.assets.Enable(assetID); err != nil {
+		return err
+	}
+	passet := asset.ProtoAsset()
+	return e.col.EnableAsset(ctx, *passet)
+
 }
 
 type HasVegaAssetID interface {
