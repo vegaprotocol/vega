@@ -50,15 +50,17 @@ func (m *MarketDataSub) loop(ctx context.Context) {
 	}
 }
 
-func (m *MarketDataSub) Push(e events.Event) {
-	switch te := e.(type) {
-	case MDE:
-		md := te.MarketData()
-		m.mu.Lock()
-		m.buf = append(m.buf, md)
-		m.mu.Unlock()
-	case TimeEvent:
-		m.flush()
+func (m *MarketDataSub) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case MDE:
+			md := te.MarketData()
+			m.mu.Lock()
+			m.buf = append(m.buf, md)
+			m.mu.Unlock()
+		case TimeEvent:
+			m.flush()
+		}
 	}
 }
 

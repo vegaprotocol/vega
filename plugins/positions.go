@@ -61,14 +61,16 @@ func NewPositions(ctx context.Context) *Positions {
 	}
 }
 
-func (p *Positions) Push(e events.Event) {
-	switch te := e.(type) {
-	case SPE:
-		p.updatePosition(te)
-	case SDE:
-		p.updateSettleDestressed(te)
-	case LSE:
-		p.applyLossSocialization(te)
+func (p *Positions) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case SPE:
+			p.updatePosition(te)
+		case SDE:
+			p.updateSettleDestressed(te)
+		case LSE:
+			p.applyLossSocialization(te)
+		}
 	}
 }
 

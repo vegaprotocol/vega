@@ -25,7 +25,7 @@ type MarketTickEvt interface {
 
 type tradeBlock struct {
 	trades []types.Trade
-	last   types.Trade
+	last   *types.Trade
 	time   time.Time
 	mID    string
 }
@@ -34,9 +34,8 @@ type CandleSub struct {
 	*Base
 	store   CandleStore
 	mu      sync.Mutex
-	b2      map[string][]types.Trade
-	last    map[string]types.Trade
-	buf     []types.Trade
+	buf     map[string][]types.Trade
+	last    map[string]*types.Trade
 	tCh     chan tradeBlock
 	candles map[string]map[string]types.Candle
 }
@@ -55,9 +54,8 @@ func NewCandleSub(ctx context.Context, store CandleStore, ack bool) *CandleSub {
 	sub := &CandleSub{
 		Base:    NewBase(ctx, 1, ack),
 		store:   store,
-		b2:      map[string][]types.Trade{},
-		last:    map[string]types.Trade{},
-		buf:     []types.Trade{},
+		buf:     map[string][]types.Trade{},
+		last:    map[string]*types.Trade{},
 		tCh:     make(chan tradeBlock, 10), // ensure we're one block behind
 		candles: map[string]map[string]types.Candle{},
 	}
@@ -72,53 +70,56 @@ func (c *CandleSub) internalLoop() {
 			return
 		case block := <-c.tCh:
 			// if no new trades, just check if we need to add the market ID to candles map
-			if len(block.trades) == 0 {
+			if block.last == nil {
 				if _, ok := c.candles[block.mID]; !ok {
 					c.candles[block.mID] = map[string]types.Candle{}
 				}
-			} else if len(block.trades) > 0 {
+			} else {
 				c.updateCandles(block)
 			}
 		}
 	}
 }
 
-func (c *CandleSub) Push(e events.Event) {
-	switch te := e.(type) {
-	case TE:
-		trade := te.Trade()
-		mID := trade.MarketID
-		c.mu.Lock()
-		if _, ok := c.b2[mID]; !ok {
-			c.b2[mID] = []types.Trade{}
-		}
-		c.b2[mID] = append(c.b2[mID], trade)
-		c.last[mID] = trade
-		c.mu.Unlock()
-	case NME:
-		mID := te.Market().Id
-		c.mu.Lock()
-		if _, ok := c.b2[mID]; !ok {
-			c.b2[mID] = []types.Trade{}
-		}
-		c.mu.Unlock()
-		c.tCh <- tradeBlock{
-			mID: mID,
-		}
-	case MarketTickEvt:
-		mID := te.MarketID()
-		c.mu.Lock()
-		cpy := c.b2[mID]
-		last := c.last[mID]
-		c.b2[mID] = make([]types.Trade, 0, cap(cpy))
-		c.mu.Unlock()
-		c.tCh <- tradeBlock{
-			trades: cpy,
-			time:   te.Time(),
-			last:   last,
-			mID:    mID,
+func (c *CandleSub) Push(evts ...events.Event) {
+	if len(evts) == 0 {
+		return
+	}
+	// trade events are batched, we need to lock outside of the loop
+	c.mu.Lock()
+	for _, e := range evts {
+		switch te := e.(type) {
+		case TE:
+			trade := te.Trade()
+			mID := trade.MarketID
+			if _, ok := c.buf[mID]; !ok {
+				c.buf[mID] = []types.Trade{}
+			}
+			c.buf[mID] = append(c.buf[mID], trade)
+			c.last[mID] = &trade
+		case NME:
+			mID := te.Market().Id
+			if _, ok := c.buf[mID]; !ok {
+				c.buf[mID] = []types.Trade{}
+			}
+			c.tCh <- tradeBlock{
+				mID: mID,
+			}
+		case MarketTickEvt:
+			mID := te.MarketID()
+			cpy := c.buf[mID]
+			last := c.last[mID]
+			c.last[mID] = nil
+			c.buf[mID] = make([]types.Trade, 0, cap(cpy))
+			c.tCh <- tradeBlock{
+				trades: cpy,
+				time:   te.Time(),
+				last:   last,
+				mID:    mID,
+			}
 		}
 	}
+	c.mu.Unlock()
 }
 
 func (c *CandleSub) Types() []events.Type {
@@ -130,59 +131,50 @@ func (c *CandleSub) Types() []events.Type {
 }
 
 func (c *CandleSub) updateCandles(block tradeBlock) {
-	// Add trades and create candles
-	lastByMarket := map[string]types.Trade{}
 	for _, t := range block.trades {
-		mID := t.MarketID
 		for _, interval := range supportedIntervals {
 			roundedTradeTime := vegatime.RoundToNearest(vegatime.UnixNano(t.Timestamp), interval)
-
-			bufkey := bufferKey(roundedTradeTime, interval)
-
+			bufKey := bufferKey(roundedTradeTime, interval)
 			// check if bufferKey is present in buffer
-			mktBuf, ok := c.candles[mID]
+			mktBuf, ok := c.candles[block.mID]
 			if !ok {
 				mktBuf = map[string]types.Candle{}
-				c.candles[mID] = mktBuf
+				c.candles[block.mID] = mktBuf
 			}
-			if candl, ok := mktBuf[bufkey]; ok {
+			if candl, ok := mktBuf[bufKey]; ok {
 				// if exists update the value of the candle under bufferKey with trade data
 				updateCandle(&candl, &t)
-				mktBuf[bufkey] = candl
+				mktBuf[bufKey] = candl
 			} else {
 				// if doesn't exist create new candle under this buffer key
-				mktBuf[bufkey] = newCandle(roundedTradeTime, t.Price, t.Size, interval)
+				mktBuf[bufKey] = newCandle(roundedTradeTime, t.Price, t.Size, interval)
 			}
-			lastByMarket[mID] = t
 		}
 	}
-
 	// Start logic (actually set last candles)
 	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(block.time)
-	for mID, t := range lastByMarket {
-		previous := c.candles[mID]
-		for _, interval := range supportedIntervals {
-			bufkey := bufferKey(roundedTimestamps[interval], interval)
-			var lastClose uint64
-			if candl, ok := previous[bufkey]; ok {
-				lastClose = candl.Close
-			}
-
-			if lastClose == 0 {
-				previousCandle, err := c.store.FetchLastCandle(mID, interval)
-				if err == nil {
-					lastClose = previousCandle.Close
-				}
-			}
-
-			if lastClose == 0 {
-				lastClose = t.Price
-			}
-
-			c.candles[mID][bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
+	previous := c.candles[block.mID]
+	for _, interval := range supportedIntervals {
+		bufkey := bufferKey(roundedTimestamps[interval], interval)
+		var lastClose uint64
+		if candl, ok := previous[bufkey]; ok {
+			lastClose = candl.Close
 		}
-		_ = c.store.GenerateCandlesFromBuffer(mID, previous)
+
+		if lastClose == 0 {
+			previousCandle, err := c.store.FetchLastCandle(block.mID, interval)
+			if err == nil {
+				lastClose = previousCandle.Close
+			}
+		}
+
+		if lastClose == 0 {
+			lastClose = block.last.Price
+		}
+
+		c.candles[block.mID][bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
 	}
+	_ = c.store.GenerateCandlesFromBuffer(block.mID, previous)
 }
 
 // GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,

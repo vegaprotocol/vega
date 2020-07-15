@@ -125,33 +125,37 @@ func (g *GovernanceSub) filter(e GovernanceEvent) bool {
 	return true
 }
 
-func (g *GovernanceSub) Push(e events.Event) {
-	// if this is a governance event, apply filters to only get events we need/want
-	if ge, ok := e.(GovernanceEvent); ok {
-		if !g.filter(ge) {
-			return
+func (g *GovernanceSub) Push(evts ...events.Event) {
+	for _, e := range evts {
+		// we only deal with GovernanceEvents, and only if the filter applies at that
+		ge, ok := e.(GovernanceEvent)
+		if !ok || !g.filter(ge) {
+			continue
 		}
-	}
-	g.mu.Lock()
-	switch et := e.(type) {
-	case PropE:
-		prop := et.Proposal()
-		gd := g.getData(prop.ID)
-		gd.Proposal = &prop
-		g.changed[prop.ID] = *gd
-	case VoteE:
-		vote := et.Vote()
-		gd := g.getData(vote.ProposalID)
-		if vote.Value == types.Vote_VALUE_YES {
-			delete(gd.NoParty, vote.PartyID)
-			gd.YesParty[vote.PartyID] = &vote
-		} else {
-			delete(gd.YesParty, vote.PartyID)
-			gd.NoParty[vote.PartyID] = &vote
+		// this data isn't stored ATM, so we'll acquire a lock per event
+		// meanwhile we can continue to serve the API, provided we get the data copied fast
+		// which, in getData, we do (lock, copy, unlock)
+		g.mu.Lock()
+		switch et := e.(type) {
+		case PropE:
+			prop := et.Proposal()
+			gd := g.getData(prop.ID)
+			gd.Proposal = &prop
+			g.changed[prop.ID] = *gd
+		case VoteE:
+			vote := et.Vote()
+			gd := g.getData(vote.ProposalID)
+			if vote.Value == types.Vote_VALUE_YES {
+				delete(gd.NoParty, vote.PartyID)
+				gd.YesParty[vote.PartyID] = &vote
+			} else {
+				delete(gd.YesParty, vote.PartyID)
+				gd.NoParty[vote.PartyID] = &vote
+			}
+			g.changed[vote.ProposalID] = *gd
 		}
-		g.changed[vote.ProposalID] = *gd
+		g.mu.Unlock()
 	}
-	g.mu.Unlock()
 }
 
 func (g *GovernanceSub) getData(id string) *types.GovernanceData {

@@ -44,12 +44,14 @@ func (m *MarketEvent) loop() {
 	}
 }
 
-func (m *MarketEvent) Push(e events.Event) {
-	me, ok := e.(ME)
-	if !ok {
-		return
+func (m *MarketEvent) Push(evts ...events.Event) {
+	for _, e := range evts {
+		me, ok := e.(ME)
+		if !ok {
+			return
+		}
+		m.write(me)
 	}
-	m.write(me)
 }
 
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use

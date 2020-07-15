@@ -39,12 +39,12 @@ func NewNotary(ctx context.Context) *Notary {
 	return n
 }
 
-func (n *Notary) Push(e events.Event) {
-	nse, ok := e.(NodeSignatureEvent)
-	if !ok {
-		return
+func (n *Notary) Push(evts ...events.Event) {
+	for _, e := range evts {
+		if nse, ok := e.(NodeSignatureEvent); ok {
+			n.ch <- nse.NodeSignature()
+		}
 	}
-	n.ch <- nse.NodeSignature()
 }
 
 func (n *Notary) consume() {

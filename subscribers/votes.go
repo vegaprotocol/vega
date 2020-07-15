@@ -63,19 +63,31 @@ func (v *VoteSub) loop(ctx context.Context) {
 	}
 }
 
-func (v *VoteSub) Push(e events.Event) {
-	te, ok := e.(VoteE)
-	if !ok {
+func (v *VoteSub) Push(evts ...events.Event) {
+	if len(evts) == 0 {
 		return
 	}
-	vote := te.Vote()
-	for _, f := range v.filters {
-		if !f(vote) {
-			return
+	add := make([]types.Vote, 0, len(evts))
+	for _, e := range evts {
+		te, ok := e.(VoteE)
+		if ok {
+			vote := te.Vote()
+			for _, f := range v.filters {
+				if !f(vote) {
+					ok = false
+					break
+				}
+			}
+			if ok {
+				add = append(add, vote)
+			}
 		}
 	}
+	if len(add) == 0 {
+		return
+	}
 	v.mu.Lock()
-	v.all = append(v.all, vote)
+	v.all = append(v.all, add...)
 	v.mu.Unlock()
 }
 
@@ -117,12 +129,12 @@ func (v VoteSub) getData() []types.Vote {
 // used to stream data to the client
 func (v *VoteSub) getStreamData() []types.Vote {
 	v.mu.Lock()
-	defer v.mu.Unlock()
-	if len(v.all) == 0 {
-		return nil
-	}
 	data := v.all
 	v.all = make([]types.Vote, 0, cap(data))
+	v.mu.Unlock()
+	if len(data) == 0 {
+		return nil
+	}
 	return data
 }
 
