@@ -17,8 +17,15 @@ type CandleStore interface {
 	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
 }
 
+type MarketTickEvt interface {
+	events.Event
+	MarketID() string
+	Time() time.Time
+}
+
 type tradeBlock struct {
 	trades []types.Trade
+	last   types.Trade
 	time   time.Time
 	mID    string
 }
@@ -27,6 +34,8 @@ type CandleSub struct {
 	*Base
 	store   CandleStore
 	mu      sync.Mutex
+	b2      map[string][]types.Trade
+	last    map[string]types.Trade
 	buf     []types.Trade
 	tCh     chan tradeBlock
 	candles map[string]map[string]types.Candle
@@ -46,8 +55,10 @@ func NewCandleSub(ctx context.Context, store CandleStore, ack bool) *CandleSub {
 	sub := &CandleSub{
 		Base:    NewBase(ctx, 1, ack),
 		store:   store,
+		b2:      map[string][]types.Trade{},
+		last:    map[string]types.Trade{},
 		buf:     []types.Trade{},
-		tCh:     make(chan tradeBlock, 1), // ensure we're one block behind
+		tCh:     make(chan tradeBlock, 10), // ensure we're one block behind
 		candles: map[string]map[string]types.Candle{},
 	}
 	go sub.internalLoop()
@@ -60,7 +71,8 @@ func (c *CandleSub) internalLoop() {
 		case <-c.Closed():
 			return
 		case block := <-c.tCh:
-			if len(block.mID) > 0 {
+			// if no new trades, just check if we need to add the market ID to candles map
+			if len(block.trades) == 0 {
 				if _, ok := c.candles[block.mID]; !ok {
 					c.candles[block.mID] = map[string]types.Candle{}
 				}
@@ -74,21 +86,37 @@ func (c *CandleSub) internalLoop() {
 func (c *CandleSub) Push(e events.Event) {
 	switch te := e.(type) {
 	case TE:
+		trade := te.Trade()
+		mID := trade.MarketID
 		c.mu.Lock()
-		c.buf = append(c.buf, te.Trade())
+		if _, ok := c.b2[mID]; !ok {
+			c.b2[mID] = []types.Trade{}
+		}
+		c.b2[mID] = append(c.b2[mID], trade)
+		c.last[mID] = trade
 		c.mu.Unlock()
 	case NME:
-		c.tCh <- tradeBlock{
-			mID: te.Market().Id,
-		}
-	case TimeEvent:
+		mID := te.Market().Id
 		c.mu.Lock()
-		cpy := c.buf
-		c.buf = make([]types.Trade, 0, cap(cpy))
+		if _, ok := c.b2[mID]; !ok {
+			c.b2[mID] = []types.Trade{}
+		}
+		c.mu.Unlock()
+		c.tCh <- tradeBlock{
+			mID: mID,
+		}
+	case MarketTickEvt:
+		mID := te.MarketID()
+		c.mu.Lock()
+		cpy := c.b2[mID]
+		last := c.last[mID]
+		c.b2[mID] = make([]types.Trade, 0, cap(cpy))
 		c.mu.Unlock()
 		c.tCh <- tradeBlock{
 			trades: cpy,
 			time:   te.Time(),
+			last:   last,
+			mID:    mID,
 		}
 	}
 }
@@ -96,8 +124,8 @@ func (c *CandleSub) Push(e events.Event) {
 func (c *CandleSub) Types() []events.Type {
 	return []events.Type{
 		events.TradeEvent,
-		events.TimeUpdate,
 		events.MarketCreatedEvent,
+		events.MarketTickEvent,
 	}
 }
 
