@@ -61,6 +61,11 @@ var (
 	ErrNilAssetSource = errors.New("nil asset source")
 	// ErrUnimplementedAssetSource returned when an asset source specified at creation is not recognised
 	ErrUnimplementedAssetSource = errors.New("unimplemented asset source")
+	// ErrMultipleProposalChangesSpecified is raised when multiple proposal changes are set
+	// (non-null) for a singe proposal terms
+	ErrMultipleProposalChangesSpecified = errors.New("multiple proposal changes specified")
+	// ErrMultipleAssetSourcesSpecified is raised when multiple asset source are specified
+	ErrMultipleAssetSourcesSpecified = errors.New("multiple asset sources specified")
 )
 
 // IntoProto ...
@@ -616,6 +621,13 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 		result.Change = marketConfig
 	} else if terms.GetUpdateNetwork() != nil {
 		result.Change = nil
+	} else if newAsset := terms.GetNewAsset(); newAsset != nil {
+		newAsset, err := NewAssetFromProto(newAsset)
+		if err != nil {
+			return nil, err
+		}
+		result.Change = newAsset
+
 	}
 	return result, nil
 }
@@ -715,6 +727,72 @@ func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfigurati
 	return nil
 }
 
+func (b *BuiltinAssetInput) IntoProto() (*types.BuiltinAsset, error) {
+	if len(b.Name) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Name: cannot be empty")
+	}
+	if len(b.Symbol) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Symbol: cannot be empty")
+	}
+	if len(b.TotalSupply) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be empty")
+	}
+	if b.Decimals <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be <= 0")
+	}
+
+	return &types.BuiltinAsset{
+		Name:        b.Name,
+		Symbol:      b.Symbol,
+		TotalSupply: b.TotalSupply,
+		Decimals:    uint64(b.Decimals),
+	}, nil
+}
+
+func (e *ERC20Input) IntoProto() (*types.ERC20, error) {
+	if len(e.ContractAddress) <= 0 {
+		return nil, errors.New("ERC20.ContractAddress: cannot be empty")
+	}
+
+	return &types.ERC20{
+		ContractAddress: e.ContractAddress,
+	}, nil
+}
+
+func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
+	var (
+		isSet       bool
+		assetSource *types.AssetSource = &types.AssetSource{}
+	)
+
+	if n.BuiltinAsset != nil {
+		isSet = true
+		source, err := n.BuiltinAsset.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		assetSource.Source = &types.AssetSource_BuiltinAsset{
+			BuiltinAsset: source,
+		}
+	}
+
+	if n.Erc20 != nil {
+		if isSet == true {
+			return nil, ErrMultipleAssetSourcesSpecified
+		}
+		isSet = true
+		source, err := n.Erc20.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		assetSource.Source = &types.AssetSource_Erc20{
+			Erc20: source,
+		}
+	}
+
+	return assetSource, nil
+}
+
 // IntoProto ...
 func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.DecimalPlaces < 0 {
@@ -759,9 +837,21 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		ClosingTimestamp:   closing,
 		EnactmentTimestamp: enactment,
 	}
+
+	// used to check if the user did not specify multiple ProposalChanges
+	// which is an error
+	var isSet bool
+
 	if p.UpdateMarket != nil {
+		isSet = true
 		result.Change = &types.ProposalTerms_UpdateMarket{}
-	} else if p.NewMarket != nil {
+	}
+
+	if p.NewMarket != nil {
+		if isSet {
+			return nil, ErrMultipleProposalChangesSpecified
+		}
+		isSet = true
 		market, err := p.NewMarket.IntoProto()
 		if err != nil {
 			return nil, err
@@ -771,9 +861,32 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 				Changes: market,
 			},
 		}
-	} else if p.UpdateNetwork != nil {
+	}
+
+	if p.NewAsset != nil {
+		if isSet {
+			return nil, ErrMultipleProposalChangesSpecified
+		}
+		isSet = true
+		assetSource, err := p.NewAsset.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		result.Change = &types.ProposalTerms_NewAsset{
+			NewAsset: &types.NewAsset{
+				Changes: assetSource,
+			},
+		}
+	}
+
+	if p.UpdateNetwork != nil {
+		if isSet {
+			return nil, ErrMultipleProposalChangesSpecified
+		}
+		isSet = true
 		result.Change = &types.ProposalTerms_UpdateMarket{}
-	} else {
+	}
+	if !isSet {
 		return nil, ErrInvalidChange
 	}
 
@@ -860,5 +973,15 @@ func AssetFromProto(passet *types.Asset) (*Asset, error) {
 		Decimals:    int(passet.Decimals),
 		TotalSupply: passet.TotalSupply,
 		Source:      source,
+	}, nil
+}
+
+func NewAssetFromProto(newAsset *types.NewAsset) (*NewAsset, error) {
+	source, err := AssetSourceFromProto(newAsset.Changes)
+	if err != nil {
+		return nil, err
+	}
+	return &NewAsset{
+		Source: source,
 	}, nil
 }
