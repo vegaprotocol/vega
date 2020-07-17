@@ -294,6 +294,16 @@ func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 	return e.positionsCpy
 }
 
+func (e *Engine) GetOpenInterest() uint64 {
+	var openInterest uint64
+	for _, pos := range e.positions {
+		if pos.size > 0 {
+			openInterest += uint64(pos.size)
+		}
+	}
+	return openInterest
+}
+
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy
