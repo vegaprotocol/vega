@@ -131,16 +131,17 @@ func (c *CandleSub) Types() []events.Type {
 }
 
 func (c *CandleSub) updateCandles(block tradeBlock) {
+	// AddTrades from candles buffer
+	mktBuf, ok := c.candles[block.mID]
+	if !ok {
+		mktBuf = map[string]types.Candle{}
+	}
+	// reset candles - we will update them using current candles + last trade (mark price)
+	c.candles[block.mID] = map[string]types.Candle{}
 	for _, t := range block.trades {
 		for _, interval := range supportedIntervals {
 			roundedTradeTime := vegatime.RoundToNearest(vegatime.UnixNano(t.Timestamp), interval)
 			bufKey := bufferKey(roundedTradeTime, interval)
-			// check if bufferKey is present in buffer
-			mktBuf, ok := c.candles[block.mID]
-			if !ok {
-				mktBuf = map[string]types.Candle{}
-				c.candles[block.mID] = mktBuf
-			}
 			if candl, ok := mktBuf[bufKey]; ok {
 				// if exists update the value of the candle under bufferKey with trade data
 				updateCandle(&candl, &t)
@@ -153,17 +154,15 @@ func (c *CandleSub) updateCandles(block tradeBlock) {
 	}
 	// Start logic (actually set last candles)
 	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(block.time)
-	previous := c.candles[block.mID]
 	for _, interval := range supportedIntervals {
 		bufkey := bufferKey(roundedTimestamps[interval], interval)
 		var lastClose uint64
-		if candl, ok := previous[bufkey]; ok {
+		if candl, ok := mktBuf[bufkey]; ok {
 			lastClose = candl.Close
 		}
 
 		if lastClose == 0 {
-			previousCandle, err := c.store.FetchLastCandle(block.mID, interval)
-			if err == nil {
+			if previousCandle, err := c.store.FetchLastCandle(block.mID, interval); err == nil {
 				lastClose = previousCandle.Close
 			}
 		}
@@ -174,7 +173,7 @@ func (c *CandleSub) updateCandles(block tradeBlock) {
 
 		c.candles[block.mID][bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
 	}
-	_ = c.store.GenerateCandlesFromBuffer(block.mID, previous)
+	_ = c.store.GenerateCandlesFromBuffer(block.mID, mktBuf)
 }
 
 // GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
