@@ -29,7 +29,7 @@ func getTestME(t *testing.T, ack bool) *tstME {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	return &tstME{
-		MarketEvent: subscribers.NewMarketEvent(ctx, logging.NewTestLogger(), ack),
+		MarketEvent: subscribers.NewMarketEvent(ctx, subscribers.NewDefaultConfig(), logging.NewTestLogger(), ack),
 		ctx:         ctx,
 		cfunc:       cfunc,
 		ctrl:        ctrl,

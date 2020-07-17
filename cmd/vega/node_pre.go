@@ -205,8 +205,8 @@ func (l *NodeCommand) loadMarketsConfig() error {
 
 func (l *NodeCommand) setupSubscibers() {
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
-	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log, false)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore, true)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
 	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
 	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
 	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
