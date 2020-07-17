@@ -378,7 +378,7 @@ func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version
 }
 
 func (r *myQueryResolver) OrderVersions(
-	ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*types.Order, error) {
+	ctx context.Context, orderID string, skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	reqest := &protoapi.OrderVersionsByIDRequest{
@@ -517,7 +517,7 @@ func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.Mar
 }
 
 func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
-	skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.OrdersByMarketRequest{
 		MarketID:   market.ID,
@@ -532,7 +532,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
 }
 
 func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
-	skip *int, first *int, last *int) ([]*types.Trade, error) {
+	skip, first, last *int) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
 		MarketID:   market.ID,
@@ -721,7 +721,7 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
-	skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	req := protoapi.OrdersByPartyRequest{
@@ -742,7 +742,7 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
-	market *string, skip *int, first *int, last *int) ([]*types.Trade, error) {
+	market *string, skip, first, last *int) ([]*types.Trade, error) {
 
 	var mkt string
 	if market != nil {
