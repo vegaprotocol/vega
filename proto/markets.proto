@@ -8,13 +8,13 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 // here begin trading modes
 
 message ContinuousTrading {
-  uint64 tickSize = 1;
+  string tickSize = 1;
 }
 
 message DiscreteTrading {
   // Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
   int64 durationNs = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
-  uint64 tickSize = 2;
+  string tickSize = 2;
 }
 
 // here end trading modes

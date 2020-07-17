@@ -14,7 +14,7 @@ func TestModelConverters(t *testing.T) {
 
 		dt := &gql.DiscreteTrading{
 			Duration: 123,
-			TickSize: 42,
+			TickSize: "0.1",
 		}
 		pdt, err := dt.IntoProto()
 		assert.NotNil(t, pdt)
@@ -126,7 +126,7 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("Market.IntoProto", func(t *testing.T) {
 		mkt := gql.Market{
-			TradingMode: &gql.ContinuousTrading{TickSize: 123},
+			TradingMode: &gql.ContinuousTrading{TickSize: "0.1"},
 			TradableInstrument: &gql.TradableInstrument{
 				Instrument: &gql.Instrument{
 					Product: &gql.Future{
@@ -173,7 +173,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("TradingModeFromProto Continuous", func(t *testing.T) {
 		ptm := &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{
-				TickSize: 42,
+				TickSize: "0.1",
 			},
 		}
 		tm, err := gql.TradingModeFromProto(ptm)
@@ -442,7 +442,7 @@ func TestModelConverters(t *testing.T) {
 			},
 			TradingMode: &proto.Market_Continuous{
 				Continuous: &proto.ContinuousTrading{
-					TickSize: 42,
+					TickSize: "0.1",
 				},
 			},
 		}
@@ -473,7 +473,7 @@ func TestModelConverters(t *testing.T) {
 			},
 			Metadata: []string{"tag:1", "tag:2"},
 			ContinuousTrading: &gql.ContinuousTradingInput{
-				TickSize: 10,
+				TickSize: "0.1",
 			},
 			DecimalPlaces: 5,
 		}
@@ -516,7 +516,7 @@ func TestModelConverters(t *testing.T) {
 			Metadata: []string{"tag:1", "tag:2"},
 			DiscreteTrading: &gql.DiscreteTradingInput{
 				Duration: 100,
-				TickSize: 10,
+				TickSize: "0.1",
 			},
 			DecimalPlaces: 5,
 		}
@@ -566,7 +566,7 @@ func TestModelConverters(t *testing.T) {
 			DecimalPlaces: 5,
 			TradingMode: &proto.NewMarketConfiguration_Continuous{
 				Continuous: &proto.ContinuousTrading{
-					TickSize: 42,
+					TickSize: "0.1",
 				},
 			},
 		}

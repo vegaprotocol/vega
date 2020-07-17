@@ -82,7 +82,7 @@ type BuiltinAssetInput struct {
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	TickSize string `json:"tickSize"`
 }
 
 func (ContinuousTrading) IsTradingMode() {}
@@ -90,7 +90,7 @@ func (ContinuousTrading) IsTradingMode() {}
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTradingInput struct {
 	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	TickSize string `json:"tickSize"`
 }
 
 // Frequent batch auctions trading mode
@@ -98,7 +98,7 @@ type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	TickSize string `json:"tickSize"`
 }
 
 func (DiscreteTrading) IsTradingMode() {}
@@ -108,7 +108,7 @@ type DiscreteTradingInput struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	TickSize string `json:"tickSize"`
 }
 
 // An asset originated from an Ethereum ERC20 Token
