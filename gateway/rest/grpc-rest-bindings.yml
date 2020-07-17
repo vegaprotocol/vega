@@ -37,17 +37,19 @@ http:
       get: '/markets-data/{marketID}'
 
 
-    # Orders
+    # transaction bundles
     - selector: api.trading.SubmitTransaction
       post: '/transaction'
       body: "*"
+
+    # Orders
     - selector: api.trading.PrepareSubmitOrder
-      post: '/orders/prepare'
+      post: '/orders/prepare/submit'
       body: "*"
     - selector: api.trading.PrepareCancelOrder
-      delete: '/orders/prepare/{cancellation.orderID}'
+      post: '/orders/prepare/cancel/{cancellation.orderID}'
     - selector: api.trading.PrepareAmendOrder
-      put: '/orders/prepare/{amendment.orderID}'
+      post: '/orders/prepare/amend/{amendment.orderID}'
       body: "*"
     - selector: api.trading_data.OrderByReference
       get: '/orders/{reference}'
@@ -77,7 +79,7 @@ http:
 
     # Governance
     - selector: api.trading.PrepareProposal
-      post: '/governance/proposals'
+      post: '/governance/proposals/prepare'
       body: "*"
 
     # Miscellaneous

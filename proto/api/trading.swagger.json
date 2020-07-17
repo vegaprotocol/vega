@@ -15,7 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/governance/proposals": {
+    "/governance/proposals/prepare": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
         "operationId": "PrepareProposal",
@@ -387,35 +387,8 @@
         ]
       }
     },
-    "/orders/prepare": {
+    "/orders/prepare/amend/{amendment.orderID}": {
       "post": {
-        "summary": "Prepare a submit order request",
-        "operationId": "PrepareSubmitOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareSubmitOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiSubmitOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/prepare/{amendment.orderID}": {
-      "put": {
         "summary": "Amend an Order",
         "operationId": "PrepareAmendOrder",
         "responses": {
@@ -448,8 +421,8 @@
         ]
       }
     },
-    "/orders/prepare/{cancellation.orderID}": {
-      "delete": {
+    "/orders/prepare/cancel/{cancellation.orderID}": {
+      "post": {
         "summary": "Cancel an Order",
         "operationId": "PrepareCancelOrder",
         "responses": {
@@ -466,18 +439,33 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/submit": {
+      "post": {
+        "summary": "Prepare a submit order request",
+        "operationId": "PrepareSubmitOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareSubmitOrderResponse"
+            }
+          }
+        },
+        "parameters": [
           {
-            "name": "cancellation.marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiSubmitOrderRequest"
+            }
           }
         ],
         "tags": [
