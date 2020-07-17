@@ -1,6 +1,8 @@
 package gql
 
 import (
+	"fmt"
+
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
@@ -634,6 +636,19 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 
 // IntoProto ...
 func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfiguration, error) {
+	if len(i.Name) <= 0 {
+		return nil, errors.New("Instrument.Name: string cannot be empty")
+	}
+	if len(i.Code) <= 0 {
+		return nil, errors.New("Instrument.Code: string cannot be empty")
+	}
+	if len(i.BaseName) <= 0 {
+		return nil, errors.New("Instrument.BaseName: string cannot be empty")
+	}
+	if len(i.QuoteName) <= 0 {
+		return nil, errors.New("Instrument.QuoteName: string cannot be empty")
+	}
+
 	result := &types.InstrumentConfiguration{
 		Name:      i.Name,
 		Code:      i.Code,
@@ -642,6 +657,13 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 	}
 
 	if i.FutureProduct != nil {
+		if len(i.FutureProduct.Asset) <= 0 {
+			return nil, errors.New("FutureProduct.Asset: string cannot be empty")
+		}
+		if len(i.FutureProduct.Maturity) <= 0 {
+			return nil, errors.New("FutureProduct.Maturity: string cannot be empty")
+		}
+
 		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
 				Asset:    i.FutureProduct.Asset,
@@ -655,23 +677,38 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 }
 
 // IntoProto ...
-func (l *LogNormalModelParamsInput) IntoProto() *types.LogNormalModelParams {
+func (l *LogNormalModelParamsInput) IntoProto() (*types.LogNormalModelParams, error) {
+	if l.Sigma < 0. {
+		return nil, errors.New("LogNormalRiskModelParams.Sigma: needs to be any strictly non-negative float")
+	}
 	return &types.LogNormalModelParams{
 		Mu:    l.Mu,
 		R:     l.R,
 		Sigma: l.Sigma,
-	}
+	}, nil
 }
 
 // IntoProto ...
-func (l *LogNormalRiskModelInput) IntoProto() *types.NewMarketConfiguration_LogNormal {
+func (l *LogNormalRiskModelInput) IntoProto() (*types.NewMarketConfiguration_LogNormal, error) {
+	if l.RiskAversionParameter <= 0. || l.RiskAversionParameter >= 1. {
+		return nil, errors.New("LogNormalRiskModel.RiskAversionParameter: needs to be strictly greater than 0 and strictly smaller than 1")
+	}
+	if l.Tau < 0. {
+		return nil, errors.New("LogNormalRiskModel.Tau: needs to be any strictly non-negative float")
+	}
+
+	params, err := l.Params.IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
 	return &types.NewMarketConfiguration_LogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			RiskAversionParameter: l.RiskAversionParameter,
 			Tau:                   l.Tau,
-			Params:                l.Params.IntoProto(),
+			Params:                params,
 		},
-	}
+	}, nil
 }
 
 // IntoProto ...
@@ -690,8 +727,9 @@ func (r *RiskParametersInput) IntoProto(target *types.NewMarketConfiguration) er
 		target.RiskParameters = r.Simple.IntoProto()
 		return nil
 	} else if r.LogNormal != nil {
-		target.RiskParameters = r.LogNormal.IntoProto()
-		return nil
+		var err error
+		target.RiskParameters, err = r.LogNormal.IntoProto()
+		return err
 	}
 	return ErrNilRiskModel
 }
@@ -706,7 +744,7 @@ func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfigurati
 
 	if n.ContinuousTrading != nil {
 		if n.ContinuousTrading.TickSize < 0 {
-			return ErrInvalidTickSize
+			return errors.New("ContinuousTrading.TickSize: cannot be < 0")
 		}
 		target.TradingMode = &types.NewMarketConfiguration_Continuous{
 			Continuous: &types.ContinuousTrading{
@@ -715,7 +753,10 @@ func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfigurati
 		}
 	} else if n.DiscreteTrading != nil {
 		if n.DiscreteTrading.TickSize < 0 {
-			return ErrInvalidTickSize
+			return errors.New("DiscreteTrading.TickSize: cannot be < 0")
+		}
+		if n.DiscreteTrading.Duration <= 0 {
+			return errors.New("DiscreteTrading.Duration: cannot be < 0")
 		}
 		target.TradingMode = &types.NewMarketConfiguration_Discrete{
 			Discrete: &types.DiscreteTrading{
@@ -796,7 +837,7 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 // IntoProto ...
 func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.DecimalPlaces < 0 {
-		return nil, ErrInvalidDecimalPlaces
+		return nil, errors.New("NewMarket.DecimalPlaces: needs to be > 0")
 	}
 	instrument, err := n.Instrument.IntoProto()
 	if err != nil {
@@ -824,10 +865,12 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	closing, err := datetimeToSecondsTS(p.ClosingDatetime)
 	if err != nil {
+		err = fmt.Errorf("ProposalTerms.ClosingDatetime: %s", err.Error())
 		return nil, err
 	}
 	enactment, err := datetimeToSecondsTS(p.EnactmentDatetime)
 	if err != nil {
+		err = fmt.Errorf("ProposalTerms.EnactementDatetime: %s", err.Error())
 		return nil, err
 	}
 
