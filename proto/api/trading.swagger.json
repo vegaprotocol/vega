@@ -387,7 +387,7 @@
         ]
       }
     },
-    "/orders/prepare/amend/{amendment.orderID}": {
+    "/orders/prepare/amend": {
       "post": {
         "summary": "Amend an Order",
         "operationId": "PrepareAmendOrder",
@@ -400,13 +400,6 @@
           }
         },
         "parameters": [
-          {
-            "name": "amendment.orderID",
-            "description": "required to find the order, not being updated",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
           {
             "name": "body",
             "in": "body",
@@ -421,7 +414,7 @@
         ]
       }
     },
-    "/orders/prepare/cancel/{cancellation.orderID}": {
+    "/orders/prepare/cancel": {
       "post": {
         "summary": "Cancel an Order",
         "operationId": "PrepareCancelOrder",
@@ -433,14 +426,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "cancellation.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
         "tags": [
           "trading"
         ]

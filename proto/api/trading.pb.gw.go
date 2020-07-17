@@ -47,30 +47,12 @@ func request_Trading_PrepareSubmitOrder_0(ctx context.Context, marshaler runtime
 }
 
 var (
-	filter_Trading_PrepareCancelOrder_0 = &utilities.DoubleArray{Encoding: map[string]int{"cancellation": 0, "orderID": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+	filter_Trading_PrepareCancelOrder_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
 func request_Trading_PrepareCancelOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CancelOrderRequest
 	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cancellation.orderID"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cancellation.orderID")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "cancellation.orderID", val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cancellation.orderID", err)
-	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_Trading_PrepareCancelOrder_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -91,24 +73,6 @@ func request_Trading_PrepareAmendOrder_0(ctx context.Context, marshaler runtime.
 	}
 	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["amendment.orderID"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "amendment.orderID")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "amendment.orderID", val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "amendment.orderID", err)
 	}
 
 	msg, err := client.PrepareAmendOrder(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1019,9 +983,9 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 var (
 	pattern_Trading_PrepareSubmitOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "submit"}, ""))
 
-	pattern_Trading_PrepareCancelOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"orders", "prepare", "cancel", "cancellation.orderID"}, ""))
+	pattern_Trading_PrepareCancelOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "cancel"}, ""))
 
-	pattern_Trading_PrepareAmendOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"orders", "prepare", "amend", "amendment.orderID"}, ""))
+	pattern_Trading_PrepareAmendOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "amend"}, ""))
 
 	pattern_Trading_NotifyTraderAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"fountain"}, ""))
 

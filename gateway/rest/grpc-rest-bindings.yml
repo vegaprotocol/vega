@@ -47,9 +47,9 @@ http:
       post: '/orders/prepare/submit'
       body: "*"
     - selector: api.trading.PrepareCancelOrder
-      post: '/orders/prepare/cancel/{cancellation.orderID}'
+      post: '/orders/prepare/cancel'
     - selector: api.trading.PrepareAmendOrder
-      post: '/orders/prepare/amend/{amendment.orderID}'
+      post: '/orders/prepare/amend'
       body: "*"
     - selector: api.trading_data.OrderByReference
       get: '/orders/{reference}'
