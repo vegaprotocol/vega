@@ -2237,34 +2237,47 @@
       "properties": {
         "markPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "the mark price (actually an unsgined int)"
         },
         "bestBidPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the highest price level on an order book for buy orders."
         },
         "bestBidVolume": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the aggregated volume being bid at the best bid price."
         },
         "bestOfferPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the lowest price level on an order book for offer orders."
         },
         "bestOfferVolume": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the aggregated volume being offered at the best offer price."
         },
         "midPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the arithmetic average of the best bid price and best offer price."
         },
         "market": {
-          "type": "string"
+          "type": "string",
+          "title": "market id of the associated mark price"
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "time at which this mark price was relevant"
+        },
+        "openInterest": {
+          "type": "string",
+          "format": "uint64",
+          "description": "the sum of the size of all positions greater than 0."
         }
       }
     },

@@ -1034,6 +1034,10 @@ func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketDa
 	return strconv.FormatUint(m.BestBidPrice, 10), nil
 }
 
+func (r *myMarketDataResolver) OpenInterest(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.OpenInterest, 10), nil
+}
+
 func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidVolume, 10), nil
 }

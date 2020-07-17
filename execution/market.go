@@ -196,6 +196,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MidPrice:        (bestBidPrice + bestOfferPrice) / 2,
 		MarkPrice:       m.markPrice,
 		Timestamp:       m.currentTime.UnixNano(),
+		OpenInterest:    m.position.GetOpenInterest(),
 	}
 }
 
