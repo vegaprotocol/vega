@@ -15,7 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/governance/proposals": {
+    "/governance/proposals/prepare": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
         "operationId": "PrepareProposal",
@@ -387,7 +387,51 @@
         ]
       }
     },
-    "/orders/prepare": {
+    "/orders/prepare/amend": {
+      "post": {
+        "summary": "Amend an Order",
+        "operationId": "PrepareAmendOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAmendOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/cancel": {
+      "post": {
+        "summary": "Cancel an Order",
+        "operationId": "PrepareCancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/submit": {
       "post": {
         "summary": "Prepare a submit order request",
         "operationId": "PrepareSubmitOrder",
@@ -407,77 +451,6 @@
             "schema": {
               "$ref": "#/definitions/apiSubmitOrderRequest"
             }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/prepare/{amendment.orderID}": {
-      "put": {
-        "summary": "Amend an Order",
-        "operationId": "PrepareAmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "amendment.orderID",
-            "description": "required to find the order, not being updated",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/prepare/{cancellation.orderID}": {
-      "delete": {
-        "summary": "Cancel an Order",
-        "operationId": "PrepareCancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "cancellation.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
           }
         ],
         "tags": [
