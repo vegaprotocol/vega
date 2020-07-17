@@ -9,7 +9,7 @@ const (
 	namedLogger = "subscribers"
 )
 
-// Config represent the configuration of the blockchain package
+// Config represent the configuration of the subscribers package
 type Config struct {
 	OrderEventLogLevel  encoding.LogLevel
 	MarketEventLogLevel encoding.LogLevel
