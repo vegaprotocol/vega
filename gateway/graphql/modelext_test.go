@@ -473,7 +473,7 @@ func TestModelConverters(t *testing.T) {
 			},
 			Metadata: []string{"tag:1", "tag:2"},
 			ContinuousTrading: &gql.ContinuousTradingInput{
-				TickSize: "0.1",
+				TickSize: stringptr("0.1"),
 			},
 			DecimalPlaces: 5,
 		}
@@ -516,7 +516,7 @@ func TestModelConverters(t *testing.T) {
 			Metadata: []string{"tag:1", "tag:2"},
 			DiscreteTrading: &gql.DiscreteTradingInput{
 				Duration: 100,
-				TickSize: "0.1",
+				TickSize: stringptr("0.1"),
 			},
 			DecimalPlaces: 5,
 		}
