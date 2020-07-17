@@ -209,7 +209,7 @@ type InstrumentConfigurationInput struct {
 // A set of metadata to associate to an instruments
 type InstrumentMetadata struct {
 	// An arbitrary list of tags to associated to associate to the Instrument (string list)
-	Tags []*string `json:"tags"`
+	Tags []string `json:"tags"`
 }
 
 // Parameters for the log normal risk model
@@ -321,7 +321,7 @@ type NewMarket struct {
 	// New market risk configuration
 	RiskParameters RiskModel `json:"riskParameters"`
 	// Metadata for this instrument, tags
-	Metadata []*string `json:"metadata"`
+	Metadata []string `json:"metadata"`
 	// Trading mode
 	TradingMode TradingMode `json:"tradingMode"`
 }
@@ -337,7 +337,7 @@ type NewMarketInput struct {
 	// New market risk configuration
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
-	Metadata []*string `json:"metadata"`
+	Metadata []string `json:"metadata"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set

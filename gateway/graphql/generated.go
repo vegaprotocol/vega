@@ -3226,7 +3226,7 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 type InstrumentMetadata {
 
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
-  tags: [String]!
+  tags: [String!]
 }
 
 "An Ethereum oracle"
@@ -3915,7 +3915,7 @@ input NewMarketInput {
   "New market risk configuration"
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -3931,7 +3931,7 @@ type NewMarket {
   "New market risk configuration"
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
 }
@@ -6850,14 +6850,11 @@ func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LogNormalModelParams_mu(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
@@ -8613,14 +8610,11 @@ func (ec *executionContext) _NewMarket_metadata(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_tradingMode(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
@@ -15204,7 +15198,7 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			}
 		case "metadata":
 			var err error
-			it.Metadata, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			it.Metadata, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16137,9 +16131,6 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("InstrumentMetadata")
 		case "tags":
 			out.Values[i] = ec._InstrumentMetadata_tags(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16806,9 +16797,6 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 			}
 		case "metadata":
 			out.Values[i] = ec._NewMarket_metadata(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "tradingMode":
 			out.Values[i] = ec._NewMarket_tradingMode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -19600,35 +19588,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v TradableInstrument) graphql.Marshaler {
 	return ec._TradableInstrument(ctx, sel, &v)
 }
@@ -20873,6 +20832,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

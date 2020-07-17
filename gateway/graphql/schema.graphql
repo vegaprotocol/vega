@@ -580,7 +580,7 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 type InstrumentMetadata {
 
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
-  tags: [String]!
+  tags: [String!]
 }
 
 "An Ethereum oracle"
@@ -1269,7 +1269,7 @@ input NewMarketInput {
   "New market risk configuration"
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -1285,7 +1285,7 @@ type NewMarket {
   "New market risk configuration"
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
 }
