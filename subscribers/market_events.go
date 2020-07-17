@@ -14,13 +14,17 @@ type ME interface {
 
 type MarketEvent struct {
 	*Base
+	cfg Config
 	log *logging.Logger
 }
 
-func NewMarketEvent(ctx context.Context, log *logging.Logger, ack bool) *MarketEvent {
+func NewMarketEvent(ctx context.Context, cfg Config, log *logging.Logger, ack bool) *MarketEvent {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.MarketEventLogLevel.Level)
 	m := &MarketEvent{
 		Base: NewBase(ctx, 10, ack), // the size of the buffer can be tweaked, maybe use config?
 		log:  log,
+		cfg:  cfg,
 	}
 	if m.isRunning() {
 		go m.loop()
