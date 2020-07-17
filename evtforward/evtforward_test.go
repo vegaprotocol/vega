@@ -19,7 +19,9 @@ var (
 		[]byte("another-pubkey1"),
 		[]byte("another-pubkey2"),
 	}
-	initTime = time.Unix(10, 0)
+	okEventEmitter = "somechaineventpubkey"
+	whitelist      = []string{okEventEmitter}
+	initTime       = time.Unix(10, 0)
 )
 
 type testEvtFwd struct {
@@ -46,8 +48,11 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 
 	tim.EXPECT().GetTimeNow().Times(1).Return(initTime, nil)
 
+	cfg := evtforward.NewDefaultConfig()
+	// add the pubkeys
+	cfg.BlockchainQueueWhitelist = whitelist
 	evtfwd, err := evtforward.New(
-		logging.NewTestLogger(), evtforward.NewDefaultConfig(),
+		logging.NewTestLogger(), cfg,
 		cmd, tim, top)
 	assert.NoError(t, err)
 
@@ -67,6 +72,18 @@ func TestEvtForwarder(t *testing.T) {
 	t.Run("test ensure validators lists are updated", testUpdateValidatorList)
 	t.Run("test ack success", testAckSuccess)
 	t.Run("test ack failure already acked", testAckFailureAlreadyAcked)
+	t.Run("error event emitter not whitelisted", testEventEmitterNotWhitelisted)
+}
+
+func testEventEmitterNotWhitelisted(t *testing.T) {
+	evtfwd := getTestEvtFwd(t)
+	defer evtfwd.ctrl.Finish()
+	evt := getTestChainEvent()
+	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
+	// set the time so the hash match our current node
+	evtfwd.cb(time.Unix(11, 0))
+	err := evtfwd.Forward(evt, "not whitelisted")
+	assert.EqualError(t, err, evtforward.ErrPubKeyNotWhitelisted.Error())
 }
 
 func testForwardSuccessNodeIsForwarder(t *testing.T) {
@@ -77,7 +94,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(time.Unix(11, 0))
-	err := evtfwd.Forward(evt)
+	err := evtfwd.Forward(evt, okEventEmitter)
 	assert.NoError(t, err)
 }
 
@@ -89,11 +106,11 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(time.Unix(11, 0))
-	err := evtfwd.Forward(evt)
+	err := evtfwd.Forward(evt, okEventEmitter)
 	assert.NoError(t, err)
 
 	// now the event should exist, let's try toforward againt
-	err = evtfwd.Forward(evt)
+	err = evtfwd.Forward(evt, okEventEmitter)
 	assert.EqualError(t, err, evtforward.ErrEvtAlreadyExist.Error())
 }
 

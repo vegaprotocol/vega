@@ -20,12 +20,15 @@ type Config struct {
 	// logging level
 	Level     encoding.LogLevel
 	RetryRate encoding.Duration
+	// a list of whitelisted blockchain queue public keys
+	BlockchainQueueWhitelist []string
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
 func NewDefaultConfig() Config {
 	return Config{
-		Level:     encoding.LogLevel{Level: logging.InfoLevel},
-		RetryRate: encoding.Duration{Duration: defaultRetryRate},
+		Level:                    encoding.LogLevel{Level: logging.InfoLevel},
+		RetryRate:                encoding.Duration{Duration: defaultRetryRate},
+		BlockchainQueueWhitelist: []string{},
 	}
 }

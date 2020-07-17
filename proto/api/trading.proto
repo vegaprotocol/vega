@@ -50,6 +50,8 @@ service trading {
 message PropagateChainEventRequest {
   // The event
   vega.ChainEvent evt = 1;
+  string pubKey = 2;
+  bytes signature = 3;
 }
 
 // The response for a new event sent to vega

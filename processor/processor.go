@@ -42,6 +42,7 @@ var (
 	ErrChainEventFromNonValidator                   = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent                        = errors.New("unsupprted chain event")
 	ErrNotAnAssetListChainEvent                     = errors.New("not an asset list chain event")
+	ErrNodeSignatureFromNonValidator                = errors.New("node signature not sent by validator")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -524,11 +525,19 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 		if err != nil {
 			return err
 		}
+		// reject if the node signature is not coming from a validator
+		if !p.top.Exists(key) {
+			return ErrNodeSignatureFromNonValidator
+		}
 		return nil
 	case blockchain.ChainEventCommand:
 		_, err := p.getChainEvent(data)
 		if err != nil {
 			return err
+		}
+		// reject if the chain event is not coming from a validator
+		if !p.top.Exists(key) {
+			return ErrChainEventFromNonValidator
 		}
 		return nil
 	}
