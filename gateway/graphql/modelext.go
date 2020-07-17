@@ -678,7 +678,7 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 
 // IntoProto ...
 func (l *LogNormalModelParamsInput) IntoProto() (*types.LogNormalModelParams, error) {
-	if l.Sigma < 0 {
+	if l.Sigma < 0. {
 		return nil, errors.New("LogNormalRiskModelParams.Sigma: needs to be any strictly non-negative float")
 	}
 	return &types.LogNormalModelParams{
@@ -690,10 +690,10 @@ func (l *LogNormalModelParamsInput) IntoProto() (*types.LogNormalModelParams, er
 
 // IntoProto ...
 func (l *LogNormalRiskModelInput) IntoProto() (*types.NewMarketConfiguration_LogNormal, error) {
-	if l.RiskAversionParameter <= 0 || l.RiskAversionParameter >= 1 {
+	if l.RiskAversionParameter <= 0. || l.RiskAversionParameter >= 1. {
 		return nil, errors.New("LogNormalRiskModel.RiskAversionParameter: needs to be strictly greater than 0 and strictly smaller than 1")
 	}
-	if l.Tau < 0 {
+	if l.Tau < 0. {
 		return nil, errors.New("LogNormalRiskModel.Tau: needs to be any strictly non-negative float")
 	}
 
