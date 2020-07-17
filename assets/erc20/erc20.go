@@ -24,8 +24,9 @@ const (
 )
 
 var (
-	ErrMissingETHWalletFromNodeWallet = errors.New("missing eth wallet from node wallet")
-	ErrUnableToFindDeposit            = errors.New("unable to find deposit")
+	ErrMissingETHWalletFromNodeWallet  = errors.New("missing eth wallet from node wallet")
+	ErrUnableToFindDeposit             = errors.New("unable to find erc20 deposit event")
+	ErrUnableToFindERC20AssetWhitelist = errors.New("unable to find erc20 asset whitelist event")
 )
 
 type ERC20 struct {
@@ -178,16 +179,48 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateWhitelist() error {
-	return nil
-}
+func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
+	bf, err := bridge.NewBridgeFilterer(
+		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+	if err != nil {
+		return err
+	}
 
-func (b *ERC20) ValidateWithdrawal() error {
+	iter, err := bf.FilterAssetWhitelisted(
+		&bind.FilterOpts{
+			Start: blockNumber - 1,
+		},
+		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
+		[]*big.Int{},
+		[][32]byte{},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	defer iter.Close()
+	var event *bridge.BridgeAssetWhitelisted
+	for iter.Next() {
+		if hex.EncodeToString(iter.Event.VegaId[:]) == w.VegaAssetID {
+			event = iter.Event
+			break
+		}
+	}
+
+	if event == nil {
+		return ErrUnableToFindERC20AssetWhitelist
+	}
+
 	return nil
 }
 
 func (b *ERC20) SignWithdrawal() ([]byte, error) {
 	return nil, nil
+}
+
+func (b *ERC20) ValidateWithdrawal() error {
+	return nil
 }
 
 func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) (partyID, assetID string, amount uint64, err error) {

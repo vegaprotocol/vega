@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	proto "code.vegaprotocol.io/vega/proto"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -45,6 +46,20 @@ func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 u
 func (mr *MockCollateralMockRecorder) Deposit(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deposit", reflect.TypeOf((*MockCollateral)(nil).Deposit), arg0, arg1, arg2, arg3)
+}
+
+// EnableAsset mocks base method
+func (m *MockCollateral) EnableAsset(arg0 context.Context, arg1 proto.Asset) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnableAsset", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnableAsset indicates an expected call of EnableAsset
+func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAsset", reflect.TypeOf((*MockCollateral)(nil).EnableAsset), arg0, arg1)
 }
 
 // Withdraw mocks base method

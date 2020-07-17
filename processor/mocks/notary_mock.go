@@ -50,6 +50,21 @@ func (mr *MockNotaryMockRecorder) AddSig(arg0, arg1, arg2 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSig", reflect.TypeOf((*MockNotary)(nil).AddSig), arg0, arg1, arg2)
 }
 
+// IsSigned mocks base method
+func (m *MockNotary) IsSigned(arg0 string, arg1 proto.NodeSignatureKind) ([]proto.NodeSignature, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSigned", arg0, arg1)
+	ret0, _ := ret[0].([]proto.NodeSignature)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// IsSigned indicates an expected call of IsSigned
+func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSigned", reflect.TypeOf((*MockNotary)(nil).IsSigned), arg0, arg1)
+}
+
 // StartAggregate mocks base method
 func (m *MockNotary) StartAggregate(arg0 string, arg1 proto.NodeSignatureKind) error {
 	m.ctrl.T.Helper()

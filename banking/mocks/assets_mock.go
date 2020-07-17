@@ -33,6 +33,20 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 	return m.recorder
 }
 
+// Enable mocks base method
+func (m *MockAssets) Enable(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Enable", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Enable indicates an expected call of Enable
+func (mr *MockAssetsMockRecorder) Enable(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Enable", reflect.TypeOf((*MockAssets)(nil).Enable), arg0)
+}
+
 // Get mocks base method
 func (m *MockAssets) Get(arg0 string) (*assets.Asset, error) {
 	m.ctrl.T.Helper()

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -59,4 +60,32 @@ func (m *MockBanking) DepositERC20(arg0 *proto.ERC20Deposit, arg1, arg2 uint64) 
 func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositERC20", reflect.TypeOf((*MockBanking)(nil).DepositERC20), arg0, arg1, arg2)
+}
+
+// EnableBuiltinAsset mocks base method
+func (m *MockBanking) EnableBuiltinAsset(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnableBuiltinAsset", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnableBuiltinAsset indicates an expected call of EnableBuiltinAsset
+func (mr *MockBankingMockRecorder) EnableBuiltinAsset(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).EnableBuiltinAsset), arg0, arg1)
+}
+
+// EnableERC20 mocks base method
+func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *proto.ERC20AssetList, arg2, arg3 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnableERC20", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnableERC20 indicates an expected call of EnableERC20
+func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3)
 }

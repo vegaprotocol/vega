@@ -78,6 +78,7 @@ type Engine struct {
 	networkParams          NetworkParameters
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
+	assets                 Assets
 }
 
 type proposalData struct {
@@ -103,6 +104,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		networkParams:          *params,
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
+		assets:                 assets,
 	}, nil
 }
 
@@ -138,6 +140,12 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, err error) {
 			return nil, err
 		}
 		te.m = mkt
+	case *types.ProposalTerms_NewAsset:
+		asset, err := e.assets.Get(p.GetID())
+		if err != nil {
+			return nil, err
+		}
+		te.a = asset.ProtoAsset()
 	}
 	return
 }
