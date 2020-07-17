@@ -2889,7 +2889,7 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
-  " the sum of the size of all positions greater than 0."
+  "the sum of the size of all positions greater than 0."
   openInterest: String!
 }
 
