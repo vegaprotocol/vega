@@ -34,8 +34,8 @@ type VegaTime interface {
 // OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/api OrderService
 type OrderService interface {
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByOrderID(ctx context.Context, id string, version uint64) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
@@ -250,7 +250,7 @@ func (t *tradingDataService) OrdersByMarket(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := t.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, request.Open)
+	o, err := t.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarket, err)
 	}
@@ -281,7 +281,7 @@ func (t *tradingDataService) OrdersByParty(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := t.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, request.Open)
+	o, err := t.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByParty, err)
 	}

@@ -182,7 +182,7 @@ type ComplexityRoot struct {
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
 		OrderByReference   func(childComplexity int, reference string) int
-		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		Orders             func(childComplexity int, skip *int, first *int, last *int) int
 		TradableInstrument func(childComplexity int) int
 		Trades             func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode        func(childComplexity int) int
@@ -257,7 +257,7 @@ type ComplexityRoot struct {
 		Accounts  func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
 		Id        func(childComplexity int) int
 		Margins   func(childComplexity int, marketID *string) int
-		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		Orders    func(childComplexity int, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
 		Proposals func(childComplexity int, inState *ProposalState) int
 		Trades    func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
@@ -476,7 +476,7 @@ type MarginLevelsResolver interface {
 	Timestamp(ctx context.Context, obj *proto.MarginLevels) (string, error)
 }
 type MarketResolver interface {
-	Orders(ctx context.Context, obj *Market, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
+	Orders(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
@@ -530,7 +530,7 @@ type OrderResolver interface {
 	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
 }
 type PartyResolver interface {
-	Orders(ctx context.Context, obj *proto.Party, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
+	Orders(ctx context.Context, obj *proto.Party, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Trades(ctx context.Context, obj *proto.Party, marketID *string, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Accounts(ctx context.Context, obj *proto.Party, marketID *string, asset *string, typeArg *AccountType) ([]*proto.Account, error)
 	Positions(ctx context.Context, obj *proto.Party) ([]*proto.Position, error)
@@ -1165,7 +1165,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Market.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -1572,7 +1572,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.positions":
 		if e.complexity.Party.Positions == nil {
@@ -3344,8 +3344,6 @@ type Market {
 
   "Orders on a market"
   orders (
-    "Filter open orders only"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -3462,8 +3460,6 @@ type Party {
 
   "Orders relating to a party"
   orders(
-    "Is the order still open or not"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -4297,38 +4293,30 @@ func (ec *executionContext) field_Market_orderByReference_args(ctx context.Conte
 func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["open"]; ok {
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["open"] = arg0
+	args["skip"] = arg0
 	var arg1 *int
-	if tmp, ok := rawArgs["skip"]; ok {
+	if tmp, ok := rawArgs["first"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg1
+	args["first"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	if tmp, ok := rawArgs["last"]; ok {
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
+	args["last"] = arg2
 	return args, nil
 }
 
@@ -4669,38 +4657,30 @@ func (ec *executionContext) field_Party_margins_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Party_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["open"]; ok {
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["open"] = arg0
+	args["skip"] = arg0
 	var arg1 *int
-	if tmp, ok := rawArgs["skip"]; ok {
+	if tmp, ok := rawArgs["first"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg1
+	args["first"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	if tmp, ok := rawArgs["last"]; ok {
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
+	args["last"] = arg2
 	return args, nil
 }
 
@@ -7561,7 +7541,7 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Orders(rctx, obj, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Market().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9371,7 +9351,7 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Orders(rctx, obj, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

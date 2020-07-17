@@ -517,12 +517,10 @@ func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.Mar
 }
 
 func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip *int, first *int, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByMarketRequest{
 		MarketID:   market.ID,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
@@ -723,13 +721,11 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip *int, first *int, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByPartyRequest{
 		PartyID:    party.Id,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
