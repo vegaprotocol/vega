@@ -3889,7 +3889,7 @@ type InstrumentConfiguration {
 "A mode where Vega try to execute order as soon as they are received"
 input ContinuousTradingInput {
   "Size of an increment in price in terms of the quote currency"
-  tickSize: String!
+  tickSize: String @deprecated(reason: "tickSize should not be used and will be ignored")
 }
 
 "Frequent batch auctions trading mode"
@@ -3897,7 +3897,7 @@ input DiscreteTradingInput {
   "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
-  tickSize: String!
+  tickSize: String @deprecated(reason: "tickSize should not be used and will be ignored")
 }
 
 """
@@ -14950,7 +14950,7 @@ func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Con
 		switch k {
 		case "tickSize":
 			var err error
-			it.TickSize, err = ec.unmarshalNString2string(ctx, v)
+			it.TickSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14974,7 +14974,7 @@ func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Conte
 			}
 		case "tickSize":
 			var err error
-			it.TickSize, err = ec.unmarshalNString2string(ctx, v)
+			it.TickSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
