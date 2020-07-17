@@ -1137,7 +1137,6 @@ The response of the GetNodeSIgnatureAggregate rpc
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | pagination | [Pagination](#api.Pagination) |  |  |
-| open | [bool](#bool) |  |  |
 
 
 
@@ -1169,7 +1168,6 @@ The response of the GetNodeSIgnatureAggregate rpc
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
 | pagination | [Pagination](#api.Pagination) |  |  |
-| open | [bool](#bool) |  |  |
 
 
 

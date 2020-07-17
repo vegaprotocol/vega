@@ -378,7 +378,7 @@ func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version
 }
 
 func (r *myQueryResolver) OrderVersions(
-	ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*types.Order, error) {
+	ctx context.Context, orderID string, skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	reqest := &protoapi.OrderVersionsByIDRequest{
@@ -517,12 +517,10 @@ func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.Mar
 }
 
 func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByMarketRequest{
 		MarketID:   market.ID,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
@@ -534,7 +532,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
 }
 
 func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
-	skip *int, first *int, last *int) ([]*types.Trade, error) {
+	skip, first, last *int) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
 		MarketID:   market.ID,
@@ -723,13 +721,11 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByPartyRequest{
 		PartyID:    party.Id,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
@@ -746,7 +742,7 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
-	market *string, skip *int, first *int, last *int) ([]*types.Trade, error) {
+	market *string, skip, first, last *int) ([]*types.Trade, error) {
 
 	var mkt string
 	if market != nil {

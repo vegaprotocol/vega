@@ -203,7 +203,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		err = orderStore.SaveBatch(vOrders)
 		assert.NoError(t, err)
 
-		orders, err := orderStore.GetByMarket(context.Background(), tt.inMarket, 0, tt.inLimit, false, true)
+		orders, err := orderStore.GetByMarket(context.Background(), tt.inMarket, 0, tt.inLimit, false)
 		assert.Nil(t, err)
 		assert.Equal(t, tt.outOrdersCount, len(orders))
 		orderStore.Close()
@@ -243,11 +243,11 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	err = orderStore.SaveBatch([]types.Order{aggressiveOrder})
 	assert.NoError(t, err)
 
-	ordersAtPartyA, err := orderStore.GetByParty(context.Background(), testPartyA, 0, 0, false, true)
+	ordersAtPartyA, err := orderStore.GetByParty(context.Background(), testPartyA, 0, 0, false)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyA))
 
-	ordersAtPartyB, err := orderStore.GetByParty(context.Background(), testPartyB, 0, 0, false, true)
+	ordersAtPartyB, err := orderStore.GetByParty(context.Background(), testPartyB, 0, 0, false)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyB))
 
@@ -304,7 +304,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	err = newOrderStore.SaveBatch([]types.Order{*order})
 	assert.NoError(t, err)
 
-	fetchedOrder, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 1, true, true)
+	fetchedOrder, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 1, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
@@ -422,7 +422,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("test if can load distinc orders regardless of versioning", func(t *testing.T) {
-		distinctOrders, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false, false)
+		distinctOrders, err := newOrderStore.GetByParty(context.Background(), testPartyA, 0, 100, false)
 		assert.NoError(t, err)
 		assert.NotNil(t, distinctOrders)
 		assert.Equal(t, 3, len(distinctOrders), "must be only 3 distinct orders")
