@@ -196,6 +196,7 @@ type ComplexityRoot struct {
 		MarkPrice       func(childComplexity int) int
 		Market          func(childComplexity int) int
 		MidPrice        func(childComplexity int) int
+		OpenInterest    func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
 	}
 
@@ -493,6 +494,7 @@ type MarketDataResolver interface {
 	BestOfferVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	MidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	Timestamp(ctx context.Context, obj *proto.MarketData) (string, error)
+	OpenInterest(ctx context.Context, obj *proto.MarketData) (string, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*Market, error)
@@ -1241,6 +1243,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.MidPrice(childComplexity), true
+
+	case "MarketData.openInterest":
+		if e.complexity.MarketData.OpenInterest == nil {
+			break
+		}
+
+		return e.complexity.MarketData.OpenInterest(childComplexity), true
 
 	case "MarketData.timestamp":
 		if e.complexity.MarketData.Timestamp == nil {
@@ -2880,6 +2889,8 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+  " the sum of the size of all positions greater than 0."
+  openInterest: String!
 }
 
 type PreparedSubmitOrder {
@@ -8041,6 +8052,40 @@ func (ec *executionContext) _MarketData_timestamp(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.MarketData().Timestamp(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_openInterest(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().OpenInterest(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16599,6 +16644,20 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._MarketData_timestamp(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "openInterest":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_openInterest(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

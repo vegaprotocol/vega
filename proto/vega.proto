@@ -502,6 +502,7 @@ message MarketData {
   uint64 midPrice = 6;
   string market = 7;
   int64 timestamp = 8;
+  uint64 openInterest = 9;
 }
 
 message ErrorDetail {

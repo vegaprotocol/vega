@@ -2292,6 +2292,10 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        },
+        "openInterest": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

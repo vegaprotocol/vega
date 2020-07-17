@@ -2925,6 +2925,7 @@ Proposal can enter Failed state from any other state.
 | midPrice | [uint64](#uint64) |  |  |
 | market | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  |  |
+| openInterest | [uint64](#uint64) |  |  |
 
 
 
