@@ -156,7 +156,7 @@ func (im *InstrumentMetadata) IntoProto() (*types.InstrumentMetadata, error) {
 		Tags: []string{},
 	}
 	for _, v := range im.Tags {
-		pim.Tags = append(pim.Tags, *v)
+		pim.Tags = append(pim.Tags, v)
 	}
 	return pim, nil
 }
@@ -336,12 +336,12 @@ func InstrumentMetadataFromProto(pim *types.InstrumentMetadata) (*InstrumentMeta
 		return nil, ErrNilInstrumentMetadata
 	}
 	im := &InstrumentMetadata{
-		Tags: []*string{},
+		Tags: []string{},
 	}
 
 	for _, v := range pim.Tags {
 		v := v
-		im.Tags = append(im.Tags, &v)
+		im.Tags = append(im.Tags, v)
 	}
 
 	return im, nil
@@ -815,9 +815,7 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		return nil, err
 	}
 	for _, tag := range n.Metadata {
-		if tag != nil {
-			result.Metadata = append(result.Metadata, *tag)
-		}
+		result.Metadata = append(result.Metadata, tag)
 	}
 	return result, nil
 }
