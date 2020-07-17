@@ -494,14 +494,23 @@ message MarginLevels {
 }
 
 message MarketData {
+  // the mark price (actually an unsgined int)
   uint64 markPrice = 1;
+  // the highest price level on an order book for buy orders.
   uint64 bestBidPrice = 2;
+  // the aggregated volume being bid at the best bid price.
   uint64 bestBidVolume = 3;
+  // the lowest price level on an order book for offer orders.
   uint64 bestOfferPrice = 4;
+  // the aggregated volume being offered at the best offer price.
   uint64 bestOfferVolume = 5;
+  // the arithmetic average of the best bid price and best offer price.
   uint64 midPrice = 6;
+  // market id of the associated mark price
   string market = 7;
+  // time at which this mark price was relevant
   int64 timestamp = 8;
+  // the sum of the size of all positions greater than 0.
   uint64 openInterest = 9;
 }
 

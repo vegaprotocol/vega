@@ -2794,14 +2794,23 @@ func (m *MarginLevels) GetTimestamp() int64 {
 }
 
 type MarketData struct {
-	MarkPrice            uint64   `protobuf:"varint,1,opt,name=markPrice,proto3" json:"markPrice,omitempty"`
-	BestBidPrice         uint64   `protobuf:"varint,2,opt,name=bestBidPrice,proto3" json:"bestBidPrice,omitempty"`
-	BestBidVolume        uint64   `protobuf:"varint,3,opt,name=bestBidVolume,proto3" json:"bestBidVolume,omitempty"`
-	BestOfferPrice       uint64   `protobuf:"varint,4,opt,name=bestOfferPrice,proto3" json:"bestOfferPrice,omitempty"`
-	BestOfferVolume      uint64   `protobuf:"varint,5,opt,name=bestOfferVolume,proto3" json:"bestOfferVolume,omitempty"`
-	MidPrice             uint64   `protobuf:"varint,6,opt,name=midPrice,proto3" json:"midPrice,omitempty"`
-	Market               string   `protobuf:"bytes,7,opt,name=market,proto3" json:"market,omitempty"`
-	Timestamp            int64    `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// the mark price (actually an unsgined int)
+	MarkPrice uint64 `protobuf:"varint,1,opt,name=markPrice,proto3" json:"markPrice,omitempty"`
+	// the highest price level on an order book for buy orders.
+	BestBidPrice uint64 `protobuf:"varint,2,opt,name=bestBidPrice,proto3" json:"bestBidPrice,omitempty"`
+	// the aggregated volume being bid at the best bid price.
+	BestBidVolume uint64 `protobuf:"varint,3,opt,name=bestBidVolume,proto3" json:"bestBidVolume,omitempty"`
+	// the lowest price level on an order book for offer orders.
+	BestOfferPrice uint64 `protobuf:"varint,4,opt,name=bestOfferPrice,proto3" json:"bestOfferPrice,omitempty"`
+	// the aggregated volume being offered at the best offer price.
+	BestOfferVolume uint64 `protobuf:"varint,5,opt,name=bestOfferVolume,proto3" json:"bestOfferVolume,omitempty"`
+	// the arithmetic average of the best bid price and best offer price.
+	MidPrice uint64 `protobuf:"varint,6,opt,name=midPrice,proto3" json:"midPrice,omitempty"`
+	// market id of the associated mark price
+	Market string `protobuf:"bytes,7,opt,name=market,proto3" json:"market,omitempty"`
+	// time at which this mark price was relevant
+	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// the sum of the size of all positions greater than 0.
 	OpenInterest         uint64   `protobuf:"varint,9,opt,name=openInterest,proto3" json:"openInterest,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

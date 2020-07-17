@@ -2917,15 +2917,15 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| markPrice | [uint64](#uint64) |  |  |
-| bestBidPrice | [uint64](#uint64) |  |  |
-| bestBidVolume | [uint64](#uint64) |  |  |
-| bestOfferPrice | [uint64](#uint64) |  |  |
-| bestOfferVolume | [uint64](#uint64) |  |  |
-| midPrice | [uint64](#uint64) |  |  |
-| market | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
-| openInterest | [uint64](#uint64) |  |  |
+| markPrice | [uint64](#uint64) |  | the mark price (actually an unsgined int) |
+| bestBidPrice | [uint64](#uint64) |  | the highest price level on an order book for buy orders. |
+| bestBidVolume | [uint64](#uint64) |  | the aggregated volume being bid at the best bid price. |
+| bestOfferPrice | [uint64](#uint64) |  | the lowest price level on an order book for offer orders. |
+| bestOfferVolume | [uint64](#uint64) |  | the aggregated volume being offered at the best offer price. |
+| midPrice | [uint64](#uint64) |  | the arithmetic average of the best bid price and best offer price. |
+| market | [string](#string) |  | market id of the associated mark price |
+| timestamp | [int64](#int64) |  | time at which this mark price was relevant |
+| openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
 
 
 
