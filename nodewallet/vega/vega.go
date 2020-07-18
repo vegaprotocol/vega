@@ -76,7 +76,19 @@ func (w *Wallet) Sign(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to instanciate signature algorithm: %v", err)
 	}
-	return wallet.Sign(alg, w.kp, data)
+	sig, err := wallet.Sign(alg, w.kp, data)
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
+}
+
+func (w *Wallet) Algo() string {
+	return w.kp.Algorithm.Name()
+}
+
+func (w *Wallet) Version() uint64 {
+	return w.kp.Algorithm.Version()
 }
 
 func (w *Wallet) PubKeyOrAddress() []byte {

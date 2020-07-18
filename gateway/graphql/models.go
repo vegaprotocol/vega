@@ -454,6 +454,16 @@ type ScalingFactors struct {
 	CollateralRelease float64 `json:"collateralRelease"`
 }
 
+// A signature to be bundled with a transaction
+type SignatureInput struct {
+	// The signature, base64 encoded
+	Sig string `json:"sig"`
+	// The algorithm used to produice the signature
+	Algo string `json:"algo"`
+	// The version of the signature
+	Version int `json:"version"`
+}
+
 // A type of simple/dummy risk model where we can specify the risk factor long and short in params
 type SimpleRiskModel struct {
 	// Params for the simple risk model

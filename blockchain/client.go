@@ -41,8 +41,15 @@ func newClient(clt chainClientImpl) *Client {
 }
 
 func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
+	// unmarshal the transaction
+	tx := &types.Transaction{}
+	err := proto.Unmarshal(bundle.Tx, tx)
+	if err != nil {
+		return false, err
+	}
+
 	// first verify the transaction in the bundle is valid + signature is OK
-	_, command, err := txDecode(bundle.Data)
+	_, command, err := txDecode(tx.InputData)
 	if err != nil {
 		return false, err
 	}
@@ -54,7 +61,7 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	}
 
 	// check sig
-	if err := verifyBundle(nil, bundle); err != nil {
+	if err := verifyBundle(nil, tx, bundle); err != nil {
 		return false, err
 	}
 

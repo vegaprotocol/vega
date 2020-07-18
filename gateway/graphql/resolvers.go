@@ -3,7 +3,6 @@ package gql
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"strconv"
@@ -1507,41 +1506,24 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig string, address, pubkey *string) (*TransactionSubmitted, error) {
-	if address == nil && pubkey == nil {
-		return nil, errors.New("auth missing: either address or pubkey needs to be set")
-	}
+func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
 	decodedData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err
 	}
-	decodedSig, err := base64.StdEncoding.DecodeString(sig)
+	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
 	if err != nil {
 		return nil, err
 	}
 	req := &protoapi.SubmitTransactionRequest{
 		Tx: &types.SignedBundle{
-			Data: decodedData,
-			Sig:  decodedSig,
+			Tx: decodedData,
+			Sig: &types.Signature{
+				Sig:     decodedSig,
+				Version: uint64(sig.Version),
+				Algo:    sig.Algo,
+			},
 		},
-	}
-	if pubkey != nil {
-		pk, err := hex.DecodeString(*pubkey)
-		if err != nil {
-			return nil, err
-		}
-		req.Tx.Auth = &types.SignedBundle_PubKey{
-			PubKey: pk,
-		}
-	} else {
-		addr, err := hex.DecodeString(*address)
-		if err != nil {
-			return nil, err
-		}
-		// address is guaranteed to be set here...
-		req.Tx.Auth = &types.SignedBundle_Address{
-			Address: addr,
-		}
 	}
 	res, err := r.tradingClient.SubmitTransaction(ctx, req)
 	if err != nil {
