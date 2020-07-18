@@ -16,7 +16,6 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
-	SubmitNodeRegistration(ctx context.Context, reg *types.NodeRegistration) (bool, error)
 }
 
 type Commander struct {

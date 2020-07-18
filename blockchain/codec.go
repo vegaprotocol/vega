@@ -124,15 +124,20 @@ func (c *codec) validateSigned(payload []byte) error {
 		return err
 	}
 
-	// verify the signature
-	if err := verifyBundle(c.log, tx, bundle); err != nil {
-		c.log.Error("error verifying bundle", logging.Error(err))
-		return err
-	}
-
 	cmdData, cmd, err := txDecode(tx.InputData)
 	if err != nil {
 		return errors.Wrap(err, "error decoding payload")
+	}
+
+	// FIXME(): for now we just not verify 2 command which are
+	// not require to be signed. This will need to be removed once we have
+	// only signed commadn
+	if cmd != WithdrawCommand && cmd != NotifyTraderAccountCommand {
+		// verify the signature
+		if err := verifyBundle(c.log, tx, bundle); err != nil {
+			c.log.Error("error verifying bundle", logging.Error(err))
+			return err
+		}
 	}
 
 	if _, ok := commandName[cmd]; !ok {

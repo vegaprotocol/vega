@@ -1,13 +1,5 @@
 package blockchain
 
-// CommandKind
-type CommandKind byte
-
-const (
-	CommandKindSigned   CommandKind = 0x10
-	CommandKindUnsigned CommandKind = 0x11
-)
-
 // Command ...
 type Command byte
 
@@ -51,22 +43,9 @@ var commandName = map[Command]string{
 	ChainEventCommand:          "Chain Event",
 }
 
-var commandKindName = map[CommandKind]string{
-	CommandKindSigned:   "SignedTx",
-	CommandKindUnsigned: "UnsignedTx",
-}
-
 // String return the
 func (cmd Command) String() string {
 	s, ok := commandName[cmd]
-	if ok {
-		return s
-	}
-	return ""
-}
-
-func (cmd CommandKind) String() string {
-	s, ok := commandKindName[cmd]
 	if ok {
 		return s
 	}

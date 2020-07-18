@@ -9,7 +9,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
-	uuid "github.com/satori/go.uuid"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -74,49 +73,71 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 		return false, errors.New("order message empty after marshal")
 	}
 
-	return c.sendTx(ctx, bundleBytes, CommandKindSigned)
+	return c.sendTx(ctx, bundleBytes)
 }
 
-// SubmitNodeRegistration - Add command-specific public func for unsigned command
-func (c *Client) SubmitNodeRegistration(ctx context.Context, reg *types.NodeRegistration) (bool, error) {
-	bytes, err := proto.Marshal(reg)
+// FIXME(): remove once we have only signed transaction going through the system
+// NotifyTraderAccount will send a Notifytraderaccount transaction to the blockchain
+func (c *Client) NotifyTraderAccount(
+	ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error) {
+	bytes, err := proto.Marshal(notif)
 	if err != nil {
 		return false, err
 	}
 	if len(bytes) == 0 {
-		return false, errors.New("node registration was empty")
+		return false, errors.New("notify trader account message empty after marshal")
 	}
 
-	return c.sendCommand(ctx, bytes, RegisterNodeCommand)
+	return c.sendCommand(ctx, bytes, NotifyTraderAccountCommand)
+
 }
 
-// CancelOrder will send a cancel order transaction to the blockchain
-func (c *Client) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
-	return c.sendCancellationCommand(ctx, order, CancelOrderCommand)
-}
-
-// AmendOrder will send an amend order transaction to the blockchain
-func (c *Client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
-	return c.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
-}
-
-// NotifyTraderAccount will send a Notifytraderaccount transaction to the blockchain
-func (c *Client) NotifyTraderAccount(
-	ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error) {
-	return c.sendNotifyTraderAccountCommand(ctx, notif, NotifyTraderAccountCommand)
-}
-
+// FIXME(): remove once we have only signed transaction going through the system
 // Withdraw will send a Withdraw transaction to the blockchain
 func (c *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
-	return c.sendWithdrawCommand(ctx, w, WithdrawCommand)
+	bytes, err := proto.Marshal(w)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("withdraw message empty after marshal")
+	}
+
+	return c.sendCommand(ctx, bytes, WithdrawCommand)
 }
 
-// CreateOrder will send a submit order transaction to the blockchain
-func (c *Client) CreateOrder(ctx context.Context, order *types.Order) error {
-	order.Reference = uuid.NewV4().String()
-	_, err := c.sendOrderCommand(ctx, order, SubmitOrderCommand)
+// FIXME(): remove once we have only signed transaction going through the system
+func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {
+	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
+	// It's split on arrival out of consensus along with a byte that represents command e.g. cancel order
+	bytes, err = txEncode(bytes, cmd)
+	if err != nil {
+		return false, err
+	}
 
-	return err
+	// make it a empty transaction
+	// no nonce or pubkey here
+	tx := &types.Transaction{InputData: bytes}
+	rawTx, err := proto.Marshal(tx)
+	if err != nil {
+		return false, err
+	}
+
+	bundle := &types.SignedBundle{
+		Tx:  rawTx,
+		Sig: &types.Signature{}, // end an empty sig
+	}
+	rawBundle, err := proto.Marshal(bundle)
+	if err != nil {
+		return false, err
+	}
+
+	// Fire off the transaction for consensus
+	return c.sendTx(ctx, rawBundle)
+}
+
+func (c *Client) sendTx(ctx context.Context, bytes []byte) (bool, error) {
+	return c.clt.SendTransaction(ctx, bytes)
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain
@@ -154,90 +175,4 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 }
 func (c *Client) Validators() ([]*tmtypes.Validator, error) {
 	return c.clt.Validators()
-}
-
-func (c *Client) sendOrderCommand(ctx context.Context, order *types.Order, cmd Command) (success bool, err error) {
-
-	// Proto-buf marshall the incoming order to byte slice.
-	bytes, err := proto.Marshal(order)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("order message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, cmd)
-}
-
-func (c *Client) sendAmendmentCommand(ctx context.Context, amendment *types.OrderAmendment, cmd Command) (success bool, err error) {
-
-	// Proto-buf marshall the incoming order to byte slice.
-	bytes, err := proto.Marshal(amendment)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("order message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, cmd)
-}
-
-func (c *Client) sendCancellationCommand(ctx context.Context, cancel *types.OrderCancellation, cmd Command) (success bool, err error) {
-
-	// Proto-buf marshall the incoming order to byte slice.
-	bytes, err := proto.Marshal(cancel)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("order message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, cmd)
-}
-
-func (c *Client) sendNotifyTraderAccountCommand(
-	ctx context.Context, notif *types.NotifyTraderAccount, cmd Command) (success bool, err error) {
-
-	bytes, err := proto.Marshal(notif)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("notify trader account message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, cmd)
-}
-
-func (c *Client) sendWithdrawCommand(
-	ctx context.Context, w *types.Withdraw, cmd Command) (success bool, err error) {
-
-	bytes, err := proto.Marshal(w)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("withdraw message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, cmd)
-}
-
-func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {
-	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
-	// It's split on arrival out of consensus along with a byte that represents command e.g. cancel order
-	bytes, err = txEncode(bytes, cmd)
-	if err != nil {
-		return false, err
-	}
-
-	// Fire off the transaction for consensus
-	return c.sendTx(ctx, bytes, CommandKindUnsigned)
-}
-
-func (c *Client) sendTx(ctx context.Context, bytes []byte, cmdKind CommandKind) (bool, error) {
-	return c.clt.SendTransaction(ctx, append([]byte{byte(cmdKind)}, bytes...))
 }
