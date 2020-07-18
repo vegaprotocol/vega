@@ -325,14 +325,6 @@ func (p *Processor) ReloadConf(cfg Config) {
 	p.Config = cfg
 }
 
-func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
-	order := &types.Order{}
-	if err := proto.Unmarshal(payload, order); err != nil {
-		return nil, err
-	}
-	return order, nil
-}
-
 func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 	orderSubmission := &types.OrderSubmission{}
 	err := proto.Unmarshal(payload, orderSubmission)

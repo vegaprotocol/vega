@@ -63,8 +63,8 @@ type KeysResponse struct {
 // SignTxResponse describes the response for SignTx.
 type SignTxResponse struct {
 	SignedTx     SignedBundle `json:"signedTx"`
-	HexBundle    string       `json:hexBundle`
-	Base64Bundle string       `json:base64Bundle`
+	HexBundle    string       `json:"hexBundle"`
+	Base64Bundle string       `json:"base64Bundle"`
 }
 
 // SuccessResponse describes the response to a request that returns a simple true/false answer.
