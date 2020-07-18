@@ -203,11 +203,13 @@
     - [RiskResult](#vega.RiskResult)
     - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
     - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
+    - [Signature](#vega.Signature)
     - [SignedBundle](#vega.SignedBundle)
     - [Statistics](#vega.Statistics)
     - [Timestamp](#vega.Timestamp)
     - [Trade](#vega.Trade)
     - [TradeSet](#vega.TradeSet)
+    - [Transaction](#vega.Transaction)
     - [Transfer](#vega.Transfer)
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
@@ -3440,18 +3442,34 @@ a decision taken by the vega network.
 
 
 
-<a name="vega.SignedBundle"></a>
+<a name="vega.Signature"></a>
 
-### SignedBundle
-
+### Signature
+A signature to be authenticate a transaction
+and to be verified by the vega network
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [bytes](#bytes) |  |  |
-| sig | [bytes](#bytes) |  |  |
-| address | [bytes](#bytes) |  |  |
-| pubKey | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  | The bytes of the signature |
+| algo | [string](#string) |  | The algorithm used to create the signature |
+| version | [uint64](#uint64) |  | The version of the signature used to create the signature |
+
+
+
+
+
+
+<a name="vega.SignedBundle"></a>
+
+### SignedBundle
+A bundle of a transaction, proto marshalled and it&#39;s signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [bytes](#bytes) |  | the transaction, proto marshalled |
+| sig | [Signature](#vega.Signature) |  | the signature authenticating the transaction |
 
 
 
@@ -3556,6 +3574,24 @@ a decision taken by the vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | trades | [Trade](#vega.Trade) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Transaction"></a>
+
+### Transaction
+A transaction to be sent to vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| inputData | [bytes](#bytes) |  | one of all the possible command, proto marshalled |
+| nonce | [uint64](#uint64) |  | a random number used to provided uniqueness and prevents against replay attack |
+| address | [bytes](#bytes) |  | the address of the sender |
+| pubKey | [bytes](#bytes) |  | the public key of the sender |
 
 
 

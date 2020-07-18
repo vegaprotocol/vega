@@ -982,6 +982,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Signature"><span class="badge">M</span>Signature</a>
+                </li>
+
+                <li>
                   <a href="#vega.SignedBundle"><span class="badge">M</span>SignedBundle</a>
                 </li>
 
@@ -999,6 +1003,10 @@
 
                 <li>
                   <a href="#vega.TradeSet"><span class="badge">M</span>TradeSet</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Transaction"><span class="badge">M</span>Transaction</a>
                 </li>
 
                 <li>
@@ -9390,8 +9398,8 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
 
-        <h3 id="vega.SignedBundle">SignedBundle</h3>
-        <p></p>
+        <h3 id="vega.Signature">Signature</h3>
+        <p>A signature to be authenticate a transaction</p><p>and to be verified by the vega network</p>
 
 
           <table class="field-table">
@@ -9401,31 +9409,55 @@ to keep track which auction batch this order falls under (required for fees calc
             <tbody>
 
                 <tr>
-                  <td>data</td>
+                  <td>sig</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The bytes of the signature </p></td>
+                </tr>
+
+                <tr>
+                  <td>algo</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The algorithm used to create the signature </p></td>
+                </tr>
+
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The version of the signature used to create the signature </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.SignedBundle">SignedBundle</h3>
+        <p>A bundle of a transaction, proto marshalled and it's signature</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>tx</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p>the transaction, proto marshalled </p></td>
                 </tr>
 
                 <tr>
                   <td>sig</td>
-                  <td><a href="#bytes">bytes</a></td>
+                  <td><a href="#vega.Signature">Signature</a></td>
                   <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>address</td>
-                  <td><a href="#bytes">bytes</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>pubKey</td>
-                  <td><a href="#bytes">bytes</a></td>
-                  <td></td>
-                  <td><p> </p></td>
+                  <td><p>the signature authenticating the transaction </p></td>
                 </tr>
 
             </tbody>
@@ -9830,6 +9862,52 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td><a href="#vega.Trade">Trade</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Transaction">Transaction</h3>
+        <p>A transaction to be sent to vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>inputData</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p>one of all the possible command, proto marshalled </p></td>
+                </tr>
+
+                <tr>
+                  <td>nonce</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>a random number used to provided uniqueness and prevents
+against replay attack </p></td>
+                </tr>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p>the address of the sender </p></td>
+                </tr>
+
+                <tr>
+                  <td>pubKey</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p>the public key of the sender </p></td>
                 </tr>
 
             </tbody>
