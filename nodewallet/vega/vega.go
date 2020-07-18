@@ -76,11 +76,7 @@ func (w *Wallet) Sign(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to instanciate signature algorithm: %v", err)
 	}
-	sig, err := wallet.Sign(alg, w.kp, data)
-	if err != nil {
-		return nil, err
-	}
-	return sig, nil
+	return wallet.Sign(alg, w.kp, data)
 }
 
 func (w *Wallet) Algo() string {
