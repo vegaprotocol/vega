@@ -1,6 +1,7 @@
 package evtforward_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -30,7 +31,7 @@ type testEvtFwd struct {
 	time *mocks.MockTimeService
 	top  *mocks.MockValidatorTopology
 	cmd  *mocks.MockCommander
-	cb   func(t time.Time)
+	cb   func(context.Context, time.Time)
 }
 
 func getTestEvtFwd(t *testing.T) *testEvtFwd {
@@ -41,8 +42,8 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 
 	top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	top.EXPECT().SelfVegaPubKey().Times(1).Return(testSelfVegaPubKey)
-	var cb func(time.Time)
-	tim.EXPECT().NotifyOnTick(gomock.Any()).Do(func(f func(t time.Time)) {
+	var cb func(context.Context, time.Time)
+	tim.EXPECT().NotifyOnTick(gomock.Any()).Do(func(f func(context.Context, time.Time)) {
 		cb = f
 	})
 
@@ -93,7 +94,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Return(nil)
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(time.Unix(11, 0))
+	evtfwd.cb(context.Background(), time.Unix(11, 0))
 	err := evtfwd.Forward(evt, okEventEmitter)
 	assert.NoError(t, err)
 }
@@ -105,10 +106,9 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Return(nil)
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(time.Unix(11, 0))
+	evtfwd.cb(context.Background(), time.Unix(11, 0))
 	err := evtfwd.Forward(evt, okEventEmitter)
 	assert.NoError(t, err)
-
 	// now the event should exist, let's try toforward againt
 	err = evtfwd.Forward(evt, okEventEmitter)
 	assert.EqualError(t, err, evtforward.ErrEvtAlreadyExist.Error())
@@ -119,7 +119,7 @@ func testUpdateValidatorList(t *testing.T) {
 	defer evtfwd.ctrl.Finish()
 	// no event, just call callback to ensure the validator list is updated
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
-	evtfwd.cb(initTime.Add(time.Second))
+	evtfwd.cb(context.Background(), initTime.Add(time.Second))
 }
 
 func testAckSuccess(t *testing.T) {

@@ -1,6 +1,7 @@
 package tm
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -36,7 +37,7 @@ type ApplicationService interface {
 // ApplicationTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/tm ApplicationTime
 type ApplicationTime interface {
-	SetTimeNow(epochTimeNano time.Time)
+	SetTimeNow(context.Context, time.Time)
 }
 
 type TMChain struct {

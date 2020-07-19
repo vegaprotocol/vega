@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/contextutil"
@@ -84,8 +85,9 @@ func (c *codec) Process(payload []byte) error {
 	}
 	c.seenPayloads[*payloadHash] = struct{}{}
 
+	hexPayloadHash := hex.EncodeToString([]byte(*payloadHash))
 	// get the block context, add transaction hash as trace ID
-	ctx := contextutil.WithTraceID(context.Background(), string(*payloadHash))
+	ctx := contextutil.WithTraceID(context.Background(), hexPayloadHash)
 	var (
 		data   []byte
 		pubkey []byte

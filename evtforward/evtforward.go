@@ -1,6 +1,7 @@
 package evtforward
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -24,7 +25,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
@@ -177,7 +178,7 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	return node.node == e.self
 }
 
-func (e *EvtForwarder) onTick(t time.Time) {
+func (e *EvtForwarder) onTick(_ context.Context, t time.Time) {
 	e.currentTime = t
 
 	// get an updated list of validators from the topology

@@ -35,7 +35,7 @@ type ApplicationService interface {
 }
 
 type ApplicationTime interface {
-	SetTimeNow(epochTimeNano time.Time)
+	SetTimeNow(context.Context, time.Time)
 }
 
 type NOOPChain struct {
@@ -102,7 +102,7 @@ func (n *NOOPChain) startTicker() {
 				n.stats.IncHeight()
 				n.stats.SetTotalTxLastBatch(n.totalTxLastBatch)
 				n.totalTxLastBatch = 0
-				n.time.SetTimeNow(time.Now())
+				n.time.SetTimeNow(context.Background(), time.Now())
 				n.log.Info("starting new block",
 					logging.String("chain-provider", "noop"),
 					logging.Uint64("block-height", n.blockHeight),

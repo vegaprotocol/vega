@@ -29,7 +29,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
@@ -302,7 +302,7 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	return conf, nil
 }
 
-func (e *Engine) onChainTimeUpdate(t time.Time) {
+func (e *Engine) onChainTimeUpdate(_ context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
 	// update block time on id generator

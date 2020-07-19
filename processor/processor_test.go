@@ -26,7 +26,7 @@ type procTest struct {
 	eng    *mocks.MockExecutionEngine
 	ts     *mocks.MockTimeService
 	stat   *mocks.MockStats
-	tickCB func(time.Time)
+	tickCB func(context.Context, time.Time)
 	ctrl   *gomock.Controller
 	cmd    *mocks.MockCommander
 	wallet *mocks.MockWallet
@@ -65,8 +65,8 @@ func getTestProcessor(t *testing.T) *procTest {
 	bank := mocks.NewMockBanking(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
-	var cb func(time.Time)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
+	var cb func(context.Context, time.Time)
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(context.Context, time.Time)) {
 		cb = c
 	})
 	wal := getTestStubWallet()
@@ -130,7 +130,7 @@ func testOnTickEmpty(t *testing.T) {
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
 	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).Times(1).Return([]*governance.ToEnact{})
-	proc.tickCB(time.Now())
+	proc.tickCB(context.Background(), time.Now())
 }
 
 func testBeginCommitSuccess(t *testing.T) {

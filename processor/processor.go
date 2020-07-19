@@ -49,7 +49,7 @@ var (
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -828,8 +828,7 @@ func (p *Processor) enactAsset(ctx context.Context, prop *types.Proposal, _ *typ
 }
 
 // check the asset proposals on tick
-func (p *Processor) onTick(t time.Time) {
-	ctx := context.TODO()
+func (p *Processor) onTick(ctx context.Context, t time.Time) {
 	p.idgen.NewBatch()
 	acceptedProposals := p.gov.OnChainTimeUpdate(ctx, t)
 	for _, toEnact := range acceptedProposals {
