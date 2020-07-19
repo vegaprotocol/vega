@@ -169,7 +169,6 @@
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
-    - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
     - [FinancialAmount](#vega.FinancialAmount)
@@ -2791,21 +2790,6 @@ Proposal can enter Failed state from any other state.
 | asset | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | type | [AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="vega.Amount"></a>
-
-### Amount
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [string](#string) |  |  |
 
 
 
