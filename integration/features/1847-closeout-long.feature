@@ -55,6 +55,6 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | trader | volume | unrealisedPNL | realisedPNL |
       | tt_4   | 4      | -200          | 0           |
       | tt_5   | 0      | 0             | -100        |
-      | tt_6   | -4     | 200           | -32         |
+      | tt_6   | -4     | 200           | -1130       |
       | tt_10  | 30     | 0             | 0           |
       | tt_11  | -30    | 200           | -70         |
