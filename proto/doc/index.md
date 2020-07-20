@@ -2510,6 +2510,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
 | PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
+| PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE | 14 | invalid liquidity fee (expect valid float) |
 
 
 

@@ -231,6 +231,8 @@ enum ProposalError {
   PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE = 12;
   // the proposal failed node validation
   PROPOSAL_ERROR_NODE_VALIDATION_FAILED = 13;
+  // invalid liquidity fee (expect valid float)
+  PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE = 14;
 }
 
 message Vote {
