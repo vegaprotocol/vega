@@ -82,7 +82,7 @@ func testEventEmitterNotWhitelisted(t *testing.T) {
 	evt := getTestChainEvent()
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(time.Unix(11, 0))
+	evtfwd.cb(context.Background(), time.Unix(11, 0))
 	err := evtfwd.Forward(evt, "not whitelisted")
 	assert.EqualError(t, err, evtforward.ErrPubKeyNotWhitelisted.Error())
 }

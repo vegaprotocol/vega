@@ -129,8 +129,7 @@ func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) OnTick(_ context.Context, t time.Time) {
-	ctx := context.Background()
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	for k, v := range e.assetActs {
 		state := atomic.LoadUint32(&v.state)
 		if state == pendingState {
