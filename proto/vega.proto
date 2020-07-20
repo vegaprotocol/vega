@@ -248,6 +248,15 @@ message Trade {
   // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 10;
   Type type = 11;
+
+  Fee buyerFee = 12;
+  Fee sellerFee = 13;
+}
+
+message Fee {
+  uint64 makerFee = 1;
+  uint64 infrastructureFee = 2;
+  uint64 liquidityFee = 3;
 }
 
 message TradeSet {

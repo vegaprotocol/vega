@@ -1952,6 +1952,23 @@
         }
       }
     },
+    "vegaFee": {
+      "type": "object",
+      "properties": {
+        "makerFee": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "infrastructureFee": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "liquidityFee": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "vegaFeeFactors": {
       "type": "object",
       "properties": {
@@ -3091,6 +3108,12 @@
         },
         "type": {
           "$ref": "#/definitions/vegaTradeType"
+        },
+        "buyerFee": {
+          "$ref": "#/definitions/vegaFee"
+        },
+        "sellerFee": {
+          "$ref": "#/definitions/vegaFee"
         }
       }
     },

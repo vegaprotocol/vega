@@ -870,6 +870,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Fee"><span class="badge">M</span>Fee</a>
+                </li>
+
+                <li>
                   <a href="#vega.FinancialAmount"><span class="badge">M</span>FinancialAmount</a>
                 </li>
 
@@ -7781,6 +7785,44 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
+        <h3 id="vega.Fee">Fee</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>makerFee</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>infrastructureFee</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>liquidityFee</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.FinancialAmount">FinancialAmount</h3>
         <p></p>
 
@@ -9542,6 +9584,20 @@ after each successful amend </p></td>
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.Trade.Type">Trade.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>buyerFee</td>
+                  <td><a href="#vega.Fee">Fee</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>sellerFee</td>
+                  <td><a href="#vega.Fee">Fee</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>

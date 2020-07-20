@@ -175,6 +175,7 @@
     - [Account](#vega.Account)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
+    - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
@@ -2919,6 +2920,23 @@ and the cause for an proposal being rejected of failed
 
 
 
+<a name="vega.Fee"></a>
+
+### Fee
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| makerFee | [uint64](#uint64) |  |  |
+| infrastructureFee | [uint64](#uint64) |  |  |
+| liquidityFee | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="vega.FinancialAmount"></a>
 
 ### FinancialAmount
@@ -3440,6 +3458,8 @@ a decision taken by the vega network.
 | sellOrder | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | type | [Trade.Type](#vega.Trade.Type) |  |  |
+| buyerFee | [Fee](#vega.Fee) |  |  |
+| sellerFee | [Fee](#vega.Fee) |  |  |
 
 
 
