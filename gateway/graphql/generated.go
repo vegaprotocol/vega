@@ -3718,31 +3718,31 @@ enum OrderStatus {
 
 "Reason for the proposal beeing rejected by the core node"
 enum ProposalRejectionReason {
-  "the specified close time is too early base on network parameters"
+  "The specified close time is too early based on network parameters"
   CloseTimeTooSoon
-  "the specified close time is too late based on network parameters"
+  "The specified close time is too late based on network parameters"
   CloseTimeTooLate
-  "the specified enact time is too early base on network parameters"
+  "The specified enactment time is too early based on network parameters"
   EnactTimeTooSoon
-  "the specified enact time is too late based on network parameters"
+  "The specified enactment time is too late based on network parameters"
   EnactTimeTooLate
-  "the proposer for this proposal as insufficient token"
+  "The proposer for this proposal as insufficient token"
   InsufficientTokens
-  "the instrument quote name and base name were the same"
+  "The instrument quote name and base name were the same"
   InvalidInstrumentSecurity
-  "the proposal has not product"
+  "The proposal has no product specified"
   NoProduct
-  "the specified product is not supported"
+  "The specified product is not supported"
   UnuspportedProduct
-  "invalid future maturity timestamp (expect RFC3339)"
+  "Invalid future maturity timestamp (expect RFC3339)"
   InvalidFutureMatuityTimestamp
-  "the product maturity is past"
+  "The product maturity is already in the past"
   ProductMaturityIsPassed
-  "the proposal has not trading mode"
+  "The proposal has no trading mode"
   NoTradingMode
-  "the proposal has an unsupported trading mode"
+  "The proposal has an unsupported trading mode"
   UnsupportedTradingMode
-  "the proposal failed node validation"
+  "The proposal failed node validation"
   NodeValidationFailed
 }
 

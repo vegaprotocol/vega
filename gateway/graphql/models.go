@@ -958,31 +958,31 @@ func (e OrderType) MarshalGQL(w io.Writer) {
 type ProposalRejectionReason string
 
 const (
-	// the specified close time is too early base on network parameters
+	// The specified close time is too early based on network parameters
 	ProposalRejectionReasonCloseTimeTooSoon ProposalRejectionReason = "CloseTimeTooSoon"
-	// the specified close time is too late based on network parameters
+	// The specified close time is too late based on network parameters
 	ProposalRejectionReasonCloseTimeTooLate ProposalRejectionReason = "CloseTimeTooLate"
-	// the specified enact time is too early base on network parameters
+	// The specified enactment time is too early based on network parameters
 	ProposalRejectionReasonEnactTimeTooSoon ProposalRejectionReason = "EnactTimeTooSoon"
-	// the specified enact time is too late based on network parameters
+	// The specified enactment time is too late based on network parameters
 	ProposalRejectionReasonEnactTimeTooLate ProposalRejectionReason = "EnactTimeTooLate"
-	// the proposer for this proposal as insufficient token
+	// The proposer for this proposal as insufficient token
 	ProposalRejectionReasonInsufficientTokens ProposalRejectionReason = "InsufficientTokens"
-	// the instrument quote name and base name were the same
+	// The instrument quote name and base name were the same
 	ProposalRejectionReasonInvalidInstrumentSecurity ProposalRejectionReason = "InvalidInstrumentSecurity"
-	// the proposal has not product
+	// The proposal has no product specified
 	ProposalRejectionReasonNoProduct ProposalRejectionReason = "NoProduct"
-	// the specified product is not supported
+	// The specified product is not supported
 	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
-	// invalid future maturity timestamp (expect RFC3339)
+	// Invalid future maturity timestamp (expect RFC3339)
 	ProposalRejectionReasonInvalidFutureMatuityTimestamp ProposalRejectionReason = "InvalidFutureMatuityTimestamp"
-	// the product maturity is past
+	// The product maturity is already in the past
 	ProposalRejectionReasonProductMaturityIsPassed ProposalRejectionReason = "ProductMaturityIsPassed"
-	// the proposal has not trading mode
+	// The proposal has no trading mode
 	ProposalRejectionReasonNoTradingMode ProposalRejectionReason = "NoTradingMode"
-	// the proposal has an unsupported trading mode
+	// The proposal has an unsupported trading mode
 	ProposalRejectionReasonUnsupportedTradingMode ProposalRejectionReason = "UnsupportedTradingMode"
-	// the proposal failed node validation
+	// The proposal failed node validation
 	ProposalRejectionReasonNodeValidationFailed ProposalRejectionReason = "NodeValidationFailed"
 )
 
