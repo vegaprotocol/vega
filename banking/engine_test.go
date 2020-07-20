@@ -1,6 +1,7 @@
 package banking_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -73,7 +74,7 @@ func testDepositSuccess(t *testing.T) {
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
 
-	eng.OnTick(now.Add(1 * time.Second))
+	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
 
 func testDepositFailure(t *testing.T) {
@@ -98,7 +99,7 @@ func testDepositFailure(t *testing.T) {
 
 	// then we call time update, expect collateral to never be called
 	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	eng.OnTick(now.Add(1 * time.Second))
+	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
 
 func testDepositError(t *testing.T) {

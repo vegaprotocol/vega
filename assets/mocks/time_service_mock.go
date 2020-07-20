@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
@@ -34,7 +35,7 @@ func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 }
 
 // NotifyOnTick mocks base method
-func (m *MockTimeService) NotifyOnTick(arg0 func(time.Time)) {
+func (m *MockTimeService) NotifyOnTick(arg0 func(context.Context, time.Time)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "NotifyOnTick", arg0)
 }

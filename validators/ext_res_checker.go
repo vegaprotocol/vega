@@ -24,7 +24,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/validators TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
@@ -210,7 +210,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 	}
 }
 
-func (e *ExtResChecker) OnTick(t time.Time) {
+func (e *ExtResChecker) OnTick(_ context.Context, t time.Time) {
 	e.now = t
 	topLen := e.top.Len()
 

@@ -38,7 +38,7 @@ type ExtResChecker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
-	NotifyOnTick(func(time.Time))
+	NotifyOnTick(func(context.Context, time.Time))
 }
 
 const (
@@ -129,8 +129,7 @@ func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) OnTick(t time.Time) {
-	ctx := context.Background()
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	for k, v := range e.assetActs {
 		state := atomic.LoadUint32(&v.state)
 		if state == pendingState {

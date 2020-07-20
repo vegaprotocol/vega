@@ -531,7 +531,7 @@ func (t *tradeStub) Get(id string) proto.Trade {
 
 type timeStub struct {
 	now    time.Time
-	notify func(time.Time)
+	notify func(context.Context, time.Time)
 }
 
 func (t *timeStub) GetTimeNow() (time.Time, error) {
@@ -540,10 +540,10 @@ func (t *timeStub) GetTimeNow() (time.Time, error) {
 
 func (t *timeStub) SetTime(newNow time.Time) {
 	t.now = newNow
-	t.notify(t.now)
+	t.notify(context.Background(), t.now)
 }
 
-func (t *timeStub) NotifyOnTick(f func(time.Time)) {
+func (t *timeStub) NotifyOnTick(f func(context.Context, time.Time)) {
 	t.notify = f
 }
 

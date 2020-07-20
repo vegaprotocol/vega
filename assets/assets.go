@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -24,7 +25,7 @@ var (
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/assets TimeService
 type TimeService interface {
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 type NodeWallet interface {
@@ -71,7 +72,7 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 	return s, nil
 }
 
-func (a *Service) onTick(t time.Time) {
+func (a *Service) onTick(_ context.Context, t time.Time) {
 	// update block time on id generator
 	a.idgen.NewBatch()
 }
