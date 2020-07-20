@@ -49,18 +49,20 @@ func (m *MarginLevelSub) loop(ctx context.Context) {
 	}
 }
 
-func (m *MarginLevelSub) Push(e events.Event) {
-	switch te := e.(type) {
-	case MLE:
-		ml := te.MarginLevels()
-		m.mu.Lock()
-		if _, ok := m.buf[ml.PartyID]; !ok {
-			m.buf[ml.PartyID] = map[string]types.MarginLevels{}
+func (m *MarginLevelSub) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case MLE:
+			ml := te.MarginLevels()
+			m.mu.Lock()
+			if _, ok := m.buf[ml.PartyID]; !ok {
+				m.buf[ml.PartyID] = map[string]types.MarginLevels{}
+			}
+			m.buf[ml.PartyID][ml.MarketID] = ml
+			m.mu.Unlock()
+		case TimeEvent:
+			m.flush()
 		}
-		m.buf[ml.PartyID][ml.MarketID] = ml
-		m.mu.Unlock()
-	case TimeEvent:
-		m.flush()
 	}
 }
 

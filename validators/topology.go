@@ -36,7 +36,8 @@ type Topology struct {
 	vegaValidatorRefs map[string]struct{}
 	chainValidators   []*tmtypes.Validator
 
-	selfChain *tmtypes.Validator
+	selfChain   *tmtypes.Validator
+	isValidator bool
 
 	// don't recalculate readyness all the time
 	ready bool
@@ -44,7 +45,7 @@ type Topology struct {
 	mu sync.Mutex
 }
 
-func NewTopology(log *logging.Logger, clt BlockchainClient) *Topology {
+func NewTopology(log *logging.Logger, clt BlockchainClient, isValidator bool) *Topology {
 
 	t := &Topology{
 		log:               log,
@@ -52,10 +53,15 @@ func NewTopology(log *logging.Logger, clt BlockchainClient) *Topology {
 		validators:        map[string]string{},
 		chainValidators:   []*tmtypes.Validator{},
 		vegaValidatorRefs: map[string]struct{}{},
+		isValidator:       isValidator,
 	}
 
 	go t.handleGenesisValidators()
 	return t
+}
+
+func (t *Topology) IsValidator() bool {
+	return t.isValidator
 }
 
 func (t *Topology) Len() int {

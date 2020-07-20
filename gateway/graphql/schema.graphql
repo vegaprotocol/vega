@@ -234,6 +234,8 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+  "the sum of the size of all positions greater than 0."
+  openInterest: String!
 }
 
 type PreparedSubmitOrder {
@@ -580,7 +582,7 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 type InstrumentMetadata {
 
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
-  tags: [String]!
+  tags: [String!]
 }
 
 "An Ethereum oracle"
@@ -698,8 +700,6 @@ type Market {
 
   "Orders on a market"
   orders (
-    "Filter open orders only"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -816,8 +816,6 @@ type Party {
 
   "Orders relating to a party"
   orders(
-    "Is the order still open or not"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -1269,7 +1267,7 @@ input NewMarketInput {
   "New market risk configuration"
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -1285,7 +1283,7 @@ type NewMarket {
   "New market risk configuration"
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
 }
@@ -1301,6 +1299,11 @@ input UpdateMarketInput {
   marketId: String!
 }
 
+"A new asset proposal change"
+type NewAsset {
+  "the source of the new Asset"
+  source: AssetSource!
+}
 
 "Allows submitting a proposal for changing governance network parameters"
 type UpdateNetwork {
@@ -1401,7 +1404,7 @@ input UpdateNetworkInput {
 }
 
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -1454,6 +1457,40 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateNetwork: UpdateNetworkInput
+
+  "a new Asset proposal, this will create a new asset to be used in the vega network"
+  newAsset: NewAssetInput
+
+}
+
+"A new asset to be added into vega"
+input NewAssetInput {
+  "A new builtin assed to be created"
+  builtinAsset: BuiltinAssetInput
+
+  "A new ERC20 asset to be created"
+  erc20: ERC20Input
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+input ERC20Input {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+input BuiltinAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
 }
 
 """

@@ -182,7 +182,7 @@ type ComplexityRoot struct {
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
 		OrderByReference   func(childComplexity int, reference string) int
-		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		Orders             func(childComplexity int, skip *int, first *int, last *int) int
 		TradableInstrument func(childComplexity int) int
 		Trades             func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode        func(childComplexity int) int
@@ -196,6 +196,7 @@ type ComplexityRoot struct {
 		MarkPrice       func(childComplexity int) int
 		Market          func(childComplexity int) int
 		MidPrice        func(childComplexity int) int
+		OpenInterest    func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
 	}
 
@@ -213,6 +214,10 @@ type ComplexityRoot struct {
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
 		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
+	}
+
+	NewAsset struct {
+		Source func(childComplexity int) int
 	}
 
 	NewMarket struct {
@@ -253,7 +258,7 @@ type ComplexityRoot struct {
 		Accounts  func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
 		Id        func(childComplexity int) int
 		Margins   func(childComplexity int, marketID *string) int
-		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		Orders    func(childComplexity int, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
 		Proposals func(childComplexity int, inState *ProposalState) int
 		Trades    func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
@@ -472,7 +477,7 @@ type MarginLevelsResolver interface {
 	Timestamp(ctx context.Context, obj *proto.MarginLevels) (string, error)
 }
 type MarketResolver interface {
-	Orders(ctx context.Context, obj *Market, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
+	Orders(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
@@ -489,6 +494,7 @@ type MarketDataResolver interface {
 	BestOfferVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	MidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	Timestamp(ctx context.Context, obj *proto.MarketData) (string, error)
+	OpenInterest(ctx context.Context, obj *proto.MarketData) (string, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*Market, error)
@@ -526,7 +532,7 @@ type OrderResolver interface {
 	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
 }
 type PartyResolver interface {
-	Orders(ctx context.Context, obj *proto.Party, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
+	Orders(ctx context.Context, obj *proto.Party, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Trades(ctx context.Context, obj *proto.Party, marketID *string, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Accounts(ctx context.Context, obj *proto.Party, marketID *string, asset *string, typeArg *AccountType) ([]*proto.Account, error)
 	Positions(ctx context.Context, obj *proto.Party) ([]*proto.Position, error)
@@ -1161,7 +1167,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Market.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -1237,6 +1243,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.MidPrice(childComplexity), true
+
+	case "MarketData.openInterest":
+		if e.complexity.MarketData.OpenInterest == nil {
+			break
+		}
+
+		return e.complexity.MarketData.OpenInterest(childComplexity), true
 
 	case "MarketData.timestamp":
 		if e.complexity.MarketData.Timestamp == nil {
@@ -1344,6 +1357,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string)), true
+
+	case "NewAsset.source":
+		if e.complexity.NewAsset.Source == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Source(childComplexity), true
 
 	case "NewMarket.decimalPlaces":
 		if e.complexity.NewMarket.DecimalPlaces == nil {
@@ -1561,7 +1581,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.positions":
 		if e.complexity.Party.Positions == nil {
@@ -2869,6 +2889,8 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+  "the sum of the size of all positions greater than 0."
+  openInterest: String!
 }
 
 type PreparedSubmitOrder {
@@ -3215,7 +3237,7 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 type InstrumentMetadata {
 
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
-  tags: [String]!
+  tags: [String!]
 }
 
 "An Ethereum oracle"
@@ -3333,8 +3355,6 @@ type Market {
 
   "Orders on a market"
   orders (
-    "Filter open orders only"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -3451,8 +3471,6 @@ type Party {
 
   "Orders relating to a party"
   orders(
-    "Is the order still open or not"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -3904,7 +3922,7 @@ input NewMarketInput {
   "New market risk configuration"
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -3920,7 +3938,7 @@ type NewMarket {
   "New market risk configuration"
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
 }
@@ -3936,6 +3954,11 @@ input UpdateMarketInput {
   marketId: String!
 }
 
+"A new asset proposal change"
+type NewAsset {
+  "the source of the new Asset"
+  source: AssetSource!
+}
 
 "Allows submitting a proposal for changing governance network parameters"
 type UpdateNetwork {
@@ -4036,7 +4059,7 @@ input UpdateNetworkInput {
 }
 
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -4089,6 +4112,40 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateNetwork: UpdateNetworkInput
+
+  "a new Asset proposal, this will create a new asset to be used in the vega network"
+  newAsset: NewAssetInput
+
+}
+
+"A new asset to be added into vega"
+input NewAssetInput {
+  "A new builtin assed to be created"
+  builtinAsset: BuiltinAssetInput
+
+  "A new ERC20 asset to be created"
+  erc20: ERC20Input
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+input ERC20Input {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+input BuiltinAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
 }
 
 """
@@ -4247,38 +4304,30 @@ func (ec *executionContext) field_Market_orderByReference_args(ctx context.Conte
 func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["open"]; ok {
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["open"] = arg0
+	args["skip"] = arg0
 	var arg1 *int
-	if tmp, ok := rawArgs["skip"]; ok {
+	if tmp, ok := rawArgs["first"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg1
+	args["first"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	if tmp, ok := rawArgs["last"]; ok {
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
+	args["last"] = arg2
 	return args, nil
 }
 
@@ -4619,38 +4668,30 @@ func (ec *executionContext) field_Party_margins_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Party_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["open"]; ok {
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["open"] = arg0
+	args["skip"] = arg0
 	var arg1 *int
-	if tmp, ok := rawArgs["skip"]; ok {
+	if tmp, ok := rawArgs["first"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg1
+	args["first"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	if tmp, ok := rawArgs["last"]; ok {
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
+	args["last"] = arg2
 	return args, nil
 }
 
@@ -6800,14 +6841,11 @@ func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LogNormalModelParams_mu(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
@@ -7514,7 +7552,7 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Orders(rctx, obj, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Market().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8030,6 +8068,40 @@ func (ec *executionContext) _MarketData_timestamp(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MarketData_openInterest(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().OpenInterest(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8403,6 +8475,40 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	return ec.marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NewAsset_source(ctx context.Context, field graphql.CollectedField, obj *NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AssetSource)
+	fc.Result = res
+	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _NewMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8529,14 +8635,11 @@ func (ec *executionContext) _NewMarket_metadata(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_tradingMode(ctx context.Context, field graphql.CollectedField, obj *NewMarket) (ret graphql.Marshaler) {
@@ -9293,7 +9396,7 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Orders(rctx, obj, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14848,6 +14951,42 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputBuiltinAssetInput(ctx context.Context, obj interface{}) (BuiltinAssetInput, error) {
+	var it BuiltinAssetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "symbol":
+			var err error
+			it.Symbol, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "totalSupply":
+			var err error
+			it.TotalSupply, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decimals":
+			var err error
+			it.Decimals, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Context, obj interface{}) (ContinuousTradingInput, error) {
 	var it ContinuousTradingInput
 	var asMap = obj.(map[string]interface{})
@@ -14881,6 +15020,24 @@ func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Conte
 		case "tickSize":
 			var err error
 			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputERC20Input(ctx context.Context, obj interface{}) (ERC20Input, error) {
+	var it ERC20Input
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "contractAddress":
+			var err error
+			it.ContractAddress, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15016,6 +15173,30 @@ func (ec *executionContext) unmarshalInputLogNormalRiskModelInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewAssetInput(ctx context.Context, obj interface{}) (NewAssetInput, error) {
+	var it NewAssetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "builtinAsset":
+			var err error
+			it.BuiltinAsset, err = ec.unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "erc20":
+			var err error
+			it.Erc20, err = ec.unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, obj interface{}) (NewMarketInput, error) {
 	var it NewMarketInput
 	var asMap = obj.(map[string]interface{})
@@ -15042,7 +15223,7 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			}
 		case "metadata":
 			var err error
-			it.Metadata, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			it.Metadata, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15097,6 +15278,12 @@ func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context
 		case "updateNetwork":
 			var err error
 			it.UpdateNetwork, err = ec.unmarshalOUpdateNetworkInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newAsset":
+			var err error
+			it.NewAsset, err = ec.unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15316,6 +15503,13 @@ func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._UpdateNetwork(ctx, sel, obj)
+	case NewAsset:
+		return ec._NewAsset(ctx, sel, &obj)
+	case *NewAsset:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NewAsset(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -15962,9 +16156,6 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("InstrumentMetadata")
 		case "tags":
 			out.Values[i] = ec._InstrumentMetadata_tags(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16458,6 +16649,20 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		case "openInterest":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_openInterest(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16576,6 +16781,33 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var newAssetImplementors = []string{"NewAsset", "ProposalChange"}
+
+func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet, obj *NewAsset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newAssetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewAsset")
+		case "source":
+			out.Values[i] = ec._NewAsset_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var newMarketImplementors = []string{"NewMarket", "ProposalChange"}
 
 func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet, obj *NewMarket) graphql.Marshaler {
@@ -16604,9 +16836,6 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 			}
 		case "metadata":
 			out.Values[i] = ec._NewMarket_metadata(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "tradingMode":
 			out.Values[i] = ec._NewMarket_tradingMode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -19398,35 +19627,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v TradableInstrument) graphql.Marshaler {
 	return ec._TradableInstrument(ctx, sel, &v)
 }
@@ -19875,6 +20075,18 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOBuiltinAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx context.Context, v interface{}) (BuiltinAssetInput, error) {
+	return ec.unmarshalInputBuiltinAssetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx context.Context, v interface{}) (*BuiltinAssetInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOBuiltinAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalOCandle2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx context.Context, sel ast.SelectionSet, v proto.Candle) graphql.Marshaler {
 	return ec._Candle(ctx, sel, &v)
 }
@@ -19947,6 +20159,18 @@ func (ec *executionContext) unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotoco
 		return nil, nil
 	}
 	res, err := ec.unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOERC20Input2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx context.Context, v interface{}) (ERC20Input, error) {
+	return ec.unmarshalInputERC20Input(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx context.Context, v interface{}) (*ERC20Input, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOERC20Input2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx, v)
 	return &res, err
 }
 
@@ -20154,6 +20378,18 @@ func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Market(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx context.Context, v interface{}) (NewAssetInput, error) {
+	return ec.unmarshalInputNewAssetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx context.Context, v interface{}) (*NewAssetInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx context.Context, v interface{}) (NewMarketInput, error) {
@@ -20635,6 +20871,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

@@ -9,7 +9,6 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/proto"
@@ -50,7 +49,6 @@ type marketTestSetup struct {
 	ctrl     *gomock.Controller
 	core     *execution.Market
 	party    *execution.Party
-	candles  *mocks.MockCandleBuf
 	accounts *accStub
 	proposal *ProposalStub
 	votes    *VoteStub
@@ -71,7 +69,6 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 	}
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	ctrl := gomock.NewController(&reporter)
-	candles := mocks.NewMockCandleBuf(ctrl)
 	broker := NewBrokerStub()
 
 	// this can happen any number of times, just set the mock up to accept all of them
@@ -83,12 +80,10 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		broker,
 		time.Now(),
 	)
-	candles.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	setup := &marketTestSetup{
 		market:     market,
 		ctrl:       ctrl,
-		candles:    candles,
 		accountIDs: map[string]struct{}{},
 		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
 		colE:       colE,
@@ -104,7 +99,6 @@ type executionTestSetup struct {
 	cfg        execution.Config
 	log        *logging.Logger
 	ctrl       *gomock.Controller
-	candles    *mocks.MockCandleBuf
 	timesvc    *timeStub
 	proposal   *ProposalStub
 	votes      *VoteStub
@@ -142,7 +136,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.cfg = execution.NewDefaultConfig("")
 	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
-	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
@@ -161,11 +154,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 		})
 	}
 
-	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	execsetup.candles.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
-
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.candles, mkts, execsetup.collateral, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, mkts, execsetup.collateral, execsetup.broker)
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())

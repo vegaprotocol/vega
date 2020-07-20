@@ -609,7 +609,35 @@
             <ul>
 
                 <li>
-                  <a href="#vega.AssetList"><span class="badge">M</span>AssetList</a>
+                  <a href="#vega.AddValidator"><span class="badge">M</span>AddValidator</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BTCDeposit"><span class="badge">M</span>BTCDeposit</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BTCEvent"><span class="badge">M</span>BTCEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BTCWithdrawal"><span class="badge">M</span>BTCWithdrawal</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BitcoinAddress"><span class="badge">M</span>BitcoinAddress</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BuiltinAssetDeposit"><span class="badge">M</span>BuiltinAssetDeposit</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BuiltinAssetEvent"><span class="badge">M</span>BuiltinAssetEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.BuiltinAssetWithdrawal"><span class="badge">M</span>BuiltinAssetWithdrawal</a>
                 </li>
 
                 <li>
@@ -617,11 +645,39 @@
                 </li>
 
                 <li>
-                  <a href="#vega.Deposit"><span class="badge">M</span>Deposit</a>
+                  <a href="#vega.ERC20AssetDelist"><span class="badge">M</span>ERC20AssetDelist</a>
                 </li>
 
                 <li>
-                  <a href="#vega.Withdrawal"><span class="badge">M</span>Withdrawal</a>
+                  <a href="#vega.ERC20AssetList"><span class="badge">M</span>ERC20AssetList</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ERC20Deposit"><span class="badge">M</span>ERC20Deposit</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ERC20Event"><span class="badge">M</span>ERC20Event</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ERC20Withdrawal"><span class="badge">M</span>ERC20Withdrawal</a>
+                </li>
+
+                <li>
+                  <a href="#vega.EthereumAddress"><span class="badge">M</span>EthereumAddress</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Identifier"><span class="badge">M</span>Identifier</a>
+                </li>
+
+                <li>
+                  <a href="#vega.RemoveValidator"><span class="badge">M</span>RemoveValidator</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ValidatorEvent"><span class="badge">M</span>ValidatorEvent</a>
                 </li>
 
 
@@ -3156,13 +3212,6 @@
                   <td><p> </p></td>
                 </tr>
 
-                <tr>
-                  <td>open</td>
-                  <td><a href="#bool">bool</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -3241,13 +3290,6 @@
                 <tr>
                   <td>pagination</td>
                   <td><a href="#api.Pagination">Pagination</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>open</td>
-                  <td><a href="#bool">bool</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -4977,8 +5019,32 @@
       <p></p>
 
 
-        <h3 id="vega.AssetList">AssetList</h3>
-        <p></p>
+        <h3 id="vega.AddValidator">AddValidator</h3>
+        <p>A message to notify a new validator being added to the vega network</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#vega.Identifier">Identifier</a></td>
+                  <td></td>
+                  <td><p>The identifier of this validator </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BTCDeposit">BTCDeposit</h3>
+        <p>A Bitcoin deposit into vega</p>
 
 
           <table class="field-table">
@@ -4991,7 +5057,242 @@
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
+                  <td><p>The vega network internally ID of the asset </p></td>
+                </tr>
+
+                <tr>
+                  <td>sourceBTCAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The BTC wallet inititing the Deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>targetPartyId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The Vega public key of the target Vega user </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BTCEvent">BTCEvent</h3>
+        <p>An event from Bitcoin</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>index</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The index of the transaction </p></td>
+                </tr>
+
+                <tr>
+                  <td>block</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The block in which the transaction happenned </p></td>
+                </tr>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.BTCDeposit">BTCDeposit</a></td>
+                  <td></td>
                   <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.BTCWithdrawal">BTCWithdrawal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BTCWithdrawal">BTCWithdrawal</h3>
+        <p>A Bitcoin withdrawl from vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The vega network internally ID of the asset </p></td>
+                </tr>
+
+                <tr>
+                  <td>sourcePartyId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party inititing the withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>targetBTCAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Target BTC wallet address </p></td>
+                </tr>
+
+                <tr>
+                  <td>referenceNonce</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The nonce reference of the transaction </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BitcoinAddress">BitcoinAddress</h3>
+        <p>Wrapper for a Bitcoin address (wallet)</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>A Bitcoin address </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BuiltinAssetDeposit">BuiltinAssetDeposit</h3>
+        <p>A deposit for an vega builtin asset</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>A vega network internal asset ID </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>A vega party ID (pubkey) </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The amount to be deposited </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BuiltinAssetEvent">BuiltinAssetEvent</h3>
+        <p>An event related to a vega builtin asset</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.BuiltinAssetDeposit">BuiltinAssetDeposit</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.BuiltinAssetWithdrawal">BuiltinAssetWithdrawal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.BuiltinAssetWithdrawal">BuiltinAssetWithdrawal</h3>
+        <p>A Withdrawal for a vega builtin asset</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>A vega network internal asset ID </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>A vega network party ID (pubkey) </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The amount to be withdrawan </p></td>
                 </tr>
 
             </tbody>
@@ -5002,7 +5303,7 @@
 
 
         <h3 id="vega.ChainEvent">ChainEvent</h3>
-        <p></p>
+        <p>An event being forwarded to the vega network</p><p>providing information on things happening on other networks</p>
 
 
           <table class="field-table">
@@ -5012,61 +5313,39 @@
             <tbody>
 
                 <tr>
-                  <td>txHash</td>
+                  <td>txID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The ID of the transaction in which the things happened
+usually a hash </p></td>
                 </tr>
 
                 <tr>
-                  <td>index</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>block</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-                <tr>
-                  <td>builtinAsset</td>
-                  <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
+                  <td>builtin</td>
+                  <td><a href="#vega.BuiltinAssetEvent">BuiltinAssetEvent</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
                   <td>erc20</td>
-                  <td><a href="#vega.ERC20">ERC20</a></td>
-                  <td></td>
-                  <td><p>ERC1155 erc1155 = 103;
-Ether ether = 104; </p></td>
-                </tr>
-
-                <tr>
-                  <td>deposit</td>
-                  <td><a href="#vega.Deposit">Deposit</a></td>
+                  <td><a href="#vega.ERC20Event">ERC20Event</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>withdrawal</td>
-                  <td><a href="#vega.Withdrawal">Withdrawal</a></td>
+                  <td>btc</td>
+                  <td><a href="#vega.BTCEvent">BTCEvent</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
 
                 <tr>
-                  <td>assetList</td>
-                  <td><a href="#vega.AssetList">AssetList</a></td>
+                  <td>validator</td>
+                  <td><a href="#vega.ValidatorEvent">ValidatorEvent</a></td>
                   <td></td>
-                  <td><p>AssetDelist assetDelist = 1004;
-DepositMinimumSet depositMinimumSet = 1005; </p></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -5076,8 +5355,8 @@ DepositMinimumSet depositMinimumSet = 1005; </p></td>
 
 
 
-        <h3 id="vega.Deposit">Deposit</h3>
-        <p></p>
+        <h3 id="vega.ERC20AssetDelist">ERC20AssetDelist</h3>
+        <p>An asset blacklisting for a erc20 token</p>
 
 
           <table class="field-table">
@@ -5090,20 +5369,127 @@ DepositMinimumSet depositMinimumSet = 1005; </p></td>
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The vega network internally ID of the asset </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ERC20AssetList">ERC20AssetList</h3>
+        <p>An asset whitelisting for a erc20 token</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The vega network internally ID of the asset </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ERC20Deposit">ERC20Deposit</h3>
+        <p>An asset deposit for an erc20 token</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The vega network internally ID of the asset </p></td>
                 </tr>
 
                 <tr>
-                  <td>sourcePartyID</td>
+                  <td>sourceEthereumAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The ethereum wallet that initiated the deposit </p></td>
                 </tr>
 
                 <tr>
                   <td>targetPartyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
+                  <td><p>The Vega public key of the target vega user </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ERC20Event">ERC20Event</h3>
+        <p>An event related to an erc20 token</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>index</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Index of the transaction </p></td>
+                </tr>
+
+                <tr>
+                  <td>block</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The block in which the transaction was added </p></td>
+                </tr>
+
+                <tr>
+                  <td>assetList</td>
+                  <td><a href="#vega.ERC20AssetList">ERC20AssetList</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>assetDelist</td>
+                  <td><a href="#vega.ERC20AssetDelist">ERC20AssetDelist</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.ERC20Deposit">ERC20Deposit</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.ERC20Withdrawal">ERC20Withdrawal</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
 
@@ -5114,8 +5500,8 @@ DepositMinimumSet depositMinimumSet = 1005; </p></td>
 
 
 
-        <h3 id="vega.Withdrawal">Withdrawal</h3>
-        <p></p>
+        <h3 id="vega.ERC20Withdrawal">ERC20Withdrawal</h3>
+        <p>An asset withdrawal for an erc20 token</p>
 
 
           <table class="field-table">
@@ -5128,26 +5514,143 @@ DepositMinimumSet depositMinimumSet = 1005; </p></td>
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The vega network internally ID of the asset </p></td>
                 </tr>
 
                 <tr>
                   <td>sourcePartyId</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The party inititing the withdrawal </p></td>
                 </tr>
 
                 <tr>
-                  <td>targetPartyId</td>
+                  <td>targetEthereumAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The target Ethereum wallet address </p></td>
                 </tr>
 
                 <tr>
                   <td>referenceNonce</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The reference nonce used for the transaction </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.EthereumAddress">EthereumAddress</h3>
+        <p>Wrapper for an Ethereum address (wallet/contract)</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>An Ethereum address </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Identifier">Identifier</h3>
+        <p>A wrapper type on any possible network address supported by vega</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ethereumAddress</td>
+                  <td><a href="#vega.EthereumAddress">EthereumAddress</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>bitcoinAddress</td>
+                  <td><a href="#vega.BitcoinAddress">BitcoinAddress</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.RemoveValidator">RemoveValidator</h3>
+        <p>A message to notify a new validator being removed to the vega network</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#vega.Identifier">Identifier</a></td>
+                  <td></td>
+                  <td><p>The identifier of this validator </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ValidatorEvent">ValidatorEvent</h3>
+        <p>An event related to validator management with foreign networks</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>sourceID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The source ID of the event </p></td>
+                </tr>
+
+                <tr>
+                  <td>add</td>
+                  <td><a href="#vega.AddValidator">AddValidator</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>rm</td>
+                  <td><a href="#vega.RemoveValidator">RemoveValidator</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -7230,56 +7733,63 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>markPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the mark price (actually an unsgined int) </p></td>
                 </tr>
 
                 <tr>
                   <td>bestBidPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the highest price level on an order book for buy orders. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestBidVolume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the aggregated volume being bid at the best bid price. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestOfferPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the lowest price level on an order book for offer orders. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestOfferVolume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the aggregated volume being offered at the best offer price. </p></td>
                 </tr>
 
                 <tr>
                   <td>midPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>the arithmetic average of the best bid price and best offer price. </p></td>
                 </tr>
 
                 <tr>
                   <td>market</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>market id of the associated mark price </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>time at which this mark price was relevant </p></td>
+                </tr>
+
+                <tr>
+                  <td>openInterest</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>the sum of the size of all positions greater than 0. </p></td>
                 </tr>
 
             </tbody>

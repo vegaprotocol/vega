@@ -13,7 +13,7 @@ const (
 	nodeApproval        = 1         // float for percentage
 )
 
-// Config represent the configuration of the blockchain package
+// Config represent the configuration of the processor package
 type Config struct {
 	Level               encoding.LogLevel
 	LogOrderSubmitDebug bool

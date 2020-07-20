@@ -21,17 +21,22 @@ type OrderStore interface {
 type OrderEvent struct {
 	*Base
 	mu    sync.Mutex
+	cfg   Config
 	log   *logging.Logger
 	store OrderStore
 	buf   []types.Order
 }
 
-func NewOrderEvent(ctx context.Context, log *logging.Logger, store OrderStore, ack bool) *OrderEvent {
+func NewOrderEvent(ctx context.Context, cfg Config, log *logging.Logger, store OrderStore, ack bool) *OrderEvent {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.OrderEventLogLevel.Level)
+
 	o := OrderEvent{
 		Base:  NewBase(ctx, 10, ack),
 		log:   log,
 		store: store,
 		buf:   []types.Order{},
+		cfg:   cfg,
 	}
 	if o.isRunning() {
 		go o.loop(o.ctx)
@@ -53,12 +58,14 @@ func (o *OrderEvent) loop(ctx context.Context) {
 	}
 }
 
-func (o *OrderEvent) Push(e events.Event) {
-	switch te := e.(type) {
-	case OE:
-		o.write(te)
-	case TimeEvent:
-		o.flush()
+func (o *OrderEvent) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case OE:
+			o.write(te)
+		case TimeEvent:
+			o.flush()
+		}
 	}
 }
 

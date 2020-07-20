@@ -45,7 +45,7 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("InstrumentMetadata.IntoProto", func(t *testing.T) {
-		im := gql.InstrumentMetadata{Tags: []*string{stringptr("tag:1"), stringptr("tag:2")}}
+		im := gql.InstrumentMetadata{Tags: []string{"tag:1", "tag:2"}}
 		pim, err := im.IntoProto()
 		assert.Nil(t, err)
 		assert.NotNil(t, pim)
@@ -211,8 +211,8 @@ func TestModelConverters(t *testing.T) {
 		assert.NotNil(t, im)
 		assert.Nil(t, err)
 		assert.Len(t, im.Tags, 2)
-		assert.Equal(t, pim.Tags[0], *(im.Tags[0]))
-		assert.Equal(t, pim.Tags[1], *(im.Tags[1]))
+		assert.Equal(t, pim.Tags[0], (im.Tags[0]))
+		assert.Equal(t, pim.Tags[1], (im.Tags[1]))
 	})
 
 	t.Run("EthereumEventFromproto nil", func(t *testing.T) {
@@ -471,7 +471,7 @@ func TestModelConverters(t *testing.T) {
 					FactorShort: 0.2,
 				},
 			},
-			Metadata: []*string{stringptr("tag:1"), stringptr("tag:2")},
+			Metadata: []string{"tag:1", "tag:2"},
 			ContinuousTrading: &gql.ContinuousTradingInput{
 				TickSize: 10,
 			},
@@ -513,7 +513,7 @@ func TestModelConverters(t *testing.T) {
 					FactorShort: 0.2,
 				},
 			},
-			Metadata: []*string{stringptr("tag:1"), stringptr("tag:2")},
+			Metadata: []string{"tag:1", "tag:2"},
 			DiscreteTrading: &gql.DiscreteTradingInput{
 				Duration: 100,
 				TickSize: 10,

@@ -11,7 +11,7 @@ import (
 // a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/vega/broker Subscriber
 type Subscriber interface {
-	Push(val events.Event)
+	Push(val ...events.Event)
 	Skip() <-chan struct{}
 	Closed() <-chan struct{}
 	C() chan<- events.Event
@@ -49,6 +49,25 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
+func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
+	for _, e := range evts {
+		select {
+		case <-b.ctx.Done():
+			return
+		case <-sub.Skip():
+			return
+		case <-sub.Closed():
+			unsub = true
+			return
+		case sub.C() <- e:
+			continue
+		default:
+			continue
+		}
+	}
+	return
+}
+
 // SendBatch sends a slice of events to subscribers that can handle the events in the slice
 // the events don't have to be of the same type, and most subscribers will ignore unknown events
 // but this will slow down those subscribers, so avoid doing silly things
@@ -76,44 +95,20 @@ func (b *Broker) SendBatch(events []events.Event) {
 	// unlock the mutex once done
 	go func(subs map[int]*subscription) {
 		unsub := make([]int, 0, len(subs))
-		// send each event
-		for _, event := range events {
-			for k, sub := range subs {
-				select {
-				case <-b.ctx.Done():
-					// broker context cancelled, we're done
-					return
-				case <-sub.Skip():
-					continue
-				case <-sub.Closed():
+		for k, sub := range subs {
+			select {
+			case <-b.ctx.Done():
+				return
+			case <-sub.Skip():
+				continue
+			case <-sub.Closed():
+				unsub = append(unsub, k)
+			default:
+				if sub.required {
+					sub.Push(events...)
+				} else if rm := b.sendChannel(sub, events); rm {
 					unsub = append(unsub, k)
-				default:
-					if sub.required {
-						sub.Push(event)
-					} else {
-						ch := sub.C()
-						select {
-						case ch <- event:
-							continue
-						default:
-							// skip this event
-							continue
-						}
-					}
 				}
-			}
-			// unsubscribed are excluded on next iteration
-			if len(unsub) > 0 {
-				b.mu.Lock()
-				b.rmSubs(unsub...)
-				b.mu.Lock()
-				for _, k := range unsub {
-					delete(subs, k)
-				}
-				if len(subs) == 0 {
-					return
-				}
-				unsub = unsub[:0]
 			}
 		}
 	}(subs)
@@ -150,15 +145,8 @@ func (b *Broker) Send(event events.Event) {
 			default:
 				if sub.required {
 					sub.Push(event)
-				} else {
-					ch := sub.C()
-					select {
-					case ch <- event:
-						continue
-					default:
-						// skip this event
-						continue
-					}
+				} else if rm := b.sendChannel(sub, []events.Event{event}); rm {
+					unsub = append(unsub, k)
 				}
 			}
 		}

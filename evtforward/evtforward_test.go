@@ -126,13 +126,16 @@ func testAckFailureAlreadyAcked(t *testing.T) {
 
 func getTestChainEvent() *types.ChainEvent {
 	return &types.ChainEvent{
-		TxHash:      "somehash",
-		Index:       1,
-		Block:       100,
-		EventSource: &types.ChainEvent_BuiltinAsset{},
-		EventType: &types.ChainEvent_AssetList{
-			AssetList: &types.AssetList{
-				VegaAssetID: "asset-id-1",
+		TxID: "somehash",
+		Event: &types.ChainEvent_Erc20{
+			Erc20: &types.ERC20Event{
+				Index: 1,
+				Block: 100,
+				Action: &types.ERC20Event_AssetList{
+					AssetList: &types.ERC20AssetList{
+						VegaAssetID: "asset-id-1",
+					},
+				},
 			},
 		},
 	}

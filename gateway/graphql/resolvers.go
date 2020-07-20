@@ -378,7 +378,7 @@ func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version
 }
 
 func (r *myQueryResolver) OrderVersions(
-	ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*types.Order, error) {
+	ctx context.Context, orderID string, skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	reqest := &protoapi.OrderVersionsByIDRequest{
@@ -517,12 +517,10 @@ func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.Mar
 }
 
 func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByMarketRequest{
 		MarketID:   market.ID,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
@@ -534,7 +532,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
 }
 
 func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
-	skip *int, first *int, last *int) ([]*types.Trade, error) {
+	skip, first, last *int) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
 		MarketID:   market.ID,
@@ -723,13 +721,11 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByPartyRequest{
 		PartyID:    party.Id,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
@@ -746,7 +742,7 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
-	market *string, skip *int, first *int, last *int) ([]*types.Trade, error) {
+	market *string, skip, first, last *int) ([]*types.Trade, error) {
 
 	var mkt string
 	if market != nil {
@@ -896,7 +892,15 @@ func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceDa
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	return getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	if p == nil && err == nil {
+		// the api could return an nil party in some cases
+		// e.g: when a party does not exists in the stores
+		// this is not an error, but here we are not checking
+		// if a party exists or not, but what party did propose
+		p = &types.Party{Id: data.Proposal.PartyID}
+	}
+	return p, err
 }
 
 func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
@@ -1028,6 +1032,10 @@ type myMarketDataResolver VegaResolverRoot
 
 func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) OpenInterest(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.OpenInterest, 10), nil
 }
 
 func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {

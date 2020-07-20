@@ -123,18 +123,10 @@ func (os *Order) Close() error {
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByMarket(ctx context.Context, market string, skip,
-	limit uint64, descending bool, open bool) ([]*types.Order, error) {
-
-	var filter *orderFilter
-	if open {
-		openOnly := func(order *types.Order) bool {
-			return order.Status != types.Order_STATUS_ACTIVE
-		}
-		filter = &openOnly
-	}
+	limit uint64, descending bool) ([]*types.Order, error) {
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
-	return os.getOrdersIndirectly(ctx, marketPrefix, validForPrefix, skip, limit, descending, filter)
+	return os.getOrdersIndirectly(ctx, marketPrefix, validForPrefix, skip, limit, descending, nil)
 }
 
 // GetByMarketAndID retrieves an order for a given Market and id, any errors will be returned immediately.
@@ -179,18 +171,10 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
-	limit uint64, descending bool, open bool) ([]*types.Order, error) {
-
-	var filter *orderFilter
-	if open {
-		openOnly := func(order *types.Order) bool {
-			return order.Status != types.Order_STATUS_ACTIVE
-		}
-		filter = &openOnly
-	}
+	limit uint64, descending bool) ([]*types.Order, error) {
 
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
-	return os.getOrdersIndirectly(ctx, partyPrefix, validForPrefix, skip, limit, descending, filter)
+	return os.getOrdersIndirectly(ctx, partyPrefix, validForPrefix, skip, limit, descending, nil)
 }
 
 // GetByPartyAndID retrieves a trade for a given Party and id, any errors will be returned immediately.

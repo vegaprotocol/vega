@@ -10,9 +10,9 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
@@ -38,7 +38,6 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -47,6 +46,7 @@ import (
 	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func envConfigPath() string {
@@ -147,7 +147,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
-	l.setupBuffers()
 	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
@@ -206,8 +205,8 @@ func (l *NodeCommand) loadMarketsConfig() error {
 
 func (l *NodeCommand) setupSubscibers() {
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
-	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log, false)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore, true)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
 	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
 	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
 	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
@@ -216,10 +215,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
-}
-
-func (l *NodeCommand) setupBuffers() {
-	l.candleBuf = buffer.NewCandle(l.candleStore)
+	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -320,7 +316,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 			return fmt.Errorf("unable to enable asset: %v", err)
 		}
 
-		assetD := asset.Data()
+		assetD := asset.ProtoAsset()
 		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
 			return fmt.Errorf("unable to enable asset in colateral: %v", err)
 		}
@@ -347,7 +343,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -367,7 +363,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.candleBuf,
 		l.mktscfg,
 		l.collateral,
 		l.broker,
@@ -378,10 +373,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, nil)
+	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
+
+	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
@@ -395,9 +392,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
+	l.banking = banking.New(l.Log, l.collateral, l.erc, l.timeService)
+
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc, l.banking)
 	if err != nil {
 		return err
 	}

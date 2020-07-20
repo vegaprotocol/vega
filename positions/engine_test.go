@@ -19,6 +19,47 @@ func TestUpdatePosition(t *testing.T) {
 	t.Run("Update position network trade as seller", testUpdatePositionNetworkSell)
 }
 
+func TestGetOpenInterest(t *testing.T) {
+	engine := getTestEngine(t)
+	assert.Empty(t, engine.Positions())
+	buyer := "buyer_id"
+	buyer2 := "buyer_id2"
+	seller := "seller_id"
+	size := int64(10)
+	trade := proto.Trade{
+		Type:      proto.Trade_TYPE_DEFAULT,
+		Id:        "trade_id",
+		MarketID:  "market_id",
+		Price:     10000,
+		Size:      uint64(size),
+		Buyer:     buyer,
+		Seller:    seller,
+		BuyOrder:  "buy_order_id",
+		SellOrder: "sell_order_id",
+		Timestamp: time.Now().Unix(),
+	}
+	_ = engine.Update(&trade)
+	trade = proto.Trade{
+		Type:      proto.Trade_TYPE_DEFAULT,
+		Id:        "trade_id",
+		MarketID:  "market_id",
+		Price:     10000,
+		Size:      uint64(size),
+		Buyer:     buyer2,
+		Seller:    seller,
+		BuyOrder:  "buy_order_id",
+		SellOrder: "sell_order_id",
+		Timestamp: time.Now().Unix(),
+	}
+	_ = engine.Update(&trade)
+	// 3 positions
+	// 2 at + 10
+	// 1 at -20
+	// we should get an open interest of 20
+	openInterest := engine.GetOpenInterest()
+	assert.Equal(t, 20, int(openInterest))
+}
+
 func testUpdatePositionRegular(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
