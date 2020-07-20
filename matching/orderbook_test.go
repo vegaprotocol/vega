@@ -1698,6 +1698,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		// trades should match expected trades
 		for i, exp := range s.expectedTrades {
 			expectTrade(t, &exp, confirmationtypes.Trades[i])
+			expectTrade(t, &exp, trades[i])
 		}
 		// for i, trade := range confirmationtypes.Trades {
 		// expectTrade(t, &s.expectedTrades[i], trade)
