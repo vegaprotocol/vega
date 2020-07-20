@@ -181,6 +181,91 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
+func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {
+	var (
+		trades            []*types.Trade
+		totalVolumeToFill uint64
+	)
+	if agg.TimeInForce == types.Order_TIF_FOK {
+		if agg.Side == types.Side_SIDE_SELL {
+			for _, level := range s.levels {
+				// we don't have to account for network orders, they don't apply in price monitoring
+				// nor do fees apply
+				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+					totalVolumeToFill += level.volume
+				}
+				if totalVolumeToFill >= agg.Remaining {
+					break
+				}
+			}
+		} else if agg.Side == types.Side_SIDE_BUY {
+			for _, level := range s.levels {
+				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+					totalVolumeToFill += level.volume
+				}
+				if totalVolumeToFill >= agg.Remaining {
+					break
+				}
+			}
+		}
+
+		// FOK order could not be filled
+		if totalVolumeToFill < agg.Remaining {
+			return false, nil, nil
+		}
+	}
+
+	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
+	cpy := *agg
+	fake := &cpy
+
+	var (
+		idx     = len(s.levels) - 1
+		ntrades []*types.Trade
+		err     error
+	)
+
+	if fake.Side == types.Side_SIDE_SELL {
+		// in here we iterate from the end, as it's easier to remove the
+		// price levels from the back of the slice instead of from the front
+		// also it will allow us to reduce allocations
+		for idx >= 0 && fake.Remaining > 0 {
+			// not a market order && buy side price is too low => break
+			if agg.Type != types.Order_TYPE_MARKET && s.levels[idx].price < agg.Price {
+				break
+			}
+			fake, ntrades, err = s.levels[idx].fakeUncross(fake)
+			trades = append(trades, ntrades...)
+			// break if a wash trade is detected
+			if err != nil && err == ErrWashTrade {
+				break
+			}
+			// the orders are still part of the levels, so we just have to move on anyway
+			idx--
+		}
+	} else if fake.Side == types.Side_SIDE_BUY { // this if is a bit superfluous, but better be safe than sorry
+		for fake.Remaining > 0 && idx >= 0 {
+			if fake.Type != types.Order_TYPE_MARKET && s.levels[idx].price > fake.Price {
+				break
+			}
+			fake, ntrades, err = s.levels[idx].fakeUncross(fake)
+			trades = append(trades, ntrades...)
+			// break if a wash trade is detected
+			if err != nil && err == ErrWashTrade {
+				break
+			}
+			// the orders are still part of the levels, so we just have to move on anyway
+			idx--
+		}
+	}
+	filled := false
+	if fake.Remaining == 0 {
+		filled = true
+	}
+
+	return filled, trades, nil
+}
+
 func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64, error) {
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 

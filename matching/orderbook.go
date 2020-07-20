@@ -242,6 +242,30 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	return nil
 }
 
+// GetTrades returns the trades a given order generates if we were to submit it now
+// this is used to calculate fees, perform price monitoring, etc...
+func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
+	if err := b.validateOrder(order); err != nil {
+		return nil, err
+	}
+	if order.CreatedAt > b.latestTimestamp {
+		b.latestTimestamp = order.CreatedAt
+	}
+	_, trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
+
+	if err != nil {
+		if err == ErrWashTrade {
+			// we still want to submit this order, but know there will be no trades coming out of it
+			return nil, nil
+		}
+		// some random error happened, return both trades and error
+		// this is a case that isn't covered by the current SubmitOrder call
+		return trades, err
+	}
+	// no error uncrossing, in all other cases, return trades (could be empty) without an error
+	return trades, nil
+}
+
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")

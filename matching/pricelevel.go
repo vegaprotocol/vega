@@ -56,6 +56,45 @@ func (l *PriceLevel) removeOrder(index int) {
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
+// fakeUncross - this updates a copy of the order passed to it, the copied order is returned
+func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*types.Trade, err error) {
+	// work on a copy of the order, so we can submit it a second time
+	// after we've done the price monitoring and fees checks
+	cpy := *o
+	agg = &cpy
+	if len(l.orders) == 0 {
+		return
+	}
+
+	for _, order := range l.orders {
+		if order.PartyID == agg.PartyID {
+			err = ErrWashTrade
+			return
+		}
+
+		// Get size and make newTrade
+		size := l.getVolumeAllocation(agg, order)
+		if size <= 0 {
+			panic("Trade.size > order.remaining")
+		}
+
+		// New Trade
+		trade := newTrade(agg, order, size)
+
+		// Update Remaining for both aggressive and passive
+		agg.Remaining -= size
+
+		// Update trades
+		trades = append(trades, trade)
+
+		// Exit when done
+		if agg.Remaining == 0 {
+			break
+		}
+	}
+	return
+}
+
 func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order, err error) {
 	// for some reason sometimes it seems the pricelevels are not deleted when getting empty
 	// no big deal, just return early
