@@ -237,7 +237,7 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 	case ProposalRejectionReasonInsufficientTokens:
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, nil
 	case ProposalRejectionReasonInvalidInstrumentSecurity:
-		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY, nil
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, nil
 	case ProposalRejectionReasonNoProduct:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, nil
 	case ProposalRejectionReasonUnuspportedProduct:
@@ -272,7 +272,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonEnactTimeTooLate, nil
 	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS:
 		return ProposalRejectionReasonInsufficientTokens, nil
-	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY:
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY:
 		return ProposalRejectionReasonInvalidInstrumentSecurity, nil
 	case types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT:
 		return ProposalRejectionReasonNoProduct, nil

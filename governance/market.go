@@ -172,7 +172,7 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct) (types.P
 
 func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration) (types.ProposalError, error) {
 	if instrument.BaseName == instrument.QuoteName {
-		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY, ErrInvalidSecurity
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, ErrInvalidSecurity
 	}
 
 	switch product := instrument.Product.(type) {

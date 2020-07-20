@@ -2480,7 +2480,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_ENACT_TIME_TOO_SOON | 3 | the specified enact time is too early base on network parameters |
 | PROPOSAL_ERROR_ENACT_TIME_TOO_LATE | 4 | the specified enact time is too late based on network parameters |
 | PROPOSAL_ERROR_INSUFFICIENT_TOKENS | 5 | the proposer for this proposal as insufficient token |
-| PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY | 6 | the instrument quote name and base name were the same |
+| PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY | 6 | the instrument quote name and base name were the same |
 | PROPOSAL_ERROR_NO_PRODUCT | 7 | the proposal has not product |
 | PROPOSAL_ERROR_UNSUPPORTED_PRODUCT | 8 | the specified product is not supported |
 | PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP | 9 | invalid future maturity timestamp (expect RFC3339) |
