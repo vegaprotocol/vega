@@ -3192,7 +3192,7 @@ type Statistics {
 "A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
   "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  tickSize: String!
 }
 
 "Frequent batch auctions trading mode"
@@ -3200,7 +3200,7 @@ type DiscreteTrading {
   "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  tickSize: String!
 }
 
 union TradingMode = ContinuousTrading | DiscreteTrading
@@ -3939,7 +3939,7 @@ type InstrumentConfiguration {
 "A mode where Vega try to execute order as soon as they are received"
 input ContinuousTradingInput {
   "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  tickSize: String @deprecated(reason: "tickSize should not be used and will be ignored")
 }
 
 "Frequent batch auctions trading mode"
@@ -3947,7 +3947,7 @@ input DiscreteTradingInput {
   "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  tickSize: String @deprecated(reason: "tickSize should not be used and will be ignored")
 }
 
 """
@@ -6109,9 +6109,9 @@ func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field graphql.CollectedField, obj *DiscreteTrading) (ret graphql.Marshaler) {
@@ -6177,9 +6177,9 @@ func (ec *executionContext) _DiscreteTrading_tickSize(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ERC20_contractAddress(ctx context.Context, field graphql.CollectedField, obj *Erc20) (ret graphql.Marshaler) {
@@ -15068,7 +15068,7 @@ func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Con
 		switch k {
 		case "tickSize":
 			var err error
-			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
+			it.TickSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15092,7 +15092,7 @@ func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Conte
 			}
 		case "tickSize":
 			var err error
-			it.TickSize, err = ec.unmarshalNInt2int(ctx, v)
+			it.TickSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

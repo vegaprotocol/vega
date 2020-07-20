@@ -2527,7 +2527,7 @@ and the cause for an proposal being rejected of failed
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tickSize | [uint64](#uint64) |  |  |
+| tickSize | [string](#string) |  |  |
 
 
 
@@ -2543,7 +2543,7 @@ and the cause for an proposal being rejected of failed
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
-| tickSize | [uint64](#uint64) |  |  |
+| tickSize | [string](#string) |  |  |
 
 
 

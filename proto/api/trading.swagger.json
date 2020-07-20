@@ -1795,8 +1795,7 @@
       "type": "object",
       "properties": {
         "tickSize": {
-          "type": "string",
-          "format": "uint64"
+          "type": "string"
         }
       }
     },
@@ -1809,8 +1808,7 @@
           "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
         },
         "tickSize": {
-          "type": "string",
-          "format": "uint64"
+          "type": "string"
         }
       }
     },

@@ -143,6 +143,16 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 	return err
 }
 
+func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
+	var tickSize string = "0."
+	for decimalPlaces > 1 {
+		tickSize += "0"
+		decimalPlaces--
+	}
+	tickSize += "1"
+	return tickSize
+}
+
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if len(marketConfig.Id) == 0 {
@@ -163,6 +173,14 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.log.Error("unable to create a market with an invalid asset",
 			logging.String("market-id", marketConfig.Id),
 			logging.String("asset-id", asset))
+	}
+
+	// set a fake tick size to the continuous trading if it's continuous
+	switch tmod := marketConfig.TradingMode.(type) {
+	case *types.Market_Continuous:
+		tmod.Continuous.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
+	case *types.Market_Discrete:
+		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
 
 	mkt, err := NewMarket(

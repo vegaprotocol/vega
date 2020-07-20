@@ -2,6 +2,7 @@ package gql
 
 import (
 	"fmt"
+	"strconv"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -72,27 +73,38 @@ var (
 
 // IntoProto ...
 func (c *ContinuousTrading) IntoProto() (*types.Market_Continuous, error) {
-	if c.TickSize < 0 {
+	if len(c.TickSize) <= 0 {
 		return nil, ErrTickSizeNegative
 	}
+	// parsing just make sure it's a valid float
+	_, err := strconv.ParseFloat(c.TickSize, 64)
+	if err != nil {
+		return nil, err
+	}
+
 	return &types.Market_Continuous{
 		Continuous: &types.ContinuousTrading{
-			TickSize: uint64(c.TickSize),
+			TickSize: c.TickSize,
 		},
 	}, nil
 }
 
 // IntoProto ...
 func (d *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
-	if d.TickSize < 0 {
+	if len(d.TickSize) <= 0 {
 		return nil, ErrTickSizeNegative
+	}
+	// parsing just make sure it's a valid float
+	_, err := strconv.ParseFloat(d.TickSize, 64)
+	if err != nil {
+		return nil, err
 	}
 	if d.Duration < 0 {
 		return nil, ErrTradingDurationNegative
 	}
 	return &types.Market_Discrete{
 		Discrete: &types.DiscreteTrading{
-			TickSize:   uint64(d.TickSize),
+			TickSize:   d.TickSize,
 			DurationNs: int64(d.Duration),
 		},
 	}, nil
@@ -289,7 +301,7 @@ func (m *Market) IntoProto() (*types.Market, error) {
 // ContinuousTradingFromProto ...
 func ContinuousTradingFromProto(pct *types.ContinuousTrading) (*ContinuousTrading, error) {
 	return &ContinuousTrading{
-		TickSize: int(pct.TickSize),
+		TickSize: pct.TickSize,
 	}, nil
 }
 
@@ -297,7 +309,7 @@ func ContinuousTradingFromProto(pct *types.ContinuousTrading) (*ContinuousTradin
 func DiscreteTradingFromProto(pdt *types.DiscreteTrading) (*DiscreteTrading, error) {
 	return &DiscreteTrading{
 		Duration: int(pdt.DurationNs),
-		TickSize: int(pdt.TickSize),
+		TickSize: pdt.TickSize,
 	}, nil
 }
 
@@ -742,26 +754,22 @@ func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfigurati
 		return ErrNilTradingMode
 	}
 
+	// FIXME(): here both tickSize are being ignore as deprecated for now
+	// they will be created internally by the core.
 	if n.ContinuousTrading != nil {
-		if n.ContinuousTrading.TickSize < 0 {
-			return errors.New("ContinuousTrading.TickSize: cannot be < 0")
-		}
 		target.TradingMode = &types.NewMarketConfiguration_Continuous{
 			Continuous: &types.ContinuousTrading{
-				TickSize: uint64(n.ContinuousTrading.TickSize),
+				TickSize: "",
 			},
 		}
 	} else if n.DiscreteTrading != nil {
-		if n.DiscreteTrading.TickSize < 0 {
-			return errors.New("DiscreteTrading.TickSize: cannot be < 0")
-		}
 		if n.DiscreteTrading.Duration <= 0 {
 			return errors.New("DiscreteTrading.Duration: cannot be < 0")
 		}
 		target.TradingMode = &types.NewMarketConfiguration_Discrete{
 			Discrete: &types.DiscreteTrading{
 				DurationNs: int64(n.DiscreteTrading.Duration),
-				TickSize:   uint64(n.DiscreteTrading.TickSize),
+				TickSize:   "",
 			},
 		}
 	}
