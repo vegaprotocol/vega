@@ -123,13 +123,13 @@ func createMarket(
 	definition *types.NewMarketConfiguration,
 	parameters *NetworkParameters,
 	currentTime time.Time,
-) (*types.Market, error) {
-	if err := validateNewMarket(currentTime, definition); err != nil {
-		return nil, err
+) (*types.Market, types.ProposalError, error) {
+	if perr, err := validateNewMarket(currentTime, definition); err != nil {
+		return nil, perr, err
 	}
 	instrument, err := createInstrument(parameters, definition.Instrument, definition.Metadata)
 	if err != nil {
-		return nil, err
+		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 	market := &types.Market{
 		Id:            marketID,
@@ -146,63 +146,63 @@ func createMarket(
 		},
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
-		return nil, err
+		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 	if err := assignTradingMode(definition, market); err != nil {
-		return nil, err
+		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
-	return market, nil
+	return market, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateAsset(asset string) error {
+func validateAsset(asset string) (types.ProposalError, error) {
 	//@TODO: call proper asset validation (once implemented)
-	return nil
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateFuture(currentTime time.Time, future *types.FutureProduct) error {
+func validateFuture(currentTime time.Time, future *types.FutureProduct) (types.ProposalError, error) {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
-		errors.Wrap(err, "future product maturity timestamp")
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, errors.Wrap(err, "future product maturity timestamp")
 	}
 	if maturity.UnixNano() < currentTime.UnixNano() {
-		return ErrProductMaturityIsPast
+		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
 	return validateAsset(future.Asset)
 }
 
-func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration) error {
+func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration) (types.ProposalError, error) {
 	if instrument.BaseName == instrument.QuoteName {
-		return ErrInvalidSecurity
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY, ErrInvalidSecurity
 	}
 
 	switch product := instrument.Product.(type) {
 	case nil:
-		return ErrNoProduct
+		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
 	case *types.InstrumentConfiguration_Future:
 		return validateFuture(currentTime, product.Future)
 	default:
-		return ErrProductInvalid
+		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
 	}
 }
 
-func validateTradingMode(terms *types.NewMarketConfiguration) error {
+func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalError, error) {
 	switch terms.TradingMode.(type) {
 	case nil:
-		return ErrNoTradingMode
+		return types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE, ErrNoTradingMode
 	case *types.NewMarketConfiguration_Continuous, *types.NewMarketConfiguration_Discrete:
-		return nil
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	default:
-		return ErrTradingModeInvalid
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrTradingModeInvalid
 	}
 }
 
 // ValidateNewMarket checks new market proposal terms
-func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration) error {
-	if err := validateInstrument(currentTime, terms.Instrument); err != nil {
-		return err
+func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration) (types.ProposalError, error) {
+	if perr, err := validateInstrument(currentTime, terms.Instrument); err != nil {
+		return perr, err
 	}
-	if err := validateTradingMode(terms); err != nil {
-		return err
+	if perr, err := validateTradingMode(terms); err != nil {
+		return perr, err
 	}
-	return nil
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

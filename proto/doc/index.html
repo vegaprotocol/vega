@@ -753,6 +753,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.ProposalError"><span class="badge">E</span>ProposalError</a>
+                </li>
+
+                <li>
                   <a href="#vega.Vote.Value"><span class="badge">E</span>Vote.Value</a>
                 </li>
 
@@ -6309,6 +6313,14 @@ usually a hash </p></td>
                   <td><p>Proposal configuration and the actual change that is meant to be executed when proposal is enacted. </p></td>
                 </tr>
 
+                <tr>
+                  <td>reason</td>
+                  <td><a href="#vega.ProposalError">ProposalError</a></td>
+                  <td></td>
+                  <td><p>A reason for the current state of the proposal
+this may be set in case of REJECTED and FAILED status </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -6679,6 +6691,101 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>STATE_WAITING_FOR_NODE_VOTE</td>
                 <td>7</td>
                 <td><p>waiting for validators validation of the proposal</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.ProposalError">ProposalError</h3>
+        <p>A list of possible error which could have happenned</p><p>and the cause for an proposal being rejected of failed</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>PROPOSAL_ERROR_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>default value</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON</td>
+                <td>1</td>
+                <td><p>the specified close time is too early base on network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE</td>
+                <td>2</td>
+                <td><p>the specified close time is too late based on network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_ENACT_TIME_TOO_SOON</td>
+                <td>3</td>
+                <td><p>the specified enact time is too early base on network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_ENACT_TIME_TOO_LATE</td>
+                <td>4</td>
+                <td><p>the specified enact time is too late based on network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_INSUFFICIENT_TOKENS</td>
+                <td>5</td>
+                <td><p>the proposer for this proposal as insufficient token</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY</td>
+                <td>6</td>
+                <td><p>the instrument quote name and base name were the same</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NO_PRODUCT</td>
+                <td>7</td>
+                <td><p>the proposal has not product</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_UNSUPPORTED_PRODUCT</td>
+                <td>8</td>
+                <td><p>the specified product is not supported</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP</td>
+                <td>9</td>
+                <td><p>invalid future maturity timestamp (expect RFC3339)</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED</td>
+                <td>10</td>
+                <td><p>the product maturity is past</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NO_TRADING_MODE</td>
+                <td>11</td>
+                <td><p>the proposal has not trading mode</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE</td>
+                <td>12</td>
+                <td><p>the proposal has an unsupported trading mode</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NODE_VALIDATION_FAILED</td>
+                <td>13</td>
+                <td><p>the proposal failed node validation</p></td>
               </tr>
 
           </tbody>

@@ -147,6 +147,7 @@
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
+    - [ProposalError](#vega.ProposalError)
     - [Vote.Value](#vega.Vote.Value)
 
 - [proto/markets.proto](#proto/markets.proto)
@@ -2368,6 +2369,7 @@ To be implemented
 | state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition) |
 | timestamp | [int64](#int64) |  | Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. |
 | terms | [ProposalTerms](#vega.ProposalTerms) |  | Proposal configuration and the actual change that is meant to be executed when proposal is enacted. |
+| reason | [ProposalError](#vega.ProposalError) |  | A reason for the current state of the proposal this may be set in case of REJECTED and FAILED status |
 
 
 
@@ -2461,6 +2463,31 @@ Proposal can enter Failed state from any other state.
 | STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
 | STATE_ENACTED | 6 |  |
 | STATE_WAITING_FOR_NODE_VOTE | 7 | waiting for validators validation of the proposal |
+
+
+
+<a name="vega.ProposalError"></a>
+
+### ProposalError
+A list of possible error which could have happenned
+and the cause for an proposal being rejected of failed
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PROPOSAL_ERROR_UNSPECIFIED | 0 | default value |
+| PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON | 1 | the specified close time is too early base on network parameters |
+| PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE | 2 | the specified close time is too late based on network parameters |
+| PROPOSAL_ERROR_ENACT_TIME_TOO_SOON | 3 | the specified enact time is too early base on network parameters |
+| PROPOSAL_ERROR_ENACT_TIME_TOO_LATE | 4 | the specified enact time is too late based on network parameters |
+| PROPOSAL_ERROR_INSUFFICIENT_TOKENS | 5 | the proposer for this proposal as insufficient token |
+| PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY | 6 | the instrument quote name and base name were the same |
+| PROPOSAL_ERROR_NO_PRODUCT | 7 | the proposal has not product |
+| PROPOSAL_ERROR_UNSUPPORTED_PRODUCT | 8 | the specified product is not supported |
+| PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP | 9 | invalid future maturity timestamp (expect RFC3339) |
+| PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED | 10 | the product maturity is past |
+| PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
+| PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
+| PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
 
 
 
