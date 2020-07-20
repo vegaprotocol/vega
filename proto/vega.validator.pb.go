@@ -23,9 +23,6 @@ func (this *Price) Validate() error {
 func (this *Timestamp) Validate() error {
 	return nil
 }
-func (this *Amount) Validate() error {
-	return nil
-}
 func (this *Party) Validate() error {
 	return nil
 }

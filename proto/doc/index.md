@@ -170,7 +170,6 @@
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
-    - [Amount](#vega.Amount)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
     - [FinancialAmount](#vega.FinancialAmount)
@@ -2820,21 +2819,6 @@ and the cause for an proposal being rejected of failed
 | asset | [string](#string) |  |  |
 | marketID | [string](#string) |  |  |
 | type | [AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="vega.Amount"></a>
-
-### Amount
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [string](#string) |  |  |
 
 
 

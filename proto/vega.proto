@@ -56,10 +56,6 @@ message Timestamp {
   int64 value = 1;
 }
 
-message Amount {
-  string value = 1;
-}
-
 message Party {
   string id = 1 [(validator.field) = {msg_exists : true}];
 }
