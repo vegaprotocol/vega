@@ -701,6 +701,101 @@ func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Reason for the order beeing rejected by the core node
+type OrderRejectionReason string
+
+const (
+	// Market id is invalid
+	OrderRejectionReasonInvalidMarketID OrderRejectionReason = "InvalidMarketId"
+	// Order id is invalid
+	OrderRejectionReasonInvalidOrderID OrderRejectionReason = "InvalidOrderId"
+	// Order is out of sequence
+	OrderRejectionReasonOrderOutOfSequence OrderRejectionReason = "OrderOutOfSequence"
+	// Remaining size in the order is invalid
+	OrderRejectionReasonInvalidRemainingSize OrderRejectionReason = "InvalidRemainingSize"
+	// Time has failed us
+	OrderRejectionReasonTimeFailure OrderRejectionReason = "TimeFailure"
+	// Unable to remove the order
+	OrderRejectionReasonOrderRemovalFailure OrderRejectionReason = "OrderRemovalFailure"
+	// Expiration time is invalid
+	OrderRejectionReasonInvalidExpirationTime OrderRejectionReason = "InvalidExpirationTime"
+	// Order reference is invalid
+	OrderRejectionReasonInvalidOrderReference OrderRejectionReason = "InvalidOrderReference"
+	// Edit is not allowed
+	OrderRejectionReasonEditNotAllowed OrderRejectionReason = "EditNotAllowed"
+	// Order amend fail
+	OrderRejectionReasonOrderAmendFailure OrderRejectionReason = "OrderAmendFailure"
+	// Order does not exist
+	OrderRejectionReasonOrderNotFound OrderRejectionReason = "OrderNotFound"
+	// Party id is invalid
+	OrderRejectionReasonInvalidPartyID OrderRejectionReason = "InvalidPartyId"
+	// Market is closed
+	OrderRejectionReasonMarketClosed OrderRejectionReason = "MarketClosed"
+	// Margin check failed
+	OrderRejectionReasonMarginCheckFailed OrderRejectionReason = "MarginCheckFailed"
+	// Order missing general account
+	OrderRejectionReasonMissingGeneralAccount OrderRejectionReason = "MissingGeneralAccount"
+	// An internal error happend
+	OrderRejectionReasonInternalError OrderRejectionReason = "InternalError"
+	// Invalid size
+	OrderRejectionReasonInvalidSize OrderRejectionReason = "InvalidSize"
+	// Invalid persistence
+	OrderRejectionReasonInvalidPersistence OrderRejectionReason = "InvalidPersistence"
+	// Invalid type
+	OrderRejectionReasonInvalidType OrderRejectionReason = "InvalidType"
+)
+
+var AllOrderRejectionReason = []OrderRejectionReason{
+	OrderRejectionReasonInvalidMarketID,
+	OrderRejectionReasonInvalidOrderID,
+	OrderRejectionReasonOrderOutOfSequence,
+	OrderRejectionReasonInvalidRemainingSize,
+	OrderRejectionReasonTimeFailure,
+	OrderRejectionReasonOrderRemovalFailure,
+	OrderRejectionReasonInvalidExpirationTime,
+	OrderRejectionReasonInvalidOrderReference,
+	OrderRejectionReasonEditNotAllowed,
+	OrderRejectionReasonOrderAmendFailure,
+	OrderRejectionReasonOrderNotFound,
+	OrderRejectionReasonInvalidPartyID,
+	OrderRejectionReasonMarketClosed,
+	OrderRejectionReasonMarginCheckFailed,
+	OrderRejectionReasonMissingGeneralAccount,
+	OrderRejectionReasonInternalError,
+	OrderRejectionReasonInvalidSize,
+	OrderRejectionReasonInvalidPersistence,
+	OrderRejectionReasonInvalidType,
+}
+
+func (e OrderRejectionReason) IsValid() bool {
+	switch e {
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType:
+		return true
+	}
+	return false
+}
+
+func (e OrderRejectionReason) String() string {
+	return string(e)
+}
+
+func (e *OrderRejectionReason) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderRejectionReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderRejectionReason", str)
+	}
+	return nil
+}
+
+func (e OrderRejectionReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
 type OrderStatus string
 
@@ -859,6 +954,83 @@ func (e OrderType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Reason for the proposal beeing rejected by the core node
+type ProposalRejectionReason string
+
+const (
+	// the specified close time is too early base on network parameters
+	ProposalRejectionReasonCloseTimeTooSoon ProposalRejectionReason = "CloseTimeTooSoon"
+	// the specified close time is too late based on network parameters
+	ProposalRejectionReasonCloseTimeTooLate ProposalRejectionReason = "CloseTimeTooLate"
+	// the specified enact time is too early base on network parameters
+	ProposalRejectionReasonEnactTimeTooSoon ProposalRejectionReason = "EnactTimeTooSoon"
+	// the specified enact time is too late based on network parameters
+	ProposalRejectionReasonEnactTimeTooLate ProposalRejectionReason = "EnactTimeTooLate"
+	// the proposer for this proposal as insufficient token
+	ProposalRejectionReasonInsufficientTokens ProposalRejectionReason = "InsufficientTokens"
+	// the instrument quote name and base name were the same
+	ProposalRejectionReasonInvalidInstrumentSecurity ProposalRejectionReason = "InvalidInstrumentSecurity"
+	// the proposal has not product
+	ProposalRejectionReasonNoProduct ProposalRejectionReason = "NoProduct"
+	// the specified product is not supported
+	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
+	// invalid future maturity timestamp (expect RFC3339)
+	ProposalRejectionReasonInvalidFutureMatuityTimestamp ProposalRejectionReason = "InvalidFutureMatuityTimestamp"
+	// the product maturity is past
+	ProposalRejectionReasonProductMaturityIsPassed ProposalRejectionReason = "ProductMaturityIsPassed"
+	// the proposal has not trading mode
+	ProposalRejectionReasonNoTradingMode ProposalRejectionReason = "NoTradingMode"
+	// the proposal has an unsupported trading mode
+	ProposalRejectionReasonUnsupportedTradingMode ProposalRejectionReason = "UnsupportedTradingMode"
+	// the proposal failed node validation
+	ProposalRejectionReasonNodeValidationFailed ProposalRejectionReason = "NodeValidationFailed"
+)
+
+var AllProposalRejectionReason = []ProposalRejectionReason{
+	ProposalRejectionReasonCloseTimeTooSoon,
+	ProposalRejectionReasonCloseTimeTooLate,
+	ProposalRejectionReasonEnactTimeTooSoon,
+	ProposalRejectionReasonEnactTimeTooLate,
+	ProposalRejectionReasonInsufficientTokens,
+	ProposalRejectionReasonInvalidInstrumentSecurity,
+	ProposalRejectionReasonNoProduct,
+	ProposalRejectionReasonUnuspportedProduct,
+	ProposalRejectionReasonInvalidFutureMatuityTimestamp,
+	ProposalRejectionReasonProductMaturityIsPassed,
+	ProposalRejectionReasonNoTradingMode,
+	ProposalRejectionReasonUnsupportedTradingMode,
+	ProposalRejectionReasonNodeValidationFailed,
+}
+
+func (e ProposalRejectionReason) IsValid() bool {
+	switch e {
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMatuityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed:
+		return true
+	}
+	return false
+}
+
+func (e ProposalRejectionReason) String() string {
+	return string(e)
+}
+
+func (e *ProposalRejectionReason) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ProposalRejectionReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ProposalRejectionReason", str)
+	}
+	return nil
+}
+
+func (e ProposalRejectionReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Varoius states a proposal can transition through:
 //   Open ->
 //       - Passed -> Enacted.
@@ -916,101 +1088,6 @@ func (e *ProposalState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ProposalState) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-// Reason for the order beeing rejected by the core node
-type RejectionReason string
-
-const (
-	// Market id is invalid
-	RejectionReasonInvalidMarketID RejectionReason = "InvalidMarketId"
-	// Order id is invalid
-	RejectionReasonInvalidOrderID RejectionReason = "InvalidOrderId"
-	// Order is out of sequence
-	RejectionReasonOrderOutOfSequence RejectionReason = "OrderOutOfSequence"
-	// Remaining size in the order is invalid
-	RejectionReasonInvalidRemainingSize RejectionReason = "InvalidRemainingSize"
-	// Time has failed us
-	RejectionReasonTimeFailure RejectionReason = "TimeFailure"
-	// Unable to remove the order
-	RejectionReasonOrderRemovalFailure RejectionReason = "OrderRemovalFailure"
-	// Expiration time is invalid
-	RejectionReasonInvalidExpirationTime RejectionReason = "InvalidExpirationTime"
-	// Order reference is invalid
-	RejectionReasonInvalidOrderReference RejectionReason = "InvalidOrderReference"
-	// Edit is not allowed
-	RejectionReasonEditNotAllowed RejectionReason = "EditNotAllowed"
-	// Order amend fail
-	RejectionReasonOrderAmendFailure RejectionReason = "OrderAmendFailure"
-	// Order does not exist
-	RejectionReasonOrderNotFound RejectionReason = "OrderNotFound"
-	// Party id is invalid
-	RejectionReasonInvalidPartyID RejectionReason = "InvalidPartyId"
-	// Market is closed
-	RejectionReasonMarketClosed RejectionReason = "MarketClosed"
-	// Margin check failed
-	RejectionReasonMarginCheckFailed RejectionReason = "MarginCheckFailed"
-	// Order missing general account
-	RejectionReasonMissingGeneralAccount RejectionReason = "MissingGeneralAccount"
-	// An internal error happend
-	RejectionReasonInternalError RejectionReason = "InternalError"
-	// Invalid size
-	RejectionReasonInvalidSize RejectionReason = "InvalidSize"
-	// Invalid persistence
-	RejectionReasonInvalidPersistence RejectionReason = "InvalidPersistence"
-	// Invalid type
-	RejectionReasonInvalidType RejectionReason = "InvalidType"
-)
-
-var AllRejectionReason = []RejectionReason{
-	RejectionReasonInvalidMarketID,
-	RejectionReasonInvalidOrderID,
-	RejectionReasonOrderOutOfSequence,
-	RejectionReasonInvalidRemainingSize,
-	RejectionReasonTimeFailure,
-	RejectionReasonOrderRemovalFailure,
-	RejectionReasonInvalidExpirationTime,
-	RejectionReasonInvalidOrderReference,
-	RejectionReasonEditNotAllowed,
-	RejectionReasonOrderAmendFailure,
-	RejectionReasonOrderNotFound,
-	RejectionReasonInvalidPartyID,
-	RejectionReasonMarketClosed,
-	RejectionReasonMarginCheckFailed,
-	RejectionReasonMissingGeneralAccount,
-	RejectionReasonInternalError,
-	RejectionReasonInvalidSize,
-	RejectionReasonInvalidPersistence,
-	RejectionReasonInvalidType,
-}
-
-func (e RejectionReason) IsValid() bool {
-	switch e {
-	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonMissingGeneralAccount, RejectionReasonInternalError, RejectionReasonInvalidSize, RejectionReasonInvalidPersistence, RejectionReasonInvalidType:
-		return true
-	}
-	return false
-}
-
-func (e RejectionReason) String() string {
-	return string(e)
-}
-
-func (e *RejectionReason) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RejectionReason(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RejectionReason", str)
-	}
-	return nil
-}
-
-func (e RejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

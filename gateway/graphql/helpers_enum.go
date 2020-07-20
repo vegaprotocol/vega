@@ -224,38 +224,108 @@ func convertProposalStateFromProto(x types.Proposal_State) (ProposalState, error
 	}
 }
 
-// convertRejectionReasonToProto converts a GraphQL enum to a Proto enum
-func convertRejectionReasonToProto(x RejectionReason) (types.OrderError, error) {
+func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.ProposalError, error) {
 	switch x {
-	case RejectionReasonInvalidMarketID:
+	case ProposalRejectionReasonCloseTimeTooSoon:
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON, nil
+	case ProposalRejectionReasonCloseTimeTooLate:
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE, nil
+	case ProposalRejectionReasonEnactTimeTooSoon:
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON, nil
+	case ProposalRejectionReasonEnactTimeTooLate:
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, nil
+	case ProposalRejectionReasonInsufficientTokens:
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, nil
+	case ProposalRejectionReasonInvalidInstrumentSecurity:
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY, nil
+	case ProposalRejectionReasonNoProduct:
+		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, nil
+	case ProposalRejectionReasonUnuspportedProduct:
+		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, nil
+	case ProposalRejectionReasonInvalidFutureMatuityTimestamp:
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, nil
+	case ProposalRejectionReasonProductMaturityIsPassed:
+		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, nil
+	case ProposalRejectionReasonNoTradingMode:
+		return types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE, nil
+	case ProposalRejectionReasonUnsupportedTradingMode:
+		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE, nil
+	case ProposalRejectionReasonNodeValidationFailed:
+		return types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED, nil
+	default:
+		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+	}
+}
+
+func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRejectionReason, error) {
+	switch x {
+	case types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED:
+		return ProposalRejectionReason(""), nil
+	case types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON:
+		return ProposalRejectionReasonCloseTimeTooSoon, nil
+	case types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE:
+		return ProposalRejectionReasonCloseTimeTooLate, nil
+	case types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON:
+		return ProposalRejectionReasonEnactTimeTooSoon, nil
+	case types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE:
+		return ProposalRejectionReasonEnactTimeTooLate, nil
+	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS:
+		return ProposalRejectionReasonInsufficientTokens, nil
+	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY:
+		return ProposalRejectionReasonInvalidInstrumentSecurity, nil
+	case types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT:
+		return ProposalRejectionReasonNoProduct, nil
+	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT:
+		return ProposalRejectionReasonUnuspportedProduct, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP:
+		return ProposalRejectionReasonInvalidFutureMatuityTimestamp, nil
+	case types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED:
+		return ProposalRejectionReasonProductMaturityIsPassed, nil
+	case types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE:
+		return ProposalRejectionReasonNoTradingMode, nil
+	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE:
+		return ProposalRejectionReasonUnsupportedTradingMode, nil
+	case types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED:
+		return ProposalRejectionReasonNodeValidationFailed, nil
+	default:
+		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
+		return ProposalRejectionReason(""), err
+	}
+}
+
+// convertRejectionReasonToProto converts a GraphQL enum to a Proto enum
+func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderError, error) {
+	switch x {
+	case OrderRejectionReasonInvalidMarketID:
 		return types.OrderError_ORDER_ERROR_INVALID_MARKET_ID, nil
-	case RejectionReasonInvalidOrderID:
+	case OrderRejectionReasonInvalidOrderID:
 		return types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, nil
-	case RejectionReasonOrderOutOfSequence:
+	case OrderRejectionReasonOrderOutOfSequence:
 		return types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE, nil
-	case RejectionReasonInvalidRemainingSize:
+	case OrderRejectionReasonInvalidRemainingSize:
 		return types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE, nil
-	case RejectionReasonTimeFailure:
+	case OrderRejectionReasonTimeFailure:
 		return types.OrderError_ORDER_ERROR_TIME_FAILURE, nil
-	case RejectionReasonOrderRemovalFailure:
+	case OrderRejectionReasonOrderRemovalFailure:
 		return types.OrderError_ORDER_ERROR_REMOVAL_FAILURE, nil
-	case RejectionReasonInvalidExpirationTime:
+	case OrderRejectionReasonInvalidExpirationTime:
 		return types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME, nil
-	case RejectionReasonInvalidOrderReference:
+	case OrderRejectionReasonInvalidOrderReference:
 		return types.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE, nil
-	case RejectionReasonEditNotAllowed:
+	case OrderRejectionReasonEditNotAllowed:
 		return types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, nil
-	case RejectionReasonOrderAmendFailure:
+	case OrderRejectionReasonOrderAmendFailure:
 		return types.OrderError_ORDER_ERROR_AMEND_FAILURE, nil
-	case RejectionReasonOrderNotFound:
+	case OrderRejectionReasonOrderNotFound:
 		return types.OrderError_ORDER_ERROR_NOT_FOUND, nil
-	case RejectionReasonInvalidPartyID:
+	case OrderRejectionReasonInvalidPartyID:
 		return types.OrderError_ORDER_ERROR_INVALID_PARTY_ID, nil
-	case RejectionReasonMarketClosed:
+	case OrderRejectionReasonMarketClosed:
 		return types.OrderError_ORDER_ERROR_MARKET_CLOSED, nil
-	case RejectionReasonMarginCheckFailed:
+	case OrderRejectionReasonMarginCheckFailed:
 		return types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED, nil
-	case RejectionReasonInternalError:
+	case OrderRejectionReasonInternalError:
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
@@ -264,41 +334,41 @@ func convertRejectionReasonToProto(x RejectionReason) (types.OrderError, error) 
 }
 
 // convertRejectionReasonFromProto converts a Proto enum to a GraphQL enum
-func convertRejectionReasonFromProto(x types.OrderError) (RejectionReason, error) {
+func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionReason, error) {
 	switch x {
 	case types.OrderError_ORDER_ERROR_INVALID_MARKET_ID:
-		return RejectionReasonInvalidMarketID, nil
+		return OrderRejectionReasonInvalidMarketID, nil
 	case types.OrderError_ORDER_ERROR_INVALID_ORDER_ID:
-		return RejectionReasonInvalidOrderID, nil
+		return OrderRejectionReasonInvalidOrderID, nil
 	case types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE:
-		return RejectionReasonOrderOutOfSequence, nil
+		return OrderRejectionReasonOrderOutOfSequence, nil
 	case types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE:
-		return RejectionReasonInvalidRemainingSize, nil
+		return OrderRejectionReasonInvalidRemainingSize, nil
 	case types.OrderError_ORDER_ERROR_TIME_FAILURE:
-		return RejectionReasonTimeFailure, nil
+		return OrderRejectionReasonTimeFailure, nil
 	case types.OrderError_ORDER_ERROR_REMOVAL_FAILURE:
-		return RejectionReasonOrderRemovalFailure, nil
+		return OrderRejectionReasonOrderRemovalFailure, nil
 	case types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME:
-		return RejectionReasonInvalidExpirationTime, nil
+		return OrderRejectionReasonInvalidExpirationTime, nil
 	case types.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE:
-		return RejectionReasonInvalidOrderReference, nil
+		return OrderRejectionReasonInvalidOrderReference, nil
 	case types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED:
-		return RejectionReasonEditNotAllowed, nil
+		return OrderRejectionReasonEditNotAllowed, nil
 	case types.OrderError_ORDER_ERROR_AMEND_FAILURE:
-		return RejectionReasonOrderAmendFailure, nil
+		return OrderRejectionReasonOrderAmendFailure, nil
 	case types.OrderError_ORDER_ERROR_NOT_FOUND:
-		return RejectionReasonOrderNotFound, nil
+		return OrderRejectionReasonOrderNotFound, nil
 	case types.OrderError_ORDER_ERROR_INVALID_PARTY_ID:
-		return RejectionReasonInvalidPartyID, nil
+		return OrderRejectionReasonInvalidPartyID, nil
 	case types.OrderError_ORDER_ERROR_MARKET_CLOSED:
-		return RejectionReasonMarketClosed, nil
+		return OrderRejectionReasonMarketClosed, nil
 	case types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED:
-		return RejectionReasonMarginCheckFailed, nil
+		return OrderRejectionReasonMarginCheckFailed, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
-		return RejectionReasonInternalError, nil
+		return OrderRejectionReasonInternalError, nil
 	default:
-		err := fmt.Errorf("failed to convert RejectionReason from Proto to GraphQL: %v", x)
-		return RejectionReasonInternalError, err
+		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
+		return OrderRejectionReasonInternalError, err
 	}
 }
 

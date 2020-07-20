@@ -203,7 +203,7 @@ enum ProposalError {
   // the proposer for this proposal as insufficient token
   PROPOSAL_ERROR_INSUFFICIENT_TOKENS = 5;
   // the instrument quote name and base name were the same
-  PROPOSAL_ERROR_INSUFFICIENT_INSTRUMENT_SECURITY = 6;
+  PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY = 6;
   // the proposal has not product
   PROPOSAL_ERROR_NO_PRODUCT = 7;
   // the specified product is not supported
