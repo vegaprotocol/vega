@@ -1952,6 +1952,42 @@
         }
       }
     },
+    "vegaFeeFactors": {
+      "type": "object",
+      "properties": {
+        "makerFee": {
+          "type": "string"
+        },
+        "infrastructureFee": {
+          "type": "string"
+        },
+        "liquidityFee": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaFeeFactorsConfiguration": {
+      "type": "object",
+      "properties": {
+        "infrastructureFee": {
+          "type": "string",
+          "title": "the infrastructure fee, needs to be a valid float"
+        },
+        "makerFee": {
+          "type": "string",
+          "title": "the maker fee, needs to be a valid float"
+        }
+      },
+      "title": "FeeFactors set at the network level"
+    },
+    "vegaFees": {
+      "type": "object",
+      "properties": {
+        "factors": {
+          "$ref": "#/definitions/vegaFeeFactors"
+        }
+      }
+    },
     "vegaFuture": {
       "type": "object",
       "properties": {
@@ -2222,6 +2258,10 @@
           "format": "uint64",
           "title": "the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`"
         },
+        "fees": {
+          "$ref": "#/definitions/vegaFees",
+          "title": "fees configuration"
+        },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
         },
@@ -2345,6 +2385,10 @@
         "marginConfiguration": {
           "$ref": "#/definitions/vegaScalingFactors",
           "description": "Scaling factors for all markets created via governance."
+        },
+        "feeFactorsConfiguration": {
+          "$ref": "#/definitions/vegaFeeFactorsConfiguration",
+          "title": "FeeFactors which are not set via proposal"
         }
       }
     },
@@ -2372,13 +2416,9 @@
           "$ref": "#/definitions/vegaInstrumentConfiguration",
           "title": "New market instrument configuration"
         },
-        "simple": {
-          "$ref": "#/definitions/vegaSimpleModelParams",
-          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
-        },
-        "logNormal": {
-          "$ref": "#/definitions/vegaLogNormalRiskModel",
-          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
+        "liquidityFee": {
+          "type": "string",
+          "title": "this is the liquidity fee, it needs to be a valid float"
         },
         "decimalPlaces": {
           "type": "string",
@@ -2391,6 +2431,14 @@
             "type": "string"
           },
           "title": "Optional new market meta data, tags"
+        },
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams",
+          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel",
+          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -2727,10 +2775,11 @@
         "PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED",
         "PROPOSAL_ERROR_NO_TRADING_MODE",
         "PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE",
-        "PROPOSAL_ERROR_NODE_VALIDATION_FAILED"
+        "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+        "PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE: invalid liquidity fee (expect valid float)",
       "title": "A list of possible error which could have happenned\nand the cause for an proposal being rejected of failed"
     },
     "vegaProposalTerms": {

@@ -44,6 +44,9 @@ const (
 	// defaultMinVoterBalance is hardcoded minimum balance required for a party
 	// to be able to cast a vote (greater than `0` to `1`).
 	defaultMinVoterBalance = 0.00001
+
+	defaultMakerFee          = "0.00025"
+	defaultInfrastructureFee = "0.0005"
 )
 
 // ProposalParameters stores proposal specific parameters
@@ -65,6 +68,13 @@ type ScalingFactors struct {
 	CollateralRelease float64
 }
 
+// FeeFactos store factors for the the which are not specified through a proposal
+// and are global to all markets
+type FeeFactors struct {
+	MakerFee          string
+	InfrastructureFee string
+}
+
 // FutureOracle stores future product oracle configuration
 type FutureOracle struct {
 	ContractID string
@@ -78,6 +88,7 @@ type NetworkParameters struct {
 	MarginConfiguration ScalingFactors
 	FutureOracle        FutureOracle
 	InitialMarkPrice    uint64
+	FeeFactors          FeeFactors
 }
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
@@ -87,6 +98,14 @@ func DefaultNetworkParameters(log *logging.Logger) *NetworkParameters {
 		MarginConfiguration: defaultMarginConfiguration(),
 		FutureOracle:        defaultFutureOracle(),
 		InitialMarkPrice:    1,
+		FeeFactors:          defaultFeeFactors(),
+	}
+}
+
+func defaultFeeFactors() FeeFactors {
+	return FeeFactors{
+		MakerFee:          defaultMakerFee,
+		InfrastructureFee: defaultInfrastructureFee,
 	}
 }
 

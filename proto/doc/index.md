@@ -131,6 +131,7 @@
     - [ValidatorEvent](#vega.ValidatorEvent)
 
 - [proto/governance.proto](#proto/governance.proto)
+    - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
@@ -156,6 +157,8 @@
     - [EthereumEvent](#vega.EthereumEvent)
     - [ExternalRiskModel](#vega.ExternalRiskModel)
     - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
+    - [FeeFactors](#vega.FeeFactors)
+    - [Fees](#vega.Fees)
     - [Future](#vega.Future)
     - [Instrument](#vega.Instrument)
     - [InstrumentMetadata](#vega.InstrumentMetadata)
@@ -2196,6 +2199,22 @@ An event related to validator management with foreign networks
 
 
 
+<a name="vega.FeeFactorsConfiguration"></a>
+
+### FeeFactorsConfiguration
+FeeFactors set at the network level
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| infrastructureFee | [string](#string) |  | the infrastructure fee, needs to be a valid float |
+| makerFee | [string](#string) |  | the maker fee, needs to be a valid float |
+
+
+
+
+
+
 <a name="vega.FutureProduct"></a>
 
 ### FutureProduct
@@ -2299,6 +2318,7 @@ Future product configuration
 | minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
 | marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
+| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal |
 
 
 
@@ -2344,10 +2364,11 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
-| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
-| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
+| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
+| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -2489,6 +2510,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
 | PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
+| PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE | 14 | invalid liquidity fee (expect valid float) |
 
 
 
@@ -2594,6 +2616,38 @@ and the cause for an proposal being rejected of failed
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.FeeFactors"></a>
+
+### FeeFactors
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| makerFee | [string](#string) |  |  |
+| infrastructureFee | [string](#string) |  |  |
+| liquidityFee | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.Fees"></a>
+
+### Fees
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| factors | [FeeFactors](#vega.FeeFactors) |  |  |
 
 
 
@@ -2714,6 +2768,7 @@ and the cause for an proposal being rejected of failed
 | id | [string](#string) |  |  |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
+| fees | [Fees](#vega.Fees) |  | fees configuration |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 

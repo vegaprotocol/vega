@@ -239,6 +239,13 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		mkt := proto.Market{
 			Id:            skel.id,
 			DecimalPlaces: skel.decimalPlaces,
+			Fees: &proto.Fees{
+				Factors: &proto.FeeFactors{
+					LiquidityFee:      "0.001",
+					InfrastructureFee: "0.0005",
+					MakerFee:          "0.00025",
+				},
+			},
 			TradableInstrument: &proto.TradableInstrument{
 				Instrument: &proto.Instrument{
 					Id:        fmt.Sprintf("Crypto/%s%s/Futures/%s", skel.baseName, skel.quoteName, monYear),

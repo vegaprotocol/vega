@@ -665,14 +665,33 @@ type TradableInstrument {
   marginCalculator: MarginCalculator
 }
 
+"The factors applied to calculate the fees"
+type FeeFactors {
+  "The factor applied to calculate MakerFees, a non-negative float"
+  makerFee: String!
+  "The factor applied to calculate InfrastructureFees, a non-negative float"
+  infrastructureFee: String!
+  "The factor applied to calculate LiquidityFees, a non-negative float"
+  liquidityFee: String!
+}
+
+"The fees applicable to a market"
+type Fees {
+  "The factors used to calculate the different fees"
+  factors: FeeFactors!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
   "Market ID"
   id: String!
 
-	# Market full name
+  "Market full name"
   name: String!
+
+  "Fees related data"
+  fees: Fees!
 
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
@@ -1298,6 +1317,8 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "The factor for the liquidity fee, must be an non negative float"
+  liquidityFee: String!
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput

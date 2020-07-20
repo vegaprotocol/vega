@@ -692,6 +692,10 @@
             <ul>
 
                 <li>
+                  <a href="#vega.FeeFactorsConfiguration"><span class="badge">M</span>FeeFactorsConfiguration</a>
+                </li>
+
+                <li>
                   <a href="#vega.FutureProduct"><span class="badge">M</span>FutureProduct</a>
                 </li>
 
@@ -788,6 +792,14 @@
 
                 <li>
                   <a href="#vega.ExternalRiskModel.ConfigEntry"><span class="badge">M</span>ExternalRiskModel.ConfigEntry</a>
+                </li>
+
+                <li>
+                  <a href="#vega.FeeFactors"><span class="badge">M</span>FeeFactors</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Fees"><span class="badge">M</span>Fees</a>
                 </li>
 
                 <li>
@@ -5690,6 +5702,37 @@ usually a hash </p></td>
       <p></p>
 
 
+        <h3 id="vega.FeeFactorsConfiguration">FeeFactorsConfiguration</h3>
+        <p>FeeFactors set at the network level</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>infrastructureFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the infrastructure fee, needs to be a valid float </p></td>
+                </tr>
+
+                <tr>
+                  <td>makerFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the maker fee, needs to be a valid float </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.FutureProduct">FutureProduct</h3>
         <p>Future product configuration</p>
 
@@ -6058,6 +6101,13 @@ usually a hash </p></td>
                   <td><p>Scaling factors for all markets created via governance. </p></td>
                 </tr>
 
+                <tr>
+                  <td>feeFactorsConfiguration</td>
+                  <td><a href="#vega.FeeFactorsConfiguration">FeeFactorsConfiguration</a></td>
+                  <td></td>
+                  <td><p>FeeFactors which are not set via proposal </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -6185,17 +6235,10 @@ usually a hash </p></td>
                 </tr>
 
                 <tr>
-                  <td>simple</td>
-                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
+                  <td>liquidityFee</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Simple risk model parameters, valid only if MODEL_SIMPLE is selected </p></td>
-                </tr>
-
-                <tr>
-                  <td>logNormal</td>
-                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
-                  <td></td>
-                  <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
+                  <td><p>this is the liquidity fee, it needs to be a valid float </p></td>
                 </tr>
 
                 <tr>
@@ -6210,6 +6253,20 @@ usually a hash </p></td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p>Optional new market meta data, tags </p></td>
+                </tr>
+
+                <tr>
+                  <td>simple</td>
+                  <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
+                  <td></td>
+                  <td><p>Simple risk model parameters, valid only if MODEL_SIMPLE is selected </p></td>
+                </tr>
+
+                <tr>
+                  <td>logNormal</td>
+                  <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
+                  <td></td>
+                  <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
                 </tr>
 
                 <tr>
@@ -6798,6 +6855,12 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td><p>the proposal failed node validation</p></td>
               </tr>
 
+              <tr>
+                <td>PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE</td>
+                <td>14</td>
+                <td><p>invalid liquidity fee (expect valid float)</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -7022,6 +7085,68 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <tr>
                   <td>value</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.FeeFactors">FeeFactors</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>makerFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>infrastructureFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>liquidityFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Fees">Fees</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>factors</td>
+                  <td><a href="#vega.FeeFactors">FeeFactors</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -7297,6 +7422,13 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
+                </tr>
+
+                <tr>
+                  <td>fees</td>
+                  <td><a href="#vega.Fees">Fees</a></td>
+                  <td></td>
+                  <td><p>fees configuration </p></td>
                 </tr>
 
                 <tr>

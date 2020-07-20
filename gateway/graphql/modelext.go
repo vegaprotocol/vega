@@ -69,6 +69,10 @@ var (
 	ErrMultipleProposalChangesSpecified = errors.New("multiple proposal changes specified")
 	// ErrMultipleAssetSourcesSpecified is raised when multiple asset source are specified
 	ErrMultipleAssetSourcesSpecified = errors.New("multiple asset sources specified")
+	// ErrNilFeeFactors is raised when the fee factors are missing from the fees
+	ErrNilFeeFactors = errors.New("nil fee factors")
+	// ErrNilFees is raised when the fees are missing from the market
+	ErrNilFees = errors.New("nil fees")
 )
 
 // IntoProto ...
@@ -279,11 +283,31 @@ func (s *ScalingFactors) IntoProto() (*types.ScalingFactors, error) {
 	}, nil
 }
 
+func (f *FeeFactors) IntoProto() (*types.FeeFactors, error) {
+	return &types.FeeFactors{
+		LiquidityFee:      f.LiquidityFee,
+		MakerFee:          f.MakerFee,
+		InfrastructureFee: f.InfrastructureFee,
+	}, nil
+}
+
+func (f *Fees) IntoProto() (*types.Fees, error) {
+	pf := &types.Fees{}
+	if f.Factors != nil {
+		pf.Factors, _ = f.Factors.IntoProto()
+	}
+	return pf, nil
+}
+
 // IntoProto ...
 func (m *Market) IntoProto() (*types.Market, error) {
 	var err error
 	pmkt := &types.Market{}
 	pmkt.Id = m.ID
+	if m.Fees != nil {
+		pmkt.Fees, _ = m.Fees.IntoProto()
+	}
+
 	if err = m.tradingModeIntoProto(pmkt); err != nil {
 		return nil, err
 	}
@@ -531,6 +555,27 @@ func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error)
 	}, nil
 }
 
+func FeeFactorsFromProto(pff *types.FeeFactors) (*FeeFactors, error) {
+	if pff == nil {
+		return nil, ErrNilFeeFactors
+	}
+	return &FeeFactors{
+		MakerFee:          pff.MakerFee,
+		InfrastructureFee: pff.InfrastructureFee,
+		LiquidityFee:      pff.LiquidityFee,
+	}, nil
+}
+
+func FeesFromProto(pf *types.Fees) (*Fees, error) {
+	if pf == nil {
+		return nil, ErrNilFees
+	}
+	factors, _ := FeeFactorsFromProto(pf.Factors)
+	return &Fees{
+		Factors: factors,
+	}, nil
+}
+
 // MarketFromProto ...
 func MarketFromProto(pmkt *types.Market) (*Market, error) {
 	if pmkt == nil {
@@ -540,6 +585,9 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 	mkt := &Market{}
 	mkt.ID = pmkt.Id
 	mkt.DecimalPlaces = int(pmkt.DecimalPlaces)
+
+	mkt.Fees, err = FeesFromProto(pmkt.Fees)
+
 	mkt.TradingMode, err = TradingModeFromProto(pmkt.TradingMode)
 	if err != nil {
 		return nil, err
@@ -852,8 +900,20 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		return nil, err
 	}
 
+	if len(n.LiquidityFee) <= 0 {
+		return nil, errors.New("NewMarket.LiquidityFee: field required")
+	}
+	lf, err := strconv.ParseFloat(n.LiquidityFee, 64)
+	if err != nil {
+		return nil, errors.New("NewMarket.LiquidityFee: needs to be a valid float")
+	}
+	if lf < 0 {
+		return nil, errors.New("NewMarket.LiquidityFee: needs to be a non-negative float")
+	}
+
 	result := &types.NewMarketConfiguration{
 		Instrument:    instrument,
+		LiquidityFee:  n.LiquidityFee,
 		DecimalPlaces: uint64(n.DecimalPlaces),
 	}
 

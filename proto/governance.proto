@@ -30,6 +30,17 @@ message NetworkConfiguration {
 
   // Scaling factors for all markets created via governance.
   ScalingFactors marginConfiguration = 9;
+
+  // FeeFactors which are not set via proposal
+  FeeFactorsConfiguration feeFactorsConfiguration = 10;
+}
+
+// FeeFactors set at the network level
+message FeeFactorsConfiguration {
+  // the infrastructure fee, needs to be a valid float
+  string infrastructureFee = 1;
+  // the maker fee, needs to be a valid float
+  string makerFee = 2;
 }
 
 message UpdateMarket {
@@ -64,6 +75,12 @@ message InstrumentConfiguration {
 message NewMarketConfiguration {
   // New market instrument configuration
   InstrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
+  // this is the liquidity fee, it needs to be a valid float
+  string liquidityFee = 2;
+  // Decimal places used for the new market
+  uint64 decimalPlaces = 3 [(validator.field) = {int_lt: 150}];
+  // Optional new market meta data, tags
+  repeated string metadata = 4;
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
@@ -71,10 +88,6 @@ message NewMarketConfiguration {
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
     LogNormalRiskModel logNormal = 101;
   }
-  // Decimal places used for the new market
-  uint64 decimalPlaces = 3 [(validator.field) = {int_lt: 150}];
-  // Optional new market meta data, tags
-  repeated string metadata = 4;
   // Trading mode
   oneof tradingMode {
     ContinuousTrading continuous = 200;
@@ -102,7 +115,7 @@ message ProposalTerms {
   // Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters.
   int64 enactmentTimestamp    = 2 [(validator.field) = {int_gt: 0}];
 
-  int64 validationTimestamp = 5; //TODO: this should be moved into `NewAsset` definition.
+  int64 validationTimestamp = 3; //TODO: this should be moved into `NewAsset` definition.
 
   // Actual changes being proposed
   oneof change {
@@ -218,6 +231,8 @@ enum ProposalError {
   PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE = 12;
   // the proposal failed node validation
   PROPOSAL_ERROR_NODE_VALIDATION_FAILED = 13;
+  // invalid liquidity fee (expect valid float)
+  PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE = 14;
 }
 
 message Vote {
