@@ -107,6 +107,16 @@ message TradableInstrument {
   }
 }
 
+message FeeFactors {
+  string makerFee = 1;
+  string infrastructureFee = 2;
+  string liquidityFee = 3;
+}
+
+message Fees {
+  FeeFactors factors = 1;
+}
+
 message Market {
   string id = 1;
 
@@ -115,8 +125,12 @@ message Market {
   // the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
   uint64 decimalPlaces = 3;
 
+  // fees configuration
+  Fees fees = 4;
+
   oneof tradingMode {
     ContinuousTrading continuous = 100;
     DiscreteTrading discrete = 101;
   }
+
 }
