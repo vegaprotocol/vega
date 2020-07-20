@@ -304,14 +304,15 @@ type ComplexityRoot struct {
 	}
 
 	Proposal struct {
-		Datetime  func(childComplexity int) int
-		ID        func(childComplexity int) int
-		NoVotes   func(childComplexity int) int
-		Party     func(childComplexity int) int
-		Reference func(childComplexity int) int
-		State     func(childComplexity int) int
-		Terms     func(childComplexity int) int
-		YesVotes  func(childComplexity int) int
+		Datetime        func(childComplexity int) int
+		ID              func(childComplexity int) int
+		NoVotes         func(childComplexity int) int
+		Party           func(childComplexity int) int
+		Reference       func(childComplexity int) int
+		RejectionReason func(childComplexity int) int
+		State           func(childComplexity int) int
+		Terms           func(childComplexity int) int
+		YesVotes        func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
@@ -527,7 +528,7 @@ type OrderResolver interface {
 
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
 	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
-	RejectionReason(ctx context.Context, obj *proto.Order) (*RejectionReason, error)
+	RejectionReason(ctx context.Context, obj *proto.Order) (*OrderRejectionReason, error)
 	Version(ctx context.Context, obj *proto.Order) (string, error)
 	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
 }
@@ -563,6 +564,7 @@ type ProposalResolver interface {
 	Terms(ctx context.Context, obj *proto.GovernanceData) (*ProposalTerms, error)
 	YesVotes(ctx context.Context, obj *proto.GovernanceData) ([]*Vote, error)
 	NoVotes(ctx context.Context, obj *proto.GovernanceData) ([]*Vote, error)
+	RejectionReason(ctx context.Context, obj *proto.GovernanceData) (*ProposalRejectionReason, error)
 }
 type QueryResolver interface {
 	Markets(ctx context.Context, id *string) ([]*Market, error)
@@ -1774,6 +1776,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Proposal.Reference(childComplexity), true
+
+	case "Proposal.rejectionReason":
+		if e.complexity.Proposal.RejectionReason == nil {
+			break
+		}
+
+		return e.complexity.Proposal.RejectionReason(childComplexity), true
 
 	case "Proposal.state":
 		if e.complexity.Proposal.State == nil {
@@ -3589,7 +3598,7 @@ type Order {
   type: OrderType
 
   "Reason for the order to be rejected"
-  rejectionReason: RejectionReason
+  rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
   version: String!
@@ -3707,8 +3716,38 @@ enum OrderStatus {
   PartiallyFilled
 }
 
+"Reason for the proposal beeing rejected by the core node"
+enum ProposalRejectionReason {
+  "The specified close time is too early based on network parameters"
+  CloseTimeTooSoon
+  "The specified close time is too late based on network parameters"
+  CloseTimeTooLate
+  "The specified enactment time is too early based on network parameters"
+  EnactTimeTooSoon
+  "The specified enactment time is too late based on network parameters"
+  EnactTimeTooLate
+  "The proposer for this proposal as insufficient token"
+  InsufficientTokens
+  "The instrument quote name and base name were the same"
+  InvalidInstrumentSecurity
+  "The proposal has no product specified"
+  NoProduct
+  "The specified product is not supported"
+  UnuspportedProduct
+  "Invalid future maturity timestamp (expect RFC3339)"
+  InvalidFutureMatuityTimestamp
+  "The product maturity is already in the past"
+  ProductMaturityIsPassed
+  "The proposal has no trading mode"
+  NoTradingMode
+  "The proposal has an unsupported trading mode"
+  UnsupportedTradingMode
+  "The proposal failed node validation"
+  NodeValidationFailed
+}
+
 "Reason for the order beeing rejected by the core node"
-enum RejectionReason {
+enum OrderRejectionReason {
 
   "Market id is invalid"
   InvalidMarketId
@@ -4188,6 +4227,9 @@ type Proposal {
   yesVotes: [Vote]
   "No votes cast for this proposal"
   noVotes: [Vote]
+
+  "Reason for the proposal to be rejected by the core"
+  rejectionReason: ProposalRejectionReason
 }
 
 type PreparedProposal {
@@ -9265,9 +9307,9 @@ func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*RejectionReason)
+	res := resTmp.(*OrderRejectionReason)
 	fc.Result = res
-	return ec.marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx, field.Selections, res)
+	return ec.marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_version(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -10460,6 +10502,37 @@ func (ec *executionContext) _Proposal_noVotes(ctx context.Context, field graphql
 	res := resTmp.([]*Vote)
 	fc.Result = res
 	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Proposal_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Proposal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Proposal().RejectionReason(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ProposalRejectionReason)
+	fc.Result = res
+	return ec.marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *ProposalTerms) (ret graphql.Marshaler) {
@@ -17675,6 +17748,17 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 				res = ec._Proposal_noVotes(ctx, field, obj)
 				return res
 			})
+		case "rejectionReason":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_rejectionReason(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20508,6 +20592,30 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
+func (ec *executionContext) unmarshalOOrderRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, v interface{}) (OrderRejectionReason, error) {
+	var res OrderRejectionReason
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOOrderRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, sel ast.SelectionSet, v OrderRejectionReason) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, v interface{}) (*OrderRejectionReason, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOrderRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, sel ast.SelectionSet, v *OrderRejectionReason) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
 	var res OrderType
 	return res, res.UnmarshalGQL(v)
@@ -20754,6 +20862,30 @@ func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Proposal(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOProposalRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx context.Context, v interface{}) (ProposalRejectionReason, error) {
+	var res ProposalRejectionReason
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOProposalRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx context.Context, sel ast.SelectionSet, v ProposalRejectionReason) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx context.Context, v interface{}) (*ProposalRejectionReason, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOProposalRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx context.Context, sel ast.SelectionSet, v *ProposalRejectionReason) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalOProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {
 	var res ProposalState
 	return res, res.UnmarshalGQL(v)
@@ -20827,30 +20959,6 @@ func (ec *executionContext) marshalOProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._ProposalVote(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, v interface{}) (RejectionReason, error) {
-	var res RejectionReason
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, sel ast.SelectionSet, v RejectionReason) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, v interface{}) (*RejectionReason, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, sel ast.SelectionSet, v *RejectionReason) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOSimpleRiskModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx context.Context, v interface{}) (SimpleRiskModelParamsInput, error) {

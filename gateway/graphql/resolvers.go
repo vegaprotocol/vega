@@ -874,6 +874,22 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 
 type myProposalResolver VegaResolverRoot
 
+func (r *myProposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*ProposalRejectionReason, error) {
+	if data == nil || data.Proposal == nil {
+		return nil, ErrInvalidProposal
+	}
+	p := data.Proposal
+	if p.Reason == types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED {
+		return nil, nil
+	}
+
+	reason, err := convertProposalRejectionReasonFromProto(p.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &reason, nil
+}
+
 func (r *myProposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
@@ -1134,11 +1150,11 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 
 type myOrderResolver VegaResolverRoot
 
-func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*RejectionReason, error) {
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*OrderRejectionReason, error) {
 	if o.Reason == types.OrderError_ORDER_ERROR_NONE {
 		return nil, nil
 	}
-	reason, err := convertRejectionReasonFromProto(o.Reason)
+	reason, err := convertOrderRejectionReasonFromProto(o.Reason)
 	if err != nil {
 		return nil, err
 	}

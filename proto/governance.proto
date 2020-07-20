@@ -51,7 +51,7 @@ message InstrumentConfiguration {
   string code = 2 [(validator.field) = {string_not_empty : true}];
   // Base security used as the reference
   string baseName = 3 [(validator.field) = {string_not_empty : true}];
-  // Quote (secondary) security 
+  // Quote (secondary) security
   string quoteName = 4 [(validator.field) = {string_not_empty : true}];
   // Product specification
   oneof product {
@@ -181,6 +181,43 @@ message Proposal {
   int64         timestamp = 5;
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
   ProposalTerms terms     = 6 [(validator.field) = {msg_exists: true}];
+
+  // A reason for the current state of the proposal
+  // this may be set in case of REJECTED and FAILED status
+  ProposalError reason = 7;
+}
+
+// A list of possible error which could have happenned
+// and the cause for an proposal being rejected of failed
+enum ProposalError {
+  // default value
+  PROPOSAL_ERROR_UNSPECIFIED = 0;
+  // the specified close time is too early base on network parameters
+  PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON = 1;
+  // the specified close time is too late based on network parameters
+  PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE = 2;
+  // the specified enact time is too early base on network parameters
+  PROPOSAL_ERROR_ENACT_TIME_TOO_SOON = 3;
+  // the specified enact time is too late based on network parameters
+  PROPOSAL_ERROR_ENACT_TIME_TOO_LATE = 4;
+  // the proposer for this proposal as insufficient token
+  PROPOSAL_ERROR_INSUFFICIENT_TOKENS = 5;
+  // the instrument quote name and base name were the same
+  PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY = 6;
+  // the proposal has not product
+  PROPOSAL_ERROR_NO_PRODUCT = 7;
+  // the specified product is not supported
+  PROPOSAL_ERROR_UNSUPPORTED_PRODUCT = 8;
+  // invalid future maturity timestamp (expect RFC3339)
+  PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP = 9;
+  // the product maturity is past
+  PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED = 10;
+  // the proposal has not trading mode
+  PROPOSAL_ERROR_NO_TRADING_MODE = 11;
+  // the proposal has an unsupported trading mode
+  PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE = 12;
+  // the proposal failed node validation
+  PROPOSAL_ERROR_NODE_VALIDATION_FAILED = 13;
 }
 
 message Vote {

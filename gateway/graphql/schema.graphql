@@ -934,7 +934,7 @@ type Order {
   type: OrderType
 
   "Reason for the order to be rejected"
-  rejectionReason: RejectionReason
+  rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
   version: String!
@@ -1052,8 +1052,38 @@ enum OrderStatus {
   PartiallyFilled
 }
 
+"Reason for the proposal beeing rejected by the core node"
+enum ProposalRejectionReason {
+  "The specified close time is too early based on network parameters"
+  CloseTimeTooSoon
+  "The specified close time is too late based on network parameters"
+  CloseTimeTooLate
+  "The specified enactment time is too early based on network parameters"
+  EnactTimeTooSoon
+  "The specified enactment time is too late based on network parameters"
+  EnactTimeTooLate
+  "The proposer for this proposal as insufficient token"
+  InsufficientTokens
+  "The instrument quote name and base name were the same"
+  InvalidInstrumentSecurity
+  "The proposal has no product specified"
+  NoProduct
+  "The specified product is not supported"
+  UnuspportedProduct
+  "Invalid future maturity timestamp (expect RFC3339)"
+  InvalidFutureMatuityTimestamp
+  "The product maturity is already in the past"
+  ProductMaturityIsPassed
+  "The proposal has no trading mode"
+  NoTradingMode
+  "The proposal has an unsupported trading mode"
+  UnsupportedTradingMode
+  "The proposal failed node validation"
+  NodeValidationFailed
+}
+
 "Reason for the order beeing rejected by the core node"
-enum RejectionReason {
+enum OrderRejectionReason {
 
   "Market id is invalid"
   InvalidMarketId
@@ -1533,6 +1563,9 @@ type Proposal {
   yesVotes: [Vote]
   "No votes cast for this proposal"
   noVotes: [Vote]
+
+  "Reason for the proposal to be rejected by the core"
+  rejectionReason: ProposalRejectionReason
 }
 
 type PreparedProposal {
