@@ -1481,6 +1481,8 @@ The request for a new event sent by the blockchain queue to be propagated into v
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | evt | [vega.ChainEvent](#vega.ChainEvent) |  | The event |
+| pubKey | [string](#string) |  |  |
+| signature | [bytes](#bytes) |  |  |
 
 
 

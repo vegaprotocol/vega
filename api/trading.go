@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"sync"
 	"time"
 
@@ -11,10 +12,16 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	ErrInvalidSignature = errors.New("invalid signature")
 )
 
 // TradeOrderService ...
@@ -43,7 +50,7 @@ type GovernanceService interface {
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(e *types.ChainEvent) error
+	Forward(e *types.ChainEvent, pk string) error
 }
 
 type tradingService struct {
@@ -237,7 +244,19 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	if req.Evt == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
-	err := s.evtForwarder.Forward(req.Evt)
+
+	msg, err := proto.Marshal(req.Evt)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	// verify the signature then
+	err = verifySignature(s.log, msg, req.Signature, req.PubKey)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	err = s.evtForwarder.Forward(req.Evt, req.PubKey)
 	if err != nil {
 		return nil, apiError(codes.AlreadyExists, err)
 	}
@@ -251,4 +270,41 @@ func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
 	prefixBytes := []byte(prefix)
 	commandInput := append([]byte{byte(cmd)}, input...)
 	return append(prefixBytes, commandInput...), nil
+}
+
+func verifySignature(
+	log *logging.Logger,
+	message []byte,
+	sig []byte,
+	pubKey string,
+) error {
+	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to instanciate new algorithm", logging.Error(err))
+		}
+		return err
+	}
+
+	pubKeyBytes, err := hex.DecodeString(pubKey)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to decode hexencoded ubkey", logging.Error(err))
+		}
+		return err
+	}
+	ok, err := validator.Verify(pubKeyBytes, message, sig)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to verify bundle", logging.Error(err))
+		}
+		return err
+	}
+	if !ok {
+		if log != nil {
+			log.Error("invalid tx signature", logging.String("pubkey", pubKey))
+		}
+		return ErrInvalidSignature
+	}
+	return nil
 }
