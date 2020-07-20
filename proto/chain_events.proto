@@ -3,8 +3,6 @@ syntax = "proto3";
 package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
-import "proto/assets.proto";
-
 // A deposit for an vega builtin asset
 message BuiltinAssetDeposit {
   // A vega network internal asset ID
