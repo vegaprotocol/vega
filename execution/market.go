@@ -755,6 +755,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(trade)
+			m.settlement.AddTrade(trade)
 		}
 		m.broker.SendBatch(tradeEvts)
 	}
