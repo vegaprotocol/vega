@@ -113,6 +113,16 @@ type ComplexityRoot struct {
 		Event      func(childComplexity int) int
 	}
 
+	FeeFactors struct {
+		InfrastructureFee func(childComplexity int) int
+		LiquidityFee      func(childComplexity int) int
+		MakerFee          func(childComplexity int) int
+	}
+
+	Fees struct {
+		Factors func(childComplexity int) int
+	}
+
 	Future struct {
 		Asset    func(childComplexity int) int
 		Maturity func(childComplexity int) int
@@ -179,6 +189,7 @@ type ComplexityRoot struct {
 		Data               func(childComplexity int) int
 		DecimalPlaces      func(childComplexity int) int
 		Depth              func(childComplexity int, maxDepth *int) int
+		Fees               func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
 		OrderByReference   func(childComplexity int, reference string) int
@@ -852,6 +863,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EthereumEvent.Event(childComplexity), true
 
+	case "FeeFactors.infrastructureFee":
+		if e.complexity.FeeFactors.InfrastructureFee == nil {
+			break
+		}
+
+		return e.complexity.FeeFactors.InfrastructureFee(childComplexity), true
+
+	case "FeeFactors.liquidityFee":
+		if e.complexity.FeeFactors.LiquidityFee == nil {
+			break
+		}
+
+		return e.complexity.FeeFactors.LiquidityFee(childComplexity), true
+
+	case "FeeFactors.makerFee":
+		if e.complexity.FeeFactors.MakerFee == nil {
+			break
+		}
+
+		return e.complexity.FeeFactors.MakerFee(childComplexity), true
+
+	case "Fees.factors":
+		if e.complexity.Fees.Factors == nil {
+			break
+		}
+
+		return e.complexity.Fees.Factors(childComplexity), true
+
 	case "Future.asset":
 		if e.complexity.Future.Asset == nil {
 			break
@@ -1132,6 +1171,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Depth(childComplexity, args["maxDepth"].(*int)), true
+
+	case "Market.fees":
+		if e.complexity.Market.Fees == nil {
+			break
+		}
+
+		return e.complexity.Market.Fees(childComplexity), true
 
 	case "Market.id":
 		if e.complexity.Market.ID == nil {
@@ -3329,14 +3375,33 @@ type TradableInstrument {
   marginCalculator: MarginCalculator
 }
 
+"The factors applied to calculate the fees"
+type FeeFactors {
+  "The factor applied to calculate MakerFees, a non-negative float"
+  makerFee: String!
+  "The factor applied to calculate InfrastructureFees, a non-negative float"
+  infrastructureFee: String!
+  "The factor applied to calculate LiquidityFees, a non-negative float"
+  liquidityFee: String!
+}
+
+"The fees applicable to a market"
+type Fees {
+  "The factors used to calculate the different fees"
+  factors: FeeFactors!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
   "Market ID"
   id: String!
 
-	# Market full name
+  "Market full name"
   name: String!
+
+  "Fees related data"
+  fees: Fees!
 
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
@@ -3962,6 +4027,8 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "The factor for the liquidity fee, must be an non negative float"
+  liquidityFee: String!
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -6284,6 +6351,142 @@ func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FeeFactors_makerFee(ctx context.Context, field graphql.CollectedField, obj *FeeFactors) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeeFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MakerFee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeeFactors_infrastructureFee(ctx context.Context, field graphql.CollectedField, obj *FeeFactors) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeeFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InfrastructureFee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeeFactors_liquidityFee(ctx context.Context, field graphql.CollectedField, obj *FeeFactors) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FeeFactors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Fees_factors(ctx context.Context, field graphql.CollectedField, obj *Fees) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Fees",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Factors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*FeeFactors)
+	fc.Result = res
+	return ec.marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFeeFactors(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.CollectedField, obj *Future) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7466,6 +7669,40 @@ func (ec *executionContext) _Market_name(ctx context.Context, field graphql.Coll
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_fees(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fees, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Fees)
+	fc.Result = res
+	return ec.marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFees(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
@@ -15300,6 +15537,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "liquidityFee":
+			var err error
+			it.LiquidityFee, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "continuousTrading":
 			var err error
 			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
@@ -16046,6 +16289,70 @@ func (ec *executionContext) _EthereumEvent(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var feeFactorsImplementors = []string{"FeeFactors"}
+
+func (ec *executionContext) _FeeFactors(ctx context.Context, sel ast.SelectionSet, obj *FeeFactors) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feeFactorsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeeFactors")
+		case "makerFee":
+			out.Values[i] = ec._FeeFactors_makerFee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "infrastructureFee":
+			out.Values[i] = ec._FeeFactors_infrastructureFee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "liquidityFee":
+			out.Values[i] = ec._FeeFactors_liquidityFee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var feesImplementors = []string{"Fees"}
+
+func (ec *executionContext) _Fees(ctx context.Context, sel ast.SelectionSet, obj *Fees) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Fees")
+		case "factors":
+			out.Values[i] = ec._Fees_factors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var futureImplementors = []string{"Future", "Product"}
 
 func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, obj *Future) graphql.Marshaler {
@@ -16484,6 +16791,11 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "name":
 			out.Values[i] = ec._Market_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fees":
+			out.Values[i] = ec._Market_fees(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -19183,6 +19495,34 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Candle(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeeFactors2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFeeFactors(ctx context.Context, sel ast.SelectionSet, v FeeFactors) graphql.Marshaler {
+	return ec._FeeFactors(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFeeFactors(ctx context.Context, sel ast.SelectionSet, v *FeeFactors) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FeeFactors(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFees2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFees(ctx context.Context, sel ast.SelectionSet, v Fees) graphql.Marshaler {
+	return ec._Fees(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFees(ctx context.Context, sel ast.SelectionSet, v *Fees) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Fees(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

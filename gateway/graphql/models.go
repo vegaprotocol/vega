@@ -135,6 +135,22 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
+// The factors applied to calculate the fees
+type FeeFactors struct {
+	// The factor applied to calculate MakerFees, a non-negative float
+	MakerFee string `json:"makerFee"`
+	// The factor applied to calculate InfrastructureFees, a non-negative float
+	InfrastructureFee string `json:"infrastructureFee"`
+	// The factor applied to calculate LiquidityFees, a non-negative float
+	LiquidityFee string `json:"liquidityFee"`
+}
+
+// The fees applicable to a market
+type Fees struct {
+	// The factors used to calculate the different fees
+	Factors *FeeFactors `json:"factors"`
+}
+
 // A Future product
 type Future struct {
 	// The maturity date of the product (ISO8601/RFC3339 timestamp)
@@ -260,8 +276,11 @@ type MarginCalculator struct {
 // Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market struct {
 	// Market ID
-	ID   string `json:"id"`
+	ID string `json:"id"`
+	// Market full name
 	Name string `json:"name"`
+	// Fees related data
+	Fees *Fees `json:"fees"`
 	// An instance of or reference to a tradable instrument.
 	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
 	// Definitions and required configuration for the trading mode
@@ -338,6 +357,8 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
+	// The factor for the liquidity fee, must be an non negative float
+	LiquidityFee string `json:"liquidityFee"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
