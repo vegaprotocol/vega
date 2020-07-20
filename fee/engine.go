@@ -141,7 +141,7 @@ func (e *Engine) CalculateForContinuousMode(
 			Asset:  e.asset,
 			Amount: int64(totalInfrastructureFeeAmount),
 		},
-		Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+		Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 	})
 
 	return &feesTransfer{
