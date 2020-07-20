@@ -1952,6 +1952,42 @@
         }
       }
     },
+    "vegaFeeFactors": {
+      "type": "object",
+      "properties": {
+        "makerFee": {
+          "type": "string"
+        },
+        "infrastructureFee": {
+          "type": "string"
+        },
+        "liquidityFee": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaFeeFactorsConfiguration": {
+      "type": "object",
+      "properties": {
+        "infrastructureFee": {
+          "type": "string",
+          "title": "the infrastructure fee, needs to be a valid float"
+        },
+        "makerFee": {
+          "type": "string",
+          "title": "the maker fee, needs to be a valid float"
+        }
+      },
+      "title": "FeeFactors set at the network level"
+    },
+    "vegaFees": {
+      "type": "object",
+      "properties": {
+        "factors": {
+          "$ref": "#/definitions/vegaFeeFactors"
+        }
+      }
+    },
     "vegaFuture": {
       "type": "object",
       "properties": {
@@ -2222,6 +2258,10 @@
           "format": "uint64",
           "title": "the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`"
         },
+        "fees": {
+          "$ref": "#/definitions/vegaFees",
+          "title": "fees configuration"
+        },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
         },
@@ -2345,6 +2385,10 @@
         "marginConfiguration": {
           "$ref": "#/definitions/vegaScalingFactors",
           "description": "Scaling factors for all markets created via governance."
+        },
+        "feeFactorsConfiguration": {
+          "$ref": "#/definitions/vegaFeeFactorsConfiguration",
+          "title": "FeeFactors which are not set via proposal"
         }
       }
     },
@@ -2372,13 +2416,9 @@
           "$ref": "#/definitions/vegaInstrumentConfiguration",
           "title": "New market instrument configuration"
         },
-        "simple": {
-          "$ref": "#/definitions/vegaSimpleModelParams",
-          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
-        },
-        "logNormal": {
-          "$ref": "#/definitions/vegaLogNormalRiskModel",
-          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
+        "liquidityFee": {
+          "type": "string",
+          "title": "this is the liquidity fee, it needs to be a valid float"
         },
         "decimalPlaces": {
           "type": "string",
@@ -2391,6 +2431,14 @@
             "type": "string"
           },
           "title": "Optional new market meta data, tags"
+        },
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams",
+          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel",
+          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
