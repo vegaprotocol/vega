@@ -5,6 +5,17 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
+// auction durations defined using one or more params:
+
+// AuctionDuration can be used to configure 3 auction periods:
+// 1) duration > 0, volume == 0: The auction will last for at least N seconds
+// 2) Duration == 0, volume > 0: Auction period will end once we can close with given traded volume
+// 3) Duration > 0 & volume > 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+message AuctionDuration {
+  int64 duration = 1;
+  uint64 volume = 2;
+}
+
 // here begin trading modes
 
 message ContinuousTrading {
@@ -127,6 +138,8 @@ message Market {
 
   // fees configuration
   Fees fees = 4;
+
+  AuctionDuration openingAuction = 5;
 
   oneof tradingMode {
     ContinuousTrading continuous = 100;

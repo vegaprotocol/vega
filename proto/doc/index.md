@@ -102,8 +102,11 @@
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
 
+
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
+
 
 - [proto/assets.proto](#proto/assets.proto)
     - [Asset](#vega.Asset)
@@ -111,6 +114,10 @@
     - [BuiltinAsset](#vega.BuiltinAsset)
     - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
+
+
+
+
 
 - [proto/chain_events.proto](#proto/chain_events.proto)
     - [AddValidator](#vega.AddValidator)
@@ -131,6 +138,10 @@
     - [Identifier](#vega.Identifier)
     - [RemoveValidator](#vega.RemoveValidator)
     - [ValidatorEvent](#vega.ValidatorEvent)
+
+
+
+
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
@@ -153,7 +164,11 @@
     - [ProposalError](#vega.ProposalError)
     - [Vote.Value](#vega.Vote.Value)
 
+
+
+
 - [proto/markets.proto](#proto/markets.proto)
+    - [AuctionDuration](#vega.AuctionDuration)
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
     - [EthereumEvent](#vega.EthereumEvent)
@@ -172,6 +187,10 @@
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
+
+
+
+
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
@@ -223,6 +242,9 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
+
+
+
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -2576,6 +2598,25 @@ and the cause for an proposal being rejected of failed
 
 
 
+<a name="vega.AuctionDuration"></a>
+
+### AuctionDuration
+AuctionDuration can be used to configure 3 auction periods:
+1) duration &gt; 0, volume == 0: The auction will last for at least N seconds
+2) Duration == 0, volume &gt; 0: Auction period will end once we can close with given traded volume
+3) Duration &gt; 0 &amp; volume &gt; 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| duration | [int64](#int64) |  |  |
+| volume | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="vega.ContinuousTrading"></a>
 
 ### ContinuousTrading
@@ -2804,6 +2845,7 @@ and the cause for an proposal being rejected of failed
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | fees | [Fees](#vega.Fees) |  | fees configuration |
+| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  |  |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -3066,6 +3108,8 @@ The fees being paid by a party, resulting from a trade
 | market | [string](#string) |  | market id of the associated mark price |
 | timestamp | [int64](#int64) |  | time at which this mark price was relevant |
 | openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
+| auctionEnd | [int64](#int64) |  | time in seconds until the end of the auction (0 if currently not in auction period) |
+| auctionStart | [int64](#int64) |  | time until next auction (used in FBA&#39;s) - currently always 0 |
 
 
 
@@ -3815,21 +3859,21 @@ Set when an order has an issue
 
 ## Scalar Value Types
 
-| .proto Type | Notes | C++ | Java | Python | Go | C# | PHP | Ruby |
-| ----------- | ----- | --- | ---- | ------ | -- | -- | --- | ---- |
-| <a name="double" /> double |  | double | double | float | float64 | double | float | Float |
-| <a name="float" /> float |  | float | float | float | float32 | float | float | Float |
-| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long | uint32 | uint | integer | Bignum or Fixnum (as required) |
-| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum or Fixnum (as required) |
-| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int | uint32 | uint | integer | Bignum or Fixnum (as required) |
-| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum |
-| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
-| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
-| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
+| .proto Type | Notes | C++ Type | Java Type | Python Type |
+| ----------- | ----- | -------- | --------- | ----------- |
+| <a name="double" /> double |  | double | double | float |
+| <a name="float" /> float |  | float | float | float |
+| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int |
+| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long |
+| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long |
+| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long |
+| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int |
+| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long |
+| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int |
+| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long |
+| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int |
+| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long |
+| <a name="bool" /> bool |  | bool | boolean | boolean |
+| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode |
+| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str |
 

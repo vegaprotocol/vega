@@ -606,6 +606,10 @@ message MarketData {
   int64 timestamp = 8;
   // the sum of the size of all positions greater than 0.
   uint64 openInterest = 9;
+  // time in seconds until the end of the auction (0 if currently not in auction period)
+  int64 auctionEnd = 10;
+  // time until next auction (used in FBA's) - currently always 0
+  int64 auctionStart = 11;
 }
 
 message ErrorDetail {
