@@ -41,6 +41,21 @@ func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string) (*Eng
 	return e, e.UpdateFeeFactors(e.feeCfg)
 }
 
+// ReloadConf is used in order to reload the internal configuration of
+// the of the fee engine
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfg = cfg
+}
+
 func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 	f, err := strconv.ParseFloat(fees.Factors.MakerFee, 64)
 	if err != nil {
@@ -89,7 +104,7 @@ func (e *Engine) CalculateForContinuousMode(
 	)
 
 	for _, v := range trades {
-		fee := e.calculateContinuousModeFee(v.Price, v.Size)
+		fee := e.calculateContinuousModeFees(v)
 		switch v.Aggressor {
 		case types.Side_SIDE_BUY:
 			v.BuyerFee = fee
@@ -151,8 +166,8 @@ func (e *Engine) CalculateForContinuousMode(
 	}, nil
 }
 
-func (e *Engine) calculateContinuousModeFee(price, size uint64) *types.Fee {
-	tradeValueForFeePurpose := float64(price * size)
+func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
+	tradeValueForFeePurpose := float64(trade.Price * trade.Size)
 	return &types.Fee{
 		MakerFee:          uint64(tradeValueForFeePurpose * e.f.makerFee),
 		InfrastructureFee: uint64(tradeValueForFeePurpose * e.f.infrastructureFee),

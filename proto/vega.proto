@@ -213,6 +213,7 @@ enum OrderError {
   ORDER_ERROR_INVALID_PERSISTENCE = 18;
   ORDER_ERROR_INVALID_TYPE = 19;
   ORDER_ERROR_SELF_TRADING = 20;
+  ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

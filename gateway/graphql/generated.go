@@ -3870,6 +3870,12 @@ enum OrderRejectionReason {
 
   "Invalid type"
   InvalidType
+
+  "Self trading"
+  SelfTrading
+
+  "Insufficient funds to pay fees"
+  InsufficientFundsToPayFees
 }
 
 enum OrderType {

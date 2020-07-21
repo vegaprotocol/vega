@@ -12,6 +12,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -76,6 +77,7 @@ type Market struct {
 	risk               *risk.Engine
 	position           *positions.Engine
 	settlement         *settlement.Engine
+	fee                *fee.Engine
 
 	// deps engines
 	collateral  *collateral.Engine
@@ -116,6 +118,7 @@ func NewMarket(
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
+	feeConfig fee.Config,
 	collateralEngine *collateral.Engine,
 	partyEngine *Party,
 	mkt *types.Market,
@@ -165,6 +168,11 @@ func NewMarket(
 	)
 	positionEngine := positions.New(log, positionConfig)
 
+	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to instanciate fee engine")
+	}
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -180,6 +188,7 @@ func NewMarket(
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
 		broker:             broker,
+		fee:                feeEngine,
 	}
 	return market, nil
 }
@@ -205,16 +214,16 @@ func (m *Market) GetMarketData() types.MarketData {
 func (m *Market) ReloadConf(
 	matchingConfig matching.Config,
 	riskConfig risk.Config,
-	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
+	feeConfig fee.Config,
 ) {
 	m.log.Info("reloading configuration")
 	m.matching.ReloadConf(matchingConfig)
 	m.risk.ReloadConf(riskConfig)
 	m.position.ReloadConf(positionConfig)
 	m.settlement.ReloadConf(settlementConfig)
-	m.collateral.ReloadConf(collateralConfig)
+	m.fee.ReloadConf(feeConfig)
 }
 
 // GetID returns the id of the given market
@@ -320,6 +329,29 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 		}
 	}
 	return
+}
+
+func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
+	_, perr := m.position.UnregisterOrder(order)
+	if perr != nil {
+		m.log.Error("Unable to unregister potential trader positions",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+	}
+	order.Status = types.Order_STATUS_REJECTED
+	if oerr, ok := types.IsOrderError(err); ok {
+		order.Reason = oerr
+	} else {
+		// should not happend but still...
+		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
+	}
+	m.broker.Send(events.NewOrderEvent(ctx, order))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Failure after submitting order to matching engine",
+			logging.Order(*order),
+			logging.Error(err))
+	}
+	return err
 }
 
 // SubmitOrder submits the given order
@@ -446,6 +478,42 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, ErrMarginCheckFailed
 	}
 
+	// first we call the order book to get the list of trades
+	trades, err := m.matching.GetTrades(order)
+	if err != nil {
+		return nil, m.unregisterAndReject(ctx, order, err)
+	}
+
+	// if we have some trades, let's try to get the fees
+	if len(trades) > 0 {
+		// first we get the fees for these trades
+		var fees []events.FeesTransfer
+		switch m.mkt.TradingMode.(type) {
+		case *types.Market_Continuous:
+			f, err := m.fee.CalculateForContinuousMode(trades)
+			if err != nil {
+				fees = append(fees, f)
+			}
+		case *types.Market_Discrete:
+			fees = nil
+		}
+
+		if err != nil {
+			return nil, m.unregisterAndReject(ctx, order, err)
+		}
+
+		// here we are going to call the colateral engine
+		// to check if we can get the fees
+		// 	transfers, err := e.collateral.TransferFees(ctx, fees)
+		// 	if err != nil {
+		// 		e.log.Error("unable to transfer fees for trades",
+		// 			logging.String("order-id", order.ID),
+		// 			logging.String("market-id", m.GetID()),
+		// 			logging.Error(err))
+		// 		return nil, m.unregisterAndReject(ctx, types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES)
+		// 	}
+	}
+
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -488,6 +556,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// Insert aggressive remaining order
 	m.broker.Send(events.NewOrderEvent(ctx, order))
+
+	// we replace the trades in the confirmation with the one we got initially
+	// the contains the fees informations
+	confirmation.Trades = trades
 
 	m.handleConfirmation(ctx, order, confirmation)
 

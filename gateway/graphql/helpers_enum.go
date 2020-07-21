@@ -325,6 +325,10 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_MARKET_CLOSED, nil
 	case OrderRejectionReasonMarginCheckFailed:
 		return types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED, nil
+	case OrderRejectionReasonInsufficientFundsToPayFees:
+		return types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES, nil
+	case OrderRejectionReasonSelfTrading:
+		return types.OrderError_ORDER_ERROR_SELF_TRADING, nil
 	case OrderRejectionReasonInternalError:
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
 	default:
@@ -364,6 +368,10 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonMarketClosed, nil
 	case types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED:
 		return OrderRejectionReasonMarginCheckFailed, nil
+	case types.OrderError_ORDER_ERROR_SELF_TRADING:
+		return OrderRejectionReasonSelfTrading, nil
+	case types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES:
+		return OrderRejectionReasonInsufficientFundsToPayFees, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
 		return OrderRejectionReasonInternalError, nil
 	default:

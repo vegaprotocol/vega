@@ -115,7 +115,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 	for _, mkt := range e.markets {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
-			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
+			e.Config.Position, e.Config.Settlement, e.Config.Fee)
 	}
 }
 
@@ -189,6 +189,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Position,
 		e.Config.Settlement,
 		e.Config.Matching,
+		e.Config.Fee,
 		e.collateral,
 		e.party,
 		marketConfig,
