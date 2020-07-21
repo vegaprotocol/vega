@@ -205,31 +205,31 @@ enum OrderError {
   // Order was amended with a sequence number that was not previous version + 1
   ORDER_ERROR_OUT_OF_SEQUENCE = 3;
   
-  // Order was amended with an invalid remaining size
+  // Order was amended with an invalid remaining size (e.g. remaining greater than total size)
   ORDER_ERROR_INVALID_REMAINING_SIZE = 4;
   
-  // ????
+  // Node was unable to get Vega (blockchain) time
   ORDER_ERROR_TIME_FAILURE = 5;
   
-  // ???
+  // Failed to remove an order from the book
   ORDER_ERROR_REMOVAL_FAILURE = 6;
   
-  // Order submitted or ammended with an expiration that was badly formatted or otherwise invalid
+  // GTT Order submitted or ammended with an expiration that was badly formatted or otherwise invalid
   ORDER_ERROR_INVALID_EXPIRATION_DATETIME = 7;
   
   // Order was submitted or ammended with an invalid reference field
   ORDER_ERROR_INVALID_ORDER_REFERENCE = 8;
   
-  // Order amend was submitted for an order that could not be edited (when is this?)
+  // Order amend was submitted for an order field that cannot not be edited (e.g. order id)
   ORDER_ERROR_EDIT_NOT_ALLOWED = 9;
   
-  // Order amend failed (when?)
+  // Amend failure because amend details do not match original order
   ORDER_ERROR_AMEND_FAILURE = 10;
   
-  // 
+  // Order not found in the order book or in order store
   ORDER_ERROR_NOT_FOUND = 11;
   
-  // Order was submitted with a party ID that is unknown to the network (has not traded, has no collateral)
+  // Order was submitted with an invalid or missing party ID
   ORDER_ERROR_INVALID_PARTY_ID = 12;
   
   // Order was submitted for a market that has closed
@@ -241,10 +241,10 @@ enum OrderError {
   // Order was submitted, but the party did not have an account for this asset
   ORDER_ERROR_MISSING_GENERAL_ACCOUNT = 15;
   
-  // Unknonwn internal error
+  // Unspecified internal error
   ORDER_ERROR_INTERNAL_ERROR = 16;
   
-  // Order was submitted with an invalid size field
+  // Order was submitted with an invalid or missing size (e.g. 0)
   ORDER_ERROR_INVALID_SIZE = 17;
   
   // Order was submitted with an invalid persistence for its type
