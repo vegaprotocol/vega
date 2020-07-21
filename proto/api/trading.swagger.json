@@ -623,6 +623,7 @@
           },
           {
             "name": "type",
+            "description": " - ACCOUNT_TYPE_UNSPECIFIED: the default variant for this enum\n - ACCOUNT_TYPE_INSURANCE: This account is created to hold the insurance pool funds of a market.\n - ACCOUNT_TYPE_SETTLEMENT: This account is created to hold fund while settlement or mtm occur.\n - ACCOUNT_TYPE_MARGIN: A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: A party will have multiple general accounts, one for each assets they want\nto trade with. This is the account where the funds are initially deposited\nor withdrawn from. It's also the account where funds are taken to fullfill\nmargin requirement or fees\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: This account is created to hold fees earned for providing infrastructure\n - ACCOUNT_TYPE_FEES_LIQUIDITY: This account is created to hold fees earned for providing liquidity\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned for placing orders that sit on the book",
             "in": "query",
             "required": false,
             "type": "string",
@@ -1525,7 +1526,8 @@
         "ACCOUNT_TYPE_FEES_LIQUIDITY",
         "ACCOUNT_TYPE_FEES_MAKER"
       ],
-      "default": "ACCOUNT_TYPE_UNSPECIFIED"
+      "default": "ACCOUNT_TYPE_UNSPECIFIED",
+      "title": "- ACCOUNT_TYPE_UNSPECIFIED: the default variant for this enum\n - ACCOUNT_TYPE_INSURANCE: This account is created to hold the insurance pool funds of a market.\n - ACCOUNT_TYPE_SETTLEMENT: This account is created to hold fund while settlement or mtm occur.\n - ACCOUNT_TYPE_MARGIN: A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: A party will have multiple general accounts, one for each assets they want\nto trade with. This is the account where the funds are initially deposited\nor withdrawn from. It's also the account where funds are taken to fullfill\nmargin requirement or fees\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: This account is created to hold fees earned for providing infrastructure\n - ACCOUNT_TYPE_FEES_LIQUIDITY: This account is created to hold fees earned for providing liquidity\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned for placing orders that sit on the book"
     },
     "vegaAddValidator": {
       "type": "object",

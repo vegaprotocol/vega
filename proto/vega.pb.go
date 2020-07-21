@@ -218,14 +218,25 @@ func (ChainStatus) EnumDescriptor() ([]byte, []int) {
 type AccountType int32
 
 const (
-	AccountType_ACCOUNT_TYPE_UNSPECIFIED         AccountType = 0
-	AccountType_ACCOUNT_TYPE_INSURANCE           AccountType = 1
-	AccountType_ACCOUNT_TYPE_SETTLEMENT          AccountType = 2
-	AccountType_ACCOUNT_TYPE_MARGIN              AccountType = 3
-	AccountType_ACCOUNT_TYPE_GENERAL             AccountType = 4
+	// the default variant for this enum
+	AccountType_ACCOUNT_TYPE_UNSPECIFIED AccountType = 0
+	// This account is created to hold the insurance pool funds of a market.
+	AccountType_ACCOUNT_TYPE_INSURANCE AccountType = 1
+	// This account is created to hold fund while settlement or mtm occur.
+	AccountType_ACCOUNT_TYPE_SETTLEMENT AccountType = 2
+	// A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change
+	AccountType_ACCOUNT_TYPE_MARGIN AccountType = 3
+	// A party will have multiple general accounts, one for each assets they want
+	// to trade with. This is the account where the funds are initially deposited
+	// or withdrawn from. It's also the account where funds are taken to fullfill
+	// margin requirement or fees
+	AccountType_ACCOUNT_TYPE_GENERAL AccountType = 4
+	//This account is created to hold fees earned for providing infrastructure
 	AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE AccountType = 5
-	AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY      AccountType = 6
-	AccountType_ACCOUNT_TYPE_FEES_MAKER          AccountType = 7
+	// This account is created to hold fees earned for providing liquidity
+	AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY AccountType = 6
+	// This account is created to hold fees earned for placing orders that sit on the book
+	AccountType_ACCOUNT_TYPE_FEES_MAKER AccountType = 7
 )
 
 var AccountType_name = map[int32]string{
