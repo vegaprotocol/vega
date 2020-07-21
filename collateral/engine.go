@@ -826,7 +826,7 @@ func (e *Engine) getFeeTransferRequest(
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE:
 		treq.FromAccount = []*types.Account{makerFee}
-		treq.ToAccount = []*types.Account{infraFee}
+		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	default:
 		return nil, ErrInvalidTransferTypeForFeeRequest
