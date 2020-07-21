@@ -214,13 +214,13 @@ enum OrderError {
   // Failed to remove an order from the book
   ORDER_ERROR_REMOVAL_FAILURE = 6;
   
-  // GTT Order submitted or ammended with an expiration that was badly formatted or otherwise invalid
+  // GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid
   ORDER_ERROR_INVALID_EXPIRATION_DATETIME = 7;
   
-  // Order was submitted or ammended with an invalid reference field
+  // Order was submitted or amended with an invalid reference field
   ORDER_ERROR_INVALID_ORDER_REFERENCE = 8;
   
-  // Order amend was submitted for an order field that cannot not be ammended (e.g. order id)
+  // Order amend was submitted for an order field that cannot not be amended (e.g. order id)
   ORDER_ERROR_EDIT_NOT_ALLOWED = 9;
   
   // Amend failure because amend details do not match original order
