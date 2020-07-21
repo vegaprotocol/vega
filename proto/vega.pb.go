@@ -99,30 +99,53 @@ func (Interval) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{1}
 }
 
+// Set when an order has an issue
 type OrderError int32
 
 const (
-	OrderError_ORDER_ERROR_NONE                           OrderError = 0
-	OrderError_ORDER_ERROR_INVALID_MARKET_ID              OrderError = 1
-	OrderError_ORDER_ERROR_INVALID_ORDER_ID               OrderError = 2
-	OrderError_ORDER_ERROR_OUT_OF_SEQUENCE                OrderError = 3
-	OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE         OrderError = 4
-	OrderError_ORDER_ERROR_TIME_FAILURE                   OrderError = 5
-	OrderError_ORDER_ERROR_REMOVAL_FAILURE                OrderError = 6
-	OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME    OrderError = 7
-	OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE        OrderError = 8
-	OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED               OrderError = 9
-	OrderError_ORDER_ERROR_AMEND_FAILURE                  OrderError = 10
-	OrderError_ORDER_ERROR_NOT_FOUND                      OrderError = 11
-	OrderError_ORDER_ERROR_INVALID_PARTY_ID               OrderError = 12
-	OrderError_ORDER_ERROR_MARKET_CLOSED                  OrderError = 13
-	OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED            OrderError = 14
-	OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT        OrderError = 15
-	OrderError_ORDER_ERROR_INTERNAL_ERROR                 OrderError = 16
-	OrderError_ORDER_ERROR_INVALID_SIZE                   OrderError = 17
-	OrderError_ORDER_ERROR_INVALID_PERSISTENCE            OrderError = 18
-	OrderError_ORDER_ERROR_INVALID_TYPE                   OrderError = 19
-	OrderError_ORDER_ERROR_SELF_TRADING                   OrderError = 20
+	// Empty default error
+	OrderError_ORDER_ERROR_NONE OrderError = 0
+	// Order was submitted for a market that does not exist
+	OrderError_ORDER_ERROR_INVALID_MARKET_ID OrderError = 1
+	// Order was submitted with an invalid ID
+	OrderError_ORDER_ERROR_INVALID_ORDER_ID OrderError = 2
+	// Order was amended with a sequence number that was not previous version + 1
+	OrderError_ORDER_ERROR_OUT_OF_SEQUENCE OrderError = 3
+	// Order was amended with an invalid remaining size (e.g. remaining greater than total size)
+	OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE OrderError = 4
+	// Node was unable to get Vega (blockchain) time
+	OrderError_ORDER_ERROR_TIME_FAILURE OrderError = 5
+	// Failed to remove an order from the book
+	OrderError_ORDER_ERROR_REMOVAL_FAILURE OrderError = 6
+	// GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid
+	OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME OrderError = 7
+	// Order was submitted or amended with an invalid reference field
+	OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE OrderError = 8
+	// Order amend was submitted for an order field that cannot not be amended (e.g. order id)
+	OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED OrderError = 9
+	// Amend failure because amend details do not match original order
+	OrderError_ORDER_ERROR_AMEND_FAILURE OrderError = 10
+	// Order not found in the order book or in order store
+	OrderError_ORDER_ERROR_NOT_FOUND OrderError = 11
+	// Order was submitted with an invalid or missing party ID
+	OrderError_ORDER_ERROR_INVALID_PARTY_ID OrderError = 12
+	// Order was submitted for a market that has closed
+	OrderError_ORDER_ERROR_MARKET_CLOSED OrderError = 13
+	// Order was submitted, but the party did not have enough collateral to cover the order
+	OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED OrderError = 14
+	// Order was submitted, but the party did not have an account for this asset
+	OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT OrderError = 15
+	// Unspecified internal error
+	OrderError_ORDER_ERROR_INTERNAL_ERROR OrderError = 16
+	// Order was submitted with an invalid or missing size (e.g. 0)
+	OrderError_ORDER_ERROR_INVALID_SIZE OrderError = 17
+	// Order was submitted with an invalid persistence for its type
+	OrderError_ORDER_ERROR_INVALID_PERSISTENCE OrderError = 18
+	// Order was submitted with an invalid type field
+	OrderError_ORDER_ERROR_INVALID_TYPE OrderError = 19
+	// Order was stopped as it would have traded with another order for the same party
+	OrderError_ORDER_ERROR_SELF_TRADING OrderError = 20
+	// Order was submitted, but the party did not have enough collateral to cover the fees for the order
 	OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES OrderError = 21
 )
 

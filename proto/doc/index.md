@@ -3667,32 +3667,32 @@ Order Type
 <a name="vega.OrderError"></a>
 
 ### OrderError
-
+Set when an order has an issue
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ORDER_ERROR_NONE | 0 |  |
-| ORDER_ERROR_INVALID_MARKET_ID | 1 |  |
-| ORDER_ERROR_INVALID_ORDER_ID | 2 |  |
-| ORDER_ERROR_OUT_OF_SEQUENCE | 3 |  |
-| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 |  |
-| ORDER_ERROR_TIME_FAILURE | 5 |  |
-| ORDER_ERROR_REMOVAL_FAILURE | 6 |  |
-| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 |  |
-| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 |  |
-| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 |  |
-| ORDER_ERROR_AMEND_FAILURE | 10 |  |
-| ORDER_ERROR_NOT_FOUND | 11 |  |
-| ORDER_ERROR_INVALID_PARTY_ID | 12 |  |
-| ORDER_ERROR_MARKET_CLOSED | 13 |  |
-| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 |  |
-| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 |  |
-| ORDER_ERROR_INTERNAL_ERROR | 16 |  |
-| ORDER_ERROR_INVALID_SIZE | 17 |  |
-| ORDER_ERROR_INVALID_PERSISTENCE | 18 |  |
-| ORDER_ERROR_INVALID_TYPE | 19 |  |
-| ORDER_ERROR_SELF_TRADING | 20 |  |
-| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 |  |
+| ORDER_ERROR_NONE | 0 | Empty default error |
+| ORDER_ERROR_INVALID_MARKET_ID | 1 | Order was submitted for a market that does not exist |
+| ORDER_ERROR_INVALID_ORDER_ID | 2 | Order was submitted with an invalid ID |
+| ORDER_ERROR_OUT_OF_SEQUENCE | 3 | Order was amended with a sequence number that was not previous version &#43; 1 |
+| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 | Order was amended with an invalid remaining size (e.g. remaining greater than total size) |
+| ORDER_ERROR_TIME_FAILURE | 5 | Node was unable to get Vega (blockchain) time |
+| ORDER_ERROR_REMOVAL_FAILURE | 6 | Failed to remove an order from the book |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid |
+| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 | Order was submitted or amended with an invalid reference field |
+| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 | Order amend was submitted for an order field that cannot not be amended (e.g. order id) |
+| ORDER_ERROR_AMEND_FAILURE | 10 | Amend failure because amend details do not match original order |
+| ORDER_ERROR_NOT_FOUND | 11 | Order not found in the order book or in order store |
+| ORDER_ERROR_INVALID_PARTY_ID | 12 | Order was submitted with an invalid or missing party ID |
+| ORDER_ERROR_MARKET_CLOSED | 13 | Order was submitted for a market that has closed |
+| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 | Order was submitted, but the party did not have enough collateral to cover the order |
+| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 | Order was submitted, but the party did not have an account for this asset |
+| ORDER_ERROR_INTERNAL_ERROR | 16 | Unspecified internal error |
+| ORDER_ERROR_INVALID_SIZE | 17 | Order was submitted with an invalid or missing size (e.g. 0) |
+| ORDER_ERROR_INVALID_PERSISTENCE | 18 | Order was submitted with an invalid persistence for its type |
+| ORDER_ERROR_INVALID_TYPE | 19 | Order was submitted with an invalid type field |
+| ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order for the same party |
+| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order |
 
 
 
