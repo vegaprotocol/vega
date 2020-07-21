@@ -220,7 +220,7 @@ enum OrderError {
   // Order was submitted or ammended with an invalid reference field
   ORDER_ERROR_INVALID_ORDER_REFERENCE = 8;
   
-  // Order amend was submitted for an order field that cannot not be edited (e.g. order id)
+  // Order amend was submitted for an order field that cannot not be ammended (e.g. order id)
   ORDER_ERROR_EDIT_NOT_ALLOWED = 9;
   
   // Amend failure because amend details do not match original order
