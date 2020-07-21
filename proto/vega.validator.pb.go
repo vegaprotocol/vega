@@ -68,6 +68,19 @@ func (this *OrderConfirmation) Validate() error {
 	return nil
 }
 func (this *Trade) Validate() error {
+	if this.BuyerFee != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.BuyerFee); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("BuyerFee", err)
+		}
+	}
+	if this.SellerFee != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SellerFee); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SellerFee", err)
+		}
+	}
+	return nil
+}
+func (this *Fee) Validate() error {
 	return nil
 }
 func (this *TradeSet) Validate() error {

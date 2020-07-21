@@ -213,6 +213,7 @@ enum OrderError {
   ORDER_ERROR_INVALID_PERSISTENCE = 18;
   ORDER_ERROR_INVALID_TYPE = 19;
   ORDER_ERROR_SELF_TRADING = 20;
+  ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -248,6 +249,15 @@ message Trade {
   // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 10;
   Type type = 11;
+
+  Fee buyerFee = 12;
+  Fee sellerFee = 13;
+}
+
+message Fee {
+  uint64 makerFee = 1;
+  uint64 infrastructureFee = 2;
+  uint64 liquidityFee = 3;
 }
 
 message TradeSet {
@@ -442,6 +452,10 @@ enum TransferType {
   TRANSFER_TYPE_MARGIN_LOW = 6;
   TRANSFER_TYPE_MARGIN_HIGH = 7;
   TRANSFER_TYPE_MARGIN_CONFISCATED = 8;
+  TRANSFER_TYPE_MAKER_FEE_PAY = 9;
+  TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
+  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
 }
 
 message Transfer {

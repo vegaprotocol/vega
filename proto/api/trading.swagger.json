@@ -1952,6 +1952,23 @@
         }
       }
     },
+    "vegaFee": {
+      "type": "object",
+      "properties": {
+        "makerFee": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "infrastructureFee": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "liquidityFee": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "vegaFeeFactors": {
       "type": "object",
       "properties": {
@@ -2607,7 +2624,8 @@
         "ORDER_ERROR_INVALID_SIZE",
         "ORDER_ERROR_INVALID_PERSISTENCE",
         "ORDER_ERROR_INVALID_TYPE",
-        "ORDER_ERROR_SELF_TRADING"
+        "ORDER_ERROR_SELF_TRADING",
+        "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES"
       ],
       "default": "ORDER_ERROR_NONE"
     },
@@ -3091,6 +3109,12 @@
         },
         "type": {
           "$ref": "#/definitions/vegaTradeType"
+        },
+        "buyerFee": {
+          "$ref": "#/definitions/vegaFee"
+        },
+        "sellerFee": {
+          "$ref": "#/definitions/vegaFee"
         }
       }
     },

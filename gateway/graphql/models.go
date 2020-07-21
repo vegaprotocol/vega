@@ -764,6 +764,10 @@ const (
 	OrderRejectionReasonInvalidPersistence OrderRejectionReason = "InvalidPersistence"
 	// Invalid type
 	OrderRejectionReasonInvalidType OrderRejectionReason = "InvalidType"
+	// Self trading
+	OrderRejectionReasonSelfTrading OrderRejectionReason = "SelfTrading"
+	// Insufficient funds to pay fees
+	OrderRejectionReasonInsufficientFundsToPayFees OrderRejectionReason = "InsufficientFundsToPayFees"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -786,11 +790,13 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonInvalidSize,
 	OrderRejectionReasonInvalidPersistence,
 	OrderRejectionReasonInvalidType,
+	OrderRejectionReasonSelfTrading,
+	OrderRejectionReasonInsufficientFundsToPayFees,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees:
 		return true
 	}
 	return false

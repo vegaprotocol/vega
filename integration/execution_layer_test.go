@@ -900,6 +900,13 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	mkt := proto.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
+		Fees: &proto.Fees{
+			Factors: &proto.FeeFactors{
+				LiquidityFee:      "0.001",
+				InfrastructureFee: "0.0005",
+				MakerFee:          "0.00025",
+			},
+		},
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),

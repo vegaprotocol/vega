@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
@@ -40,6 +41,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	positionConfig := positions.NewDefaultConfig()
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
+	feeConfig := fee.NewDefaultConfig()
 
 	broker := mocks.NewMockBroker(ctrl)
 
@@ -59,7 +61,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		collateralEngine, partyEngine, &mkts[0], now, broker, execution.NewIDGen())
+		feeConfig, collateralEngine, partyEngine, &mkts[0], now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -82,6 +84,13 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 
 func getMarkets(closingAt time.Time) []types.Market {
 	mkt := types.Market{
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
+				LiquidityFee:      "0.001",
+				InfrastructureFee: "0.0005",
+				MakerFee:          "0.00025",
+			},
+		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",

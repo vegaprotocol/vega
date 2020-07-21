@@ -175,6 +175,7 @@
     - [Account](#vega.Account)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
+    - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
@@ -2919,6 +2920,23 @@ and the cause for an proposal being rejected of failed
 
 
 
+<a name="vega.Fee"></a>
+
+### Fee
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| makerFee | [uint64](#uint64) |  |  |
+| infrastructureFee | [uint64](#uint64) |  |  |
+| liquidityFee | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="vega.FinancialAmount"></a>
 
 ### FinancialAmount
@@ -3440,6 +3458,8 @@ a decision taken by the vega network.
 | sellOrder | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | type | [Trade.Type](#vega.Trade.Type) |  |  |
+| buyerFee | [Fee](#vega.Fee) |  |  |
+| sellerFee | [Fee](#vega.Fee) |  |  |
 
 
 
@@ -3672,6 +3692,7 @@ Order Type
 | ORDER_ERROR_INVALID_PERSISTENCE | 18 |  |
 | ORDER_ERROR_INVALID_TYPE | 19 |  |
 | ORDER_ERROR_SELF_TRADING | 20 |  |
+| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 |  |
 
 
 
@@ -3718,6 +3739,10 @@ Order Type
 | TRANSFER_TYPE_MARGIN_LOW | 6 |  |
 | TRANSFER_TYPE_MARGIN_HIGH | 7 |  |
 | TRANSFER_TYPE_MARGIN_CONFISCATED | 8 |  |
+| TRANSFER_TYPE_MAKER_FEE_PAY | 9 |  |
+| TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 |  |
+| TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 |  |
+| TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 |  |
 
 
 

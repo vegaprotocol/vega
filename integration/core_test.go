@@ -9,6 +9,7 @@ import (
 
 	// cmocks "code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
@@ -86,6 +87,13 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 func theMarket(mSetup *gherkin.DataTable) error {
 	// generic market config, ready to be populated with specs from scenario
 	mkt := &proto.Market{
+		Fees: &proto.Fees{
+			Factors: &proto.FeeFactors{
+				LiquidityFee:      "0.001",
+				InfrastructureFee: "0.0005",
+				MakerFee:          "0.00025",
+			},
+		},
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Metadata: &proto.InstrumentMetadata{
@@ -131,6 +139,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		positions.NewDefaultConfig(),
 		settlement.NewDefaultConfig(),
 		matching.NewDefaultConfig(),
+		fee.NewDefaultConfig(),
 		mktsetup.colE,
 		mktsetup.party, // party-engine here!
 		mkt,
