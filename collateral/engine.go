@@ -261,7 +261,7 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *types.Account, err error) {
 	makerID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
 	infraID := e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
-	liquiID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	liquiID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 
 	if maker, err = e.GetAccountByID(makerID); err != nil {
 		if e.log.GetLevel() == logging.DebugLevel {
