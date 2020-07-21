@@ -1959,17 +1959,21 @@
       "properties": {
         "makerFee": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "A fee being paid to the non-aggressor party of the trade"
         },
         "infrastructureFee": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "A fee being paid to maintaining the vega infrastructure"
         },
         "liquidityFee": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "A fee being paid to the market makers"
         }
-      }
+      },
+      "title": "The fees being paid by a party, resulting from a trade"
     },
     "vegaFeeFactors": {
       "type": "object",

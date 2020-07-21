@@ -1145,9 +1145,13 @@ func (m *Trade) GetSellerFee() *Fee {
 	return nil
 }
 
+// The fees being paid by a party, resulting from a trade
 type Fee struct {
-	MakerFee             uint64   `protobuf:"varint,1,opt,name=makerFee,proto3" json:"makerFee,omitempty"`
-	InfrastructureFee    uint64   `protobuf:"varint,2,opt,name=infrastructureFee,proto3" json:"infrastructureFee,omitempty"`
+	// A fee being paid to the non-aggressor party of the trade
+	MakerFee uint64 `protobuf:"varint,1,opt,name=makerFee,proto3" json:"makerFee,omitempty"`
+	// A fee being paid to maintaining the vega infrastructure
+	InfrastructureFee uint64 `protobuf:"varint,2,opt,name=infrastructureFee,proto3" json:"infrastructureFee,omitempty"`
+	// A fee being paid to the market makers
 	LiquidityFee         uint64   `protobuf:"varint,3,opt,name=liquidityFee,proto3" json:"liquidityFee,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

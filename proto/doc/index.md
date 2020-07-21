@@ -2924,14 +2924,14 @@ and the cause for an proposal being rejected of failed
 <a name="vega.Fee"></a>
 
 ### Fee
-
+The fees being paid by a party, resulting from a trade
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| makerFee | [uint64](#uint64) |  |  |
-| infrastructureFee | [uint64](#uint64) |  |  |
-| liquidityFee | [uint64](#uint64) |  |  |
+| makerFee | [uint64](#uint64) |  | A fee being paid to the non-aggressor party of the trade |
+| infrastructureFee | [uint64](#uint64) |  | A fee being paid to maintaining the vega infrastructure |
+| liquidityFee | [uint64](#uint64) |  | A fee being paid to the market makers |
 
 
 
