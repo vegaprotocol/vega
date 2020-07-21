@@ -39,6 +39,8 @@ var (
 	ErrAssetAlreadyEnabled = errors.New("asset already enabled")
 	// ErrInvalidAssetID signals that an asset id does not exists
 	ErrInvalidAssetID = errors.New("invalid asset ID")
+	// ErrInsufficientFundsToPayFees the party do not have enough funds to pay the feeds
+	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
 )
 
 // Broker send events
@@ -117,6 +119,22 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.Symbol] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// then creat a new infrastructure fee account for the asset
+	// these are fee related account only
+	infraFeeID := e.accountID("", "", asset.Symbol, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	_, ok := e.accs[infraFeeID]
+	if !ok {
+		infraFeeAcc := &types.Account{
+			Id:       infraFeeID,
+			Asset:    asset.Symbol,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: noMarket,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		}
+		e.accs[infraFeeID] = infraFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
+	}
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.ID))
 	return nil
@@ -160,6 +178,44 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	}
 
 	return
+}
+
+func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	if len(ft.Transfers()) <= 0 {
+		return nil, nil
+	}
+	// check quickly that all traders have enough monies in their accoutns
+	// this may be done only in case of continuous trading
+	for party, amount := range ft.TotalFeesAmountPerParty() {
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		marginAcc, err := e.GetAccountByID(e.accountID(marketID, party, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "margin"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID),
+				logging.String("market-id", marketID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		if (marginAcc.Balance + generalAcc.Balance) < amount {
+			return nil, ErrInsufficientFundsToPayFees
+		}
+	}
+
+	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
+func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	return nil, nil
 }
 
 // FinalSettlement will process the list of transfer instructed by other engines
@@ -1049,6 +1105,36 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		}
 		e.accs[settleID] = setAcc
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
+	}
+
+	// these are fee related account only
+	liquidityFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+	_, ok = e.accs[liquidityFeeID]
+	if !ok {
+		liquidityFeeAcc := &types.Account{
+			Id:       liquidityFeeID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		}
+		e.accs[liquidityFeeID] = liquidityFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *liquidityFeeAcc))
+	}
+	makerFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
+	_, ok = e.accs[makerFeeID]
+	if !ok {
+		makerFeeAcc := &types.Account{
+			Id:       makerFeeID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
+		}
+		e.accs[makerFeeID] = makerFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
 
 	return

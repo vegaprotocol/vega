@@ -422,6 +422,9 @@ enum AccountType {
   ACCOUNT_TYPE_SETTLEMENT = 2;
   ACCOUNT_TYPE_MARGIN = 3;
   ACCOUNT_TYPE_GENERAL = 4;
+  ACCOUNT_TYPE_FEES_INFRASTRUCTURE = 5;
+  ACCOUNT_TYPE_FEES_LIQUIDITY = 6;
+  ACCOUNT_TYPE_FEES_MAKER = 7;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go

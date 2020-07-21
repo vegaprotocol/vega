@@ -83,7 +83,7 @@ func testEnableAssetSuccess(t *testing.T) {
 		ID:     "MYASSET",
 		Symbol: "MYASSET",
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 }
@@ -95,7 +95,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 		ID:     "MYASSET",
 		Symbol: "MYASSET",
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -1448,7 +1448,7 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 	// 4 new events expected:
 	// 2 markets accounts
 	// 2 new assets
-	broker.EXPECT().Send(gomock.Any()).Times(4)
+	broker.EXPECT().Send(gomock.Any()).Times(8)
 	// system accounts created
 
 	eng, err := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())

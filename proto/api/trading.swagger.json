@@ -631,7 +631,10 @@
               "ACCOUNT_TYPE_INSURANCE",
               "ACCOUNT_TYPE_SETTLEMENT",
               "ACCOUNT_TYPE_MARGIN",
-              "ACCOUNT_TYPE_GENERAL"
+              "ACCOUNT_TYPE_GENERAL",
+              "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
+              "ACCOUNT_TYPE_FEES_LIQUIDITY",
+              "ACCOUNT_TYPE_FEES_MAKER"
             ],
             "default": "ACCOUNT_TYPE_UNSPECIFIED"
           },
@@ -1517,7 +1520,10 @@
         "ACCOUNT_TYPE_INSURANCE",
         "ACCOUNT_TYPE_SETTLEMENT",
         "ACCOUNT_TYPE_MARGIN",
-        "ACCOUNT_TYPE_GENERAL"
+        "ACCOUNT_TYPE_GENERAL",
+        "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
+        "ACCOUNT_TYPE_FEES_LIQUIDITY",
+        "ACCOUNT_TYPE_FEES_MAKER"
       ],
       "default": "ACCOUNT_TYPE_UNSPECIFIED"
     },
