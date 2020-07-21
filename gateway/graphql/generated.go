@@ -3938,16 +3938,16 @@ type InstrumentConfiguration {
 
 "A mode where Vega try to execute order as soon as they are received"
 input ContinuousTradingInput {
-  "Size of an increment in price in terms of the quote currency"
-  tickSize: String @deprecated(reason: "tickSize should not be used and will be ignored")
+  "Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored"
+  tickSize: String
 }
 
 "Frequent batch auctions trading mode"
 input DiscreteTradingInput {
   "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
-  "Size of an increment in price in terms of the quote currency"
-  tickSize: String @deprecated(reason: "tickSize should not be used and will be ignored")
+  "Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored"
+  tickSize: String
 }
 
 """
