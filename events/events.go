@@ -38,13 +38,12 @@ type SettlePosition interface {
 
 // FeeTransfer is a transfer initiated after trade occurs
 type FeesTransfer interface {
-	// the  party which is to pay the fees
-	PartyID() string
 	// The list of transfers to be made by the collateral
 	Transfers() []*types.Transfer
-	// The total amount of fees to be transfered (all cumulated)
-	// if all the  transfers are to be executed
-	TotalFeeAmount() uint64
+	// The total amount of fees to be payed (all cumulated)
+	// per party if all the  transfers are to be executed
+	// map is party id -> total amount of fees to be transfered
+	TotalFeesAmountPerParty() map[string]uint64
 }
 
 // Transfer is an event passed on by settlement engine, contains position

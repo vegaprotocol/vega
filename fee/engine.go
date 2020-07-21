@@ -130,7 +130,7 @@ func (e *Engine) CalculateForContinuousMode(
 			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
 		})
 		// create a transfer for the maker
-		transfersRecv = append(transfers, &types.Transfer{
+		transfersRecv = append(transfersRecv, &types.Transfer{
 			Owner: maker,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
@@ -160,9 +160,8 @@ func (e *Engine) CalculateForContinuousMode(
 	})
 
 	return &feesTransfer{
-		partyID:        aggressor,
-		totalFeeAmount: totalFeeAmount,
-		transfers:      append(transfers, transfersRecv...),
+		totalFeesAmountsPerParty: map[string]uint64{aggressor: totalFeeAmount},
+		transfers:                append(transfers, transfersRecv...),
 	}, nil
 }
 
@@ -182,16 +181,14 @@ func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 // single trader
 func (e *Engine) CalculateForAuctionMode(
 	trades []*types.Trade,
-) ([]events.FeesTransfer, error) {
+) (events.FeesTransfer, error) {
 	return nil, errors.New("unimplemented")
 }
 
 type feesTransfer struct {
-	totalFeeAmount uint64
-	partyID        string
-	transfers      []*types.Transfer
+	totalFeesAmountsPerParty map[string]uint64
+	transfers                []*types.Transfer
 }
 
-func (f *feesTransfer) PartyID() string              { return f.partyID }
-func (f *feesTransfer) TotalFeeAmount() uint64       { return f.totalFeeAmount }
-func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
+func (f *feesTransfer) TotalFeesAmountPerParty() map[string]uint64 { return f.totalFeesAmountsPerParty }
+func (f *feesTransfer) Transfers() []*types.Transfer               { return f.transfers }
