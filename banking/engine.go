@@ -60,7 +60,7 @@ type Engine struct {
 	tsvc      TimeService
 }
 
-func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService) (e *Engine) {
+func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	return &Engine{
 		log:       log,
@@ -68,6 +68,7 @@ func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeServic
 		erc:       erc,
 		assetActs: map[string]*assetAction{},
 		tsvc:      tsvc,
+		assets:    assets,
 	}
 }
 

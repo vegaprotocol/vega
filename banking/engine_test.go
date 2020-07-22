@@ -32,7 +32,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	tsvc := mocks.NewMockTimeService(ctrl)
 
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), col, erc, tsvc)
+	eng := banking.New(logging.NewTestLogger(), col, erc, tsvc, assets)
 
 	return &testEngine{
 		Engine: eng,
