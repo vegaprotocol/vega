@@ -1060,9 +1060,9 @@ func AssetSourceFromProto(psource interface{}) (AssetSource, error) {
 		return nil, ErrNilAssetSource
 	}
 	switch asimpl := psource.(type) {
-	case *types.Asset_BuiltinAsset:
+	case *types.AssetSource_BuiltinAsset:
 		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
-	case *types.Asset_Erc20:
+	case *types.AssetSource_Erc20:
 		return ERC20FromProto(asimpl.Erc20), nil
 	default:
 		return nil, ErrUnimplementedAssetSource
