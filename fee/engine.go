@@ -2,6 +2,7 @@ package fee
 
 import (
 	"errors"
+	"math"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/events"
@@ -175,6 +176,9 @@ func (e *Engine) CalculateForContinuousMode(
 func (e *Engine) CalculateForAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
+	if len(trades) <= 0 {
+		return nil, ErrEmptyTrades
+	}
 	var (
 		totalFeesAmounts = map[string]uint64{}
 		// we allocate for len of trades *4 as all trades generate
@@ -232,6 +236,10 @@ func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*
 func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
+	if len(trades) <= 0 {
+		return nil, ErrEmptyTrades
+	}
+
 	var (
 		totalFeesAmounts = map[string]uint64{}
 		// we allocate for len of trades *4 as all trades generate
@@ -296,9 +304,9 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 	tradeValueForFeePurpose := float64(trade.Price * trade.Size)
 	return &types.Fee{
-		MakerFee:          uint64(tradeValueForFeePurpose * e.f.makerFee),
-		InfrastructureFee: uint64(tradeValueForFeePurpose * e.f.infrastructureFee),
-		LiquidityFee:      uint64(tradeValueForFeePurpose * e.f.liquidityFee),
+		MakerFee:          uint64(math.Ceil(tradeValueForFeePurpose * e.f.makerFee)),
+		InfrastructureFee: uint64(math.Ceil(tradeValueForFeePurpose * e.f.infrastructureFee)),
+		LiquidityFee:      uint64(math.Ceil(tradeValueForFeePurpose * e.f.liquidityFee)),
 	}
 }
 
@@ -306,8 +314,8 @@ func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 	fee := e.calculateContinuousModeFees(trade)
 	return &types.Fee{
 		MakerFee:          0,
-		InfrastructureFee: fee.InfrastructureFee / 2,
-		LiquidityFee:      fee.LiquidityFee / 2,
+		InfrastructureFee: uint64(math.Ceil(float64(fee.InfrastructureFee) / 2)),
+		LiquidityFee:      uint64(math.Ceil(float64(fee.LiquidityFee) / 2)),
 	}
 }
 
