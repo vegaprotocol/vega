@@ -771,6 +771,7 @@ func (p *Processor) enactMarket(ctx context.Context, prop *types.Proposal, mkt *
 }
 
 func (p *Processor) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+	prop.State = types.Proposal_STATE_ENACTED
 	// first check if this asset is real
 	asset, err := p.assets.Get(prop.ID)
 	if err != nil {
