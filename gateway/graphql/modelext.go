@@ -1055,11 +1055,11 @@ func ERC20FromProto(ea *types.ERC20) *Erc20 {
 	}
 }
 
-func AssetSourceFromProto(psource interface{}) (AssetSource, error) {
+func AssetSourceFromProto(psource *types.AssetSource) (AssetSource, error) {
 	if psource == nil {
 		return nil, ErrNilAssetSource
 	}
-	switch asimpl := psource.(type) {
+	switch asimpl := psource.Source.(type) {
 	case *types.AssetSource_BuiltinAsset:
 		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
 	case *types.AssetSource_Erc20:
