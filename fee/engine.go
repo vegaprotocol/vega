@@ -216,18 +216,6 @@ func (e *Engine) CalculateForAuctionMode(
 	}, nil
 }
 
-func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.Transfer) {
-	fee := e.calculateAuctionModeFees(t)
-	transfers := make([]*types.Transfer, 0, 4)
-	transfers = append(transfers,
-		e.getAuctionModeFeeTransfers(
-			fee.InfrastructureFee, fee.LiquidityFee, t.Seller)...)
-	transfers = append(transfers,
-		e.getAuctionModeFeeTransfers(
-			fee.InfrastructureFee, fee.LiquidityFee, t.Buyer)...)
-	return fee, transfers
-}
-
 // CalculateForFrequentBatchesAuctionMode calculate the fee for
 // trades which were produced from a market running in
 // in auction trading mode.
@@ -299,6 +287,18 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 		totalFeesAmountsPerParty: totalFeesAmounts,
 		transfers:                transfers,
 	}, nil
+}
+
+func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.Transfer) {
+	fee := e.calculateAuctionModeFees(t)
+	transfers := make([]*types.Transfer, 0, 4)
+	transfers = append(transfers,
+		e.getAuctionModeFeeTransfers(
+			fee.InfrastructureFee, fee.LiquidityFee, t.Seller)...)
+	transfers = append(transfers,
+		e.getAuctionModeFeeTransfers(
+			fee.InfrastructureFee, fee.LiquidityFee, t.Buyer)...)
+	return fee, transfers
 }
 
 func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
