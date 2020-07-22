@@ -4280,6 +4280,8 @@ enum ProposalState {
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
+  "Proposal is waiting for the node to run validation"
+  WaitingForNodeVote
 }
 
 type Proposal {

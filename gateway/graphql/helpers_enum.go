@@ -197,6 +197,8 @@ func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) 
 		return types.Proposal_STATE_DECLINED, nil
 	case ProposalStateEnacted:
 		return types.Proposal_STATE_ENACTED, nil
+	case ProposalStateWaitingForNodeVote:
+		return types.Proposal_STATE_WAITING_FOR_NODE_VOTE, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalState from GraphQL to Proto: %v", x)
 		return types.Proposal_STATE_UNSPECIFIED, err
@@ -218,6 +220,8 @@ func convertProposalStateFromProto(x types.Proposal_State) (ProposalState, error
 		return ProposalStateDeclined, nil
 	case types.Proposal_STATE_ENACTED:
 		return ProposalStateEnacted, nil
+	case types.Proposal_STATE_WAITING_FOR_NODE_VOTE:
+		return ProposalStateWaitingForNodeVote, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalState from Proto to GraphQL: %v", x)
 		return ProposalStateFailed, err
