@@ -155,6 +155,26 @@ message Order {
     //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
+  // Market Type
+  // What market state can this order be accepted in
+  enum MarketType {
+    // Default value, always invalid
+    MARKET_TYPE_UNSPECIFIED = 0;
+
+    // Normal trading market
+    MARKET_TYPE_CONTINUOUS = 1;
+
+    // Auction
+    MARKET_TYPE_AUCTION = 2;
+
+    // used for orders where the initiating party is the network (used for distressed traders)
+    MARKET_TYPE_AUCTION_AND_CONTINUOUS = 3;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/helpers_enum.go
+    //       - gateway/graphql/schema.graphql (enum OrderType)
+  }
+
   string id = 1;
   string marketID = 2;
   string partyID = 3;
@@ -179,6 +199,8 @@ message Order {
   // Versioning support for amends, orders start at version 1 and increment
   // after each successful amend
   uint64 version = 16;
+
+  MarketType marketType = 17;
 }
 
 message OrderCancellationConfirmation {
@@ -214,6 +236,7 @@ enum OrderError {
   ORDER_ERROR_INVALID_TYPE = 19;
   ORDER_ERROR_SELF_TRADING = 20;
   ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
+  ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

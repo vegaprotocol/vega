@@ -3892,6 +3892,18 @@ enum OrderType {
   NETWORK
 }
 
+"What market type does the order work on"
+enum MarketType {
+  "Continuous trading where orders are processed and potentially matched on arrival"
+  CONTINUOUS
+
+  "Auction trading where orders are uncrossed at the end of the auction period"
+  AUCTION
+
+  "Continuous and auction, the order will work in both market types"
+  AUCTION_AND_CONTINUOUS
+}
+
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
   "The Placer of the order is aiming to buy"

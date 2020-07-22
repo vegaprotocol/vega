@@ -1019,6 +1019,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Order.MarketType"><span class="badge">E</span>Order.MarketType</a>
+                </li>
+
+                <li>
                   <a href="#vega.Order.Status"><span class="badge">E</span>Order.Status</a>
                 </li>
 
@@ -8403,6 +8407,13 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 after each successful amend </p></td>
                 </tr>
 
+                <tr>
+                  <td>marketType</td>
+                  <td><a href="#vega.Order.MarketType">Order.MarketType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -9959,6 +9970,41 @@ after each successful amend </p></td>
           </tbody>
         </table>
 
+        <h3 id="vega.Order.MarketType">Order.MarketType</h3>
+        <p>Market Type</p><p>What market state can this order be accepted in</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>MARKET_TYPE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_TYPE_CONTINUOUS</td>
+                <td>1</td>
+                <td><p>Normal trading market</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_TYPE_AUCTION</td>
+                <td>2</td>
+                <td><p>Auction</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_TYPE_AUCTION_AND_CONTINUOUS</td>
+                <td>3</td>
+                <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
         <h3 id="vega.Order.Status">Order.Status</h3>
         <p>Order Status</p><p>See <a href="https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for details.</p>
         <table class="enum-table">
@@ -10231,6 +10277,12 @@ after each successful amend </p></td>
               <tr>
                 <td>ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES</td>
                 <td>21</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_INCORRECT_MARKET_TYPE</td>
+                <td>22</td>
                 <td><p></p></td>
               </tr>
 

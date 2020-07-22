@@ -870,6 +870,18 @@
     }
   },
   "definitions": {
+    "OrderMarketType": {
+      "type": "string",
+      "enum": [
+        "MARKET_TYPE_UNSPECIFIED",
+        "MARKET_TYPE_CONTINUOUS",
+        "MARKET_TYPE_AUCTION",
+        "MARKET_TYPE_AUCTION_AND_CONTINUOUS"
+      ],
+      "default": "MARKET_TYPE_UNSPECIFIED",
+      "description": "- MARKET_TYPE_UNSPECIFIED: Default value, always invalid\n - MARKET_TYPE_CONTINUOUS: Normal trading market\n - MARKET_TYPE_AUCTION: Auction\n - MARKET_TYPE_AUCTION_AND_CONTINUOUS: used for orders where the initiating party is the network (used for distressed traders)",
+      "title": "Market Type\nWhat market state can this order be accepted in"
+    },
     "OrderStatus": {
       "type": "string",
       "enum": [
@@ -2555,6 +2567,9 @@
           "type": "string",
           "format": "uint64",
           "title": "Versioning support for amends, orders start at version 1 and increment\nafter each successful amend"
+        },
+        "marketType": {
+          "$ref": "#/definitions/OrderMarketType"
         }
       }
     },
@@ -2625,7 +2640,8 @@
         "ORDER_ERROR_INVALID_PERSISTENCE",
         "ORDER_ERROR_INVALID_TYPE",
         "ORDER_ERROR_SELF_TRADING",
-        "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES"
+        "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES",
+        "ORDER_ERROR_INCORRECT_MARKET_TYPE"
       ],
       "default": "ORDER_ERROR_NONE"
     },

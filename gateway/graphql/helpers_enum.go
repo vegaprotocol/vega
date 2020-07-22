@@ -182,6 +182,21 @@ func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 	}
 }
 
+// convertMarketTypeFromProto converts a Proto enum to a GraphQL enum
+func convertMarketTypeFromProto(mt types.Order_MarketType) (MarketType, error) {
+	switch mt {
+	case types.Order_MARKET_TYPE_AUCTION:
+		return MarketTypeAuction, nil
+	case types.Order_MARKET_TYPE_AUCTION_AND_CONTINUOUS:
+		return MarketTypeAuctionAndContinuous, nil
+	case types.Order_MARKET_TYPE_CONTINUOUS:
+		return MarketTypeContinuous, nil
+	default:
+		err := fmt.Errorf("failed to convert MarketType from Proto to GraphQL: %v", mt)
+		return MarketTypeContinuous, err
+	}
+}
+
 // convertProposalStateToProto converts a GraphQL enum to a Proto enum
 func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) {
 	switch x {

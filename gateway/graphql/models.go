@@ -678,6 +678,53 @@ func (e Interval) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// What market type does the order work on
+type MarketType string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	MarketTypeContinuous MarketType = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the auction period
+	MarketTypeAuction MarketType = "AUCTION"
+	// Continuous and auction, the order will work in both market types
+	MarketTypeAuctionAndContinuous MarketType = "AUCTION_AND_CONTINUOUS"
+)
+
+var AllMarketType = []MarketType{
+	MarketTypeContinuous,
+	MarketTypeAuction,
+	MarketTypeAuctionAndContinuous,
+}
+
+func (e MarketType) IsValid() bool {
+	switch e {
+	case MarketTypeContinuous, MarketTypeAuction, MarketTypeAuctionAndContinuous:
+		return true
+	}
+	return false
+}
+
+func (e MarketType) String() string {
+	return string(e)
+}
+
+func (e *MarketType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketType", str)
+	}
+	return nil
+}
+
+func (e MarketType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Represents the type signature provided by a node
 type NodeSignatureKind string
 

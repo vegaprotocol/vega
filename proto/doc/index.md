@@ -213,6 +213,7 @@
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
+    - [Order.MarketType](#vega.Order.MarketType)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -3110,6 +3111,7 @@ a decision taken by the vega network.
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
+| marketType | [Order.MarketType](#vega.Order.MarketType) |  |  |
 
 
 
@@ -3613,6 +3615,21 @@ eg: for a new asset whitelisting, withdrawal
 
 
 
+<a name="vega.Order.MarketType"></a>
+
+### Order.MarketType
+Market Type
+What market state can this order be accepted in
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MARKET_TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| MARKET_TYPE_CONTINUOUS | 1 | Normal trading market |
+| MARKET_TYPE_AUCTION | 2 | Auction |
+| MARKET_TYPE_AUCTION_AND_CONTINUOUS | 3 | used for orders where the initiating party is the network (used for distressed traders) |
+
+
+
 <a name="vega.Order.Status"></a>
 
 ### Order.Status
@@ -3693,6 +3710,7 @@ Order Type
 | ORDER_ERROR_INVALID_TYPE | 19 |  |
 | ORDER_ERROR_SELF_TRADING | 20 |  |
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 |  |
+| ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 |  |
 
 
 
