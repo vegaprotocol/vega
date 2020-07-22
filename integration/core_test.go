@@ -165,7 +165,7 @@ func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 		Symbol: asset,
 	})
 	_, _, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
-	if len(mktsetup.broker.GetAccounts()) != current+2 {
+	if len(mktsetup.broker.GetAccounts()) != current+5 {
 		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err

@@ -2924,14 +2924,14 @@ and the cause for an proposal being rejected of failed
 <a name="vega.Fee"></a>
 
 ### Fee
-
+The fees being paid by a party, resulting from a trade
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| makerFee | [uint64](#uint64) |  |  |
-| infrastructureFee | [uint64](#uint64) |  |  |
-| liquidityFee | [uint64](#uint64) |  |  |
+| makerFee | [uint64](#uint64) |  | A fee being paid to the non-aggressor party of the trade |
+| infrastructureFee | [uint64](#uint64) |  | A fee being paid to maintaining the vega infrastructure |
+| liquidityFee | [uint64](#uint64) |  | A fee being paid to the market makers |
 
 
 
@@ -3561,11 +3561,14 @@ a decision taken by the vega network.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
-| ACCOUNT_TYPE_INSURANCE | 1 |  |
-| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
-| ACCOUNT_TYPE_MARGIN | 3 |  |
-| ACCOUNT_TYPE_GENERAL | 4 |  |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 | the default variant for this enum |
+| ACCOUNT_TYPE_INSURANCE | 1 | This account is created to hold the insurance pool funds of a market. |
+| ACCOUNT_TYPE_SETTLEMENT | 2 | This account is created to hold fund while settlement or mtm occur. |
+| ACCOUNT_TYPE_MARGIN | 3 | A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change |
+| ACCOUNT_TYPE_GENERAL | 4 | A party will have multiple general accounts, one for each assets they want to trade with. This is the account where the funds are initially deposited or withdrawn from. It&#39;s also the account where funds are taken to fullfill margin requirement or fees |
+| ACCOUNT_TYPE_FEES_INFRASTRUCTURE | 5 | This account is created to hold fees earned for providing infrastructure |
+| ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | This account is created to hold fees earned for providing liquidity |
+| ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned for placing orders that sit on the book |
 
 
 

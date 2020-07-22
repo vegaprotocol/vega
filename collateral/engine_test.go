@@ -76,6 +76,212 @@ func TestEnableAssets(t *testing.T) {
 	t.Run("create new account for bad asset - failure", testCreateNewAccountForBadAsset)
 }
 
+func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
+	t.Run("Fees transfer continuous - no transfer", testFeesTransferContinuousNoTransfer)
+	t.Run("fees transfer continuous - not funds", testFeeTransferContinuousNoFunds)
+	t.Run("fees transfer continuous - not enough funds", testFeeTransferContinuousNotEnoughFunds)
+	t.Run("fees transfer continuous - OK with enough in margin", testFeeTransferContinuousOKWithEnoughInMargin)
+	t.Run("fees transfer continuous - OK with enough in general", testFeeTransferContinuousOKWithEnoughInGenral)
+	t.Run("fees transfer continuous - OK with enough in margin + general", testFeeTransferContinuousOKWithEnoughInGeneralAndMargin)
+}
+
+func testFeesTransferContinuousNoTransfer(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFees{})
+	assert.Nil(t, transfers)
+	assert.Nil(t, err)
+}
+
+func testFeeTransferContinuousNoFunds(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	_, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.Nil(t, transfers)
+	assert.EqualError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+}
+
+func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	general, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), general, 100)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.Nil(t, transfers)
+	assert.EqualError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+}
+
+func testFeeTransferContinuousOKWithEnoughInGenral(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	general, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), general, 10000)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 1)
+}
+
+func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	_, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), margin, 10000)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 1)
+
+}
+
+func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	general, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	err = eng.Engine.UpdateBalance(context.Background(), general, 700)
+	assert.Nil(t, err)
+	err = eng.Engine.UpdateBalance(context.Background(), margin, 900)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 1)
+
+	// now check the balances
+	// general should be empty
+	generalAcc, _ := eng.GetAccountByID(general)
+	assert.Equal(t, 0, int(generalAcc.Balance))
+	marginAcc, _ := eng.GetAccountByID(margin)
+	assert.Equal(t, 600, int(marginAcc.Balance))
+}
+
 func testEnableAssetSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	defer eng.Finish()
@@ -83,7 +289,7 @@ func testEnableAssetSuccess(t *testing.T) {
 		ID:     "MYASSET",
 		Symbol: "MYASSET",
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 }
@@ -95,7 +301,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 		ID:     "MYASSET",
 		Symbol: "MYASSET",
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -1448,7 +1654,7 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 	// 4 new events expected:
 	// 2 markets accounts
 	// 2 new assets
-	broker.EXPECT().Send(gomock.Any()).Times(4)
+	broker.EXPECT().Send(gomock.Any()).Times(8)
 	// system accounts created
 
 	eng, err := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
@@ -1548,3 +1754,11 @@ func (m riskFake) Asset() string                     { return m.asset }
 func (m riskFake) MarketID() string                  { return "" }
 func (m riskFake) MarginBalance() uint64             { return 0 }
 func (m riskFake) GeneralBalance() uint64            { return 0 }
+
+type transferFees struct {
+	tfs []*types.Transfer
+	tfa map[string]uint64
+}
+
+func (t transferFees) Transfers() []*types.Transfer               { return t.tfs }
+func (t transferFees) TotalFeesAmountPerParty() map[string]uint64 { return t.tfa }

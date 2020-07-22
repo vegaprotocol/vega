@@ -7791,7 +7791,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Fee">Fee</h3>
-        <p></p>
+        <p>The fees being paid by a party, resulting from a trade</p>
 
 
           <table class="field-table">
@@ -7804,21 +7804,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>makerFee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A fee being paid to the non-aggressor party of the trade </p></td>
                 </tr>
 
                 <tr>
                   <td>infrastructureFee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A fee being paid to maintaining the vega infrastructure </p></td>
                 </tr>
 
                 <tr>
                   <td>liquidityFee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A fee being paid to the market makers </p></td>
                 </tr>
 
             </tbody>
@@ -9817,31 +9817,52 @@ after each successful amend </p></td>
               <tr>
                 <td>ACCOUNT_TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>the default variant for this enum</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_INSURANCE</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>This account is created to hold the insurance pool funds of a market.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_SETTLEMENT</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>This account is created to hold fund while settlement or mtm occur.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_MARGIN</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_GENERAL</td>
                 <td>4</td>
-                <td><p></p></td>
+                <td><p>A party will have multiple general accounts, one for each assets they want
+to trade with. This is the account where the funds are initially deposited
+or withdrawn from. It&#39;s also the account where funds are taken to fullfill
+margin requirement or fees</p></td>
+              </tr>
+
+              <tr>
+                <td>ACCOUNT_TYPE_FEES_INFRASTRUCTURE</td>
+                <td>5</td>
+                <td><p>This account is created to hold fees earned for providing infrastructure</p></td>
+              </tr>
+
+              <tr>
+                <td>ACCOUNT_TYPE_FEES_LIQUIDITY</td>
+                <td>6</td>
+                <td><p>This account is created to hold fees earned for providing liquidity</p></td>
+              </tr>
+
+              <tr>
+                <td>ACCOUNT_TYPE_FEES_MAKER</td>
+                <td>7</td>
+                <td><p>This account is created to hold fees earned for placing orders that sit on the book</p></td>
               </tr>
 
           </tbody>

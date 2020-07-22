@@ -27,6 +27,9 @@ var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
 	// collateral engine have not been initialised properly
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
+	// ErrFeeAccountsMissing signals that a fee account is missing, which may means that the
+	// collateral engine have not been initialised properly
+	ErrFeeAccountsMissing = errors.New("fee accounts missing for collateral engine to work")
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
@@ -39,6 +42,10 @@ var (
 	ErrAssetAlreadyEnabled = errors.New("asset already enabled")
 	// ErrInvalidAssetID signals that an asset id does not exists
 	ErrInvalidAssetID = errors.New("invalid asset ID")
+	// ErrInsufficientFundsToPayFees the party do not have enough funds to pay the feeds
+	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
+	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request
+	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 )
 
 // Broker send events
@@ -117,6 +124,22 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.Symbol] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// then creat a new infrastructure fee account for the asset
+	// these are fee related account only
+	infraFeeID := e.accountID("", "", asset.Symbol, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	_, ok := e.accs[infraFeeID]
+	if !ok {
+		infraFeeAcc := &types.Account{
+			Id:       infraFeeID,
+			Asset:    asset.Symbol,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: noMarket,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		}
+		e.accs[infraFeeID] = infraFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
+	}
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.ID))
 	return nil
@@ -157,6 +180,123 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 			)
 		}
 		err = ErrSystemAccountsMissing
+	}
+
+	return
+}
+
+func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	if len(ft.Transfers()) <= 0 {
+		return nil, nil
+	}
+	// check quickly that all traders have enough monies in their accoutns
+	// this may be done only in case of continuous trading
+	for party, amount := range ft.TotalFeesAmountPerParty() {
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		marginAcc, err := e.GetAccountByID(e.accountID(marketID, party, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "margin"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID),
+				logging.String("market-id", marketID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		if (marginAcc.Balance + generalAcc.Balance) < amount {
+			return nil, ErrInsufficientFundsToPayFees
+		}
+	}
+
+	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
+func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(
+		marketID, assetID)
+	if err != nil {
+		return nil, err
+	}
+
+	transfers := ft.Transfers()
+	responses := make([]*types.TransferResponse, 0, len(transfers))
+
+	for _, transfer := range transfers {
+		req, err := e.getFeeTransferRequest(
+			transfer, makerFee, infraFee, liquiFee, marketID, assetID)
+		if err != nil {
+			e.log.Error("Failed to build transfer request for event",
+				logging.Error(err))
+			return nil, err
+		}
+
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error("Failed to transfer funds", logging.Error(err))
+			return nil, err
+		}
+		for _, bal := range res.Balances {
+			if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.Id),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		responses = append(responses, res)
+	}
+
+	return responses, nil
+}
+
+// this func uses named returns because it makes body of the func look clearer
+func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *types.Account, err error) {
+	makerID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
+	infraID := e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	liquiID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+
+	if maker, err = e.GetAccountByID(makerID); err != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing fee account",
+				logging.String("asset", asset),
+				logging.String("id", makerID),
+				logging.String("market", marketID),
+				logging.Error(err),
+			)
+		}
+		err = ErrFeeAccountsMissing
+		return
+	}
+
+	if infra, err = e.GetAccountByID(infraID); err != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing fee account",
+				logging.String("asset", asset),
+				logging.String("id", infraID),
+				logging.Error(err),
+			)
+		}
+		err = ErrFeeAccountsMissing
+	}
+
+	if liqui, err = e.GetAccountByID(liquiID); err != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing system account",
+				logging.String("asset", asset),
+				logging.String("id", liquiID),
+				logging.String("market", marketID),
+				logging.Error(err),
+			)
+		}
+		err = ErrFeeAccountsMissing
 	}
 
 	return
@@ -632,6 +772,67 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	return res, nil, nil
 }
 
+func (e *Engine) getFeeTransferRequest(
+	t *types.Transfer,
+	makerFee, infraFee, liquiFee *types.Account,
+	marketID, assetID string,
+) (*types.TransferRequest, error) {
+	var (
+		err             error
+		margin, general *types.Account
+	)
+
+	// the accounts for the trader we need
+	margin, err = e.GetAccountByID(e.accountID(marketID, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+	general, err = e.GetAccountByID(e.accountID(noMarket, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	treq := &types.TransferRequest{
+		Amount:    uint64(t.Amount.Amount),
+		MinAmount: uint64(t.Amount.Amount),
+		Asset:     assetID,
+		Reference: t.Type.String(),
+	}
+
+	switch t.Type {
+	case types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY:
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{infraFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY:
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{liquiFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY:
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{makerFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE:
+		treq.FromAccount = []*types.Account{makerFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	default:
+		return nil, ErrInvalidTransferTypeForFeeRequest
+	}
+}
+
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
 func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	asset := p.Amount.Asset
@@ -1049,6 +1250,36 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		}
 		e.accs[settleID] = setAcc
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
+	}
+
+	// these are fee related account only
+	liquidityFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+	_, ok = e.accs[liquidityFeeID]
+	if !ok {
+		liquidityFeeAcc := &types.Account{
+			Id:       liquidityFeeID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		}
+		e.accs[liquidityFeeID] = liquidityFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *liquidityFeeAcc))
+	}
+	makerFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
+	_, ok = e.accs[makerFeeID]
+	if !ok {
+		makerFeeAcc := &types.Account{
+			Id:       makerFeeID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
+		}
+		e.accs[makerFeeID] = makerFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
 
 	return
