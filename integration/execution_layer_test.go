@@ -330,7 +330,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		}
 		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
-			return err
+			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyID, order.Reference)
 		}
 		if int64(len(result.Trades)) != i64val(row, 5) {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
@@ -902,9 +902,9 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 		DecimalPlaces: 2,
 		Fees: &proto.Fees{
 			Factors: &proto.FeeFactors{
-				LiquidityFee:      "0.001",
-				InfrastructureFee: "0.0005",
-				MakerFee:          "0.00025",
+				LiquidityFee:      "0",
+				InfrastructureFee: "0",
+				MakerFee:          "0",
 			},
 		},
 		TradableInstrument: &proto.TradableInstrument{

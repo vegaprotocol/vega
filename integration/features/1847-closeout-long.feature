@@ -37,7 +37,6 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | tt_10  | ETH/DEC19 | buy  | 25     | 100   | 0                | TYPE_LIMIT  | TIF_GTC | tt_10-2   |
       | tt_11  | ETH/DEC19 | sell | 25     | 0     | 3                | TYPE_MARKET | TIF_FOK | tt_11-2   |
 
-
     And the mark price for the market "ETH/DEC19" is "100"
 
     # checking margins

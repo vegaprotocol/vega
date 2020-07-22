@@ -244,7 +244,7 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 			return nil, err
 		}
 		for _, bal := range res.Balances {
-			if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error("Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.Id),
 					logging.Error(err))
