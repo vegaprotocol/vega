@@ -203,7 +203,7 @@ func (e *Engine) CalculateForAuctionMode(
 		} else {
 			totalFeesAmounts[v.Seller] = sellerTotalFee + totalFee
 		}
-		if buyerTotalFee, ok := totalFeesAmounts[v.Seller]; !ok {
+		if buyerTotalFee, ok := totalFeesAmounts[v.Buyer]; !ok {
 			totalFeesAmounts[v.Buyer] = totalFee
 		} else {
 			totalFeesAmounts[v.Buyer] = buyerTotalFee + totalFee
