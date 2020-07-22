@@ -80,7 +80,7 @@ func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 	return nil
 }
 
-// CalculateForContinuousTrading calculate the fee for
+// CalculateForContinuousMode calculate the fee for
 // trades which were produced from a market running in
 // in continuous trading mode.
 // A single FeesTransfer is produced here as all fees

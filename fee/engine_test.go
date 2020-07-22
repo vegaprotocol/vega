@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +16,7 @@ const (
 
 var (
 	testFees = types.Fees{
-		Factors: &proto.FeeFactors{
+		Factors: &types.FeeFactors{
 			LiquidityFee:      "0.1",
 			InfrastructureFee: "0.05",
 			MakerFee:          "0.02",
@@ -61,7 +60,7 @@ func TestFeeEngine(t *testing.T) {
 func testUpdateFeeFactors(t *testing.T) {
 	eng := getTestFee(t)
 	okFees := types.Fees{
-		Factors: &proto.FeeFactors{
+		Factors: &types.FeeFactors{
 			LiquidityFee:      "0.1",
 			InfrastructureFee: "0.5",
 			MakerFee:          "0.25",
@@ -74,7 +73,7 @@ func testUpdateFeeFactors(t *testing.T) {
 func testUpdateFeeFactorsError(t *testing.T) {
 	eng := getTestFee(t)
 	koFees := types.Fees{
-		Factors: &proto.FeeFactors{
+		Factors: &types.FeeFactors{
 			LiquidityFee:      "asdasd",
 			InfrastructureFee: "0.5",
 			MakerFee:          "0.25",
@@ -84,7 +83,7 @@ func testUpdateFeeFactorsError(t *testing.T) {
 	assert.Error(t, err)
 
 	koFees = types.Fees{
-		Factors: &proto.FeeFactors{
+		Factors: &types.FeeFactors{
 			LiquidityFee:      "0.1",
 			InfrastructureFee: "asdas",
 			MakerFee:          "0.25",
@@ -93,7 +92,7 @@ func testUpdateFeeFactorsError(t *testing.T) {
 	err = eng.UpdateFeeFactors(koFees)
 	assert.Error(t, err)
 	koFees = types.Fees{
-		Factors: &proto.FeeFactors{
+		Factors: &types.FeeFactors{
 			LiquidityFee:      "0.1",
 			InfrastructureFee: "0.5",
 			MakerFee:          "asdas",
@@ -166,16 +165,16 @@ func testCalcContinuousTrading(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
 			liquidity += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
 			infra += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
 			recv += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
 			pay += 1
 		}
 	}
@@ -227,16 +226,16 @@ func testCalcAuctionTrading(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
 			liquidity += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
 			infra += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
 			recv += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
 			pay += 1
 		}
 	}
@@ -290,16 +289,16 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
 			liquidity += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
 			infra += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
 			recv += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
 			pay += 1
 		}
 	}
@@ -344,16 +343,16 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
 			liquidity += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
 			infra += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
 			recv += 1
 		}
-		if v.Type == proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
 			pay += 1
 		}
 	}
