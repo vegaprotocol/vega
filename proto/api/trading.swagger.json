@@ -3125,6 +3125,14 @@
         },
         "sellerFee": {
           "$ref": "#/definitions/vegaFee"
+        },
+        "buyerAuctionBatch": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "sellerAuctionBatch": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

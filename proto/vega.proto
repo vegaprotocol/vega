@@ -252,6 +252,8 @@ message Trade {
 
   Fee buyerFee = 12;
   Fee sellerFee = 13;
+  uint64 buyerAuctionBatch = 14;
+  uint64 sellerAuctionBatch = 15;
 }
 
 // The fees being paid by a party, resulting from a trade

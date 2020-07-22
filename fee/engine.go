@@ -108,10 +108,12 @@ func (e *Engine) CalculateForContinuousMode(
 		switch v.Aggressor {
 		case types.Side_SIDE_BUY:
 			v.BuyerFee = fee
+			v.SellerFee = &types.Fee{}
 			aggressor = v.Buyer
 			maker = v.Seller
 		case types.Side_SIDE_SELL:
 			v.SellerFee = fee
+			v.BuyerFee = &types.Fee{}
 			aggressor = v.Seller
 			maker = v.Buyer
 		}
@@ -165,15 +167,6 @@ func (e *Engine) CalculateForContinuousMode(
 	}, nil
 }
 
-func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
-	tradeValueForFeePurpose := float64(trade.Price * trade.Size)
-	return &types.Fee{
-		MakerFee:          uint64(tradeValueForFeePurpose * e.f.makerFee),
-		InfrastructureFee: uint64(tradeValueForFeePurpose * e.f.infrastructureFee),
-		LiquidityFee:      uint64(tradeValueForFeePurpose * e.f.liquidityFee),
-	}
-}
-
 // CalculateForAuctionMode calculate the fee for
 // trades which were produced from a market running in
 // in auction trading mode.
@@ -193,9 +186,9 @@ func (e *Engine) CalculateForAuctionMode(
 	// for each trades both party needs to pay half of the fees
 	// no maker fees are to be paid here.
 	for _, v := range trades {
-		fee := e.calculateContinuousModeFees(v)
-		infraFee, liquiFee := (fee.InfrastructureFee / 2), (fee.LiquidityFee / 2)
-		totalFee := infraFee + liquiFee
+		fee, newTransfers := e.getAuctionModeFeesAndTransfers(v)
+		totalFee := fee.InfrastructureFee + fee.LiquidityFee
+		transfers = append(transfers, newTransfers...)
 
 		// increase the total fee for the parties
 		if sellerTotalFee, ok := totalFeesAmounts[v.Seller]; !ok {
@@ -209,15 +202,113 @@ func (e *Engine) CalculateForAuctionMode(
 			totalFeesAmounts[v.Buyer] = buyerTotalFee + totalFee
 		}
 
-		transfers = append(transfers, e.getAuctionModeFeeTransfers(infraFee, liquiFee, v.Seller)...)
-		transfers = append(transfers, e.getAuctionModeFeeTransfers(infraFee, liquiFee, v.Buyer)...)
-		// create a transfer for the aggressor
+		v.BuyerFee = fee
+		v.SellerFee = fee
 	}
 
 	return &feesTransfer{
 		totalFeesAmountsPerParty: totalFeesAmounts,
 		transfers:                transfers,
 	}, nil
+}
+
+func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.Transfer) {
+	fee := e.calculateAuctionModeFees(t)
+	transfers := make([]*types.Transfer, 0, 4)
+	transfers = append(transfers,
+		e.getAuctionModeFeeTransfers(
+			fee.InfrastructureFee, fee.LiquidityFee, t.Seller)...)
+	transfers = append(transfers,
+		e.getAuctionModeFeeTransfers(
+			fee.InfrastructureFee, fee.LiquidityFee, t.Buyer)...)
+	return fee, transfers
+}
+
+// CalculateForFrequentBatchesAuctionMode calculate the fee for
+// trades which were produced from a market running in
+// in auction trading mode.
+// A list FeesTransfer is produced each containing fees transfer from a
+// single trader
+func (e *Engine) CalculateForFrequentBatchesAuctionMode(
+	trades []*types.Trade,
+) (events.FeesTransfer, error) {
+	var (
+		totalFeesAmounts = map[string]uint64{}
+		// we allocate for len of trades *4 as all trades generate
+		// at lest2 fees per party
+		transfers = make([]*types.Transfer, 0, len(trades)*4)
+	)
+
+	// we iterate over all trades
+	// if the parties submitted the order in the same batches,
+	// auction mode fees apply.
+	// if not then the aggressor is the party which submitted
+	// the order last, and continuous trading fees apply
+	for _, v := range trades {
+		var (
+			sellerTotalFee, buyerTotalFee uint64
+			newTransfers                  []*types.Transfer
+		)
+		// we are in the same auction, normal auction fees applies
+		if v.BuyerAuctionBatch == v.SellerAuctionBatch {
+			var fee *types.Fee
+			fee, newTransfers = e.getAuctionModeFeesAndTransfers(v)
+			v.SellerFee, v.BuyerFee = fee, fee
+			totalFee := fee.InfrastructureFee + fee.LiquidityFee
+			sellerTotalFee, buyerTotalFee = totalFee, totalFee
+
+		} else {
+			// set the aggressor to be the side of the trader
+			// entering the later auction
+			v.Aggressor = types.Side_SIDE_SELL
+			if v.BuyerAuctionBatch > v.SellerAuctionBatch {
+				v.Aggressor = types.Side_SIDE_BUY
+			}
+			// fees are being assign to the trade directly
+			// no need to do add them there as well
+			ftrnsfr, _ := e.CalculateForContinuousMode([]*types.Trade{v})
+			newTransfers = ftrnsfr.Transfers()
+			buyerTotalFee = ftrnsfr.TotalFeesAmountPerParty()[v.Buyer]
+			sellerTotalFee = ftrnsfr.TotalFeesAmountPerParty()[v.Seller]
+		}
+
+		transfers = append(transfers, newTransfers...)
+
+		// increase the total fee for the parties
+		if prevTotalFee, ok := totalFeesAmounts[v.Seller]; !ok {
+			totalFeesAmounts[v.Seller] = sellerTotalFee
+		} else {
+			totalFeesAmounts[v.Seller] = prevTotalFee + sellerTotalFee
+		}
+		if prevTotalFee, ok := totalFeesAmounts[v.Buyer]; !ok {
+			totalFeesAmounts[v.Buyer] = buyerTotalFee
+		} else {
+			totalFeesAmounts[v.Buyer] = prevTotalFee + buyerTotalFee
+		}
+	}
+
+	return &feesTransfer{
+		totalFeesAmountsPerParty: totalFeesAmounts,
+		transfers:                transfers,
+	}, nil
+}
+
+func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
+	tradeValueForFeePurpose := float64(trade.Price * trade.Size)
+	return &types.Fee{
+		MakerFee:          uint64(tradeValueForFeePurpose * e.f.makerFee),
+		InfrastructureFee: uint64(tradeValueForFeePurpose * e.f.infrastructureFee),
+		LiquidityFee:      uint64(tradeValueForFeePurpose * e.f.liquidityFee),
+	}
+}
+
+func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
+	fee := e.calculateContinuousModeFees(trade)
+	return &types.Fee{
+		MakerFee:          0,
+		InfrastructureFee: fee.InfrastructureFee / 2,
+		LiquidityFee:      fee.LiquidityFee / 2,
+	}
 }
 
 func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string) []*types.Transfer {
@@ -241,17 +332,6 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string)
 			Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 		},
 	}
-}
-
-// CalculateForFrequentBatchesAuctionMode calculate the fee for
-// trades which were produced from a market running in
-// in auction trading mode.
-// A list FeesTransfer is produced each containing fees transfer from a
-// single trader
-func (e *Engine) CalculateForFrequentBatchesAuctionMode(
-	trades []*types.Trade,
-) (events.FeesTransfer, error) {
-	return nil, errors.New("unimplemented")
 }
 
 type feesTransfer struct {

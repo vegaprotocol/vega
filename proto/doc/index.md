@@ -3461,6 +3461,8 @@ a decision taken by the vega network.
 | type | [Trade.Type](#vega.Trade.Type) |  |  |
 | buyerFee | [Fee](#vega.Fee) |  |  |
 | sellerFee | [Fee](#vega.Fee) |  |  |
+| buyerAuctionBatch | [uint64](#uint64) |  |  |
+| sellerAuctionBatch | [uint64](#uint64) |  |  |
 
 
 
