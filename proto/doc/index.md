@@ -1795,8 +1795,7 @@ The vega representation of an external asset
 | symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
 | totalSupply | [string](#string) |  | The total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A vega builtin asset (for testing purpose) |
-| erc20 | [ERC20](#vega.ERC20) |  | An ERC20 token based asset |
+| source | [AssetSource](#vega.AssetSource) |  | The definition of the external source for this asset |
 
 
 

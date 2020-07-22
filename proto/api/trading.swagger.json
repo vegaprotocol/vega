@@ -1555,13 +1555,9 @@
           "format": "uint64",
           "title": "The number of decimal / precision handled by this asset"
         },
-        "builtinAsset": {
-          "$ref": "#/definitions/vegaBuiltinAsset",
-          "title": "A vega builtin asset (for testing purpose)"
-        },
-        "erc20": {
-          "$ref": "#/definitions/vegaERC20",
-          "title": "An ERC20 token based asset"
+        "source": {
+          "$ref": "#/definitions/vegaAssetSource",
+          "title": "The definition of the external source for this asset"
         }
       },
       "title": "The vega representation of an external asset"
