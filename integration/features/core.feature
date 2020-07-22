@@ -5,8 +5,8 @@ Feature: Test trading-core flow with future risk model
     ## With these values, we get risk factors:
     ## short=0.11000000665311127, long=0.10036253585651489
     Given the market:
-      | name      | markprice | risk model | lamd/long |    tau/short | mu | r |     sigma | release factor | initial factor | search factor |
-      | ETH/DEC19 |      1000 | future     |       0.01 | 0.000114077 |  0 | 0 | 3.6907199 |            1.4 |            1.2 |           1.1 |
+      | name      | markprice | risk model | lamd/long |    tau/short | mu | r |     sigma | release factor | initial factor | search factor | openAuction | trading mode |
+      | ETH/DEC19 |      1000 | future     |       0.01 | 0.000114077 |  0 | 0 | 3.6907199 |            1.4 |            1.2 |           1.1 | 0           | continuous   |
     And the system accounts:
       | type       | asset | balance |
       | settlement | ETH   |       0 |

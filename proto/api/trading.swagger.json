@@ -2497,6 +2497,11 @@
           },
           "title": "Optional new market meta data, tags"
         },
+        "openingAuctionDuration": {
+          "type": "string",
+          "format": "int64",
+          "title": "for now, just specify a time for the opening auction to last"
+        },
         "simple": {
           "$ref": "#/definitions/vegaSimpleModelParams",
           "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"

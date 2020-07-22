@@ -81,6 +81,10 @@ message NewMarketConfiguration {
   uint64 decimalPlaces = 2 [(validator.field) = {int_lt: 150}];
   // Optional new market meta data, tags
   repeated string metadata = 3;
+
+  // for now, just specify a time for the opening auction to last
+  int64 openingAuctionDuration = 4;
+
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected

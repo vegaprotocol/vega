@@ -3,8 +3,8 @@ Feature: test bugfix 614 for margin calculations
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |        94 | simple     |        0.2 |      0.1 |  0 | 0 |     0 |              5 |              4 |           3.2 |             100 |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode |
+      | ETH/DEC19 | BTC      | ETH       | ETH   |        94 | simple     |        0.2 |      0.1 |  0 | 0 |     0 |              5 |              4 |           3.2 |             100 | 0           | continuous   |
 
   Scenario: CASE-1: Trader submits long order that will trade - new formula & high exit price
     Given the following traders:

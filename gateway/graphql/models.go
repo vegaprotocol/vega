@@ -359,6 +359,8 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
+	// The proposed duration for the opening auction for this market
+	OpeningAuctionDuration *int `json:"openingAuctionDuration"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set

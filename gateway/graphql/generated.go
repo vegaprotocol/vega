@@ -202,6 +202,8 @@ type ComplexityRoot struct {
 	}
 
 	MarketData struct {
+		AuctionEnd      func(childComplexity int) int
+		AuctionStart    func(childComplexity int) int
 		BestBidPrice    func(childComplexity int) int
 		BestBidVolume   func(childComplexity int) int
 		BestOfferPrice  func(childComplexity int) int
@@ -1268,6 +1270,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.TradingMode(childComplexity), true
+
+	case "MarketData.auctionEnd":
+		if e.complexity.MarketData.AuctionEnd == nil {
+			break
+		}
+
+		return e.complexity.MarketData.AuctionEnd(childComplexity), true
+
+	case "MarketData.auctionStart":
+		if e.complexity.MarketData.AuctionStart == nil {
+			break
+		}
+
+		return e.complexity.MarketData.AuctionStart(childComplexity), true
 
 	case "MarketData.bestBidPrice":
 		if e.complexity.MarketData.BestBidPrice == nil {
@@ -3021,6 +3037,10 @@ type MarketData {
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
+  "time in seconds until the end of the current auction, 0 if not in auction mode"
+  auctionEnd: Int
+  "time in seconds until the start of the next auction (0 if no new auction scheduled)"
+  auctionStart: Int
 }
 
 type PreparedSubmitOrder {
@@ -4144,6 +4164,8 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "The proposed duration for the opening auction for this market"
+  openingAuctionDuration: Int
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -8530,6 +8552,68 @@ func (ec *executionContext) _MarketData_openInterest(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_auctionEnd(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionEnd, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_auctionStart(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionStart, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) (ret graphql.Marshaler) {
@@ -15920,6 +16004,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "openingAuctionDuration":
+			var err error
+			it.OpeningAuctionDuration, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "continuousTrading":
 			var err error
 			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
@@ -17439,6 +17529,10 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		case "auctionEnd":
+			out.Values[i] = ec._MarketData_auctionEnd(ctx, field, obj)
+		case "auctionStart":
+			out.Values[i] = ec._MarketData_auctionStart(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21165,6 +21259,14 @@ func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	return graphql.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	return graphql.MarshalInt64(v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

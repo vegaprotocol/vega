@@ -47,6 +47,16 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	release, _ := strconv.ParseFloat(row.Cells[8].Value, 64)
 	initial, _ := strconv.ParseFloat(row.Cells[9].Value, 64)
 	search, _ := strconv.ParseFloat(row.Cells[10].Value, 64)
+	lastIdx := len(row.Cells) - 1
+	openAuctionDuration, _ := strconv.ParseInt(row.Cells[lastIdx-1].Value, 10, 64)
+	if row.Cells[lastIdx].Value != "continuous" {
+		batchDuration, _ := strconv.ParseInt(row.Cells[lastIdx].Value, 10, 64)
+		mkt.TradingMode = &proto.Market_Discrete{
+			Discrete: &proto.DiscreteTrading{
+				DurationNs: batchDuration,
+			},
+		}
+	}
 
 	// set scaling factors
 	mkt.TradableInstrument.MarginCalculator.ScalingFactors = &proto.ScalingFactors{
@@ -71,6 +81,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	mu, _ := strconv.ParseFloat(row.Cells[5].Value, 64)
 	r, _ := strconv.ParseFloat(row.Cells[6].Value, 64)
 	sigma, _ := strconv.ParseFloat(row.Cells[7].Value, 64)
+	mkt.OpeningAuction.Duration = openAuctionDuration
 	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: &proto.LogNormalRiskModel{
 			RiskAversionParameter: lambdShort,
@@ -116,6 +127,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 			},
 			MarginCalculator: &proto.MarginCalculator{},
 		},
+		OpeningAuction: &proto.AuctionDuration{},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},

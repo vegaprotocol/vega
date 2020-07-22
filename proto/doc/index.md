@@ -2423,6 +2423,7 @@ To be implemented
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
+| openingAuctionDuration | [int64](#int64) |  | for now, just specify a time for the opening auction to last |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
