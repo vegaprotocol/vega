@@ -264,8 +264,6 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 
 func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRejectionReason, error) {
 	switch x {
-	case types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED:
-		return ProposalRejectionReason(""), nil
 	case types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON:
 		return ProposalRejectionReasonCloseTimeTooSoon, nil
 	case types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE:
