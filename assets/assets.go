@@ -94,9 +94,9 @@ func (a *Service) Enable(assetID string) error {
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
-func (s *Service) NewAsset(ref string, assetSrc *types.AssetSource) (string, error) {
+func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
 	// make a new asset id
-	assetID := s.idgen.NewID()
+	// assetID := s.idgen.NewID()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
@@ -115,7 +115,7 @@ func (s *Service) NewAsset(ref string, assetSrc *types.AssetSource) (string, err
 		return "", ErrUnknowAssetSource
 	}
 	// setup the ref lookup table
-	s.refs[ref] = assetID
+	s.refs[assetID] = assetID
 
 	return assetID, nil
 }

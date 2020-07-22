@@ -163,8 +163,7 @@ func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 		return func() error {
 			return n.checkAsset(p.ID)
 		}, nil
-	default:
-		// this should have been check earlier but in case of.
+	default: // this should have been check earlier but in case of.
 		return nil, ErrNoNodeValidationRequired
 	}
 }
