@@ -117,6 +117,8 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.Symbol] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	e.log.Info("new asset added successfully",
+		logging.String("asset-id", asset.ID))
 	return nil
 }
 

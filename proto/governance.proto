@@ -233,6 +233,10 @@ enum ProposalError {
   PROPOSAL_ERROR_NODE_VALIDATION_FAILED = 13;
   // invalid liquidity fee (expect valid float)
   PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE = 14;
+  // a field is missing in a builtin asset source
+  PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD = 15;
+  // the contract address is missing in the ERC20 asset source
+  PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS = 16;
 }
 
 message Vote {

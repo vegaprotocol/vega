@@ -1078,6 +1078,8 @@ const (
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
 	ProposalStateEnacted ProposalState = "Enacted"
+	// Proposal is waiting for the node to run validation
+	ProposalStateWaitingForNodeVote ProposalState = "WaitingForNodeVote"
 )
 
 var AllProposalState = []ProposalState{
@@ -1087,11 +1089,12 @@ var AllProposalState = []ProposalState{
 	ProposalStateDeclined,
 	ProposalStateRejected,
 	ProposalStateEnacted,
+	ProposalStateWaitingForNodeVote,
 }
 
 func (e ProposalState) IsValid() bool {
 	switch e {
-	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted:
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted, ProposalStateWaitingForNodeVote:
 		return true
 	}
 	return false

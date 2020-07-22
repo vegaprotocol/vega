@@ -250,10 +250,8 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 }
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	if terms.GetNewMarket() != nil {
-		return &e.networkParams.NewMarkets, nil
-	}
-	return nil, ErrNoNetworkParams
+	// FIXME(): we should not have networkf params per proposal type..
+	return &e.networkParams.NewMarkets, nil
 }
 
 // validates proposals read from the chain
@@ -317,6 +315,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
 		return validateNewMarket(e.currentTime, change.NewMarket.Changes)
+	case *types.ProposalTerms_NewAsset:
+		return validateNewAsset(change.NewAsset.Changes)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
