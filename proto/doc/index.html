@@ -10121,7 +10121,7 @@ margin requirement or fees</p></td>
         </table>
 
         <h3 id="vega.OrderError">OrderError</h3>
-        <p></p>
+        <p>Set when an order has an issue</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10131,133 +10131,133 @@ margin requirement or fees</p></td>
               <tr>
                 <td>ORDER_ERROR_NONE</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Empty default error</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_MARKET_ID</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Order was submitted for a market that does not exist</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_ORDER_ID</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>Order was submitted with an invalid ID</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_OUT_OF_SEQUENCE</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>Order was amended with a sequence number that was not previous version &#43; 1</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_REMAINING_SIZE</td>
                 <td>4</td>
-                <td><p></p></td>
+                <td><p>Order was amended with an invalid remaining size (e.g. remaining greater than total size)</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_TIME_FAILURE</td>
                 <td>5</td>
-                <td><p></p></td>
+                <td><p>Node was unable to get Vega (blockchain) time</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_REMOVAL_FAILURE</td>
                 <td>6</td>
-                <td><p></p></td>
+                <td><p>Failed to remove an order from the book</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_EXPIRATION_DATETIME</td>
                 <td>7</td>
-                <td><p></p></td>
+                <td><p>GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_ORDER_REFERENCE</td>
                 <td>8</td>
-                <td><p></p></td>
+                <td><p>Order was submitted or amended with an invalid reference field</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_EDIT_NOT_ALLOWED</td>
                 <td>9</td>
-                <td><p></p></td>
+                <td><p>Order amend was submitted for an order field that cannot not be amended (e.g. order id)</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_AMEND_FAILURE</td>
                 <td>10</td>
-                <td><p></p></td>
+                <td><p>Amend failure because amend details do not match original order</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_NOT_FOUND</td>
                 <td>11</td>
-                <td><p></p></td>
+                <td><p>Order not found in the order book or in order store</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_PARTY_ID</td>
                 <td>12</td>
-                <td><p></p></td>
+                <td><p>Order was submitted with an invalid or missing party ID</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_MARKET_CLOSED</td>
                 <td>13</td>
-                <td><p></p></td>
+                <td><p>Order was submitted for a market that has closed</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_MARGIN_CHECK_FAILED</td>
                 <td>14</td>
-                <td><p></p></td>
+                <td><p>Order was submitted, but the party did not have enough collateral to cover the order</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_MISSING_GENERAL_ACCOUNT</td>
                 <td>15</td>
-                <td><p></p></td>
+                <td><p>Order was submitted, but the party did not have an account for this asset</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INTERNAL_ERROR</td>
                 <td>16</td>
-                <td><p></p></td>
+                <td><p>Unspecified internal error</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_SIZE</td>
                 <td>17</td>
-                <td><p></p></td>
+                <td><p>Order was submitted with an invalid or missing size (e.g. 0)</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_PERSISTENCE</td>
                 <td>18</td>
-                <td><p></p></td>
+                <td><p>Order was submitted with an invalid persistence for its type</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_TYPE</td>
                 <td>19</td>
-                <td><p></p></td>
+                <td><p>Order was submitted with an invalid type field</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_SELF_TRADING</td>
                 <td>20</td>
-                <td><p></p></td>
+                <td><p>Order was stopped as it would have traded with another order for the same party</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES</td>
                 <td>21</td>
-                <td><p></p></td>
+                <td><p>Order was submitted, but the party did not have enough collateral to cover the fees for the order</p></td>
               </tr>
 
           </tbody>
