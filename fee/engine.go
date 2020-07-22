@@ -174,12 +174,81 @@ func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 	}
 }
 
-// CalculateForContinuousTrading calculate the fee for
+// CalculateForAuctionMode calculate the fee for
 // trades which were produced from a market running in
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
 // single trader
 func (e *Engine) CalculateForAuctionMode(
+	trades []*types.Trade,
+) (events.FeesTransfer, error) {
+	var (
+		totalFeesAmounts = map[string]uint64{}
+		// we allocate for len of trades *4 as all trades generate
+		// 2 fees per party
+		transfers = make([]*types.Transfer, 0, len(trades)*4)
+	)
+
+	// we iterate over all trades
+	// for each trades both party needs to pay half of the fees
+	// no maker fees are to be paid here.
+	for _, v := range trades {
+		fee := e.calculateContinuousModeFees(v)
+		infraFee, liquiFee := (fee.InfrastructureFee / 2), (fee.LiquidityFee / 2)
+		totalFee := infraFee + liquiFee
+
+		// increase the total fee for the parties
+		if sellerTotalFee, ok := totalFeesAmounts[v.Seller]; !ok {
+			totalFeesAmounts[v.Seller] = totalFee
+		} else {
+			totalFeesAmounts[v.Seller] = sellerTotalFee + totalFee
+		}
+		if buyerTotalFee, ok := totalFeesAmounts[v.Seller]; !ok {
+			totalFeesAmounts[v.Buyer] = totalFee
+		} else {
+			totalFeesAmounts[v.Buyer] = buyerTotalFee + totalFee
+		}
+
+		transfers = append(transfers, e.getAuctionModeFeeTransfers(infraFee, liquiFee, v.Seller)...)
+		transfers = append(transfers, e.getAuctionModeFeeTransfers(infraFee, liquiFee, v.Buyer)...)
+		// create a transfer for the aggressor
+	}
+
+	return &feesTransfer{
+		totalFeesAmountsPerParty: totalFeesAmounts,
+		transfers:                transfers,
+	}, nil
+}
+
+func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string) []*types.Transfer {
+	// we return both transfer for the party in a slice
+	// always the infrastructure fee first
+	return []*types.Transfer{
+		&types.Transfer{
+			Owner: p,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: int64(infraFee),
+			},
+			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+		},
+		&types.Transfer{
+			Owner: p,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: int64(liquiFee),
+			},
+			Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+		},
+	}
+}
+
+// CalculateForFrequentBatchesAuctionMode calculate the fee for
+// trades which were produced from a market running in
+// in auction trading mode.
+// A list FeesTransfer is produced each containing fees transfer from a
+// single trader
+func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
 	return nil, errors.New("unimplemented")
