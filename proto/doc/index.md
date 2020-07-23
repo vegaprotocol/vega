@@ -3206,6 +3206,7 @@ a decision taken by the vega network.
 | expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | reference | [string](#string) |  |  |
+| marketType | [Order.MarketType](#vega.Order.MarketType) |  |  |
 
 
 

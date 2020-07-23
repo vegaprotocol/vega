@@ -2680,6 +2680,9 @@
         },
         "reference": {
           "type": "string"
+        },
+        "marketType": {
+          "$ref": "#/definitions/OrderMarketType"
         }
       }
     },

@@ -47,6 +47,8 @@ var (
 	ErrNoType = errors.New("no value has been set for the type")
 	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
+	// ErrNoMarketType no value has been set for the market type
+	ErrNoMarketType = errors.New("no value has been set for the market type")
 )
 
 // TimeService ...
@@ -154,6 +156,10 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 
 	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoTimeInForce
+	}
+
+	if sub.MarketType == types.Order_MARKET_TYPE_UNSPECIFIED {
+		return ErrNoMarketType
 	}
 
 	if sub.TimeInForce == types.Order_TIF_GTT {
