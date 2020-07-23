@@ -100,10 +100,6 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 	}
 
 	accs = append(accs, accsLiqui...)
-	for _, v := range accs {
-		fmt.Printf("acc: %v\n", *v)
-	}
-
 	if len(asset) <= 0 {
 		return accs, nil
 	}
