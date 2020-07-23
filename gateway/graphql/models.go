@@ -485,6 +485,16 @@ type TradableInstrument struct {
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
 }
 
+// The fee paid by the party when a trade occurs
+type TradeFee struct {
+	// The maker fee, aggressive party to the other party (the one who had an order in the book)
+	MakerFee string `json:"makerFee"`
+	// The infrastructure fee, a fee paid to the node runner to maintain the vega network
+	InfrastructureFee string `json:"infrastructureFee"`
+	// The fee paid to the market makers to provide liquidity in the market
+	LiquidityFee string `json:"liquidityFee"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }

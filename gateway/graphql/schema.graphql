@@ -997,7 +997,32 @@ type Trade {
 
   "The type of trade"
   type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  sellerAuctionBatch: Int
 }
+
+"The fee paid by the party when a trade occurs"
+type TradeFee {
+  "The maker fee, aggressive party to the other party (the one who had an order in the book)"
+  makerFee: String!
+
+  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  infrastructureFee: String!
+
+  "The fee paid to the market makers to provide liquidity in the market"
+  liquidityFee: String!
+}
+
 
 "Valid trade types"
 enum TradeType {

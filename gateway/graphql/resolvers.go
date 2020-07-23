@@ -1318,6 +1318,44 @@ func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType
 	return convertTradeTypeFromProto(obj.Type)
 }
 
+func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+	i := int(obj.BuyerAuctionBatch)
+	return &i, nil
+}
+
+func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+	fee := TradeFee{
+		MakerFee:          "0",
+		InfrastructureFee: "0",
+		LiquidityFee:      "0",
+	}
+	if obj.BuyerFee != nil {
+		fee.MakerFee = strconv.FormatUint(obj.BuyerFee.MakerFee, 10)
+		fee.InfrastructureFee = strconv.FormatUint(obj.BuyerFee.InfrastructureFee, 10)
+		fee.LiquidityFee = strconv.FormatUint(obj.BuyerFee.LiquidityFee, 10)
+	}
+	return &fee, nil
+}
+
+func (r *myTradeResolver) SellerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+	i := int(obj.SellerAuctionBatch)
+	return &i, nil
+}
+
+func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+	fee := TradeFee{
+		MakerFee:          "0",
+		InfrastructureFee: "0",
+		LiquidityFee:      "0",
+	}
+	if obj.SellerFee != nil {
+		fee.MakerFee = strconv.FormatUint(obj.SellerFee.MakerFee, 10)
+		fee.InfrastructureFee = strconv.FormatUint(obj.SellerFee.InfrastructureFee, 10)
+		fee.LiquidityFee = strconv.FormatUint(obj.SellerFee.LiquidityFee, 10)
+	}
+	return &fee, nil
+}
+
 // END: Trade Resolver
 
 // BEGIN: Candle Resolver
