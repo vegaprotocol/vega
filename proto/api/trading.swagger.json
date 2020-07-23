@@ -970,6 +970,17 @@
         }
       }
     },
+    "apiFeeInfrastructureAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiGetNetworkParametersProposalsResponse": {
       "type": "object",
       "properties": {

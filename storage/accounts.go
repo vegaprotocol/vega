@@ -119,6 +119,28 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 	return out, nil
 }
 
+func (a *Account) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error) {
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, "!", false)
+	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading fee infrastructure for asset: %s", asset))
+	}
+
+	if len(asset) <= 0 {
+		return accs, nil
+	}
+
+	out := []*types.Account{}
+	for _, v := range accs {
+		if asset == v.Asset {
+			out = append(out, v)
+			break
+		}
+	}
+
+	return out, nil
+}
+
 func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {
 	if len(partyID) <= 0 {
 		return nil, ErrMissingPartyID

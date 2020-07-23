@@ -687,6 +687,19 @@ func (this *MarketAccountsResponse) Validate() error {
 	}
 	return nil
 }
+func (this *FeeInfrastructureAccountsRequest) Validate() error {
+	return nil
+}
+func (this *FeeInfrastructureAccountsResponse) Validate() error {
+	for _, item := range this.Accounts {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *PrepareProposalRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))

@@ -108,6 +108,7 @@ type BlockchainClient interface {
 type AccountsService interface {
 	GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error)
 	GetMarketAccounts(marketID, asset string) ([]*types.Account, error)
+	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -1288,6 +1289,19 @@ func (t *tradingDataService) MarketAccounts(_ context.Context,
 		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
 	}
 	return &protoapi.MarketAccountsResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (t *tradingDataService) FeeInfrastructureAccounts(_ context.Context,
+	req *protoapi.FeeInfrastructureAccountsRequest) (*protoapi.FeeInfrastructureAccountsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("FeeInfrastructureAccounts", startTime)
+	accs, err := t.AccountsService.GetFeeInfrastructureAccounts(req.Asset)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
+	}
+	return &protoapi.FeeInfrastructureAccountsResponse{
 		Accounts: accs,
 	}, nil
 }

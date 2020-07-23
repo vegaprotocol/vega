@@ -219,6 +219,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.FeeInfrastructureAccountsRequest"><span class="badge">M</span>FeeInfrastructureAccountsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.FeeInfrastructureAccountsResponse"><span class="badge">M</span>FeeInfrastructureAccountsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetNetworkParametersProposalsRequest"><span class="badge">M</span>GetNetworkParametersProposalsRequest</a>
                 </li>
 
@@ -1388,6 +1396,54 @@
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.FeeInfrastructureAccountsRequest">FeeInfrastructureAccountsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.FeeInfrastructureAccountsResponse">FeeInfrastructureAccountsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>accounts</td>
+                  <td><a href="#vega.Account">vega.Account</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -4495,6 +4551,13 @@
                 <td><a href="#api.PartyAccountsRequest">PartyAccountsRequest</a></td>
                 <td><a href="#api.PartyAccountsResponse">PartyAccountsResponse</a></td>
                 <td><p>Get a list of Accounts by Party</p></td>
+              </tr>
+
+              <tr>
+                <td>FeeInfrastructureAccounts</td>
+                <td><a href="#api.FeeInfrastructureAccountsRequest">FeeInfrastructureAccountsRequest</a></td>
+                <td><a href="#api.FeeInfrastructureAccountsResponse">FeeInfrastructureAccountsResponse</a></td>
+                <td><p>Get the list of infrastructure fees accounts filter eventually by assets</p></td>
               </tr>
 
               <tr>

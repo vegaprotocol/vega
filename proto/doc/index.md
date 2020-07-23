@@ -14,6 +14,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
+    - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
     - [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse)
     - [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest)
@@ -377,6 +379,36 @@ The response containing the list of all assets enabled in vega
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | interval | [vega.Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsRequest"></a>
+
+### FeeInfrastructureAccountsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsResponse"></a>
+
+### FeeInfrastructureAccountsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated |  |
 
 
 
@@ -1722,6 +1754,7 @@ The response for a new event sent to vega
 | ----------- | ------------ | ------------- | ------------|
 | MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get a list of Accounts by Market |
 | PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get a list of Accounts by Party |
+| FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse) | Get the list of infrastructure fees accounts filter eventually by assets |
 | Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get a list of Candles by Market |
 | MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by MarketID |
 | MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |

@@ -121,6 +121,9 @@ service trading_data {
   // Get a list of Accounts by Party
   rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
 
+  // Get the list of infrastructure fees accounts filter eventually by assets
+ rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
+
   // Candles
 
   // Get a list of Candles by Market
@@ -646,6 +649,14 @@ message MarketAccountsRequest {
 }
 
 message MarketAccountsResponse {
+  repeated vega.Account accounts = 1;
+}
+
+message FeeInfrastructureAccountsRequest {
+  string asset = 1;
+}
+
+message FeeInfrastructureAccountsResponse {
   repeated vega.Account accounts = 1;
 }
 
