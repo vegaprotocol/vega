@@ -793,7 +793,6 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 	return &types.ProposalTerms_NewMarket{
 		NewMarket: &types.NewMarket{
 			Changes: &types.NewMarketConfiguration{
-				LiquidityFee: "0.001",
 				Instrument: &types.InstrumentConfiguration{
 					Name:      "June 2020 GBP vs VUSD future",
 					Code:      "CRYPTO:GBPVUSD/JUN20",

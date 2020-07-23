@@ -246,7 +246,7 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, nil
 	case ProposalRejectionReasonUnuspportedProduct:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, nil
-	case ProposalRejectionReasonInvalidFutureMatuityTimestamp:
+	case ProposalRejectionReasonInvalidFutureMaturityTimestamp:
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, nil
 	case ProposalRejectionReasonProductMaturityIsPassed:
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, nil
@@ -256,6 +256,10 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE, nil
 	case ProposalRejectionReasonNodeValidationFailed:
 		return types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED, nil
+	case ProposalRejectionReasonMissingBuiltinAssetField:
+		return types.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, nil
+	case ProposalRejectionReasonMissingERC20ContractAddress:
+		return types.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -281,7 +285,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT:
 		return ProposalRejectionReasonUnuspportedProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP:
-		return ProposalRejectionReasonInvalidFutureMatuityTimestamp, nil
+		return ProposalRejectionReasonInvalidFutureMaturityTimestamp, nil
 	case types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED:
 		return ProposalRejectionReasonProductMaturityIsPassed, nil
 	case types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE:
@@ -290,6 +294,10 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonUnsupportedTradingMode, nil
 	case types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED:
 		return ProposalRejectionReasonNodeValidationFailed, nil
+	case types.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD:
+		return ProposalRejectionReasonMissingBuiltinAssetField, nil
+	case types.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS:
+		return ProposalRejectionReasonMissingERC20ContractAddress, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err

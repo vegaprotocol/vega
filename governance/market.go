@@ -1,7 +1,6 @@
 package governance
 
 import (
-	"strconv"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -139,7 +138,7 @@ func createMarket(
 			Factors: &types.FeeFactors{
 				MakerFee:          parameters.FeeFactors.MakerFee,
 				InfrastructureFee: parameters.FeeFactors.InfrastructureFee,
-				LiquidityFee:      definition.LiquidityFee,
+				LiquidityFee:      parameters.FeeFactors.LiquidityFee,
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -206,11 +205,6 @@ func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalErr
 
 // ValidateNewMarket checks new market proposal terms
 func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration) (types.ProposalError, error) {
-	_, err := strconv.ParseFloat(terms.LiquidityFee, 64)
-	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE, err
-	}
-
 	if perr, err := validateInstrument(currentTime, terms.Instrument); err != nil {
 		return perr, err
 	}

@@ -2001,6 +2001,10 @@
         "makerFee": {
           "type": "string",
           "title": "the maker fee, needs to be a valid float"
+        },
+        "liquidityFee": {
+          "type": "string",
+          "title": "this is the liquidity fee, it needs to be a valid float"
         }
       },
       "title": "FeeFactors set at the network level"
@@ -2441,10 +2445,6 @@
           "$ref": "#/definitions/vegaInstrumentConfiguration",
           "title": "New market instrument configuration"
         },
-        "liquidityFee": {
-          "type": "string",
-          "title": "this is the liquidity fee, it needs to be a valid float"
-        },
         "decimalPlaces": {
           "type": "string",
           "format": "uint64",
@@ -2803,12 +2803,11 @@
         "PROPOSAL_ERROR_NO_TRADING_MODE",
         "PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE",
         "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
-        "PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE",
         "PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD",
         "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE: invalid liquidity fee (expect valid float)\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: a field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: the contract address is missing in the ERC20 asset source",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: a field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: the contract address is missing in the ERC20 asset source",
       "title": "A list of possible error which could have happenned\nand the cause for an proposal being rejected of failed"
     },
     "vegaProposalTerms": {

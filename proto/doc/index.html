@@ -5723,6 +5723,13 @@ usually a hash </p></td>
                   <td><p>the maker fee, needs to be a valid float </p></td>
                 </tr>
 
+                <tr>
+                  <td>liquidityFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>this is the liquidity fee, it needs to be a valid float </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -6229,13 +6236,6 @@ usually a hash </p></td>
                   <td><a href="#vega.InstrumentConfiguration">InstrumentConfiguration</a></td>
                   <td></td>
                   <td><p>New market instrument configuration </p></td>
-                </tr>
-
-                <tr>
-                  <td>liquidityFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>this is the liquidity fee, it needs to be a valid float </p></td>
                 </tr>
 
                 <tr>
@@ -6853,20 +6853,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
               </tr>
 
               <tr>
-                <td>PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE</td>
-                <td>14</td>
-                <td><p>invalid liquidity fee (expect valid float)</p></td>
-              </tr>
-
-              <tr>
                 <td>PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD</td>
-                <td>15</td>
+                <td>14</td>
                 <td><p>a field is missing in a builtin asset source</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS</td>
-                <td>16</td>
+                <td>15</td>
                 <td><p>the contract address is missing in the ERC20 asset source</p></td>
               </tr>
 

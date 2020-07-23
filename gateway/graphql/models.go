@@ -357,8 +357,6 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
-	// The factor for the liquidity fee, must be an non negative float
-	LiquidityFee string `json:"liquidityFee"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -1012,7 +1010,7 @@ const (
 	// The specified product is not supported
 	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
 	// Invalid future maturity timestamp (expect RFC3339)
-	ProposalRejectionReasonInvalidFutureMatuityTimestamp ProposalRejectionReason = "InvalidFutureMatuityTimestamp"
+	ProposalRejectionReasonInvalidFutureMaturityTimestamp ProposalRejectionReason = "InvalidFutureMaturityTimestamp"
 	// The product maturity is already in the past
 	ProposalRejectionReasonProductMaturityIsPassed ProposalRejectionReason = "ProductMaturityIsPassed"
 	// The proposal has no trading mode
@@ -1021,6 +1019,10 @@ const (
 	ProposalRejectionReasonUnsupportedTradingMode ProposalRejectionReason = "UnsupportedTradingMode"
 	// The proposal failed node validation
 	ProposalRejectionReasonNodeValidationFailed ProposalRejectionReason = "NodeValidationFailed"
+	// A builtin asset configuration is missing
+	ProposalRejectionReasonMissingBuiltinAssetField ProposalRejectionReason = "MissingBuiltinAssetField"
+	// The ERC20 contract address is missing from an ERC20 asset proposal
+	ProposalRejectionReasonMissingERC20ContractAddress ProposalRejectionReason = "MissingERC20ContractAddress"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1032,16 +1034,18 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInvalidInstrumentSecurity,
 	ProposalRejectionReasonNoProduct,
 	ProposalRejectionReasonUnuspportedProduct,
-	ProposalRejectionReasonInvalidFutureMatuityTimestamp,
+	ProposalRejectionReasonInvalidFutureMaturityTimestamp,
 	ProposalRejectionReasonProductMaturityIsPassed,
 	ProposalRejectionReasonNoTradingMode,
 	ProposalRejectionReasonUnsupportedTradingMode,
 	ProposalRejectionReasonNodeValidationFailed,
+	ProposalRejectionReasonMissingBuiltinAssetField,
+	ProposalRejectionReasonMissingERC20ContractAddress,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMatuityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress:
 		return true
 	}
 	return false

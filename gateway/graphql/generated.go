@@ -3888,7 +3888,7 @@ enum ProposalRejectionReason {
   "The specified product is not supported"
   UnuspportedProduct
   "Invalid future maturity timestamp (expect RFC3339)"
-  InvalidFutureMatuityTimestamp
+  InvalidFutureMaturityTimestamp
   "The product maturity is already in the past"
   ProductMaturityIsPassed
   "The proposal has no trading mode"
@@ -3897,6 +3897,10 @@ enum ProposalRejectionReason {
   UnsupportedTradingMode
   "The proposal failed node validation"
   NodeValidationFailed
+  "A builtin asset configuration is missing"
+  MissingBuiltinAssetField
+  "The ERC20 contract address is missing from an ERC20 asset proposal"
+  MissingERC20ContractAddress
 }
 
 "Reason for the order beeing rejected by the core node"
@@ -4121,8 +4125,6 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The factor for the liquidity fee, must be an non negative float"
-  liquidityFee: String!
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -15862,12 +15864,6 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 		case "metadata":
 			var err error
 			it.Metadata, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "liquidityFee":
-			var err error
-			it.LiquidityFee, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

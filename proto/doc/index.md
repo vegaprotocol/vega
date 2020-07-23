@@ -2209,6 +2209,7 @@ FeeFactors set at the network level
 | ----- | ---- | ----- | ----------- |
 | infrastructureFee | [string](#string) |  | the infrastructure fee, needs to be a valid float |
 | makerFee | [string](#string) |  | the maker fee, needs to be a valid float |
+| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 
 
 
@@ -2364,7 +2365,6 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
-| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
@@ -2510,9 +2510,8 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
 | PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
-| PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE | 14 | invalid liquidity fee (expect valid float) |
-| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 15 | a field is missing in a builtin asset source |
-| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 16 | the contract address is missing in the ERC20 asset source |
+| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
+| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
 
 
 
