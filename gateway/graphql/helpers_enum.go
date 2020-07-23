@@ -41,6 +41,10 @@ func convertAccountTypeToProto(x AccountType) (types.AccountType, error) {
 		return types.AccountType_ACCOUNT_TYPE_MARGIN, nil
 	case AccountTypeSettlement:
 		return types.AccountType_ACCOUNT_TYPE_SETTLEMENT, nil
+	case AccountTypeFeeInfrastructure:
+		return types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, nil
+	case AccountTypeFeeLiquidity:
+		return types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY, nil
 	default:
 		err := fmt.Errorf("failed to convert AccountType from GraphQL to Proto: %v", x)
 		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, err
@@ -58,6 +62,10 @@ func convertAccountTypeFromProto(x types.AccountType) (AccountType, error) {
 		return AccountTypeMargin, nil
 	case types.AccountType_ACCOUNT_TYPE_SETTLEMENT:
 		return AccountTypeSettlement, nil
+	case types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE:
+		return AccountTypeFeeInfrastructure, nil
+	case types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY:
+		return AccountTypeFeeLiquidity, nil
 	default:
 		err := fmt.Errorf("failed to convert AccountType from Proto to GraphQL: %v", x)
 		return AccountTypeGeneral, err

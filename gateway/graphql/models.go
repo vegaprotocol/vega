@@ -592,6 +592,10 @@ const (
 	AccountTypeMargin AccountType = "Margin"
 	// General account - the account containing 'unused' collateral for traders
 	AccountTypeGeneral AccountType = "General"
+	// Infrastructure fee account - the account where all infrastructure fees are collected
+	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
+	// Liquidity fee account - the account where all infrastructure fees are collected
+	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
 )
 
 var AllAccountType = []AccountType{
@@ -599,11 +603,13 @@ var AllAccountType = []AccountType{
 	AccountTypeSettlement,
 	AccountTypeMargin,
 	AccountTypeGeneral,
+	AccountTypeFeeInfrastructure,
+	AccountTypeFeeLiquidity,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity:
 		return true
 	}
 	return false

@@ -4024,6 +4024,10 @@ enum AccountType {
   Margin
   "General account - the account containing 'unused' collateral for traders"
   General
+  "Infrastructure fee account - the account where all infrastructure fees are collected"
+  FeeInfrastructure
+  "Liquidity fee account - the account where all infrastructure fees are collected"
+  FeeLiquidity
 }
 
 input SimpleRiskModelParamsInput {
