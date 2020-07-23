@@ -977,9 +977,11 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaAccount"
-          }
+          },
+          "title": "A list of infrastructure fee accounts for all\nor a specific asset"
         }
-      }
+      },
+      "title": "Response for the infrastructure fees accounts"
     },
     "apiGetNetworkParametersProposalsResponse": {
       "type": "object",

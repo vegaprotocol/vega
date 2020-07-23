@@ -388,12 +388,12 @@ The response containing the list of all assets enabled in vega
 <a name="api.FeeInfrastructureAccountsRequest"></a>
 
 ### FeeInfrastructureAccountsRequest
-
+Request for the infrastructure fees accounts
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| asset | [string](#string) |  |  |
+| asset | [string](#string) |  | an empty string to return all accounts an asset ID to return a single infrastructure fee fee account for a given asset |
 
 
 
@@ -403,12 +403,12 @@ The response containing the list of all assets enabled in vega
 <a name="api.FeeInfrastructureAccountsResponse"></a>
 
 ### FeeInfrastructureAccountsResponse
-
+Response for the infrastructure fees accounts
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of infrastructure fee accounts for all or a specific asset |
 
 
 

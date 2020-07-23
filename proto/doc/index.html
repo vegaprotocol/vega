@@ -1402,7 +1402,7 @@
 
 
         <h3 id="api.FeeInfrastructureAccountsRequest">FeeInfrastructureAccountsRequest</h3>
-        <p></p>
+        <p>Request for the infrastructure fees accounts</p>
 
 
           <table class="field-table">
@@ -1415,7 +1415,9 @@
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>an empty string to return all accounts
+an asset ID to return a single infrastructure fee
+fee account for a given asset </p></td>
                 </tr>
 
             </tbody>
@@ -1426,7 +1428,7 @@
 
 
         <h3 id="api.FeeInfrastructureAccountsResponse">FeeInfrastructureAccountsResponse</h3>
-        <p></p>
+        <p>Response for the infrastructure fees accounts</p>
 
 
           <table class="field-table">
@@ -1439,7 +1441,8 @@
                   <td>accounts</td>
                   <td><a href="#vega.Account">vega.Account</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of infrastructure fee accounts for all
+or a specific asset </p></td>
                 </tr>
 
             </tbody>

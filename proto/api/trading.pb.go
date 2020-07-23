@@ -3842,7 +3842,11 @@ func (m *MarketAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
+// Request for the infrastructure fees accounts
 type FeeInfrastructureAccountsRequest struct {
+	// an empty string to return all accounts
+	// an asset ID to return a single infrastructure fee
+	// fee account for a given asset
 	Asset                string   `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3881,7 +3885,10 @@ func (m *FeeInfrastructureAccountsRequest) GetAsset() string {
 	return ""
 }
 
+// Response for the infrastructure fees accounts
 type FeeInfrastructureAccountsResponse struct {
+	// A list of infrastructure fee accounts for all
+	// or a specific asset
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`

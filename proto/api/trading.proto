@@ -652,11 +652,18 @@ message MarketAccountsResponse {
   repeated vega.Account accounts = 1;
 }
 
+// Request for the infrastructure fees accounts
 message FeeInfrastructureAccountsRequest {
+  // an empty string to return all accounts
+  // an asset ID to return a single infrastructure fee
+  // fee account for a given asset
   string asset = 1;
 }
 
+// Response for the infrastructure fees accounts
 message FeeInfrastructureAccountsResponse {
+  // A list of infrastructure fee accounts for all
+  // or a specific asset
   repeated vega.Account accounts = 1;
 }
 
