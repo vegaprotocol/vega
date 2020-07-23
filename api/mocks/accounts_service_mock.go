@@ -48,6 +48,21 @@ func (mr *MockAccountsServiceMockRecorder) GetAccountSubscribersCount() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountSubscribersCount", reflect.TypeOf((*MockAccountsService)(nil).GetAccountSubscribersCount))
 }
 
+// GetFeeInfrastructureAccounts mocks base method
+func (m *MockAccountsService) GetFeeInfrastructureAccounts(arg0 string) ([]*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFeeInfrastructureAccounts", arg0)
+	ret0, _ := ret[0].([]*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFeeInfrastructureAccounts indicates an expected call of GetFeeInfrastructureAccounts
+func (mr *MockAccountsServiceMockRecorder) GetFeeInfrastructureAccounts(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeeInfrastructureAccounts", reflect.TypeOf((*MockAccountsService)(nil).GetFeeInfrastructureAccounts), arg0)
+}
+
 // GetMarketAccounts mocks base method
 func (m *MockAccountsService) GetMarketAccounts(arg0, arg1 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()

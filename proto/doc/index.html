@@ -219,6 +219,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.FeeInfrastructureAccountsRequest"><span class="badge">M</span>FeeInfrastructureAccountsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.FeeInfrastructureAccountsResponse"><span class="badge">M</span>FeeInfrastructureAccountsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.GetNetworkParametersProposalsRequest"><span class="badge">M</span>GetNetworkParametersProposalsRequest</a>
                 </li>
 
@@ -1388,6 +1396,57 @@
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.FeeInfrastructureAccountsRequest">FeeInfrastructureAccountsRequest</h3>
+        <p>Request for the infrastructure fees accounts</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>an empty string to return all accounts
+an asset ID to return a single infrastructure fee
+fee account for a given asset </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.FeeInfrastructureAccountsResponse">FeeInfrastructureAccountsResponse</h3>
+        <p>Response for the infrastructure fees accounts</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>accounts</td>
+                  <td><a href="#vega.Account">vega.Account</a></td>
+                  <td>repeated</td>
+                  <td><p>A list of infrastructure fee accounts for all
+or a specific asset </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -4498,6 +4557,13 @@
               </tr>
 
               <tr>
+                <td>FeeInfrastructureAccounts</td>
+                <td><a href="#api.FeeInfrastructureAccountsRequest">FeeInfrastructureAccountsRequest</a></td>
+                <td><a href="#api.FeeInfrastructureAccountsResponse">FeeInfrastructureAccountsResponse</a></td>
+                <td><p>Get the list of infrastructure fees accounts filter eventually by assets</p></td>
+              </tr>
+
+              <tr>
                 <td>Candles</td>
                 <td><a href="#api.CandlesRequest">CandlesRequest</a></td>
                 <td><a href="#api.CandlesResponse">CandlesResponse</a></td>
@@ -5723,6 +5789,13 @@ usually a hash </p></td>
                   <td><p>the maker fee, needs to be a valid float </p></td>
                 </tr>
 
+                <tr>
+                  <td>liquidityFee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>this is the liquidity fee, it needs to be a valid float </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -6229,13 +6302,6 @@ usually a hash </p></td>
                   <td><a href="#vega.InstrumentConfiguration">InstrumentConfiguration</a></td>
                   <td></td>
                   <td><p>New market instrument configuration </p></td>
-                </tr>
-
-                <tr>
-                  <td>liquidityFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>this is the liquidity fee, it needs to be a valid float </p></td>
                 </tr>
 
                 <tr>
@@ -6853,20 +6919,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
               </tr>
 
               <tr>
-                <td>PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE</td>
-                <td>14</td>
-                <td><p>invalid liquidity fee (expect valid float)</p></td>
-              </tr>
-
-              <tr>
                 <td>PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD</td>
-                <td>15</td>
+                <td>14</td>
                 <td><p>a field is missing in a builtin asset source</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS</td>
-                <td>16</td>
+                <td>15</td>
                 <td><p>the contract address is missing in the ERC20 asset source</p></td>
               </tr>
 

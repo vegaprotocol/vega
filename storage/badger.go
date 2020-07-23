@@ -331,6 +331,19 @@ func (bs *badgerStore) accountInsuranceIDKey(marketID string, assetID string) []
 }
 
 // accountGeneralKey relates only to a party and asset, no market index/references
+func (bs *badgerStore) accountFeeLiquidityIDKey(marketID string, assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY), marketID, assetID))
+}
+
+// accountGeneralKey relates only to a party and asset, no market index/references
+func (bs *badgerStore) accountFeeInfrastructureIDKey(assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_A:%s",
+
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE), "!", assetID))
+}
+
+// accountGeneralKey relates only to a party and asset, no market index/references
 func (bs *badgerStore) accountGeneralIDKey(partyID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
 		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_GENERAL), partyID, assetID))
@@ -367,6 +380,10 @@ func (bs *badgerStore) getAccountTypePrefix(accType types.AccountType) string {
 		return "IP"
 	case types.AccountType_ACCOUNT_TYPE_GENERAL:
 		return "GP"
+	case types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE:
+		return "FI"
+	case types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY:
+		return "FL"
 	default:
 		return "ERR"
 	}

@@ -900,20 +900,8 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		return nil, err
 	}
 
-	if len(n.LiquidityFee) <= 0 {
-		return nil, errors.New("NewMarket.LiquidityFee: field required")
-	}
-	lf, err := strconv.ParseFloat(n.LiquidityFee, 64)
-	if err != nil {
-		return nil, errors.New("NewMarket.LiquidityFee: needs to be a valid float")
-	}
-	if lf < 0 {
-		return nil, errors.New("NewMarket.LiquidityFee: needs to be a non-negative float")
-	}
-
 	result := &types.NewMarketConfiguration{
 		Instrument:    instrument,
-		LiquidityFee:  n.LiquidityFee,
 		DecimalPlaces: uint64(n.DecimalPlaces),
 	}
 

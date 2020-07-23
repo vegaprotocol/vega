@@ -14,6 +14,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
+    - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
     - [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse)
     - [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest)
@@ -377,6 +379,36 @@ The response containing the list of all assets enabled in vega
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | interval | [vega.Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsRequest"></a>
+
+### FeeInfrastructureAccountsRequest
+Request for the infrastructure fees accounts
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| asset | [string](#string) |  | an empty string to return all accounts an asset ID to return a single infrastructure fee fee account for a given asset |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsResponse"></a>
+
+### FeeInfrastructureAccountsResponse
+Response for the infrastructure fees accounts
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of infrastructure fee accounts for all or a specific asset |
 
 
 
@@ -1722,6 +1754,7 @@ The response for a new event sent to vega
 | ----------- | ------------ | ------------- | ------------|
 | MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get a list of Accounts by Market |
 | PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get a list of Accounts by Party |
+| FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse) | Get the list of infrastructure fees accounts filter eventually by assets |
 | Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get a list of Candles by Market |
 | MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by MarketID |
 | MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
@@ -2209,6 +2242,7 @@ FeeFactors set at the network level
 | ----- | ---- | ----- | ----------- |
 | infrastructureFee | [string](#string) |  | the infrastructure fee, needs to be a valid float |
 | makerFee | [string](#string) |  | the maker fee, needs to be a valid float |
+| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 
 
 
@@ -2364,7 +2398,6 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
-| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
@@ -2510,9 +2543,8 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
 | PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
-| PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE | 14 | invalid liquidity fee (expect valid float) |
-| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 15 | a field is missing in a builtin asset source |
-| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 16 | the contract address is missing in the ERC20 asset source |
+| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
+| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
 
 
 

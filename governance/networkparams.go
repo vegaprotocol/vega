@@ -47,6 +47,7 @@ const (
 
 	defaultMakerFee          = "0.00025"
 	defaultInfrastructureFee = "0.0005"
+	defaultLiquidityFee      = "0.001"
 )
 
 // ProposalParameters stores proposal specific parameters
@@ -73,6 +74,7 @@ type ScalingFactors struct {
 type FeeFactors struct {
 	MakerFee          string
 	InfrastructureFee string
+	LiquidityFee      string
 }
 
 // FutureOracle stores future product oracle configuration
@@ -106,6 +108,7 @@ func defaultFeeFactors() FeeFactors {
 	return FeeFactors{
 		MakerFee:          defaultMakerFee,
 		InfrastructureFee: defaultInfrastructureFee,
+		LiquidityFee:      defaultLiquidityFee,
 	}
 }
 
