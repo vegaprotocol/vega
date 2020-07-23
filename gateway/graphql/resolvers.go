@@ -112,6 +112,7 @@ type TradingDataClient interface {
 	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
 	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
+	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -222,6 +223,38 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 // NodeSignature ...
 func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
 	return (*myNodeSignatureResolver)(r)
+}
+
+// Asset ...
+func (r *VegaResolverRoot) Asset() AssetResolver {
+	return (*myAssetResolver)(r)
+}
+
+// asset resolver
+
+type myAssetResolver VegaResolverRoot
+
+func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error) {
+	if len(obj.ID) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &protoapi.FeeInfrastructureAccountsRequest{
+		// FIXME(jeremy): this use the symbol for now,
+		// but we'll need to use the id once all the asset
+		// stuff is used everywhere
+		Asset: obj.Symbol,
+	}
+	res, err := r.tradingDataClient.FeeInfrastructureAccounts(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var acc *types.Account
+	if len(res.Accounts) > 0 {
+		acc = res.Accounts[0]
+	}
+
+	return acc, nil
 }
 
 // BEGIN: Query Resolver

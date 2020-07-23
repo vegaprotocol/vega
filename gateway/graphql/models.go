@@ -49,6 +49,8 @@ type Asset struct {
 	Decimals int `json:"decimals"`
 	// The origin source of the asset (e.g: an erc20 asset)
 	Source AssetSource `json:"source"`
+	// The infrastructure fee account for this asset
+	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
 }
 
 // A vega builtin asset, mostly for testing purpose

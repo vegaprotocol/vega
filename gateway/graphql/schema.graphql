@@ -388,6 +388,9 @@ type Asset {
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
+
+  "The infrastructure fee account for this asset"
+  infrastructureFeeAccount: Account!
 }
 
 "One of the possible asset sources"

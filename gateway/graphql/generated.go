@@ -38,6 +38,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Account() AccountResolver
+	Asset() AssetResolver
 	Candle() CandleResolver
 	MarginLevels() MarginLevelsResolver
 	Market() MarketResolver
@@ -68,12 +69,13 @@ type ComplexityRoot struct {
 	}
 
 	Asset struct {
-		Decimals    func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Source      func(childComplexity int) int
-		Symbol      func(childComplexity int) int
-		TotalSupply func(childComplexity int) int
+		Decimals                 func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		InfrastructureFeeAccount func(childComplexity int) int
+		Name                     func(childComplexity int) int
+		Source                   func(childComplexity int) int
+		Symbol                   func(childComplexity int) int
+		TotalSupply              func(childComplexity int) int
 	}
 
 	BuiltinAsset struct {
@@ -478,6 +480,9 @@ type AccountResolver interface {
 	Type(ctx context.Context, obj *proto.Account) (AccountType, error)
 	Market(ctx context.Context, obj *proto.Account) (*Market, error)
 }
+type AssetResolver interface {
+	InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error)
+}
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
 
@@ -715,6 +720,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.ID(childComplexity), true
+
+	case "Asset.infrastructureFeeAccount":
+		if e.complexity.Asset.InfrastructureFeeAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.InfrastructureFeeAccount(childComplexity), true
 
 	case "Asset.name":
 		if e.complexity.Asset.Name == nil {
@@ -3161,6 +3173,9 @@ type Asset {
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
+
+  "The infrastructure fee account for this asset"
+  infrastructureFeeAccount: Account!
 }
 
 "One of the possible asset sources"
@@ -5805,6 +5820,40 @@ func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.Col
 	res := resTmp.(AssetSource)
 	fc.Result = res
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Asset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().InfrastructureFeeAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.Account)
+	fc.Result = res
+	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -16289,33 +16338,47 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Asset_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Asset_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "symbol":
 			out.Values[i] = ec._Asset_symbol(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "totalSupply":
 			out.Values[i] = ec._Asset_totalSupply(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "decimals":
 			out.Values[i] = ec._Asset_decimals(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "source":
 			out.Values[i] = ec._Asset_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "infrastructureFeeAccount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_infrastructureFeeAccount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
