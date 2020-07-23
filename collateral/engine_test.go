@@ -83,6 +83,7 @@ func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 	t.Run("fees transfer continuous - OK with enough in margin", testFeeTransferContinuousOKWithEnoughInMargin)
 	t.Run("fees transfer continuous - OK with enough in general", testFeeTransferContinuousOKWithEnoughInGenral)
 	t.Run("fees transfer continuous - OK with enough in margin + general", testFeeTransferContinuousOKWithEnoughInGeneralAndMargin)
+	t.Run("fees transfer continuous - transfer with 0 amount", testFeeTransferContinuousOKWith0Amount)
 }
 
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
@@ -196,6 +197,45 @@ func testFeeTransferContinuousOKWithEnoughInGenral(t *testing.T) {
 	assert.NotNil(t, transfers)
 	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
 	assert.Len(t, transfers, 1)
+}
+
+func testFeeTransferContinuousOKWith0Amount(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	general, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), general, 10000)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 0,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 0,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 1)
+	generalAcc, _ := eng.GetAccountByID(general)
+	assert.Equal(t, 10000, int(generalAcc.Balance))
 }
 
 func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
