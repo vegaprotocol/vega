@@ -24,6 +24,19 @@ const (
 )
 
 var (
+	TokenAssetSource = &types.AssetSource{
+		Source: &types.AssetSource_BuiltinAsset{
+			BuiltinAsset: &types.BuiltinAsset{
+				Name:        "VOTE",
+				Symbol:      "VOT",
+				TotalSupply: "0",
+				Decimals:    5,
+			},
+		},
+	}
+)
+
+var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
 	// collateral engine have not been initialised properly
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
@@ -1396,10 +1409,20 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	if acc.Asset == TokenAsset {
 		e.totalTokens -= uint64(acc.Balance)
 		e.totalTokens += uint64(balance)
+		e.updateVoteToken(ctx)
 	}
 	acc.Balance = balance
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
+}
+
+func (e *Engine) updateVoteToken(ctx context.Context) {
+	tokAsset := e.enabledAssets[TokenAsset]
+	totalSupplyStr := fmt.Sprintf("%v", e.totalTokens)
+	tokAsset.TotalSupply = totalSupplyStr
+	tokAsset.GetSource().GetBuiltinAsset().TotalSupply = totalSupplyStr
+	e.enabledAssets[TokenAsset] = tokAsset
+	e.broker.Send(events.NewAssetEvent(ctx, tokAsset))
 }
 
 // IncrementBalance will increment the balance of a given account
@@ -1412,6 +1435,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 	acc.Balance += inc
 	if acc.Asset == TokenAsset {
 		e.totalTokens += inc
+		e.updateVoteToken(ctx)
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
@@ -1427,6 +1451,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 	acc.Balance -= dec
 	if acc.Asset == TokenAsset {
 		e.totalTokens -= dec
+		e.updateVoteToken(ctx)
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil

@@ -286,44 +286,58 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return err
 	}
 
+	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
+	if err != nil {
+		return err
+	}
+
 	for _, v := range assetSrcs {
 		v := v
-		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
+		err := l.loadAsset(uuid.NewV4().String(), v)
 		if err != nil {
-			return fmt.Errorf("error instanciating asset %v\n", err)
+			return err
 		}
-
-		asset, err := l.assets.Get(aid)
-		if err != nil {
-			return fmt.Errorf("unable to get asset %v\n", err)
-		}
-
-		// just a simple backoff here
-		err = backoff.Retry(
-			func() error {
-				err := asset.Validate()
-				if !asset.IsValid() {
-					return err
-				}
-				return nil
-			},
-			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-		)
-		if err != nil {
-			return fmt.Errorf("unable to instanciate new asset %v", err)
-		}
-		if err := l.assets.Enable(aid); err != nil {
-			return fmt.Errorf("unable to enable asset: %v", err)
-		}
-
-		assetD := asset.ProtoAsset()
-		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
-			return fmt.Errorf("unable to enable asset in colateral: %v", err)
-		}
-
-		l.Log.Info("new asset added successfully",
-			logging.String("asset", asset.String()))
 	}
+
+	return nil
+}
+
+func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
+	aid, err := l.assets.NewAsset(id, v)
+	if err != nil {
+		return fmt.Errorf("error instanciating asset %v\n", err)
+	}
+
+	asset, err := l.assets.Get(aid)
+	if err != nil {
+		return fmt.Errorf("unable to get asset %v\n", err)
+	}
+
+	// just a simple backoff here
+	err = backoff.Retry(
+		func() error {
+			err := asset.Validate()
+			if !asset.IsValid() {
+				return err
+			}
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate new asset %v", err)
+	}
+	if err := l.assets.Enable(aid); err != nil {
+		return fmt.Errorf("unable to enable asset: %v", err)
+	}
+
+	assetD := asset.ProtoAsset()
+	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
+		return fmt.Errorf("unable to enable asset in colateral: %v", err)
+	}
+
+	l.Log.Info("new asset added successfully",
+		logging.String("asset", asset.String()))
 
 	return nil
 }
