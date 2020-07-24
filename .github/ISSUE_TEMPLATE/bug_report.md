@@ -1,7 +1,7 @@
 # Problem encountered
 A clear and concise description of what the bug is.
 
-# System Response
+# System response
 Describe what the system response was, include the output from the command, automation, or else.
 
 **System version:** Specify the system version (0.xx.xx)
@@ -42,6 +42,6 @@ A clear and concise description of what you expected to happen.
 # Logs
 If applicable, add logs and/or screenshots to help explain your problem.
 
-# Additional Content
+# Additional content
 Add any other context about the problem here.
 
