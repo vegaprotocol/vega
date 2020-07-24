@@ -28,7 +28,7 @@ var (
 		Source: &types.AssetSource_BuiltinAsset{
 			BuiltinAsset: &types.BuiltinAsset{
 				Name:        "VOTE",
-				Symbol:      "VOT",
+				Symbol:      "VOTE",
 				TotalSupply: "0",
 				Decimals:    5,
 			},
