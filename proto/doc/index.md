@@ -102,8 +102,11 @@
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
 
+
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
+
 
 - [proto/assets.proto](#proto/assets.proto)
     - [Asset](#vega.Asset)
@@ -111,6 +114,10 @@
     - [BuiltinAsset](#vega.BuiltinAsset)
     - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
+
+
+
+
 
 - [proto/chain_events.proto](#proto/chain_events.proto)
     - [AddValidator](#vega.AddValidator)
@@ -131,6 +138,10 @@
     - [Identifier](#vega.Identifier)
     - [RemoveValidator](#vega.RemoveValidator)
     - [ValidatorEvent](#vega.ValidatorEvent)
+
+
+
+
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
@@ -153,6 +164,9 @@
     - [ProposalError](#vega.ProposalError)
     - [Vote.Value](#vega.Vote.Value)
 
+
+
+
 - [proto/markets.proto](#proto/markets.proto)
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
@@ -173,8 +187,13 @@
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
 
+
+
+
+
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
+    - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
@@ -222,6 +241,9 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
+
+
+
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -2914,6 +2936,26 @@ and the cause for an proposal being rejected of failed
 
 
 
+<a name="vega.AuctionIndicativeState"></a>
+
+### AuctionIndicativeState
+Whenever a change to the book occurs during an auction, this message will be used
+to emit an event with the indicative price/volume per market
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| indicativePrice | [uint64](#uint64) |  |  |
+| indicativeVolume | [uint64](#uint64) |  |  |
+| auctionStart | [int64](#int64) |  |  |
+| auctionEnd | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="vega.Candle"></a>
 
 ### Candle
@@ -3143,6 +3185,7 @@ a decision taken by the vega network.
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
+| batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
 
 
 
@@ -3793,21 +3836,21 @@ Set when an order has an issue
 
 ## Scalar Value Types
 
-| .proto Type | Notes | C++ | Java | Python | Go | C# | PHP | Ruby |
-| ----------- | ----- | --- | ---- | ------ | -- | -- | --- | ---- |
-| <a name="double" /> double |  | double | double | float | float64 | double | float | Float |
-| <a name="float" /> float |  | float | float | float | float32 | float | float | Float |
-| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long | uint32 | uint | integer | Bignum or Fixnum (as required) |
-| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum or Fixnum (as required) |
-| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int | uint32 | uint | integer | Bignum or Fixnum (as required) |
-| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum |
-| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
-| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
-| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
+| .proto Type | Notes | C++ Type | Java Type | Python Type |
+| ----------- | ----- | -------- | --------- | ----------- |
+| <a name="double" /> double |  | double | double | float |
+| <a name="float" /> float |  | float | float | float |
+| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int |
+| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long |
+| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long |
+| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long |
+| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int |
+| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long |
+| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int |
+| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long |
+| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int |
+| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long |
+| <a name="bool" /> bool |  | bool | boolean | boolean |
+| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode |
+| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str |
 

@@ -179,6 +179,10 @@ message Order {
   // Versioning support for amends, orders start at version 1 and increment
   // after each successful amend
   uint64 version = 16;
+
+  // used internally, for orders submitted during auctions
+  // to keep track which auction batch this order falls under (required for fees calculation)
+  uint64 batchID = 17;
 }
 
 message OrderCancellationConfirmation {
@@ -189,6 +193,16 @@ message OrderConfirmation {
     Order order = 1;
     repeated Trade trades = 2;
     repeated Order passiveOrdersAffected = 3;
+}
+
+// Whenever a change to the book occurs during an auction, this message will be used
+// to emit an event with the indicative price/volume per market
+message AuctionIndicativeState {
+  string marketID = 1;
+  uint64 indicativePrice = 2;
+  uint64 indicativeVolume = 3;
+  int64 auctionStart = 4;
+  int64 auctionEnd = 5;
 }
 
 // Set when an order has an issue

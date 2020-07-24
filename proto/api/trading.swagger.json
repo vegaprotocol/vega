@@ -2576,6 +2576,11 @@
           "type": "string",
           "format": "uint64",
           "title": "Versioning support for amends, orders start at version 1 and increment\nafter each successful amend"
+        },
+        "batchID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "used internally, for orders submitted during auctions\nto keep track which auction batch this order falls under (required for fees calculation)"
         }
       }
     },
