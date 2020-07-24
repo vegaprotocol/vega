@@ -1210,6 +1210,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)

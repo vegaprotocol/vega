@@ -2,6 +2,7 @@ package banking
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -91,10 +92,18 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 
 func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 	now, _ := e.tsvc.GetTimeNow()
+	asset, err := e.assets.Get(d.VegaAssetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", d.VegaAssetID),
+			logging.Error(err))
+		return err
+	}
 	aa := &assetAction{
 		id:       id(d, now),
 		state:    pendingState,
 		builtinD: d,
+		asset:    asset,
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
@@ -117,7 +126,13 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 
 func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
-	asset, _ := e.assets.Get(d.VegaAssetID)
+	asset, err := e.assets.Get(d.VegaAssetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", d.VegaAssetID),
+			logging.Error(err))
+		return err
+	}
 	aa := &assetAction{
 		id:          id(d, now),
 		state:       pendingState,
@@ -162,6 +177,8 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit(), aa.IsERC20Deposit():
+		//FIXME: use the ID here when implemented
+		aa.deposit.assetID = aa.asset.ProtoAsset().Symbol
 		return e.finalizeDeposit(ctx, aa.deposit)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
@@ -200,5 +217,5 @@ type HasVegaAssetID interface {
 func id(s fmt.Stringer, now time.Time) string {
 	hasher := sha3.New256()
 	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), now.UnixNano())))
-	return string(hasher.Sum(nil))
+	return hex.EncodeToString(hasher.Sum(nil))
 }

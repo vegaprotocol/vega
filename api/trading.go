@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -256,12 +257,19 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
+	var ok = true
 	err = s.evtForwarder.Forward(req.Evt, req.PubKey)
 	if err != nil {
-		return nil, apiError(codes.AlreadyExists, err)
+		s.log.Error("unable to forward chain event",
+			logging.Error(err))
+		if err != evtforward.ErrEvtAlreadyExist {
+			return nil, apiError(codes.AlreadyExists, err)
+		}
+		ok = false
 	}
+
 	return &protoapi.PropagateChainEventResponse{
-		Success: true,
+		Success: ok,
 	}, nil
 }
 

@@ -1852,6 +1852,10 @@
           "type": "string",
           "title": "The ID of the transaction in which the things happened\nusually a hash"
         },
+        "nonce": {
+          "type": "string",
+          "format": "uint64"
+        },
         "builtin": {
           "$ref": "#/definitions/vegaBuiltinAssetEvent"
         },

@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -98,7 +99,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
-	key := string(e.hash([]byte(evt.String())))
+	key := string(hashKey([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
 		// this was already acknowledged, nothing to be done, return false
@@ -123,7 +124,7 @@ func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
 		return ErrPubKeyNotWhitelisted
 	}
 
-	key := string(e.hash([]byte(evt.String())))
+	key := string(hashKey([]byte(evt.String())))
 	_, ok, _ := e.getEvt(key)
 	if ok {
 		return ErrEvtAlreadyExist
@@ -141,6 +142,7 @@ func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	e.self = string(e.top.SelfVegaPubKey())
 	// reset slice
 	// preemptive alloc, we can expect to have most likely
 	// as much validator
@@ -174,7 +176,9 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	h := e.hash([]byte(s))
 	e.mu.RLock()
 	node := e.nodes[h%uint64(len(e.nodes))]
+	fmt.Printf("len(%v) | selected %v\n", len(e.nodes), h%uint64(len(e.nodes)))
 	e.mu.RUnlock()
+	fmt.Printf("node.node = %v, s.self = %v\n", node.node, e.self)
 	return node.node == e.self
 }
 
@@ -202,6 +206,12 @@ func (e *EvtForwarder) onTick(_ context.Context, t time.Time) {
 			}
 		}
 	}
+}
+
+func hashKey(key []byte) []byte {
+	hasher := sha3.New256()
+	hasher.Write([]byte(key))
+	return hasher.Sum(nil)
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {
