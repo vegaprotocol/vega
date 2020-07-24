@@ -27,13 +27,63 @@ message NetworkConfiguration {
   float minProposerBalance = 7;
   // Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`.
   float minVoterBalance = 8;
+
+  // Scaling factors for all markets created via governance.
+  ScalingFactors marginConfiguration = 9;
 }
 
 message UpdateMarket {
   //TODO
 }
+
+// Future product configuration
+message FutureProduct {
+  // Future product maturity (ISO8601/RFC3339 timestamp)
+  string maturity = 1  [(validator.field) = {string_not_empty : true}];
+  // Product asset name
+  string asset = 2  [(validator.field) = {string_not_empty : true}];
+}
+
+message InstrumentConfiguration {
+  // Instrument name
+  string name = 1 [(validator.field) = {string_not_empty : true}];
+  // Instrument code
+  string code = 2 [(validator.field) = {string_not_empty : true}];
+  // Base security used as the reference
+  string baseName = 3 [(validator.field) = {string_not_empty : true}];
+  // Quote (secondary) security 
+  string quoteName = 4 [(validator.field) = {string_not_empty : true}];
+  // Product specification
+  oneof product {
+    FutureProduct future = 100;
+
+    //@TODO: more products
+  }
+}
+
+message NewMarketConfiguration {
+  // New market instrument configuration
+  InstrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
+  // New market risk model parameters
+  oneof riskParameters {
+    // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
+    SimpleModelParams simple = 100;
+    // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
+    LogNormalRiskModel logNormal = 101;
+  }
+  // Decimal places used for the new market
+  uint64 decimalPlaces = 3 [(validator.field) = {int_lt: 150}];
+  // Optional new market meta data, tags
+  repeated string metadata = 4;
+  // Trading mode
+  oneof tradingMode {
+    ContinuousTrading continuous = 200;
+    DiscreteTrading discrete = 201;
+  }
+}
+
 message NewMarket {
-  Market changes = 1 [(validator.field) = {msg_exists: true}];
+  NewMarketConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
 }
 message UpdateNetwork {
   NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
@@ -74,6 +124,12 @@ message GovernanceData {
   repeated Vote yes = 2;
   // All "no" votes against the proposal above.
   repeated Vote no = 3;
+
+  // All latest YES votes by party (guaranteed to be unique)
+  map<string, Vote> yesParty = 4;
+
+  // All latest NO votes by party (unique)
+  map<string, Vote> noParty = 5;
 }
 
 message Proposal {
@@ -103,8 +159,10 @@ message Proposal {
     // Proposal didn't get enough votes (either failing to gain required participation or majority level).
     STATE_DECLINED = 5;
 
-    // Proposal has been executed and the changes under this proposal have now been applied.
     STATE_ENACTED = 6;
+
+    // waiting for validators validation of the proposal
+    STATE_WAITING_FOR_NODE_VOTE = 7;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go

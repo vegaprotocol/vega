@@ -6,6 +6,10 @@
 - [proto/api/trading.proto](#proto/api/trading.proto)
     - [AccountsSubscribeRequest](#api.AccountsSubscribeRequest)
     - [AmendOrderRequest](#api.AmendOrderRequest)
+    - [AssetByIDRequest](#api.AssetByIDRequest)
+    - [AssetByIDResponse](#api.AssetByIDResponse)
+    - [AssetsRequest](#api.AssetsRequest)
+    - [AssetsResponse](#api.AssetsResponse)
     - [CancelOrderRequest](#api.CancelOrderRequest)
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
@@ -16,6 +20,8 @@
     - [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse)
     - [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest)
     - [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse)
+    - [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest)
+    - [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse)
     - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
     - [GetProposalByIDResponse](#api.GetProposalByIDResponse)
     - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
@@ -79,6 +85,8 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
+    - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
+    - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
     - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
@@ -92,11 +100,8 @@
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
 
-
-
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
-
 
 - [proto/assets.proto](#proto/assets.proto)
     - [Asset](#vega.Asset)
@@ -105,15 +110,36 @@
     - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
 
-
-
-
+- [proto/chain_events.proto](#proto/chain_events.proto)
+    - [AddValidator](#vega.AddValidator)
+    - [BTCDeposit](#vega.BTCDeposit)
+    - [BTCEvent](#vega.BTCEvent)
+    - [BTCWithdrawal](#vega.BTCWithdrawal)
+    - [BitcoinAddress](#vega.BitcoinAddress)
+    - [BuiltinAssetDeposit](#vega.BuiltinAssetDeposit)
+    - [BuiltinAssetEvent](#vega.BuiltinAssetEvent)
+    - [BuiltinAssetWithdrawal](#vega.BuiltinAssetWithdrawal)
+    - [ChainEvent](#vega.ChainEvent)
+    - [ERC20AssetDelist](#vega.ERC20AssetDelist)
+    - [ERC20AssetList](#vega.ERC20AssetList)
+    - [ERC20Deposit](#vega.ERC20Deposit)
+    - [ERC20Event](#vega.ERC20Event)
+    - [ERC20Withdrawal](#vega.ERC20Withdrawal)
+    - [EthereumAddress](#vega.EthereumAddress)
+    - [Identifier](#vega.Identifier)
+    - [RemoveValidator](#vega.RemoveValidator)
+    - [ValidatorEvent](#vega.ValidatorEvent)
 
 - [proto/governance.proto](#proto/governance.proto)
+    - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
+    - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
+    - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
+    - [InstrumentConfiguration](#vega.InstrumentConfiguration)
     - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
+    - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
@@ -122,9 +148,6 @@
 
     - [Proposal.State](#vega.Proposal.State)
     - [Vote.Value](#vega.Vote.Value)
-
-
-
 
 - [proto/markets.proto](#proto/markets.proto)
     - [ContinuousTrading](#vega.ContinuousTrading)
@@ -144,10 +167,6 @@
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
 
-
-
-
-
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
     - [Amount](#vega.Amount)
@@ -159,6 +178,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [NodeRegistration](#vega.NodeRegistration)
+    - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
@@ -188,6 +208,7 @@
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -195,9 +216,6 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
-
-
-
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -237,6 +255,61 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  |  |
+
+
+
+
+
+
+<a name="api.AssetByIDRequest"></a>
+
+### AssetByIDRequest
+The request message to get an AssetByID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | ID of the asset to get |
+
+
+
+
+
+
+<a name="api.AssetByIDResponse"></a>
+
+### AssetByIDResponse
+The response message to get an AssetByID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| asset | [vega.Asset](#vega.Asset) |  | The asset corresponding to the requested ID |
+
+
+
+
+
+
+<a name="api.AssetsRequest"></a>
+
+### AssetsRequest
+The request to get the lit of all assets in vega
+
+
+
+
+
+
+<a name="api.AssetsResponse"></a>
+
+### AssetsResponse
+The response containing the list of all assets enabled in vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| assets | [vega.Asset](#vega.Asset) | repeated | The list of assets |
 
 
 
@@ -390,6 +463,37 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateRequest"></a>
+
+### GetNodeSignaturesAggregateRequest
+The request message to specify the ID of the resource we want to retrieve
+the aggregated signatures for
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The ID of the resource |
+
+
+
+
+
+
+<a name="api.GetNodeSignaturesAggregateResponse"></a>
+
+### GetNodeSignaturesAggregateResponse
+The response of the GetNodeSIgnatureAggregate rpc
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| signatures | [vega.NodeSignature](#vega.NodeSignature) | repeated | The list of signatures |
 
 
 
@@ -1033,7 +1137,6 @@
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | pagination | [Pagination](#api.Pagination) |  |  |
-| open | [bool](#bool) |  |  |
 
 
 
@@ -1065,7 +1168,6 @@
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  |  |
 | pagination | [Pagination](#api.Pagination) |  |  |
-| open | [bool](#bool) |  |  |
 
 
 
@@ -1369,6 +1471,36 @@
 
 
 
+<a name="api.PropagateChainEventRequest"></a>
+
+### PropagateChainEventRequest
+The request for a new event sent by the blockchain queue to be propagated into vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| evt | [vega.ChainEvent](#vega.ChainEvent) |  | The event |
+
+
+
+
+
+
+<a name="api.PropagateChainEventResponse"></a>
+
+### PropagateChainEventResponse
+The response for a new event sent to vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| success | [bool](#bool) |  | Did the event get accepted by the node successfully |
+
+
+
+
+
+
 <a name="api.SubmitOrderRequest"></a>
 
 ### SubmitOrderRequest
@@ -1572,6 +1704,7 @@
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
+| PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | chain events |
 
 
 <a name="api.trading_data"></a>
@@ -1628,6 +1761,9 @@
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
+| AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its ID |
+| Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get the list of all assets in vega |
 
 
 
@@ -1643,18 +1779,18 @@
 <a name="vega.Asset"></a>
 
 ### Asset
-
+The vega representation of an external asset
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| symbol | [string](#string) |  |  |
-| totalSupply | [string](#string) |  | this may very much likely be a big.Int |
-| decimals | [uint64](#uint64) |  |  |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
-| erc20 | [ERC20](#vega.ERC20) |  |  |
+| ID | [string](#string) |  | The vega internal ID of the asset |
+| name | [string](#string) |  | The name of the asset (e.g: Great British Pound) |
+| symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
+| totalSupply | [string](#string) |  | The total circulating supply for the asset |
+| decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A vega builtin asset (for testing purpose) |
+| erc20 | [ERC20](#vega.ERC20) |  | An ERC20 token based asset |
 
 
 
@@ -1680,15 +1816,15 @@
 <a name="vega.BuiltinAsset"></a>
 
 ### BuiltinAsset
-
+A vega internal asset
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| symbol | [string](#string) |  |  |
-| totalSupply | [string](#string) |  |  |
-| decimals | [uint64](#uint64) |  |  |
+| name | [string](#string) |  | The name of the asset (e.g: Great British Pound) |
+| symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
+| totalSupply | [string](#string) |  | The total circulating supply for the asset |
+| decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
 
 
 
@@ -1713,12 +1849,329 @@
 <a name="vega.ERC20"></a>
 
 ### ERC20
-
+An ERC20 token based asset, living on the ethereum network
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| contractAddress | [string](#string) |  |  |
+| contractAddress | [string](#string) |  | The address of the contract for the token, on the ethereum network |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="proto/chain_events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/chain_events.proto
+
+
+
+<a name="vega.AddValidator"></a>
+
+### AddValidator
+A message to notify a new validator being added to the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Identifier](#vega.Identifier) |  | The identifier of this validator |
+
+
+
+
+
+
+<a name="vega.BTCDeposit"></a>
+
+### BTCDeposit
+A Bitcoin deposit into vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourceBTCAddress | [string](#string) |  | The BTC wallet inititing the Deposit |
+| targetPartyId | [string](#string) |  | The Vega public key of the target Vega user |
+
+
+
+
+
+
+<a name="vega.BTCEvent"></a>
+
+### BTCEvent
+An event from Bitcoin
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| index | [uint64](#uint64) |  | The index of the transaction |
+| block | [uint64](#uint64) |  | The block in which the transaction happenned |
+| deposit | [BTCDeposit](#vega.BTCDeposit) |  |  |
+| withdrawal | [BTCWithdrawal](#vega.BTCWithdrawal) |  |  |
+
+
+
+
+
+
+<a name="vega.BTCWithdrawal"></a>
+
+### BTCWithdrawal
+A Bitcoin withdrawl from vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
+| targetBTCAddress | [string](#string) |  | Target BTC wallet address |
+| referenceNonce | [string](#string) |  | The nonce reference of the transaction |
+
+
+
+
+
+
+<a name="vega.BitcoinAddress"></a>
+
+### BitcoinAddress
+Wrapper for a Bitcoin address (wallet)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  | A Bitcoin address |
+
+
+
+
+
+
+<a name="vega.BuiltinAssetDeposit"></a>
+
+### BuiltinAssetDeposit
+A deposit for an vega builtin asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | A vega network internal asset ID |
+| partyID | [string](#string) |  | A vega party ID (pubkey) |
+| amount | [uint64](#uint64) |  | The amount to be deposited |
+
+
+
+
+
+
+<a name="vega.BuiltinAssetEvent"></a>
+
+### BuiltinAssetEvent
+An event related to a vega builtin asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposit | [BuiltinAssetDeposit](#vega.BuiltinAssetDeposit) |  |  |
+| withdrawal | [BuiltinAssetWithdrawal](#vega.BuiltinAssetWithdrawal) |  |  |
+
+
+
+
+
+
+<a name="vega.BuiltinAssetWithdrawal"></a>
+
+### BuiltinAssetWithdrawal
+A Withdrawal for a vega builtin asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | A vega network internal asset ID |
+| partyID | [string](#string) |  | A vega network party ID (pubkey) |
+| amount | [uint64](#uint64) |  | The amount to be withdrawan |
+
+
+
+
+
+
+<a name="vega.ChainEvent"></a>
+
+### ChainEvent
+An event being forwarded to the vega network
+providing information on things happening on other networks
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  | The ID of the transaction in which the things happened usually a hash |
+| builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  |  |
+| erc20 | [ERC20Event](#vega.ERC20Event) |  |  |
+| btc | [BTCEvent](#vega.BTCEvent) |  |  |
+| validator | [ValidatorEvent](#vega.ValidatorEvent) |  |  |
+
+
+
+
+
+
+<a name="vega.ERC20AssetDelist"></a>
+
+### ERC20AssetDelist
+An asset blacklisting for a erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+
+
+
+
+
+
+<a name="vega.ERC20AssetList"></a>
+
+### ERC20AssetList
+An asset whitelisting for a erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+
+
+
+
+
+
+<a name="vega.ERC20Deposit"></a>
+
+### ERC20Deposit
+An asset deposit for an erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourceEthereumAddress | [string](#string) |  | The ethereum wallet that initiated the deposit |
+| targetPartyID | [string](#string) |  | The Vega public key of the target vega user |
+
+
+
+
+
+
+<a name="vega.ERC20Event"></a>
+
+### ERC20Event
+An event related to an erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| index | [uint64](#uint64) |  | Index of the transaction |
+| block | [uint64](#uint64) |  | The block in which the transaction was added |
+| assetList | [ERC20AssetList](#vega.ERC20AssetList) |  |  |
+| assetDelist | [ERC20AssetDelist](#vega.ERC20AssetDelist) |  |  |
+| deposit | [ERC20Deposit](#vega.ERC20Deposit) |  |  |
+| withdrawal | [ERC20Withdrawal](#vega.ERC20Withdrawal) |  |  |
+
+
+
+
+
+
+<a name="vega.ERC20Withdrawal"></a>
+
+### ERC20Withdrawal
+An asset withdrawal for an erc20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
+| targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address |
+| referenceNonce | [string](#string) |  | The reference nonce used for the transaction |
+
+
+
+
+
+
+<a name="vega.EthereumAddress"></a>
+
+### EthereumAddress
+Wrapper for an Ethereum address (wallet/contract)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  | An Ethereum address |
+
+
+
+
+
+
+<a name="vega.Identifier"></a>
+
+### Identifier
+A wrapper type on any possible network address supported by vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ethereumAddress | [EthereumAddress](#vega.EthereumAddress) |  |  |
+| bitcoinAddress | [BitcoinAddress](#vega.BitcoinAddress) |  |  |
+
+
+
+
+
+
+<a name="vega.RemoveValidator"></a>
+
+### RemoveValidator
+A message to notify a new validator being removed to the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Identifier](#vega.Identifier) |  | The identifier of this validator |
+
+
+
+
+
+
+<a name="vega.ValidatorEvent"></a>
+
+### ValidatorEvent
+An event related to validator management with foreign networks
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sourceID | [string](#string) |  | The source ID of the event |
+| add | [AddValidator](#vega.AddValidator) |  |  |
+| rm | [RemoveValidator](#vega.RemoveValidator) |  |  |
 
 
 
@@ -1741,6 +2194,22 @@
 
 
 
+<a name="vega.FutureProduct"></a>
+
+### FutureProduct
+Future product configuration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp) |
+| asset | [string](#string) |  | Product asset name |
+
+
+
+
+
+
 <a name="vega.GovernanceData"></a>
 
 ### GovernanceData
@@ -1752,6 +2221,59 @@
 | proposal | [Proposal](#vega.Proposal) |  | Proposal |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique) |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique) |
+
+
+
+
+
+
+<a name="vega.GovernanceData.NoPartyEntry"></a>
+
+### GovernanceData.NoPartyEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="vega.GovernanceData.YesPartyEntry"></a>
+
+### GovernanceData.YesPartyEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="vega.InstrumentConfiguration"></a>
+
+### InstrumentConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | Instrument name |
+| code | [string](#string) |  | Instrument code |
+| baseName | [string](#string) |  | Base security used as the reference |
+| quoteName | [string](#string) |  | Quote (secondary) security |
+| future | [FutureProduct](#vega.FutureProduct) |  |  |
 
 
 
@@ -1774,6 +2296,7 @@
 | requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
 | minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
+| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
 
 
 
@@ -1803,7 +2326,28 @@ To be implemented
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [Market](#vega.Market) |  |  |
+| changes | [NewMarketConfiguration](#vega.NewMarketConfiguration) |  |  |
+
+
+
+
+
+
+<a name="vega.NewMarketConfiguration"></a>
+
+### NewMarketConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
+| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
+| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
+| metadata | [string](#string) | repeated | Optional new market meta data, tags |
+| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
+| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
 
 
@@ -1915,7 +2459,8 @@ Proposal can enter Failed state from any other state.
 | STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
 | STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements). |
 | STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
-| STATE_ENACTED | 6 | Proposal has been executed and the changes under this proposal have now been applied. |
+| STATE_ENACTED | 6 |  |
+| STATE_WAITING_FOR_NODE_VOTE | 7 | waiting for validators validation of the proposal |
 
 
 
@@ -1969,7 +2514,8 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| duration | [int64](#int64) |  |  |
+| durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
+| tickSize | [uint64](#uint64) |  |  |
 
 
 
@@ -2137,8 +2683,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | 32 pseudo-random upper-case letters and digits |
-| name | [string](#string) |  | a human-understandable name for the Market, perhaps including a currency pair and a maturity date |
+| id | [string](#string) |  |  |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
@@ -2372,14 +2917,15 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| markPrice | [uint64](#uint64) |  |  |
-| bestBidPrice | [uint64](#uint64) |  |  |
-| bestBidVolume | [uint64](#uint64) |  |  |
-| bestOfferPrice | [uint64](#uint64) |  |  |
-| bestOfferVolume | [uint64](#uint64) |  |  |
-| midPrice | [uint64](#uint64) |  |  |
-| market | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| markPrice | [uint64](#uint64) |  | the mark price (actually an unsgined int) |
+| bestBidPrice | [uint64](#uint64) |  | the highest price level on an order book for buy orders. |
+| bestBidVolume | [uint64](#uint64) |  | the aggregated volume being bid at the best bid price. |
+| bestOfferPrice | [uint64](#uint64) |  | the lowest price level on an order book for offer orders. |
+| bestOfferVolume | [uint64](#uint64) |  | the aggregated volume being offered at the best offer price. |
+| midPrice | [uint64](#uint64) |  | the arithmetic average of the best bid price and best offer price. |
+| market | [string](#string) |  | market id of the associated mark price |
+| timestamp | [int64](#int64) |  | time at which this mark price was relevant |
+| openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
 
 
 
@@ -2419,6 +2965,25 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.NodeSignature"></a>
+
+### NodeSignature
+A message reprensenting a signature from a validator
+meant to be used by foreign chain in order to recognise
+a decision taken by the vega network.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The ID of the resource being signed |
+| sig | [bytes](#bytes) |  | The signature |
+| kind | [NodeSignatureKind](#vega.NodeSignatureKind) |  | The kind of resource being signed |
+
+
+
+
+
+
 <a name="vega.NodeVote"></a>
 
 ### NodeVote
@@ -2452,8 +3017,8 @@ Proposal can enter Failed state from any other state.
 | remaining | [uint64](#uint64) |  |  |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
 | type | [Order.Type](#vega.Order.Type) |  |  |
-| createdAt | [int64](#int64) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  | If `status` is `Rejected`, check `reason`. |
+| createdAt | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| status | [Order.Status](#vega.Order.Status) |  | If `status` is `STATUS_REJECTED`, check `reason`. |
 | expiresAt | [int64](#int64) |  |  |
 | reference | [string](#string) |  |  |
 | reason | [OrderError](#vega.OrderError) |  |  |
@@ -2946,21 +3511,37 @@ Proposal can enter Failed state from any other state.
 
 
 
-<a name="vega.Order.Status"></a>
+<a name="vega.NodeSignatureKind"></a>
 
-### Order.Status
-
+### NodeSignatureKind
+The kind of the signature created by a node
+eg: for a new asset whitelisting, withdrawal
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| STATUS_INVALID | 0 |  |
-| STATUS_ACTIVE | 1 |  |
-| STATUS_EXPIRED | 2 |  |
-| STATUS_CANCELLED | 3 |  |
-| STATUS_STOPPED | 4 |  |
-| STATUS_FILLED | 5 |  |
-| STATUS_REJECTED | 6 |  |
-| STATUS_PARTIALLY_FILLED | 7 |  |
+| NODE_SIGNATURE_KIND_UNSPECIFIED | 0 | represents a unspecified / missing value from the input |
+| NODE_SIGNATURE_KIND_ASSET_NEW | 1 | represents a signature for a new asset whitelisting |
+| NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 2 | represents a signature for a asset withdrawal |
+
+
+
+<a name="vega.Order.Status"></a>
+
+### Order.Status
+Order Status
+
+See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_INVALID | 0 | Default value, always invalid |
+| STATUS_ACTIVE | 1 | used for active unfilled or partially filled orders |
+| STATUS_EXPIRED | 2 | used for expired GTT orders |
+| STATUS_CANCELLED | 3 | used for orders cancelled by the party that created the order |
+| STATUS_STOPPED | 4 | used for unfilled FOK or IOC orders, and for orders that were stopped by the network |
+| STATUS_FILLED | 5 | used for closed fully filled orders |
+| STATUS_REJECTED | 6 | used for orders when not enough collateral was available to fill the margin requirements |
+| STATUS_PARTIALLY_FILLED | 7 | used for closed partially filled IOC orders |
 
 
 
@@ -2968,6 +3549,8 @@ Proposal can enter Failed state from any other state.
 
 ### Order.TimeInForce
 Order Time in Force
+
+See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -3078,21 +3661,21 @@ Order Type
 
 ## Scalar Value Types
 
-| .proto Type | Notes | C++ Type | Java Type | Python Type |
-| ----------- | ----- | -------- | --------- | ----------- |
-| <a name="double" /> double |  | double | double | float |
-| <a name="float" /> float |  | float | float | float |
-| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int |
-| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long |
-| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long |
-| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long |
-| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int |
-| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long |
-| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int |
-| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long |
-| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int |
-| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long |
-| <a name="bool" /> bool |  | bool | boolean | boolean |
-| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode |
-| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str |
+| .proto Type | Notes | C++ | Java | Python | Go | C# | PHP | Ruby |
+| ----------- | ----- | --- | ---- | ------ | -- | -- | --- | ---- |
+| <a name="double" /> double |  | double | double | float | float64 | double | float | Float |
+| <a name="float" /> float |  | float | float | float | float32 | float | float | Float |
+| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
+| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long | int64 | long | integer/string | Bignum |
+| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long | uint32 | uint | integer | Bignum or Fixnum (as required) |
+| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum or Fixnum (as required) |
+| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
+| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long | int64 | long | integer/string | Bignum |
+| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int | uint32 | uint | integer | Bignum or Fixnum (as required) |
+| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum |
+| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
+| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long | int64 | long | integer/string | Bignum |
+| <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
+| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
+| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
 

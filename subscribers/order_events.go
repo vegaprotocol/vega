@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -19,20 +20,27 @@ type OrderStore interface {
 
 type OrderEvent struct {
 	*Base
+	mu    sync.Mutex
+	cfg   Config
 	log   *logging.Logger
 	store OrderStore
 	buf   []types.Order
 }
 
-func NewOrderEvent(ctx context.Context, log *logging.Logger, store OrderStore) *OrderEvent {
+func NewOrderEvent(ctx context.Context, cfg Config, log *logging.Logger, store OrderStore, ack bool) *OrderEvent {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.OrderEventLogLevel.Level)
+
 	o := OrderEvent{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		log:   log,
 		store: store,
 		buf:   []types.Order{},
+		cfg:   cfg,
 	}
-	o.running = true
-	go o.loop(o.ctx)
+	if o.isRunning() {
+		go o.loop(o.ctx)
+	}
 	return &o
 }
 
@@ -43,25 +51,29 @@ func (o *OrderEvent) loop(ctx context.Context) {
 			o.Halt()
 			return
 		case e := <-o.ch:
-			if o.running {
+			if o.isRunning() {
 				o.Push(e)
 			}
 		}
 	}
 }
 
-func (o *OrderEvent) Push(e events.Event) {
-	switch te := e.(type) {
-	case OE:
-		o.write(te)
-	case TimeEvent:
-		o.flush()
+func (o *OrderEvent) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch te := e.(type) {
+		case OE:
+			o.write(te)
+		case TimeEvent:
+			o.flush()
+		}
 	}
 }
 
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use
 func (o *OrderEvent) write(e OE) {
+	o.mu.Lock()
 	o.buf = append(o.buf, *e.Order())
+	o.mu.Unlock()
 	o.log.Debug("ORDER EVENT",
 		logging.String("trace-id", e.TraceID()),
 		logging.String("type", e.Type().String()),
@@ -70,8 +82,10 @@ func (o *OrderEvent) write(e OE) {
 }
 
 func (o *OrderEvent) flush() {
+	o.mu.Lock()
 	b := o.buf
 	o.buf = make([]types.Order, 0, cap(b))
+	o.mu.Unlock()
 	if err := o.store.SaveBatch(b); err != nil {
 		o.log.Error(
 			"Failed to store batch of orders",

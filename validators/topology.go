@@ -36,7 +36,8 @@ type Topology struct {
 	vegaValidatorRefs map[string]struct{}
 	chainValidators   []*tmtypes.Validator
 
-	selfChain *tmtypes.Validator
+	selfChain   *tmtypes.Validator
+	isValidator bool
 
 	// don't recalculate readyness all the time
 	ready bool
@@ -44,7 +45,7 @@ type Topology struct {
 	mu sync.Mutex
 }
 
-func NewTopology(log *logging.Logger, clt BlockchainClient) *Topology {
+func NewTopology(log *logging.Logger, clt BlockchainClient, isValidator bool) *Topology {
 
 	t := &Topology{
 		log:               log,
@@ -52,10 +53,15 @@ func NewTopology(log *logging.Logger, clt BlockchainClient) *Topology {
 		validators:        map[string]string{},
 		chainValidators:   []*tmtypes.Validator{},
 		vegaValidatorRefs: map[string]struct{}{},
+		isValidator:       isValidator,
 	}
 
 	go t.handleGenesisValidators()
 	return t
+}
+
+func (t *Topology) IsValidator() bool {
+	return t.isValidator
 }
 
 func (t *Topology) Len() int {
@@ -66,6 +72,16 @@ func (t *Topology) Len() int {
 func (t *Topology) Exists(key []byte) bool {
 	_, ok := t.vegaValidatorRefs[string(key)]
 	return ok
+}
+
+func (t *Topology) AllPubKeys() [][]byte {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	keys := make([][]byte, 0, len(t.validators))
+	for _, key := range t.validators {
+		keys = append(keys, []byte(key))
+	}
+	return keys
 }
 
 func (t *Topology) SetChain(clt BlockchainClient) {
@@ -79,6 +95,15 @@ func (t *Topology) SelfChainPubKey() []byte {
 	defer t.mu.Unlock()
 	if t.selfChain != nil {
 		return t.selfChain.PubKey.Bytes()
+	}
+	return nil
+}
+
+func (t *Topology) SelfVegaPubKey() []byte {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.selfChain != nil {
+		return []byte(t.validators[string(t.selfChain.PubKey.Bytes())])
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package settlement
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -29,11 +30,10 @@ type Product interface {
 	GetAsset() string
 }
 
-// Buffer ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buffer_mock.go -package mocks code.vegaprotocol.io/vega/settlement Buffer
-type Buffer interface {
-	Add([]events.SettlePosition)
-	Flush() // this call can go here, because this engine knows when its done its job
+// Broker - the event bus broker, send events here
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/settlement Broker
+type Broker interface {
+	SendBatch(events []events.Event)
 }
 
 // Engine - the main type (of course)
@@ -46,11 +46,11 @@ type Engine struct {
 	pos     map[string]*pos
 	mu      *sync.Mutex
 	trades  map[string][]*pos
-	buf     Buffer
+	broker  Broker
 }
 
 // New instantiates a new instance of the settlement engine
-func New(log *logging.Logger, conf Config, product Product, market string, buf Buffer) *Engine {
+func New(log *logging.Logger, conf Config, product Product, market string, broker Broker) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -63,7 +63,7 @@ func New(log *logging.Logger, conf Config, product Product, market string, buf B
 		pos:     map[string]*pos{},
 		mu:      &sync.Mutex{},
 		trades:  map[string][]*pos{},
-		buf:     buf,
+		broker:  broker,
 	}
 }
 
@@ -155,7 +155,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
+func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
 	tCap := e.transferCap(positions)
@@ -165,21 +165,19 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 	trades := e.trades
 	e.trades = map[string][]*pos{} // remove here, once we've processed it all here, we're done
 	mpSigned := int64(markPrice)
-	bufEvents := make([]events.SettlePosition, 0, len(positions))
+	evts := make([]events.Event, 0, len(positions))
 	for _, evt := range positions {
 		party := evt.Party()
 		// get the current position, and all (if any) position changes because of trades
 		current := e.getCurrentPosition(party, evt)
 		// we don't care if this is a nil value
 		traded, hasTraded := trades[party]
-		// create (and add position to buffer)
-		sp := &settlePos{
-			party:    evt.Party(),
-			price:    evt.Price(),
-			marketID: e.market,
-			trades:   traded,
+		tradeset := make([]events.TradeSettlement, 0, len(traded))
+		for _, t := range traded {
+			tradeset = append(tradeset, t)
 		}
-		bufEvents = append(bufEvents, sp)
+		// create (and add position to buffer)
+		evts = append(evts, events.NewSettlePositionEvent(ctx, evt.Party(), e.market, evt.Price(), tradeset))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price == markPrice {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
@@ -232,37 +230,28 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 			})
 		}
 	}
-	e.buf.Add(bufEvents)
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
 	// whatever was added to the buffer is now ready to be flushed
-	e.buf.Flush()
 	e.mu.Unlock()
+	e.broker.SendBatch(evts)
 	timer.EngineTimeCounterAdd()
 	return transfers
 }
 
 // RemoveDistressed - remove whatever settlement data we have for distressed traders
 // they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
-func (e *Engine) RemoveDistressed(evts []events.Margin) {
+func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
+	devts := make([]events.Event, 0, len(evts))
 	e.mu.Lock()
-	bEvts := make([]events.SettlePosition, 0, len(evts))
 	for _, v := range evts {
 		key := v.Party()
-		sp := &settlePos{
-			party:     v.Party(),
-			price:     v.Price(),
-			marketID:  e.market,
-			margin:    v.MarginBalance() + v.GeneralBalance(),
-			hasMargin: true,
-		}
-		bEvts = append(bEvts, sp)
+		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), v.MarginBalance()+v.GeneralBalance()))
 		delete(e.pos, key)
 		delete(e.trades, key)
 	}
-	e.buf.Add(bEvts)
-	e.buf.Flush()
 	e.mu.Unlock()
+	e.broker.SendBatch(devts)
 }
 
 func (e *Engine) getSettlementProduct(lastMarkPrice uint64) (Product, error) {

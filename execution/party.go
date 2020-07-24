@@ -17,7 +17,7 @@ var ErrInvalidPartyId = errors.New("party id is not valid")
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
-	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) string
+	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	IncrementBalance(ctx context.Context, id string, amount uint64) error
 	DecrementBalance(ctx context.Context, id string, amount uint64) error
 	GetAccountByID(id string) (*types.Account, error)
@@ -98,7 +98,10 @@ func (p *Party) MakeGeneralAccounts(ctx context.Context, partyID string) (map[st
 
 		// create account
 		// @TODO this context needs to come from somewhere...
-		generalAccount := p.collateral.CreatePartyGeneralAccount(ctx, partyID, asset)
+		generalAccount, err := p.collateral.CreatePartyGeneralAccount(ctx, partyID, asset)
+		if err != nil {
+			return nil, err
+		}
 		if _, exists := result[generalAccount]; !exists {
 			result[generalAccount] = Void{}
 			if _, err := p.collateral.GetAccountByID(generalAccount); err != nil {

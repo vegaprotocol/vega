@@ -6,7 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -21,36 +20,10 @@ var (
 	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
 	// because proposed changes cannot be processed by the system
 	ErrUnknownProposalChange = errors.New("unknown proposal change")
+
+	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
+	ErrNoMarketID = errors.New("no valid market id was supplied")
 )
-
-// OrderBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution OrderBuf
-type OrderBuf interface {
-	Add(types.Order)
-	Flush() error
-}
-
-// CandleBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
-type CandleBuf interface {
-	AddTrade(types.Trade) error
-	Flush(marketID string, t time.Time) error
-	Start(marketID string, t time.Time) (map[string]types.Candle, error)
-}
-
-// MarketBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketBuf
-type MarketBuf interface {
-	Add(types.Market)
-	Flush() error
-}
-
-// SettlementBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
-type SettlementBuf interface {
-	Add([]events.SettlePosition)
-	Flush()
-}
 
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
@@ -59,44 +32,10 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// MarketDataBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketDataBuf
-type MarketDataBuf interface {
-	Add(types.MarketData)
-	Flush()
-}
-
-// MarginLevelsBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
-type MarginLevelsBuf interface {
-	Add(types.MarginLevels)
-	Flush()
-}
-
-// LossSocializationBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution LossSocializationBuf
-type LossSocializationBuf interface {
-	Add([]events.LossSocialization)
-	Flush()
-}
-
-// ProposalBuf...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/proposal_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution ProposalBuf
-type ProposalBuf interface {
-	Add(types.Proposal)
-	Flush()
-}
-
-// VoteBuf...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution VoteBuf
-type VoteBuf interface {
-	Add(types.Vote)
-	Flush()
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 // Engine is the execution engine
@@ -107,17 +46,7 @@ type Engine struct {
 	markets    map[string]*Market
 	party      *Party
 	collateral *collateral.Engine
-	governance *governance.Engine
 	idgen      *IDgenerator
-
-	candleBuf       CandleBuf
-	marketBuf       MarketBuf
-	marketDataBuf   MarketDataBuf
-	marginLevelsBuf MarginLevelsBuf
-	settleBuf       SettlementBuf
-	lossSocBuf      LossSocializationBuf
-	proposalBuf     ProposalBuf
-	voteBuf         VoteBuf
 
 	broker Broker
 	time   TimeService
@@ -129,69 +58,39 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	time TimeService,
-	candleBuf CandleBuf,
-	marketBuf MarketBuf,
-	marketDataBuf MarketDataBuf,
-	marginLevelsBuf MarginLevelsBuf,
-	settleBuf SettlementBuf,
-	lossSocBuf LossSocializationBuf,
-	proposalBuf ProposalBuf,
-	voteBuf VoteBuf,
 	pmkts []types.Market,
+	collateral *collateral.Engine,
 	broker Broker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
-
-	now, err := time.GetTimeNow()
-	if err != nil {
-		log.Error("unable to get the time now", logging.Error(err))
-		return nil
-	}
-	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, broker, lossSocBuf, now)
-	if err != nil {
-		log.Error("unable to initialise collateral", logging.Error(err))
-		return nil
-	}
-
-	networkParameters := governance.DefaultNetworkParameters(log) //TODO: store the parameters so proposals can update them
-	gengine := governance.NewEngine(log, executionConfig.Governance, networkParameters, cengine, proposalBuf, voteBuf, now)
+	// this is here because we're creating some markets here
+	// this isn't going to be the case in the final version
+	// so I'm using Background rather than TODO
+	ctx := context.Background()
 
 	e := &Engine{
-		log:             log,
-		Config:          executionConfig,
-		markets:         map[string]*Market{},
-		candleBuf:       candleBuf,
-		marketBuf:       marketBuf,
-		time:            time,
-		collateral:      cengine,
-		governance:      gengine,
-		party:           NewParty(log, cengine, pmkts, broker),
-		marketDataBuf:   marketDataBuf,
-		marginLevelsBuf: marginLevelsBuf,
-		settleBuf:       settleBuf,
-		lossSocBuf:      lossSocBuf,
-		proposalBuf:     proposalBuf,
-		voteBuf:         voteBuf,
-		idgen:           NewIDGen(),
-		broker:          broker,
+		log:        log,
+		Config:     executionConfig,
+		markets:    map[string]*Market{},
+		time:       time,
+		collateral: collateral,
+		party:      NewParty(log, collateral, pmkts, broker),
+		idgen:      NewIDGen(),
+		broker:     broker,
 	}
 
+	var err error
 	// Add initial markets and flush to stores (if they're configured)
 	if len(pmkts) > 0 {
 		for _, mkt := range pmkts {
 			mkt := mkt
-			err = e.SubmitMarket(&mkt)
+			err = e.SubmitMarket(ctx, &mkt)
 			if err != nil {
 				e.log.Panic("Unable to submit market",
 					logging.Error(err))
 			}
-		}
-		if err := e.marketBuf.Flush(); err != nil {
-			e.log.Error("unable to flush markets", logging.Error(err))
-			return nil
 		}
 	}
 
@@ -218,7 +117,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
-	e.governance.ReloadConf(e.Config.Governance)
 }
 
 // NotifyTraderAccount notify the engine to create a new account for a party
@@ -246,18 +144,28 @@ func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
 }
 
 // SubmitMarket will submit a new market configuration to the network
-func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
+func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
+	if len(marketConfig.Id) == 0 {
+		return ErrNoMarketID
+	}
+	now, err := e.time.GetTimeNow()
+	if err != nil {
+		e.log.Error("Failed to get current Vega network time", logging.Error(err))
+		return err
+	}
 
-	// TODO: Check for existing market in MarketStore by Name.
-	// if __TBC_MarketExists__(marketConfig.Name) {
-	// 	return ErrMarketAlreadyExist
-	// }
+	// ensure the asset for this new market exisrts
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		return err
+	}
+	if !e.collateral.AssetExists(asset) {
+		e.log.Error("unable to create a market with an invalid asset",
+			logging.String("market-id", marketConfig.Id),
+			logging.String("asset-id", asset))
+	}
 
-	var mkt *Market
-	var err error
-
-	now, _ := e.time.GetTimeNow()
-	mkt, err = NewMarket(
+	mkt, err := NewMarket(
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
@@ -266,37 +174,27 @@ func (e *Engine) SubmitMarket(marketConfig *types.Market) error {
 		e.collateral,
 		e.party,
 		marketConfig,
-		e.candleBuf,
-		e.marginLevelsBuf,
-		e.settleBuf,
 		now,
 		e.broker,
 		e.idgen,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
-			logging.String("market-name", marketConfig.GetName()),
+			logging.String("market-id", marketConfig.Id),
 			logging.Error(err),
 		)
 	}
 
 	e.markets[marketConfig.Id] = mkt
 
-	// create market accounts
-	asset, err := marketConfig.GetAsset()
-	if err != nil {
-		return err
-	}
-
-	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(context.TODO(), marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	// we ignore the reponse, this cannot fail as the asset
+	// is already proven to exists a few line before
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 
 	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
-	e.markets[mkt.mkt.Id].partyEngine = e.party
 
-	// Save to market proto to buffer
-	e.marketBuf.Add(*marketConfig)
+	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
 	return nil
 }
 
@@ -420,17 +318,6 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
-	acceptedProposals := e.governance.OnChainTimeUpdate(t)
-	for _, proposal := range acceptedProposals {
-		if err := e.enactProposal(proposal); err != nil {
-			proposal.State = types.Proposal_STATE_FAILED
-			e.log.Error("unable to enact proposal",
-				logging.String("proposal-id", proposal.ID),
-				logging.Error(err))
-		}
-		e.proposalBuf.Add(*proposal)
-	}
-
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
 		mkt := mkt
@@ -442,29 +329,6 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 		}
 	}
 	timer.EngineTimeCounterAdd()
-}
-
-func (e *Engine) enactProposal(proposal *types.Proposal) error {
-	if newMarket := proposal.Terms.GetNewMarket(); newMarket != nil {
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("enacting proposal", logging.String("proposal-id", proposal.ID))
-		}
-		newMarket.Changes.Id = proposal.ID // reusing proposal ID for market ID
-		if err := e.SubmitMarket(newMarket.Changes); err != nil {
-			return err
-		}
-		proposal.State = types.Proposal_STATE_ENACTED
-		return nil
-	} else if updateMarket := proposal.Terms.GetUpdateMarket(); updateMarket != nil {
-
-		return errors.New("update market enactment is not implemented")
-	} else if updateNetwork := proposal.Terms.GetUpdateNetwork(); updateNetwork != nil {
-
-		return errors.New("update network enactment is not implemented")
-	}
-	// This error shouldn't be possible here,if we reach this point the governance engine
-	// has failed to perform the correct validation on the proposal itself
-	return ErrUnknownProposalChange
 }
 
 // Process any data updates (including state changes)
@@ -513,63 +377,19 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 
 // Generate flushes any data (including storing state changes) to underlying stores (if configured).
 func (e *Engine) Generate() error {
-	// governance
-	e.proposalBuf.Flush()
-	e.voteBuf.Flush()
+	ctx := context.TODO()
 
-	// margins levels
-	e.marginLevelsBuf.Flush()
-
+	// Market data is added to buffer on Generate
+	// do this before the time event -> time event flushes
+	for _, v := range e.markets {
+		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
+	}
 	// Transfers
 	// @TODO this event will be generated with a block context that has the trace ID
 	// this will have the effect of flushing the transfer response buffer
 	now, _ := e.time.GetTimeNow()
-	evt := events.NewTime(context.Background(), now)
+	evt := events.NewTime(ctx, now)
 	e.broker.Send(evt)
 	// Markets
-	if err := e.marketBuf.Flush(); err != nil {
-		return errors.Wrap(err, "failed to flush markets buffer")
-	}
-	// Market data is added to buffer on Generate
-	for _, v := range e.markets {
-		e.marketDataBuf.Add(v.GetMarketData())
-	}
-	e.marketDataBuf.Flush()
 	return nil
-}
-
-// SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
-func (e *Engine) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Submitting proposal",
-			logging.String("proposal-id", proposal.ID),
-			logging.String("proposal-reference", proposal.Reference),
-			logging.String("proposal-party", proposal.PartyID),
-			logging.String("proposal-terms", proposal.Terms.String()))
-	}
-
-	now, err := e.time.GetTimeNow()
-	if err != nil {
-		return errors.Wrap(err, "failed to submit a proposal")
-	}
-
-	proposal.Timestamp = now.UnixNano()
-	e.idgen.SetProposalID(proposal)
-	return e.governance.SubmitProposal(*proposal)
-}
-
-// VoteOnProposal sends proposal vote to governance engine
-func (e *Engine) VoteOnProposal(ctx context.Context, vote *types.Vote) error {
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Voting on proposal",
-			logging.String("proposal-id", vote.ProposalID),
-			logging.String("vote-party", vote.PartyID),
-			logging.String("vote-value", vote.Value.String()))
-	}
-	now, err := e.time.GetTimeNow()
-	if err != nil {
-		return errors.Wrap(err, "failed to vote on a proposal")
-	}
-	vote.Timestamp = now.UnixNano()
-	return e.governance.AddVote(*vote)
 }

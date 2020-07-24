@@ -18,7 +18,7 @@ var (
 )
 
 type Processor interface {
-	Process(ctx context.Context, payload []byte, cmd Command) error
+	Process(ctx context.Context, payload []byte, pubkey []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error
 }
 
@@ -87,8 +87,9 @@ func (c *codec) Process(payload []byte) error {
 	// get the block context, add transaction hash as trace ID
 	ctx := contextutil.WithTraceID(context.Background(), string(*payloadHash))
 	var (
-		data []byte
-		cmd  Command
+		data   []byte
+		pubkey []byte
+		cmd    Command
 	)
 	// first is that a signed or unsigned command?
 	switch CommandKind(payload[0]) {
@@ -99,6 +100,7 @@ func (c *codec) Process(payload []byte) error {
 			c.log.Error("unable to unmarshal signed bundle", logging.Error(err))
 			return err
 		}
+		pubkey = bundle.GetPubKey()
 		data, cmd, err = txDecode(bundle.Data)
 	case CommandKindUnsigned:
 		data, cmd, err = txDecode(payload[1:])
@@ -112,7 +114,7 @@ func (c *codec) Process(payload []byte) error {
 		return err
 	}
 	// Actually process the transaction
-	if err := c.p.Process(ctx, data, cmd); err != nil {
+	if err := c.p.Process(ctx, data, pubkey, cmd); err != nil {
 		return err
 	}
 	return nil

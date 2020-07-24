@@ -1,6 +1,7 @@
 package settlement_test
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"testing"
@@ -21,7 +22,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
-	buf       *mocks.MockBuffer
+	broker    *mocks.MockBroker
 	market    string
 }
 
@@ -234,7 +235,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 	pos.EXPECT().Size().AnyTimes().Return(data.size)
 	pos.EXPECT().Price().AnyTimes().Return(markPrice)
 	engine.Update([]events.MarketPosition{pos})
-	result := engine.SettleMTM(markPrice, []events.MarketPosition{pos})
+	result := engine.SettleMTM(context.Background(), markPrice, []events.MarketPosition{pos})
 	assert.Empty(t, result)
 }
 
@@ -277,7 +278,7 @@ func testAddNewTraderSelfTrade(t *testing.T) {
 	}
 	engine.Update(init)
 	engine.AddTrade(trade)
-	noTransfers := engine.SettleMTM(markPrice, positions)
+	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
 	assert.Len(t, noTransfers, 1)
 	assert.Nil(t, noTransfers[0].Transfer())
 }
@@ -321,7 +322,7 @@ func testAddNewTrader(t *testing.T) {
 	}
 	engine.Update(init)
 	engine.AddTrade(trade)
-	noTransfers := engine.SettleMTM(markPrice, positions)
+	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
 	assert.Len(t, noTransfers, 2)
 	for _, v := range noTransfers {
 		assert.Nil(t, v.Transfer())
@@ -422,7 +423,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		engine.Update(init)
 		engine.AddTrade(trade)
 		update := updates[k]
-		transfers := engine.SettleMTM(markPrice, update)
+		transfers := engine.SettleMTM(context.Background(), markPrice, update)
 		assert.NotEmpty(t, transfers)
 		assert.Equal(t, 3, len(transfers))
 		// start with losses, end with wins
@@ -510,7 +511,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// RemoveDistressed requires posMu and closedMu
-			engine.RemoveDistressed(marginEvts)
+			engine.RemoveDistressed(context.Background(), marginEvts)
 		}()
 		go func() {
 			defer wg.Done()
@@ -562,16 +563,15 @@ func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
-	buf := mocks.NewMockBuffer(ctrl)
-	buf.EXPECT().Add(gomock.Any()).AnyTimes()
-	buf.EXPECT().Flush().AnyTimes()
+	broker := mocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, buf),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker),
 		ctrl:      ctrl,
 		prod:      prod,
-		buf:       buf,
+		broker:    broker,
 		positions: nil,
 		market:    market,
 	}

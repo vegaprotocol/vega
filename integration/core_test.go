@@ -29,8 +29,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 
 	// general stuff like name, ID, code, asset, and initial mark price
-	mkt.Name = row.Cells[0].Value
-	parts := strings.Split(mkt.Name, "/")
+	parts := strings.Split(row.Cells[0].Value, "/")
 	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
 	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
 	prod := mkt.TradableInstrument.Instrument.GetFuture()
@@ -135,9 +134,6 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.colE,
 		mktsetup.party, // party-engine here!
 		mkt,
-		mktsetup.candles,
-		mktsetup.marginLevelsBuf,
-		NewSettlementStub(),
 		time.Now(),
 		mktsetup.broker,
 		execution.NewIDGen(),
@@ -155,7 +151,11 @@ func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 	current := len(mktsetup.broker.GetAccounts())
 	// this should create market accounts, currently same way it's done in execution engine (register market)
 	asset, _ := mktsetup.market.GetAsset()
-	_, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
+	_ = mktsetup.colE.EnableAsset(context.Background(), proto.Asset{
+		ID:     asset,
+		Symbol: asset,
+	})
+	_, _, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
 	if len(mktsetup.broker.GetAccounts()) != current+2 {
 		reporter.err = fmt.Errorf("error creating system accounts")
 	}
@@ -192,7 +192,7 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		asset, _ := mktsetup.market.GetAsset()
 		// get the account balance, ensure we can set the margin balance in this step if we want to
 		// and get the account ID's so we can keep track of the state correctly
-		general := mktsetup.colE.CreatePartyGeneralAccount(context.Background(), row.Cells[0].Value, asset)
+		general, _ := mktsetup.colE.CreatePartyGeneralAccount(context.Background(), row.Cells[0].Value, asset)
 		margin, _ := mktsetup.colE.CreatePartyMarginAccount(context.Background(), row.Cells[0].Value, market, asset)
 		_ = mktsetup.colE.IncrementBalance(context.Background(), margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
@@ -264,7 +264,7 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			Price:       uint64(price),
 			Size:        uint64(vol),
 			Remaining:   uint64(vol),
-			ExpiresAt:   tomorrow.Unix(),
+			ExpiresAt:   tomorrow.UnixNano(),
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),

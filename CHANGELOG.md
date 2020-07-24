@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.22.0
+
+*2020-07-20*
+
+This release primarily focuses on setting up Vega nodes to deal correctly with events sourced from other chains, working towards bridging assets from Ethereum. This includes responding to asset events from Ethereum, and support for validator nodes notarising asset movements and proposals.
+
+It also contains a lot of bug fixes and improvements, primarily around an internal refactor to using an event bus to communicate between packages. Also included are some corrections for order statuses that were incorrectly being reported or left outdated on the APIs.
+
+### New
+
+- [#1825](https://github.com/vegaprotocol/vega/pull/1825) Add new Notary package for tracking multisig decisions for governance
+- [#1837](https://github.com/vegaprotocol/vega/pull/1837) Add support for two-step governance processes such as asset proposals
+- [#1856](https://github.com/vegaprotocol/vega/pull/1856) Implement handling of external chain events from the Event Queue
+- [#1927](https://github.com/vegaprotocol/vega/pull/1927) Support ERC20 deposits
+- [#1987](https://github.com/vegaprotocol/vega/pull/1987) Add `OpenInterest` field to markets
+- [#1949](https://github.com/vegaprotocol/vega/pull/1949) Add `RejectionReason` field to rejected governance proposals
+
+### Improvements
+- 💥 [#1988](https://github.com/vegaprotocol/vega/pull/1988) REST: Update orders endpoints to use POST, not PUT or DELETE
+- 💥 [#1957](https://github.com/vegaprotocol/vega/pull/1957) GraphQL: Some endpoints returned a nullable array of Strings. Now they return an array of nullable strings
+- 💥 [#1928](https://github.com/vegaprotocol/vega/pull/1928) GraphQL & GRPC: Remove broken `open` parameter from Orders endpoints. It returned ambiguous results
+- 💥 [#1858](https://github.com/vegaprotocol/vega/pull/1858) Fix outdated order details for orders amended by cancel-and-replace
+- 💥 [#1849](https://github.com/vegaprotocol/vega/pull/1849) Fix incorrect status on partially filled trades that would have matched with another order by the same user. Was `stopped`, now `rejected`
+- 💥 [#1883](https://github.com/vegaprotocol/vega/pull/1883) REST & GraphQL: Market name is now based on the instrument name rather than being set separately
+- [#1699](https://github.com/vegaprotocol/vega/pull/1699) Migrate Margin package to event bus
+- [#1853](https://github.com/vegaprotocol/vega/pull/1853) Migrate Market package to event bus
+- [#1844](https://github.com/vegaprotocol/vega/pull/1844) Migrate Governance package to event
+- [#1877](https://github.com/vegaprotocol/vega/pull/1877) Migrate Position package to event
+- [#1838](https://github.com/vegaprotocol/vega/pull/1838) GraphQL: Orders now include their `version` and `updatedAt`, which are useful when dealing with amended orders
+- [#1841](https://github.com/vegaprotocol/vega/pull/1841) Fix: `expiresAt` on orders was validated at submission time, this has been moved to post-chain validation
+- [#1849](https://github.com/vegaprotocol/vega/pull/1849) Improve Order documentation for `Status` and `TimeInForce`
+- [#1861](https://github.com/vegaprotocol/vega/pull/1861) Remove single mutex in event bus
+- [#1866](https://github.com/vegaprotocol/vega/pull/1866) Add mutexes for event bus access
+- [#1889](https://github.com/vegaprotocol/vega/pull/1889) Improve event broker performance
+- [#1891](https://github.com/vegaprotocol/vega/pull/1891) Fix context for event subscribers
+- [#1889](https://github.com/vegaprotocol/vega/pull/1889) Address event bus performance issues
+- [#1892](https://github.com/vegaprotocol/vega/pull/1892) Improve handling for new chain connection proposal
+- [#1903](https://github.com/vegaprotocol/vega/pull/1903) Fix regressions in Candles API introduced by event bus
+- [#1940](https://github.com/vegaprotocol/vega/pull/1940) Add new asset proposals to GraphQL API
+- [#1943](https://github.com/vegaprotocol/vega/pull/1943) Validate list of allowed assets
+
 ## 0.21.0
 
 *2020-06-18*

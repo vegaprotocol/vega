@@ -31,11 +31,11 @@ type trTst struct {
 	store *mocks.MockTransferResponseStore
 }
 
-func getTestSub(t *testing.T) *trTst {
+func getTestSub(t *testing.T, ack bool) *trTst {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	store := mocks.NewMockTransferResponseStore(ctrl)
-	tr := subscribers.NewTransferResponse(ctx, store)
+	tr := subscribers.NewTransferResponse(ctx, store, ack)
 	return &trTst{
 		TransferResponse: tr,
 		ctrl:             ctrl,
@@ -46,7 +46,7 @@ func getTestSub(t *testing.T) *trTst {
 }
 
 func TestTypes(t *testing.T) {
-	tr := getTestSub(t)
+	tr := getTestSub(t, true)
 	defer tr.Finish()
 	types := tr.Types()
 	assert.Equal(t, 2, len(types))
@@ -64,7 +64,7 @@ func TestChannelPushOptional(t *testing.T) {
 }
 
 func testPushSeveralSuccess(t *testing.T) {
-	tr := getTestSub(t)
+	tr := getTestSub(t, true)
 	defer tr.Finish()
 	time := timeStub{
 		t: time.Now(),
@@ -91,7 +91,7 @@ func testPushSeveralSuccess(t *testing.T) {
 }
 
 func testChannelOptionalSuccess(t *testing.T) {
-	tr := getTestSub(t)
+	tr := getTestSub(t, false)
 	defer tr.Finish()
 	resps := []*types.TransferResponse{
 		{},
@@ -125,7 +125,7 @@ func testChannelOptionalSuccess(t *testing.T) {
 }
 
 func testChannelOptionalSkip(t *testing.T) {
-	tr := getTestSub(t)
+	tr := getTestSub(t, false)
 	defer tr.Finish()
 	resps := []*types.TransferResponse{
 		{},

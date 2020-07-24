@@ -272,7 +272,7 @@ steps:
         - refs/tags/*
 
   - name: build-multiarch
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:latest
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:1.14.4
     pull: always
     volumes:
       - name: gocache

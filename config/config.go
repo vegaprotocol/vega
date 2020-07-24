@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/governance"
@@ -19,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/positions"
@@ -27,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -36,31 +39,34 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	API        api.Config
-	Accounts   accounts.Config
-	Blockchain blockchain.Config
-	Candles    candles.Config
-	Collateral collateral.Config
-	Execution  execution.Config
-	Processor  processor.Config
-	Logging    logging.Config
-	Matching   matching.Config
-	Markets    markets.Config
-	Orders     orders.Config
-	Parties    parties.Config
-	Position   positions.Config
-	Risk       risk.Config
-	Settlement settlement.Config
-	Storage    storage.Config
-	Trades     trades.Config
-	Time       vegatime.Config
-	Monitoring monitoring.Config
-	Gateway    gateway.Config
-	Metrics    metrics.Config
-	Transfers  transfers.Config
-	Governance governance.Config
-	NodeWallet nodewallet.Config
-	Assets     assets.Config
+	API         api.Config
+	Accounts    accounts.Config
+	Blockchain  blockchain.Config
+	Candles     candles.Config
+	Collateral  collateral.Config
+	Execution   execution.Config
+	Processor   processor.Config
+	Logging     logging.Config
+	Matching    matching.Config
+	Markets     markets.Config
+	Orders      orders.Config
+	Parties     parties.Config
+	Position    positions.Config
+	Risk        risk.Config
+	Settlement  settlement.Config
+	Storage     storage.Config
+	Trades      trades.Config
+	Time        vegatime.Config
+	Monitoring  monitoring.Config
+	Gateway     gateway.Config
+	Metrics     metrics.Config
+	Transfers   transfers.Config
+	Governance  governance.Config
+	NodeWallet  nodewallet.Config
+	Assets      assets.Config
+	Notary      notary.Config
+	EvtForward  evtforward.Config
+	Subscribers subscribers.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -98,6 +104,9 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Governance:     governance.NewDefaultConfig(),
 		NodeWallet:     nodewallet.NewDefaultConfig(defaultStoreDirPath),
 		Assets:         assets.NewDefaultConfig(defaultStoreDirPath),
+		Notary:         notary.NewDefaultConfig(),
+		EvtForward:     evtforward.NewDefaultConfig(),
+		Subscribers:    subscribers.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,

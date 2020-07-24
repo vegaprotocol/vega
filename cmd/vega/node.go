@@ -10,11 +10,13 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -22,12 +24,14 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -41,30 +45,31 @@ import (
 )
 
 type AccountStore interface {
-	buffer.AccountStore
 	accounts.AccountStore
+	SaveBatch([]*types.Account) error
 	Close() error
 	ReloadConf(storage.Config)
 }
 
 type CandleStore interface {
-	buffer.CandleStore
+	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
+	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
 	candles.CandleStore
 	Close() error
 	ReloadConf(storage.Config)
 }
 
 type OrderStore interface {
-	buffer.OrderStore
 	orders.OrderStore
+	SaveBatch([]types.Order) error
 	GetMarketDepth(context.Context, string, uint64) (*proto.MarketDepth, error)
 	Close() error
 	ReloadConf(storage.Config)
 }
 
 type TradeStore interface {
-	buffer.TradeStore
 	trades.TradeStore
+	SaveBatch([]types.Trade) error
 	Close() error
 	ReloadConf(storage.Config)
 }
@@ -94,19 +99,12 @@ type NodeCommand struct {
 	accountSub     *subscribers.AccountSub
 	partySub       *subscribers.PartySub
 	tradeSub       *subscribers.TradeSub
-
-	orderBuf        *buffer.Order
-	tradeBuf        *buffer.Trade
-	partyBuf        *buffer.Party
-	marketBuf       *buffer.Market
-	accountBuf      *buffer.Account
-	candleBuf       *buffer.Candle
-	marketDataBuf   *buffer.MarketData
-	marginLevelsBuf *buffer.MarginLevels
-	settleBuf       *buffer.Settlement
-	lossSocBuf      *buffer.LossSocialization
-	proposalBuf     *buffer.Proposal
-	voteBuf         *buffer.Vote
+	marginLevelSub *subscribers.MarginLevelSub
+	governanceSub  *subscribers.GovernanceDataSub
+	voteSub        *subscribers.VoteSub
+	marketDataSub  *subscribers.MarketDataSub
+	newMarketSub   *subscribers.Market
+	candleSub      *subscribers.CandleSub
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -118,6 +116,8 @@ type NodeCommand struct {
 	transfersService  *transfers.Svc
 	riskService       *risk.Svc
 	governanceService *governance.Svc
+	notaryService     *notary.Svc
+	assetService      *assets.Svc
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -134,17 +134,25 @@ type NodeCommand struct {
 
 	executionEngine *execution.Engine
 	processor       *processor.Processor
-	mktscfg         []proto.Market
+	governance      *governance.Engine
+	collateral      *collateral.Engine
+
+	mktscfg []proto.Market
 
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
 
 	assets   *assets.Service
 	topology *validators.Topology
+	notary   *notary.Notary
+	evtfwd   *evtforward.EvtForwarder
+	erc      *validators.ExtResChecker
+	banking  *banking.Engine
 
 	// plugins
-	settlePlugin     *plugins.Positions
-	governancePlugin *plugins.Governance
+	settlePlugin *plugins.Positions
+	notaryPlugin *plugins.Notary
+	assetPlugin  *plugins.Asset
 }
 
 // Init initialises the node command.
@@ -206,6 +214,9 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.transfersService,
 		l.riskService,
 		l.governanceService,
+		l.notaryService,
+		l.evtfwd,
+		l.assetService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

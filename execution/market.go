@@ -49,6 +49,8 @@ var (
 	ErrEmptyMarketID = errors.New("invalid market id (empty)")
 	// ErrInvalidOrderType is returned if processed order has an invalid order type
 	ErrInvalidOrderType = errors.New("invalid order type")
+	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
+	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
 
 	networkPartyID = "network"
 )
@@ -78,11 +80,6 @@ type Market struct {
 	// deps engines
 	collateral  *collateral.Engine
 	partyEngine *Party
-
-	// buffers
-	candleBuf       CandleBuf
-	marginLevelsBuf MarginLevelsBuf
-	settleBuf       SettlementBuf
 
 	broker Broker
 	closed bool
@@ -122,9 +119,6 @@ func NewMarket(
 	collateralEngine *collateral.Engine,
 	partyEngine *Party,
 	mkt *types.Market,
-	candleBuf CandleBuf,
-	marginLevelsBuf MarginLevelsBuf,
-	settlementBuf SettlementBuf,
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
@@ -158,7 +152,7 @@ func NewMarket(
 		tradableInstrument.RiskModel,
 		getInitialFactors(log, mkt, asset),
 		book,
-		marginLevelsBuf,
+		broker,
 		now.UnixNano(),
 		mkt.GetId(),
 	)
@@ -167,7 +161,7 @@ func NewMarket(
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
 		mkt.Id,
-		settlementBuf,
+		broker,
 	)
 	positionEngine := positions.New(log, positionConfig)
 
@@ -185,9 +179,6 @@ func NewMarket(
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		partyEngine:        partyEngine,
-		candleBuf:          candleBuf,
-		marginLevelsBuf:    marginLevelsBuf,
-		settleBuf:          settlementBuf,
 		broker:             broker,
 	}
 	return market, nil
@@ -205,6 +196,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MidPrice:        (bestBidPrice + bestOfferPrice) / 2,
 		MarkPrice:       m.markPrice,
 		Timestamp:       m.currentTime.UnixNano(),
+		OpenInterest:    m.position.GetOpenInterest(),
 	}
 }
 
@@ -241,15 +233,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	m.risk.OnTimeUpdate(t)
 
-	// Only start candle generation once we have a non-zero(default) time from vega-time service
-	if m.currentTime.IsZero() {
-		_, err := m.candleBuf.Start(m.mkt.Id, t)
-		if err != nil {
-			m.log.Error("error when starting candle generation for market",
-				logging.String("market-id", m.mkt.Id), logging.Error(err))
-		}
-	}
-
 	closed = t.After(m.closingAt)
 	m.closed = closed
 	m.currentTime = t
@@ -268,74 +251,74 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			logging.String("market-id", m.mkt.Id))
 	}
 
-	err := m.candleBuf.Flush(m.mkt.Id, t)
+	timer.EngineTimeCounterAdd()
+
+	if !closed {
+		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
+		return
+	}
+	// market is closed, final settlement
+	// call settlement and stuff
+	positions, err := m.settlement.Settle(t, m.markPrice)
 	if err != nil {
-		m.log.Error("Failed to flush candles from buffer for market",
-			logging.String("market-id", m.mkt.Id),
+		m.log.Error(
+			"Failed to get settle positions on market close",
 			logging.Error(err),
 		)
-	}
-
-	if closed {
-		// call settlement and stuff
-		positions, err := m.settlement.Settle(t, m.markPrice)
+	} else {
+		transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 		if err != nil {
 			m.log.Error(
-				"Failed to get settle positions on market close",
+				"Failed to get ledger movements after settling closed market",
+				logging.String("market-id", m.GetID()),
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
+			// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
+			// this will be next block
+			evt := events.NewTransferResponse(ctx, transfers)
+			m.broker.Send(evt)
+			if m.log.GetLevel() == logging.DebugLevel {
+				// use transfers, unused var thingy
+				for _, v := range transfers {
+					if m.log.GetLevel() == logging.DebugLevel {
+						m.log.Debug(
+							"Got transfers on market close",
+							logging.String("transfer", fmt.Sprintf("%v", *v)),
+							logging.String("market-id", m.GetID()))
+					}
+				}
+			}
+
+			asset, _ := m.mkt.GetAsset()
+			// FIXME(JEREMY): once deposit and withdrawal
+			// are implemented with the new method, the partyEngine
+			// will be removed, this call will need to be changed to
+			// use a slice of parties stored in the current market
+			// until we refactor collateral engine to work per market maybe
+			parties := m.partyEngine.GetByMarket(m.GetID())
+			clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 			if err != nil {
-				m.log.Error(
-					"Failed to get ledger movements after settling closed market",
+				m.log.Error("Clear market error",
 					logging.String("market-id", m.GetID()),
-					logging.Error(err),
-				)
+					logging.Error(err))
 			} else {
-				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
-				// this will be next block
-				evt := events.NewTransferResponse(ctx, transfers)
+				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
-					for _, v := range transfers {
+					for _, v := range clearMarketTransfers {
 						if m.log.GetLevel() == logging.DebugLevel {
 							m.log.Debug(
-								"Got transfers on market close",
+								"Market cleared with success",
 								logging.String("transfer", fmt.Sprintf("%v", *v)),
 								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
-
-				asset, _ := m.mkt.GetAsset()
-				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
-				if err != nil {
-					m.log.Error("Clear market error",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				} else {
-					evt := events.NewTransferResponse(ctx, clearMarketTransfers)
-					m.broker.Send(evt)
-					if m.log.GetLevel() == logging.DebugLevel {
-						// use transfers, unused var thingy
-						for _, v := range clearMarketTransfers {
-							if m.log.GetLevel() == logging.DebugLevel {
-								m.log.Debug(
-									"Market cleared with success",
-									logging.String("transfer", fmt.Sprintf("%v", *v)),
-									logging.String("market-id", m.GetID()))
-							}
 						}
 					}
 				}
 			}
 		}
 	}
-
-	timer.EngineTimeCounterAdd()
 	return
 }
 
@@ -351,6 +334,15 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// set those at the begining as even rejected order get through the buffers
 	m.idgen.SetID(order)
 	order.Version = InitialOrderVersion
+	order.Status = types.Order_STATUS_ACTIVE
+
+	// Check the expiry time is valid
+	if order.ExpiresAt > 0 && order.ExpiresAt < order.CreatedAt {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidExpiresAtTime
+	}
 
 	if m.closed {
 		// adding order to the buffer first
@@ -384,6 +376,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, types.ErrInvalidMarketID
 	}
 
+	// TODO(): jeremy
+	// when new withdrawals and deposits are used only
+	// we will need to use the collateral engine
+	// and add a check in there to get the General account for
+	// this party and the market Asset
 	// Verify and add new parties
 	// party, _ := m.parties.GetByID(order.PartyID)
 	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
@@ -492,6 +489,13 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// Insert aggressive remaining order
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
+	m.handleConfirmation(ctx, order, confirmation)
+
+	orderValidity = "valid" // used in deferred func.
+	return confirmation, nil
+}
+
+func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, confirmation *types.OrderConfirmation) {
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
@@ -507,6 +511,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		m.setMarkPrice(confirmation.Trades[len(confirmation.Trades)-1])
 
 		// Insert all trades resulted from the executed order
+		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_SIDE_BUY {
@@ -517,25 +522,18 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			m.broker.Send(events.NewTradeEvent(ctx, *trade))
-
-			// Save to trade buffer for generating candles etc
-			err := m.candleBuf.AddTrade(*trade)
-			if err != nil {
-				m.log.Error("Failure adding trade to candle buffer after submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
 		}
+		m.broker.SendBatch(tradeEvts)
 
 		// now let's get the transfers for MTM settlement
 		evts := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleMTM(m.markPrice, evts)
+		settle := m.settlement.SettleMTM(ctx, m.markPrice, evts)
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(ctx, settle)
@@ -574,9 +572,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			}
 		}
 	}
-
-	orderValidity = "valid" // used in deferred func.
-	return confirmation, nil
 }
 
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
@@ -664,7 +659,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 
 		// remove accounts, positions and return
 		// from settlement engine first
-		m.settlement.RemoveDistressed(closed)
+		m.settlement.RemoveDistressed(ctx, closed)
 		// then from positions
 		closedMPs = m.position.RemoveDistressed(closedMPs)
 		asset, _ := m.mkt.GetAsset()
@@ -737,8 +732,9 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 	}
 
-	if confirmation.Trades != nil {
+	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
+		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
 			if no.Side == types.Side_SIDE_BUY {
@@ -754,21 +750,13 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// 0 out the BAD trader position
 			trade.Type = types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 
-			m.broker.Send(events.NewTradeEvent(ctx, *trade))
-
-			// Save to trade buffer for generating candles etc
-			err = m.candleBuf.AddTrade(*trade)
-			if err != nil {
-				m.log.Error("Failure adding trade to candle buffer after submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
-			// we skip setting the mark price when the network is trading
+			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(trade)
 		}
+		m.broker.SendBatch(tradeEvts)
 	}
 
 	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o); err != nil {
@@ -780,7 +768,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	}
 	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
 	// insurance pool, which needs to happen before we settle the non-distressed traders
-	m.settlement.RemoveDistressed(closed)
+	m.settlement.RemoveDistressed(ctx, closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
 	asset, _ := m.mkt.GetAsset()
 	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
@@ -799,7 +787,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	evt := m.position.Positions()
 
 	// settle MTM, the positions have changed
-	settle := m.settlement.SettleMTM(m.markPrice, evt)
+	settle := m.settlement.SettleMTM(ctx, m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
@@ -840,6 +828,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		Timestamp: m.currentTime.UnixNano(),
 	}
 
+	tradeEvts := make([]events.Event, 0, len(traders))
 	for i, trader := range traders {
 		tSide, nSide := types.Side_SIDE_SELL, types.Side_SIDE_SELL // one of them will have to sell
 		if trader.Size() < 0 {
@@ -902,17 +891,20 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Timestamp: partyOrder.CreatedAt,
 			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
 		}
-		m.broker.Send(events.NewTradeEvent(ctx, trade))
+		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, trade))
 
 		// 0 out margins levels for this trader
 		marginLevels.PartyID = trader.Party()
-		m.marginLevelsBuf.Add(marginLevels)
+		m.broker.Send(events.NewMarginLevelsEvent(ctx, marginLevels))
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("trader closed-out with success",
 				logging.String("party-id", trader.Party()),
 				logging.String("market-id", m.GetID()))
 		}
+	}
+	if len(tradeEvts) > 0 {
+		m.broker.SendBatch(tradeEvts)
 	}
 	return nil
 }
@@ -1320,11 +1312,12 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		ret, err := m.orderCancelReplace(existingOrder, amendedOrder)
+		confirmation, err := m.orderCancelReplace(existingOrder, amendedOrder)
 		if err == nil {
+			m.handleConfirmation(ctx, amendedOrder, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 		}
-		return ret, err
+		return confirmation, err
 	}
 
 	// if decrease in size or change in expiration date

@@ -234,6 +234,8 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+  "the sum of the size of all positions greater than 0."
+  openInterest: String!
 }
 
 type PreparedSubmitOrder {
@@ -351,6 +353,89 @@ type Query {
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignatures(
+    resourceId: String!
+  ): [NodeSignature!]
+
+  "An asset which is used in the vega network"
+  asset(
+   "Id of the asset"
+    assetId: String!
+  ): Asset
+
+  "The list of all assets in use in the vega network"
+  assets: [Asset!]
+}
+
+"Represents an asset in vega"
+type Asset {
+  "The id of the asset"
+  id: String!
+
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+
+  "The origin source of the asset (e.g: an erc20 asset)"
+  source: AssetSource!
+}
+
+"One of the possible asset sources"
+union AssetSource = BuiltinAsset | ERC20
+
+"An asset originated from an Ethereum ERC20 Token"
+type ERC20 {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+type BuiltinAsset {
+  "The id of the asset"
+  id: String!
+
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+}
+
+"Represents a signature for the approval of a resource from a validator"
+type NodeSignature {
+  "The id of the resource being signed for"
+  id: String!
+
+  "The signature, as base64 encoding"
+  signature: String
+
+  "The kind of signature this is (e.g: withdrawal, new asset, etc)"
+  kind: NodeSignatureKind
+}
+
+"Represents the type signature provided by a node"
+enum NodeSignatureKind {
+  "A signature for proposing a new asset into the network"
+  AssetNew
+
+  "A signature for allowing a withdrawal of funds"
+  AssetWithdrawal
 }
 
 "Statistics about the node"
@@ -442,19 +527,19 @@ type Statistics {
 
 "A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
-  "Size of an increment in price in terms of the quote currency (uint64)"
-  tickSize: Int
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
-"Some non continuous trading mode"
+"Frequent batch auctions trading mode"
 type DiscreteTrading {
-  "Duration of the trading (uint64)"
-  duration: Int
+  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
+  duration: Int!
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
-union TradingMode =
-ContinuousTrading
-| DiscreteTrading
+union TradingMode = ContinuousTrading | DiscreteTrading
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -497,7 +582,7 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 type InstrumentMetadata {
 
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
-  tags: [String]!
+  tags: [String!]
 }
 
 "An Ethereum oracle"
@@ -515,7 +600,7 @@ union Oracle = EthereumEvent
 "A Future product"
 type Future {
 
-  "The maturity date of the product (string)"
+  "The maturity date of the product (ISO8601/RFC3339 timestamp)"
   maturity: String!
 
   "The name of the asset (string)"
@@ -615,8 +700,6 @@ type Market {
 
   "Orders on a market"
   orders (
-    "Filter open orders only"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -733,8 +816,6 @@ type Party {
 
   "Orders relating to a party"
   orders(
-    "Is the order still open or not"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -854,6 +935,12 @@ type Order {
 
   "Reason for the order to be rejected"
   rejectionReason: RejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "UpdatedAt is the last time the order was altered"
+  updatedAt: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -1082,53 +1169,11 @@ enum AccountType {
   General
 }
 
-input InstrumentMetadatInput {
-  "An arbitrary list of tags to associated to associate to the Instrument"
-  tags: [String]!
-}
-
-input EthereumEventInput {
-  "The ID of the ethereum contract to use"
-  contractId: String!
-
-  "Name of the Ethereum event to listen to"
-  event: String!
-}
-
-input FutureInput {
-  "The maturity date of the product"
-  maturity: String!
-
-  "The name of the asset"
-  asset: String!
-
-  "The oracle used for this product"
-  ethereumOracle: EthereumEventInput!
-}
-
-input InstrumentInput {
-  "Uniquely identify an instrument accrods all instruments available on Vega"
-  id: String!
-
-  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
-  code: String!
-
-  "Full and fairly descriptive name for the instrument"
-  name: String!
-
-  "String representing the base (e.g. BTCUSD -> BTC is base)"
-  baseName: String!
-
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
-
-  initialMarkPrice: String!
-
-  "Metadata for this instrument"
-  metadata: InstrumentMetadatInput!
-
-  "A reference to or instance of a fully specified product, including all required product parameters for that product"
-  futureProduct: FutureInput!
+input SimpleRiskModelParamsInput {
+  "Risk factor for long"
+  factorLong: Float!
+  "Risk factor for short"
+  factorShort: Float!
 }
 
 input LogNormalModelParamsInput {
@@ -1140,13 +1185,6 @@ input LogNormalModelParamsInput {
   sigma: Float!
 }
 
-input SimpleRiskModelParamsInput {
-  "Risk factor for long"
-  factorLong: Float!
-  "Risk factor for short"
-  factorShort: Float!
-}
-
 input LogNormalRiskModelInput {
   "Lambda parameter of the risk model"
   riskAversionParameter: Float!
@@ -1156,57 +1194,98 @@ input LogNormalRiskModelInput {
   params: LogNormalModelParamsInput!
 }
 
-input SimpleRiskModelInput {
-  "Params for the simple risk model"
-  params: SimpleRiskModelParamsInput!
+input RiskParametersInput {
+  "Simple risk model parameters. Set only if risk model is Simple"
+  simple: SimpleRiskModelParamsInput
+  "Log normal risk model parameters. Set only if risk model is LogNormal"
+  logNormal: LogNormalRiskModelInput
 }
 
-input ScalingFactorsInput {
-  "the scaling factor that determines the margin level at which we have to search for more money"
-  searchLevel: Float!
-
-  "the scaling factor that determines the optimal margin level"
-  initialMargin: Float!
-
-  "The scaling factor that determines the overflow margin level"
-  collateralRelease: Float!
+"Future product configuration"
+input FutureProductInput {
+  "Future product maturity (ISO8601/RFC3339 timestamp)"
+  maturity: String!
+  "Product asset name"
+  asset: String!
 }
 
-
-input MarginCalculatorInput {
-  "The scaling factors that will be used for margin calculation"
-  scalingFactors: ScalingFactorsInput!
+type FutureProduct {
+  "Future product maturity (ISO8601/RFC3339 timestamp)"
+  maturity: String!
+  "Product asset name"
+  asset: String!
 }
 
-"Input variation of tradable instrument details"
-input TradableInstrumentInput {
-  instrument: InstrumentInput!
-
-  simpleRiskModel: SimpleRiskModelInput
-  logNormalRiskModel: LogNormalRiskModelInput
-
-  marginCalculator: MarginCalculatorInput
+input InstrumentConfigurationInput {
+  "Full and fairly descriptive name for the instrument"
+  name: String!
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
+  code: String!
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+  "Future product specification"
+  futureProduct: FutureProductInput
 }
 
+type InstrumentConfiguration {
+  "Full and fairly descriptive name for the instrument"
+  name: String!
+  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
+  code: String!
+  "String representing the base (e.g. BTCUSD -> BTC is base)"
+  baseName: String!
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+  "Future product specification"
+  futureProduct: FutureProduct
+}
 
+"A mode where Vega try to execute order as soon as they are received"
 input ContinuousTradingInput {
   "Size of an increment in price in terms of the quote currency"
   tickSize: Int!
 }
 
+"Frequent batch auctions trading mode"
 input DiscreteTradingInput {
-  "Duration of the trading"
+  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
+  "Size of an increment in price in terms of the quote currency"
+  tickSize: Int!
 }
 
-
-"Input variation of market details same to those defined in Market type"
-input MarketInput {
-  name: String!
-  tradableInstrument: TradableInstrumentInput!
-  continuousTradingMode: ContinuousTradingInput
-  discreteTradingMode: DiscreteTradingInput
+"""
+Allows creating new markets on the network
+"""
+input NewMarketInput {
+  "New market instrument configuration"
+  instrument: InstrumentConfigurationInput!
+  "Decimal places used for the new market"
   decimalPlaces: Int!
+  "New market risk configuration"
+  riskParameters: RiskParametersInput!
+  "Metadata for this instrument, tags"
+  metadata: [String!]
+
+  "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
+  continuousTrading: ContinuousTradingInput
+  "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
+  discreteTrading: DiscreteTradingInput
+}
+
+type NewMarket {
+  "New market instrument configuration"
+  instrument: InstrumentConfiguration!
+  "Decimal places used for the new market"
+  decimalPlaces: Int!
+  "New market risk configuration"
+  riskParameters: RiskModel!
+  "Metadata for this instrument, tags"
+  metadata: [String!]
+  "Trading mode"
+  tradingMode: TradingMode!
 }
 
 """
@@ -1220,14 +1299,10 @@ input UpdateMarketInput {
   marketId: String!
 }
 
-"""
-Allows creating new markets on the network
-"""
-type NewMarket {
-  market: Market!
-}
-input NewMarketInput {
-  market: MarketInput!
+"A new asset proposal change"
+type NewAsset {
+  "the source of the new Asset"
+  source: AssetSource!
 }
 
 "Allows submitting a proposal for changing governance network parameters"
@@ -1329,7 +1404,7 @@ input UpdateNetworkInput {
 }
 
 
-union ProposalChange = UpdateMarket | NewMarket | UpdateNetwork
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -1382,6 +1457,40 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateNetwork: UpdateNetworkInput
+
+  "a new Asset proposal, this will create a new asset to be used in the vega network"
+  newAsset: NewAssetInput
+
+}
+
+"A new asset to be added into vega"
+input NewAssetInput {
+  "A new builtin assed to be created"
+  builtinAsset: BuiltinAssetInput
+
+  "A new ERC20 asset to be created"
+  erc20: ERC20Input
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+input ERC20Input {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+input BuiltinAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
 }
 
 """

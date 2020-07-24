@@ -253,3 +253,6 @@ func (this *ErrorDetail) Validate() error {
 func (this *SignedBundle) Validate() error {
 	return nil
 }
+func (this *NodeSignature) Validate() error {
+	return nil
+}

@@ -6,11 +6,13 @@ import (
 	"net"
 
 	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -44,6 +46,9 @@ type GRPCServer struct {
 	transferResponseService *transfers.Svc
 	riskService             *risk.Svc
 	governanceService       *governance.Svc
+	notaryService           *notary.Svc
+	evtfwd                  EvtForwarder
+	assetService            *assets.Svc
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -71,6 +76,9 @@ func NewGRPCServer(
 	transferResponseService *transfers.Svc,
 	riskService *risk.Svc,
 	governanceService *governance.Svc,
+	notaryService *notary.Svc,
+	evtfwd EvtForwarder,
+	assetService *assets.Svc,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -93,6 +101,9 @@ func NewGRPCServer(
 		transferResponseService: transferResponseService,
 		riskService:             riskService,
 		governanceService:       governanceService,
+		notaryService:           notaryService,
+		evtfwd:                  evtfwd,
+		assetService:            assetService,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -185,6 +196,7 @@ func (g *GRPCServer) Start() {
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
 		governanceService: g.governanceService,
+		evtForwarder:      g.evtfwd,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
@@ -204,7 +216,9 @@ func (g *GRPCServer) Start() {
 		AccountsService:         g.accountsService,
 		TransferResponseService: g.transferResponseService,
 		RiskService:             g.riskService,
+		NotaryService:           g.notaryService,
 		governanceService:       g.governanceService,
+		AssetService:            g.assetService,
 		statusChecker:           g.statusChecker,
 		ctx:                     g.ctx,
 	}

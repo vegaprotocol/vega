@@ -25,11 +25,11 @@ type meStub struct {
 	t   events.Type
 }
 
-func getTestME(t *testing.T) *tstME {
+func getTestME(t *testing.T, ack bool) *tstME {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	return &tstME{
-		MarketEvent: subscribers.NewMarketEvent(ctx, logging.NewTestLogger()),
+		MarketEvent: subscribers.NewMarketEvent(ctx, subscribers.NewDefaultConfig(), logging.NewTestLogger(), ack),
 		ctx:         ctx,
 		cfunc:       cfunc,
 		ctrl:        ctrl,
@@ -47,7 +47,7 @@ func TestPush(t *testing.T) {
 }
 
 func testPushSuccess(t *testing.T) {
-	me := getTestME(t)
+	me := getTestME(t, true)
 	defer me.Finish()
 	for _, et := range events.MarketEvents() {
 		e := meStub{
@@ -59,7 +59,7 @@ func testPushSuccess(t *testing.T) {
 }
 
 func testPushIgnore(t *testing.T) {
-	me := getTestME(t)
+	me := getTestME(t, true)
 	defer me.Finish()
 	// this is not a market event
 	e := trStub{

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 )
@@ -15,20 +16,82 @@ type brokerStub struct {
 	mu   sync.Mutex
 	err  error
 	data map[events.Type][]events.Event
+	subT map[events.Type][]broker.Subscriber
 }
 
 func NewBrokerStub() *brokerStub {
 	return &brokerStub{
 		data: map[events.Type][]events.Event{},
+		subT: map[events.Type][]broker.Subscriber{},
 	}
+}
+
+func (b *brokerStub) Subscribe(sub broker.Subscriber) {
+	b.mu.Lock()
+	types := sub.Types()
+	for _, t := range types {
+		if _, ok := b.subT[t]; !ok {
+			b.subT[t] = []broker.Subscriber{}
+		}
+		b.subT[t] = append(b.subT[t], sub)
+	}
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) SendBatch(evts []events.Event) {
+	if len(evts) == 0 {
+		return
+	}
+	t := evts[0].Type()
+	b.mu.Lock()
+	if subs, ok := b.subT[t]; ok {
+		for _, sub := range subs {
+			if sub.Ack() {
+				sub.Push(evts...)
+				continue
+			}
+			for _, e := range evts {
+				select {
+				case <-sub.Closed():
+					continue
+				case <-sub.Skip():
+					continue
+				case sub.C() <- e:
+					continue
+				}
+			}
+		}
+	}
+	if _, ok := b.data[t]; !ok {
+		b.data[t] = []events.Event{}
+	}
+	b.data[t] = append(b.data[t], evts...)
+	b.mu.Unlock()
 }
 
 func (b *brokerStub) Send(e events.Event) {
 	b.mu.Lock()
-	if _, ok := b.data[e.Type()]; !ok {
-		b.data[e.Type()] = []events.Event{}
+	t := e.Type()
+	if subs, ok := b.subT[t]; ok {
+		for _, sub := range subs {
+			if sub.Ack() {
+				sub.Push(e)
+			} else {
+				select {
+				case <-sub.Closed():
+					continue
+				case <-sub.Skip():
+					continue
+				case sub.C() <- e:
+					continue
+				}
+			}
+		}
 	}
-	b.data[e.Type()] = append(b.data[e.Type()], e)
+	if _, ok := b.data[t]; !ok {
+		b.data[t] = []events.Event{}
+	}
+	b.data[t] = append(b.data[t], e)
 	b.mu.Unlock()
 }
 
@@ -112,6 +175,36 @@ func (b *brokerStub) GetAccounts() []events.Acc {
 		s = append(s, e)
 	}
 	return s
+}
+
+func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (proto.MarginLevels, error) {
+	batch := b.GetBatch(events.MarginLevelsEvent)
+	mapped := map[string]map[string]proto.MarginLevels{}
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.MarginLevels:
+			ml := et.MarginLevels()
+			if _, ok := mapped[ml.PartyID]; !ok {
+				mapped[ml.PartyID] = map[string]proto.MarginLevels{}
+			}
+			mapped[ml.PartyID][ml.MarketID] = ml
+		case events.MarginLevels:
+			ml := et.MarginLevels()
+			if _, ok := mapped[ml.PartyID]; !ok {
+				mapped[ml.PartyID] = map[string]proto.MarginLevels{}
+			}
+			mapped[ml.PartyID][ml.MarketID] = ml
+		}
+	}
+	mkts, ok := mapped[partyID]
+	if !ok {
+		return proto.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
+	}
+	ml, ok := mkts[marketID]
+	if !ok {
+		return proto.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
+	}
+	return ml, nil
 }
 
 func (b *brokerStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {

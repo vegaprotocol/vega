@@ -3,6 +3,8 @@ syntax = "proto3";
 package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
 // here begin trading modes
 
 message ContinuousTrading {
@@ -10,7 +12,9 @@ message ContinuousTrading {
 }
 
 message DiscreteTrading {
-  int64 duration = 1;
+  // Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
+  int64 durationNs = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
+  uint64 tickSize = 2;
 }
 
 // here end trading modes
@@ -104,17 +108,12 @@ message TradableInstrument {
 }
 
 message Market {
-
-  // 32 pseudo-random upper-case letters and digits
   string id = 1;
 
-  // a human-understandable name for the Market, perhaps including a currency pair and a maturity date
-  string name = 2;
-
-  TradableInstrument tradableInstrument = 3;
+  TradableInstrument tradableInstrument = 2;
 
   // the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
-  uint64 decimalPlaces = 4;
+  uint64 decimalPlaces = 3;
 
   oneof tradingMode {
     ContinuousTrading continuous = 100;

@@ -26,6 +26,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.MarketData
   MarginLevels:
     model: code.vegaprotocol.io/vega/proto.MarginLevels
+  NodeSignature:
+    model: code.vegaprotocol.io/vega/proto.NodeSignature
   Market:
     fields:
       orders:

@@ -29,6 +29,7 @@ type Wallet interface {
 type ETHWallet interface {
 	Wallet
 	Client() eth.ETHClient
+	BridgeAddress() string
 }
 
 type Service struct {

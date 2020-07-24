@@ -10,17 +10,20 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -35,14 +38,15 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"golang.org/x/crypto/ssh/terminal"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func envConfigPath() string {
@@ -143,7 +147,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
-	l.setupBuffers()
 	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
@@ -168,51 +171,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	err = l.nodeWallet.EnsureRequireWallets()
 	if err != nil {
 		return err
-	}
-
-	// initialize the assets service now
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
-	if err != nil {
-		return err
-	}
-
-	// TODO: remove that once we have infrastructure to use token through governance
-	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
-	if err != nil {
-		return err
-	}
-
-	for _, v := range assetSrcs {
-		v := v
-		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
-		if err != nil {
-			return fmt.Errorf("error instanciating asset %v\n", err)
-		}
-
-		asset, err := l.assets.Get(aid)
-		if err != nil {
-			return fmt.Errorf("unable to get asset %v\n", err)
-		}
-
-		// just a simple backoff here
-		err = backoff.Retry(
-			func() error {
-				err := asset.Validate()
-				if !asset.IsValid() {
-					return err
-				}
-				return nil
-			},
-			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-		)
-		if err != nil {
-			return fmt.Errorf("unable to instanciate new asset %v", err)
-		}
-		if err := l.assets.Enable(aid); err != nil {
-			return fmt.Errorf("unable to enable asset: %v", err)
-		}
-		l.Log.Info("new asset added successfully",
-			logging.String("asset", asset.String()))
 	}
 
 	return nil
@@ -246,31 +204,18 @@ func (l *NodeCommand) loadMarketsConfig() error {
 }
 
 func (l *NodeCommand) setupSubscibers() {
-	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore)
-	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore)
-	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts)
-	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore)
-	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore)
-}
-
-func (l *NodeCommand) setupBuffers() {
-	l.orderBuf = buffer.NewOrder(l.orderStore)
-	l.tradeBuf = buffer.NewTrade(l.tradeStore)
-	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.accountBuf = buffer.NewAccount(l.accounts)
-	l.candleBuf = buffer.NewCandle(l.candleStore)
-	l.marketBuf = buffer.NewMarket(l.marketStore)
-
-	l.marketDataBuf = buffer.NewMarketData()
-	l.marketDataBuf.Register(l.marketDataStore)
-
-	l.marginLevelsBuf = buffer.NewMarginLevels()
-	l.marginLevelsBuf.Register(l.riskStore)
-	l.settleBuf = buffer.NewSettlement()
-	l.lossSocBuf = buffer.NewLossSocialization()
-	l.proposalBuf = buffer.NewProposal()
-	l.voteBuf = buffer.NewVote()
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
+	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
+	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, true)
+	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, true)
+	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
+	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
+	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
+	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -327,6 +272,62 @@ func (l *NodeCommand) setupStorages() (err error) {
 	return
 }
 
+func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
+	var err error
+	// initialize the assets service now
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove that once we have infrastructure to use token through governance
+	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range assetSrcs {
+		v := v
+		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
+		if err != nil {
+			return fmt.Errorf("error instanciating asset %v\n", err)
+		}
+
+		asset, err := l.assets.Get(aid)
+		if err != nil {
+			return fmt.Errorf("unable to get asset %v\n", err)
+		}
+
+		// just a simple backoff here
+		err = backoff.Retry(
+			func() error {
+				err := asset.Validate()
+				if !asset.IsValid() {
+					return err
+				}
+				return nil
+			},
+			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to instanciate new asset %v", err)
+		}
+		if err := l.assets.Enable(aid); err != nil {
+			return fmt.Errorf("unable to enable asset: %v", err)
+		}
+
+		assetD := asset.ProtoAsset()
+		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
+			return fmt.Errorf("unable to enable asset in colateral: %v", err)
+		}
+
+		l.Log.Info("new asset added successfully",
+			logging.String("asset", asset.String()))
+	}
+
+	return nil
+}
+
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -336,44 +337,71 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 
-	broker := broker.New(l.ctx)
-	_ = broker.Subscribe(l.marketEventSub, false) // not required, use channel
-	broker.SubscribeBatch(true, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub)
+	// plugins
+	l.settlePlugin = plugins.NewPositions(l.ctx)
+	l.notaryPlugin = plugins.NewNotary(l.ctx)
+	l.assetPlugin = plugins.NewAsset(l.ctx)
+
+	l.broker = broker.New(l.ctx)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
+
+	now, _ := l.timeService.GetTimeNow()
+
+	//  create collateral
+	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
+	if err != nil {
+		log.Error("unable to initialise collateral", logging.Error(err))
+		return err
+	}
+
+	// TODO(): remove wheen asset are fully loaded through governance
+	// after the collateral is loaded, we want to load all the assets
+	l.loadAssets(l.collateral)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.candleBuf,
-		l.marketBuf,
-		l.marketDataBuf,
-		l.marginLevelsBuf,
-		l.settleBuf,
-		l.lossSocBuf,
-		l.proposalBuf,
-		l.voteBuf,
 		l.mktscfg,
-		broker,
+		l.collateral,
+		l.broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	commander := nodewallet.NewCommander(l.ctx, nil)
-	l.topology = validators.NewTopology(l.Log, nil)
+	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
+	commander, err := nodewallet.NewCommander(l.ctx, nil, wal)
+	if err != nil {
+		return err
+	}
+	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
+
+	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
+
+	netParams := governance.DefaultNetworkParameters(l.Log)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
+	if err != nil {
+		log.Error("unable to initialise governance", logging.Error(err))
+		return err
+	}
+
+	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
+
+	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
+	if err != nil {
+		return err
+	}
+
+	l.banking = banking.New(l.Log, l.collateral, l.erc, l.timeService)
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc, l.banking)
 	if err != nil {
 		return err
 	}
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
-
-	// plugins
-	l.settlePlugin = plugins.NewPositions(l.settleBuf, l.lossSocBuf)
-	l.settlePlugin.Start(l.ctx) // open channel from the start
-	l.governancePlugin = plugins.NewGovernance(l.proposalBuf, l.voteBuf)
-	l.governancePlugin.Start(l.ctx)
 
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)
@@ -411,7 +439,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
 
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.governancePlugin)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
@@ -421,6 +449,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
+	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
+	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) })
 	return
 }
 

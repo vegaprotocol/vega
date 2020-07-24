@@ -35,19 +35,17 @@ var (
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
 	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
+	// ErrAssetAlreadyEnabled signals the given asset has already been enabled in this engine
+	ErrAssetAlreadyEnabled = errors.New("asset already enabled")
+	// ErrInvalidAssetID signals that an asset id does not exists
+	ErrInvalidAssetID = errors.New("invalid asset ID")
 )
 
 // Broker send events
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/collateral Broker
 type Broker interface {
 	Send(event events.Event)
-}
-
-// LossSocializationBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/loss_socialization_buf_mock.go -package mocks code.vegaprotocol.io/vega/collateral LossSocializationBuf
-type LossSocializationBuf interface {
-	Add([]events.LossSocialization)
-	Flush()
+	SendBatch(events []events.Event)
 }
 
 // Engine is handling the power of the collateral
@@ -58,27 +56,32 @@ type Engine struct {
 
 	accs        map[string]*types.Account
 	broker      Broker
-	lossSocBuf  LossSocializationBuf
 	totalTokens uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
 	idbuf []byte
+
+	// TODO(): this is asset symbol -> asset as of now
+	// so it stay compatible with the current implemenetation which uses
+	// only the symbol to define an asset (e.g: VUSD, BTC, ETH)
+	// a separate issue will need to change that to id -> asset
+	enabledAssets map[string]types.Asset
 }
 
 // New instantiates a new collateral engine
-func New(log *logging.Logger, conf Config, broker Broker, lossSocBuf LossSocializationBuf, now time.Time) (*Engine, error) {
+func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 	return &Engine{
-		log:         log,
-		Config:      conf,
-		accs:        make(map[string]*types.Account, initialAccountSize),
-		broker:      broker,
-		currentTime: now.UnixNano(),
-		idbuf:       make([]byte, 256),
-		lossSocBuf:  lossSocBuf,
+		log:           log,
+		Config:        conf,
+		accs:          make(map[string]*types.Account, initialAccountSize),
+		broker:        broker,
+		currentTime:   now.UnixNano(),
+		idbuf:         make([]byte, 256),
+		enabledAssets: map[string]types.Asset{},
 	}, nil
 }
 
@@ -102,6 +105,25 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Lock()
 	e.Config = cfg
 	e.cfgMu.Unlock()
+}
+
+// EnableAsset adds a new asset in the collateral engine
+// this enable the asset to be used by new markets or
+// parties to deposit funds
+// FIXME(): use the ID later on
+func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
+	if e.AssetExists(asset.Symbol) {
+		return ErrAssetAlreadyEnabled
+	}
+	e.enabledAssets[asset.Symbol] = asset
+	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	return nil
+}
+
+// AssetExists no errors if the asset exists
+func (e *Engine) AssetExists(assetID string) bool {
+	_, ok := e.enabledAssets[assetID]
+	return ok
 }
 
 // this func uses named returns because it makes body of the func look clearer
@@ -219,6 +241,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		expectCollected int64
 	)
 
+	// create batch of events
+	brokerEvts := make([]events.Event, 0, len(transfers))
 	// iterate over transfer until we get the first win, so we need we accumulated all loss
 	for i, evt := range transfers {
 		transfer := evt.Transfer()
@@ -312,7 +336,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.Int64("amount", lsevt.amountLost),
 				logging.String("market-id", lsevt.market))
 
-			e.lossSocBuf.Add([]events.LossSocialization{lsevt})
+			brokerEvts = append(brokerEvts,
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount)))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -336,6 +361,9 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
+	if len(brokerEvts) > 0 {
+		e.broker.SendBatch(brokerEvts)
+	}
 	// if winidx is 0, this means we had now wind and loss, but may have some event which
 	// needs to be propagated forward so we return now.
 	if winidx == 0 {
@@ -378,8 +406,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				distr.Add(evt.Transfer())
 			}
 		}
-		evts := distr.Run()
-		e.lossSocBuf.Add(evts)
+		evts := distr.Run(ctx)
+		e.broker.SendBatch(evts)
 	}
 
 	// then we process all the wins
@@ -465,7 +493,6 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		marginEvts = append(marginEvts, marginEvt)
 	}
 
-	e.lossSocBuf.Flush()
 	if settle.Balance > 0 {
 		return nil, nil, ErrSettlementBalanceNotZero
 	}
@@ -871,6 +898,9 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 // CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
 // if no general account exist for the trader for the given asset
 func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error) {
+	if !e.AssetExists(asset) {
+		return "", ErrInvalidAssetID
+	}
 	marginID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
 		// OK no margin ID, so let's try to get the general id then
@@ -900,9 +930,11 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
-// CreatePartyGeneralAccount creates trader accounts for a given market
-// one account per market, per asset for each trader
-func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) string {
+// CreatePartyGeneralAccount create the general account for a trader
+func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error) {
+	if !e.AssetExists(asset) {
+		return "", ErrInvalidAssetID
+	}
 
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	if _, ok := e.accs[generalID]; !ok {
@@ -931,7 +963,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 
-	return generalID
+	return generalID, nil
 }
 
 // RemoveDistressed will remove all distressed trader in the event positions
@@ -983,7 +1015,10 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 
 // CreateMarketAccounts will create all required accounts for a market once
 // a new market is accepted through the network
-func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string, insurance uint64) (insuranceID, settleID string) {
+func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string, insurance uint64) (insuranceID, settleID string, err error) {
+	if !e.AssetExists(asset) {
+		return "", "", ErrInvalidAssetID
+	}
 	insuranceID = e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
 	_, ok := e.accs[insuranceID]
 	if !ok {
@@ -1020,6 +1055,9 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 // Withdraw will remove the specified amount from the trader
 // general account
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) error {
+	if !e.AssetExists(asset) {
+		return ErrInvalidAssetID
+	}
 	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
 		return ErrAccountDoesNotExist
@@ -1039,6 +1077,20 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 		return err
 	}
 	return nil
+}
+
+// Deposit will deposit the given amount into the party account
+func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint64) error {
+	if !e.AssetExists(asset) {
+		return ErrInvalidAssetID
+	}
+	// this will get or create the account basically
+	accID, err := e.CreatePartyGeneralAccount(ctx, partyID, asset)
+	if err != nil {
+		return err
+	}
+
+	return e.IncrementBalance(ctx, accID, amount)
 }
 
 // UpdateBalance will update the balance of a given account

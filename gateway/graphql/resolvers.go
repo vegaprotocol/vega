@@ -109,6 +109,9 @@ type TradingDataClient interface {
 	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyProposalsClient, error)
 	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyVotesClient, error)
 	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveProposalVotesClient, error)
+	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
+	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
+	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -216,9 +219,62 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*myProposalResolver)(r)
 }
 
+// NodeSignature ...
+func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
+	return (*myNodeSignatureResolver)(r)
+}
+
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Asset(ctx context.Context, id string) (*Asset, error) {
+	if len(id) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &protoapi.AssetByIDRequest{
+		ID: id,
+	}
+	res, err := r.tradingDataClient.AssetByID(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return AssetFromProto(res.Asset)
+}
+
+func (r *myQueryResolver) Assets(ctx context.Context) ([]*Asset, error) {
+	req := &protoapi.AssetsRequest{}
+	res, err := r.tradingDataClient.Assets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*Asset, 0, len(res.Assets))
+	for _, v := range res.Assets {
+		a, err := AssetFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+
+	return out, nil
+
+}
+
+func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*types.NodeSignature, error) {
+	if len(resourceID) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+
+	req := &protoapi.GetNodeSignaturesAggregateRequest{
+		ID: resourceID,
+	}
+	res, err := r.tradingDataClient.GetNodeSignaturesAggregate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Signatures, nil
+}
 
 func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, error) {
 	if id != nil {
@@ -241,6 +297,9 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 			r.log.Error("unable to convert market from proto", logging.Error(err))
 			return nil, err
 		}
+		// add the market name explicitly here as it does not
+		// come anymore from the market framework
+		market.Name = market.TradableInstrument.Instrument.Name
 		m = append(m, market)
 	}
 
@@ -259,6 +318,9 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 		r.log.Error("unable to convert market from proto", logging.Error(err))
 		return nil, err
 	}
+	// add the market name explicitly here as it does not
+	// come anymore from the market framework
+	market.Name = market.TradableInstrument.Instrument.Name
 	return market, nil
 }
 
@@ -316,7 +378,7 @@ func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version
 }
 
 func (r *myQueryResolver) OrderVersions(
-	ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*types.Order, error) {
+	ctx context.Context, orderID string, skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	reqest := &protoapi.OrderVersionsByIDRequest{
@@ -455,12 +517,10 @@ func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.Mar
 }
 
 func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByMarketRequest{
 		MarketID:   market.ID,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
@@ -472,7 +532,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *Market,
 }
 
 func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
-	skip *int, first *int, last *int) ([]*types.Trade, error) {
+	skip, first, last *int) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
 		MarketID:   market.ID,
@@ -599,6 +659,21 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, partyID
 
 // END: Market Resolver
 
+type myNodeSignatureResolver VegaResolverRoot
+
+func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *types.NodeSignature) (*string, error) {
+	sig := base64.StdEncoding.EncodeToString(obj.Sig)
+	return &sig, nil
+}
+
+func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *types.NodeSignature) (*NodeSignatureKind, error) {
+	kind, err := convertNodeSignatureKindFromProto(obj.Kind)
+	if err != nil {
+		return nil, err
+	}
+	return &kind, nil
+}
+
 // BEGIN: Party Resolver
 
 type myPartyResolver VegaResolverRoot
@@ -646,13 +721,11 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
-	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
+	skip, first, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
-	openOnly := open != nil && *open
 	req := protoapi.OrdersByPartyRequest{
 		PartyID:    party.Id,
-		Open:       openOnly,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
@@ -669,7 +742,7 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
-	market *string, skip *int, first *int, last *int) ([]*types.Trade, error) {
+	market *string, skip, first, last *int) ([]*types.Trade, error) {
 
 	var mkt string
 	if market != nil {
@@ -819,7 +892,15 @@ func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceDa
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	return getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	if p == nil && err == nil {
+		// the api could return an nil party in some cases
+		// e.g: when a party does not exists in the stores
+		// this is not an error, but here we are not checking
+		// if a party exists or not, but what party did propose
+		p = &types.Party{Id: data.Proposal.PartyID}
+	}
+	return p, err
 }
 
 func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
@@ -951,6 +1032,10 @@ type myMarketDataResolver VegaResolverRoot
 
 func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) OpenInterest(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.OpenInterest, 10), nil
 }
 
 func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1105,6 +1190,18 @@ func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderSt
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
+
+func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (string, error) {
+	if obj.UpdatedAt <= 0 {
+		return "", nil
+	}
+	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+}
+
+func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
+}
+
 func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil

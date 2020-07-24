@@ -14,16 +14,21 @@ type ME interface {
 
 type MarketEvent struct {
 	*Base
+	cfg Config
 	log *logging.Logger
 }
 
-func NewMarketEvent(ctx context.Context, log *logging.Logger) *MarketEvent {
+func NewMarketEvent(ctx context.Context, cfg Config, log *logging.Logger, ack bool) *MarketEvent {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.MarketEventLogLevel.Level)
 	m := &MarketEvent{
-		Base: newBase(ctx, 10), // the size of the buffer can be tweaked, maybe use config?
+		Base: NewBase(ctx, 10, ack), // the size of the buffer can be tweaked, maybe use config?
 		log:  log,
+		cfg:  cfg,
 	}
-	m.running = true
-	go m.loop()
+	if m.isRunning() {
+		go m.loop()
+	}
 	return m
 }
 
@@ -34,7 +39,7 @@ func (m *MarketEvent) loop() {
 			m.Halt()
 			return
 		case e := <-m.ch:
-			if m.running {
+			if m.isRunning() {
 				if me, ok := e.(ME); ok {
 					m.write(me)
 				}
@@ -43,12 +48,14 @@ func (m *MarketEvent) loop() {
 	}
 }
 
-func (m *MarketEvent) Push(e events.Event) {
-	me, ok := e.(ME)
-	if !ok {
-		return
+func (m *MarketEvent) Push(evts ...events.Event) {
+	for _, e := range evts {
+		me, ok := e.(ME)
+		if !ok {
+			return
+		}
+		m.write(me)
 	}
-	m.write(me)
 }
 
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use

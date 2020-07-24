@@ -26,7 +26,7 @@ func New(id string, asset *types.BuiltinAsset) *Builtin {
 	}
 }
 
-func (b *Builtin) Data() *types.Asset {
+func (b *Builtin) ProtoAsset() *types.Asset {
 	return b.asset
 }
 
@@ -42,8 +42,8 @@ func (b *Builtin) Validate() error {
 	return nil
 }
 
-func (b *Builtin) SignBridgeWhitelisting() ([]byte, error) {
-	return nil, nil
+func (b *Builtin) SignBridgeWhitelisting() ([]byte, []byte, error) {
+	return nil, nil, nil
 }
 
 func (b *Builtin) ValidateWithdrawal() error {

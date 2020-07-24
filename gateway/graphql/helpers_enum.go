@@ -6,6 +6,30 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+func convertNodeSignatureKindToToProto(x NodeSignatureKind) (types.NodeSignatureKind, error) {
+	switch x {
+	case NodeSignatureKindAssetNew:
+		return types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW, nil
+	case NodeSignatureKindAssetWithdrawal:
+		return types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL, nil
+	default:
+		err := fmt.Errorf("failed to convert NodeSignatureKind from GraphQL to Proto: %v", x)
+		return types.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED, err
+	}
+}
+
+func convertNodeSignatureKindFromProto(x types.NodeSignatureKind) (NodeSignatureKind, error) {
+	switch x {
+	case types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW:
+		return NodeSignatureKindAssetNew, nil
+	case types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL:
+		return NodeSignatureKindAssetWithdrawal, nil
+	default:
+		err := fmt.Errorf("failed to convert NodeSignatureKind from proto to graphql: %v", x)
+		return NodeSignatureKindAssetNew, err
+	}
+}
+
 // convertAccountTypeToProto converts a GraphQL enum to a Proto enum
 func convertAccountTypeToProto(x AccountType) (types.AccountType, error) {
 	switch x {

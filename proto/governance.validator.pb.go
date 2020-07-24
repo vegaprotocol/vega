@@ -18,9 +18,87 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *NetworkConfiguration) Validate() error {
+	if this.MarginConfiguration != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginConfiguration); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarginConfiguration", err)
+		}
+	}
 	return nil
 }
 func (this *UpdateMarket) Validate() error {
+	return nil
+}
+func (this *FutureProduct) Validate() error {
+	if this.Maturity == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Maturity", fmt.Errorf(`value '%v' must not be an empty string`, this.Maturity))
+	}
+	if this.Asset == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Asset", fmt.Errorf(`value '%v' must not be an empty string`, this.Asset))
+	}
+	return nil
+}
+func (this *InstrumentConfiguration) Validate() error {
+	if this.Name == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Name", fmt.Errorf(`value '%v' must not be an empty string`, this.Name))
+	}
+	if this.Code == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Code", fmt.Errorf(`value '%v' must not be an empty string`, this.Code))
+	}
+	if this.BaseName == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("BaseName", fmt.Errorf(`value '%v' must not be an empty string`, this.BaseName))
+	}
+	if this.QuoteName == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("QuoteName", fmt.Errorf(`value '%v' must not be an empty string`, this.QuoteName))
+	}
+	if oneOfNester, ok := this.GetProduct().(*InstrumentConfiguration_Future); ok {
+		if oneOfNester.Future != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Future); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Future", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *NewMarketConfiguration) Validate() error {
+	if nil == this.Instrument {
+		return github_com_mwitkow_go_proto_validators.FieldError("Instrument", fmt.Errorf("message must exist"))
+	}
+	if this.Instrument != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Instrument); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Instrument", err)
+		}
+	}
+	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_Simple); ok {
+		if oneOfNester.Simple != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Simple); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Simple", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_LogNormal); ok {
+		if oneOfNester.LogNormal != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LogNormal); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LogNormal", err)
+			}
+		}
+	}
+	if !(this.DecimalPlaces < 150) {
+		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '150'`, this.DecimalPlaces))
+	}
+	if oneOfNester, ok := this.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
+		if oneOfNester.Continuous != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Continuous); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Continuous", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetTradingMode().(*NewMarketConfiguration_Discrete); ok {
+		if oneOfNester.Discrete != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Discrete); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Discrete", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *NewMarket) Validate() error {
@@ -113,6 +191,8 @@ func (this *GovernanceData) Validate() error {
 			}
 		}
 	}
+	// Validation of proto3 map<> fields is unsupported.
+	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
 func (this *Proposal) Validate() error {

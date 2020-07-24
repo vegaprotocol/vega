@@ -1,6 +1,8 @@
 package gql
 
 import (
+	"fmt"
+
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
@@ -9,6 +11,8 @@ import (
 var (
 	// ErrNilTradingMode ...
 	ErrNilTradingMode = errors.New("nil trading mode")
+	// ErrAmbiguousTradingMode ...
+	ErrAmbiguousTradingMode = errors.New("more than one trading mode selected")
 	// ErrUnimplementedTradingMode ...
 	ErrUnimplementedTradingMode = errors.New("unimplemented trading mode")
 	// ErrNilMarket ...
@@ -35,8 +39,10 @@ var (
 	ErrNilFuture = errors.New("nil future")
 	// ErrNilInstrument ...
 	ErrNilInstrument = errors.New("nil instrument")
-	// ErrNilDiscreteTradingDuration ...
-	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
+	// ErrTradingDurationNegative ...
+	ErrTradingDurationNegative = errors.New("invalid trading duration (negative)")
+	// ErrTickSizeNegative ...
+	ErrTickSizeNegative = errors.New("invalid tick size (negative)")
 	// ErrNilContinuousTradingTickSize ...
 	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
 	// ErrNilScalingFactors ...
@@ -51,24 +57,43 @@ var (
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
 	// ErrInvalidProposalState ...
 	ErrInvalidProposalState = errors.New("invalid proposal state")
+	// ErrInvalidRiskConfiguration ...
+	ErrInvalidRiskConfiguration = errors.New("invalid risk configuration")
+	// ErrNilAssetSource returned when an asset source is not specified at creation
+	ErrNilAssetSource = errors.New("nil asset source")
+	// ErrUnimplementedAssetSource returned when an asset source specified at creation is not recognised
+	ErrUnimplementedAssetSource = errors.New("unimplemented asset source")
+	// ErrMultipleProposalChangesSpecified is raised when multiple proposal changes are set
+	// (non-null) for a singe proposal terms
+	ErrMultipleProposalChangesSpecified = errors.New("multiple proposal changes specified")
+	// ErrMultipleAssetSourcesSpecified is raised when multiple asset source are specified
+	ErrMultipleAssetSourcesSpecified = errors.New("multiple asset sources specified")
 )
 
 // IntoProto ...
-func (ct *ContinuousTrading) IntoProto() (*types.Market_Continuous, error) {
-	if ct.TickSize == nil {
-		return nil, ErrNilContinuousTradingTickSize
+func (c *ContinuousTrading) IntoProto() (*types.Market_Continuous, error) {
+	if c.TickSize < 0 {
+		return nil, ErrTickSizeNegative
 	}
-	return &types.Market_Continuous{Continuous: &types.ContinuousTrading{TickSize: uint64(*ct.TickSize)}}, nil
+	return &types.Market_Continuous{
+		Continuous: &types.ContinuousTrading{
+			TickSize: uint64(c.TickSize),
+		},
+	}, nil
 }
 
 // IntoProto ...
-func (dt *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
-	if dt.Duration == nil {
-		return nil, ErrNilDiscreteTradingDuration
+func (d *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
+	if d.TickSize < 0 {
+		return nil, ErrTickSizeNegative
+	}
+	if d.Duration < 0 {
+		return nil, ErrTradingDurationNegative
 	}
 	return &types.Market_Discrete{
 		Discrete: &types.DiscreteTrading{
-			Duration: int64(*dt.Duration),
+			TickSize:   uint64(d.TickSize),
+			DurationNs: int64(d.Duration),
 		},
 	}, nil
 }
@@ -133,7 +158,7 @@ func (im *InstrumentMetadata) IntoProto() (*types.InstrumentMetadata, error) {
 		Tags: []string{},
 	}
 	for _, v := range im.Tags {
-		pim.Tags = append(pim.Tags, *v)
+		pim.Tags = append(pim.Tags, v)
 	}
 	return pim, nil
 }
@@ -263,15 +288,16 @@ func (m *Market) IntoProto() (*types.Market, error) {
 
 // ContinuousTradingFromProto ...
 func ContinuousTradingFromProto(pct *types.ContinuousTrading) (*ContinuousTrading, error) {
-	ts := int(pct.TickSize)
-	return &ContinuousTrading{TickSize: &ts}, nil
+	return &ContinuousTrading{
+		TickSize: int(pct.TickSize),
+	}, nil
 }
 
 // DiscreteTradingFromProto ...
 func DiscreteTradingFromProto(pdt *types.DiscreteTrading) (*DiscreteTrading, error) {
-	dur := int(pdt.Duration)
 	return &DiscreteTrading{
-		Duration: &dur,
+		Duration: int(pdt.DurationNs),
+		TickSize: int(pdt.TickSize),
 	}, nil
 }
 
@@ -291,18 +317,33 @@ func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	}
 }
 
+// NewMarketTradingModeFromProto ...
+func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
+	if ptm == nil {
+		return nil, ErrNilTradingMode
+	}
+	switch ptmimpl := ptm.(type) {
+	case *types.NewMarketConfiguration_Continuous:
+		return ContinuousTradingFromProto(ptmimpl.Continuous)
+	case *types.NewMarketConfiguration_Discrete:
+		return DiscreteTradingFromProto(ptmimpl.Discrete)
+	default:
+		return nil, ErrUnimplementedTradingMode
+	}
+}
+
 // InstrumentMetadataFromProto ...
 func InstrumentMetadataFromProto(pim *types.InstrumentMetadata) (*InstrumentMetadata, error) {
 	if pim == nil {
 		return nil, ErrNilInstrumentMetadata
 	}
 	im := &InstrumentMetadata{
-		Tags: []*string{},
+		Tags: []string{},
 	}
 
 	for _, v := range pim.Tags {
 		v := v
-		im.Tags = append(im.Tags, &v)
+		im.Tags = append(im.Tags, v)
 	}
 
 	return im, nil
@@ -486,7 +527,6 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 	var err error
 	mkt := &Market{}
 	mkt.ID = pmkt.Id
-	mkt.Name = pmkt.Name
 	mkt.DecimalPlaces = int(pmkt.DecimalPlaces)
 	mkt.TradingMode, err = TradingModeFromProto(pmkt.TradingMode)
 	if err != nil {
@@ -501,11 +541,70 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 
 	return mkt, nil
 }
+func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
+	if future := instrument.GetFuture(); future != nil {
+		i.FutureProduct = &FutureProduct{
+			Asset:    future.Asset,
+			Maturity: future.Maturity,
+		}
+	} else {
+		return ErrNilProduct
+	}
+	return nil
+}
 
-// IntoProto ...
-func (a AccountType) IntoProto() types.AccountType {
-	at, _ := convertAccountTypeToProto(a)
-	return at
+// RiskConfigurationFromProto ...
+func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
+	switch params := newMarket.RiskParameters.(type) {
+	case *types.NewMarketConfiguration_Simple:
+		return &SimpleRiskModel{
+			Params: &SimpleRiskModelParams{
+				FactorLong:  params.Simple.FactorLong,
+				FactorShort: params.Simple.FactorShort,
+			},
+		}, nil
+	case *types.NewMarketConfiguration_LogNormal:
+		return &LogNormalRiskModel{
+			RiskAversionParameter: params.LogNormal.RiskAversionParameter,
+			Tau:                   params.LogNormal.Tau,
+			Params: &LogNormalModelParams{
+				Mu:    params.LogNormal.Params.Mu,
+				R:     params.LogNormal.Params.R,
+				Sigma: params.LogNormal.Params.Sigma,
+			},
+		}, nil
+	default:
+		return nil, ErrInvalidRiskConfiguration
+	}
+}
+
+// NewMarketFromProto ...
+func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, error) {
+	if newMarket == nil {
+		return nil, ErrNilMarket
+	}
+	risk, err := RiskConfigurationFromProto(newMarket)
+	if err != nil {
+		return nil, err
+	}
+	mode, err := NewMarketTradingModeFromProto(newMarket.TradingMode)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &NewMarket{
+		Instrument: &InstrumentConfiguration{
+			Name:      newMarket.Instrument.Name,
+			Code:      newMarket.Instrument.Code,
+			BaseName:  newMarket.Instrument.BaseName,
+			QuoteName: newMarket.Instrument.QuoteName,
+		},
+		DecimalPlaces:  int(newMarket.DecimalPlaces),
+		RiskParameters: risk,
+		TradingMode:    mode,
+	}
+	result.Instrument.assignProductFromProto(newMarket.Instrument)
+	return result, nil
 }
 
 // ProposalTermsFromProto ...
@@ -517,169 +616,247 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 	if terms.GetUpdateMarket() != nil {
 		result.Change = nil
 	} else if newMarket := terms.GetNewMarket(); newMarket != nil {
-		market, err := MarketFromProto(newMarket.Changes)
+		marketConfig, err := NewMarketFromProto(newMarket.Changes)
 		if err != nil {
 			return nil, err
 		}
-		result.Change = &NewMarket{Market: market}
+		result.Change = marketConfig
 	} else if terms.GetUpdateNetwork() != nil {
 		result.Change = nil
+	} else if newAsset := terms.GetNewAsset(); newAsset != nil {
+		newAsset, err := NewAssetFromProto(newAsset)
+		if err != nil {
+			return nil, err
+		}
+		result.Change = newAsset
+
 	}
 	return result, nil
 }
 
 // IntoProto ...
-func (i *InstrumentInput) IntoProto() (*types.Instrument, error) {
-	initMarkPrice, err := safeStringUint64(i.InitialMarkPrice)
-	if err != nil {
-		return nil, err
+func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfiguration, error) {
+	if len(i.Name) <= 0 {
+		return nil, errors.New("Instrument.Name: string cannot be empty")
 	}
-	return &types.Instrument{
-		Id:        i.ID,
-		Code:      i.Code,
+	if len(i.Code) <= 0 {
+		return nil, errors.New("Instrument.Code: string cannot be empty")
+	}
+	if len(i.BaseName) <= 0 {
+		return nil, errors.New("Instrument.BaseName: string cannot be empty")
+	}
+	if len(i.QuoteName) <= 0 {
+		return nil, errors.New("Instrument.QuoteName: string cannot be empty")
+	}
+
+	result := &types.InstrumentConfiguration{
 		Name:      i.Name,
+		Code:      i.Code,
 		BaseName:  i.BaseName,
 		QuoteName: i.QuoteName,
-		Metadata: &types.InstrumentMetadata{
-			Tags: removePointers(i.Metadata.Tags),
-		},
-		InitialMarkPrice: initMarkPrice,
-		Product:          nil,
-	}, nil
-}
-
-// IntoProto ...
-func (m *MarginCalculatorInput) IntoProto() (*types.MarginCalculator, error) {
-	if m == nil {
-		return nil, ErrNilMarginCalculator
 	}
-	return &types.MarginCalculator{
-		ScalingFactors: &types.ScalingFactors{
-			SearchLevel:       m.ScalingFactors.SearchLevel,
-			InitialMargin:     m.ScalingFactors.InitialMargin,
-			CollateralRelease: m.ScalingFactors.CollateralRelease,
-		},
-	}, nil
-}
 
-func (f *FutureInput) oracleIntoProto(pf *types.Future) error {
-	if f.EthereumOracle != nil {
-		pf.Oracle = &types.Future_EthereumEvent{
-			EthereumEvent: &types.EthereumEvent{
-				ContractID: f.EthereumOracle.ContractID,
-				Event:      f.EthereumOracle.Event,
-			},
+	if i.FutureProduct != nil {
+		if len(i.FutureProduct.Asset) <= 0 {
+			return nil, errors.New("FutureProduct.Asset: string cannot be empty")
 		}
-		return nil
-	}
-	return ErrNilOracle
-}
+		if len(i.FutureProduct.Maturity) <= 0 {
+			return nil, errors.New("FutureProduct.Maturity: string cannot be empty")
+		}
 
-func (i *InstrumentInput) productInputIntoProto(pinst *types.Instrument) error {
-	if future := i.FutureProduct; future != nil {
-		f := &types.Future{
-			Maturity: future.Maturity,
-			Asset:    future.Asset,
-		}
-		future.oracleIntoProto(f)
-		pinst.Product = &types.Instrument_Future{Future: f}
-		return nil
-	}
-	return ErrNilProduct
-}
-
-func (t *TradableInstrumentInput) riskModelInputIntoProto(trIn *types.TradableInstrument) error {
-	if t.SimpleRiskModel != nil {
-		trIn.RiskModel = &types.TradableInstrument_SimpleRiskModel{
-			SimpleRiskModel: &types.SimpleRiskModel{
-				Params: &types.SimpleModelParams{
-					FactorLong:  t.SimpleRiskModel.Params.FactorLong,
-					FactorShort: t.SimpleRiskModel.Params.FactorShort,
-				},
-			},
-		}
-	} else if t.LogNormalRiskModel != nil {
-		trIn.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
-			LogNormalRiskModel: &types.LogNormalRiskModel{
-				RiskAversionParameter: t.LogNormalRiskModel.RiskAversionParameter,
-				Tau:                   t.LogNormalRiskModel.Tau,
-				Params: &types.LogNormalModelParams{
-					Mu:    t.LogNormalRiskModel.Params.Mu,
-					R:     t.LogNormalRiskModel.Params.R,
-					Sigma: t.LogNormalRiskModel.Params.Sigma,
-				},
+		result.Product = &types.InstrumentConfiguration_Future{
+			Future: &types.FutureProduct{
+				Asset:    i.FutureProduct.Asset,
+				Maturity: i.FutureProduct.Maturity,
 			},
 		}
 	} else {
-		return ErrNilRiskModel
+		return nil, ErrNilProduct
 	}
-	return nil
-}
-
-// IntoProto ...
-func (t *TradableInstrumentInput) IntoProto() (*types.TradableInstrument, error) {
-	instrument, err := t.Instrument.IntoProto()
-	if err != nil {
-		return nil, err
-	}
-	calc, err := t.MarginCalculator.IntoProto()
-	if err != nil {
-		return nil, err
-	}
-	result := &types.TradableInstrument{
-		Instrument:       instrument,
-		MarginCalculator: calc,
-		RiskModel:        nil,
-	}
-	if err := t.Instrument.productInputIntoProto(result.Instrument); err != nil {
-		return nil, err
-	}
-	if err := t.riskModelInputIntoProto(result); err != nil {
-		return nil, err
-	}
-
 	return result, nil
 }
 
-func (m *MarketInput) tradingModeInputIntoProto(market *types.Market) error {
-	if m.ContinuousTradingMode != nil {
-		if m.ContinuousTradingMode.TickSize < 0 {
-			return ErrInvalidTickSize
-		}
-		market.TradingMode = &types.Market_Continuous{
-			Continuous: &types.ContinuousTrading{
-				TickSize: uint64(m.ContinuousTradingMode.TickSize),
-			},
-		}
-	} else if m.DiscreteTradingMode != nil {
-		market.TradingMode = &types.Market_Discrete{
-			Discrete: &types.DiscreteTrading{
-				Duration: int64(m.DiscreteTradingMode.Duration),
-			},
-		}
-	} else {
+// IntoProto ...
+func (l *LogNormalModelParamsInput) IntoProto() (*types.LogNormalModelParams, error) {
+	if l.Sigma < 0. {
+		return nil, errors.New("LogNormalRiskModelParams.Sigma: needs to be any strictly non-negative float")
+	}
+	return &types.LogNormalModelParams{
+		Mu:    l.Mu,
+		R:     l.R,
+		Sigma: l.Sigma,
+	}, nil
+}
+
+// IntoProto ...
+func (l *LogNormalRiskModelInput) IntoProto() (*types.NewMarketConfiguration_LogNormal, error) {
+	if l.RiskAversionParameter <= 0. || l.RiskAversionParameter >= 1. {
+		return nil, errors.New("LogNormalRiskModel.RiskAversionParameter: needs to be strictly greater than 0 and strictly smaller than 1")
+	}
+	if l.Tau < 0. {
+		return nil, errors.New("LogNormalRiskModel.Tau: needs to be any strictly non-negative float")
+	}
+
+	params, err := l.Params.IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.NewMarketConfiguration_LogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: l.RiskAversionParameter,
+			Tau:                   l.Tau,
+			Params:                params,
+		},
+	}, nil
+}
+
+// IntoProto ...
+func (s *SimpleRiskModelParamsInput) IntoProto() *types.NewMarketConfiguration_Simple {
+	return &types.NewMarketConfiguration_Simple{
+		Simple: &types.SimpleModelParams{
+			FactorLong:  s.FactorLong,
+			FactorShort: s.FactorShort,
+		},
+	}
+}
+
+// IntoProto ...
+func (r *RiskParametersInput) IntoProto(target *types.NewMarketConfiguration) error {
+	if r.Simple != nil {
+		target.RiskParameters = r.Simple.IntoProto()
+		return nil
+	} else if r.LogNormal != nil {
+		var err error
+		target.RiskParameters, err = r.LogNormal.IntoProto()
+		return err
+	}
+	return ErrNilRiskModel
+}
+
+// TradingModeIntoProto ...
+func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfiguration) error {
+	if n.ContinuousTrading != nil && n.DiscreteTrading != nil {
+		return ErrAmbiguousTradingMode
+	} else if n.ContinuousTrading == nil && n.DiscreteTrading == nil {
 		return ErrNilTradingMode
+	}
+
+	if n.ContinuousTrading != nil {
+		if n.ContinuousTrading.TickSize < 0 {
+			return errors.New("ContinuousTrading.TickSize: cannot be < 0")
+		}
+		target.TradingMode = &types.NewMarketConfiguration_Continuous{
+			Continuous: &types.ContinuousTrading{
+				TickSize: uint64(n.ContinuousTrading.TickSize),
+			},
+		}
+	} else if n.DiscreteTrading != nil {
+		if n.DiscreteTrading.TickSize < 0 {
+			return errors.New("DiscreteTrading.TickSize: cannot be < 0")
+		}
+		if n.DiscreteTrading.Duration <= 0 {
+			return errors.New("DiscreteTrading.Duration: cannot be < 0")
+		}
+		target.TradingMode = &types.NewMarketConfiguration_Discrete{
+			Discrete: &types.DiscreteTrading{
+				DurationNs: int64(n.DiscreteTrading.Duration),
+				TickSize:   uint64(n.DiscreteTrading.TickSize),
+			},
+		}
 	}
 	return nil
 }
 
+func (b *BuiltinAssetInput) IntoProto() (*types.BuiltinAsset, error) {
+	if len(b.Name) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Name: cannot be empty")
+	}
+	if len(b.Symbol) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Symbol: cannot be empty")
+	}
+	if len(b.TotalSupply) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be empty")
+	}
+	if b.Decimals <= 0 {
+		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be <= 0")
+	}
+
+	return &types.BuiltinAsset{
+		Name:        b.Name,
+		Symbol:      b.Symbol,
+		TotalSupply: b.TotalSupply,
+		Decimals:    uint64(b.Decimals),
+	}, nil
+}
+
+func (e *ERC20Input) IntoProto() (*types.ERC20, error) {
+	if len(e.ContractAddress) <= 0 {
+		return nil, errors.New("ERC20.ContractAddress: cannot be empty")
+	}
+
+	return &types.ERC20{
+		ContractAddress: e.ContractAddress,
+	}, nil
+}
+
+func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
+	var (
+		isSet       bool
+		assetSource *types.AssetSource = &types.AssetSource{}
+	)
+
+	if n.BuiltinAsset != nil {
+		isSet = true
+		source, err := n.BuiltinAsset.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		assetSource.Source = &types.AssetSource_BuiltinAsset{
+			BuiltinAsset: source,
+		}
+	}
+
+	if n.Erc20 != nil {
+		if isSet == true {
+			return nil, ErrMultipleAssetSourcesSpecified
+		}
+		isSet = true
+		source, err := n.Erc20.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		assetSource.Source = &types.AssetSource_Erc20{
+			Erc20: source,
+		}
+	}
+
+	return assetSource, nil
+}
+
 // IntoProto ...
-func (m *MarketInput) IntoProto() (*types.Market, error) {
-	ti, err := m.TradableInstrument.IntoProto()
+func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
+	if n.DecimalPlaces < 0 {
+		return nil, errors.New("NewMarket.DecimalPlaces: needs to be > 0")
+	}
+	instrument, err := n.Instrument.IntoProto()
 	if err != nil {
 		return nil, err
 	}
-	if m.DecimalPlaces < 0 {
-		return nil, ErrInvalidDecimalPlaces
+
+	result := &types.NewMarketConfiguration{
+		Instrument:    instrument,
+		DecimalPlaces: uint64(n.DecimalPlaces),
 	}
-	result := &types.Market{
-		Name:               m.Name,
-		TradableInstrument: ti,
-		DecimalPlaces:      uint64(m.DecimalPlaces),
-		TradingMode:        nil,
-	}
-	if err := m.tradingModeInputIntoProto(result); err != nil {
+
+	if err := n.RiskParameters.IntoProto(result); err != nil {
 		return nil, err
+	}
+	if err := n.TradingModeIntoProto(result); err != nil {
+		return nil, err
+	}
+	for _, tag := range n.Metadata {
+		result.Metadata = append(result.Metadata, tag)
 	}
 	return result, nil
 }
@@ -688,10 +865,12 @@ func (m *MarketInput) IntoProto() (*types.Market, error) {
 func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 	closing, err := datetimeToSecondsTS(p.ClosingDatetime)
 	if err != nil {
+		err = fmt.Errorf("ProposalTerms.ClosingDatetime: %s", err.Error())
 		return nil, err
 	}
 	enactment, err := datetimeToSecondsTS(p.EnactmentDatetime)
 	if err != nil {
+		err = fmt.Errorf("ProposalTerms.EnactementDatetime: %s", err.Error())
 		return nil, err
 	}
 
@@ -699,10 +878,22 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		ClosingTimestamp:   closing,
 		EnactmentTimestamp: enactment,
 	}
+
+	// used to check if the user did not specify multiple ProposalChanges
+	// which is an error
+	var isSet bool
+
 	if p.UpdateMarket != nil {
+		isSet = true
 		result.Change = &types.ProposalTerms_UpdateMarket{}
-	} else if p.NewMarket != nil {
-		market, err := p.NewMarket.Market.IntoProto()
+	}
+
+	if p.NewMarket != nil {
+		if isSet {
+			return nil, ErrMultipleProposalChangesSpecified
+		}
+		isSet = true
+		market, err := p.NewMarket.IntoProto()
 		if err != nil {
 			return nil, err
 		}
@@ -711,9 +902,32 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 				Changes: market,
 			},
 		}
-	} else if p.UpdateNetwork != nil {
+	}
+
+	if p.NewAsset != nil {
+		if isSet {
+			return nil, ErrMultipleProposalChangesSpecified
+		}
+		isSet = true
+		assetSource, err := p.NewAsset.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		result.Change = &types.ProposalTerms_NewAsset{
+			NewAsset: &types.NewAsset{
+				Changes: assetSource,
+			},
+		}
+	}
+
+	if p.UpdateNetwork != nil {
+		if isSet {
+			return nil, ErrMultipleProposalChangesSpecified
+		}
+		isSet = true
 		result.Change = &types.ProposalTerms_UpdateMarket{}
-	} else {
+	}
+	if !isSet {
 		return nil, ErrInvalidChange
 	}
 
@@ -750,4 +964,65 @@ func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 		},
 		ProposalID: v.ProposalID,
 	}
+}
+
+// IntoProto ...
+func (a AccountType) IntoProto() types.AccountType {
+	at, _ := convertAccountTypeToProto(a)
+	return at
+}
+
+func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
+	return &BuiltinAsset{
+		Name:        ba.Name,
+		Symbol:      ba.Symbol,
+		TotalSupply: ba.TotalSupply,
+		Decimals:    int(ba.Decimals),
+	}
+}
+
+func ERC20FromProto(ea *types.ERC20) *Erc20 {
+	return &Erc20{
+		ContractAddress: ea.ContractAddress,
+	}
+}
+
+func AssetSourceFromProto(psource interface{}) (AssetSource, error) {
+	if psource == nil {
+		return nil, ErrNilAssetSource
+	}
+	switch asimpl := psource.(type) {
+	case *types.Asset_BuiltinAsset:
+		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
+	case *types.Asset_Erc20:
+		return ERC20FromProto(asimpl.Erc20), nil
+	default:
+		return nil, ErrUnimplementedAssetSource
+	}
+}
+
+func AssetFromProto(passet *types.Asset) (*Asset, error) {
+	source, err := AssetSourceFromProto(passet.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Asset{
+		ID:          passet.ID,
+		Name:        passet.Name,
+		Symbol:      passet.Symbol,
+		Decimals:    int(passet.Decimals),
+		TotalSupply: passet.TotalSupply,
+		Source:      source,
+	}, nil
+}
+
+func NewAssetFromProto(newAsset *types.NewAsset) (*NewAsset, error) {
+	source, err := AssetSourceFromProto(newAsset.Changes)
+	if err != nil {
+		return nil, err
+	}
+	return &NewAsset{
+		Source: source,
+	}, nil
 }

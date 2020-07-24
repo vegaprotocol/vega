@@ -5,6 +5,8 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 import "proto/vega.proto";
 import "proto/markets.proto";
 import "proto/governance.proto";
+import "proto/chain_events.proto";
+import "proto/assets.proto";
 
 package api;
 
@@ -39,6 +41,21 @@ service trading {
 
   // Prepare a vote to be put on the chain (via SubmitTransaction)
   rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
+
+  // chain events
+  rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
+}
+
+// The request for a new event sent by the blockchain queue to be propagated into vega
+message PropagateChainEventRequest {
+  // The event
+  vega.ChainEvent evt = 1;
+}
+
+// The response for a new event sent to vega
+message PropagateChainEventResponse {
+  // Did the event get accepted by the node successfully
+  bool success = 1;
 }
 
 message SubmitTransactionRequest {
@@ -199,7 +216,7 @@ service trading_data {
 
   // Get governance data (proposals and votes) for proposals that aim updating Vega network parameters
   rpc GetNetworkParametersProposals(GetNetworkParametersProposalsRequest) returns (GetNetworkParametersProposalsResponse);
-  
+
   // Get governance data (proposals and votes) for proposals aiming to create new assets
   rpc GetNewAssetProposals(GetNewAssetProposalsRequest) returns (GetNewAssetProposalsResponse);
 
@@ -211,7 +228,7 @@ service trading_data {
 
   // Subscribe to a stream of all governance updates
   rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
-  
+
   // Subscribe to a stream of proposal updates
   rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.GovernanceData);
 
@@ -255,6 +272,49 @@ service trading_data {
 
   // Subscribe to a stream of Transfer Responses
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+
+  // Get an aggregate of signature from all the node of the network
+  rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
+
+  // Get an asset by its ID
+  rpc AssetByID(AssetByIDRequest) returns (AssetByIDResponse);
+
+  // Get the list of all assets in vega
+  rpc Assets(AssetsRequest) returns (AssetsResponse);
+}
+
+// The request to get the lit of all assets in vega
+message AssetsRequest {}
+
+// The response containing the list of all assets enabled in vega
+message AssetsResponse {
+  // The list of assets
+  repeated vega.Asset assets = 1;
+}
+
+// The request message to get an AssetByID
+message AssetByIDRequest {
+  // ID of the asset to get
+  string ID = 1;
+}
+
+// The response message to get an AssetByID
+message AssetByIDResponse {
+  // The asset corresponding to the requested ID
+  vega.Asset asset = 1;
+}
+
+// The request message to specify the ID of the resource we want to retrieve
+// the aggregated signatures for
+message GetNodeSignaturesAggregateRequest {
+  // The ID of the resource
+  string ID = 1;
+}
+
+// The response of the GetNodeSIgnatureAggregate rpc
+message GetNodeSignaturesAggregateResponse {
+  // The list of signatures
+  repeated vega.NodeSignature signatures = 1;
 }
 
 message OptionalProposalState {
@@ -466,7 +526,6 @@ message PositionsSubscribeRequest {
 message OrdersByMarketRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
   Pagination pagination = 2;
-  bool open = 3;
 }
 
 message OrdersByMarketResponse {
@@ -476,7 +535,6 @@ message OrdersByMarketResponse {
 message OrdersByPartyRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
   Pagination pagination = 2;
-  bool open = 3;
 }
 
 message OrdersByPartyResponse {
@@ -611,7 +669,7 @@ message PrepareVoteResponse {
 
 message OrderByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
-  
+
   // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
   uint64 version = 2;
 }

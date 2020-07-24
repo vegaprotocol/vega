@@ -10,18 +10,22 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/mocks"
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -40,6 +44,18 @@ import (
 type GRPCServer interface {
 	Start()
 	Stop()
+}
+
+type govStub struct{}
+
+type voteStub struct{}
+
+func (g govStub) Filter(_ bool, filters ...subscribers.ProposalFilter) []*types.GovernanceData {
+	return nil
+}
+
+func (v voteStub) Filter(filters ...subscribers.VoteFilter) []*types.Vote {
+	return nil
 }
 
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
@@ -107,11 +123,9 @@ func getTestGRPCServer(
 	}, nil)
 	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
 
-	_, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
-		if err != nil {
-			cancel()
-		}
+		cancel()
 	}()
 
 	// Account Store
@@ -217,9 +231,18 @@ func getTestGRPCServer(
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore)
 	// stub...
-	governancePlugin := plugins.NewGovernance(nil, nil)
+	gov, vote := govStub{}, voteStub{}
+	broker := broker.New(ctx)
 
-	governanceService := governance.NewService(logger, conf.Governance, governancePlugin)
+	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
+
+	nplugin := plugins.NewNotary(context.Background())
+	notaryService := notary.NewService(logger, conf.Notary, nplugin)
+
+	aplugin := plugins.NewAsset(context.Background())
+	assetService := assets.NewService(logger, conf.Assets, aplugin)
+
+	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -236,6 +259,9 @@ func getTestGRPCServer(
 		transferResponseService,
 		riskService,
 		governanceService,
+		notaryService,
+		evtfwd,
+		assetService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

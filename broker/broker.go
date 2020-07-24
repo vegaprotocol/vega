@@ -11,13 +11,14 @@ import (
 // a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/vega/broker Subscriber
 type Subscriber interface {
-	Push(val events.Event)
+	Push(val ...events.Event)
 	Skip() <-chan struct{}
 	Closed() <-chan struct{}
 	C() chan<- events.Event
 	Types() []events.Type
 	SetID(id int)
 	ID() int
+	Ack() bool
 }
 
 type subscription struct {
@@ -48,17 +49,89 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
+func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
+	for _, e := range evts {
+		select {
+		case <-b.ctx.Done():
+			return
+		case <-sub.Skip():
+			return
+		case <-sub.Closed():
+			unsub = true
+			return
+		case sub.C() <- e:
+			continue
+		default:
+			continue
+		}
+	}
+	return
+}
+
+// SendBatch sends a slice of events to subscribers that can handle the events in the slice
+// the events don't have to be of the same type, and most subscribers will ignore unknown events
+// but this will slow down those subscribers, so avoid doing silly things
+func (b *Broker) SendBatch(events []events.Event) {
+	if len(events) == 0 {
+		return
+	}
+	// We could ensure that the events are all of the same type but when
+	// pushing logging events in batch, this wouldn't work without additional
+	// logic, so we're assuming the caller knows what they're doing
+	// t := events[0].Type()
+	// for i := 1; i < len(events); i++ {
+	// 	if events[i].Type() != t {
+	// 		events = append(events[:i], events[i+1:]...)
+	// 		i--
+	// 	}
+	// }
+	b.mu.Lock()
+	subs := b.getSubsByType(events[0].Type())
+	b.mu.Unlock()
+	if len(subs) == 0 {
+		return
+	}
+	// push the event out in a routine
+	// unlock the mutex once done
+	go func(subs map[int]*subscription) {
+		unsub := make([]int, 0, len(subs))
+		for k, sub := range subs {
+			select {
+			case <-b.ctx.Done():
+				return
+			case <-sub.Skip():
+				continue
+			case <-sub.Closed():
+				unsub = append(unsub, k)
+			default:
+				if sub.required {
+					sub.Push(events...)
+				} else if rm := b.sendChannel(sub, events); rm {
+					unsub = append(unsub, k)
+				}
+			}
+		}
+	}(subs)
+}
+
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
 	b.mu.Lock()
+	subs := b.getSubsByType(event.Type())
+	b.mu.Unlock()
+	if len(subs) == 0 {
+		return
+	}
 	// push the event out in a routine
 	// unlock the mutex once done
-	go func() {
-		subs := b.getSubsByType(event.Type())
+	go func(subs map[int]*subscription) {
 		unsub := make([]int, 0, len(subs))
 		defer func() {
-			b.rmSubs(unsub...)
-			b.mu.Unlock()
+			if len(unsub) > 0 {
+				b.mu.Lock()
+				b.rmSubs(unsub...)
+				b.mu.Unlock()
+			}
 		}()
 		for k, sub := range subs {
 			select {
@@ -72,18 +145,12 @@ func (b *Broker) Send(event events.Event) {
 			default:
 				if sub.required {
 					sub.Push(event)
-				} else {
-					select {
-					case sub.C() <- event:
-						continue
-					default:
-						// skip this event
-						continue
-					}
+				} else if rm := b.sendChannel(sub, []events.Event{event}); rm {
+					unsub = append(unsub, k)
 				}
 			}
 		}
-	}()
+	}(subs)
 }
 
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
@@ -103,20 +170,40 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 }
 
 // Subscribe registers a new subscriber, returning the key
-func (b *Broker) Subscribe(s Subscriber, req bool) int {
+func (b *Broker) Subscribe(s Subscriber) int {
 	b.mu.Lock()
-	k := b.sub(s, req)
+	k := b.subscribe(s)
 	b.mu.Unlock()
 	return k
 }
 
-func (b *Broker) SubscribeBatch(req bool, subs ...Subscriber) {
+func (b *Broker) SubscribeBatch(subs ...Subscriber) {
 	b.mu.Lock()
 	for _, s := range subs {
-		k := b.sub(s, req)
+		k := b.subscribe(s)
 		s.SetID(k)
 	}
 	b.mu.Unlock()
+}
+
+func (b *Broker) subscribe(s Subscriber) int {
+	k := b.getKey()
+	sub := subscription{
+		Subscriber: s,
+		required:   s.Ack(),
+	}
+	b.subs[k] = sub
+	types := sub.Types()
+	if len(types) == 0 {
+		types = []events.Type{events.All}
+	}
+	for _, t := range types {
+		if _, ok := b.tSubs[t]; !ok {
+			b.tSubs[t] = map[int]*subscription{}
+		}
+		b.tSubs[t][k] = &sub
+	}
+	return k
 }
 
 func (b *Broker) sub(s Subscriber, req bool) int {

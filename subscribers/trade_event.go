@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -18,18 +19,20 @@ type TradeStore interface {
 
 type TradeSub struct {
 	*Base
+	mu    sync.Mutex
 	buf   []types.Trade
 	store TradeStore
 }
 
-func NewTradeSub(ctx context.Context, store TradeStore) *TradeSub {
+func NewTradeSub(ctx context.Context, store TradeStore, ack bool) *TradeSub {
 	t := &TradeSub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		buf:   []types.Trade{},
 		store: store,
 	}
-	t.running = true
-	go t.loop(t.ctx)
+	if t.isRunning() {
+		go t.loop(t.ctx)
+	}
 	return t
 }
 
@@ -40,25 +43,28 @@ func (t *TradeSub) loop(ctx context.Context) {
 			t.Halt()
 			return
 		case e := <-t.ch:
-			if t.running {
+			if t.isRunning() {
 				t.Push(e)
 			}
 		}
 	}
 }
 
-func (t *TradeSub) Push(e events.Event) {
-	switch te := e.(type) {
-	case TE:
-		t.write(te)
-	case TimeEvent:
-		t.flush()
+func (t *TradeSub) Push(evts ...events.Event) {
+	if len(evts) == 0 {
+		return
 	}
-}
-
-// this function will be replaced - this is where the events will be normalised for a market event plugin to use
-func (t *TradeSub) write(e TE) {
-	t.buf = append(t.buf, e.Trade())
+	// acquire lock here, so a time event doesn't result in a partial flush
+	t.mu.Lock()
+	for _, e := range evts {
+		switch te := e.(type) {
+		case TE:
+			t.buf = append(t.buf, te.Trade())
+		case TimeEvent:
+			t.flush()
+		}
+	}
+	t.mu.Unlock()
 }
 
 func (t *TradeSub) flush() {

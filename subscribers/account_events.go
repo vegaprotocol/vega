@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -19,17 +20,19 @@ type AccountStore interface {
 type AccountSub struct {
 	*Base
 	store AccountStore
+	mu    sync.Mutex
 	buf   map[string]*types.Account
 }
 
-func NewAccountSub(ctx context.Context, store AccountStore) *AccountSub {
+func NewAccountSub(ctx context.Context, store AccountStore, ack bool) *AccountSub {
 	a := &AccountSub{
-		Base:  newBase(ctx, 10),
+		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   map[string]*types.Account{},
 	}
-	a.running = true
-	go a.loop(a.ctx)
+	if a.isRunning() {
+		go a.loop(a.ctx)
+	}
 	return a
 }
 
@@ -40,23 +43,31 @@ func (a *AccountSub) loop(ctx context.Context) {
 			a.Halt()
 			return
 		case e := <-a.ch:
-			if a.running {
+			if a.isRunning() {
 				a.Push(e)
 			}
 		}
 	}
 }
 
-func (a *AccountSub) Push(e events.Event) {
-	switch et := e.(type) {
-	case AE:
-		acc := et.Account()
-		k := acc.Id
-		acc.Id = ""
-		a.buf[k] = &acc
-	case TimeEvent:
-		a.flush()
+func (a *AccountSub) Push(evts ...events.Event) {
+	if len(evts) == 0 {
+		return
 	}
+	// lock now, this could be a batch in the future
+	a.mu.Lock()
+	for _, e := range evts {
+		switch et := e.(type) {
+		case AE:
+			acc := et.Account()
+			k := acc.Id
+			acc.Id = ""
+			a.buf[k] = &acc
+		case TimeEvent:
+			a.flush()
+		}
+	}
+	a.mu.Unlock()
 }
 
 func (a *AccountSub) Types() []events.Type {
@@ -71,5 +82,6 @@ func (a *AccountSub) flush() {
 	for _, acc := range a.buf {
 		batch = append(batch, acc)
 	}
+	a.buf = map[string]*types.Account{}
 	_ = a.store.SaveBatch(batch)
 }

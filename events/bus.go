@@ -42,23 +42,47 @@ const (
 	AccountEvent
 	PartyEvent
 	TradeEvent
+	MarginLevelsEvent
+	ProposalEvent
+	VoteEvent
+	MarketDataEvent
+	NodeSignatureEvent
+	LossSocializationEvent
+	SettlePositionEvent
+	SettleDistressedEvent
+	MarketCreatedEvent
+	AssetEvent
+	MarketTickEvent
 )
 
 var (
 	marketEvents = []Type{
 		PositionResolution,
+		MarketCreatedEvent,
+		MarketTickEvent,
 	}
 
 	eventStrings = map[Type]string{
-		All:                "ALL",
-		TimeUpdate:         "TimeUpdate",
-		TransferResponses:  "TransferResponses",
-		PositionResolution: "PositionResolution",
-		MarketEvent:        "MarketEvent",
-		OrderEvent:         "OrderEvent",
-		AccountEvent:       "AccountEvent",
-		PartyEvent:         "PartyEvent",
-		TradeEvent:         "TradeEvent",
+		All:                    "ALL",
+		TimeUpdate:             "TimeUpdate",
+		TransferResponses:      "TransferResponses",
+		PositionResolution:     "PositionResolution",
+		MarketEvent:            "MarketEvent",
+		OrderEvent:             "OrderEvent",
+		AccountEvent:           "AccountEvent",
+		PartyEvent:             "PartyEvent",
+		TradeEvent:             "TradeEvent",
+		MarginLevelsEvent:      "MarginLevelsEvent",
+		ProposalEvent:          "ProposalEvent",
+		VoteEvent:              "VoteEvent",
+		MarketDataEvent:        "MarketDataEvent",
+		NodeSignatureEvent:     "NodeSignatureEvent",
+		LossSocializationEvent: "LossSocializationEvent",
+		SettlePositionEvent:    "SettlePositionEvent",
+		SettleDistressedEvent:  "SettleDistressedEvent",
+		MarketCreatedEvent:     "MarketCreatedEvent",
+		AssetEvent:             "AssetEvent",
+		MarketTickEvent:        "MarketTickEvent",
 	}
 )
 
@@ -85,6 +109,24 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Trade:
 		e := NewTradeEvent(ctx, tv)
+		return e, nil
+	case types.MarginLevels:
+		e := NewMarginLevelsEvent(ctx, tv)
+		return e, nil
+	case types.Proposal:
+		e := NewProposalEvent(ctx, tv)
+		return e, nil
+	case types.Vote:
+		e := NewVoteEvent(ctx, tv)
+		return e, nil
+	case types.MarketData:
+		e := NewMarketDataEvent(ctx, tv)
+		return e, nil
+	case types.NodeSignature:
+		e := NewNodeSignatureEvent(ctx, tv)
+		return e, nil
+	case types.Asset:
+		e := NewAssetEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

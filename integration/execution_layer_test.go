@@ -95,7 +95,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			acc := account{
 				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: 0,
-				Market:  mkt.Name,
+				Market:  mkt.Id,
 				Asset:   asset,
 			}
 			execsetup.accs[val(row, 0)] = append(execsetup.accs[val(row, 0)], acc)
@@ -581,7 +581,7 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 		}
 
 		partyID, marketID := val(row, 0), val(row, 1)
-		ml, err := execsetup.marginLevelsBuf.getMarginByPartyAndMarket(partyID, marketID)
+		ml, err := execsetup.broker.getMarginByPartyAndMarket(partyID, marketID)
 		if err != nil {
 			return err
 		}
@@ -899,7 +899,6 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 func baseMarket(row *gherkin.TableRow) proto.Market {
 	mkt := proto.Market{
 		Id:            val(row, 0),
-		Name:          val(row, 0),
 		DecimalPlaces: 2,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
