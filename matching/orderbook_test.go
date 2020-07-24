@@ -62,6 +62,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "order0",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -73,6 +74,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIF_GTC,
 		},
 		{
+			Id:          "order1",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -84,6 +86,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIF_GTC,
 		},
 		{
+			Id:          "order2",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -95,6 +98,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIF_GTC,
 		},
 		{
+			Id:          "order3",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -127,6 +131,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "order0",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -138,6 +143,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIF_GTC,
 		},
 		{
+			Id:          "order1",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -149,6 +155,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIF_GTC,
 		},
 		{
+			Id:          "order2",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -160,6 +167,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIF_GTC,
 		},
 		{
+			Id:          "order3",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1347,6 +1355,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
+			Id:          "order0",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1359,6 +1368,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "order1",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1372,6 +1382,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Id:          "order2",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1384,6 +1395,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "order3",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1401,6 +1413,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
+			Id:          "order4",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1414,6 +1427,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Id:          "order5",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketID:    market,
@@ -1445,6 +1459,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Id:          "order6",
 				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
@@ -1469,6 +1484,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Id:          "order7",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
@@ -1485,6 +1501,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Id:          "order8",
 				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
@@ -1518,6 +1535,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Id:          "order9",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
@@ -1530,6 +1548,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   0,
 				},
 				{
+					Id:          "order10",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
@@ -1546,6 +1565,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
+				Id:          "order11",
 				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
@@ -1588,6 +1608,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Id:          "order12",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
@@ -1600,6 +1621,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   1,
 				},
 				{
+					Id:          "order13",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
@@ -1612,6 +1634,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt:   0,
 				},
 				{
+					Id:          "order14",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,
@@ -1628,6 +1651,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
+				Id:          "order15",
 				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_TYPE_LIMIT,
 				MarketID:    market,
@@ -1652,6 +1676,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
+					Id:          "order16",
 					Status:      types.Order_STATUS_ACTIVE,
 					Type:        types.Order_TYPE_LIMIT,
 					MarketID:    market,

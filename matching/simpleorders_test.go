@@ -540,6 +540,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "order",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "B",
@@ -555,6 +556,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order1 := types.Order{
+		Id:          "order1",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",
@@ -570,6 +572,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "order2",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    market,
 		PartyID:     "A",

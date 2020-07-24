@@ -24,6 +24,17 @@ type OrderBookSide struct {
 	levels []*PriceLevel
 }
 
+func (s *OrderBookSide) deepCopy() *OrderBookSide {
+	cpy := &OrderBookSide{
+		log:    s.log,
+		levels: make([]*PriceLevel, 0, len(s.levels)),
+	}
+	for _, l := range s.levels {
+		cpy.levels = append(cpy.levels, l.deepCopy())
+	}
+	return cpy
+}
+
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
 	// update the price-volume map
 
@@ -69,13 +80,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	for idx, priceLevel := range s.levels {
 		if priceLevel.price == orderAmend.Price {
 			priceLevelIndex = idx
-			for j, order := range priceLevel.orders {
-				if order.Id == orderAmend.Id {
-					orderIndex = j
-					oldOrder = order
-					break
-				}
-			}
+			oldOrder, orderIndex = priceLevel.getOrderWithIndex(orderAmend)
 			break
 		}
 	}
@@ -96,9 +101,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 		return types.ErrOrderAmendFailure
 	}
 
-	reduceBy := oldOrder.Remaining - orderAmend.Size
-	*s.levels[priceLevelIndex].orders[orderIndex] = *orderAmend
-	s.levels[priceLevelIndex].reduceVolume(reduceBy)
+	s.levels[priceLevelIndex].replaceOrder(orderIndex, orderAmend)
 	return nil
 }
 
@@ -155,6 +158,29 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	return order, nil
 }
 
+// used in auctions to re-uncross a level. We have to ensure the level contains copies of orders
+// either do this in this function, or in the caller
+func (s *OrderBookSide) replacePriceLevel(newLvl *PriceLevel, side types.Side) {
+	price := newLvl.price
+	var i int
+	if side == types.Side_SIDE_BUY {
+		// buy side levels should be ordered in descending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+	}
+
+	// we found the level just return it.
+	if i < len(s.levels) && s.levels[i].price == price {
+		s.levels[i] = newLvl
+		return
+	}
+	s.levels = append(s.levels, nil)
+	copy(s.levels[i+1:], s.levels[i:])
+	s.levels[i] = newLvl
+}
+
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
 	var i int
 	if side == types.Side_SIDE_BUY {
@@ -181,7 +207,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
-func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {
+func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Order, []*types.Trade, error) {
 	var (
 		trades            []*types.Trade
 		totalVolumeToFill uint64
@@ -211,7 +237,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 
 		// FOK order could not be filled
 		if totalVolumeToFill < agg.Remaining {
-			return false, nil, nil
+			return nil, nil, nil
 		}
 	}
 
@@ -220,9 +246,10 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 	fake := &cpy
 
 	var (
-		idx     = len(s.levels) - 1
-		ntrades []*types.Trade
-		err     error
+		idx                      = len(s.levels) - 1
+		ntrades                  []*types.Trade
+		impacted, impactedOrders []*types.Order
+		err                      error
 	)
 
 	if fake.Side == types.Side_SIDE_SELL {
@@ -234,8 +261,9 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 			if agg.Type != types.Order_TYPE_MARKET && s.levels[idx].price < agg.Price {
 				break
 			}
-			fake, ntrades, err = s.levels[idx].fakeUncross(fake)
+			fake, ntrades, impactedOrders, err = s.levels[idx].fakeUncross(fake)
 			trades = append(trades, ntrades...)
+			impacted = append(impacted, impactedOrders...)
 			// break if a wash trade is detected
 			if err != nil && err == ErrWashTrade {
 				break
@@ -248,8 +276,9 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 			if fake.Type != types.Order_TYPE_MARKET && s.levels[idx].price > fake.Price {
 				break
 			}
-			fake, ntrades, err = s.levels[idx].fakeUncross(fake)
+			fake, ntrades, impactedOrders, err = s.levels[idx].fakeUncross(fake)
 			trades = append(trades, ntrades...)
+			impacted = append(impacted, impactedOrders...)
 			// break if a wash trade is detected
 			if err != nil && err == ErrWashTrade {
 				break
@@ -258,12 +287,8 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 			idx--
 		}
 	}
-	filled := false
-	if fake.Remaining == 0 {
-		filled = true
-	}
 
-	return filled, trades, nil
+	return impacted, trades, nil
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64, error) {

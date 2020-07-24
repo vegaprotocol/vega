@@ -15,17 +15,34 @@ var (
 
 // PriceLevel represents all the Orders placed at a given price.
 type PriceLevel struct {
-	price  uint64
-	orders []*types.Order
-	volume uint64
+	price    uint64
+	hasOrder map[string]struct{}
+	orders   []*types.Order
+	volume   uint64
 }
 
 // NewPriceLevel instantiate a new PriceLevel
 func NewPriceLevel(price uint64) *PriceLevel {
 	return &PriceLevel{
-		price:  price,
-		orders: []*types.Order{},
+		price:    price,
+		hasOrder: map[string]struct{}{},
+		orders:   []*types.Order{},
 	}
+}
+
+func (l *PriceLevel) deepCopy() *PriceLevel {
+	cpy := &PriceLevel{
+		price:    l.price,
+		volume:   l.volume,
+		hasOrder: make(map[string]struct{}, len(l.hasOrder)),
+		orders:   make([]*types.Order, 0, len(l.orders)),
+	}
+	for _, o := range l.orders {
+		oc := *o
+		cpy.hasOrder[oc.Id] = struct{}{}
+		cpy.orders = append(cpy.orders, &oc)
+	}
+	return cpy
 }
 
 func (l *PriceLevel) reduceVolume(reduceBy uint64) {
@@ -42,22 +59,48 @@ func (l *PriceLevel) getOrdersByParty(partyID string) []*types.Order {
 	return ret
 }
 
+func (l *PriceLevel) getOrderWithIndex(o *types.Order) (*types.Order, int) {
+	if _, ok := l.hasOrder[o.Id]; !ok {
+		return nil, -1
+	}
+	for i, lo := range l.orders {
+		if lo.Id == o.Id {
+			return lo, i
+		}
+	}
+	// this shouldn't be possible
+	return nil, -1
+}
+
+func (l *PriceLevel) replaceOrder(idx int, o *types.Order) {
+	old := l.orders[idx]
+	delta := old.Remaining - o.Size
+	*l.orders[idx] = *o
+	l.volume -= delta
+}
+
 func (l *PriceLevel) addOrder(o *types.Order) {
 	// add orders to slice of orders on this price level
+	if _, ok := l.hasOrder[o.Id]; ok {
+		return
+	}
+	l.hasOrder[o.Id] = struct{}{}
 	l.orders = append(l.orders, o)
 	l.volume += o.Remaining
 }
 
 func (l *PriceLevel) removeOrder(index int) {
 	// decrease total volume
-	l.volume -= l.orders[index].Remaining
+	o := l.orders[index]
+	l.volume -= o.Remaining
+	delete(l.hasOrder, o.Id)
 	// remove the orders at index
 	copy(l.orders[index:], l.orders[index+1:])
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
 // fakeUncross - this updates a copy of the order passed to it, the copied order is returned
-func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*types.Trade, err error) {
+func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*types.Trade, impactedOrders []*types.Order, err error) {
 	// work on a copy of the order, so we can submit it a second time
 	// after we've done the price monitoring and fees checks
 	cpy := *o
@@ -87,6 +130,8 @@ func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*ty
 		// Update trades
 		trades = append(trades, trade)
 
+		impactedOrders = append(impactedOrders, order)
+
 		// Exit when done
 		if agg.Remaining == 0 {
 			break
@@ -102,10 +147,8 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		return
 	}
 
-	var (
-		toRemove []int
-		removed  int
-	)
+	var removed int
+	toRemove := map[string]int{}
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
 	for i, order := range l.orders {
@@ -131,7 +174,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 
 		// Schedule order for deletion
 		if order.Remaining == 0 {
-			toRemove = append(toRemove, i)
+			toRemove[order.Id] = i
 		}
 
 		// Update trades
@@ -148,7 +191,8 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 	// just by keep the index of the last order which is to remove as they
 	// are all order, then just copy the second part of the slice in the actual s[0]
 	if len(toRemove) > 0 {
-		for _, idx := range toRemove {
+		for id, idx := range toRemove {
+			delete(l.hasOrder, id)
 			copy(l.orders[idx-removed:], l.orders[idx-removed+1:])
 			removed++
 		}

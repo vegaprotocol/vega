@@ -26,6 +26,7 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{}
 	l := side.getPriceLevel(100, types.Side_SIDE_SELL)
 	order := &types.Order{
+		Id:          "order1",
 		MarketID:    "testOrderBook",
 		PartyID:     "A",
 		Side:        types.Side_SIDE_SELL,
@@ -40,7 +41,9 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	assert.Equal(t, 0, len(l.orders))
 	l.addOrder(order)
 	assert.Equal(t, 1, len(l.orders))
-	l.addOrder(order)
+	o2 := *order
+	o2.Id = "order2"
+	l.addOrder(&o2)
 	assert.Equal(t, 2, len(l.orders))
 
 	// remove orders

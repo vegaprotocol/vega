@@ -4,6 +4,12 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrMarketOrderDuringAuction = errors.New("market order not allowed during auction")
+	ErrInvalidAuctionTIF        = errors.New("order not allowed during auction")
 )
 
 const minOrderIDLen = 22
@@ -11,6 +17,15 @@ const maxOrderIDLen = 22
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "validateOrder")
+	// check this first, if this error doesn't get reassigned
+	// we might want to add the order anyway if it's market to be valid outside of auctions
+	if b.auction {
+		if orderMessage.Type == types.Order_TYPE_MARKET {
+			err = ErrMarketOrderDuringAuction
+		} else if orderMessage.TimeInForce == types.Order_TIF_FOK || orderMessage.TimeInForce == types.Order_TIF_IOC {
+			err = ErrInvalidAuctionTIF
+		}
+	}
 	if orderMessage.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",
 			logging.String("market", orderMessage.MarketID),

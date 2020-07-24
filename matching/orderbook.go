@@ -32,6 +32,9 @@ type OrderBook struct {
 	latestTimestamp int64
 	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
+	auction         bool
+	auctionBooks    map[int]*AuctionBook
+	currentBatch    int
 }
 
 func isPersistent(o *types.Order) bool {
@@ -60,7 +63,55 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
 		ordersByID:      map[string]*types.Order{},
+		auction:         false,
+		auctionBooks:    map[int]*AuctionBook{},
 	}
+}
+
+// StartAuction - begin an auction period
+// this function will have to prepare current orderbook for price monitoring auctions etc...
+func (b *OrderBook) StartAuction() {
+	b.auction = true
+	b.auctionBooks[b.currentBatch] = newAuctionBook(b.log)
+}
+
+// EndAuction - close an auction period
+// this is where we finally uncross the book, and return the price at which the largest volume will be traded
+func (b *OrderBook) EndAuction() []*types.OrderConfirmation {
+	ab := b.auctionBooks[b.currentBatch]
+	b.currentBatch++
+	level := ab.getMarketLevel()
+	b.auction = false
+	confirmation := make([]*types.OrderConfirmation, 0, len(level.orders))
+	for id := range level.orders {
+		order, ok := b.ordersByID[id]
+		if !ok {
+			continue // this order has been filled already (by previous orders)
+		}
+		// this will not return an order, and the last price is known already
+		// arguably, the impacted orders we also have from the level object
+		trades, impactedOrders, _, _ := b.getOppositeSide(order.Side).uncross(order)
+		if order.Remaining == 0 {
+			order.Status = types.Order_STATUS_FILLED
+		}
+		for idx := range impactedOrders {
+			if impactedOrders[idx].Remaining == 0 {
+				impactedOrders[idx].Status = types.Order_STATUS_FILLED
+
+				// Ensure any fully filled impacted GTT orders are removed
+				// from internal matching engine pending orders list
+				if impactedOrders[idx].TimeInForce == types.Order_TIF_GTT {
+					b.removePendingGttOrder(*impactedOrders[idx])
+				}
+
+				// delete from lookup table
+				delete(b.ordersByID, impactedOrders[idx].Id)
+			}
+		}
+
+		confirmation = append(confirmation, makeResponse(order, trades, impactedOrders))
+	}
+	return confirmation
 }
 
 // ReloadConf is used in order to reload the internal configuration of
@@ -174,6 +225,14 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		return nil, err
 	}
 
+	if b.auction {
+		// get copies of the price levels we need to re-uncross, minus this order
+		// this includes all price levels involved in trades with the order we're cancelling
+		ab := b.auctionBooks[b.currentBatch]
+		// removes this order, and re-uncrosses the book without the given order
+		ab.removeOrders(b.buy.deepCopy(), b.sell.deepCopy(), *order)
+	}
+
 	order, err := b.DeleteOrder(order)
 	if err != nil {
 		return nil, err
@@ -231,6 +290,11 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		}
 	}
 
+	if b.auction {
+		ab := b.auctionBooks[b.currentBatch]
+		ab.amendOrder(originalOrder, amendedOrder)
+	}
+
 	// If we have changed the ExpiresAt or TIF then update Expiry table
 	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
 		originalOrder.TimeInForce != amendedOrder.TimeInForce {
@@ -277,6 +341,23 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if order.CreatedAt > b.latestTimestamp {
 		b.latestTimestamp = order.CreatedAt
+	}
+
+	if b.auction {
+		ab := b.auctionBooks[b.currentBatch]
+		if err := ab.applyOrder(order); err != nil {
+			return nil, err
+		}
+		if isPersistent(order) {
+			// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
+			if order.TimeInForce == types.Order_TIF_GTT {
+				b.insertExpiringOrder(*order)
+			}
+
+			b.getSide(order.Side).addOrder(order, order.Side)
+		}
+		// no trades happened
+		return nil, nil
 	}
 
 	if b.LogPriceLevelsDebug {
@@ -407,6 +488,10 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 			order.UpdatedAt = expirationTimestamp
 			out = append(out, *order)
 		}
+	}
+	if b.auction {
+		ab := b.auctionBooks[b.currentBatch]
+		ab.removeOrders(b.buy.deepCopy(), b.sell.deepCopy(), out...)
 	}
 
 	if b.LogRemovedOrdersDebug {
