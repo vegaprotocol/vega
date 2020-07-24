@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/faucet"
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -67,6 +68,7 @@ type Config struct {
 	Notary      notary.Config
 	EvtForward  evtforward.Config
 	Subscribers subscribers.Config
+	Faucet      faucet.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -107,6 +109,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Notary:         notary.NewDefaultConfig(),
 		EvtForward:     evtforward.NewDefaultConfig(),
 		Subscribers:    subscribers.NewDefaultConfig(),
+		Faucet:         faucet.NewDefaultConfig(defaultStoreDirPath),
 		GatewayEnabled: true,
 		StoresEnabled:  true,
 		UlimitNOFile:   8192,

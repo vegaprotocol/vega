@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/faucet"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
@@ -26,11 +27,12 @@ import (
 type initCommand struct {
 	command
 
-	rootPath             string
-	force                bool
-	nodeWalletPassphrase string
-	genDevNodeWallet     bool
-	Log                  *logging.Logger
+	rootPath              string
+	force                 bool
+	nodeWalletPassphrase  string
+	genDevNodeWallet      bool
+	genBuiltinAssetFaucet bool
+	Log                   *logging.Logger
 }
 
 func (ic *initCommand) Init(c *Cli) {
@@ -40,7 +42,7 @@ func (ic *initCommand) Init(c *Cli) {
 		Short: "Initialize a vega node",
 		Long:  "Generate the minimal configuration required for a vega node to start",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunInit(ic.rootPath, ic.force, ic.Log, ic.nodeWalletPassphrase, ic.genDevNodeWallet)
+			return RunInit(ic.rootPath, ic.force, ic.Log, ic.nodeWalletPassphrase, ic.genDevNodeWallet, ic.genBuiltinAssetFaucet)
 		},
 	}
 
@@ -49,10 +51,11 @@ func (ic *initCommand) Init(c *Cli) {
 	fs.StringVarP(&ic.nodeWalletPassphrase, "nodewallet-passphrase", "n", "", "The path to a file containing the passphrase used to encrypt the vega nodewallet")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
 	fs.BoolVarP(&ic.genDevNodeWallet, "gen-dev-nodewallet", "g", false, "Generate dev wallet for all vega supported chains (not for production)")
+	fs.BoolVarP(&ic.genBuiltinAssetFaucet, "gen-builtinasset-faucet", "b", false, "Generate the builtin asset configuration (not for production)")
 }
 
 // RunInit initialises vega config files - config.toml and markets/*.json.
-func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphraseInput string, genDevNodeWallet bool) error {
+func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphraseInput string, genDevNodeWallet, genBuiltinAssetFaucet bool) error {
 
 	// if theses is not specified, we then trigger a prompt
 	// for the user to type his password
@@ -125,6 +128,17 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 
 	// generate a default configuration
 	cfg := config.NewDefaultConfig(rootPath)
+
+	// initialize the faucet if needed
+	if genBuiltinAssetFaucet {
+		pubkey, err := faucet.Init(cfg.Faucet.WalletPath, nodeWalletPassphrase)
+		if err != nil {
+			return err
+		}
+		// add the pubkey to the whitelis
+		cfg.EvtForward.BlockchainQueueWhitelist = append(
+			cfg.EvtForward.BlockchainQueueWhitelist, pubkey)
+	}
 
 	// setup the defaults markets
 	cfg.Execution.Markets.Configs = filenames

@@ -165,6 +165,8 @@ message ChainEvent {
   // usually a hash
   string txID = 1;
 
+  uint64 nonce = 2;
+
   oneof event {
     BuiltinAssetEvent builtin = 1001;
     ERC20Event erc20 = 1002;
