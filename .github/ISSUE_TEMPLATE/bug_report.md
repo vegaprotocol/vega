@@ -1,7 +1,7 @@
 # Problem encountered
 A clear and concise description of what the bug is.
 
-# **SYSTEM RESPONSE**
+# System Response
 Describe what the system response was, include the output from the command, automation, or else.
 
 **System version:** Specify the system version (0.xx.xx)
@@ -36,12 +36,12 @@ https://github.com/vegaprotocol/system-tests/tree/master/....
 ## Not reproducible
 Explain why the problem/bug is not reproducible
 
-# EXPECTED BEHAVIOUR
+# Expected behaviour
 A clear and concise description of what you expected to happen.
 
-# LOGS
+# Logs
 If applicable, add logs and/or screenshots to help explain your problem.
 
-# ADDITIONAL CONTEXT
+# Additional Content
 Add any other context about the problem here.
 
