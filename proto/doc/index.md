@@ -2064,7 +2064,7 @@ providing information on things happening on other networks
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txID | [string](#string) |  | The ID of the transaction in which the things happened usually a hash |
-| nonce | [uint64](#uint64) |  |  |
+| nonce | [uint64](#uint64) |  | Arbitrary one-time integer used to prevent replay attacks |
 | builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  |  |
 | erc20 | [ERC20Event](#vega.ERC20Event) |  |  |
 | btc | [BTCEvent](#vega.BTCEvent) |  |  |

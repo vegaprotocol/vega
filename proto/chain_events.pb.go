@@ -1123,7 +1123,8 @@ func (*ValidatorEvent) XXX_OneofWrappers() []interface{} {
 type ChainEvent struct {
 	// The ID of the transaction in which the things happened
 	// usually a hash
-	TxID  string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+	TxID string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+	// Arbitrary one-time integer used to prevent replay attacks
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// Types that are valid to be assigned to Event:
 	//	*ChainEvent_Builtin

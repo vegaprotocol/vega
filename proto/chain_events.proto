@@ -165,6 +165,7 @@ message ChainEvent {
   // usually a hash
   string txID = 1;
 
+  // Arbitrary one-time integer used to prevent replay attacks
   uint64 nonce = 2;
 
   oneof event {
