@@ -176,9 +176,7 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	h := e.hash([]byte(s))
 	e.mu.RLock()
 	node := e.nodes[h%uint64(len(e.nodes))]
-	fmt.Printf("len(%v) | selected %v\n", len(e.nodes), h%uint64(len(e.nodes)))
 	e.mu.RUnlock()
-	fmt.Printf("node.node = %v, s.self = %v\n", node.node, e.self)
 	return node.node == e.self
 }
 
