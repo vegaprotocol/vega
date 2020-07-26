@@ -24,6 +24,10 @@ type Asset struct {
 	isAsset
 }
 
+func NewAsset(a isAsset) *Asset {
+	return &Asset{a}
+}
+
 func (a *Asset) IsERC20() bool {
 	_, ok := a.isAsset.(*erc20.ERC20)
 	return ok
