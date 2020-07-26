@@ -56,6 +56,17 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		ID:     "ETH",
 	})
 
+	// add the token asset
+	tokAsset := types.Asset{
+		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
+		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
+		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
+		Source:      collateral.TokenAssetSource,
+	}
+	collateralEngine.EnableAsset(context.Background(), tokAsset)
+
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, broker)
 

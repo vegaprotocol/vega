@@ -41,7 +41,7 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 	cmd := mocks.NewMockCommander(ctrl)
 
 	top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
-	top.EXPECT().SelfVegaPubKey().Times(1).Return(testSelfVegaPubKey)
+	top.EXPECT().SelfVegaPubKey().AnyTimes().Return(testSelfVegaPubKey)
 	var cb func(context.Context, time.Time)
 	tim.EXPECT().NotifyOnTick(gomock.Any()).Do(func(f func(context.Context, time.Time)) {
 		cb = f
