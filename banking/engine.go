@@ -90,6 +90,10 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 	return e.finalizeAssetList(ctx, assetID)
 }
 
+func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, asset string, amount uint64) error {
+	return e.finalizeWithdrawal(ctx, party, asset, amount)
+}
+
 func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 	now, _ := e.tsvc.GetTimeNow()
 	asset, err := e.assets.Get(d.VegaAssetID)
@@ -189,6 +193,10 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
 	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
+}
+
+func (e *Engine) finalizeWithdrawal(ctx context.Context, party, asset string, amount uint64) error {
+	return e.col.Withdraw(ctx, party, asset, amount)
 }
 
 func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {

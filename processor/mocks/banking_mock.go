@@ -89,3 +89,17 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3 interface{
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3)
 }
+
+// WithdrawalBuiltinAsset mocks base method
+func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithdrawalBuiltinAsset", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithdrawalBuiltinAsset indicates an expected call of WithdrawalBuiltinAsset
+func (mr *MockBankingMockRecorder) WithdrawalBuiltinAsset(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawalBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).WithdrawalBuiltinAsset), arg0, arg1, arg2, arg3)
+}

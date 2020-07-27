@@ -158,6 +158,7 @@ type Collateral interface {
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(*types.BuiltinAssetDeposit) error
+	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
 	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
 }
@@ -577,7 +578,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		return p.exec.Withdraw(ctx, withdraw)
+		return p.processWithdraw(ctx, withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
