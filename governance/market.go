@@ -141,6 +141,9 @@ func createMarket(
 				LiquidityFee:      parameters.FeeFactors.LiquidityFee,
 			},
 		},
+		OpeningAuction: &types.AuctionDuration{
+			Duration: definition.OpeningAuctionDuration,
+		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{

@@ -17,6 +17,9 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *AuctionDuration) Validate() error {
+	return nil
+}
 func (this *ContinuousTrading) Validate() error {
 	return nil
 }
@@ -151,6 +154,11 @@ func (this *Market) Validate() error {
 	if this.Fees != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Fees); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Fees", err)
+		}
+	}
+	if this.OpeningAuction != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OpeningAuction); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OpeningAuction", err)
 		}
 	}
 	if oneOfNester, ok := this.GetTradingMode().(*Market_Continuous); ok {

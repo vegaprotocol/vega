@@ -783,6 +783,10 @@
             <ul>
 
                 <li>
+                  <a href="#vega.AuctionDuration"><span class="badge">M</span>AuctionDuration</a>
+                </li>
+
+                <li>
                   <a href="#vega.ContinuousTrading"><span class="badge">M</span>ContinuousTrading</a>
                 </li>
 
@@ -6323,6 +6327,13 @@ usually a hash </p></td>
                 </tr>
 
                 <tr>
+                  <td>openingAuctionDuration</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>for now, just specify a time for the opening auction to last </p></td>
+                </tr>
+
+                <tr>
                   <td>simple</td>
                   <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
                   <td></td>
@@ -6978,6 +6989,37 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
       <p></p>
 
 
+        <h3 id="vega.AuctionDuration">AuctionDuration</h3>
+        <p>AuctionDuration can be used to configure 3 auction periods:</p><p>1) duration > 0, volume == 0: The auction will last for at least N seconds</p><p>2) Duration == 0, volume > 0: Auction period will end once we can close with given traded volume</p><p>3) Duration > 0 & volume > 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>duration</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>volume</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.ContinuousTrading">ContinuousTrading</h3>
         <p></p>
 
@@ -7502,6 +7544,13 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td><a href="#vega.Fees">Fees</a></td>
                   <td></td>
                   <td><p>fees configuration </p></td>
+                </tr>
+
+                <tr>
+                  <td>openingAuction</td>
+                  <td><a href="#vega.AuctionDuration">AuctionDuration</a></td>
+                  <td></td>
+                  <td><p>Specifies how long the opening auction will run (min duration &#43; optionally minimum traded volume) </p></td>
                 </tr>
 
                 <tr>
@@ -8178,6 +8227,20 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>the sum of the size of all positions greater than 0. </p></td>
+                </tr>
+
+                <tr>
+                  <td>auctionEnd</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>time in seconds until the end of the auction (0 if currently not in auction period) </p></td>
+                </tr>
+
+                <tr>
+                  <td>auctionStart</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>time until next auction (used in FBA&#39;s) - currently always 0 </p></td>
                 </tr>
 
             </tbody>
