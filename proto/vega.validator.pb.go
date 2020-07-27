@@ -67,6 +67,9 @@ func (this *OrderConfirmation) Validate() error {
 	}
 	return nil
 }
+func (this *AuctionIndicativeState) Validate() error {
+	return nil
+}
 func (this *Trade) Validate() error {
 	if this.BuyerFee != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.BuyerFee); err != nil {

@@ -179,6 +179,10 @@ message Order {
   // Versioning support for amends, orders start at version 1 and increment
   // after each successful amend
   uint64 version = 16;
+
+  // used internally, for orders submitted during auctions
+  // to keep track which auction batch this order falls under (required for fees calculation)
+  uint64 batchID = 17;
 }
 
 message OrderCancellationConfirmation {
@@ -191,71 +195,86 @@ message OrderConfirmation {
     repeated Order passiveOrdersAffected = 3;
 }
 
+// Whenever a change to the book occurs during an auction, this message will be used
+// to emit an event with the indicative price/volume per market
+message AuctionIndicativeState {
+  // The market this state is related to
+  string marketID = 1;
+  // The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now.
+  uint64 indicativePrice = 2;
+  // The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now.
+  uint64 indicativeVolume = 3;
+  // The timestamp at which the auction started
+  int64 auctionStart = 4;
+  // The timestamp at which the auction is meant to stop.
+  int64 auctionEnd = 5;
+}
+
 // Set when an order has an issue
 enum OrderError {
   // Empty default error
   ORDER_ERROR_NONE = 0;
-  
+
   // Order was submitted for a market that does not exist
   ORDER_ERROR_INVALID_MARKET_ID = 1;
-  
+
   // Order was submitted with an invalid ID
   ORDER_ERROR_INVALID_ORDER_ID = 2;
-  
+
   // Order was amended with a sequence number that was not previous version + 1
   ORDER_ERROR_OUT_OF_SEQUENCE = 3;
-  
+
   // Order was amended with an invalid remaining size (e.g. remaining greater than total size)
   ORDER_ERROR_INVALID_REMAINING_SIZE = 4;
-  
+
   // Node was unable to get Vega (blockchain) time
   ORDER_ERROR_TIME_FAILURE = 5;
-  
+
   // Failed to remove an order from the book
   ORDER_ERROR_REMOVAL_FAILURE = 6;
-  
+
   // GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid
   ORDER_ERROR_INVALID_EXPIRATION_DATETIME = 7;
-  
+
   // Order was submitted or amended with an invalid reference field
   ORDER_ERROR_INVALID_ORDER_REFERENCE = 8;
-  
+
   // Order amend was submitted for an order field that cannot not be amended (e.g. order id)
   ORDER_ERROR_EDIT_NOT_ALLOWED = 9;
-  
+
   // Amend failure because amend details do not match original order
   ORDER_ERROR_AMEND_FAILURE = 10;
-  
+
   // Order not found in the order book or in order store
   ORDER_ERROR_NOT_FOUND = 11;
-  
+
   // Order was submitted with an invalid or missing party ID
   ORDER_ERROR_INVALID_PARTY_ID = 12;
-  
+
   // Order was submitted for a market that has closed
   ORDER_ERROR_MARKET_CLOSED = 13;
-  
+
   // Order was submitted, but the party did not have enough collateral to cover the order
   ORDER_ERROR_MARGIN_CHECK_FAILED = 14;
-  
+
   // Order was submitted, but the party did not have an account for this asset
   ORDER_ERROR_MISSING_GENERAL_ACCOUNT = 15;
-  
+
   // Unspecified internal error
   ORDER_ERROR_INTERNAL_ERROR = 16;
-  
+
   // Order was submitted with an invalid or missing size (e.g. 0)
   ORDER_ERROR_INVALID_SIZE = 17;
-  
+
   // Order was submitted with an invalid persistence for its type
   ORDER_ERROR_INVALID_PERSISTENCE = 18;
-  
+
   // Order was submitted with an invalid type field
   ORDER_ERROR_INVALID_TYPE = 19;
-  
+
   // Order was stopped as it would have traded with another order for the same party
   ORDER_ERROR_SELF_TRADING = 20;
-  
+
   // Order was submitted, but the party did not have enough collateral to cover the fees for the order
   ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
 

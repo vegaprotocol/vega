@@ -175,6 +175,7 @@
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
+    - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
@@ -2914,6 +2915,26 @@ and the cause for an proposal being rejected of failed
 
 
 
+<a name="vega.AuctionIndicativeState"></a>
+
+### AuctionIndicativeState
+Whenever a change to the book occurs during an auction, this message will be used
+to emit an event with the indicative price/volume per market
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | The market this state is related to |
+| indicativePrice | [uint64](#uint64) |  | The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now. |
+| indicativeVolume | [uint64](#uint64) |  | The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now. |
+| auctionStart | [int64](#int64) |  | The timestamp at which the auction started |
+| auctionEnd | [int64](#int64) |  | The timestamp at which the auction is meant to stop. |
+
+
+
+
+
+
 <a name="vega.Candle"></a>
 
 ### Candle
@@ -3143,6 +3164,7 @@ a decision taken by the vega network.
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
+| batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
 
 
 
