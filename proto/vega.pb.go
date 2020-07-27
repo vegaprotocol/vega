@@ -1056,10 +1056,15 @@ func (m *OrderConfirmation) GetPassiveOrdersAffected() []*Order {
 // Whenever a change to the book occurs during an auction, this message will be used
 // to emit an event with the indicative price/volume per market
 type AuctionIndicativeState struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	IndicativePrice      uint64   `protobuf:"varint,2,opt,name=indicativePrice,proto3" json:"indicativePrice,omitempty"`
-	IndicativeVolume     uint64   `protobuf:"varint,3,opt,name=indicativeVolume,proto3" json:"indicativeVolume,omitempty"`
-	AuctionStart         int64    `protobuf:"varint,4,opt,name=auctionStart,proto3" json:"auctionStart,omitempty"`
+	// The market this state is related to
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now.
+	IndicativePrice uint64 `protobuf:"varint,2,opt,name=indicativePrice,proto3" json:"indicativePrice,omitempty"`
+	// The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now.
+	IndicativeVolume uint64 `protobuf:"varint,3,opt,name=indicativeVolume,proto3" json:"indicativeVolume,omitempty"`
+	// The timestamp at which the auction started
+	AuctionStart int64 `protobuf:"varint,4,opt,name=auctionStart,proto3" json:"auctionStart,omitempty"`
+	// The timestamp at which the auction is meant to stop.
 	AuctionEnd           int64    `protobuf:"varint,5,opt,name=auctionEnd,proto3" json:"auctionEnd,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

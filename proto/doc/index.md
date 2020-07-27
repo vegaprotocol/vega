@@ -2924,11 +2924,11 @@ to emit an event with the indicative price/volume per market
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| indicativePrice | [uint64](#uint64) |  |  |
-| indicativeVolume | [uint64](#uint64) |  |  |
-| auctionStart | [int64](#int64) |  |  |
-| auctionEnd | [int64](#int64) |  |  |
+| marketID | [string](#string) |  | The market this state is related to |
+| indicativePrice | [uint64](#uint64) |  | The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now. |
+| indicativeVolume | [uint64](#uint64) |  | The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now. |
+| auctionStart | [int64](#int64) |  | The timestamp at which the auction started |
+| auctionEnd | [int64](#int64) |  | The timestamp at which the auction is meant to stop. |
 
 
 
