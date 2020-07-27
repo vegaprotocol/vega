@@ -175,6 +175,10 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime.Unix())
 	h := e.hash([]byte(s))
 	e.mu.RLock()
+	if len(e.nodes) <= 0 {
+		e.mu.RUnlock()
+		return false
+	}
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
 	return node.node == e.self
