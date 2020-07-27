@@ -503,6 +503,16 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrVoteSubmissionPartyAndPubKeyDoesNotMatch
 		}
 		return nil
+	case blockchain.NodeVoteCommand:
+		_, err := p.getNodeVote(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		// if vote.PartyID != hex.EncodeToString(key) {
+		// return ErrNodeVote
+		// }
+		return nil
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
@@ -601,7 +611,6 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		_ = vote
 		return p.erc.AddNodeCheck(ctx, vote)
 	case blockchain.NodeSignatureCommand:
 		ns, err := p.getNodeSignature(data)
@@ -763,6 +772,7 @@ func (p *Processor) enactMarket(ctx context.Context, prop *types.Proposal, mkt *
 }
 
 func (p *Processor) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+	prop.State = types.Proposal_STATE_ENACTED
 	// first check if this asset is real
 	asset, err := p.assets.Get(prop.ID)
 	if err != nil {

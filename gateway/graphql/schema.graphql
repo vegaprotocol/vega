@@ -388,6 +388,9 @@ type Asset {
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
+
+  "The infrastructure fee account for this asset"
+  infrastructureFeeAccount: Account!
 }
 
 "One of the possible asset sources"
@@ -997,7 +1000,32 @@ type Trade {
 
   "The type of trade"
   type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  sellerAuctionBatch: Int
 }
+
+"The fee paid by the party when a trade occurs"
+type TradeFee {
+  "The maker fee, aggressive party to the other party (the one who had an order in the book)"
+  makerFee: String!
+
+  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  infrastructureFee: String!
+
+  "The fee paid to the market makers to provide liquidity in the market"
+  liquidityFee: String!
+}
+
 
 "Valid trade types"
 enum TradeType {
@@ -1090,7 +1118,7 @@ enum ProposalRejectionReason {
   "The specified product is not supported"
   UnuspportedProduct
   "Invalid future maturity timestamp (expect RFC3339)"
-  InvalidFutureMatuityTimestamp
+  InvalidFutureMaturityTimestamp
   "The product maturity is already in the past"
   ProductMaturityIsPassed
   "The proposal has no trading mode"
@@ -1099,6 +1127,10 @@ enum ProposalRejectionReason {
   UnsupportedTradingMode
   "The proposal failed node validation"
   NodeValidationFailed
+  "A builtin asset configuration is missing"
+  MissingBuiltinAssetField
+  "The ERC20 contract address is missing from an ERC20 asset proposal"
+  MissingERC20ContractAddress
 }
 
 "Reason for the order beeing rejected by the core node"
@@ -1243,6 +1275,10 @@ enum AccountType {
   Margin
   "General account - the account containing 'unused' collateral for traders"
   General
+  "Infrastructure fee account - the account where all infrastructure fees are collected"
+  FeeInfrastructure
+  "Liquidity fee account - the account where all infrastructure fees are collected"
+  FeeLiquidity
 }
 
 input SimpleRiskModelParamsInput {
@@ -1344,8 +1380,6 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The factor for the liquidity fee, must be an non negative float"
-  liquidityFee: String!
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -1591,6 +1625,8 @@ enum ProposalState {
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
+  "Proposal is waiting for the node to run validation"
+  WaitingForNodeVote
 }
 
 type Proposal {

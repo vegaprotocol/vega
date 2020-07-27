@@ -17,18 +17,9 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *Asset) Validate() error {
-	if oneOfNester, ok := this.GetSource().(*Asset_BuiltinAsset); ok {
-		if oneOfNester.BuiltinAsset != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.BuiltinAsset); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("BuiltinAsset", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetSource().(*Asset_Erc20); ok {
-		if oneOfNester.Erc20 != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Erc20); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Erc20", err)
-			}
+	if this.Source != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Source); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Source", err)
 		}
 	}
 	return nil

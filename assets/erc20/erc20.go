@@ -45,8 +45,10 @@ func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 	return &ERC20{
 		asset: &types.Asset{
 			ID: id,
-			Source: &types.Asset_Erc20{
-				Erc20: asset,
+			Source: &types.AssetSource{
+				Source: &types.AssetSource_Erc20{
+					Erc20: asset,
+				},
 			},
 		},
 		address: asset.ContractAddress,

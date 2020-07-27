@@ -49,6 +49,8 @@ type Asset struct {
 	Decimals int `json:"decimals"`
 	// The origin source of the asset (e.g: an erc20 asset)
 	Source AssetSource `json:"source"`
+	// The infrastructure fee account for this asset
+	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
 }
 
 // A vega builtin asset, mostly for testing purpose
@@ -357,8 +359,6 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
-	// The factor for the liquidity fee, must be an non negative float
-	LiquidityFee string `json:"liquidityFee"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -485,6 +485,16 @@ type TradableInstrument struct {
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
 }
 
+// The fee paid by the party when a trade occurs
+type TradeFee struct {
+	// The maker fee, aggressive party to the other party (the one who had an order in the book)
+	MakerFee string `json:"makerFee"`
+	// The infrastructure fee, a fee paid to the node runner to maintain the vega network
+	InfrastructureFee string `json:"infrastructureFee"`
+	// The fee paid to the market makers to provide liquidity in the market
+	LiquidityFee string `json:"liquidityFee"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }
@@ -584,6 +594,10 @@ const (
 	AccountTypeMargin AccountType = "Margin"
 	// General account - the account containing 'unused' collateral for traders
 	AccountTypeGeneral AccountType = "General"
+	// Infrastructure fee account - the account where all infrastructure fees are collected
+	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
+	// Liquidity fee account - the account where all infrastructure fees are collected
+	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
 )
 
 var AllAccountType = []AccountType{
@@ -591,11 +605,13 @@ var AllAccountType = []AccountType{
 	AccountTypeSettlement,
 	AccountTypeMargin,
 	AccountTypeGeneral,
+	AccountTypeFeeInfrastructure,
+	AccountTypeFeeLiquidity,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity:
 		return true
 	}
 	return false
@@ -1093,7 +1109,7 @@ const (
 	// The specified product is not supported
 	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
 	// Invalid future maturity timestamp (expect RFC3339)
-	ProposalRejectionReasonInvalidFutureMatuityTimestamp ProposalRejectionReason = "InvalidFutureMatuityTimestamp"
+	ProposalRejectionReasonInvalidFutureMaturityTimestamp ProposalRejectionReason = "InvalidFutureMaturityTimestamp"
 	// The product maturity is already in the past
 	ProposalRejectionReasonProductMaturityIsPassed ProposalRejectionReason = "ProductMaturityIsPassed"
 	// The proposal has no trading mode
@@ -1102,6 +1118,10 @@ const (
 	ProposalRejectionReasonUnsupportedTradingMode ProposalRejectionReason = "UnsupportedTradingMode"
 	// The proposal failed node validation
 	ProposalRejectionReasonNodeValidationFailed ProposalRejectionReason = "NodeValidationFailed"
+	// A builtin asset configuration is missing
+	ProposalRejectionReasonMissingBuiltinAssetField ProposalRejectionReason = "MissingBuiltinAssetField"
+	// The ERC20 contract address is missing from an ERC20 asset proposal
+	ProposalRejectionReasonMissingERC20ContractAddress ProposalRejectionReason = "MissingERC20ContractAddress"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1113,16 +1133,18 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInvalidInstrumentSecurity,
 	ProposalRejectionReasonNoProduct,
 	ProposalRejectionReasonUnuspportedProduct,
-	ProposalRejectionReasonInvalidFutureMatuityTimestamp,
+	ProposalRejectionReasonInvalidFutureMaturityTimestamp,
 	ProposalRejectionReasonProductMaturityIsPassed,
 	ProposalRejectionReasonNoTradingMode,
 	ProposalRejectionReasonUnsupportedTradingMode,
 	ProposalRejectionReasonNodeValidationFailed,
+	ProposalRejectionReasonMissingBuiltinAssetField,
+	ProposalRejectionReasonMissingERC20ContractAddress,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMatuityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress:
 		return true
 	}
 	return false
@@ -1169,6 +1191,8 @@ const (
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
 	ProposalStateEnacted ProposalState = "Enacted"
+	// Proposal is waiting for the node to run validation
+	ProposalStateWaitingForNodeVote ProposalState = "WaitingForNodeVote"
 )
 
 var AllProposalState = []ProposalState{
@@ -1178,11 +1202,12 @@ var AllProposalState = []ProposalState{
 	ProposalStateDeclined,
 	ProposalStateRejected,
 	ProposalStateEnacted,
+	ProposalStateWaitingForNodeVote,
 }
 
 func (e ProposalState) IsValid() bool {
 	switch e {
-	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted:
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted, ProposalStateWaitingForNodeVote:
 		return true
 	}
 	return false

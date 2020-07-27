@@ -14,6 +14,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
+    - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
     - [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse)
     - [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest)
@@ -173,6 +175,7 @@
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
+    - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
@@ -379,6 +382,36 @@ The response containing the list of all assets enabled in vega
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | interval | [vega.Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsRequest"></a>
+
+### FeeInfrastructureAccountsRequest
+Request for the infrastructure fees accounts
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| asset | [string](#string) |  | an empty string to return all accounts an asset ID to return a single infrastructure fee fee account for a given asset |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsResponse"></a>
+
+### FeeInfrastructureAccountsResponse
+Response for the infrastructure fees accounts
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of infrastructure fee accounts for all or a specific asset |
 
 
 
@@ -1724,6 +1757,7 @@ The response for a new event sent to vega
 | ----------- | ------------ | ------------- | ------------|
 | MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get a list of Accounts by Market |
 | PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get a list of Accounts by Party |
+| FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse) | Get the list of infrastructure fees accounts filter eventually by assets |
 | Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get a list of Candles by Market |
 | MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by MarketID |
 | MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
@@ -1797,8 +1831,7 @@ The vega representation of an external asset
 | symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
 | totalSupply | [string](#string) |  | The total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A vega builtin asset (for testing purpose) |
-| erc20 | [ERC20](#vega.ERC20) |  | An ERC20 token based asset |
+| source | [AssetSource](#vega.AssetSource) |  | The definition of the external source for this asset |
 
 
 
@@ -2212,6 +2245,7 @@ FeeFactors set at the network level
 | ----- | ---- | ----- | ----------- |
 | infrastructureFee | [string](#string) |  | the infrastructure fee, needs to be a valid float |
 | makerFee | [string](#string) |  | the maker fee, needs to be a valid float |
+| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 
 
 
@@ -2367,7 +2401,6 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
-| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
@@ -2513,7 +2546,8 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
 | PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
-| PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE | 14 | invalid liquidity fee (expect valid float) |
+| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
+| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
 
 
 
@@ -2883,6 +2917,26 @@ and the cause for an proposal being rejected of failed
 
 
 
+<a name="vega.AuctionIndicativeState"></a>
+
+### AuctionIndicativeState
+Whenever a change to the book occurs during an auction, this message will be used
+to emit an event with the indicative price/volume per market
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | The market this state is related to |
+| indicativePrice | [uint64](#uint64) |  | The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now. |
+| indicativeVolume | [uint64](#uint64) |  | The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now. |
+| auctionStart | [int64](#int64) |  | The timestamp at which the auction started |
+| auctionEnd | [int64](#int64) |  | The timestamp at which the auction is meant to stop. |
+
+
+
+
+
+
 <a name="vega.Candle"></a>
 
 ### Candle
@@ -2925,14 +2979,14 @@ and the cause for an proposal being rejected of failed
 <a name="vega.Fee"></a>
 
 ### Fee
-
+The fees being paid by a party, resulting from a trade
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| makerFee | [uint64](#uint64) |  |  |
-| infrastructureFee | [uint64](#uint64) |  |  |
-| liquidityFee | [uint64](#uint64) |  |  |
+| makerFee | [uint64](#uint64) |  | A fee being paid to the non-aggressor party of the trade |
+| infrastructureFee | [uint64](#uint64) |  | A fee being paid to maintaining the vega infrastructure |
+| liquidityFee | [uint64](#uint64) |  | A fee being paid to the market makers |
 
 
 
@@ -3112,7 +3166,8 @@ a decision taken by the vega network.
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
-| marketType | [Order.MarketType](#vega.Order.MarketType) |  |  |
+| batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
+| marketType | [Order.MarketType](#vega.Order.MarketType) |  | Used to indicate which market state this order is valid for |
 
 
 
@@ -3464,6 +3519,8 @@ a decision taken by the vega network.
 | type | [Trade.Type](#vega.Trade.Type) |  |  |
 | buyerFee | [Fee](#vega.Fee) |  |  |
 | sellerFee | [Fee](#vega.Fee) |  |  |
+| buyerAuctionBatch | [uint64](#uint64) |  |  |
+| sellerAuctionBatch | [uint64](#uint64) |  |  |
 
 
 
@@ -3564,11 +3621,14 @@ a decision taken by the vega network.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
-| ACCOUNT_TYPE_INSURANCE | 1 |  |
-| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
-| ACCOUNT_TYPE_MARGIN | 3 |  |
-| ACCOUNT_TYPE_GENERAL | 4 |  |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 | the default variant for this enum |
+| ACCOUNT_TYPE_INSURANCE | 1 | This account is created to hold the insurance pool funds of a market. |
+| ACCOUNT_TYPE_SETTLEMENT | 2 | This account is created to hold fund while settlement or mtm occur. |
+| ACCOUNT_TYPE_MARGIN | 3 | A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change |
+| ACCOUNT_TYPE_GENERAL | 4 | A party will have multiple general accounts, one for each assets they want to trade with. This is the account where the funds are initially deposited or withdrawn from. It&#39;s also the account where funds are taken to fullfill margin requirement or fees |
+| ACCOUNT_TYPE_FEES_INFRASTRUCTURE | 5 | This account is created to hold fees earned for providing infrastructure |
+| ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | This account is created to hold fees earned for providing liquidity |
+| ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned for placing orders that sit on the book |
 
 
 
@@ -3700,32 +3760,32 @@ Order Type
 <a name="vega.OrderError"></a>
 
 ### OrderError
-
+Set when an order has an issue
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ORDER_ERROR_NONE | 0 |  |
-| ORDER_ERROR_INVALID_MARKET_ID | 1 |  |
-| ORDER_ERROR_INVALID_ORDER_ID | 2 |  |
-| ORDER_ERROR_OUT_OF_SEQUENCE | 3 |  |
-| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 |  |
-| ORDER_ERROR_TIME_FAILURE | 5 |  |
-| ORDER_ERROR_REMOVAL_FAILURE | 6 |  |
-| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 |  |
-| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 |  |
-| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 |  |
-| ORDER_ERROR_AMEND_FAILURE | 10 |  |
-| ORDER_ERROR_NOT_FOUND | 11 |  |
-| ORDER_ERROR_INVALID_PARTY_ID | 12 |  |
-| ORDER_ERROR_MARKET_CLOSED | 13 |  |
-| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 |  |
-| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 |  |
-| ORDER_ERROR_INTERNAL_ERROR | 16 |  |
-| ORDER_ERROR_INVALID_SIZE | 17 |  |
-| ORDER_ERROR_INVALID_PERSISTENCE | 18 |  |
-| ORDER_ERROR_INVALID_TYPE | 19 |  |
-| ORDER_ERROR_SELF_TRADING | 20 |  |
-| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 |  |
+| ORDER_ERROR_NONE | 0 | Empty default error |
+| ORDER_ERROR_INVALID_MARKET_ID | 1 | Order was submitted for a market that does not exist |
+| ORDER_ERROR_INVALID_ORDER_ID | 2 | Order was submitted with an invalid ID |
+| ORDER_ERROR_OUT_OF_SEQUENCE | 3 | Order was amended with a sequence number that was not previous version &#43; 1 |
+| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 | Order was amended with an invalid remaining size (e.g. remaining greater than total size) |
+| ORDER_ERROR_TIME_FAILURE | 5 | Node was unable to get Vega (blockchain) time |
+| ORDER_ERROR_REMOVAL_FAILURE | 6 | Failed to remove an order from the book |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid |
+| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 | Order was submitted or amended with an invalid reference field |
+| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 | Order amend was submitted for an order field that cannot not be amended (e.g. order id) |
+| ORDER_ERROR_AMEND_FAILURE | 10 | Amend failure because amend details do not match original order |
+| ORDER_ERROR_NOT_FOUND | 11 | Order not found in the order book or in order store |
+| ORDER_ERROR_INVALID_PARTY_ID | 12 | Order was submitted with an invalid or missing party ID |
+| ORDER_ERROR_MARKET_CLOSED | 13 | Order was submitted for a market that has closed |
+| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 | Order was submitted, but the party did not have enough collateral to cover the order |
+| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 | Order was submitted, but the party did not have an account for this asset |
+| ORDER_ERROR_INTERNAL_ERROR | 16 | Unspecified internal error |
+| ORDER_ERROR_INVALID_SIZE | 17 | Order was submitted with an invalid or missing size (e.g. 0) |
+| ORDER_ERROR_INVALID_PERSISTENCE | 18 | Order was submitted with an invalid persistence for its type |
+| ORDER_ERROR_INVALID_TYPE | 19 | Order was submitted with an invalid type field |
+| ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order for the same party |
+| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order |
 | ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 |  |
 
 

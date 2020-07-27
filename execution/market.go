@@ -514,34 +514,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, m.unregisterAndReject(ctx, order, err)
 	}
 
-	// if we have some trades, let's try to get the fees
-	if len(trades) > 0 {
-		// first we get the fees for these trades
-		var fees []events.FeesTransfer
-		switch m.mkt.TradingMode.(type) {
-		case *types.Market_Continuous:
-			f, err := m.fee.CalculateForContinuousMode(trades)
-			if err != nil {
-				fees = append(fees, f)
-			}
-		case *types.Market_Discrete:
-			fees = nil
-		}
-
-		if err != nil {
-			return nil, m.unregisterAndReject(ctx, order, err)
-		}
-
-		// here we are going to call the colateral engine
-		// to check if we can get the fees
-		// 	transfers, err := e.collateral.TransferFees(ctx, fees)
-		// 	if err != nil {
-		// 		e.log.Error("unable to transfer fees for trades",
-		// 			logging.String("order-id", order.ID),
-		// 			logging.String("market-id", m.GetID()),
-		// 			logging.Error(err))
-		// 		return nil, m.unregisterAndReject(ctx, types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES)
-		// 	}
+	// try to apply fees on the trade
+	err = m.applyFees(ctx, order, trades)
+	if err != nil {
+		return nil, err
 	}
 
 	// Send the aggressive order into matching engine
@@ -595,6 +571,90 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
+}
+
+func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
+	// if we have some trades, let's try to get the fees
+	// FIXME(): change the following code with this check:
+	// we de not take any fees if the market was on a open auction
+	// if len(trades) <= 0 || m.IsInMarketOpenAuctionMode {
+	if len(trades) <= 0 {
+		return nil
+	}
+
+	// first we get the fees for these trades
+	var (
+		fees events.FeesTransfer
+		err  error
+	)
+
+	switch m.mkt.TradingMode.(type) {
+	case *types.Market_Continuous:
+		// change this by the following check:
+		// if m.NotInMonitoringAuctionMode {
+		if true {
+			fees, err = m.fee.CalculateForContinuousMode(trades)
+		}
+		// FIXME(): uncomment this once we have implemented
+		// monitoring auction mode
+		//  Use this once we implemented Opening auction
+		// } else {
+		// 	fees, err = m.fee.CalculateForAuctionMode(trades)
+		// }
+
+		// FIXME(): uncomment this once we have implemented
+		// FrequentBatchesAuctions
+		// case *types.Market_FrequentBatchesAuctions:
+		// 	fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
+	}
+
+	if err != nil {
+		return m.unregisterAndReject(ctx, order, err)
+	}
+	_ = fees
+
+	var (
+		transfers []*types.TransferResponse
+		asset, _  = m.mkt.GetAsset()
+	)
+	switch m.mkt.TradingMode.(type) {
+	case *types.Market_Continuous:
+		// change this by the following check:
+		// if m.NotInMonitoringAuctionMode {
+		if true {
+			transfers, err = m.collateral.TransferFeesContinuousTrading(
+				ctx, m.GetID(), asset, fees)
+		}
+		// FIXME():
+		//  Use this once we implemented Opening auction
+		// } else {
+		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
+		// 		ctx, m.GetID(), asset, fees)
+		// }
+
+		// FIXME(): uncomment once Frequent batches auctions is implemented
+		// case *types.Market_FrequentBatchesAuctions:
+		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
+		// 		ctx, m.GetID(), asset, fees)
+		// }
+	}
+
+	if err != nil {
+		m.log.Error("unable to transfer fees for trades",
+			logging.String("order-id", order.Id),
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+		return m.unregisterAndReject(ctx,
+			order, types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES)
+	}
+
+	// send transfers through the broker
+	if err == nil && len(transfers) > 0 {
+		evt := events.NewTransferResponse(ctx, transfers)
+		m.broker.Send(evt)
+	}
+
+	return nil
 }
 
 func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, confirmation *types.OrderConfirmation) {
@@ -1415,7 +1475,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		confirmation, err := m.orderCancelReplace(existingOrder, amendedOrder)
+		confirmation, err := m.orderCancelReplace(ctx, existingOrder, amendedOrder)
 		if err == nil {
 			m.handleConfirmation(ctx, amendedOrder, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
@@ -1528,7 +1588,7 @@ func (m *Market) applyOrderAmendment(
 	return
 }
 
-func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
+func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
 
 	if m.log.GetLevel() == logging.DebugLevel {
@@ -1548,7 +1608,22 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
 	} else {
+		// calculates the fees
+		trades, err := m.matching.GetTrades(newOrder)
+		if err != nil {
+			return nil, m.unregisterAndReject(ctx, newOrder, err)
+		}
+
+		// try to apply fees on the trade
+		err = m.applyFees(ctx, newOrder, trades)
+		if err != nil {
+			return nil, err
+		}
+
 		conf, err = m.matching.SubmitOrder(newOrder)
+		// replace the trades in the confirmation to have
+		// the ones with the fees embbeded
+		conf.Trades = trades
 	}
 
 	timer.EngineTimeCounterAdd()

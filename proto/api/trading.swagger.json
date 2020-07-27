@@ -623,6 +623,7 @@
           },
           {
             "name": "type",
+            "description": " - ACCOUNT_TYPE_UNSPECIFIED: the default variant for this enum\n - ACCOUNT_TYPE_INSURANCE: This account is created to hold the insurance pool funds of a market.\n - ACCOUNT_TYPE_SETTLEMENT: This account is created to hold fund while settlement or mtm occur.\n - ACCOUNT_TYPE_MARGIN: A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: A party will have multiple general accounts, one for each assets they want\nto trade with. This is the account where the funds are initially deposited\nor withdrawn from. It's also the account where funds are taken to fullfill\nmargin requirement or fees\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: This account is created to hold fees earned for providing infrastructure\n - ACCOUNT_TYPE_FEES_LIQUIDITY: This account is created to hold fees earned for providing liquidity\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned for placing orders that sit on the book",
             "in": "query",
             "required": false,
             "type": "string",
@@ -631,7 +632,10 @@
               "ACCOUNT_TYPE_INSURANCE",
               "ACCOUNT_TYPE_SETTLEMENT",
               "ACCOUNT_TYPE_MARGIN",
-              "ACCOUNT_TYPE_GENERAL"
+              "ACCOUNT_TYPE_GENERAL",
+              "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
+              "ACCOUNT_TYPE_FEES_LIQUIDITY",
+              "ACCOUNT_TYPE_FEES_MAKER"
             ],
             "default": "ACCOUNT_TYPE_UNSPECIFIED"
           },
@@ -977,6 +981,19 @@
           }
         }
       }
+    },
+    "apiFeeInfrastructureAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          },
+          "title": "A list of infrastructure fee accounts for all\nor a specific asset"
+        }
+      },
+      "title": "Response for the infrastructure fees accounts"
     },
     "apiGetNetworkParametersProposalsResponse": {
       "type": "object",
@@ -1529,9 +1546,13 @@
         "ACCOUNT_TYPE_INSURANCE",
         "ACCOUNT_TYPE_SETTLEMENT",
         "ACCOUNT_TYPE_MARGIN",
-        "ACCOUNT_TYPE_GENERAL"
+        "ACCOUNT_TYPE_GENERAL",
+        "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
+        "ACCOUNT_TYPE_FEES_LIQUIDITY",
+        "ACCOUNT_TYPE_FEES_MAKER"
       ],
-      "default": "ACCOUNT_TYPE_UNSPECIFIED"
+      "default": "ACCOUNT_TYPE_UNSPECIFIED",
+      "title": "- ACCOUNT_TYPE_UNSPECIFIED: the default variant for this enum\n - ACCOUNT_TYPE_INSURANCE: This account is created to hold the insurance pool funds of a market.\n - ACCOUNT_TYPE_SETTLEMENT: This account is created to hold fund while settlement or mtm occur.\n - ACCOUNT_TYPE_MARGIN: A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: A party will have multiple general accounts, one for each assets they want\nto trade with. This is the account where the funds are initially deposited\nor withdrawn from. It's also the account where funds are taken to fullfill\nmargin requirement or fees\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: This account is created to hold fees earned for providing infrastructure\n - ACCOUNT_TYPE_FEES_LIQUIDITY: This account is created to hold fees earned for providing liquidity\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned for placing orders that sit on the book"
     },
     "vegaAddValidator": {
       "type": "object",
@@ -1567,13 +1588,9 @@
           "format": "uint64",
           "title": "The number of decimal / precision handled by this asset"
         },
-        "builtinAsset": {
-          "$ref": "#/definitions/vegaBuiltinAsset",
-          "title": "A vega builtin asset (for testing purpose)"
-        },
-        "erc20": {
-          "$ref": "#/definitions/vegaERC20",
-          "title": "An ERC20 token based asset"
+        "source": {
+          "$ref": "#/definitions/vegaAssetSource",
+          "title": "The definition of the external source for this asset"
         }
       },
       "title": "The vega representation of an external asset"
@@ -1969,17 +1986,21 @@
       "properties": {
         "makerFee": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "A fee being paid to the non-aggressor party of the trade"
         },
         "infrastructureFee": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "A fee being paid to maintaining the vega infrastructure"
         },
         "liquidityFee": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "A fee being paid to the market makers"
         }
-      }
+      },
+      "title": "The fees being paid by a party, resulting from a trade"
     },
     "vegaFeeFactors": {
       "type": "object",
@@ -2005,6 +2026,10 @@
         "makerFee": {
           "type": "string",
           "title": "the maker fee, needs to be a valid float"
+        },
+        "liquidityFee": {
+          "type": "string",
+          "title": "this is the liquidity fee, it needs to be a valid float"
         }
       },
       "title": "FeeFactors set at the network level"
@@ -2445,10 +2470,6 @@
           "$ref": "#/definitions/vegaInstrumentConfiguration",
           "title": "New market instrument configuration"
         },
-        "liquidityFee": {
-          "type": "string",
-          "title": "this is the liquidity fee, it needs to be a valid float"
-        },
         "decimalPlaces": {
           "type": "string",
           "format": "uint64",
@@ -2568,8 +2589,14 @@
           "format": "uint64",
           "title": "Versioning support for amends, orders start at version 1 and increment\nafter each successful amend"
         },
+        "batchID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "used internally, for orders submitted during auctions\nto keep track which auction batch this order falls under (required for fees calculation)"
+        },
         "marketType": {
-          "$ref": "#/definitions/OrderMarketType"
+          "$ref": "#/definitions/OrderMarketType",
+          "title": "Used to indicate which market state this order is valid for"
         }
       }
     },
@@ -2643,7 +2670,9 @@
         "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES",
         "ORDER_ERROR_INCORRECT_MARKET_TYPE"
       ],
-      "default": "ORDER_ERROR_NONE"
+      "default": "ORDER_ERROR_NONE",
+      "description": "- ORDER_ERROR_NONE: Empty default error\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid ID\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size)\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order id)\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order\n - ORDER_ERROR_NOT_FOUND: Order not found in the order book or in order store\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party ID\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0)\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order for the same party\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order",
+      "title": "Set when an order has an issue"
     },
     "vegaOrderSubmission": {
       "type": "object",
@@ -2814,10 +2843,11 @@
         "PROPOSAL_ERROR_NO_TRADING_MODE",
         "PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE",
         "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
-        "PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE"
+        "PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD",
+        "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_INVALID_LIQUIDITY_FEE: invalid liquidity fee (expect valid float)",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: a field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: the contract address is missing in the ERC20 asset source",
       "title": "A list of possible error which could have happenned\nand the cause for an proposal being rejected of failed"
     },
     "vegaProposalTerms": {
@@ -3134,6 +3164,14 @@
         },
         "sellerFee": {
           "$ref": "#/definitions/vegaFee"
+        },
+        "buyerAuctionBatch": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "sellerAuctionBatch": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

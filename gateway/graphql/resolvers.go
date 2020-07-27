@@ -112,6 +112,7 @@ type TradingDataClient interface {
 	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
 	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
+	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -222,6 +223,38 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 // NodeSignature ...
 func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
 	return (*myNodeSignatureResolver)(r)
+}
+
+// Asset ...
+func (r *VegaResolverRoot) Asset() AssetResolver {
+	return (*myAssetResolver)(r)
+}
+
+// asset resolver
+
+type myAssetResolver VegaResolverRoot
+
+func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error) {
+	if len(obj.ID) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &protoapi.FeeInfrastructureAccountsRequest{
+		// FIXME(jeremy): this use the symbol for now,
+		// but we'll need to use the id once all the asset
+		// stuff is used everywhere
+		Asset: obj.Symbol,
+	}
+	res, err := r.tradingDataClient.FeeInfrastructureAccounts(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var acc *types.Account
+	if len(res.Accounts) > 0 {
+		acc = res.Accounts[0]
+	}
+
+	return acc, nil
 }
 
 // BEGIN: Query Resolver
@@ -1316,6 +1349,44 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 
 func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
 	return convertTradeTypeFromProto(obj.Type)
+}
+
+func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+	i := int(obj.BuyerAuctionBatch)
+	return &i, nil
+}
+
+func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+	fee := TradeFee{
+		MakerFee:          "0",
+		InfrastructureFee: "0",
+		LiquidityFee:      "0",
+	}
+	if obj.BuyerFee != nil {
+		fee.MakerFee = strconv.FormatUint(obj.BuyerFee.MakerFee, 10)
+		fee.InfrastructureFee = strconv.FormatUint(obj.BuyerFee.InfrastructureFee, 10)
+		fee.LiquidityFee = strconv.FormatUint(obj.BuyerFee.LiquidityFee, 10)
+	}
+	return &fee, nil
+}
+
+func (r *myTradeResolver) SellerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+	i := int(obj.SellerAuctionBatch)
+	return &i, nil
+}
+
+func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+	fee := TradeFee{
+		MakerFee:          "0",
+		InfrastructureFee: "0",
+		LiquidityFee:      "0",
+	}
+	if obj.SellerFee != nil {
+		fee.MakerFee = strconv.FormatUint(obj.SellerFee.MakerFee, 10)
+		fee.InfrastructureFee = strconv.FormatUint(obj.SellerFee.InfrastructureFee, 10)
+		fee.LiquidityFee = strconv.FormatUint(obj.SellerFee.LiquidityFee, 10)
+	}
+	return &fee, nil
 }
 
 // END: Trade Resolver

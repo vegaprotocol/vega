@@ -900,20 +900,8 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		return nil, err
 	}
 
-	if len(n.LiquidityFee) <= 0 {
-		return nil, errors.New("NewMarket.LiquidityFee: field required")
-	}
-	lf, err := strconv.ParseFloat(n.LiquidityFee, 64)
-	if err != nil {
-		return nil, errors.New("NewMarket.LiquidityFee: needs to be a valid float")
-	}
-	if lf < 0 {
-		return nil, errors.New("NewMarket.LiquidityFee: needs to be a non-negative float")
-	}
-
 	result := &types.NewMarketConfiguration{
 		Instrument:    instrument,
-		LiquidityFee:  n.LiquidityFee,
 		DecimalPlaces: uint64(n.DecimalPlaces),
 	}
 
@@ -1055,14 +1043,14 @@ func ERC20FromProto(ea *types.ERC20) *Erc20 {
 	}
 }
 
-func AssetSourceFromProto(psource interface{}) (AssetSource, error) {
+func AssetSourceFromProto(psource *types.AssetSource) (AssetSource, error) {
 	if psource == nil {
 		return nil, ErrNilAssetSource
 	}
-	switch asimpl := psource.(type) {
-	case *types.Asset_BuiltinAsset:
+	switch asimpl := psource.Source.(type) {
+	case *types.AssetSource_BuiltinAsset:
 		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
-	case *types.Asset_Erc20:
+	case *types.AssetSource_Erc20:
 		return ERC20FromProto(asimpl.Erc20), nil
 	default:
 		return nil, ErrUnimplementedAssetSource

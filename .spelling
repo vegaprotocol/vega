@@ -11,6 +11,7 @@ datetime
 Ed25519
 enum
 enums
+Ethereum
 github
 GitLab
 Golang
@@ -19,11 +20,14 @@ gRPC
 Ilya
 init
 MacOSX
+multisig
+mutex
+mutexes
 nodewallet
+notarising
 proto
 protobuf
 protobufs
-struct
 struct
 Suzdalnitski
 syslog

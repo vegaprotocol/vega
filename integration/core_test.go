@@ -89,9 +89,9 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	mkt := &proto.Market{
 		Fees: &proto.Fees{
 			Factors: &proto.FeeFactors{
-				LiquidityFee:      "0.001",
-				InfrastructureFee: "0.0005",
-				MakerFee:          "0.00025",
+				LiquidityFee:      "0",
+				InfrastructureFee: "0",
+				MakerFee:          "0",
 			},
 		},
 		TradableInstrument: &proto.TradableInstrument{
@@ -165,7 +165,7 @@ func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 		Symbol: asset,
 	})
 	_, _, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
-	if len(mktsetup.broker.GetAccounts()) != current+2 {
+	if len(mktsetup.broker.GetAccounts()) != current+5 {
 		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err

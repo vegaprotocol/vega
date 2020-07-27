@@ -137,6 +137,26 @@ func (mr *MockTradingDataClientMockRecorder) CandlesSubscribe(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandlesSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).CandlesSubscribe), varargs...)
 }
 
+// FeeInfrastructureAccounts mocks base method
+func (m *MockTradingDataClient) FeeInfrastructureAccounts(arg0 context.Context, arg1 *api.FeeInfrastructureAccountsRequest, arg2 ...grpc.CallOption) (*api.FeeInfrastructureAccountsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FeeInfrastructureAccounts", varargs...)
+	ret0, _ := ret[0].(*api.FeeInfrastructureAccountsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FeeInfrastructureAccounts indicates an expected call of FeeInfrastructureAccounts
+func (mr *MockTradingDataClientMockRecorder) FeeInfrastructureAccounts(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FeeInfrastructureAccounts", reflect.TypeOf((*MockTradingDataClient)(nil).FeeInfrastructureAccounts), varargs...)
+}
+
 // GetNetworkParametersProposals mocks base method
 func (m *MockTradingDataClient) GetNetworkParametersProposals(arg0 context.Context, arg1 *api.GetNetworkParametersProposalsRequest, arg2 ...grpc.CallOption) (*api.GetNetworkParametersProposalsResponse, error) {
 	m.ctrl.T.Helper()

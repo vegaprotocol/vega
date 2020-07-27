@@ -38,6 +38,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Account() AccountResolver
+	Asset() AssetResolver
 	Candle() CandleResolver
 	MarginLevels() MarginLevelsResolver
 	Market() MarketResolver
@@ -68,12 +69,13 @@ type ComplexityRoot struct {
 	}
 
 	Asset struct {
-		Decimals    func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Source      func(childComplexity int) int
-		Symbol      func(childComplexity int) int
-		TotalSupply func(childComplexity int) int
+		Decimals                 func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		InfrastructureFeeAccount func(childComplexity int) int
+		Name                     func(childComplexity int) int
+		Source                   func(childComplexity int) int
+		Symbol                   func(childComplexity int) int
+		TotalSupply              func(childComplexity int) int
 	}
 
 	BuiltinAsset struct {
@@ -423,17 +425,27 @@ type ComplexityRoot struct {
 	}
 
 	Trade struct {
-		Aggressor func(childComplexity int) int
-		BuyOrder  func(childComplexity int) int
-		Buyer     func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		Id        func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Price     func(childComplexity int) int
-		SellOrder func(childComplexity int) int
-		Seller    func(childComplexity int) int
-		Size      func(childComplexity int) int
-		Type      func(childComplexity int) int
+		Aggressor          func(childComplexity int) int
+		BuyOrder           func(childComplexity int) int
+		Buyer              func(childComplexity int) int
+		BuyerAuctionBatch  func(childComplexity int) int
+		BuyerFee           func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		Id                 func(childComplexity int) int
+		Market             func(childComplexity int) int
+		Price              func(childComplexity int) int
+		SellOrder          func(childComplexity int) int
+		Seller             func(childComplexity int) int
+		SellerAuctionBatch func(childComplexity int) int
+		SellerFee          func(childComplexity int) int
+		Size               func(childComplexity int) int
+		Type               func(childComplexity int) int
+	}
+
+	TradeFee struct {
+		InfrastructureFee func(childComplexity int) int
+		LiquidityFee      func(childComplexity int) int
+		MakerFee          func(childComplexity int) int
 	}
 
 	TransactionSubmitted struct {
@@ -467,6 +479,9 @@ type AccountResolver interface {
 
 	Type(ctx context.Context, obj *proto.Account) (AccountType, error)
 	Market(ctx context.Context, obj *proto.Account) (*Market, error)
+}
+type AssetResolver interface {
+	InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
@@ -643,6 +658,10 @@ type TradeResolver interface {
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
 	CreatedAt(ctx context.Context, obj *proto.Trade) (string, error)
 	Type(ctx context.Context, obj *proto.Trade) (TradeType, error)
+	BuyerFee(ctx context.Context, obj *proto.Trade) (*TradeFee, error)
+	SellerFee(ctx context.Context, obj *proto.Trade) (*TradeFee, error)
+	BuyerAuctionBatch(ctx context.Context, obj *proto.Trade) (*int, error)
+	SellerAuctionBatch(ctx context.Context, obj *proto.Trade) (*int, error)
 }
 
 type executableSchema struct {
@@ -701,6 +720,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.ID(childComplexity), true
+
+	case "Asset.infrastructureFeeAccount":
+		if e.complexity.Asset.InfrastructureFeeAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.InfrastructureFeeAccount(childComplexity), true
 
 	case "Asset.name":
 		if e.complexity.Asset.Name == nil {
@@ -2480,6 +2506,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Buyer(childComplexity), true
 
+	case "Trade.buyerAuctionBatch":
+		if e.complexity.Trade.BuyerAuctionBatch == nil {
+			break
+		}
+
+		return e.complexity.Trade.BuyerAuctionBatch(childComplexity), true
+
+	case "Trade.buyerFee":
+		if e.complexity.Trade.BuyerFee == nil {
+			break
+		}
+
+		return e.complexity.Trade.BuyerFee(childComplexity), true
+
 	case "Trade.createdAt":
 		if e.complexity.Trade.CreatedAt == nil {
 			break
@@ -2522,6 +2562,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Seller(childComplexity), true
 
+	case "Trade.sellerAuctionBatch":
+		if e.complexity.Trade.SellerAuctionBatch == nil {
+			break
+		}
+
+		return e.complexity.Trade.SellerAuctionBatch(childComplexity), true
+
+	case "Trade.sellerFee":
+		if e.complexity.Trade.SellerFee == nil {
+			break
+		}
+
+		return e.complexity.Trade.SellerFee(childComplexity), true
+
 	case "Trade.size":
 		if e.complexity.Trade.Size == nil {
 			break
@@ -2535,6 +2589,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Trade.Type(childComplexity), true
+
+	case "TradeFee.infrastructureFee":
+		if e.complexity.TradeFee.InfrastructureFee == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.InfrastructureFee(childComplexity), true
+
+	case "TradeFee.liquidityFee":
+		if e.complexity.TradeFee.LiquidityFee == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.LiquidityFee(childComplexity), true
+
+	case "TradeFee.makerFee":
+		if e.complexity.TradeFee.MakerFee == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.MakerFee(childComplexity), true
 
 	case "TransactionSubmitted.success":
 		if e.complexity.TransactionSubmitted.Success == nil {
@@ -3098,6 +3173,9 @@ type Asset {
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
+
+  "The infrastructure fee account for this asset"
+  infrastructureFeeAccount: Account!
 }
 
 "One of the possible asset sources"
@@ -3707,7 +3785,32 @@ type Trade {
 
   "The type of trade"
   type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  sellerAuctionBatch: Int
 }
+
+"The fee paid by the party when a trade occurs"
+type TradeFee {
+  "The maker fee, aggressive party to the other party (the one who had an order in the book)"
+  makerFee: String!
+
+  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  infrastructureFee: String!
+
+  "The fee paid to the market makers to provide liquidity in the market"
+  liquidityFee: String!
+}
+
 
 "Valid trade types"
 enum TradeType {
@@ -3800,7 +3903,7 @@ enum ProposalRejectionReason {
   "The specified product is not supported"
   UnuspportedProduct
   "Invalid future maturity timestamp (expect RFC3339)"
-  InvalidFutureMatuityTimestamp
+  InvalidFutureMaturityTimestamp
   "The product maturity is already in the past"
   ProductMaturityIsPassed
   "The proposal has no trading mode"
@@ -3809,6 +3912,10 @@ enum ProposalRejectionReason {
   UnsupportedTradingMode
   "The proposal failed node validation"
   NodeValidationFailed
+  "A builtin asset configuration is missing"
+  MissingBuiltinAssetField
+  "The ERC20 contract address is missing from an ERC20 asset proposal"
+  MissingERC20ContractAddress
 }
 
 "Reason for the order beeing rejected by the core node"
@@ -3953,6 +4060,10 @@ enum AccountType {
   Margin
   "General account - the account containing 'unused' collateral for traders"
   General
+  "Infrastructure fee account - the account where all infrastructure fees are collected"
+  FeeInfrastructure
+  "Liquidity fee account - the account where all infrastructure fees are collected"
+  FeeLiquidity
 }
 
 input SimpleRiskModelParamsInput {
@@ -4054,8 +4165,6 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The factor for the liquidity fee, must be an non negative float"
-  liquidityFee: String!
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -4301,6 +4410,8 @@ enum ProposalState {
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
+  "Proposal is waiting for the node to run validation"
+  WaitingForNodeVote
 }
 
 type Proposal {
@@ -5730,6 +5841,40 @@ func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.Col
 	res := resTmp.(AssetSource)
 	fc.Result = res
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Asset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().InfrastructureFeeAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.Account)
+	fc.Result = res
+	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -13815,6 +13960,238 @@ func (ec *executionContext) _Trade_type(ctx context.Context, field graphql.Colle
 	return ec.marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Trade_buyerFee(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().BuyerFee(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TradeFee)
+	fc.Result = res
+	return ec.marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeFee(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Trade_sellerFee(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().SellerFee(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TradeFee)
+	fc.Result = res
+	return ec.marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeFee(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Trade_buyerAuctionBatch(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().BuyerAuctionBatch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Trade_sellerAuctionBatch(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().SellerAuctionBatch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeFee_makerFee(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TradeFee",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MakerFee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeFee_infrastructureFee(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TradeFee",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InfrastructureFee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeFee_liquidityFee(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TradeFee",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15564,12 +15941,6 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "liquidityFee":
-			var err error
-			it.LiquidityFee, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "continuousTrading":
 			var err error
 			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
@@ -15988,33 +16359,47 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Asset_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Asset_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "symbol":
 			out.Values[i] = ec._Asset_symbol(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "totalSupply":
 			out.Values[i] = ec._Asset_totalSupply(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "decimals":
 			out.Values[i] = ec._Asset_decimals(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "source":
 			out.Values[i] = ec._Asset_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "infrastructureFeeAccount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_infrastructureFeeAccount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19064,6 +19449,93 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		case "buyerFee":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_buyerFee(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "sellerFee":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_sellerFee(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "buyerAuctionBatch":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_buyerAuctionBatch(ctx, field, obj)
+				return res
+			})
+		case "sellerAuctionBatch":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_sellerAuctionBatch(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tradeFeeImplementors = []string{"TradeFee"}
+
+func (ec *executionContext) _TradeFee(ctx context.Context, sel ast.SelectionSet, obj *TradeFee) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tradeFeeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TradeFee")
+		case "makerFee":
+			out.Values[i] = ec._TradeFee_makerFee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "infrastructureFee":
+			out.Values[i] = ec._TradeFee_infrastructureFee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "liquidityFee":
+			out.Values[i] = ec._TradeFee_liquidityFee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20104,6 +20576,20 @@ func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Trade(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTradeFee2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeFee(ctx context.Context, sel ast.SelectionSet, v TradeFee) graphql.Marshaler {
+	return ec._TradeFee(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeFee(ctx context.Context, sel ast.SelectionSet, v *TradeFee) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TradeFee(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, v interface{}) (TradeType, error) {
