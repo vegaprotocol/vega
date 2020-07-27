@@ -37,7 +37,6 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (bool, error)
 	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 
@@ -136,28 +135,6 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}
 	return &protoapi.SubmitTransactionResponse{
 		Success: true,
-	}, nil
-}
-
-func (s *tradingService) NotifyTraderAccount(
-	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
-) (*protoapi.NotifyTraderAccountResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("NotifyTraderAccount", startTime)
-	if req == nil || req.Notif == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-	}
-	if len(req.Notif.TraderID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
-	}
-
-	submitted, err := s.accountService.NotifyTraderAccount(ctx, req.Notif)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	return &protoapi.NotifyTraderAccountResponse{
-		Submitted: submitted,
 	}, nil
 }
 

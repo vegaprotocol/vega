@@ -76,23 +76,6 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	return c.sendTx(ctx, bundleBytes)
 }
 
-// FIXME(): remove once we have only signed transaction going through the system
-// NotifyTraderAccount will send a Notifytraderaccount transaction to the blockchain
-func (c *Client) NotifyTraderAccount(
-	ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error) {
-	bytes, err := proto.Marshal(notif)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("notify trader account message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, NotifyTraderAccountCommand)
-
-}
-
-// FIXME(): remove once we have only signed transaction going through the system
 // Withdraw will send a Withdraw transaction to the blockchain
 func (c *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
 	bytes, err := proto.Marshal(w)

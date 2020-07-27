@@ -25,7 +25,7 @@ done
 # Generate proto/doc/
 
 # Comment things before generating docs (#726, #1674)
-patch -p0 <proto/comment_undocumented.patch >/dev/null
+# patch -p0 <proto/comment_undocumented.patch >/dev/null
 
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
@@ -64,7 +64,7 @@ do
 done
 
 # Uncomment things after generating docs
-patch --reverse -p0 <proto/comment_undocumented.patch >/dev/null
+#patch --reverse -p0 <proto/comment_undocumented.patch >/dev/null
 find proto -name '*.proto.orig' -exec rm '{}' ';'
 
 # Generate *.validator.pb.go, *.pb.gw.go

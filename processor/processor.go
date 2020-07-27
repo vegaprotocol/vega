@@ -57,8 +57,6 @@ type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
-	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
@@ -371,15 +369,6 @@ func (p *Processor) getOrderAmendment(payload []byte) (*types.OrderAmendment, er
 	return amendment, nil
 }
 
-func (p *Processor) getNotifyTraderAccount(payload []byte) (*types.NotifyTraderAccount, error) {
-	notif := &types.NotifyTraderAccount{}
-	err := proto.Unmarshal(payload, notif)
-	if err != nil {
-		return nil, errors.Wrap(err, "error decoding order to proto")
-	}
-	return notif, nil
-}
-
 func (p *Processor) getWithdraw(payload []byte) (*types.Withdraw, error) {
 	w := &types.Withdraw{}
 	err := proto.Unmarshal(payload, w)
@@ -620,12 +609,6 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 			return err
 		}
 		return p.processChainEvent(ctx, ce, pubkey)
-	case blockchain.NotifyTraderAccountCommand:
-		notify, err := p.getNotifyTraderAccount(data)
-		if err != nil {
-			return err
-		}
-		return p.exec.NotifyTraderAccount(ctx, notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)

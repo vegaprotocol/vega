@@ -11,8 +11,6 @@ const (
 	CancelOrderCommand Command = 0x41
 	// AmendOrderCommand ...
 	AmendOrderCommand Command = 0x42
-	// NotifyTraderAccountCommand ...
-	NotifyTraderAccountCommand Command = 0x43
 	// WithdrawCommand ...
 	WithdrawCommand Command = 0x44
 	// ProposeCommand ...
@@ -30,17 +28,16 @@ const (
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:         "Submit Order",
-	CancelOrderCommand:         "Cancel Order",
-	AmendOrderCommand:          "Amend Order",
-	NotifyTraderAccountCommand: "Notify Trader Account",
-	WithdrawCommand:            "Withdraw",
-	ProposeCommand:             "Proposal",
-	VoteCommand:                "Vote on Proposal",
-	RegisterNodeCommand:        "Register new Node",
-	NodeVoteCommand:            "Node Vote",
-	NodeSignatureCommand:       "Node Signature",
-	ChainEventCommand:          "Chain Event",
+	SubmitOrderCommand:   "Submit Order",
+	CancelOrderCommand:   "Cancel Order",
+	AmendOrderCommand:    "Amend Order",
+	WithdrawCommand:      "Withdraw",
+	ProposeCommand:       "Proposal",
+	VoteCommand:          "Vote on Proposal",
+	RegisterNodeCommand:  "Register new Node",
+	NodeVoteCommand:      "Node Vote",
+	NodeSignatureCommand: "Node Signature",
+	ChainEventCommand:    "Chain Event",
 }
 
 // String return the
