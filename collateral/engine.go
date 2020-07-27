@@ -1359,6 +1359,12 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 	return
 }
 
+func (e *Engine) HasGeneralAccount(party, asset string) bool {
+	_, err := e.GetAccountByID(
+		e.accountID("", party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	return err == nil
+}
+
 // Withdraw will remove the specified amount from the trader
 // general account
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) error {

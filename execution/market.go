@@ -441,8 +441,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// this party and the market Asset
 	// Verify and add new parties
 	// party, _ := m.parties.GetByID(order.PartyID)
-	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
-	if party == nil {
+	asset, _ := m.mkt.GetAsset()
+	if !m.collateral.HasGeneralAccount(order.PartyID, asset) {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INVALID_PARTY_ID
@@ -453,7 +453,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// ensure party have a general account, and margin account is / can be created
-	asset, _ := m.mkt.GetAsset()
 	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.PartyID, order.MarketID, asset)
 	if err != nil {
 		m.log.Error("Margin account verification failed",
