@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -44,8 +45,8 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/sha3"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -291,9 +292,16 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return err
 	}
 
+	h := func(key []byte) []byte {
+		hasher := sha3.New256()
+		hasher.Write([]byte(key))
+		return hasher.Sum(nil)
+	}
+
 	for _, v := range assetSrcs {
 		v := v
-		err := l.loadAsset(uuid.NewV4().String(), v)
+		id := hex.EncodeToString(h([]byte(v.String())))
+		err := l.loadAsset(id, v)
 		if err != nil {
 			return err
 		}
