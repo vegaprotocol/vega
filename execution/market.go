@@ -58,18 +58,6 @@ var (
 	networkPartyID = "network"
 )
 
-// Enum to hold all the possible states that the market can be in
-type Market_State int32
-
-const (
-	// Default value, always invalid
-	Market_State_UNSPECIFIED Market_State = 0
-	// Normal trading with orders processed immediately
-	Market_State_CONTINUOUS_TRADING Market_State = 1
-	// Auction state where orders are processed at the end of the auction period
-	Market_State_AUCTION Market_State = 2
-)
-
 // Market represents an instance of a market in vega and is in charge of calling
 // the engines in order to process all transctiona
 type Market struct {
@@ -97,9 +85,9 @@ type Market struct {
 	collateral  *collateral.Engine
 	partyEngine *Party
 
-	broker Broker
-	closed bool
-	state  Market_State
+	broker      Broker
+	closed      bool
+	marketState types.MarketState
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -206,7 +194,7 @@ func NewMarket(
 		fee:                feeEngine,
 		// For now we set market state to continuous because that is what
 		// we are used to. Before we go live this will be auction
-		state: Market_State_CONTINUOUS_TRADING,
+		marketState: types.MarketState_MARKET_STATE_CONTINUOUS,
 	}
 	return market, nil
 }
@@ -402,8 +390,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	order.Status = types.Order_STATUS_ACTIVE
 
 	// Check we are allowed to handle this order type with the current market status
-	if (m.state == Market_State_AUCTION && order.MarketType == types.Order_MARKET_TYPE_CONTINUOUS) ||
-		(m.state == Market_State_CONTINUOUS_TRADING && order.MarketType == types.Order_MARKET_TYPE_AUCTION) {
+	if (m.marketState == types.MarketState_MARKET_STATE_AUCTION && order.MarketType == types.Order_MARKET_TYPE_CONTINUOUS) ||
+		(m.marketState == types.MarketState_MARKET_STATE_CONTINUOUS && order.MarketType == types.Order_MARKET_TYPE_AUCTION) {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))

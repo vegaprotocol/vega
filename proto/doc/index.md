@@ -212,6 +212,7 @@
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.MarketType](#vega.Order.MarketType)
     - [Order.Status](#vega.Order.Status)
@@ -3599,6 +3600,20 @@ a decision taken by the vega network.
 | INTERVAL_I1H | 3600 | 1 hour |
 | INTERVAL_I6H | 21600 | 6 hours |
 | INTERVAL_I1D | 86400 | 1 day |
+
+
+
+<a name="vega.MarketState"></a>
+
+### MarketState
+Market Status
+What mode is the market currently running in
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
+| MARKET_STATE_CONTINUOUS | 1 | Normal trading |
+| MARKET_STATE_AUCTION | 2 | Auction trading |
 
 
 

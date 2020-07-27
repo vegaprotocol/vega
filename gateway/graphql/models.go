@@ -678,6 +678,50 @@ func (e Interval) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// What market state are we in
+type MarketState string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	MarketStateContinuous MarketState = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the auction period
+	MarketStateAuction MarketState = "AUCTION"
+)
+
+var AllMarketState = []MarketState{
+	MarketStateContinuous,
+	MarketStateAuction,
+}
+
+func (e MarketState) IsValid() bool {
+	switch e {
+	case MarketStateContinuous, MarketStateAuction:
+		return true
+	}
+	return false
+}
+
+func (e MarketState) String() string {
+	return string(e)
+}
+
+func (e *MarketState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketState", str)
+	}
+	return nil
+}
+
+func (e MarketState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // What market type does the order work on
 type MarketType string
 

@@ -77,6 +77,20 @@ message RiskResult {
   map<string, RiskFactor> predictedNextRiskFactors = 4;
 }
 
+// Market Status
+// What mode is the market currently running in
+enum MarketState {
+  // Default value, this is invalid
+  MARKET_STATE_UNSPECIFIED = 0;
+
+  // Normal trading
+  MARKET_STATE_CONTINUOUS = 1;
+
+  // Auction trading
+  MARKET_STATE_AUCTION = 2;
+}
+
+
 message Order {
 
   // Order Time in Force
