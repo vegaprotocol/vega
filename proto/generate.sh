@@ -60,7 +60,6 @@ do
 		"$protofile"
 done
 
-
 # Generate *.validator.pb.go, *.pb.gw.go
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
