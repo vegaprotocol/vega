@@ -128,9 +128,6 @@ func (this *PositionTrade) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
-func (this *NotifyTraderAccount) Validate() error {
-	return nil
-}
 func (this *Withdraw) Validate() error {
 	return nil
 }

@@ -854,6 +854,39 @@
         ]
       }
     },
+    "/parties/{withdraw.partyID}/withdrawals": {
+      "post": {
+        "summary": "Request withdrawal",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdraw.partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
         "summary": "Get Statistics",
@@ -1518,6 +1551,23 @@
           "type": "string",
           "format": "int64",
           "title": "nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`"
+        }
+      }
+    },
+    "apiWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdraw"
+        }
+      }
+    },
+    "apiWithdrawResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -3356,6 +3406,21 @@
           "type": "string",
           "format": "int64",
           "description": "Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network."
+        }
+      }
+    },
+    "vegaWithdraw": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "asset": {
+          "type": "string"
         }
       }
     }
