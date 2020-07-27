@@ -49,7 +49,6 @@ type marketTestSetup struct {
 	market   *proto.Market
 	ctrl     *gomock.Controller
 	core     *execution.Market
-	party    *execution.Party
 	accounts *accStub
 	proposal *ProposalStub
 	votes    *VoteStub

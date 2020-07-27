@@ -82,11 +82,12 @@ type Market struct {
 	fee                *fee.Engine
 
 	// deps engines
-	collateral  *collateral.Engine
-	partyEngine *Party
+	collateral *collateral.Engine
 
 	broker Broker
 	closed bool
+
+	parties map[string]struct{}
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -122,7 +123,6 @@ func NewMarket(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	collateralEngine *collateral.Engine,
-	partyEngine *Party,
 	mkt *types.Market,
 	now time.Time,
 	broker Broker,
@@ -188,9 +188,9 @@ func NewMarket(
 		position:           positionEngine,
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
-		partyEngine:        partyEngine,
 		broker:             broker,
 		fee:                feeEngine,
+		parties:            map[string]struct{}{},
 	}
 	return market, nil
 }
@@ -302,12 +302,11 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			}
 
 			asset, _ := m.mkt.GetAsset()
-			// FIXME(JEREMY): once deposit and withdrawal
-			// are implemented with the new method, the partyEngine
-			// will be removed, this call will need to be changed to
-			// use a slice of parties stored in the current market
-			// until we refactor collateral engine to work per market maybe
-			parties := m.partyEngine.GetByMarket(m.GetID())
+			parties := make([]string, 0, len(m.parties))
+			for k, _ := range m.parties {
+				parties = append(parties, k)
+			}
+
 			clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 			if err != nil {
 				m.log.Error("Clear market error",
@@ -467,6 +466,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, ErrMissingGeneralAccountForParty
 	}
 
+	// from this point we know the party have a margin account
+	// we had it to the list of parties.
+	m.addParty(order.PartyID)
+
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
@@ -591,6 +594,12 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
+}
+
+func (m *Market) addParty(party string) {
+	if _, ok := m.parties[party]; !ok {
+		m.parties[party] = struct{}{}
+	}
 }
 
 func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {

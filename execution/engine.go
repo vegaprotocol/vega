@@ -191,7 +191,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Matching,
 		e.Config.Fee,
 		e.collateral,
-		e.party,
 		marketConfig,
 		now,
 		e.broker,
