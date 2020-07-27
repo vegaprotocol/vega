@@ -2319,7 +2319,8 @@
           "title": "fees configuration"
         },
         "openingAuction": {
-          "$ref": "#/definitions/vegaAuctionDuration"
+          "$ref": "#/definitions/vegaAuctionDuration",
+          "title": "Specifies how long the opening auction will run (min duration + optionally minimum traded volume)"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"

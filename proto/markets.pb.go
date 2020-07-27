@@ -1011,7 +1011,8 @@ type Market struct {
 	// the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
 	DecimalPlaces uint64 `protobuf:"varint,3,opt,name=decimalPlaces,proto3" json:"decimalPlaces,omitempty"`
 	// fees configuration
-	Fees           *Fees            `protobuf:"bytes,4,opt,name=fees,proto3" json:"fees,omitempty"`
+	Fees *Fees `protobuf:"bytes,4,opt,name=fees,proto3" json:"fees,omitempty"`
+	// Specifies how long the opening auction will run (min duration + optionally minimum traded volume)
 	OpeningAuction *AuctionDuration `protobuf:"bytes,5,opt,name=openingAuction,proto3" json:"openingAuction,omitempty"`
 	// Types that are valid to be assigned to TradingMode:
 	//	*Market_Continuous

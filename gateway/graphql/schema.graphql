@@ -1363,8 +1363,8 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The proposed duration for the opening auction for this market"
-  openingAuctionDuration: Int
+  "The proposed duration for the opening auction for this market in seconds"
+  openingAuctionDurationSecs: Int
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput

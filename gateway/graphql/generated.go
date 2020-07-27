@@ -4164,8 +4164,8 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The proposed duration for the opening auction for this market"
-  openingAuctionDuration: Int
+  "The proposed duration for the opening auction for this market in seconds"
+  openingAuctionDurationSecs: Int
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -16004,9 +16004,9 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "openingAuctionDuration":
+		case "openingAuctionDurationSecs":
 			var err error
-			it.OpeningAuctionDuration, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.OpeningAuctionDurationSecs, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}

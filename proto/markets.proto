@@ -139,6 +139,7 @@ message Market {
   // fees configuration
   Fees fees = 4;
 
+  // Specifies how long the opening auction will run (min duration + optionally minimum traded volume)
   AuctionDuration openingAuction = 5;
 
   oneof tradingMode {

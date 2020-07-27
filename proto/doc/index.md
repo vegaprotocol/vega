@@ -2846,7 +2846,7 @@ AuctionDuration can be used to configure 3 auction periods:
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | fees | [Fees](#vega.Fees) |  | fees configuration |
-| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  |  |
+| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Specifies how long the opening auction will run (min duration &#43; optionally minimum traded volume) |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
