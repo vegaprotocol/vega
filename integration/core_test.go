@@ -226,12 +226,9 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 				Balance: generalBal,
 			},
 		}
-		notif := &proto.NotifyTraderAccount{
-			TraderID: row.Cells[0].Value,
-			Amount:   uint64(generalBal),
-		}
+		trader := row.Cells[0].Value
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.colE.Deposit(context.Background(), notif.TraderID, asset, generalBal)
+		_ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
 	}
 	return nil
 }

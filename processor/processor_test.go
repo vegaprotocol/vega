@@ -367,9 +367,6 @@ func testProcessCommandSuccess(t *testing.T) {
 		// blockchain.WithdrawCommand: &types.Withdraw{
 		// 	PartyID: party,
 		// },
-		blockchain.NotifyTraderAccountCommand: &types.NotifyTraderAccount{
-			TraderID: party,
-		},
 	}
 	zero := uint64(0)
 	proc := getTestProcessor(t)
@@ -387,7 +384,6 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)

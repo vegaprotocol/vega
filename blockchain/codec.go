@@ -18,6 +18,8 @@ var (
 	ErrCommandKindUnknown = errors.New("unknown command kind when validating payload")
 )
 
+// Processor ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_mock.go -package mocks code.vegaprotocol.io/vega/blockchain Processor
 type Processor interface {
 	Process(ctx context.Context, payload []byte, pubkey []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error

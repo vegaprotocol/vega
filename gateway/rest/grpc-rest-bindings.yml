@@ -86,9 +86,6 @@ http:
       body: "*"
 
     # Miscellaneous
-    - selector: api.trading.NotifyTraderAccount
-      post: '/fountain'
-      body: "*"
     - selector: api.trading_data.Statistics
       get: '/statistics'
     - selector: api.trading_data.GetVegaTime
