@@ -1137,54 +1137,50 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 			m.log.Debug("No risk updates",
 				logging.String("market-id", m.GetID()))
 		}
-	} else {
-		// this should always be a increase to the InitialMargin
-		// if it does fail, we need to return an error straight away
-		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get risk updates")
-		}
-		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
-		m.broker.Send(evt)
+		return nil, nil
+	}
+	return m.riskUpdateTransfer(ctx, riskUpdate, order)
+}
 
-		if closePos != nil {
-			// if closePose is not nil then we return an error as well, it means the trader did not have enough
-			// monies to reach the InitialMargin
+func (m *Market) riskUpdateTransfer(ctx context.Context, evt events.Risk, order *types.Order) (*types.Transfer, error) {
+	// this should always be a increase to the InitialMargin
+	// if it does fail, we need to return an error straight away
+	transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), evt)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get risk updates")
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{transfer}))
 
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("party did not have enough collateral to reach the InitialMargin",
-					logging.Order(*order),
-					logging.String("market-id", m.GetID()))
-			}
+	if closePos != nil {
+		// if closePose is not nil then we return an error as well, it means the trader did not have enough
+		// monies to reach the InitialMargin
+		return nil, ErrMarginCheckInsufficient
+	}
 
-			return nil, ErrMarginCheckInsufficient
-		}
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Transfers applied for ")
-			for _, v := range transfer.GetTransfers() {
-				m.log.Debug(
-					"Ensured margin on order with success",
-					logging.String("transfer", fmt.Sprintf("%v", *v)),
-					logging.String("market-id", m.GetID()),
-				)
-			}
-		}
-
-		if len(transfer.Transfers) > 0 {
-			// we create the rollback transfer here, so it can be used in case of.
-			riskRollback = &types.Transfer{
-				Owner: riskUpdate.Party(),
-				Amount: &types.FinancialAmount{
-					Amount: int64(transfer.Transfers[0].Amount),
-					Asset:  riskUpdate.Asset(),
-				},
-				Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
-				MinAmount: int64(transfer.Transfers[0].Amount),
-			}
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Transfers applied for ")
+		for _, v := range transfer.GetTransfers() {
+			m.log.Debug(
+				"Ensured margin on order with success",
+				logging.String("transfer", fmt.Sprintf("%v", *v)),
+				logging.String("market-id", m.GetID()),
+			)
 		}
 	}
-	return riskRollback, nil
+
+	if len(transfer.Transfers) > 0 {
+		// we create the rollback transfer here, so it can be used in case of.
+		return &types.Transfer{
+			Owner: evt.Party(),
+			Amount: &types.FinancialAmount{
+				Amount: int64(transfer.Transfers[0].Amount),
+				Asset:  evt.Asset(),
+			},
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+			MinAmount: int64(transfer.Transfers[0].Amount),
+		}, nil
+	}
+	return nil, nil
 }
 
 func (m *Market) collateralAndRiskForAuctionOrder(ctx context.Context, e events.Margin, o, old *types.Order) (events.Risk, error) {
@@ -1323,11 +1319,26 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 	// Update the order in our stores (will be marked as cancelled)
 	cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
 	m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
-	_, err = m.position.UnregisterOrder(cancellation.Order)
+	pos, err := m.position.UnregisterOrder(cancellation.Order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
 			logging.Order(*order),
 			logging.Error(err))
+	}
+	if m.auction {
+		asset, err := m.mkt.GetAsset()
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get risk updates")
+		}
+
+		evt, err := m.collateral.GetPartyMargin(pos, asset, m.GetID())
+		if err != nil {
+			return nil, err
+		}
+		risk := m.risk.UpdateMarginOnCancelAuctionOrder(ctx, evt, order)
+		if _, err := m.riskUpdateTransfer(ctx, risk, order); err != nil {
+			m.log.Error("Failed to release margin after order was cancelled", logging.Error(err))
+		}
 	}
 
 	return cancellation, nil

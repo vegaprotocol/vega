@@ -123,6 +123,33 @@ func (e *Engine) CalculateFactors(now time.Time) {
 	}
 }
 
+func (e *Engine) UpdateMarginOnCancelAuctionOrder(ctx context.Context, evt events.Margin, o *types.Order) events.Risk {
+	if evt == nil {
+		return nil
+	}
+	factors := *e.factors.RiskFactors[evt.Asset()]
+	margins := e.calculateAuctionMargin(evt, factors, o)
+	margins.PartyID = evt.Party()
+	margins.Asset = evt.Asset()
+	margins.Timestamp = e.currTime
+	margins.MarketID = e.mktID
+	// release only the initial margin -> we cannot guarantee the maintenance margin was transferred
+	// we can only be certain the initial margin was reached
+	trnsfr := &types.Transfer{
+		Owner: evt.Party(),
+		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+		Amount: &types.FinancialAmount{
+			Asset:  evt.Asset(),
+			Amount: int64(margins.InitialMargin),
+		},
+	}
+	return &marginChange{
+		Margin:   evt,
+		transfer: trnsfr,
+		margins:  margins,
+	}
+}
+
 func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Margin, o, old *types.Order) (events.Risk, error) {
 	if evt == nil {
 		return nil, nil
