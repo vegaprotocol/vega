@@ -56,6 +56,8 @@ vega faucet run -h
 
 * Request:
 
+POST /api/v1/mint
+
 ```json
 {
 	"party": "party_pub_key",
