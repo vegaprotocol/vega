@@ -12,9 +12,9 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"golang.org/x/crypto/sha3"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
