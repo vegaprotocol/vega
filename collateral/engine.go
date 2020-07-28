@@ -185,6 +185,10 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	return
 }
 
+func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
 func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil

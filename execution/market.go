@@ -889,6 +889,27 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 	}
 
+	asset, _ := m.mkt.GetAsset()
+
+	// pay the fees now
+	fees, err := m.fee.CalculateFeeForPositionResolution(
+		confirmation.Trades, closedMPs)
+	if err != nil {
+		m.log.Error("unable to calculate fees for positions resolutions",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return err
+	}
+	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+	if err != nil {
+		m.log.Error("unable to transfer fees for positions resolutions",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return err
+	}
+	// send transfer to buffer
+	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
@@ -928,7 +949,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// insurance pool, which needs to happen before we settle the non-distressed traders
 	m.settlement.RemoveDistressed(ctx, closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
-	asset, _ := m.mkt.GetAsset()
 	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
