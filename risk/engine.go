@@ -160,7 +160,7 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 		oldMargins = e.calculateAuctionMargin(evt, factors, old)
 	}
 	margins := e.calculateAuctionMargin(evt, factors, o)
-	maintenance := float64(margins.MaintenanceMargin) - float64(oldMargins.Maintenance)
+	maintenance := float64(margins.MaintenanceMargin) - float64(oldMargins.MaintenanceMargin)
 	initial := float64(margins.InitialMargin) - float64(oldMargins.InitialMargin)
 	// we have too much margin (size/price of order was reduced) -> release some money from margin account
 	if maintenance < 0 {
