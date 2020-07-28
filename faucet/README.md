@@ -1,12 +1,11 @@
-faucet
-======
+# Faucet
 
 The faucet provide a way to deposit/mint new funds for vega builtin assets (for now, maybe more will be supported later on).
-The faucet takes the form of an http server exposing a rest API, sending new chain events to vega.
-In order to prevent any users to send chain events to vega, the node configuration can whitelist a list of public keys
-allowed to send chain events to the node.
+The faucet takes the form of an http server exposing a REST API which triggers new chain events on the Vega.
 
-# Configuration
+In order to control exactly who is allowed to broadcast events to the network, the [node configuration](../config/) contains a list of public keys allowed to broadcast chain events. The faucet's keypairs must be on this list before it can start allocating assets.
+
+## Configuration
 
 The configuration of the faucet is done through the vega config.toml file.
 
@@ -18,7 +17,7 @@ The whitelisted public key must be added in the following section.
   BlockchainQueueWhitelist = ["c65af95865b4e970c48860f5c854c5ca8f340416372f9e72a98ff09e365aa0cf"]
 ```
 
-The faucet also have its own configuration inside the vega config.toml file:
+The faucet also has its own configuration inside the vega config.toml file:
 ```toml
 [Faucet]
   Level = "Info"
@@ -32,13 +31,12 @@ The faucet also have its own configuration inside the vega config.toml file:
     Retries = 5
 ```
 
-This configuration can be generated automatically when running vega init, the following command will generate the Faucet section in the configuration file,
-and add the generate public key to the EvtForward whitelist section.
+This configuration can be generated automatically when running `vega init`. The following command will generate the faucet section in the configuration file, and add the generated public key to the `EvtForward` whitelist section.
 ```shell
 vega init -f --gen-dev-nodewallet --gen-builtinasset-faucet
 ```
 
-# Run the faucet
+## Run the faucet
 
 The faucet can be started using the core vega command line:
 ```shell
@@ -54,7 +52,7 @@ vega faucet run -h
 
 ## Get new funds
 
-* Request:
+### Request
 
 POST /api/v1/mint
 
@@ -66,11 +64,11 @@ POST /api/v1/mint
 }
 ```
 
-* Response:
+### Response
 
 ```json
 {
 	"success": true
 }
 ```
-Note: the response does not indicate that the deposit succeeded, but that the request was send to the vega network, it may take a few block before your deposit is actually taking effect.
+Note: the response does not indicate that the deposit succeeded, but that the request was send to the Vega network. It may take a few blocks before your the assets are deposited.
