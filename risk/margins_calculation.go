@@ -18,6 +18,15 @@ func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) 
 	}
 }
 
+func (r *Engine) calculateAuctionMargin(e events.Margin, rf types.RiskFactor, o *types.Order) *types.MarginLevels {
+	factor := rf.Long
+	if o.Side == types.Side_SIDE_SELL {
+		factor = rf.Short
+	}
+	maintenance := float64(o.Size) * (factor * float64(o.Price))
+	return newMarginLevels(maintenance, r.marginCalculator.ScalingFactors)
+}
+
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {

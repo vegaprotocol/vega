@@ -85,6 +85,9 @@ type Market struct {
 
 	broker Broker
 	closed bool
+
+	auction    bool
+	auctionEnd time.Time
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -189,6 +192,10 @@ func NewMarket(
 		partyEngine:        partyEngine,
 		broker:             broker,
 		fee:                feeEngine,
+		auctionEnd:         now.Add(mkt.OpeningAuction.Duration * time.Second),
+	}
+	if market.auctionEnd.After(now) {
+		market.auction = true
 	}
 	return market, nil
 }
@@ -245,6 +252,10 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	closed = t.After(m.closingAt)
 	m.closed = closed
 	m.currentTime = t
+	// opening auction ended
+	if !m.currentTime.Before(m.auctionEnd) {
+		m.auction = false
+	}
 
 	// TODO(): handle market start time
 
@@ -459,7 +470,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// Perform check and allocate margin
-	newOrderMarginRiskRollback, err := m.checkMarginForOrder(ctx, pos, order)
+	newOrderMarginRiskRollback, err := m.checkMarginForOrder(ctx, pos, order, nil)
 	if err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
@@ -1087,7 +1098,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order, oldOrder *types.Order) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1105,8 +1116,13 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	if err != nil {
 		return nil, err
 	}
+	var riskUpdate events.Risk
 
-	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
+	if m.auction {
+		riskUpdate, err = m.collateralAndRiskForAuctionOrder(ctx, e, order, oldOrder)
+	} else {
+		riskUpdate, err = m.collateralAndRiskForOrder(ctx, e, m.markPrice)
+	}
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("unable to top up margin on new order",
@@ -1171,15 +1187,24 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	return riskRollback, nil
 }
 
+func (m *Market) collateralAndRiskForAuctionOrder(ctx context.Context, e events.Margin, o, old *types.Order) (events.Risk, error) {
+	// get the balance, then get the margin for this order
+	margins, err := m.risk.UpdateMarginOnAuctionOrder(ctx, e, o, old)
+	if err != nil {
+		return nil, err
+	}
+	return margins, nil
+}
+
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) (events.Risk, error) {
+func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64) (events.Risk, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(e, price)
+	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
 	if err != nil {
 		return nil, err
 	}
@@ -1492,7 +1517,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
 
-	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder, existingOrder); err != nil {
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {

@@ -123,11 +123,64 @@ func (e *Engine) CalculateFactors(now time.Time) {
 	}
 }
 
+func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Margin, o, old *types.Order) (events.Risk, error) {
+	if evt == nil {
+		return nil, nil
+	}
+	factors := *e.factors.RiskFactors[evt.Asset()]
+	oldMargins := &types.MarginLevels{}
+	if old != nil {
+		oldMargins = e.calculateAuctionMargin(evt, factors, old)
+	}
+	margins := e.calculateAuctionMargin(evt, factors, o)
+	initial := float64(margins.InitialMargin) - float64(oldMargins.InitialMargin)
+	// we have too much margin (size/price of order was reduced) -> release some money from margin account
+	if initial < 0 {
+		margins.PartyID = evt.Party()
+		margins.Asset = evt.Asset()
+		margins.Timestamp = e.currTime
+		margins.MarketID = e.mktID
+		trnsfr := &types.Transfer{
+			Owner: margins.PartyID,
+			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+			Amount: &types.FinancialAmount{
+				Asset:  evt.Asset(),
+				Amount: int64(-initial),
+			},
+		}
+		return &marginChange{
+			Margin:   evt,
+			transfer: trnsfr,
+			margins:  margins,
+		}, nil
+	}
+	if evt.GeneralBalance() < uint64(initial) {
+		return nil, ErrInsufficientFundsForInitialMargin
+	}
+	margins.PartyID = evt.Party()
+	margins.Asset = evt.Asset()
+	margins.Timestamp = e.currTime
+	margins.MarketID = e.mktID
+	trnsfr := &types.Transfer{
+		Owner: evt.Party(),
+		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+		Amount: &types.FinancialAmount{
+			Asset:  evt.Asset(),
+			Amount: int64(margins.MaintenanceMargin - oldMargins.MaintenanceMargin),
+		},
+		MinAmount: int64(margins.InitialMargin - oldMargins.InitialMargin), // minimal amount == maintenance
+	}
+	return &marginChange{
+		Margin:   evt,
+		transfer: trnsfr,
+		margins:  margins,
+	}, nil
+}
+
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (events.Risk, error) {
-	ctx := context.TODO()
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice uint64) (events.Risk, error) {
 	if evt == nil {
 		return nil, nil
 	}
