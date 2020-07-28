@@ -192,10 +192,14 @@ func NewMarket(
 		partyEngine:        partyEngine,
 		broker:             broker,
 		fee:                feeEngine,
-		auctionEnd:         now.Add(time.Duration(mkt.OpeningAuction.Duration) * time.Second),
+		// keep this commented until the market framework is updated in other repos
+		// auctionEnd:         now.Add(time.Duration(mkt.OpeningAuction.Duration) * time.Second),
 	}
-	if market.auctionEnd.After(now) {
-		market.auction = true
+	if mkt.OpeningAuction != nil {
+		market.auctionEnd = now.Add(time.Duration(mkt.OpeningAuction.Duration) * time.Second)
+		if market.auctionEnd.After(now) {
+			market.auction = true
+		}
 	}
 	return market, nil
 }

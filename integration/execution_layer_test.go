@@ -951,6 +951,7 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 				},
 			},
 		},
+		OpeningAuction: &proto.AuctionDuration{},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
