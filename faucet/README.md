@@ -1,6 +1,6 @@
 # Faucet
 
-The faucet provide a way to deposit/mint new funds for vega builtin assets (for now, maybe more will be supported later on).
+The faucet provides a way to deposit/mint new funds for vega builtin assets (for now, maybe more will be supported later on).
 The faucet takes the form of an http server exposing a REST API which triggers new chain events on the Vega.
 
 In order to control exactly who is allowed to broadcast events to the network, the [node configuration](../config/) contains a list of public keys allowed to broadcast chain events. The faucet's keypairs must be on this list before it can start allocating assets.
