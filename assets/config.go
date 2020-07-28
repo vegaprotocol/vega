@@ -46,16 +46,6 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VegaToken",
-					Symbol:      "VGT",
-					TotalSupply: "10000000",
-					Decimals:    5,
-				},
-			},
-		},
-		&types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
 					Name:        "Ether",
 					Symbol:      "ETH",
 					TotalSupply: "110436690",
