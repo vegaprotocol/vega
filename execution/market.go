@@ -192,7 +192,7 @@ func NewMarket(
 		partyEngine:        partyEngine,
 		broker:             broker,
 		fee:                feeEngine,
-		auctionEnd:         now.Add(mkt.OpeningAuction.Duration * time.Second),
+		auctionEnd:         now.Add(time.Duration(mkt.OpeningAuction.Duration) * time.Second),
 	}
 	if market.auctionEnd.After(now) {
 		market.auction = true
@@ -1102,11 +1102,6 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
-	// this is a rollback transfer to be used in case the order do not
-	// trade and do not stay in the book to prevent for margin being
-	// locked in the margin account forever
-	var riskRollback *types.Transfer
-
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get risk updates")
@@ -1143,6 +1138,10 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 }
 
 func (m *Market) riskUpdateTransfer(ctx context.Context, evt events.Risk, order *types.Order) (*types.Transfer, error) {
+	// this is a rollback transfer to be used in case the order do not
+	// trade and do not stay in the book to prevent for margin being
+	// locked in the margin account forever
+	var riskRollback *types.Transfer
 	// this should always be a increase to the InitialMargin
 	// if it does fail, we need to return an error straight away
 	transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), evt)
@@ -1170,7 +1169,7 @@ func (m *Market) riskUpdateTransfer(ctx context.Context, evt events.Risk, order 
 
 	if len(transfer.Transfers) > 0 {
 		// we create the rollback transfer here, so it can be used in case of.
-		return &types.Transfer{
+		riskRollback = &types.Transfer{
 			Owner: evt.Party(),
 			Amount: &types.FinancialAmount{
 				Amount: int64(transfer.Transfers[0].Amount),
@@ -1178,9 +1177,9 @@ func (m *Market) riskUpdateTransfer(ctx context.Context, evt events.Risk, order 
 			},
 			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 			MinAmount: int64(transfer.Transfers[0].Amount),
-		}, nil
+		}
 	}
-	return nil, nil
+	return riskRollback, nil
 }
 
 func (m *Market) collateralAndRiskForAuctionOrder(ctx context.Context, e events.Margin, o, old *types.Order) (events.Risk, error) {
