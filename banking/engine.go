@@ -181,8 +181,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit(), aa.IsERC20Deposit():
-		//FIXME: use the ID here when implemented
-		aa.deposit.assetID = aa.asset.ProtoAsset().Symbol
 		return e.finalizeDeposit(ctx, aa.deposit)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)

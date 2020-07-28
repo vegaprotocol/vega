@@ -99,6 +99,7 @@ type Wallet interface {
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
 	Get(assetID string) (*assets.Asset, error)
+	IsEnabled(string) bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
