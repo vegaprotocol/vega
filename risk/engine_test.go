@@ -76,6 +76,161 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
 }
 
+func TestUpdateAuctionMargins(t *testing.T) {
+	t.Run("Update margin on new order", testAuctionMarginLevels)
+	t.Run("Update an order, recalculate margins", testAuctionMarginAmendLevels)
+	t.Run("Release margin when an order is cancelled", testAuctionMarginReleaseCancel)
+	t.Run("Release margin when order is cancelled - low margin", testAuctionMarginReleaseCancelLowMargin)
+}
+
+func testAuctionMarginLevels(t *testing.T) {
+	cpy := riskResult
+	rr := &cpy
+	mc := getMarginCalculator()
+	eng := getTestEngine(t, rr)
+	defer eng.ctrl.Finish()
+	// ctx, cfunc := context.WithCancel(context.Background())
+	// defer cfunc()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  10,     // required margin will be > 30 so ensure we don't have enough
+		general: 100000, // plenty of balance for the transfer anyway
+		market:  "ETH/DEC19",
+	}
+	order := &types.Order{
+		MarketID:  evt.market,
+		PartyID:   evt.party,
+		Size:      1,
+		Price:     1000,
+		Side:      types.Side_SIDE_BUY,
+		Remaining: 1,
+	}
+	rf := riskResult.RiskFactors[evt.asset]
+	expectedAmount := float64(order.Price*order.Size) * rf.Long * mc.ScalingFactors.InitialMargin
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	resp, err := eng.UpdateMarginOnAuctionOrder(context.Background(), evt, order, nil)
+	assert.NoError(t, err)
+	transfer := resp.Transfer()
+	assert.NotNil(t, transfer)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, transfer.Type)
+	assert.Equal(t, transfer.MinAmount, transfer.Amount.Amount)
+	assert.Equal(t, int64(expectedAmount), transfer.MinAmount)
+}
+
+func testAuctionMarginAmendLevels(t *testing.T) {
+	cpy := riskResult
+	rr := &cpy
+	mc := getMarginCalculator()
+	eng := getTestEngine(t, rr)
+	defer eng.ctrl.Finish()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  1000,
+		general: 100000,
+		market:  "ETH/DEC19",
+	}
+	order := &types.Order{
+		MarketID:  evt.market,
+		PartyID:   evt.party,
+		Size:      1,
+		Price:     1000,
+		Side:      types.Side_SIDE_BUY,
+		Remaining: 1,
+	}
+	old := &types.Order{
+		MarketID:  evt.market,
+		PartyID:   evt.party,
+		Size:      2,
+		Price:     1000,
+		Side:      types.Side_SIDE_BUY,
+		Remaining: 2,
+	}
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	rf := riskResult.RiskFactors[evt.asset]
+	newAmount := float64(order.Price*order.Size) * rf.Long * mc.ScalingFactors.InitialMargin
+	oldAmount := float64(old.Price*old.Size) * rf.Long * mc.ScalingFactors.InitialMargin
+	expectedAmount := oldAmount - newAmount
+	resp, err := eng.UpdateMarginOnAuctionOrder(context.Background(), evt, order, old)
+	assert.NoError(t, err)
+	transfer := resp.Transfer()
+	assert.NotNil(t, transfer)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, transfer.Type)
+	assert.Equal(t, int64(expectedAmount), transfer.Amount.Amount)
+}
+
+func testAuctionMarginReleaseCancel(t *testing.T) {
+	cpy := riskResult
+	rr := &cpy
+	mc := getMarginCalculator()
+	eng := getTestEngine(t, rr)
+	defer eng.ctrl.Finish()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  1000,
+		general: 100000,
+		market:  "ETH/DEC19",
+	}
+	order := &types.Order{
+		MarketID:  evt.market,
+		PartyID:   evt.party,
+		Size:      1,
+		Price:     1000,
+		Side:      types.Side_SIDE_BUY,
+		Remaining: 1,
+	}
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	rf := riskResult.RiskFactors[evt.asset]
+	expected := float64(order.Price*order.Size) * rf.Long * mc.ScalingFactors.InitialMargin
+	resp := eng.UpdateMarginOnCancelAuctionOrder(context.Background(), evt, order)
+	assert.NotNil(t, resp)
+	transfer := resp.Transfer()
+	assert.NotNil(t, transfer)
+	assert.Equal(t, int64(expected), transfer.Amount.Amount)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, transfer.Type)
+}
+
+func testAuctionMarginReleaseCancelLowMargin(t *testing.T) {
+	cpy := riskResult
+	rr := &cpy
+	eng := getTestEngine(t, rr)
+	defer eng.ctrl.Finish()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  1,
+		general: 100000,
+		market:  "ETH/DEC19",
+	}
+	order := &types.Order{
+		MarketID:  evt.market,
+		PartyID:   evt.party,
+		Size:      1,
+		Price:     1000,
+		Side:      types.Side_SIDE_BUY,
+		Remaining: 1,
+	}
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	resp := eng.UpdateMarginOnCancelAuctionOrder(context.Background(), evt, order)
+	assert.NotNil(t, resp)
+	transfer := resp.Transfer()
+	assert.NotNil(t, transfer)
+	assert.Equal(t, int64(evt.margin), transfer.Amount.Amount)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, transfer.Type)
+}
+
 func testMarginLevelsTS(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
@@ -150,7 +305,7 @@ func testMarginTopup(t *testing.T) {
 func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
-	_, cfunc := context.WithCancel(context.Background())
+	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
 		party:   "trader1",
@@ -165,7 +320,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
 		})
-	riskevt, err := eng.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	riskevt, err := eng.UpdateMarginOnNewOrder(ctx, evt, uint64(markPrice))
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
@@ -319,7 +474,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		general: 100000,
 		market:  "ETH/DEC19",
 	}
-	riskevt, err := testE.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	riskevt, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -427,7 +582,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	previousMarkPrice := 103
 
-	riskevt, err := testE.UpdateMarginOnNewOrder(evt, uint64(previousMarkPrice))
+	riskevt, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(previousMarkPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")

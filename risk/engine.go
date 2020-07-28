@@ -133,6 +133,11 @@ func (e *Engine) UpdateMarginOnCancelAuctionOrder(ctx context.Context, evt event
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
 	margins.MarketID = e.mktID
+	e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
+	amount := int64(margins.InitialMargin)
+	if evt.MarginBalance() < uint64(amount) {
+		amount = int64(evt.MarginBalance())
+	}
 	// release only the maintenance margin -> we cannot guarantee the initial margin was transferred
 	// we can only be certain the maintenance margin was reached
 	trnsfr := &types.Transfer{
@@ -140,7 +145,7 @@ func (e *Engine) UpdateMarginOnCancelAuctionOrder(ctx context.Context, evt event
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.InitialMargin),
+			Amount: amount,
 		},
 	}
 	return &marginChange{
@@ -167,6 +172,7 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 		margins.Asset = evt.Asset()
 		margins.Timestamp = e.currTime
 		margins.MarketID = e.mktID
+		e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 		trnsfr := &types.Transfer{
 			Owner: margins.PartyID,
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
@@ -189,6 +195,7 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
 	margins.MarketID = e.mktID
+	e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 	trnsfr := &types.Transfer{
 		Owner: evt.Party(),
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
