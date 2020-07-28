@@ -133,14 +133,14 @@ func (e *Engine) UpdateMarginOnCancelAuctionOrder(ctx context.Context, evt event
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
 	margins.MarketID = e.mktID
-	// release only the initial margin -> we cannot guarantee the maintenance margin was transferred
-	// we can only be certain the initial margin was reached
+	// release only the maintenance margin -> we cannot guarantee the initial margin was transferred
+	// we can only be certain the maintenance margin was reached
 	trnsfr := &types.Transfer{
 		Owner: evt.Party(),
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.InitialMargin),
+			Amount: int64(margins.MaintenanceMargin),
 		},
 	}
 	return &marginChange{
@@ -160,9 +160,10 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 		oldMargins = e.calculateAuctionMargin(evt, factors, old)
 	}
 	margins := e.calculateAuctionMargin(evt, factors, o)
+	maintenance := float64(margins.MaintenanceMargin) - float64(oldMargins.Maintenance)
 	initial := float64(margins.InitialMargin) - float64(oldMargins.InitialMargin)
 	// we have too much margin (size/price of order was reduced) -> release some money from margin account
-	if initial < 0 {
+	if maintenance < 0 {
 		margins.PartyID = evt.Party()
 		margins.Asset = evt.Asset()
 		margins.Timestamp = e.currTime
@@ -172,7 +173,7 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 			Amount: &types.FinancialAmount{
 				Asset:  evt.Asset(),
-				Amount: int64(-initial),
+				Amount: int64(-maintenance),
 			},
 		}
 		return &marginChange{
@@ -193,9 +194,9 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.MaintenanceMargin - oldMargins.MaintenanceMargin),
+			Amount: int64(initial),
 		},
-		MinAmount: int64(margins.InitialMargin - oldMargins.InitialMargin), // minimal amount == maintenance
+		MinAmount: int64(maintenance), // minimal amount == maintenance
 	}
 	return &marginChange{
 		Margin:   evt,
