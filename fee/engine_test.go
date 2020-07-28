@@ -56,7 +56,6 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("calcualte batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
 	t.Run("calcualte batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
 
-	// t.Run("calcualte position resolution fees", testCalcPositionResolution)
 }
 
 func testUpdateFeeFactors(t *testing.T) {
