@@ -397,7 +397,6 @@ func testCalcPositionResolution(t *testing.T) {
 
 	// get the amounts map
 	feeAmounts := ft.TotalFeesAmountPerParty()
-	// fees are (100 * 0.1 + 100 * 0.05 + 100 *0.02) = 17
 	party1Amount, ok := feeAmounts["bad-party1"]
 	assert.True(t, ok)
 	assert.Equal(t, 307, int(party1Amount))
