@@ -165,8 +165,7 @@ func createMarket(
 }
 
 func validateAsset(asset string) (types.ProposalError, error) {
-	//@TODO: call proper asset validation (once implemented)
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, nil
 }
 
 func validateFuture(currentTime time.Time, future *types.FutureProduct) (types.ProposalError, error) {

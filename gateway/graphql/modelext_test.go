@@ -23,7 +23,7 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("Future.IntoProto nil oracle", func(t *testing.T) {
-		f := &gql.Future{Maturity: "12/31/19", Asset: "Ethereum/Ether"}
+		f := &gql.Future{Maturity: "12/31/19", Asset: &gql.Asset{ID: "Ethereum/Ether"}}
 		pf, err := f.IntoProto()
 		assert.Nil(t, pf)
 		assert.NotNil(t, err)
@@ -33,7 +33,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("Future.IntoProto", func(t *testing.T) {
 		f := &gql.Future{
 			Maturity: "12/31/19",
-			Asset:    "Ethereum/Ether",
+			Asset:    &gql.Asset{ID: "Ethereum/Ether"},
 			Oracle: &gql.EthereumEvent{
 				ContractID: "asdas",
 				Event:      "aerasd",
@@ -64,7 +64,7 @@ func TestModelConverters(t *testing.T) {
 	t.Run("Instrument.IntoProto ", func(t *testing.T) {
 		i := gql.Instrument{Product: &gql.Future{
 			Maturity: "asdasdas",
-			Asset:    "Ethereum/Ether",
+			Asset:    &gql.Asset{ID: "Ethereum/Ether"},
 			Oracle: &gql.EthereumEvent{
 				ContractID: "asdas",
 				Event:      "aerasd",
@@ -86,7 +86,7 @@ func TestModelConverters(t *testing.T) {
 
 		ti.Instrument.Product = &gql.Future{
 			Maturity: "asdasdas",
-			Asset:    "Ethereum/Ether",
+			Asset:    &gql.Asset{ID: "Ethereum/Ether"},
 			Oracle: &gql.EthereumEvent{
 				ContractID: "asdas",
 				Event:      "aerasd",
@@ -102,7 +102,7 @@ func TestModelConverters(t *testing.T) {
 			Instrument: &gql.Instrument{
 				Product: &gql.Future{
 					Maturity: "asdasdas",
-					Asset:    "Ethereum/Ether",
+					Asset:    &gql.Asset{ID: "Ethereum/Ether"},
 					Oracle: &gql.EthereumEvent{
 						ContractID: "asdas",
 						Event:      "aerasd",
@@ -131,7 +131,7 @@ func TestModelConverters(t *testing.T) {
 				Instrument: &gql.Instrument{
 					Product: &gql.Future{
 						Maturity: "asdasdas",
-						Asset:    "Ethereum/Ether",
+						Asset:    &gql.Asset{ID: "Ethereum/Ether"},
 						Oracle: &gql.EthereumEvent{
 							ContractID: "asdas",
 							Event:      "aerasd",

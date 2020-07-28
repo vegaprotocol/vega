@@ -347,6 +347,15 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	l.Log.Info("new asset added successfully",
 		logging.String("asset", asset.String()))
 
+	// FIXME: this will be remove once we stop loading market from config
+	// here we replace the mkts assets symbols with ids
+	for _, v := range l.mktscfg {
+		sym := v.TradableInstrument.Instrument.GetFuture().Asset
+		if sym == assetD.Symbol {
+			v.TradableInstrument.Instrument.GetFuture().Asset = assetD.ID
+		}
+	}
+
 	return nil
 }
 

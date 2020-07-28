@@ -2587,6 +2587,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
 | PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
+| PROPOSAL_ERROR_INVALID_ASSET | 16 | the asset id refer to no assets in vega |
 
 
 

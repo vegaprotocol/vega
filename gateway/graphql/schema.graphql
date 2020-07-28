@@ -203,7 +203,7 @@ type MarginLevels {
   "market in which the margin is required for this trader"
   market: Market!
   "asset for the current margins"
-  asset: String!
+  asset: Asset!
   "id of the trader for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned int actually)"
@@ -618,7 +618,7 @@ type Future {
   maturity: String!
 
   "The name of the asset (string)"
-  asset: String!
+  asset: Asset!
 
   "The oracle used for this product (Oracle union)"
   oracle: Oracle!
@@ -1059,7 +1059,7 @@ type Account {
   "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
   "Asset, the 'currency'"
-  asset: String!
+  asset: Asset!
   "Account type (General, Margin, etc)"
   type: AccountType!
   "Market (only relevant to margin accounts)"
@@ -1339,7 +1339,7 @@ type FutureProduct {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
-  asset: String!
+  asset: Asset!
 }
 
 input InstrumentConfigurationInput {

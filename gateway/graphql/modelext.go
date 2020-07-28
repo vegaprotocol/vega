@@ -158,7 +158,7 @@ func (f *Future) IntoProto() (*types.Instrument_Future, error) {
 	var err error
 	pf := &types.Future{
 		Maturity: f.Maturity,
-		Asset:    f.Asset,
+		Asset:    f.Asset.ID,
 	}
 	err = f.oracleIntoProto(pf)
 	if err != nil {
@@ -420,7 +420,7 @@ func FutureFromProto(pf *types.Future) (*Future, error) {
 	var err error
 	f := &Future{}
 	f.Maturity = pf.Maturity
-	f.Asset = pf.Asset
+	f.Asset = &Asset{ID: pf.Asset}
 	f.Oracle, err = OracleFromProto(pf.Oracle)
 	if err != nil {
 		return nil, err
@@ -598,13 +598,13 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 		return nil, err
 	}
 	mkt.TradableInstrument = tradableInstrument
-
 	return mkt, nil
 }
+
 func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
 	if future := instrument.GetFuture(); future != nil {
 		i.FutureProduct = &FutureProduct{
-			Asset:    future.Asset,
+			Asset:    &Asset{ID: future.Asset},
 			Maturity: future.Maturity,
 		}
 	} else {

@@ -82,10 +82,7 @@ type Engine struct {
 
 	idbuf []byte
 
-	// TODO(): this is asset symbol -> asset as of now
-	// so it stay compatible with the current implemenetation which uses
-	// only the symbol to define an asset (e.g: VUSD, BTC, ETH)
-	// a separate issue will need to change that to id -> asset
+	// asset ID to asset
 	enabledAssets map[string]types.Asset
 }
 
@@ -132,19 +129,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 // parties to deposit funds
 // FIXME(): use the ID later on
 func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
-	if e.AssetExists(asset.Symbol) {
+	if e.AssetExists(asset.ID) {
 		return ErrAssetAlreadyEnabled
 	}
-	e.enabledAssets[asset.Symbol] = asset
+	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
-	infraFeeID := e.accountID("", "", asset.Symbol, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	infraFeeID := e.accountID("", "", asset.ID, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
 		infraFeeAcc := &types.Account{
 			Id:       infraFeeID,
-			Asset:    asset.Symbol,
+			Asset:    asset.ID,
 			Owner:    systemOwner,
 			Balance:  0,
 			MarketID: noMarket,
