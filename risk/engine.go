@@ -140,7 +140,7 @@ func (e *Engine) UpdateMarginOnCancelAuctionOrder(ctx context.Context, evt event
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.MaintenanceMargin),
+			Amount: int64(margins.InitialMargin),
 		},
 	}
 	return &marginChange{
@@ -160,10 +160,9 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 		oldMargins = e.calculateAuctionMargin(evt, factors, old)
 	}
 	margins := e.calculateAuctionMargin(evt, factors, o)
-	maintenance := float64(margins.MaintenanceMargin) - float64(oldMargins.MaintenanceMargin)
 	initial := float64(margins.InitialMargin) - float64(oldMargins.InitialMargin)
 	// we have too much margin (size/price of order was reduced) -> release some money from margin account
-	if maintenance < 0 {
+	if initial < 0 {
 		margins.PartyID = evt.Party()
 		margins.Asset = evt.Asset()
 		margins.Timestamp = e.currTime
@@ -173,8 +172,9 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 			Amount: &types.FinancialAmount{
 				Asset:  evt.Asset(),
-				Amount: int64(-maintenance),
+				Amount: int64(-initial),
 			},
+			MinAmount: int64(-initial),
 		}
 		return &marginChange{
 			Margin:   evt,
@@ -196,7 +196,7 @@ func (e *Engine) UpdateMarginOnAuctionOrder(ctx context.Context, evt events.Marg
 			Asset:  evt.Asset(),
 			Amount: int64(initial),
 		},
-		MinAmount: int64(maintenance), // minimal amount == maintenance
+		MinAmount: int64(initial), // minimal amount == maintenance
 	}
 	return &marginChange{
 		Margin:   evt,
