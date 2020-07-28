@@ -1780,3 +1780,48 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
 	assert.Equal(t, (*types.Order)(nil), nonorder)
 }
+
+func makeOrder(market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
+	return &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketID:    market,
+		Id:          id,
+		Side:        side,
+		Price:       price,
+		PartyID:     partyid,
+		Size:        size,
+		Remaining:   size,
+		TimeInForce: types.Order_TIF_GTC,
+		CreatedAt:   10,
+	}
+}
+func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	buyOrder1 := makeOrder(market, "Order01", types.Side_SIDE_BUY, 100, "party01", 100)
+	_, err := book.SubmitOrder(buyOrder1)
+	assert.Equal(t, err, nil)
+
+	// Populate sell side
+	sellOrder1 := makeOrder(market, "Order02", types.Side_SIDE_SELL, 100, "party01", 100)
+	_, err = book.SubmitOrder(sellOrder1)
+	assert.Equal(t, err, nil)
+
+	// Get indicative auction price and volume
+	price, volume := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(100))
+
+	// Leave auction and uncross the book
+	book.LeaveAuction()
+}

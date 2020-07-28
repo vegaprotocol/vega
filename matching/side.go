@@ -181,6 +181,16 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
+func (s *OrderBookSide) GetVolume(price uint64, side types.Side) (uint64, error) {
+	priceLevel := s.getPriceLevel(price, side)
+
+	if priceLevel == nil {
+		return 0, ErrPriceNotFound
+	}
+
+	return priceLevel.volume, nil
+}
+
 func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {
 	var (
 		trades            []*types.Trade

@@ -85,9 +85,8 @@ type Market struct {
 	collateral  *collateral.Engine
 	partyEngine *Party
 
-	broker      Broker
-	closed      bool
-	marketState types.MarketState
+	broker Broker
+	closed bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -192,9 +191,6 @@ func NewMarket(
 		partyEngine:        partyEngine,
 		broker:             broker,
 		fee:                feeEngine,
-		// For now we set market state to continuous because that is what
-		// we are used to. Before we go live this will be auction
-		marketState: types.MarketState_MARKET_STATE_CONTINUOUS,
 	}
 	return market, nil
 }
@@ -390,8 +386,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	order.Status = types.Order_STATUS_ACTIVE
 
 	// Check we are allowed to handle this order type with the current market status
-	if (m.marketState == types.MarketState_MARKET_STATE_AUCTION && order.MarketType == types.Order_MARKET_TYPE_CONTINUOUS) ||
-		(m.marketState == types.MarketState_MARKET_STATE_CONTINUOUS && order.MarketType == types.Order_MARKET_TYPE_AUCTION) {
+	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.MarketType == types.Order_MARKET_TYPE_CONTINUOUS) ||
+		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.MarketType == types.Order_MARKET_TYPE_AUCTION) {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
