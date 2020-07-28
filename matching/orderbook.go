@@ -643,7 +643,7 @@ func (b *OrderBook) getBestBidPrice() uint64 {
 }
 
 func (b *OrderBook) getBestAskPrice() uint64 {
-	price, _ := b.buy.BestPriceAndVolume(types.Side_SIDE_SELL)
+	price, _ := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
 	return price
 }
 
