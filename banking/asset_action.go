@@ -6,6 +6,8 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
 	types "code.vegaprotocol.io/vega/proto"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -105,6 +107,10 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 		partyID: t.builtinD.PartyID,
 		assetID: t.builtinD.VegaAssetID,
 	}
+	asset, _ := t.asset.BuiltinAsset()
+	// builtin deposits do not have hash, and we don't need one
+	// so let's just add some random id
+	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String()}
 	return nil
 }
 
