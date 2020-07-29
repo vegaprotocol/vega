@@ -902,9 +902,9 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 		DecimalPlaces: 2,
 		Fees: &proto.Fees{
 			Factors: &proto.FeeFactors{
-				LiquidityFee:      "0",
-				InfrastructureFee: "0",
-				MakerFee:          "0",
+				LiquidityFee:      val(row, 17),
+				InfrastructureFee: val(row, 18),
+				MakerFee:          val(row, 19),
 			},
 		},
 		TradableInstrument: &proto.TradableInstrument{

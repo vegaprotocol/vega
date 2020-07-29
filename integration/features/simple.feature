@@ -2,8 +2,8 @@ Feature: Test trading-core flow with simple risk model
 
     Background:
         Given the market:
-            | name      | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | openAuction | trading mode |
-            | ETH/DEC19 | 1000      | simple     | 0.11       | 0.1      | 0  | 0 | 0     | 1.4            | 1.2            | 1.1           | 0           | continuous   |
+            | name      | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee |
+            | ETH/DEC19 | 1000      | simple     | 0.11       | 0.1      | 0  | 0 | 0     | 1.4            | 1.2            | 1.1           | 0           | continuous   |        0 |                 0 |            0 |
         And the system accounts:
             | type       | asset | balance |
             | settlement | ETH   | 0       |

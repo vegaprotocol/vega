@@ -3,8 +3,8 @@ Feature: Test mark to market settlement
   Background:
     Given the markets starts on "2019-11-30T00:00:00Z" and expires on "2019-12-31T23:59:59Z"
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlement price | openAuction | trading mode |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |       0.11 |      0.1 |  0 | 0 |     0 |            1.4 |            1.2 |           1.1 |               42 | 0           | continuous   |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlement price | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee |
+      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |       0.11 |      0.1 |  0 | 0 |     0 |            1.4 |            1.2 |           1.1 |               42 | 0           | continuous   |        0 |                 0 |            0 |
   Scenario: Order cannot be placed once the market is expired
     Given the following traders:
       | name    | amount |
