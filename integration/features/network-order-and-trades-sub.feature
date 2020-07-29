@@ -3,8 +3,8 @@ Feature: Ensure network trader are generated
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode |
-      | ETH/DEC19 | ETH      | BTC       | BTC   |        94 | simple     |          0 |        0 |  0 | 0.016 |   2.0 |              5 |              4 |           3.2 |              42 | 0           | continuous   |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee |
+      | ETH/DEC19 | ETH      | BTC       | BTC   |        94 | simple     |          0 |        0 |  0 | 0.016 |   2.0 |              5 |              4 |           3.2 |              42 | 0           | continuous   |        0 |                 0 |            0 |
 
   Scenario: Implement trade and order network
 # setup accounts
