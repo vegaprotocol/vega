@@ -130,7 +130,7 @@ docker: build ## Make docker container image using pre-existing binaries
 	@source ./script/build.sh && set_version && \
 	mkdir -p docker/bin && \
 	for app in "$${apps[@]}" ; do \
-		f="cmd/$$app/$$app-linux-amd64" ; \
+		f="cmd/$$app/$$app" ; \
 		if ! test -f "$$f" ; then \
 			echo "Failed to find: $$f" ; \
 			exit 1 ; \
