@@ -511,6 +511,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.PrepareWithdrawRequest"><span class="badge">M</span>PrepareWithdrawRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareWithdrawResponse"><span class="badge">M</span>PrepareWithdrawResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.PropagateChainEventRequest"><span class="badge">M</span>PropagateChainEventRequest</a>
                 </li>
 
@@ -564,14 +572,6 @@
 
                 <li>
                   <a href="#api.VegaTimeResponse"><span class="badge">M</span>VegaTimeResponse</a>
-                </li>
-
-                <li>
-                  <a href="#api.WithdrawRequest"><span class="badge">M</span>WithdrawRequest</a>
-                </li>
-
-                <li>
-                  <a href="#api.WithdrawResponse"><span class="badge">M</span>WithdrawResponse</a>
                 </li>
 
 
@@ -4098,6 +4098,54 @@ or a specific asset </p></td>
 
 
 
+        <h3 id="api.PrepareWithdrawRequest">PrepareWithdrawRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>withdraw</td>
+                  <td><a href="#vega.Withdraw">vega.Withdraw</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.PrepareWithdrawResponse">PrepareWithdrawResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.PropagateChainEventRequest">PropagateChainEventRequest</h3>
         <p>The request for a new event sent by the blockchain queue to be propagated into vega</p>
 
@@ -4503,54 +4551,6 @@ or a specific asset </p></td>
 
 
 
-        <h3 id="api.WithdrawRequest">WithdrawRequest</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>withdraw</td>
-                  <td><a href="#vega.Withdraw">vega.Withdraw</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
-        <h3 id="api.WithdrawResponse">WithdrawResponse</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>success</td>
-                  <td><a href="#bool">bool</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
 
 
 
@@ -4587,9 +4587,9 @@ or a specific asset </p></td>
               </tr>
 
               <tr>
-                <td>Withdraw</td>
-                <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
-                <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
+                <td>PrepareWithdraw</td>
+                <td><a href="#api.PrepareWithdrawRequest">PrepareWithdrawRequest</a></td>
+                <td><a href="#api.PrepareWithdrawResponse">PrepareWithdrawResponse</a></td>
                 <td><p>Request withdrawal</p></td>
               </tr>
 

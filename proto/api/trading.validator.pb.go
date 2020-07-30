@@ -41,7 +41,7 @@ func (this *SubmitTransactionRequest) Validate() error {
 func (this *SubmitTransactionResponse) Validate() error {
 	return nil
 }
-func (this *WithdrawRequest) Validate() error {
+func (this *PrepareWithdrawRequest) Validate() error {
 	if this.Withdraw != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdraw); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Withdraw", err)
@@ -49,7 +49,7 @@ func (this *WithdrawRequest) Validate() error {
 	}
 	return nil
 }
-func (this *WithdrawResponse) Validate() error {
+func (this *PrepareWithdrawResponse) Validate() error {
 	return nil
 }
 func (this *PrepareSubmitOrderResponse) Validate() error {

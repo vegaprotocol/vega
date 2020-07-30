@@ -87,6 +87,8 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
+    - [PrepareWithdrawRequest](#api.PrepareWithdrawRequest)
+    - [PrepareWithdrawResponse](#api.PrepareWithdrawResponse)
     - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
     - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
@@ -101,8 +103,6 @@
     - [TradesStream](#api.TradesStream)
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
-    - [WithdrawRequest](#api.WithdrawRequest)
-    - [WithdrawResponse](#api.WithdrawResponse)
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
@@ -1516,6 +1516,36 @@ The response of the GetNodeSIgnatureAggregate rpc
 
 
 
+<a name="api.PrepareWithdrawRequest"></a>
+
+### PrepareWithdrawRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdraw | [vega.Withdraw](#vega.Withdraw) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareWithdrawResponse"></a>
+
+### PrepareWithdrawResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="api.PropagateChainEventRequest"></a>
 
 ### PropagateChainEventRequest
@@ -1732,36 +1762,6 @@ The response for a new event sent to vega
 
 
 
-<a name="api.WithdrawRequest"></a>
-
-### WithdrawRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  |  |
-
-
-
-
-
-
-<a name="api.WithdrawResponse"></a>
-
-### WithdrawResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| success | [bool](#bool) |  |  |
-
-
-
-
-
-
 
 
 
@@ -1778,7 +1778,7 @@ The response for a new event sent to vega
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
-| Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
+| PrepareWithdraw | [PrepareWithdrawRequest](#api.PrepareWithdrawRequest) | [PrepareWithdrawResponse](#api.PrepareWithdrawResponse) | Request withdrawal |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |

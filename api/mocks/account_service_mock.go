@@ -34,17 +34,16 @@ func (m *MockAccountService) EXPECT() *MockAccountServiceMockRecorder {
 	return m.recorder
 }
 
-// Withdraw mocks base method
-func (m *MockAccountService) Withdraw(arg0 context.Context, arg1 *proto.Withdraw) (bool, error) {
+// PrepareWithdraw mocks base method
+func (m *MockAccountService) PrepareWithdraw(arg0 context.Context, arg1 *proto.Withdraw) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "PrepareWithdraw", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// Withdraw indicates an expected call of Withdraw
-func (mr *MockAccountServiceMockRecorder) Withdraw(arg0, arg1 interface{}) *gomock.Call {
+// PrepareWithdraw indicates an expected call of PrepareWithdraw
+func (mr *MockAccountServiceMockRecorder) PrepareWithdraw(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockAccountService)(nil).Withdraw), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareWithdraw", reflect.TypeOf((*MockAccountService)(nil).PrepareWithdraw), arg0, arg1)
 }
