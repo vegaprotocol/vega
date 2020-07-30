@@ -180,7 +180,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
-	case aa.IsBuiltinAssetDeposit(), aa.IsERC20Deposit():
+	case aa.IsBuiltinAssetDeposit():
+		return e.finalizeDeposit(ctx, aa.deposit)
+	case aa.IsERC20Deposit():
+		// here the event queue send us a 0x... pubkey
+		// we do the slice operation to remove it ([2:]
+		aa.deposit.partyID = aa.deposit.partyID[2:]
 		return e.finalizeDeposit(ctx, aa.deposit)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)

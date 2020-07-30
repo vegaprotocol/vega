@@ -249,7 +249,9 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 	defer iter.Close()
 	var event *bridge.BridgeAssetDeposited
 	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID &&
+		// here the event queu send us a 0x... pubkey
+		// we do the slice operation to remove it ([2:]
+		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID[2:] &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.TxIndex) == txIndex {
 			event = iter.Event
