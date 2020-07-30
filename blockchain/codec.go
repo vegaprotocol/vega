@@ -92,7 +92,8 @@ func (c *codec) Process(payload []byte) error {
 	tx := &types.Transaction{}
 	err = proto.Unmarshal(bundle.Tx, tx)
 	if err != nil {
-		c.log.Error("unable to unmarshal Transction", logging.Error(err))
+		c.log.Error("unable to unmarshal Transaction", logging.Error(err))
+		return err
 	}
 
 	cmdData, cmd, err := txDecode(tx.InputData)
