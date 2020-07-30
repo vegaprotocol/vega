@@ -364,60 +364,6 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	assert.Equal(t, pay, 1)
 }
 
-func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
-	eng := getTestFee(t)
-	trades := []*types.Trade{
-		{
-			Aggressor:          types.Side_SIDE_SELL,
-			Seller:             "party1",
-			Buyer:              "party2",
-			Size:               1,
-			Price:              100,
-			SellerAuctionBatch: 11,
-			BuyerAuctionBatch:  10,
-		},
-	}
-
-	ft, err := eng.CalculateForFrequentBatchesAuctionMode(trades)
-	assert.NotNil(t, ft)
-	assert.Nil(t, err)
-
-	// get the amounts map
-	feeAmounts := ft.TotalFeesAmountPerParty()
-	// fees are (100 * 0.1 + 100 * 0.05 + 100 *0.02) = 17
-	party1Amount, ok := feeAmounts["party1"]
-	assert.True(t, ok)
-	assert.Equal(t, 17, int(party1Amount))
-	party2Amount, ok := feeAmounts["party2"]
-	assert.True(t, ok)
-	assert.Equal(t, 0, int(party2Amount))
-
-	// get the transfer and check we have enough of each types
-	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
-	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
-			liquidity += 1
-		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
-			infra += 1
-		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
-			recv += 1
-		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
-			pay += 1
-		}
-	}
-
-	assert.Equal(t, liquidity, 1)
-	assert.Equal(t, infra, 1)
-	assert.Equal(t, recv, 1)
-	assert.Equal(t, pay, 1)
-}
-
 func testCalcPositionResolution(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{

@@ -1459,7 +1459,7 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 	trader := "oktrader"
 
 	// create traders
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
