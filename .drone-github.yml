@@ -249,11 +249,11 @@ steps:
       DOCKER_HOST: unix:///run/docker.sock
       DOCKER_CONFIG_JSON:
         from_secret: dockerconfig
-    shell: /bin/bash
+    # shell: /bin/bash
     commands:
       - find cmd -name "*-linux-amd64" -print | while read -r binary ; do cp -a "$$binary" "$${binary//-linux-amd64/}" ; done
       - make docker
-      - tag="$$(source script/build.sh && set_version && echo "$$version")"
+      - tag="$$(bash -c 'source script/build.sh && set_version && echo "$$version"')"
       - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag"
       - if test -n "$$DRONE_BRANCH" ; then
           docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
