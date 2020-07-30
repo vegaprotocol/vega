@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -188,7 +189,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64) {
 	bestAsk := b.getBestAskPrice()
 
 	// Short curcuit if the book is not crossed
-	if bestBid < bestAsk {
+	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
 		return 0, 0
 	}
 
@@ -208,6 +209,9 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64) {
 			prices = append(prices, value.price)
 		}
 	}
+
+	// We need to sort the prices list as they are not in order
+	sort.Slice(prices, func(i, j int) bool { return prices[i] < prices[j] })
 
 	// get the maximum volume price from the median of all the maximum tradable price levels
 	uncrossPrice := prices[len(prices)/2]
@@ -264,7 +268,24 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 
 // Uncrosses the book to generate the maximum volume set of trades
 func (b *OrderBook) uncrossBook() {
+	// Get the uncrossing price and which side has the most volume at that price
+	price, volume := b.GetIndicativePriceAndVolume()
 
+	// Work out which side of the book we should uncross from
+	uncrossSide := types.Side_SIDE_BUY
+
+	// Remove all the orders from that side of the book upto the given volume
+	if uncrossSide == types.Side_SIDE_BUY {
+		// Pull out the trades we want to process
+		trades, _ := b.buy.ExtractOrders(volume, price)
+
+		// Uncross each one
+		for _, order := range trades {
+			b.sell.uncross(order)
+		}
+	} else {
+
+	}
 }
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book

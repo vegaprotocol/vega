@@ -17,11 +17,40 @@ var (
 	ErrNoOrder = errors.New("no orders in the book side")
 )
 
-// OrderBookSide reprenset a side of the book, either Sell or Buy
+// OrderBookSide represent a side of the book, either Sell or Buy
 type OrderBookSide struct {
 	log *logging.Logger
 	// Config
-	levels []*PriceLevel
+	levels       []*PriceLevel
+	parkedOrders []*types.Order
+}
+
+// When we enter an auction we have to park all pegged orders
+// and cancel all orders that are not good for auction
+func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
+	ordersToCancel := make([]*types.Order, 0)
+	for _, pricelevel := range s.levels {
+		for _, order := range pricelevel.orders {
+			// Find orders to cancel
+			if order.MarketType != types.Order_MARKET_TYPE_AUCTION &&
+				order.MarketType != types.Order_MARKET_TYPE_AUCTION_AND_CONTINUOUS {
+				ordersToCancel = append(ordersToCancel, order)
+			}
+
+			if order.Id == "PeggedOrder" {
+				s.parkedOrders = append(s.parkedOrders, order)
+			}
+		}
+	}
+	return ordersToCancel, nil
+}
+
+// When we leave an auction period we need to put back all the orders
+// that were parked into the order book
+func (s *OrderBookSide) unparkOrders(side types.Side) {
+	for _, order := range s.parkedOrders {
+		s.addOrder(order, side)
+	}
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
@@ -100,6 +129,29 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	*s.levels[priceLevelIndex].orders[orderIndex] = *orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
 	return nil
+}
+
+// ExtractOrders removes the orders from the top of the book until the volume amount is hit
+func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, error) {
+	extractedOrders := make([]*types.Order, 0)
+	var totalVolume uint64
+	for _, pricelevel := range s.levels {
+		for _, order := range pricelevel.orders {
+			// Check the price is good and the total volume will not be exceeded
+			if order.Price >= price && totalVolume+order.Remaining < volume {
+				// Remove this order
+				extractedOrders = append(extractedOrders, order)
+				totalVolume += order.Remaining
+
+			} else {
+				// We should never get to here unless the passed in price
+				// and volume are not correct
+				return nil, ErrInvalidVolume
+			}
+		}
+		// Erase this price level
+	}
+	return extractedOrders, nil
 }
 
 // RemoveOrder will remove an order from the book
@@ -181,6 +233,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
+// GetVolume returns the volume at the given pricelevel
 func (s *OrderBookSide) GetVolume(price uint64, side types.Side) (uint64, error) {
 	priceLevel := s.getPriceLevel(price, side)
 
