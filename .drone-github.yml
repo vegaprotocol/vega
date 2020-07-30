@@ -249,6 +249,7 @@ steps:
       DOCKER_HOST: unix:///run/docker.sock
       DOCKER_CONFIG_JSON:
         from_secret: dockerconfig
+    shell: /bin/bash
     commands:
       - find cmd -name "*-linux-amd64" -print | while read -r binary ; do cp -a "$$binary" "$${binary//-linux-amd64/}" ; done
       - make docker
