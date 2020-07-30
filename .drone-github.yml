@@ -253,6 +253,7 @@ steps:
     commands:
       - find cmd -name "*-linux-amd64" -print | while read -r binary ; do cp -a "$$binary" "$${binary//-linux-amd64/}" ; done
       - make docker
+      - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - tag="$$(bash -c 'source script/build.sh && set_version && echo "$$version"')"
       - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag"
       - if test -n "$$DRONE_BRANCH" ; then
