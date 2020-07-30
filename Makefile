@@ -126,7 +126,7 @@ print_check: ## Check for fmt.Print functions in Go code
 
 .PHONY: docker
 docker: SHELL:=/usr/bin/env bash
-docker: build ## Make docker container image using pre-existing binaries
+docker: ## Make docker container image using pre-existing binaries
 	@source ./script/build.sh && set_version && \
 	mkdir -p docker/bin && \
 	for app in "$${apps[@]}" ; do \

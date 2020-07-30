@@ -241,7 +241,7 @@ steps:
         - push
 
   - name: build_docker_image
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:stable
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:18.09.9
     volumes:
       - name: dockersock
         path: /run/docker.sock
@@ -250,19 +250,14 @@ steps:
       DOCKER_CONFIG_JSON:
         from_secret: dockerconfig
     commands:
-      - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
-      - 'for app in $$apps ; do
-          f="cmd/$$app/$$app-linux-amd64" ;
-          if ! test -f "$$f" ; then echo "Failed to find: $$f" ; exit 1 ; fi ;
-          cp -a "$$f" "./$$app" || exit 1 ;
-        done'
-      - imgtag="$${DRONE_BRANCH}"
-      - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
-      - if test -z "$$imgtag" ; then exit 1 ; fi
-      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag" -f Dockerfile.quick .
-      - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
-      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag"
-      - for app in $$apps ; do rm -f "./$$app"; done
+      - find cmd -name "*-linux-amd64" -print | while read -r binary ; do cp -a "$$binary" "$${binary//-linux-amd64/}" ; done
+      - make docker
+      - tag="$$(source script/build.sh && set_version && echo "$$version")"
+      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag"
+      - if test -n "$$DRONE_BRANCH" ; then
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
+        fi
     depends_on:
       - build-branch
     when:
