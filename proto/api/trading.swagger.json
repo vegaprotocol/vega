@@ -84,7 +84,7 @@
         ]
       }
     },
-    "/governance/proposals/prepare": {
+    "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
         "operationId": "PrepareProposal",

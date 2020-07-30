@@ -82,8 +82,9 @@ http:
       get: '/parties/{partyID}/accounts'
     - selector: api.trading_data.MarginLevels
       get: '/parties/{partyID}/markets/{marketID}/margin'
+
     - selector: api.trading.Withdraw
-      post: '/parties/{withdraw.partyID}/withdrawals'
+      post: '/parties/prepare/withdraw'
       body: '*'
     - selector: api.trading_data.GetProposalsByParty
       get: '/parties/{partyID}/proposals'
@@ -91,7 +92,7 @@ http:
 
     # Governance
     - selector: api.trading.PrepareProposal
-      post: '/governance/proposals/prepare'
+      post: '/governance/prepare/proposal'
       body: "*"
 
     # Miscellaneous
