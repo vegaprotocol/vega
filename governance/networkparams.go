@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"log"
 	"strconv"
 	"time"
 
@@ -10,21 +11,7 @@ import (
 const (
 	day  = 24 * time.Hour // day here is 24 hours
 	year = 365 * day      // year here is 365 days (ignoring leap years)
-)
 
-// These Governance parameters are fixed, unless overridden by ldflags for test purposes.
-var (
-	MinClose              = ""
-	MaxClose              = ""
-	MinEnact              = ""
-	MaxEnact              = ""
-	RequiredParticipation = ""
-	RequiredMajority      = ""
-	MinProposerBalance    = ""
-	MinVoterBalance       = ""
-)
-
-const (
 	// defaultMinClose is the hardcoded minimum voting close offset duration
 	// (relative to the time proposal is received from the chain)
 	defaultMinClose = 2 * day
@@ -48,6 +35,10 @@ const (
 	defaultMakerFee          = "0.00025"
 	defaultInfrastructureFee = "0.0005"
 	defaultLiquidityFee      = "0.001"
+
+	defaultSearchLevel       = "1.1"
+	defaultInitialMargin     = "1.2"
+	defaultCollateralRelease = "1.4"
 )
 
 // ProposalParameters stores proposal specific parameters
@@ -86,7 +77,7 @@ type FutureOracle struct {
 
 // NetworkParameters stores network parameters per proposal type
 type NetworkParameters struct {
-	NewMarkets          ProposalParameters
+	Proposals           ProposalParameters
 	MarginConfiguration ScalingFactors
 	FutureOracle        FutureOracle
 	InitialMarkPrice    uint64
@@ -95,28 +86,51 @@ type NetworkParameters struct {
 
 // DefaultNetworkParameters returns default, hardcoded, network parameters
 func DefaultNetworkParameters(log *logging.Logger) *NetworkParameters {
+	gstate := DefaultGenesisState()
 	return &NetworkParameters{
-		NewMarkets:          defaultNewMarketParameters(log),
-		MarginConfiguration: defaultMarginConfiguration(),
+		Proposals:           defaultProposalParameters(log, gstate),
+		MarginConfiguration: defaultMarginConfiguration(gstate),
 		FutureOracle:        defaultFutureOracle(),
 		InitialMarkPrice:    1,
-		FeeFactors:          defaultFeeFactors(),
+		FeeFactors:          defaultFeeFactors(gstate),
 	}
 }
 
-func defaultFeeFactors() FeeFactors {
+func defaultFeeFactors(gstate GenesisState) FeeFactors {
 	return FeeFactors{
-		MakerFee:          defaultMakerFee,
-		InfrastructureFee: defaultInfrastructureFee,
-		LiquidityFee:      defaultLiquidityFee,
+		MakerFee:          gstate.MakerFee,
+		InfrastructureFee: gstate.InfrastructureFee,
+		LiquidityFee:      gstate.LiquidityFee,
 	}
 }
 
-func defaultMarginConfiguration() ScalingFactors {
+func defaultMarginConfiguration(gstate GenesisState) ScalingFactors {
+	search, err := strconv.ParseFloat(gstate.SearchLevel, 32)
+	if err != nil {
+		log.Fatal(
+			"Failed to parse margins search level",
+			logging.String("SearchLevel", gstate.SearchLevel),
+			logging.Error(err))
+	}
+	initial, err := strconv.ParseFloat(gstate.InitialMargin, 32)
+	if err != nil {
+		log.Fatal(
+			"Failed to parse margins search level",
+			logging.String("SearchLevel", gstate.InitialMargin),
+			logging.Error(err))
+	}
+	release, err := strconv.ParseFloat(gstate.CollateralRelease, 32)
+	if err != nil {
+		log.Fatal(
+			"Failed to parse margins search level",
+			logging.String("SearchLevel", gstate.CollateralRelease),
+			logging.Error(err))
+	}
+
 	return ScalingFactors{
-		SearchLevel:       1.1,
-		InitialMargin:     1.2,
-		CollateralRelease: 1.4,
+		SearchLevel:       search,
+		InitialMargin:     initial,
+		CollateralRelease: release,
 	}
 }
 
@@ -128,7 +142,7 @@ func defaultFutureOracle() FutureOracle {
 	}
 }
 
-func defaultNewMarketParameters(log *logging.Logger) ProposalParameters {
+func defaultProposalParameters(log *logging.Logger, gstate GenesisState) ProposalParameters {
 	var err error
 	result := ProposalParameters{
 		MinClose:              defaultMinClose,
@@ -141,134 +155,134 @@ func defaultNewMarketParameters(log *logging.Logger) ProposalParameters {
 		MinVoterBalance:       defaultMinVoterBalance,
 	}
 
-	if len(MinClose) > 0 {
-		result.MinClose, err = time.ParseDuration(MinClose)
+	if len(gstate.MinClose) > 0 {
+		result.MinClose, err = time.ParseDuration(gstate.MinClose)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("MinClose", MinClose),
+				logging.String("MinClose", gstate.MinClose),
 				logging.Error(err),
 			)
 		}
 	}
-	if len(MaxClose) > 0 {
-		result.MaxClose, err = time.ParseDuration(MaxClose)
+	if len(gstate.MaxClose) > 0 {
+		result.MaxClose, err = time.ParseDuration(gstate.MaxClose)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("MaxClose", MaxClose),
+				logging.String("MaxClose", gstate.MaxClose),
 				logging.Error(err),
 			)
 		}
 	}
-	if len(MinEnact) > 0 {
-		result.MinEnact, err = time.ParseDuration(MinEnact)
+	if len(gstate.MinEnact) > 0 {
+		result.MinEnact, err = time.ParseDuration(gstate.MinEnact)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("MinEnact", MinEnact),
+				logging.String("MinEnact", gstate.MinEnact),
 				logging.Error(err),
 			)
 		}
 	}
-	if len(MaxEnact) > 0 {
-		result.MaxEnact, err = time.ParseDuration(MaxEnact)
+	if len(gstate.MaxEnact) > 0 {
+		result.MaxEnact, err = time.ParseDuration(gstate.MaxEnact)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("MaxEnact", MaxEnact),
+				logging.String("MaxEnact", gstate.MaxEnact),
 				logging.Error(err),
 			)
 		}
 	}
-	if len(RequiredParticipation) > 0 {
-		levelValue, err := strconv.ParseFloat(RequiredParticipation, 32)
+	if len(gstate.RequiredParticipation) > 0 {
+		levelValue, err := strconv.ParseFloat(gstate.RequiredParticipation, 32)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("RequiredParticipation", RequiredParticipation),
+				logging.String("RequiredParticipation", gstate.RequiredParticipation),
 				logging.Error(err),
 			)
 		}
 		if levelValue < 0 {
 			log.Fatal(
 				"New market network parameter is invalid (negative)",
-				logging.String("RequiredParticipation", RequiredParticipation),
+				logging.String("RequiredParticipation", gstate.RequiredParticipation),
 			)
 		}
 		if levelValue > 1 {
 			log.Fatal(
 				"New market network parameter is invalid (over 1)",
-				logging.String("RequiredParticipation", RequiredParticipation),
+				logging.String("RequiredParticipation", gstate.RequiredParticipation),
 			)
 		}
 		result.RequiredParticipation = float32(levelValue)
 	}
-	if len(RequiredMajority) > 0 {
-		levelValue, err := strconv.ParseFloat(RequiredMajority, 32)
+	if len(gstate.RequiredMajority) > 0 {
+		levelValue, err := strconv.ParseFloat(gstate.RequiredMajority, 32)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("RequiredMajority", RequiredMajority),
+				logging.String("RequiredMajority", gstate.RequiredMajority),
 				logging.Error(err),
 			)
 		}
 		if levelValue < 0.5 {
 			log.Fatal(
 				"New market network parameter is invalid (less than 0.5)",
-				logging.String("RequiredMajority", RequiredMajority),
+				logging.String("RequiredMajority", gstate.RequiredMajority),
 			)
 		}
 		if levelValue > 1 {
 			log.Fatal(
 				"New market network parameter is invalid (over 1)",
-				logging.String("RequiredMajority", RequiredMajority),
+				logging.String("RequiredMajority", gstate.RequiredMajority),
 			)
 		}
 		result.RequiredMajority = float32(levelValue)
 	}
-	if len(MinProposerBalance) > 0 {
-		levelValue, err := strconv.ParseFloat(MinProposerBalance, 32)
+	if len(gstate.MinProposerBalance) > 0 {
+		levelValue, err := strconv.ParseFloat(gstate.MinProposerBalance, 32)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("MinProposerBalance", MinProposerBalance),
+				logging.String("MinProposerBalance", gstate.MinProposerBalance),
 				logging.Error(err),
 			)
 		}
 		if levelValue <= 0 {
 			log.Fatal(
 				"New market network parameter is invalid (less or equal than 0)",
-				logging.String("MinProposerBalance", MinProposerBalance),
+				logging.String("MinProposerBalance", gstate.MinProposerBalance),
 			)
 		}
 		if levelValue > 1 {
 			log.Fatal(
 				"New market network parameter is invalid (over 1)",
-				logging.String("MinProposerBalance", MinProposerBalance),
+				logging.String("MinProposerBalance", gstate.MinProposerBalance),
 			)
 		}
 		result.MinProposerBalance = float32(levelValue)
 	}
-	if len(MinVoterBalance) > 0 {
-		levelValue, err := strconv.ParseFloat(MinVoterBalance, 32)
+	if len(gstate.MinVoterBalance) > 0 {
+		levelValue, err := strconv.ParseFloat(gstate.MinVoterBalance, 32)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
-				logging.String("MinVoterBalance", MinVoterBalance),
+				logging.String("MinVoterBalance", gstate.MinVoterBalance),
 				logging.Error(err),
 			)
 		}
 		if levelValue <= 0 {
 			log.Fatal(
 				"New market network parameter is invalid (less or equal than 0)",
-				logging.String("MinVoterBalance", MinVoterBalance),
+				logging.String("MinVoterBalance", gstate.MinVoterBalance),
 			)
 		}
 		if levelValue > 1 {
 			log.Fatal(
 				"New market network parameter is invalid (over 1)",
-				logging.String("MinVoterBalance", MinVoterBalance),
+				logging.String("MinVoterBalance", gstate.MinVoterBalance),
 			)
 		}
 		result.MinVoterBalance = float32(levelValue)

@@ -253,7 +253,7 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	// FIXME(): we should not have networkf params per proposal type..
-	return &e.networkParams.NewMarkets, nil
+	return &e.networkParams.Proposals, nil
 }
 
 // validates proposals read from the chain

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/contextutil"
@@ -109,6 +111,22 @@ func (a *AbciApplication) ReloadConf(cfg Config) {
 	a.cfgMu.Lock()
 	a.Config = cfg
 	a.cfgMu.Unlock()
+}
+
+type GenesisState struct {
+	Hello string `json:"hello"`
+	World uint64 `json:"world"`
+}
+
+func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
+	gstate := GenesisState{}
+	err := json.Unmarshal(req.AppStateBytes, &gstate)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("STATE: %v\n", gstate)
+
+	return types.ResponseInitChain{}
 }
 
 // BeginBlock is called by the chain once the new block is starting
