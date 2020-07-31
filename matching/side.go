@@ -19,7 +19,8 @@ var (
 
 // OrderBookSide represent a side of the book, either Sell or Buy
 type OrderBookSide struct {
-	log *logging.Logger
+	side types.Side
+	log  *logging.Logger
 	// Config
 	levels       []*PriceLevel
 	parkedOrders []*types.Order
@@ -132,24 +133,55 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 }
 
 // ExtractOrders removes the orders from the top of the book until the volume amount is hit
-func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, error) {
+func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]*types.Order, error) {
 	extractedOrders := make([]*types.Order, 0)
 	var totalVolume uint64
-	for _, pricelevel := range s.levels {
-		for _, order := range pricelevel.orders {
-			// Check the price is good and the total volume will not be exceeded
-			if order.Price >= price && totalVolume+order.Remaining < volume {
-				// Remove this order
-				extractedOrders = append(extractedOrders, order)
-				totalVolume += order.Remaining
 
-			} else {
-				// We should never get to here unless the passed in price
-				// and volume are not correct
-				return nil, ErrInvalidVolume
+	if side == types.Side_SIDE_BUY {
+		for index := len(s.levels) - 1; index >= 0; index-- {
+			pricelevel := s.levels[index]
+			for _, order := range pricelevel.orders {
+				// Check the price is good and the total volume will not be exceeded
+				if order.Price >= price && totalVolume+order.Remaining <= volume {
+					// Remove this order
+					extractedOrders = append(extractedOrders, order)
+					totalVolume += order.Remaining
+					// Remove the order from the price level
+					pricelevel.removeOrder(0)
+
+				} else {
+					// We should never get to here unless the passed in price
+					// and volume are not correct
+					return nil, ErrInvalidVolume
+				}
+			}
+			// Erase this price level which will be at the end of the slice
+			s.levels[index] = nil
+			s.levels = s.levels[:len(s.levels)-1]
+
+			// Check if we have done enough
+			if totalVolume == volume {
+				break
 			}
 		}
-		// Erase this price level
+	} else {
+		for index := 0; index <= len(s.levels); index++ {
+			pricelevel := s.levels[index]
+			for _, order := range pricelevel.orders {
+				// Check the price is good and the total volume will not be exceeded
+				if order.Price <= price && totalVolume+order.Remaining < volume {
+					// Remove this order
+					extractedOrders = append(extractedOrders, order)
+					totalVolume += order.Remaining
+
+				} else {
+					// We should never get to here unless the passed in price
+					// and volume are not correct
+					return nil, ErrInvalidVolume
+				}
+			}
+			// Erase this price level which will be the start of the slice
+		}
 	}
 	return extractedOrders, nil
 }

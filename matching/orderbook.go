@@ -34,6 +34,7 @@ type OrderBook struct {
 	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
 	marketState     types.MarketState
+	batchID         uint64
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
@@ -71,8 +72,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		log:             log,
 		marketID:        marketID,
 		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log},
-		sell:            &OrderBookSide{log: log},
+		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
+		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
 		Config:          config,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
@@ -81,6 +82,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		// For now we set market state to continuous because that is what
 		// we are used to. Before we go live this will be auction
 		marketState: types.MarketState_MARKET_STATE_CONTINUOUS,
+		batchID:     0,
 	}
 }
 
@@ -162,35 +164,56 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 }
 
 // EnterAuction Moves the order book into an auction state
-func (b *OrderBook) EnterAuction() {
+func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Scan existing orders to see which ones can be kept, cancelled and parked
+	buyCancelledOrders, err := b.buy.parkOrCancelOrders()
+	if err != nil {
+		return nil, err
+	}
+
+	sellCancelledOrders, err := b.sell.parkOrCancelOrders()
+	if err != nil {
+		return nil, err
+	}
 
 	// Set the market state
 	b.marketState = types.MarketState_MARKET_STATE_AUCTION
+
+	// Return all the orders that have been cancelled from the book
+	cancelledOrders := buyCancelledOrders
+	cancelledOrders = append(cancelledOrders, sellCancelledOrders...)
+	return cancelledOrders, nil
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
-func (b *OrderBook) LeaveAuction() {
+func (b *OrderBook) LeaveAuction() ([]*types.Order, []*types.Trade, error) {
 	// Uncross the book
-	b.uncrossBook()
-
-	// Update batchID
-	//b.batchID += 1
+	trades, orders, err := b.uncrossBook()
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Unpark all parked orders
+	//b.buy.unparkOrders(types.Side_SIDE_BUY)
+	//b.sell.unparkOrders(types.Side_SIDE_SELL)
+
+	// Update batchID
+	b.batchID++
 
 	// Flip back to continuous
 	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
+
+	return orders, trades, nil
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
-func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64) {
+func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	bestBid := b.getBestBidPrice()
 	bestAsk := b.getBestAskPrice()
 
 	// Short curcuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
-		return 0, 0
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
 	}
 
 	// Generate a set of price level pairs with their maximum tradable volumes
@@ -215,7 +238,21 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64) {
 
 	// get the maximum volume price from the median of all the maximum tradable price levels
 	uncrossPrice := prices[len(prices)/2]
-	return uncrossPrice, maxTradableAmount
+	var uncrossSide types.Side
+
+	// See which side we should fully process when we uncross
+	for _, value := range cumulativeVolumes {
+		if value.price == uncrossPrice {
+			if value.cumulativeAskVolume >= value.cumulativeBidVolume {
+				// More sells, so we process the buys
+				uncrossSide = types.Side_SIDE_BUY
+			} else {
+				uncrossSide = types.Side_SIDE_SELL
+			}
+			break
+		}
+	}
+	return uncrossPrice, maxTradableAmount, uncrossSide
 }
 
 func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[uint64]CumulativeVolumeLevel {
@@ -267,25 +304,52 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
-func (b *OrderBook) uncrossBook() {
+func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 	// Get the uncrossing price and which side has the most volume at that price
-	price, volume := b.GetIndicativePriceAndVolume()
+	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
 
-	// Work out which side of the book we should uncross from
-	uncrossSide := types.Side_SIDE_BUY
+	var allTrades []*types.Trade
+	var allOrders []*types.Order
 
 	// Remove all the orders from that side of the book upto the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
-		trades, _ := b.buy.ExtractOrders(volume, price)
+		trades, err := b.buy.ExtractOrders(uncrossSide, price, volume)
+		if err != nil {
+			return nil, nil, err
+		}
 
 		// Uncross each one
 		for _, order := range trades {
-			b.sell.uncross(order)
+			trades, orders, _, err := b.sell.uncross(order)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			allTrades = append(allTrades, trades...)
+			allOrders = append(allOrders, orders...)
 		}
 	} else {
+		// Pull out the trades we want to process
+		trades, err := b.sell.ExtractOrders(uncrossSide, price, volume)
+		if err != nil {
+			return nil, nil, err
+		}
 
+		// Uncross each one
+		for _, order := range trades {
+			trades, orders, _, err := b.buy.uncross(order)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			allTrades = append(allTrades, trades...)
+			allOrders = append(allOrders, orders...)
+		}
 	}
+	return allTrades, allOrders, nil
 }
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
@@ -435,6 +499,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	var impactedOrders []*types.Order
 	var lastTradedPrice uint64
 	var err error
+
+	order.BatchID = b.batchID
 
 	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
 		// uncross with opposite
