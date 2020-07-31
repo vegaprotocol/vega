@@ -23,6 +23,8 @@ var requiredWallets = []Blockchain{Vega, Ethereum}
 type Wallet interface {
 	Chain() string
 	Sign([]byte) ([]byte, error)
+	Algo() string
+	Version() uint64
 	PubKeyOrAddress() []byte
 }
 

@@ -102,15 +102,20 @@ type Mutation {
     "The signed transaction"
     data: String!
     "The signature"
-    sig: String!
-    "address is one of 2 possible auth values, currently only pubkey is used"
-    address: String
-    "pubkey is used to verify the signature, currently the only supported one"
-    pubkey: String
+    sig: SignatureInput!
   ): TransactionSubmitted!
 
 }
 
+"A signature to be bundled with a transaction"
+input SignatureInput {
+  "The signature, base64 encoded"
+  sig: String!
+  "The algorithm used to produice the signature"
+  algo: String!
+  "The version of the signature"
+  version: Int!
+}
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
 type Subscription {

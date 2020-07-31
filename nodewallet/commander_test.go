@@ -88,6 +88,14 @@ func (s stubWallet) Chain() string {
 	return s.chain
 }
 
+func (s stubWallet) Algo() string {
+	return "vega/ed25519"
+}
+
+func (s stubWallet) Version() uint64 {
+	return 1
+}
+
 func (s stubWallet) PubKeyOrAddress() []byte {
 	return s.key
 }

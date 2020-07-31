@@ -2935,26 +2935,40 @@
       "default": "SIDE_UNSPECIFIED",
       "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - SIDE_BUY: Buy\n - SIDE_SELL: Sell"
     },
+    "vegaSignature": {
+      "type": "object",
+      "properties": {
+        "sig": {
+          "type": "string",
+          "format": "byte",
+          "title": "The bytes of the signature"
+        },
+        "algo": {
+          "type": "string",
+          "title": "The algorithm used to create the signature"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The version of the signature used to create the signature"
+        }
+      },
+      "title": "A signature to be authenticate a transaction\nand to be verified by the vega network"
+    },
     "vegaSignedBundle": {
       "type": "object",
       "properties": {
-        "data": {
+        "tx": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "the transaction, proto marshalled"
         },
         "sig": {
-          "type": "string",
-          "format": "byte"
-        },
-        "address": {
-          "type": "string",
-          "format": "byte"
-        },
-        "pubKey": {
-          "type": "string",
-          "format": "byte"
+          "$ref": "#/definitions/vegaSignature",
+          "title": "the signature authenticating the transaction"
         }
-      }
+      },
+      "title": "A bundle of a transaction, proto marshalled and it's signature"
     },
     "vegaSimpleModelParams": {
       "type": "object",
