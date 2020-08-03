@@ -217,7 +217,7 @@
     - [Interval](#vega.Interval)
     - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
-    - [Order.MarketType](#vega.Order.MarketType)
+    - [Order.GoodFor](#vega.Order.GoodFor)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -3167,7 +3167,7 @@ a decision taken by the vega network.
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
 | batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
-| marketType | [Order.MarketType](#vega.Order.MarketType) |  | Used to indicate which market state this order is valid for |
+| goodFor | [Order.GoodFor](#vega.Order.GoodFor) |  | Used to indicate which market state this order is good for |
 
 
 
@@ -3262,7 +3262,7 @@ a decision taken by the vega network.
 | expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | reference | [string](#string) |  |  |
-| marketType | [Order.MarketType](#vega.Order.MarketType) |  |  |
+| goodFor | [Order.GoodFor](#vega.Order.GoodFor) |  |  |
 
 
 
@@ -3691,18 +3691,18 @@ eg: for a new asset whitelisting, withdrawal
 
 
 
-<a name="vega.Order.MarketType"></a>
+<a name="vega.Order.GoodFor"></a>
 
-### Order.MarketType
-Market Type
+### Order.GoodFor
+Good for
 What market state can this order be accepted in
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| MARKET_TYPE_UNSPECIFIED | 0 | Default value, always invalid |
-| MARKET_TYPE_CONTINUOUS | 1 | Normal trading market |
-| MARKET_TYPE_AUCTION | 2 | Auction |
-| MARKET_TYPE_AUCTION_AND_CONTINUOUS | 3 | used for orders where the initiating party is the network (used for distressed traders) |
+| GOOD_FOR_UNSPECIFIED | 0 | Default value, always invalid |
+| GOOD_FOR_CONTINUOUS | 1 | Normal trading market |
+| GOOD_FOR_AUCTION | 2 | Auction |
+| GOOD_FOR_AUCTION_AND_CONTINUOUS | 3 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 

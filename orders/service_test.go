@@ -28,7 +28,7 @@ var (
 		Size:        1,
 		Side:        types.Side(1),
 		TimeInForce: types.Order_TIF_GTT,
-		MarketType:  types.Order_MARKET_TYPE_CONTINUOUS,
+		GoodFor:     types.Order_GOOD_FOR_CONTINUOUS,
 	}
 )
 

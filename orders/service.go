@@ -158,7 +158,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoTimeInForce
 	}
 
-	if sub.MarketType == types.Order_MARKET_TYPE_UNSPECIFIED {
+	if sub.GoodFor == types.Order_GOOD_FOR_UNSPECIFIED {
 		return ErrNoMarketType
 	}
 

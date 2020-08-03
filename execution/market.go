@@ -386,8 +386,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	order.Status = types.Order_STATUS_ACTIVE
 
 	// Check we are allowed to handle this order type with the current market status
-	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.MarketType == types.Order_MARKET_TYPE_CONTINUOUS) ||
-		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.MarketType == types.Order_MARKET_TYPE_AUCTION) {
+	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.GoodFor == types.Order_GOOD_FOR_CONTINUOUS) ||
+		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.GoodFor == types.Order_GOOD_FOR_AUCTION) {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))

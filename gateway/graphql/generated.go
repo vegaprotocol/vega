@@ -3999,8 +3999,8 @@ enum OrderType {
   NETWORK
 }
 
-"What market type does the order work on"
-enum MarketType {
+"What market type is the order good for"
+enum GoodFor {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 

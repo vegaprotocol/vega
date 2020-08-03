@@ -874,17 +874,17 @@
     }
   },
   "definitions": {
-    "OrderMarketType": {
+    "OrderGoodFor": {
       "type": "string",
       "enum": [
-        "MARKET_TYPE_UNSPECIFIED",
-        "MARKET_TYPE_CONTINUOUS",
-        "MARKET_TYPE_AUCTION",
-        "MARKET_TYPE_AUCTION_AND_CONTINUOUS"
+        "GOOD_FOR_UNSPECIFIED",
+        "GOOD_FOR_CONTINUOUS",
+        "GOOD_FOR_AUCTION",
+        "GOOD_FOR_AUCTION_AND_CONTINUOUS"
       ],
-      "default": "MARKET_TYPE_UNSPECIFIED",
-      "description": "- MARKET_TYPE_UNSPECIFIED: Default value, always invalid\n - MARKET_TYPE_CONTINUOUS: Normal trading market\n - MARKET_TYPE_AUCTION: Auction\n - MARKET_TYPE_AUCTION_AND_CONTINUOUS: used for orders where the initiating party is the network (used for distressed traders)",
-      "title": "Market Type\nWhat market state can this order be accepted in"
+      "default": "GOOD_FOR_UNSPECIFIED",
+      "description": "- GOOD_FOR_UNSPECIFIED: Default value, always invalid\n - GOOD_FOR_CONTINUOUS: Normal trading market\n - GOOD_FOR_AUCTION: Auction\n - GOOD_FOR_AUCTION_AND_CONTINUOUS: used for orders where the initiating party is the network (used for distressed traders)",
+      "title": "Good for\nWhat market state can this order be accepted in"
     },
     "OrderStatus": {
       "type": "string",
@@ -2594,9 +2594,9 @@
           "format": "uint64",
           "title": "used internally, for orders submitted during auctions\nto keep track which auction batch this order falls under (required for fees calculation)"
         },
-        "marketType": {
-          "$ref": "#/definitions/OrderMarketType",
-          "title": "Used to indicate which market state this order is valid for"
+        "goodFor": {
+          "$ref": "#/definitions/OrderGoodFor",
+          "title": "Used to indicate which market state this order is good for"
         }
       }
     },
@@ -2710,8 +2710,8 @@
         "reference": {
           "type": "string"
         },
-        "marketType": {
-          "$ref": "#/definitions/OrderMarketType"
+        "goodFor": {
+          "$ref": "#/definitions/OrderGoodFor"
         }
       }
     },

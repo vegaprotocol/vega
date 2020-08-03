@@ -172,8 +172,8 @@ func (this *OrderSubmission) Validate() error {
 	if _, ok := Order_Type_name[int32(this.Type)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Type", fmt.Errorf(`value '%v' must be a valid Order_Type field`, this.Type))
 	}
-	if _, ok := Order_MarketType_name[int32(this.MarketType)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("MarketType", fmt.Errorf(`value '%v' must be a valid Order_MarketType field`, this.MarketType))
+	if _, ok := Order_GoodFor_name[int32(this.GoodFor)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("GoodFor", fmt.Errorf(`value '%v' must be a valid Order_GoodFor field`, this.GoodFor))
 	}
 	return nil
 }
