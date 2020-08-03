@@ -91,6 +91,7 @@ type proposalData struct {
 
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Level)
 	// ensure params are set
 	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
 	if err != nil {
@@ -151,6 +152,21 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		te.a = asset.ProtoAsset()
 	}
 	return
+}
+
+// InitState load the genesis configuration into the governance engine
+func (e *Engine) InitState(rawState []byte) {
+	e.log.Debug("loading genesis configuration")
+	state, err := LoadGenesisState(rawState)
+	if err != nil {
+		// no need to stop, this may not be an error, the network
+		// maybe be bootstrap without the genesis state being customized
+		e.log.Error("unable to load genesis state",
+			logging.Error(err))
+		return
+	}
+	params := NetworkParametersFromGenesisState(e.log, *state)
+	e.networkParams = *params
 }
 
 // OnChainTimeUpdate triggers time bound state changes.

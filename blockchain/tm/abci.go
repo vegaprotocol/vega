@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
@@ -25,6 +24,10 @@ const (
 	// Maximum sample size for average calculation, used in statistics (average tx per block etc).
 	statsSampleSize = 5000
 )
+
+type GenesisHandler interface {
+	OnGenesis(genesisTime time.Time, appState []byte, validatorsPubkey [][]byte) error
+}
 
 // AbciApplication represent the application connection to the chain through the abci api
 type AbciApplication struct {
@@ -46,12 +49,14 @@ type AbciApplication struct {
 
 	// metrics
 	blockHeightCounter prometheus.Counter
+
+	ghandler GenesisHandler
 }
 
 // NewApplication returns a new instance of the Abci application
 func NewApplication(log *logging.Logger,
 	config Config, stats Stats, proc Processor, svc ApplicationService,
-	time ApplicationTime, onCriticalError func()) *AbciApplication {
+	time ApplicationTime, onCriticalError func(), ghandler GenesisHandler) *AbciApplication {
 
 	// setup logger
 	log = log.Named(namedLogger)
@@ -65,6 +70,7 @@ func NewApplication(log *logging.Logger,
 		service:         svc,
 		time:            time,
 		onCriticalError: onCriticalError,
+		ghandler:        ghandler,
 	}
 	if err := app.setMetrics(); err != nil {
 		app.log.Panic(
@@ -119,13 +125,13 @@ type GenesisState struct {
 }
 
 func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	gstate := GenesisState{}
-	err := json.Unmarshal(req.AppStateBytes, &gstate)
-	if err != nil {
-		panic(err)
+	vators := make([][]byte, 0, len(req.Validators))
+	// get just the pubkeys out of the validator list
+	for _, v := range req.Validators {
+		vators = append(vators, v.PubKey.Data)
 	}
-	fmt.Printf("STATE: %v\n", gstate)
 
+	a.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators)
 	return types.ResponseInitChain{}
 }
 

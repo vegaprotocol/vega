@@ -4,32 +4,54 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/tendermint/tendermint/abci/types"
 )
 
 type Handler struct {
 	log *logging.Logger
+	cfg Config
 
 	onGenesisTimeLoadedCB     []func(time.Time)
 	onGenesisAppStateLoadedCB []func([]byte)
 }
 
-func New(log *logging.Logger) *Handler {
+func New(log *logging.Logger, cfg Config) *Handler {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Level)
 	return &Handler{
 		log:                       log,
+		cfg:                       cfg,
 		onGenesisTimeLoadedCB:     []func(time.Time){},
 		onGenesisAppStateLoadedCB: []func([]byte){},
 	}
 }
 
-func (h *Handler) HandleGenesis(req types.RequestInitChain) {
+// ReloadConf update the internal configuration of the positions engine
+func (h *Handler) ReloadConf(cfg Config) {
+	h.log.Info("reloading configuration")
+	if h.log.GetLevel() != cfg.Level.Get() {
+		h.log.Info("updating log level",
+			logging.String("old", h.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		h.log.SetLevel(cfg.Level.Get())
+	}
+	h.cfg = cfg
+}
+
+func (h *Handler) OnGenesis(t time.Time, state []byte, validatorsPubkey [][]byte) error {
+	h.log.Debug("vega time at genesis",
+		logging.String("time", t.String()))
 	for _, f := range h.onGenesisTimeLoadedCB {
-		f(req.Time)
+		f(t)
 	}
+
+	h.log.Debug("vega initial state a genesis",
+		logging.String("state", string(state)))
 	for _, f := range h.onGenesisAppStateLoadedCB {
-		f(req.AppStateBytes)
+		f(state)
 	}
+
+	return nil
 }
 
 func (h *Handler) OnGenesisTimeLoaded(f func(time.Time)) {

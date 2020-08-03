@@ -87,6 +87,12 @@ type NetworkParameters struct {
 // DefaultNetworkParameters returns default, hardcoded, network parameters
 func DefaultNetworkParameters(log *logging.Logger) *NetworkParameters {
 	gstate := DefaultGenesisState()
+	return NetworkParametersFromGenesisState(log, gstate)
+}
+
+// NetworkParametersFromGenesisState returns network parameter loaded from the
+// genesis state
+func NetworkParametersFromGenesisState(log *logging.Logger, gstate GenesisState) *NetworkParameters {
 	return &NetworkParameters{
 		Proposals:           defaultProposalParameters(log, gstate),
 		MarginConfiguration: defaultMarginConfiguration(gstate),

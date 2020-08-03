@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -144,12 +145,13 @@ type NodeCommand struct {
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
 
-	assets   *assets.Service
-	topology *validators.Topology
-	notary   *notary.Notary
-	evtfwd   *evtforward.EvtForwarder
-	erc      *validators.ExtResChecker
-	banking  *banking.Engine
+	assets         *assets.Service
+	topology       *validators.Topology
+	notary         *notary.Notary
+	evtfwd         *evtforward.EvtForwarder
+	erc            *validators.ExtResChecker
+	banking        *banking.Engine
+	genesisHandler *genesis.Handler
 
 	// plugins
 	settlePlugin *plugins.Positions
