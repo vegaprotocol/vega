@@ -325,14 +325,6 @@ func (p *Processor) ReloadConf(cfg Config) {
 	p.Config = cfg
 }
 
-func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
-	order := &types.Order{}
-	if err := proto.Unmarshal(payload, order); err != nil {
-		return nil, err
-	}
-	return order, nil
-}
-
 func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 	orderSubmission := &types.OrderSubmission{}
 	err := proto.Unmarshal(payload, orderSubmission)
@@ -551,6 +543,8 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrChainEventFromNonValidator
 		}
 		return nil
+	case blockchain.NotifyTraderAccountCommand:
+		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
@@ -714,22 +708,6 @@ func (p *Processor) amendOrder(ctx context.Context, order *types.OrderAmendment)
 	}
 	if p.LogOrderAmendDebug {
 		p.log.Debug("Order amended", logging.String("order", order.String()))
-	}
-	return nil
-}
-
-func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
-	asset := prop.Terms.GetNewAsset()
-	// only validate timestamps for new asset proposal
-	if asset == nil {
-		return nil
-	}
-	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
-		return ErrProposalValidationTimestampInvalid
-	}
-	minValid, maxValid := p.currentTimestamp.Add(minValidationPeriod*time.Second), p.currentTimestamp.Add(maxValidationPeriod*time.Second)
-	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
-		return ErrProposalValidationTimestampInvalid
 	}
 	return nil
 }

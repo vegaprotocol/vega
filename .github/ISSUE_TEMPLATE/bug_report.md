@@ -1,3 +1,12 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: "bug \U0001F41E, bug \U0001F41ELow"
+assignees: ''
+
+---
+
 # Problem encountered
 A clear and concise description of what the bug is.
 
@@ -44,4 +53,3 @@ If applicable, add logs and/or screenshots to help explain your problem.
 
 # Additional content
 Add any other context about the problem here.
-

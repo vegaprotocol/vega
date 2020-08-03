@@ -359,6 +359,8 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
+	// The proposed duration for the opening auction for this market in seconds
+	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -450,6 +452,16 @@ type ScalingFactors struct {
 	InitialMargin float64 `json:"initialMargin"`
 	// The scaling factor that determines the overflow margin level
 	CollateralRelease float64 `json:"collateralRelease"`
+}
+
+// A signature to be bundled with a transaction
+type SignatureInput struct {
+	// The signature, base64 encoded
+	Sig string `json:"sig"`
+	// The algorithm used to produice the signature
+	Algo string `json:"algo"`
+	// The version of the signature
+	Version int `json:"version"`
 }
 
 // A type of simple/dummy risk model where we can specify the risk factor long and short in params

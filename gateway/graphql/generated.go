@@ -202,6 +202,8 @@ type ComplexityRoot struct {
 	}
 
 	MarketData struct {
+		AuctionEnd      func(childComplexity int) int
+		AuctionStart    func(childComplexity int) int
 		BestBidPrice    func(childComplexity int) int
 		BestBidVolume   func(childComplexity int) int
 		BestOfferPrice  func(childComplexity int) int
@@ -226,7 +228,7 @@ type ComplexityRoot struct {
 		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
-		SubmitTransaction  func(childComplexity int, data string, sig string, address *string, pubkey *string) int
+		SubmitTransaction  func(childComplexity int, data string, sig SignatureInput) int
 	}
 
 	NewAsset struct {
@@ -534,7 +536,7 @@ type MutationResolver interface {
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
-	SubmitTransaction(ctx context.Context, data string, sig string, address *string, pubkey *string) (*TransactionSubmitted, error)
+	SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error)
 }
 type NodeSignatureResolver interface {
 	Signature(ctx context.Context, obj *proto.NodeSignature) (*string, error)
@@ -1269,6 +1271,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.TradingMode(childComplexity), true
 
+	case "MarketData.auctionEnd":
+		if e.complexity.MarketData.AuctionEnd == nil {
+			break
+		}
+
+		return e.complexity.MarketData.AuctionEnd(childComplexity), true
+
+	case "MarketData.auctionStart":
+		if e.complexity.MarketData.AuctionStart == nil {
+			break
+		}
+
+		return e.complexity.MarketData.AuctionStart(childComplexity), true
+
 	case "MarketData.bestBidPrice":
 		if e.complexity.MarketData.BestBidPrice == nil {
 			break
@@ -1430,7 +1446,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string)), true
+		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(SignatureInput)), true
 
 	case "NewAsset.source":
 		if e.complexity.NewAsset.Source == nil {
@@ -2887,15 +2903,20 @@ type Mutation {
     "The signed transaction"
     data: String!
     "The signature"
-    sig: String!
-    "address is one of 2 possible auth values, currently only pubkey is used"
-    address: String
-    "pubkey is used to verify the signature, currently the only supported one"
-    pubkey: String
+    sig: SignatureInput!
   ): TransactionSubmitted!
 
 }
 
+"A signature to be bundled with a transaction"
+input SignatureInput {
+  "The signature, base64 encoded"
+  sig: String!
+  "The algorithm used to produice the signature"
+  algo: String!
+  "The version of the signature"
+  version: Int!
+}
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
 type Subscription {
@@ -3021,6 +3042,10 @@ type MarketData {
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
+  "time in seconds until the end of the current auction, 0 if not in auction mode"
+  auctionEnd: Int
+  "time in seconds until the start of the next auction (0 if no new auction scheduled)"
+  auctionStart: Int
 }
 
 type PreparedSubmitOrder {
@@ -4165,6 +4190,8 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "The proposed duration for the opening auction for this market in seconds"
+  openingAuctionDurationSecs: Int
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -4841,30 +4868,14 @@ func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Co
 		}
 	}
 	args["data"] = arg0
-	var arg1 string
+	var arg1 SignatureInput
 	if tmp, ok := rawArgs["sig"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNSignatureInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSignatureInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["sig"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["address"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["address"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["pubkey"]; ok {
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pubkey"] = arg3
 	return args, nil
 }
 
@@ -8553,6 +8564,68 @@ func (ec *executionContext) _MarketData_openInterest(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MarketData_auctionEnd(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionEnd, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_auctionStart(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionStart, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8909,7 +8982,7 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(string), args["address"].(*string), args["pubkey"].(*string))
+		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(SignatureInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15941,6 +16014,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "openingAuctionDurationSecs":
+			var err error
+			it.OpeningAuctionDurationSecs, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "continuousTrading":
 			var err error
 			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
@@ -16022,6 +16101,36 @@ func (ec *executionContext) unmarshalInputRiskParametersInput(ctx context.Contex
 		case "logNormal":
 			var err error
 			it.LogNormal, err = ec.unmarshalOLogNormalRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSignatureInput(ctx context.Context, obj interface{}) (SignatureInput, error) {
+	var it SignatureInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "sig":
+			var err error
+			it.Sig, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "algo":
+			var err error
+			it.Algo, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -17460,6 +17569,10 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		case "auctionEnd":
+			out.Values[i] = ec._MarketData_auctionEnd(ctx, field, obj)
+		case "auctionStart":
+			out.Values[i] = ec._MarketData_auctionStart(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20508,6 +20621,10 @@ func (ec *executionContext) marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatew
 	return v
 }
 
+func (ec *executionContext) unmarshalNSignatureInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSignatureInput(ctx context.Context, v interface{}) (SignatureInput, error) {
+	return ec.unmarshalInputSignatureInput(ctx, v)
+}
+
 func (ec *executionContext) marshalNSimpleRiskModelParams2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v SimpleRiskModelParams) graphql.Marshaler {
 	return ec._SimpleRiskModelParams(ctx, sel, &v)
 }
@@ -21186,6 +21303,14 @@ func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	return graphql.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	return graphql.MarshalInt64(v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

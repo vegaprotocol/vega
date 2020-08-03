@@ -3102,7 +3102,11 @@ type MarketData struct {
 	// time at which this mark price was relevant
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// the sum of the size of all positions greater than 0.
-	OpenInterest         uint64   `protobuf:"varint,9,opt,name=openInterest,proto3" json:"openInterest,omitempty"`
+	OpenInterest uint64 `protobuf:"varint,9,opt,name=openInterest,proto3" json:"openInterest,omitempty"`
+	// time in seconds until the end of the auction (0 if currently not in auction period)
+	AuctionEnd int64 `protobuf:"varint,10,opt,name=auctionEnd,proto3" json:"auctionEnd,omitempty"`
+	// time until next auction (used in FBA's) - currently always 0
+	AuctionStart         int64    `protobuf:"varint,11,opt,name=auctionStart,proto3" json:"auctionStart,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3196,6 +3200,20 @@ func (m *MarketData) GetOpenInterest() uint64 {
 	return 0
 }
 
+func (m *MarketData) GetAuctionEnd() int64 {
+	if m != nil {
+		return m.AuctionEnd
+	}
+	return 0
+}
+
+func (m *MarketData) GetAuctionStart() int64 {
+	if m != nil {
+		return m.AuctionStart
+	}
+	return 0
+}
+
 type ErrorDetail struct {
 	// a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
 	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
@@ -3254,23 +3272,185 @@ func (m *ErrorDetail) GetInner() string {
 	return ""
 }
 
+// A transaction to be sent to vega
+type Transaction struct {
+	// one of all the possible command, proto marshalled
+	InputData []byte `protobuf:"bytes,1,opt,name=inputData,proto3" json:"inputData,omitempty"`
+	// a random number used to provided uniqueness and prevents
+	// against replay attack
+	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// the sender of the transction
+	// any of the following would be valid
+	//
+	// Types that are valid to be assigned to From:
+	//	*Transaction_Address
+	//	*Transaction_PubKey
+	From                 isTransaction_From `protobuf_oneof:"from"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *Transaction) Reset()         { *m = Transaction{} }
+func (m *Transaction) String() string { return proto.CompactTextString(m) }
+func (*Transaction) ProtoMessage()    {}
+func (*Transaction) Descriptor() ([]byte, []int) {
+	return fileDescriptor_bb6b8173ee11af27, []int{35}
+}
+
+func (m *Transaction) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Transaction.Unmarshal(m, b)
+}
+func (m *Transaction) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Transaction.Marshal(b, m, deterministic)
+}
+func (m *Transaction) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Transaction.Merge(m, src)
+}
+func (m *Transaction) XXX_Size() int {
+	return xxx_messageInfo_Transaction.Size(m)
+}
+func (m *Transaction) XXX_DiscardUnknown() {
+	xxx_messageInfo_Transaction.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Transaction proto.InternalMessageInfo
+
+func (m *Transaction) GetInputData() []byte {
+	if m != nil {
+		return m.InputData
+	}
+	return nil
+}
+
+func (m *Transaction) GetNonce() uint64 {
+	if m != nil {
+		return m.Nonce
+	}
+	return 0
+}
+
+type isTransaction_From interface {
+	isTransaction_From()
+}
+
+type Transaction_Address struct {
+	Address []byte `protobuf:"bytes,1001,opt,name=address,proto3,oneof"`
+}
+
+type Transaction_PubKey struct {
+	PubKey []byte `protobuf:"bytes,1002,opt,name=pubKey,proto3,oneof"`
+}
+
+func (*Transaction_Address) isTransaction_From() {}
+
+func (*Transaction_PubKey) isTransaction_From() {}
+
+func (m *Transaction) GetFrom() isTransaction_From {
+	if m != nil {
+		return m.From
+	}
+	return nil
+}
+
+func (m *Transaction) GetAddress() []byte {
+	if x, ok := m.GetFrom().(*Transaction_Address); ok {
+		return x.Address
+	}
+	return nil
+}
+
+func (m *Transaction) GetPubKey() []byte {
+	if x, ok := m.GetFrom().(*Transaction_PubKey); ok {
+		return x.PubKey
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Transaction) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*Transaction_Address)(nil),
+		(*Transaction_PubKey)(nil),
+	}
+}
+
+// A signature to be authenticate a transaction
+// and to be verified by the vega network
+type Signature struct {
+	// The bytes of the signature
+	Sig []byte `protobuf:"bytes,1,opt,name=sig,proto3" json:"sig,omitempty"`
+	// The algorithm used to create the signature
+	Algo string `protobuf:"bytes,2,opt,name=algo,proto3" json:"algo,omitempty"`
+	// The version of the signature used to create the signature
+	Version              uint64   `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Signature) Reset()         { *m = Signature{} }
+func (m *Signature) String() string { return proto.CompactTextString(m) }
+func (*Signature) ProtoMessage()    {}
+func (*Signature) Descriptor() ([]byte, []int) {
+	return fileDescriptor_bb6b8173ee11af27, []int{36}
+}
+
+func (m *Signature) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Signature.Unmarshal(m, b)
+}
+func (m *Signature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Signature.Marshal(b, m, deterministic)
+}
+func (m *Signature) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Signature.Merge(m, src)
+}
+func (m *Signature) XXX_Size() int {
+	return xxx_messageInfo_Signature.Size(m)
+}
+func (m *Signature) XXX_DiscardUnknown() {
+	xxx_messageInfo_Signature.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Signature proto.InternalMessageInfo
+
+func (m *Signature) GetSig() []byte {
+	if m != nil {
+		return m.Sig
+	}
+	return nil
+}
+
+func (m *Signature) GetAlgo() string {
+	if m != nil {
+		return m.Algo
+	}
+	return ""
+}
+
+func (m *Signature) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+// A bundle of a transaction, proto marshalled and it's signature
 type SignedBundle struct {
-	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	Sig  []byte `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
-	// Types that are valid to be assigned to Auth:
-	//	*SignedBundle_Address
-	//	*SignedBundle_PubKey
-	Auth                 isSignedBundle_Auth `protobuf_oneof:"auth"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	// the transaction, proto marshalled
+	Tx []byte `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
+	// the signature authenticating the transaction
+	Sig                  *Signature `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
 func (m *SignedBundle) Reset()         { *m = SignedBundle{} }
 func (m *SignedBundle) String() string { return proto.CompactTextString(m) }
 func (*SignedBundle) ProtoMessage()    {}
 func (*SignedBundle) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb6b8173ee11af27, []int{35}
+	return fileDescriptor_bb6b8173ee11af27, []int{37}
 }
 
 func (m *SignedBundle) XXX_Unmarshal(b []byte) error {
@@ -3291,63 +3471,18 @@ func (m *SignedBundle) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SignedBundle proto.InternalMessageInfo
 
-func (m *SignedBundle) GetData() []byte {
+func (m *SignedBundle) GetTx() []byte {
 	if m != nil {
-		return m.Data
+		return m.Tx
 	}
 	return nil
 }
 
-func (m *SignedBundle) GetSig() []byte {
+func (m *SignedBundle) GetSig() *Signature {
 	if m != nil {
 		return m.Sig
 	}
 	return nil
-}
-
-type isSignedBundle_Auth interface {
-	isSignedBundle_Auth()
-}
-
-type SignedBundle_Address struct {
-	Address []byte `protobuf:"bytes,101,opt,name=address,proto3,oneof"`
-}
-
-type SignedBundle_PubKey struct {
-	PubKey []byte `protobuf:"bytes,102,opt,name=pubKey,proto3,oneof"`
-}
-
-func (*SignedBundle_Address) isSignedBundle_Auth() {}
-
-func (*SignedBundle_PubKey) isSignedBundle_Auth() {}
-
-func (m *SignedBundle) GetAuth() isSignedBundle_Auth {
-	if m != nil {
-		return m.Auth
-	}
-	return nil
-}
-
-func (m *SignedBundle) GetAddress() []byte {
-	if x, ok := m.GetAuth().(*SignedBundle_Address); ok {
-		return x.Address
-	}
-	return nil
-}
-
-func (m *SignedBundle) GetPubKey() []byte {
-	if x, ok := m.GetAuth().(*SignedBundle_PubKey); ok {
-		return x.PubKey
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*SignedBundle) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*SignedBundle_Address)(nil),
-		(*SignedBundle_PubKey)(nil),
-	}
 }
 
 // A message reprensenting a signature from a validator
@@ -3369,7 +3504,7 @@ func (m *NodeSignature) Reset()         { *m = NodeSignature{} }
 func (m *NodeSignature) String() string { return proto.CompactTextString(m) }
 func (*NodeSignature) ProtoMessage()    {}
 func (*NodeSignature) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb6b8173ee11af27, []int{36}
+	return fileDescriptor_bb6b8173ee11af27, []int{38}
 }
 
 func (m *NodeSignature) XXX_Unmarshal(b []byte) error {
@@ -3462,6 +3597,8 @@ func init() {
 	proto.RegisterType((*MarginLevels)(nil), "vega.MarginLevels")
 	proto.RegisterType((*MarketData)(nil), "vega.MarketData")
 	proto.RegisterType((*ErrorDetail)(nil), "vega.ErrorDetail")
+	proto.RegisterType((*Transaction)(nil), "vega.Transaction")
+	proto.RegisterType((*Signature)(nil), "vega.Signature")
 	proto.RegisterType((*SignedBundle)(nil), "vega.SignedBundle")
 	proto.RegisterType((*NodeSignature)(nil), "vega.NodeSignature")
 }

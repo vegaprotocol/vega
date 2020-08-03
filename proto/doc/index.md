@@ -154,6 +154,7 @@
     - [Vote.Value](#vega.Vote.Value)
 
 - [proto/markets.proto](#proto/markets.proto)
+    - [AuctionDuration](#vega.AuctionDuration)
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
     - [EthereumEvent](#vega.EthereumEvent)
@@ -202,11 +203,13 @@
     - [RiskResult](#vega.RiskResult)
     - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
     - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
+    - [Signature](#vega.Signature)
     - [SignedBundle](#vega.SignedBundle)
     - [Statistics](#vega.Statistics)
     - [Timestamp](#vega.Timestamp)
     - [Trade](#vega.Trade)
     - [TradeSet](#vega.TradeSet)
+    - [Transaction](#vega.Transaction)
     - [Transfer](#vega.Transfer)
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
@@ -2403,6 +2406,7 @@ To be implemented
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
+| openingAuctionDuration | [int64](#int64) |  | for now, just specify a time for the opening auction to last |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
@@ -2575,6 +2579,25 @@ and the cause for an proposal being rejected of failed
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/markets.proto
+
+
+
+<a name="vega.AuctionDuration"></a>
+
+### AuctionDuration
+AuctionDuration can be used to configure 3 auction periods:
+1) duration &gt; 0, volume == 0: The auction will last for at least N seconds
+2) Duration == 0, volume &gt; 0: Auction period will end once we can close with given traded volume
+3) Duration &gt; 0 &amp; volume &gt; 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| duration | [int64](#int64) |  |  |
+| volume | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -2806,6 +2829,7 @@ and the cause for an proposal being rejected of failed
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
 | fees | [Fees](#vega.Fees) |  | fees configuration |
+| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Specifies how long the opening auction will run (min duration &#43; optionally minimum traded volume) |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -3068,6 +3092,8 @@ The fees being paid by a party, resulting from a trade
 | market | [string](#string) |  | market id of the associated mark price |
 | timestamp | [int64](#int64) |  | time at which this mark price was relevant |
 | openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
+| auctionEnd | [int64](#int64) |  | time in seconds until the end of the auction (0 if currently not in auction period) |
+| auctionStart | [int64](#int64) |  | time until next auction (used in FBA&#39;s) - currently always 0 |
 
 
 
@@ -3420,18 +3446,34 @@ a decision taken by the vega network.
 
 
 
-<a name="vega.SignedBundle"></a>
+<a name="vega.Signature"></a>
 
-### SignedBundle
-
+### Signature
+A signature to be authenticate a transaction
+and to be verified by the vega network
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [bytes](#bytes) |  |  |
-| sig | [bytes](#bytes) |  |  |
-| address | [bytes](#bytes) |  |  |
-| pubKey | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  | The bytes of the signature |
+| algo | [string](#string) |  | The algorithm used to create the signature |
+| version | [uint64](#uint64) |  | The version of the signature used to create the signature |
+
+
+
+
+
+
+<a name="vega.SignedBundle"></a>
+
+### SignedBundle
+A bundle of a transaction, proto marshalled and it&#39;s signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [bytes](#bytes) |  | the transaction, proto marshalled |
+| sig | [Signature](#vega.Signature) |  | the signature authenticating the transaction |
 
 
 
@@ -3536,6 +3578,24 @@ a decision taken by the vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | trades | [Trade](#vega.Trade) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Transaction"></a>
+
+### Transaction
+A transaction to be sent to vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| inputData | [bytes](#bytes) |  | one of all the possible command, proto marshalled |
+| nonce | [uint64](#uint64) |  | a random number used to provided uniqueness and prevents against replay attack |
+| address | [bytes](#bytes) |  | the address of the sender |
+| pubKey | [bytes](#bytes) |  | the public key of the sender |
 
 
 

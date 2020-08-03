@@ -63,6 +63,7 @@ func TestRemoveDistressed(t *testing.T) {
 
 func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Successfully update margin on new order if general account balance is OK", testMarginUpdateOnOrderOK)
+	t.Run("Successfully update margin on new order then rollback", testMarginUpdateOnOrderOKThenRollback)
 	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
@@ -1450,6 +1451,76 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, closed)
 	assert.NotNil(t, resp)
+}
+
+func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), acc, 500)
+	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	evt := riskFake{
+		asset:  testMarketAsset,
+		amount: 100,
+		transfer: &types.Transfer{
+			Owner: trader,
+			Amount: &types.FinancialAmount{
+				Amount: 100,
+				Asset:  testMarketAsset,
+			},
+			MinAmount: 100,
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+		},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+			assert.Equal(t, int(acc.Balance), 100)
+		}
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+			assert.Equal(t, int(acc.Balance), 400)
+		}
+	})
+	resp, closed, err := eng.Engine.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
+	assert.Nil(t, err)
+	assert.Nil(t, closed)
+	assert.NotNil(t, resp)
+
+	// then rollback
+	rollback := &types.Transfer{
+		Owner: trader,
+		Amount: &types.FinancialAmount{
+			Amount: 100,
+			Asset:  testMarketAsset,
+		},
+		MinAmount: 100,
+		Type:      types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+			assert.Equal(t, int(acc.Balance), 0)
+		}
+		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+			assert.Equal(t, int(acc.Balance), 500)
+		}
+	})
+	resp, err = eng.Engine.RollbackMarginUpdateOnOrder(context.Background(), testMarketID, testMarketAsset, rollback)
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+
 }
 
 func testMarginUpdateOnOrderFail(t *testing.T) {

@@ -1606,6 +1606,20 @@
         }
       }
     },
+    "vegaAuctionDuration": {
+      "type": "object",
+      "properties": {
+        "duration": {
+          "type": "string",
+          "format": "int64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "AuctionDuration can be used to configure 3 auction periods:\n1) duration \u003e 0, volume == 0: The auction will last for at least N seconds\n2) Duration == 0, volume \u003e 0: Auction period will end once we can close with given traded volume\n3) Duration \u003e 0 \u0026 volume \u003e 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume"
+    },
     "vegaBTCDeposit": {
       "type": "object",
       "properties": {
@@ -2316,6 +2330,10 @@
           "$ref": "#/definitions/vegaFees",
           "title": "fees configuration"
         },
+        "openingAuction": {
+          "$ref": "#/definitions/vegaAuctionDuration",
+          "title": "Specifies how long the opening auction will run (min duration + optionally minimum traded volume)"
+        },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
         },
@@ -2370,6 +2388,16 @@
           "type": "string",
           "format": "uint64",
           "description": "the sum of the size of all positions greater than 0."
+        },
+        "auctionEnd": {
+          "type": "string",
+          "format": "int64",
+          "title": "time in seconds until the end of the auction (0 if currently not in auction period)"
+        },
+        "auctionStart": {
+          "type": "string",
+          "format": "int64",
+          "title": "time until next auction (used in FBA's) - currently always 0"
         }
       }
     },
@@ -2481,6 +2509,11 @@
             "type": "string"
           },
           "title": "Optional new market meta data, tags"
+        },
+        "openingAuctionDuration": {
+          "type": "string",
+          "format": "int64",
+          "title": "for now, just specify a time for the opening auction to last"
         },
         "simple": {
           "$ref": "#/definitions/vegaSimpleModelParams",
@@ -2922,26 +2955,40 @@
       "default": "SIDE_UNSPECIFIED",
       "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - SIDE_BUY: Buy\n - SIDE_SELL: Sell"
     },
+    "vegaSignature": {
+      "type": "object",
+      "properties": {
+        "sig": {
+          "type": "string",
+          "format": "byte",
+          "title": "The bytes of the signature"
+        },
+        "algo": {
+          "type": "string",
+          "title": "The algorithm used to create the signature"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The version of the signature used to create the signature"
+        }
+      },
+      "title": "A signature to be authenticate a transaction\nand to be verified by the vega network"
+    },
     "vegaSignedBundle": {
       "type": "object",
       "properties": {
-        "data": {
+        "tx": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "the transaction, proto marshalled"
         },
         "sig": {
-          "type": "string",
-          "format": "byte"
-        },
-        "address": {
-          "type": "string",
-          "format": "byte"
-        },
-        "pubKey": {
-          "type": "string",
-          "format": "byte"
+          "$ref": "#/definitions/vegaSignature",
+          "title": "the signature authenticating the transaction"
         }
-      }
+      },
+      "title": "A bundle of a transaction, proto marshalled and it's signature"
     },
     "vegaSimpleModelParams": {
       "type": "object",

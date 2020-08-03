@@ -185,6 +185,10 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	return
 }
 
+func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
 func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil
@@ -723,6 +727,62 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 	}
 
 	return response, closed, nil
+}
+
+// MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
+func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error) {
+	margin, err := e.GetAccountByID(e.accountID(marketID, transfer.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", transfer.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	general, err := e.GetAccountByID(e.accountID(noMarket, transfer.Owner, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", transfer.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{
+			margin,
+		},
+		ToAccount: []*types.Account{
+			general,
+		},
+		Amount:    uint64(transfer.Amount.Amount),
+		MinAmount: uint64(transfer.MinAmount),
+		Asset:     assetID,
+		Reference: transfer.Type.String(),
+	}
+
+	res, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range res.GetTransfers() {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Uint64("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	return res, nil
 }
 
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)

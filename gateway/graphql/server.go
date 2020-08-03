@@ -141,6 +141,7 @@ func (g *GraphServer) Start() {
 		handlr.Handle("/", corz.Handler(handler.Playground("VEGA", "/query")))
 	}
 	options := []handler.Option{
+		handler.WebsocketKeepAliveDuration(10 * time.Second),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {

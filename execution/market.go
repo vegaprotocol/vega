@@ -485,7 +485,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(ctx, pos, order); err != nil {
+	newOrderMarginRiskRollback, err := m.checkMarginForOrder(ctx, pos, order)
+	if err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -554,6 +555,30 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
+
+		// if the specific case we are in and FOK or IOC
+		// we moved some margin, which may never be released
+		// as we never create a position in the settlement engine.
+		// to be fair the monies would be released later on if the
+		// party place an order which stay in the book / trade.
+		// but in the case the party is actually neve used again
+		// the funds woulds be locked on the margin account until
+		// the market is being closed.
+		// we also check the margin risk update was not nil, as it's not
+		// guaranteed the trader had to pay any margin
+		if order.Remaining == order.Size && newOrderMarginRiskRollback != nil {
+			transfers, err := m.collateral.RollbackMarginUpdateOnOrder(
+				ctx, m.GetID(), asset, newOrderMarginRiskRollback)
+			if err != nil {
+				m.log.Error("Unable to rollback risk updates",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			evt := events.NewTransferResponse(
+				ctx, []*types.TransferResponse{transfers})
+			m.broker.Send(evt)
+		}
+
 	}
 
 	// Insert aggressive remaining order
@@ -890,6 +915,27 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 	}
 
+	asset, _ := m.mkt.GetAsset()
+
+	// pay the fees now
+	fees, err := m.fee.CalculateFeeForPositionResolution(
+		confirmation.Trades, closedMPs)
+	if err != nil {
+		m.log.Error("unable to calculate fees for positions resolutions",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return err
+	}
+	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+	if err != nil {
+		m.log.Error("unable to transfer fees for positions resolutions",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return err
+	}
+	// send transfer to buffer
+	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
@@ -929,7 +975,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// insurance pool, which needs to happen before we settle the non-distressed traders
 	m.settlement.RemoveDistressed(ctx, closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
-	asset, _ := m.mkt.GetAsset()
 	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
@@ -1068,18 +1113,23 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
+	// this is a rollback transfer to be used in case the order do not
+	// trade and do not stay in the book to prevent for margin being
+	// locked in the margin account forever
+	var riskRollback *types.Transfer
+
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
-		return errors.Wrap(err, "unable to get risk updates")
+		return nil, errors.Wrap(err, "unable to get risk updates")
 	}
 
 	e, err := m.collateral.GetPartyMargin(pos, asset, m.GetID())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
@@ -1091,7 +1141,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 				logging.Error(err),
 			)
 		}
-		return ErrMarginCheckInsufficient
+		return nil, ErrMarginCheckInsufficient
 	} else if riskUpdate == nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates",
@@ -1102,7 +1152,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		// if it does fail, we need to return an error straight away
 		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
 		if err != nil {
-			return errors.Wrap(err, "unable to get risk updates")
+			return nil, errors.Wrap(err, "unable to get risk updates")
 		}
 		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
 		m.broker.Send(evt)
@@ -1117,7 +1167,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 					logging.String("market-id", m.GetID()))
 			}
 
-			return ErrMarginCheckInsufficient
+			return nil, ErrMarginCheckInsufficient
 		}
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -1130,8 +1180,21 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 				)
 			}
 		}
+
+		if len(transfer.Transfers) > 0 {
+			// we create the rollback transfer here, so it can be used in case of.
+			riskRollback = &types.Transfer{
+				Owner: riskUpdate.Party(),
+				Amount: &types.FinancialAmount{
+					Amount: int64(transfer.Transfers[0].Amount),
+					Asset:  riskUpdate.Asset(),
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+				MinAmount: int64(transfer.Transfers[0].Amount),
+			}
+		}
 	}
-	return nil
+	return riskRollback, nil
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -1451,7 +1514,11 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+	// ignore rollback return here, as if we amend it means the order
+	// is already on the book, not rollback will be needed, the margin
+	// will be updated later on for sure.
+
+	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {

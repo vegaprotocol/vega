@@ -289,6 +289,129 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	}, nil
 }
 
+func (e *Engine) CalculateFeeForPositionResolution(
+	// the trade from the good traders which 0 out the networl order
+	trades []*types.Trade,
+	// the positions of the traders being closed out.
+	closedMPs []events.MarketPosition,
+) (events.FeesTransfer, error) {
+	var (
+		totalFeesAmounts = map[string]uint64{}
+		// this is the share of each party to be paid
+		partiesShare     = map[string]*feeShare{}
+		totalAbsolutePos uint64
+		transfers        = []*types.Transfer{}
+	)
+
+	// first calculate the share of all distressedTraders
+	for _, v := range closedMPs {
+		var size = v.Size()
+		if size < 0 {
+			size = -size
+		}
+		totalAbsolutePos += uint64(size)
+		partiesShare[v.Party()] = &feeShare{pos: uint64(size)}
+	}
+
+	// no we accumulated all the absolute position, we
+	// will get the share of each party
+	for _, v := range partiesShare {
+		v.share = float64(v.pos) / float64(totalAbsolutePos)
+	}
+
+	// now we have the share of each distressed parties
+	// we can iterate over the trades, and make the transfers
+	for _, t := range trades {
+		// continuous trading fees apply here
+		// the we'll split them in between all parties
+		fees := e.calculateContinuousModeFees(t)
+
+		// lets fine which side is the good party
+		var goodParty = t.Buyer
+		t.SellerFee = fees
+		if goodParty == "network" {
+			goodParty = t.Seller
+			t.SellerFee = &types.Fee{}
+			t.BuyerFee = fees
+		}
+
+		// now we iterate over all parties,
+		// and create a pay for each distressed parties
+		for _, v := range closedMPs {
+			partyTransfers, feesAmount := e.getPositionResolutionFeesTransfers(
+				v.Party(), partiesShare[v.Party()].share, fees)
+
+			if prevTotalFee, ok := totalFeesAmounts[v.Party()]; !ok {
+				totalFeesAmounts[v.Party()] = feesAmount
+			} else {
+				totalFeesAmounts[v.Party()] = prevTotalFee + feesAmount
+			}
+			transfers = append(transfers, partyTransfers...)
+		}
+
+		// then 1 receive transfer for the good party
+		transfers = append(transfers, &types.Transfer{
+			Owner: goodParty,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: int64(fees.MakerFee),
+			},
+			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE,
+		})
+
+	}
+
+	// calculate the
+	return &feesTransfer{
+		totalFeesAmountsPerParty: totalFeesAmounts,
+		transfers:                transfers,
+	}, nil
+}
+
+// this will calculate the transfer the distressed party needs
+// to do
+func (e *Engine) getPositionResolutionFeesTransfers(
+	party string, share float64, fees *types.Fee,
+) ([]*types.Transfer, uint64) {
+	makerFee := int64(math.Ceil(share * float64(fees.MakerFee)))
+	infraFee := int64(math.Ceil(share * float64(fees.InfrastructureFee)))
+	liquiFee := int64(math.Ceil(share * float64(fees.LiquidityFee)))
+
+	return []*types.Transfer{
+		&types.Transfer{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: makerFee,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
+		},
+		&types.Transfer{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: infraFee,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+		},
+		&types.Transfer{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: liquiFee,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+		},
+	}, uint64(makerFee + infraFee + liquiFee)
+}
+
+type feeShare struct {
+	// the absolute position of the party which had to be recovered
+	pos uint64
+	// the share out of the total volumt
+	share float64
+}
+
 func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.Transfer) {
 	fee := e.calculateAuctionModeFees(t)
 	transfers := make([]*types.Transfer, 0, 4)

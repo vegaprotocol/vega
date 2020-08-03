@@ -134,6 +134,7 @@ func getMarkets(closingAt time.Time) []types.Market {
 				},
 			},
 		},
+		OpeningAuction: &types.AuctionDuration{},
 		TradingMode: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
