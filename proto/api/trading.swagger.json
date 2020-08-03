@@ -15,6 +15,75 @@
     "application/json"
   ],
   "paths": {
+    "/assets": {
+      "get": {
+        "summary": "Get the list of all assets in vega",
+        "operationId": "Assets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAssetsResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/assets/{ID}": {
+      "get": {
+        "summary": "Get an asset by its ID",
+        "operationId": "AssetByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAssetByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "ID of the asset to get",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/assets/{asset}/infrastructureFeeAccount": {
+      "get": {
+        "summary": "Get the list of infrastructure fees accounts filter eventually by assets",
+        "operationId": "FeeInfrastructureAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiFeeInfrastructureAccountsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "asset",
+            "description": "an empty string to return all accounts\nan asset ID to return a single infrastructure fee\nfee account for a given asset",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/governance/proposals/prepare": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
