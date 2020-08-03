@@ -1799,6 +1799,9 @@ func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side ty
 	assert.Equal(t, err, nil)
 }
 
+/*****************************************************************************/
+/*                             AUCTION TESTING                               */
+/*****************************************************************************/
 func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -1819,7 +1822,10 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
@@ -1845,7 +1851,10 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
@@ -1871,7 +1880,10 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
@@ -1904,7 +1916,10 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 2)
+	assert.Equal(t, len(trades), 2)
 }
 
 func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
@@ -1938,7 +1953,10 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 1)
+	assert.Equal(t, len(trades), 1)
 }
 
 func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
@@ -1969,7 +1987,10 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 5)
+	assert.Equal(t, len(trades), 5)
 }
 
 func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
@@ -2000,7 +2021,10 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	//book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
@@ -2045,7 +2069,10 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 4)
+	assert.Equal(t, len(trades), 4)
 }
 
 // Set up an auction so that the sell side is proicessed when we uncross
@@ -2079,7 +2106,10 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_SELL)
 
 	// Leave auction and uncross the book
-	book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 4)
+	assert.Equal(t, len(trades), 4)
 }
 
 // Check that multiple orders per price level work
@@ -2117,5 +2147,48 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_SELL)
 
 	// Leave auction and uncross the book
-	book.LeaveAuction()
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 7)
+	assert.Equal(t, len(trades), 7)
+}
+
+func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 103, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 102, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder05", types.Side_SIDE_BUY, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder06", types.Side_SIDE_BUY, 101, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder07", types.Side_SIDE_BUY, 100, "party01", 7)
+	makeOrder(t, book, market, "BuyOrder08", types.Side_SIDE_BUY, 100, "party01", 1)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 99, "party02", 10)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 98, "party02", 10)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 97, "party02", 10)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 9)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(38))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 10)
+	assert.Equal(t, len(trades), 10)
 }

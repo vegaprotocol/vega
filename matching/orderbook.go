@@ -308,19 +308,24 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
 
+	// If we have no uncrossing price, we have nothing to do
+	if price == 0 && volume == 0 {
+		return nil, nil, nil
+	}
+
 	var allTrades []*types.Trade
 	var allOrders []*types.Order
 
 	// Remove all the orders from that side of the book upto the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
-		trades, err := b.buy.ExtractOrders(uncrossSide, price, volume)
+		uncrossOrders, err := b.buy.ExtractOrders(uncrossSide, price, volume)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		// Uncross each one
-		for _, order := range trades {
+		for _, order := range uncrossOrders {
 			trades, orders, _, err := b.sell.uncross(order)
 
 			if err != nil {
@@ -332,13 +337,13 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 		}
 	} else {
 		// Pull out the trades we want to process
-		trades, err := b.sell.ExtractOrders(uncrossSide, price, volume)
+		uncrossOrders, err := b.sell.ExtractOrders(uncrossSide, price, volume)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		// Uncross each one
-		for _, order := range trades {
+		for _, order := range uncrossOrders {
 			trades, orders, _, err := b.buy.uncross(order)
 
 			if err != nil {
@@ -349,6 +354,17 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 			allOrders = append(allOrders, orders...)
 		}
 	}
+
+	// Update all the trades to have the correct uncorssing price
+	for index := 0; index < len(allTrades); index++ {
+		allTrades[index].Price = price
+	}
+
+	// Update all the orders to have the correct uncorssing price
+	for index := 0; index < len(allOrders); index++ {
+		allOrders[index].Price = price
+	}
+
 	return allTrades, allOrders, nil
 }
 

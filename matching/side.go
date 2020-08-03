@@ -143,6 +143,8 @@ func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price >= price && totalVolume+order.Remaining <= volume {
+					// Update the price to the uncrossing price
+					order.Price = price
 					// Remove this order
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
@@ -165,15 +167,18 @@ func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]
 			}
 		}
 	} else {
-		for index := 0; index <= len(s.levels); index++ {
-			pricelevel := s.levels[index]
+		for len(s.levels) > 0 {
+			pricelevel := s.levels[0]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
-				if order.Price <= price && totalVolume+order.Remaining < volume {
+				if order.Price <= price && totalVolume+order.Remaining <= volume {
+					// Update the price to the uncrossing price
+					order.Price = price
 					// Remove this order
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
-
+					// Remove the order from the price level
+					pricelevel.removeOrder(0)
 				} else {
 					// We should never get to here unless the passed in price
 					// and volume are not correct
@@ -181,6 +186,13 @@ func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]
 				}
 			}
 			// Erase this price level which will be the start of the slice
+			s.levels[0] = nil
+			s.levels = s.levels[1:len(s.levels)]
+
+			// Check if we have done enough
+			if totalVolume == volume {
+				break
+			}
 		}
 	}
 	return extractedOrders, nil
@@ -239,6 +251,23 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	return order, nil
 }
 
+func (s *OrderBookSide) getPriceLevelIfExists(price uint64, side types.Side) *PriceLevel {
+	var i int
+	if side == types.Side_SIDE_BUY {
+		// buy side levels should be ordered in descending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+	}
+
+	// we found the level just return it.
+	if i < len(s.levels) && s.levels[i].price == price {
+		return s.levels[i]
+	}
+	return nil
+}
+
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
 	var i int
 	if side == types.Side_SIDE_BUY {
@@ -267,7 +296,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 
 // GetVolume returns the volume at the given pricelevel
 func (s *OrderBookSide) GetVolume(price uint64, side types.Side) (uint64, error) {
-	priceLevel := s.getPriceLevel(price, side)
+	priceLevel := s.getPriceLevelIfExists(price, side)
 
 	if priceLevel == nil {
 		return 0, ErrPriceNotFound
