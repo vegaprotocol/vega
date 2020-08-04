@@ -370,7 +370,7 @@ type OrderFeeEstimate struct {
 	// The estimated fee if the order was to trade
 	Fee *TradeFee `json:"fee"`
 	// The total estimated amount of fee if the order was to trade
-	TotalFeeAmount int `json:"totalFeeAmount"`
+	TotalFeeAmount string `json:"totalFeeAmount"`
 }
 
 type PreparedAmendOrder struct {

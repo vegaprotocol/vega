@@ -332,7 +332,7 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 
 	return &OrderFeeEstimate{
 		Fee:            &fee,
-		TotalFeeAmount: int(ttf),
+		TotalFeeAmount: fmt.Sprintf("%d", ttf),
 	}, nil
 
 }

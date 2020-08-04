@@ -3815,7 +3815,7 @@ type OrderFeeEstimate {
   fee: TradeFee!
 
   "The total estimated amount of fee if the order was to trade"
-  totalFeeAmount: Int!
+  totalFeeAmount: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -9979,9 +9979,9 @@ func (ec *executionContext) _OrderFeeEstimate_totalFeeAmount(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {

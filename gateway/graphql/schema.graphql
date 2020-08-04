@@ -995,7 +995,7 @@ type OrderFeeEstimate {
   fee: TradeFee!
 
   "The total estimated amount of fee if the order was to trade"
-  totalFeeAmount: Int!
+  totalFeeAmount: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
