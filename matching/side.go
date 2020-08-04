@@ -322,11 +322,6 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 		}
 
-		if agg.Type == types.Order_TYPE_NETWORK {
-			// set avg price for order
-			agg.Price = totalPrice / agg.Remaining
-		}
-
 		if s.log.GetLevel() == logging.DebugLevel {
 			s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
 		}
@@ -350,7 +345,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
@@ -386,7 +381,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// price levels from the back of the slice instead of from the front
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
-			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
@@ -415,6 +410,13 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 			s.levels = s.levels[:idx]
 		}
+	}
+
+	if agg.Type == types.Order_TYPE_NETWORK {
+		// now we are done with uncrossing,
+		// we can set back the price of the netorder to the average
+		// price over the whole volume
+		agg.Price = totalPrice / agg.Size
 	}
 
 	if len(trades) > 0 {
