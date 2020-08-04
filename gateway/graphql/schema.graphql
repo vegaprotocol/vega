@@ -318,7 +318,7 @@ type Query {
     last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReferenceID(
+  orderByReference(
     "ReferenceID for an order"
     referenceID: String!
   ): Order!

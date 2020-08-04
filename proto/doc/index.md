@@ -60,7 +60,6 @@
     - [OrderByIDRequest](#api.OrderByIDRequest)
     - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
     - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
-    - [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest)
     - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
     - [OrderByReferenceResponse](#api.OrderByReferenceResponse)
     - [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest)
@@ -1095,21 +1094,6 @@ The response of the GetNodeSIgnatureAggregate rpc
 
 
 
-<a name="api.OrderByReferenceIDRequest"></a>
-
-### OrderByReferenceIDRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| referenceID | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="api.OrderByReferenceRequest"></a>
 
 ### OrderByReferenceRequest
@@ -1805,7 +1789,6 @@ The response for a new event sent to vega
 | OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get a list of Orders by Market |
 | OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
 | OrderByID | [OrderByIDRequest](#api.OrderByIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by orderID |
-| OrderByReferenceID | [OrderByReferenceIDRequest](#api.OrderByReferenceIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by referenceID |
 | OrderVersionsByID | [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest) | [OrderVersionsResponse](#api.OrderVersionsResponse) | Get all versions of the order by its orderID |
 | MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by PartyID |
 | Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
