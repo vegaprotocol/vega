@@ -312,6 +312,9 @@ service trading_data {
 
   // Get a list of all assets on Vega.
   rpc Assets(AssetsRequest) returns (AssetsResponse);
+
+  // Get an estimate for the fee to be paid for a given order
+  rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
 }
 
 // Request for a list of all assets enabled on Vega.
@@ -993,7 +996,6 @@ message OrderByIDRequest {
 
 // Request for a list of all versions of an order given the specified order identifier.
 message OrderVersionsByIDRequest {
-
   // Order identifier. Required field.
   string orderID = 1 [(validator.field) = {msg_exists: true}];
   // Pagination controls.
@@ -1002,7 +1004,14 @@ message OrderVersionsByIDRequest {
 
 // Response to a request for a list of all versions of an order.
 message OrderVersionsResponse {
+  // A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended).
+  repeated vega.Order orders = 1;
+}
 
-    // A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended).
-    repeated vega.Order orders = 1;
+message EstimateFeeRequest {
+  vega.Order order = 1;
+}
+
+message EstimateFeeResponse {
+  vega.Fee fee = 2;
 }

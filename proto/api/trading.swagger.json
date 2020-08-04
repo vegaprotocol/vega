@@ -1148,6 +1148,14 @@
       },
       "description": "Response for a list of candles for a market at an interval."
     },
+    "apiEstimateFeeResponse": {
+      "type": "object",
+      "properties": {
+        "fee": {
+          "$ref": "#/definitions/vegaFee"
+        }
+      }
+    },
     "apiFeeInfrastructureAccountsResponse": {
       "type": "object",
       "properties": {

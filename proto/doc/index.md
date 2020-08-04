@@ -14,6 +14,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [EstimateFeeRequest](#api.EstimateFeeRequest)
+    - [EstimateFeeResponse](#api.EstimateFeeResponse)
     - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
     - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
@@ -386,6 +388,36 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier. Required field. |
 | interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
+
+
+
+
+
+
+<a name="api.EstimateFeeRequest"></a>
+
+### EstimateFeeRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [vega.Order](#vega.Order) |  |  |
+
+
+
+
+
+
+<a name="api.EstimateFeeResponse"></a>
+
+### EstimateFeeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| fee | [vega.Fee](#vega.Fee) |  |  |
 
 
 
@@ -1852,6 +1884,7 @@ Response for the current consensus coordinated time on the Vega network, referre
 | GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signatures from all the nodes of the network. |
 | AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
+| EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
 
 
 
