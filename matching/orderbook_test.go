@@ -1780,3 +1780,68 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
 	assert.Equal(t, (*types.Order)(nil), nonorder)
 }
+
+// this is a test for issue 2060 to ensure we process FOK orders properly
+func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	orders := []*types.Order{
+		{
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			Id:          "123456",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			PartyID:     "A",
+			Size:        100,
+			Remaining:   100,
+			TimeInForce: types.Order_TIF_GTC,
+			CreatedAt:   10,
+		},
+		{
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			Id:          "234561",
+			Side:        types.Side_SIDE_BUY,
+			Price:       1,
+			PartyID:     "B",
+			Size:        100,
+			Remaining:   100,
+			TimeInForce: types.Order_TIF_GTC,
+			CreatedAt:   11,
+		},
+	}
+
+	// now we add the trades to the book
+	for _, o := range orders {
+		cnfm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Len(t, cnfm.Trades, 0)
+	}
+
+	// no price for network order
+	// we want to consume the whole book
+	netorder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_NETWORK,
+		MarketID:    market,
+		Id:          "345612",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     "C",
+		Size:        200,
+		Remaining:   200,
+		TimeInForce: types.Order_TIF_FOK,
+		CreatedAt:   12,
+	}
+
+	cnfm, err := book.SubmitOrder(netorder)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_FILLED, netorder.Status)
+	assert.Equal(t, 50, int(netorder.Price))
+	assert.Equal(t, 0, int(netorder.Remaining))
+	_ = cnfm
+}
