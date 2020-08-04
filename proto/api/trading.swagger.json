@@ -1152,9 +1152,11 @@
       "type": "object",
       "properties": {
         "fee": {
-          "$ref": "#/definitions/vegaFee"
+          "$ref": "#/definitions/vegaFee",
+          "title": "Summary of the estimated fees for this order if it were to trade now"
         }
-      }
+      },
+      "title": "Response to a EstimateFeeRequest, containing the estimated fees for a given order"
     },
     "apiFeeInfrastructureAccountsResponse": {
       "type": "object",

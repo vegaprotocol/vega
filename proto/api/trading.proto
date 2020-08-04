@@ -1008,10 +1008,14 @@ message OrderVersionsResponse {
   repeated vega.Order orders = 1;
 }
 
+// Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
+  // Order to estimate fees for
   vega.Order order = 1;
 }
 
+// Response to a EstimateFeeRequest, containing the estimated fees for a given order
 message EstimateFeeResponse {
+  // Summary of the estimated fees for this order if it were to trade now
   vega.Fee fee = 2;
 }

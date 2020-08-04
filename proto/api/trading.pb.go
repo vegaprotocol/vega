@@ -4392,7 +4392,9 @@ func (m *OrderVersionsResponse) GetOrders() []*proto1.Order {
 	return nil
 }
 
+// Request to fetch the estimated fee if an order were to trade immediately
 type EstimateFeeRequest struct {
+	// Order to estimate fees for
 	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -4431,7 +4433,9 @@ func (m *EstimateFeeRequest) GetOrder() *proto1.Order {
 	return nil
 }
 
+// Response to a EstimateFeeRequest, containing the estimated fees for a given order
 type EstimateFeeResponse struct {
+	// Summary of the estimated fees for this order if it were to trade now
 	Fee                  *proto1.Fee `protobuf:"bytes,2,opt,name=fee,proto3" json:"fee,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`

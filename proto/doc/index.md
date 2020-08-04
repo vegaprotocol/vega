@@ -397,12 +397,12 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 <a name="api.EstimateFeeRequest"></a>
 
 ### EstimateFeeRequest
-
+Request to fetch the estimated fee if an order were to trade immediately
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [vega.Order](#vega.Order) |  |  |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
 
 
 
@@ -412,12 +412,12 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 <a name="api.EstimateFeeResponse"></a>
 
 ### EstimateFeeResponse
-
+Response to a EstimateFeeRequest, containing the estimated fees for a given order
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| fee | [vega.Fee](#vega.Fee) |  |  |
+| fee | [vega.Fee](#vega.Fee) |  | Summary of the estimated fees for this order if it were to trade now |
 
 
 
