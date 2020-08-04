@@ -325,9 +325,9 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 	ttf := resp.Fee.MakerFee + resp.Fee.InfrastructureFee + resp.Fee.LiquidityFee
 
 	fee := TradeFee{
-		MakerFee:          fmt.Sprintf("%f", resp.Fee.MakerFee),
-		InfrastructureFee: fmt.Sprintf("%f", resp.Fee.InfrastructureFee),
-		LiquidityFee:      fmt.Sprintf("%f", resp.Fee.LiquidityFee),
+		MakerFee:          fmt.Sprintf("%d", resp.Fee.MakerFee),
+		InfrastructureFee: fmt.Sprintf("%d", resp.Fee.InfrastructureFee),
+		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
 	}
 
 	return &OrderFeeEstimate{
