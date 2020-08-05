@@ -35,17 +35,17 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 }
 
 // DepositBuiltinAsset mocks base method
-func (m *MockBanking) DepositBuiltinAsset(arg0 *proto.BuiltinAssetDeposit) error {
+func (m *MockBanking) DepositBuiltinAsset(arg0 *proto.BuiltinAssetDeposit, arg1 uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0)
+	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DepositBuiltinAsset indicates an expected call of DepositBuiltinAsset
-func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).DepositBuiltinAsset), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).DepositBuiltinAsset), arg0, arg1)
 }
 
 // DepositERC20 mocks base method

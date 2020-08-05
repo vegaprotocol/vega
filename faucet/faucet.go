@@ -244,5 +244,7 @@ func makeNonce() uint64 {
 	// set it to the max value of the uint64
 	max.SetUint64(^uint64(0))
 	nonce, _ := rand.Int(rand.Reader, max)
-	return nonce.Uint64()
+	nonceu64 := nonce.Uint64()
+	fmt.Printf("NONCE: %v\n", nonceu64)
+	return nonceu64
 }

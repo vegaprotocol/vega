@@ -94,7 +94,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, asset string
 	return e.finalizeWithdrawal(ctx, party, asset, amount)
 }
 
-func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
+func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
 	asset, err := e.assets.Get(d.VegaAssetID)
 	if err != nil {
@@ -104,7 +104,7 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
 		return err
 	}
 	aa := &assetAction{
-		id:       id(d, now),
+		id:       id(d, nonce),
 		state:    pendingState,
 		builtinD: d,
 		asset:    asset,
@@ -117,7 +117,7 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 	now, _ := e.tsvc.GetTimeNow()
 	asset, _ := e.assets.Get(al.VegaAssetID)
 	aa := &assetAction{
-		id:          id(al, now),
+		id:          id(al, uint64(now.UnixNano())),
 		state:       pendingState,
 		erc20AL:     al,
 		asset:       asset,
@@ -138,7 +138,7 @@ func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64
 		return err
 	}
 	aa := &assetAction{
-		id:          id(d, now),
+		id:          id(d, uint64(now.UnixNano())),
 		state:       pendingState,
 		erc20D:      d,
 		asset:       asset,
@@ -225,8 +225,8 @@ type HasVegaAssetID interface {
 	GetVegaAssetID() string
 }
 
-func id(s fmt.Stringer, now time.Time) string {
+func id(s fmt.Stringer, nonce uint64) string {
 	hasher := sha3.New256()
-	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), now.UnixNano())))
+	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), nonce)))
 	return hex.EncodeToString(hasher.Sum(nil))
 }

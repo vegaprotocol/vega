@@ -73,7 +73,7 @@ func testDepositSuccess(t *testing.T) {
 	}
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -101,7 +101,7 @@ func testDepositFailure(t *testing.T) {
 	}
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -131,7 +131,7 @@ func testDepositError(t *testing.T) {
 	eng.erc.err = expectError
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.EqualError(t, err, expectError.Error())
 }
 
