@@ -32,6 +32,8 @@ type Mutation {
     type: OrderType!
     "client reference for the order"
     reference: String
+    "good for value for the order"
+    goodfor: GoodFor!
   ): PreparedSubmitOrder!
 
   """
@@ -919,7 +921,7 @@ type Position {
   margins: [MarginLevels!]
 }
 
-"An order in Vega, if active it will be on the OrderBoook for the market"
+"An order in Vega, if active it will be on the OrderBook for the market"
 type Order {
 
   "Hash of the order data"
@@ -972,6 +974,9 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+
+  "Which market type is the order valid for"
+  goodFor: GoodFor!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
