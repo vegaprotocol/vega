@@ -34,6 +34,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Validate duplicate proposal", testProposalDuplicate)
 	t.Run("Validate closing time", testClosingTime)
 	t.Run("Validate enactment time", testEnactmentTime)
+	t.Run("Validate timestamps", testValidateTimestamps)
 	t.Run("Validate proposer stake", testProposerStake)
 }
 
@@ -286,6 +287,25 @@ func testEnactmentTime(t *testing.T) {
 		assert.Equal(t, party.Id, p.PartyID)
 	})
 	err = eng.SubmitProposal(context.Background(), atClosingTime)
+}
+
+func testValidateTimestamps(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	party := eng.makeValidParty("a-valid-party", 1)
+	// for some unknown reason this previous expect a moke assertion while doing
+	// nothing. basically this tests utilitiees contaminates the other tests
+	// this will need to be refactored
+	eng.accs.GetPartyTokenAccount(party.Id)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	now := time.Now()
+	prop := eng.newOpenProposal(party.Id, now)
+	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp + 10
+	err := eng.SubmitProposal(context.Background(), prop)
+	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
 }
 
 func TestVoteValidation(t *testing.T) {
@@ -885,9 +905,10 @@ func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposa
 		PartyID:   partyID,
 		State:     types.Proposal_STATE_OPEN,
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp:   now.Add(48 * time.Hour).Unix(),
-			EnactmentTimestamp: now.Add(2 * 48 * time.Hour).Unix(),
-			Change:             newValidMarketTerms(), //TODO: add more variaty here (when available)
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newValidMarketTerms(), //TODO: add more variaty here (when available)
 		},
 	}
 }

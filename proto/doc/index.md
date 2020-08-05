@@ -2589,6 +2589,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | the asset id refer to no assets in vega |
+| PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment) |
 
 
 
