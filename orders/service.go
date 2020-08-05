@@ -47,8 +47,10 @@ var (
 	ErrNoType = errors.New("no value has been set for the type")
 	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
-	// ErrNoMarketType no value has been set for the market type
-	ErrNoMarketType = errors.New("no value has been set for the market type")
+	// ErrNoGoodFor no value has been set for the good for field
+	ErrNoGoodFor = errors.New("no value has been set for the good for field")
+	// ErrInvalidGoodFor incorrect value has been set for the good for field
+	ErrInvalidGoodFor = errors.New("incorrect value has been set for the good for field")
 )
 
 // TimeService ...
@@ -159,7 +161,11 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	}
 
 	if sub.GoodFor == types.Order_GOOD_FOR_UNSPECIFIED {
-		return ErrNoMarketType
+		return ErrNoGoodFor
+	}
+
+	if sub.GoodFor == types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS {
+		return ErrInvalidGoodFor
 	}
 
 	if sub.TimeInForce == types.Order_TIF_GTT {
