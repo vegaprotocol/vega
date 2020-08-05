@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -28,7 +30,11 @@ func (g *genesisCommand) Init(c *Cli) {
 
 func (g *genesisCommand) Run(cmd *cobra.Command, args []string) error {
 	if len(g.inPlace) <= 0 {
-		return genesis.DumpDefault()
+		dump, err := genesis.DumpDefault()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%v\n", dump)
 	}
 	return genesis.UpdateInPlaceDefault(g.inPlace)
 }

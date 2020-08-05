@@ -2,7 +2,6 @@ package genesis
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"code.vegaprotocol.io/vega/governance"
@@ -18,14 +17,13 @@ func DefaultGenesisState() GenesisState {
 	}
 }
 
-func DumpDefault() error {
+func DumpDefault() (string, error) {
 	gstate := DefaultGenesisState()
 	bytes, err := json.MarshalIndent(&gstate, "  ", "  ")
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Printf("%v\n", string(bytes))
-	return nil
+	return string(bytes), nil
 }
 
 func UpdateInPlaceDefault(tmCfgPath string) error {
