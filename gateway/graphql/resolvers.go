@@ -662,20 +662,6 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *Market,
 	return res.Candles, nil
 }
 
-func (r *myMarketResolver) OrderByReference(ctx context.Context, market *Market,
-	ref string) (*types.Order, error) {
-
-	req := protoapi.OrderByReferenceRequest{
-		Reference: ref,
-	}
-	res, err := r.tradingDataClient.OrderByReference(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Order, nil
-}
-
 // Accounts ...
 // if partyID specified get margin account for the given market
 // if nil return the insurance pool for the market

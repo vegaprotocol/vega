@@ -194,7 +194,6 @@ type ComplexityRoot struct {
 		Fees               func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
-		OrderByReference   func(childComplexity int, reference string) int
 		Orders             func(childComplexity int, skip *int, first *int, last *int) int
 		TradableInstrument func(childComplexity int) int
 		Trades             func(childComplexity int, skip *int, first *int, last *int) int
@@ -511,7 +510,6 @@ type MarketResolver interface {
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
-	OrderByReference(ctx context.Context, obj *Market, reference string) (*proto.Order, error)
 	Data(ctx context.Context, obj *Market) (*proto.MarketData, error)
 }
 type MarketDataResolver interface {
@@ -1220,18 +1218,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Name(childComplexity), true
-
-	case "Market.orderByReference":
-		if e.complexity.Market.OrderByReference == nil {
-			break
-		}
-
-		args, err := ec.field_Market_orderByReference_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.OrderByReference(childComplexity, args["reference"].(string)), true
 
 	case "Market.orders":
 		if e.complexity.Market.Orders == nil {
@@ -3568,12 +3554,6 @@ type Market {
     interval: Interval!
   ): [Candle]
 
-  "Query an order by reference for the given market"
-  orderByReference (
-    "reference of the order"
-    reference: String!
-  ): Order!
-
   "marketData for the given market"
   data: MarketData!
 }
@@ -4554,20 +4534,6 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 		}
 	}
 	args["maxDepth"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Market_orderByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["reference"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["reference"] = arg0
 	return args, nil
 }
 
@@ -8177,47 +8143,6 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	res := resTmp.([]*proto.Candle)
 	fc.Result = res
 	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Market_orderByReference(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Market",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Market_orderByReference_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().OrderByReference(rctx, obj, args["reference"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.Order)
-	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_data(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
@@ -17405,20 +17330,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Market_candles(ctx, field, obj)
-				return res
-			})
-		case "orderByReference":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_orderByReference(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "data":

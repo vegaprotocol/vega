@@ -312,8 +312,6 @@ type Market struct {
 	Depth *proto.MarketDepth `json:"depth"`
 	// Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
 	Candles []*proto.Candle `json:"candles"`
-	// Query an order by reference for the given market
-	OrderByReference *proto.Order `json:"orderByReference"`
 	// marketData for the given market
 	Data *proto.MarketData `json:"data"`
 }
