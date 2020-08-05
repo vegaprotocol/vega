@@ -294,8 +294,8 @@ func testValidateTimestamps(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	party := eng.makeValidParty("a-valid-party", 1)
-	// for some unknown reason this previous expect a moke assertion while doing
-	// nothing. basically this tests utilitiees contaminates the other tests
+	// for some unknown reason this previous utilities expect a mock assertion while doing
+	// nothing. basically this test utilities contaminates the other tests
 	// this will need to be refactored
 	eng.accs.GetPartyTokenAccount(party.Id)
 
