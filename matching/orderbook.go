@@ -355,14 +355,9 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 		}
 	}
 
-	// Update all the trades to have the correct uncorssing price
+	// Update all the trades to have the correct uncrossing price
 	for index := 0; index < len(allTrades); index++ {
 		allTrades[index].Price = price
-	}
-
-	// Update all the orders to have the correct uncorssing price
-	for index := 0; index < len(allOrders); index++ {
-		allOrders[index].Price = price
 	}
 
 	return allTrades, allOrders, nil
