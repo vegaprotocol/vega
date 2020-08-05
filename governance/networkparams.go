@@ -121,15 +121,15 @@ func defaultMarginConfiguration(gstate GenesisState) ScalingFactors {
 	initial, err := strconv.ParseFloat(gstate.InitialMargin, 32)
 	if err != nil {
 		log.Fatal(
-			"Failed to parse margins search level",
-			logging.String("SearchLevel", gstate.InitialMargin),
+			"Failed to parse margins initial margin level",
+			logging.String("InitialMargin", gstate.InitialMargin),
 			logging.Error(err))
 	}
 	release, err := strconv.ParseFloat(gstate.CollateralRelease, 32)
 	if err != nil {
 		log.Fatal(
-			"Failed to parse margins search level",
-			logging.String("SearchLevel", gstate.CollateralRelease),
+			"Failed to parse margins collateral release level",
+			logging.String("CollateralRelease", gstate.CollateralRelease),
 			logging.Error(err))
 	}
 
