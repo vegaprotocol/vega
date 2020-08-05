@@ -211,7 +211,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	bestBid := b.getBestBidPrice()
 	bestAsk := b.getBestAskPrice()
 
-	// Short curcuit if the book is not crossed
+	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
 		return 0, 0, types.Side_SIDE_UNSPECIFIED
 	}

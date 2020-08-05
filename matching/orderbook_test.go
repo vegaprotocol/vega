@@ -2075,7 +2075,7 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	assert.Equal(t, len(trades), 4)
 }
 
-// Set up an auction so that the sell side is proicessed when we uncross
+// Set up an auction so that the sell side is processed when we uncross
 func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
