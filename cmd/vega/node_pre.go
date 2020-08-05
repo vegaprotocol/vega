@@ -99,7 +99,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// for the user to type his password
 	var nodeWalletPassphrase string
 	if len(l.nodeWalletPassphrase) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase()
+		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
 	} else {
 		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
 	}
@@ -487,8 +487,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	return
 }
 
-func getTerminalPassphrase() (string, error) {
-	fmt.Printf("please enter nodewallet passphrase:")
+func getTerminalPassphrase(what string) (string, error) {
+	fmt.Printf("please enter %v passphrase:", what)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
 		return "", err

@@ -174,7 +174,7 @@ func (f *Faucet) Stop() error {
 
 func Init(path, passphrase string) (string, error) {
 	if ok, _ := fsutil.PathExists(path); ok {
-		return "", fmt.Errorf("faucet folder already exists %v", path)
+		return "", fmt.Errorf("faucet file already exists %v", path)
 	}
 
 	w, err := wallet.CreateWalletFile(path, defaultVegaFaucetOwner, passphrase)

@@ -64,7 +64,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 		err                  error
 	)
 	if len(nodeWalletPassphraseInput) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase()
+		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
 	} else {
 		nodeWalletPassphrase, err = getFilePassphrase(nodeWalletPassphraseInput)
 	}
@@ -131,7 +131,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 
 	// initialize the faucet if needed
 	if genBuiltinAssetFaucet {
-		pubkey, err := faucet.Init(cfg.Faucet.WalletPath, nodeWalletPassphrase)
+		pubkey, err := faucet.GenConfig(logger, rootPath, nodeWalletPassphrase, false)
 		if err != nil {
 			return err
 		}
