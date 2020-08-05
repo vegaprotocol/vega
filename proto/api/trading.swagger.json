@@ -759,6 +759,49 @@
         ]
       }
     },
+    "/parties/{partyID}/proposals": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for proposals by party authoring them",
+        "operationId": "GetProposalsByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetProposalsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "selectInState.value",
+            "description": " - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_WAITING_FOR_NODE_VOTE: waiting for validators validation of the proposal",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "STATE_FAILED",
+              "STATE_OPEN",
+              "STATE_PASSED",
+              "STATE_REJECTED",
+              "STATE_DECLINED",
+              "STATE_ENACTED",
+              "STATE_WAITING_FOR_NODE_VOTE"
+            ],
+            "default": "STATE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/trades": {
       "get": {
         "summary": "Get a list of Trades by Party",
