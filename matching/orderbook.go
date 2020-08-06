@@ -261,7 +261,7 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 	// Run through the bid prices and build cumulative volume
 	var cumulativeVolume uint64
 	for price := maxPrice; price >= minPrice; price-- {
-		volume, err := b.buy.GetVolume(price, types.Side_SIDE_BUY)
+		volume, err := b.buy.GetVolume(price)
 
 		if err == nil {
 			cumulativeVolume += volume
@@ -282,7 +282,7 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 	// Now do the same for the ask prices but reuse the price levels already made
 	cumulativeVolume = 0
 	for price := minPrice; price <= maxPrice; price++ {
-		volume, err := b.sell.GetVolume(price, types.Side_SIDE_SELL)
+		volume, err := b.sell.GetVolume(price)
 
 		// Lookup the existing structure from the map
 		cvl := cumulativeVolumes[price]
@@ -318,7 +318,7 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 	// Remove all the orders from that side of the book upto the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
-		uncrossOrders, err := b.buy.ExtractOrders(uncrossSide, price, volume)
+		uncrossOrders, err := b.buy.ExtractOrders(price, volume)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -336,7 +336,7 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 		}
 	} else {
 		// Pull out the trades we want to process
-		uncrossOrders, err := b.sell.ExtractOrders(uncrossSide, price, volume)
+		uncrossOrders, err := b.sell.ExtractOrders(price, volume)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -534,7 +534,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 			b.insertExpiringOrder(*order)
 		}
 
-		b.getSide(order.Side).addOrder(order, order.Side)
+		b.getSide(order.Side).addOrder(order)
 
 		if b.LogPriceLevelsDebug {
 			b.PrintState("After addOrder state:")
