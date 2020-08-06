@@ -45,7 +45,7 @@ func (h *Handler) OnGenesis(t time.Time, state []byte, validatorsPubkey [][]byte
 		f(t)
 	}
 
-	h.log.Debug("vega initial state a genesis",
+	h.log.Debug("vega initial state at genesis",
 		logging.String("state", string(state)))
 	for _, f := range h.onGenesisAppStateLoadedCB {
 		if err := f(state); err != nil {
