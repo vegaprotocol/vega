@@ -169,6 +169,14 @@ func min(x, y uint64) uint64 {
 	return x
 }
 
+// Returns the max of 2 uint64s
+func max(x, y uint64) uint64 {
+	if x > y {
+		return x
+	}
+	return y
+}
+
 // Creates a trade of a given size between two orders and updates the order details
 func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	var buyer, seller *types.Order

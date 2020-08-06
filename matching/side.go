@@ -17,11 +17,41 @@ var (
 	ErrNoOrder = errors.New("no orders in the book side")
 )
 
-// OrderBookSide reprenset a side of the book, either Sell or Buy
+// OrderBookSide represent a side of the book, either Sell or Buy
 type OrderBookSide struct {
-	log *logging.Logger
+	side types.Side
+	log  *logging.Logger
 	// Config
-	levels []*PriceLevel
+	levels       []*PriceLevel
+	parkedOrders []*types.Order
+}
+
+// When we enter an auction we have to park all pegged orders
+// and cancel all orders that are not good for auction
+func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
+	ordersToCancel := make([]*types.Order, 0)
+	for _, pricelevel := range s.levels {
+		for _, order := range pricelevel.orders {
+			// Find orders to cancel
+			if order.GoodFor != types.Order_GOOD_FOR_AUCTION &&
+				order.GoodFor != types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS {
+				ordersToCancel = append(ordersToCancel, order)
+			}
+
+			if order.Id == "PeggedOrder" {
+				s.parkedOrders = append(s.parkedOrders, order)
+			}
+		}
+	}
+	return ordersToCancel, nil
+}
+
+// When we leave an auction period we need to put back all the orders
+// that were parked into the order book
+func (s *OrderBookSide) unparkOrders(side types.Side) {
+	for _, order := range s.parkedOrders {
+		s.addOrder(order, side)
+	}
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
@@ -102,6 +132,68 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	return nil
 }
 
+// ExtractOrders removes the orders from the top of the book until the volume amount is hit
+func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]*types.Order, error) {
+	extractedOrders := []*types.Order{}
+	var totalVolume uint64
+
+	if side == types.Side_SIDE_BUY {
+		for index := len(s.levels) - 1; index >= 0; index-- {
+			pricelevel := s.levels[index]
+			for _, order := range pricelevel.orders {
+				// Check the price is good and the total volume will not be exceeded
+				if order.Price >= price && totalVolume+order.Remaining <= volume {
+					// Remove this order
+					extractedOrders = append(extractedOrders, order)
+					totalVolume += order.Remaining
+					// Remove the order from the price level
+					pricelevel.removeOrder(0)
+
+				} else {
+					// We should never get to here unless the passed in price
+					// and volume are not correct
+					return nil, ErrInvalidVolume
+				}
+			}
+			// Erase this price level which will be at the end of the slice
+			s.levels[index] = nil
+			s.levels = s.levels[:len(s.levels)-1]
+
+			// Check if we have done enough
+			if totalVolume == volume {
+				break
+			}
+		}
+	} else {
+		for len(s.levels) > 0 {
+			pricelevel := s.levels[0]
+			for _, order := range pricelevel.orders {
+				// Check the price is good and the total volume will not be exceeded
+				if order.Price <= price && totalVolume+order.Remaining <= volume {
+					// Remove this order
+					extractedOrders = append(extractedOrders, order)
+					totalVolume += order.Remaining
+					// Remove the order from the price level
+					pricelevel.removeOrder(0)
+				} else {
+					// We should never get to here unless the passed in price
+					// and volume are not correct
+					return nil, ErrInvalidVolume
+				}
+			}
+			// Erase this price level which will be the start of the slice
+			s.levels[0] = nil
+			s.levels = s.levels[1:len(s.levels)]
+
+			// Check if we have done enough
+			if totalVolume == volume {
+				break
+			}
+		}
+	}
+	return extractedOrders, nil
+}
+
 // RemoveOrder will remove an order from the book
 func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
@@ -155,6 +247,23 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	return order, nil
 }
 
+func (s *OrderBookSide) getPriceLevelIfExists(price uint64, side types.Side) *PriceLevel {
+	var i int
+	if side == types.Side_SIDE_BUY {
+		// buy side levels should be ordered in descending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+	}
+
+	// we found the level just return it.
+	if i < len(s.levels) && s.levels[i].price == price {
+		return s.levels[i]
+	}
+	return nil
+}
+
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
 	var i int
 	if side == types.Side_SIDE_BUY {
@@ -179,6 +288,17 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	copy(s.levels[i+1:], s.levels[i:])
 	s.levels[i] = level
 	return level
+}
+
+// GetVolume returns the volume at the given pricelevel
+func (s *OrderBookSide) GetVolume(price uint64, side types.Side) (uint64, error) {
+	priceLevel := s.getPriceLevelIfExists(price, side)
+
+	if priceLevel == nil {
+		return 0, ErrPriceNotFound
+	}
+
+	return priceLevel.volume, nil
 }
 
 func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {

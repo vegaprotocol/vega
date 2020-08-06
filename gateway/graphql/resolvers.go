@@ -1257,6 +1257,11 @@ func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*str
 	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
 	return &expiresAt, nil
 }
+
+func (r *myOrderResolver) GoodFor(ctx context.Context, obj *types.Order) (GoodFor, error) {
+	return convertGoodForFromProto(obj.GoodFor)
+}
+
 func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*types.Trade, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
@@ -1537,7 +1542,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 }
 
 func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string) (*PreparedSubmitOrder, error) {
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, goodFor GoodFor) (*PreparedSubmitOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -1575,6 +1580,9 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		return nil, err
 	}
 	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
+		return nil, err
+	}
+	if order.GoodFor, err = convertGoodForToProto(goodFor); err != nil {
 		return nil, err
 	}
 

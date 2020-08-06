@@ -52,6 +52,8 @@ var (
 	ErrInvalidOrderType = errors.New("invalid order type")
 	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
+	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
+	ErrInvalidMarketType = errors.New("invalid market type")
 
 	networkPartyID = "network"
 )
@@ -354,6 +356,21 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
+// EnterAuction : Prepare the order book to be run as an auction
+func (m *Market) EnterAuction(ctx context.Context) {
+	// Change market type to auction
+
+	// Check the orderbook for any non auction friendly orders
+	// and move them into a parking area
+}
+
+// LeaveAuction : Return the orderbook and market to continuous trading
+func (m *Market) LeaveAuction(ctx context.Context) {
+	// Change market type to continuous trading
+
+	// Move any parked orders back into the orderbook
+}
+
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
@@ -367,6 +384,15 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	m.idgen.SetID(order)
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
+
+	// Check we are allowed to handle this order type with the current market status
+	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.GoodFor == types.Order_GOOD_FOR_CONTINUOUS) ||
+		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.GoodFor == types.Order_GOOD_FOR_AUCTION) {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidMarketType
+	}
 
 	// Check the expiry time is valid
 	if order.ExpiresAt > 0 && order.ExpiresAt < order.CreatedAt {

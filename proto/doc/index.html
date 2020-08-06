@@ -1039,7 +1039,15 @@
                 </li>
 
                 <li>
+                  <a href="#vega.MarketState"><span class="badge">E</span>MarketState</a>
+                </li>
+
+                <li>
                   <a href="#vega.NodeSignatureKind"><span class="badge">E</span>NodeSignatureKind</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Order.GoodFor"><span class="badge">E</span>Order.GoodFor</a>
                 </li>
 
                 <li>
@@ -8603,6 +8611,13 @@ after each successful amend </p></td>
 to keep track which auction batch this order falls under (required for fees calculation) </p></td>
                 </tr>
 
+                <tr>
+                  <td>goodFor</td>
+                  <td><a href="#vega.Order.GoodFor">Order.GoodFor</a></td>
+                  <td></td>
+                  <td><p>Used to indicate which market state this order is good for </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -8943,6 +8958,13 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>goodFor</td>
+                  <td><a href="#vega.Order.GoodFor">Order.GoodFor</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -9027,6 +9049,17 @@ to keep track which auction batch this order falls under (required for fees calc
 
                 <tr>
                   <td>type</td>
+                  <td>
+                    <ul>
+
+                      <li>is_in_enum: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>goodFor</td>
                   <td>
                     <ul>
 
@@ -10235,6 +10268,35 @@ margin requirement or fees</p></td>
           </tbody>
         </table>
 
+        <h3 id="vega.MarketState">MarketState</h3>
+        <p>Market Status</p><p>What mode is the market currently running in</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>MARKET_STATE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, this is invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_CONTINUOUS</td>
+                <td>1</td>
+                <td><p>Normal trading</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_AUCTION</td>
+                <td>2</td>
+                <td><p>Auction trading</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
         <h3 id="vega.NodeSignatureKind">NodeSignatureKind</h3>
         <p>The kind of the signature created by a node</p><p>eg: for a new asset whitelisting, withdrawal</p>
         <table class="enum-table">
@@ -10259,6 +10321,41 @@ margin requirement or fees</p></td>
                 <td>NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL</td>
                 <td>2</td>
                 <td><p>represents a signature for a asset withdrawal</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Order.GoodFor">Order.GoodFor</h3>
+        <p>Good for</p><p>What market state can this order be accepted in</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>GOOD_FOR_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, always invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>GOOD_FOR_CONTINUOUS</td>
+                <td>1</td>
+                <td><p>Normal trading market</p></td>
+              </tr>
+
+              <tr>
+                <td>GOOD_FOR_AUCTION</td>
+                <td>2</td>
+                <td><p>Auction</p></td>
+              </tr>
+
+              <tr>
+                <td>GOOD_FOR_AUCTION_AND_CONTINUOUS</td>
+                <td>3</td>
+                <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
               </tr>
 
           </tbody>
@@ -10537,6 +10634,12 @@ margin requirement or fees</p></td>
                 <td>ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES</td>
                 <td>21</td>
                 <td><p>Order was submitted, but the party did not have enough collateral to cover the fees for the order</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_INCORRECT_MARKET_TYPE</td>
+                <td>22</td>
+                <td><p></p></td>
               </tr>
 
           </tbody>

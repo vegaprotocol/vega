@@ -32,6 +32,8 @@ type Mutation {
     type: OrderType!
     "client reference for the order"
     reference: String
+    "good for value for the order"
+    goodfor: GoodFor!
   ): PreparedSubmitOrder!
 
   """
@@ -919,7 +921,7 @@ type Position {
   margins: [MarginLevels!]
 }
 
-"An order in Vega, if active it will be on the OrderBoook for the market"
+"An order in Vega, if active it will be on the OrderBook for the market"
 type Order {
 
   "Hash of the order data"
@@ -972,6 +974,9 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+
+  "Which market type is the order valid for"
+  goodFor: GoodFor!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -1221,6 +1226,27 @@ enum OrderType {
   similar to MARKET order, only no party is attached to the order.
   """
   NETWORK
+}
+
+"What market type is the order good for"
+enum GoodFor {
+  "Continuous trading where orders are processed and potentially matched on arrival"
+  CONTINUOUS
+
+  "Auction trading where orders are uncrossed at the end of the auction period"
+  AUCTION
+
+  "Continuous and auction, the order will work in both market types"
+  AUCTION_AND_CONTINUOUS
+}
+
+"What market state are we in"
+enum MarketState {
+  "Continuous trading where orders are processed and potentially matched on arrival"
+  CONTINUOUS
+
+  "Auction trading where orders are uncrossed at the end of the auction period"
+  AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"

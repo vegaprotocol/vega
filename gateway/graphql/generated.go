@@ -225,7 +225,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		PrepareOrderAmend  func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) int
 		PrepareOrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) int
+		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, goodfor GoodFor) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
 		SubmitTransaction  func(childComplexity int, data string, sig SignatureInput) int
@@ -252,6 +252,7 @@ type ComplexityRoot struct {
 	Order struct {
 		CreatedAt       func(childComplexity int) int
 		ExpiresAt       func(childComplexity int) int
+		GoodFor         func(childComplexity int) int
 		Id              func(childComplexity int) int
 		Market          func(childComplexity int) int
 		Party           func(childComplexity int) int
@@ -531,7 +532,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) (*PreparedSubmitOrder, error)
+	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, goodfor GoodFor) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id string, partyID string, marketID string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
@@ -559,6 +560,7 @@ type OrderResolver interface {
 	RejectionReason(ctx context.Context, obj *proto.Order) (*OrderRejectionReason, error)
 	Version(ctx context.Context, obj *proto.Order) (string, error)
 	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
+	GoodFor(ctx context.Context, obj *proto.Order) (GoodFor, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *proto.Party, skip *int, first *int, last *int) ([]*proto.Order, error)
@@ -1410,7 +1412,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string)), true
+		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["goodfor"].(GoodFor)), true
 
 	case "Mutation.prepareProposal":
 		if e.complexity.Mutation.PrepareProposal == nil {
@@ -1524,6 +1526,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.ExpiresAt(childComplexity), true
+
+	case "Order.goodFor":
+		if e.complexity.Order.GoodFor == nil {
+			break
+		}
+
+		return e.complexity.Order.GoodFor(childComplexity), true
 
 	case "Order.id":
 		if e.complexity.Order.Id == nil {
@@ -2833,6 +2842,8 @@ type Mutation {
     type: OrderType!
     "client reference for the order"
     reference: String
+    "good for value for the order"
+    goodfor: GoodFor!
   ): PreparedSubmitOrder!
 
   """
@@ -3720,7 +3731,7 @@ type Position {
   margins: [MarginLevels!]
 }
 
-"An order in Vega, if active it will be on the OrderBoook for the market"
+"An order in Vega, if active it will be on the OrderBook for the market"
 type Order {
 
   "Hash of the order data"
@@ -3773,6 +3784,9 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+
+  "Which market type is the order valid for"
+  goodFor: GoodFor!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -4022,6 +4036,27 @@ enum OrderType {
   similar to MARKET order, only no party is attached to the order.
   """
   NETWORK
+}
+
+"What market type is the order good for"
+enum GoodFor {
+  "Continuous trading where orders are processed and potentially matched on arrival"
+  CONTINUOUS
+
+  "Auction trading where orders are uncrossed at the end of the auction period"
+  AUCTION
+
+  "Continuous and auction, the order will work in both market types"
+  AUCTION_AND_CONTINUOUS
+}
+
+"What market state are we in"
+enum MarketState {
+  "Continuous trading where orders are processed and potentially matched on arrival"
+  CONTINUOUS
+
+  "Auction trading where orders are uncrossed at the end of the auction period"
+  AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -4773,6 +4808,14 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 		}
 	}
 	args["reference"] = arg8
+	var arg9 GoodFor
+	if tmp, ok := rawArgs["goodfor"]; ok {
+		arg9, err = ec.unmarshalNGoodFor2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐGoodFor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["goodfor"] = arg9
 	return args, nil
 }
 
@@ -8756,7 +8799,7 @@ func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string))
+		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["goodfor"].(GoodFor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9839,6 +9882,40 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_goodFor(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().GoodFor(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(GoodFor)
+	fc.Result = res
+	return ec.marshalNGoodFor2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐGoodFor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
@@ -18009,6 +18086,20 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		case "goodFor":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_goodFor(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20128,6 +20219,15 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNGoodFor2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐGoodFor(ctx context.Context, v interface{}) (GoodFor, error) {
+	var res GoodFor
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNGoodFor2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐGoodFor(ctx context.Context, sel ast.SelectionSet, v GoodFor) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {

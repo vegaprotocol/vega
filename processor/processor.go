@@ -346,6 +346,7 @@ func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 		Status:      types.Order_STATUS_ACTIVE,
 		CreatedAt:   0,
 		Remaining:   orderSubmission.Size,
+		GoodFor:     orderSubmission.GoodFor,
 	}
 
 	return &order, nil

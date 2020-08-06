@@ -650,6 +650,53 @@ func (e AccountType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// What market type is the order good for
+type GoodFor string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	GoodForContinuous GoodFor = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the auction period
+	GoodForAuction GoodFor = "AUCTION"
+	// Continuous and auction, the order will work in both market types
+	GoodForAuctionAndContinuous GoodFor = "AUCTION_AND_CONTINUOUS"
+)
+
+var AllGoodFor = []GoodFor{
+	GoodForContinuous,
+	GoodForAuction,
+	GoodForAuctionAndContinuous,
+}
+
+func (e GoodFor) IsValid() bool {
+	switch e {
+	case GoodForContinuous, GoodForAuction, GoodForAuctionAndContinuous:
+		return true
+	}
+	return false
+}
+
+func (e GoodFor) String() string {
+	return string(e)
+}
+
+func (e *GoodFor) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GoodFor(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GoodFor", str)
+	}
+	return nil
+}
+
+func (e GoodFor) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // The interval for trade candles when subscribing via VEGA graphql, default is I15M
 type Interval string
 
@@ -703,6 +750,50 @@ func (e *Interval) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Interval) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// What market state are we in
+type MarketState string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	MarketStateContinuous MarketState = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the auction period
+	MarketStateAuction MarketState = "AUCTION"
+)
+
+var AllMarketState = []MarketState{
+	MarketStateContinuous,
+	MarketStateAuction,
+}
+
+func (e MarketState) IsValid() bool {
+	switch e {
+	case MarketStateContinuous, MarketStateAuction:
+		return true
+	}
+	return false
+}
+
+func (e MarketState) String() string {
+	return string(e)
+}
+
+func (e *MarketState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketState", str)
+	}
+	return nil
+}
+
+func (e MarketState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

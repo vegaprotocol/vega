@@ -917,6 +917,18 @@
     }
   },
   "definitions": {
+    "OrderGoodFor": {
+      "type": "string",
+      "enum": [
+        "GOOD_FOR_UNSPECIFIED",
+        "GOOD_FOR_CONTINUOUS",
+        "GOOD_FOR_AUCTION",
+        "GOOD_FOR_AUCTION_AND_CONTINUOUS"
+      ],
+      "default": "GOOD_FOR_UNSPECIFIED",
+      "description": "- GOOD_FOR_UNSPECIFIED: Default value, always invalid\n - GOOD_FOR_CONTINUOUS: Normal trading market\n - GOOD_FOR_AUCTION: Auction\n - GOOD_FOR_AUCTION_AND_CONTINUOUS: used for orders where the initiating party is the network (used for distressed traders)",
+      "title": "Good for\nWhat market state can this order be accepted in"
+    },
     "OrderStatus": {
       "type": "string",
       "enum": [
@@ -2657,6 +2669,10 @@
           "type": "string",
           "format": "uint64",
           "title": "used internally, for orders submitted during auctions\nto keep track which auction batch this order falls under (required for fees calculation)"
+        },
+        "goodFor": {
+          "$ref": "#/definitions/OrderGoodFor",
+          "title": "Used to indicate which market state this order is good for"
         }
       }
     },
@@ -2727,7 +2743,8 @@
         "ORDER_ERROR_INVALID_PERSISTENCE",
         "ORDER_ERROR_INVALID_TYPE",
         "ORDER_ERROR_SELF_TRADING",
-        "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES"
+        "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES",
+        "ORDER_ERROR_INCORRECT_MARKET_TYPE"
       ],
       "default": "ORDER_ERROR_NONE",
       "description": "- ORDER_ERROR_NONE: Empty default error\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid ID\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size)\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order id)\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order\n - ORDER_ERROR_NOT_FOUND: Order not found in the order book or in order store\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party ID\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0)\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order for the same party\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order",
@@ -2768,6 +2785,9 @@
         },
         "reference": {
           "type": "string"
+        },
+        "goodFor": {
+          "$ref": "#/definitions/OrderGoodFor"
         }
       }
     },

@@ -1781,6 +1781,418 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, (*types.Order)(nil), nonorder)
 }
 
+func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
+	order := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketID:    market,
+		Id:          id,
+		Side:        side,
+		Price:       price,
+		PartyID:     partyid,
+		Size:        size,
+		Remaining:   size,
+		TimeInForce: types.Order_TIF_GTC,
+		CreatedAt:   10,
+	}
+	_, err := orderbook.SubmitOrder(order)
+	assert.Equal(t, err, nil)
+}
+
+/*****************************************************************************/
+/*                             AUCTION TESTING                               */
+/*****************************************************************************/
+func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// No trades!
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
+}
+
+func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Trades on just one side of the book
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 99, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 98, "party01", 10)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
+}
+
+func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Trades on just one side of the book
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 99, "party01", 10)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 98, "party01", 10)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
+}
+
+func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 101, "party01", 20)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 100, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 99, "party01", 20)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 98, "party01", 10)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 10)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 101, "party02", 15)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 102, "party02", 5)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 103, "party02", 10)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(101))
+	assert.Equal(t, volume, uint64(20))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 2)
+	assert.Equal(t, len(trades), 2)
+}
+
+func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 101, "party01", 30)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 100, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 99, "party01", 20)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 98, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder05", types.Side_SIDE_BUY, 97, "party01", 5)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 30)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 101, "party02", 15)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 102, "party02", 5)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 103, "party02", 10)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(101))
+	assert.Equal(t, volume, uint64(30))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 1)
+	assert.Equal(t, len(trades), 1)
+}
+
+func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 104, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 103, "party01", 20)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 102, "party01", 15)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 98, "party02", 10)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 97, "party02", 20)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 96, "party02", 15)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(45))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 5)
+	assert.Equal(t, len(trades), 5)
+}
+
+func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 99, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 98, "party01", 25)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 97, "party01", 5)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 102, "party02", 30)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 101, "party02", 15)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 100, "party02", 5)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 0)
+	assert.Equal(t, len(trades), 0)
+}
+
+func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 100, "party01", 7)
+	makeOrder(t, book, market, "BuyOrder05", types.Side_SIDE_BUY, 99, "party01", 6)
+	makeOrder(t, book, market, "BuyOrder06", types.Side_SIDE_BUY, 98, "party01", 5)
+	makeOrder(t, book, market, "BuyOrder07", types.Side_SIDE_BUY, 97, "party01", 4)
+	makeOrder(t, book, market, "BuyOrder08", types.Side_SIDE_BUY, 96, "party01", 3)
+	makeOrder(t, book, market, "BuyOrder09", types.Side_SIDE_BUY, 95, "party01", 2)
+	makeOrder(t, book, market, "BuyOrder10", types.Side_SIDE_BUY, 94, "party01", 1)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 105, "party02", 1)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 104, "party02", 2)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 103, "party02", 3)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 102, "party02", 4)
+	makeOrder(t, book, market, "SellOrder05", types.Side_SIDE_SELL, 101, "party02", 5)
+	makeOrder(t, book, market, "SellOrder06", types.Side_SIDE_SELL, 100, "party02", 6)
+	makeOrder(t, book, market, "SellOrder07", types.Side_SIDE_SELL, 99, "party02", 7)
+	makeOrder(t, book, market, "SellOrder08", types.Side_SIDE_SELL, 98, "party02", 8)
+	makeOrder(t, book, market, "SellOrder09", types.Side_SIDE_SELL, 97, "party02", 9)
+	makeOrder(t, book, market, "SellOrder10", types.Side_SIDE_SELL, 96, "party02", 10)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(34))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 4)
+	assert.Equal(t, len(trades), 4)
+}
+
+// Set up an auction so that the sell side is processed when we uncross
+func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 100, "party01", 7)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 99, "party02", 1)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 98, "party02", 2)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 97, "party02", 3)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 4)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(101))
+	assert.Equal(t, volume, uint64(10))
+	assert.Equal(t, side, types.Side_SIDE_SELL)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 4)
+	assert.Equal(t, len(trades), 4)
+}
+
+// Check that multiple orders per price level work
+func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 103, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 102, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder05", types.Side_SIDE_BUY, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder06", types.Side_SIDE_BUY, 101, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder07", types.Side_SIDE_BUY, 100, "party01", 7)
+	makeOrder(t, book, market, "BuyOrder08", types.Side_SIDE_BUY, 100, "party01", 1)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 99, "party02", 10)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 98, "party02", 10)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 97, "party02", 10)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 7)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(37))
+	assert.Equal(t, side, types.Side_SIDE_SELL)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 7)
+	assert.Equal(t, len(trades), 7)
+}
+
+func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 103, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder04", types.Side_SIDE_BUY, 102, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder05", types.Side_SIDE_BUY, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder06", types.Side_SIDE_BUY, 101, "party01", 1)
+	makeOrder(t, book, market, "BuyOrder07", types.Side_SIDE_BUY, 100, "party01", 7)
+	makeOrder(t, book, market, "BuyOrder08", types.Side_SIDE_BUY, 100, "party01", 1)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 99, "party02", 10)
+	makeOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 98, "party02", 10)
+	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 97, "party02", 10)
+	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 9)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(38))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	impactedOrders, trades, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(impactedOrders), 10)
+	assert.Equal(t, len(trades), 10)
+}
+
 // this is a test for issue 2060 to ensure we process FOK orders properly
 func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 	market := "testOrderbook"

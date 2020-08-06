@@ -218,7 +218,9 @@
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
+    - [Order.GoodFor](#vega.Order.GoodFor)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -3191,6 +3193,7 @@ a decision taken by the vega network.
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
 | batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
+| goodFor | [Order.GoodFor](#vega.Order.GoodFor) |  | Used to indicate which market state this order is good for |
 
 
 
@@ -3285,6 +3288,7 @@ a decision taken by the vega network.
 | expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
 | type | [Order.Type](#vega.Order.Type) |  |  |
 | reference | [string](#string) |  |  |
+| goodFor | [Order.GoodFor](#vega.Order.GoodFor) |  |  |
 
 
 
@@ -3719,6 +3723,20 @@ A transaction to be sent to vega
 
 
 
+<a name="vega.MarketState"></a>
+
+### MarketState
+Market Status
+What mode is the market currently running in
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
+| MARKET_STATE_CONTINUOUS | 1 | Normal trading |
+| MARKET_STATE_AUCTION | 2 | Auction trading |
+
+
+
 <a name="vega.NodeSignatureKind"></a>
 
 ### NodeSignatureKind
@@ -3730,6 +3748,21 @@ eg: for a new asset whitelisting, withdrawal
 | NODE_SIGNATURE_KIND_UNSPECIFIED | 0 | represents a unspecified / missing value from the input |
 | NODE_SIGNATURE_KIND_ASSET_NEW | 1 | represents a signature for a new asset whitelisting |
 | NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 2 | represents a signature for a asset withdrawal |
+
+
+
+<a name="vega.Order.GoodFor"></a>
+
+### Order.GoodFor
+Good for
+What market state can this order be accepted in
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| GOOD_FOR_UNSPECIFIED | 0 | Default value, always invalid |
+| GOOD_FOR_CONTINUOUS | 1 | Normal trading market |
+| GOOD_FOR_AUCTION | 2 | Auction |
+| GOOD_FOR_AUCTION_AND_CONTINUOUS | 3 | used for orders where the initiating party is the network (used for distressed traders) |
 
 
 
@@ -3813,6 +3846,7 @@ Set when an order has an issue
 | ORDER_ERROR_INVALID_TYPE | 19 | Order was submitted with an invalid type field |
 | ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order for the same party |
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order |
+| ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 |  |
 
 
 

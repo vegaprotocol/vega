@@ -190,6 +190,49 @@ func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 	}
 }
 
+// convertOrderTypeToProto converts a GraphQL enum to a Proto enum
+func convertGoodForToProto(gf GoodFor) (types.Order_GoodFor, error) {
+	switch gf {
+	case GoodForAuction:
+		return types.Order_GOOD_FOR_AUCTION, nil
+	case GoodForContinuous:
+		return types.Order_GOOD_FOR_CONTINUOUS, nil
+	case GoodForAuctionAndContinuous:
+		return types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS, nil
+	default:
+		err := fmt.Errorf("failed to convert GoodFor from GraphQL to Proto: %v", gf)
+		return types.Order_GOOD_FOR_UNSPECIFIED, err
+	}
+}
+
+// convertGoodForFromProto converts a Proto enum to a GraphQL enum
+func convertGoodForFromProto(gf types.Order_GoodFor) (GoodFor, error) {
+	switch gf {
+	case types.Order_GOOD_FOR_AUCTION:
+		return GoodForAuction, nil
+	case types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS:
+		return GoodForAuctionAndContinuous, nil
+	case types.Order_GOOD_FOR_CONTINUOUS:
+		return GoodForContinuous, nil
+	default:
+		err := fmt.Errorf("failed to convert GoodFor from Proto to GraphQL: %v", gf)
+		return GoodForContinuous, err
+	}
+}
+
+// convertMarketStateFromProto converts a Proto enum to a GraphQL enum
+func convertMarketStateFromProto(ms types.MarketState) (MarketState, error) {
+	switch ms {
+	case types.MarketState_MARKET_STATE_AUCTION:
+		return MarketStateAuction, nil
+	case types.MarketState_MARKET_STATE_CONTINUOUS:
+		return MarketStateContinuous, nil
+	default:
+		err := fmt.Errorf("failed to convert MarketState from Proto to GraphQL: %v", ms)
+		return MarketStateContinuous, err
+	}
+}
+
 // convertProposalStateToProto converts a GraphQL enum to a Proto enum
 func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) {
 	switch x {

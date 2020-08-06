@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -32,6 +33,23 @@ type OrderBook struct {
 	latestTimestamp int64
 	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
+	marketState     types.MarketState
+	batchID         uint64
+}
+
+// CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
+type CumulativeVolumeLevel struct {
+	price               uint64
+	bidVolume           uint64
+	askVolume           uint64
+	cumulativeBidVolume uint64
+	cumulativeAskVolume uint64
+	maxTradableAmount   uint64
+}
+
+// GetMarketState returns the current state of the orderbook/market
+func (b *OrderBook) GetMarketState() types.MarketState {
+	return b.marketState
 }
 
 func isPersistent(o *types.Order) bool {
@@ -54,12 +72,17 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		log:             log,
 		marketID:        marketID,
 		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log},
-		sell:            &OrderBookSide{log: log},
+		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
+		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
 		Config:          config,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
 		ordersByID:      map[string]*types.Order{},
+
+		// For now we set market state to continuous because that is what
+		// we are used to. Before we go live this will be auction
+		marketState: types.MarketState_MARKET_STATE_CONTINUOUS,
+		batchID:     0,
 	}
 }
 
@@ -138,6 +161,205 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		}
 		return price / (volume - vol), err
 	}
+}
+
+// EnterAuction Moves the order book into an auction state
+func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
+	// Scan existing orders to see which ones can be kept, cancelled and parked
+	buyCancelledOrders, err := b.buy.parkOrCancelOrders()
+	if err != nil {
+		return nil, err
+	}
+
+	sellCancelledOrders, err := b.sell.parkOrCancelOrders()
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the market state
+	b.marketState = types.MarketState_MARKET_STATE_AUCTION
+
+	// Return all the orders that have been cancelled from the book
+	cancelledOrders := buyCancelledOrders
+	cancelledOrders = append(cancelledOrders, sellCancelledOrders...)
+	return cancelledOrders, nil
+}
+
+// LeaveAuction Moves the order book back into continuous trading state
+func (b *OrderBook) LeaveAuction() ([]*types.Order, []*types.Trade, error) {
+	// Uncross the book
+	trades, orders, err := b.uncrossBook()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Unpark all parked orders
+	//b.buy.unparkOrders(types.Side_SIDE_BUY)
+	//b.sell.unparkOrders(types.Side_SIDE_SELL)
+
+	// Update batchID
+	b.batchID++
+
+	// Flip back to continuous
+	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
+
+	return orders, trades, nil
+}
+
+// GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
+func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
+	bestBid := b.getBestBidPrice()
+	bestAsk := b.getBestAskPrice()
+
+	// Short circuit if the book is not crossed
+	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
+
+	// Generate a set of price level pairs with their maximum tradable volumes
+	cumulativeVolumes := b.buildCumulativePriceLevels(bestBid, bestAsk)
+
+	// Find the maximum tradable amount
+	var maxTradableAmount uint64
+	for _, value := range cumulativeVolumes {
+		maxTradableAmount = max(maxTradableAmount, value.maxTradableAmount)
+	}
+
+	// Pull out all prices that match that volume
+	prices := make([]uint64, 0)
+	for _, value := range cumulativeVolumes {
+		if value.maxTradableAmount == maxTradableAmount {
+			prices = append(prices, value.price)
+		}
+	}
+
+	// We need to sort the prices list as they are not in order
+	sort.Slice(prices, func(i, j int) bool { return prices[i] < prices[j] })
+
+	// get the maximum volume price from the median of all the maximum tradable price levels
+	uncrossPrice := prices[len(prices)/2]
+	var uncrossSide types.Side
+
+	// See which side we should fully process when we uncross
+	for _, value := range cumulativeVolumes {
+		if value.price == uncrossPrice {
+			if value.cumulativeAskVolume >= value.cumulativeBidVolume {
+				// More sells, so we process the buys
+				uncrossSide = types.Side_SIDE_BUY
+			} else {
+				uncrossSide = types.Side_SIDE_SELL
+			}
+			break
+		}
+	}
+	return uncrossPrice, maxTradableAmount, uncrossSide
+}
+
+func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[uint64]CumulativeVolumeLevel {
+	cumulativeVolumes := map[uint64]CumulativeVolumeLevel{}
+
+	// Run through the bid prices and build cumulative volume
+	var cumulativeVolume uint64
+	for price := maxPrice; price >= minPrice; price-- {
+		volume, err := b.buy.GetVolume(price, types.Side_SIDE_BUY)
+
+		if err == nil {
+			cumulativeVolume += volume
+			cumulativeVolumes[price] = CumulativeVolumeLevel{
+				price:               price,
+				bidVolume:           volume,
+				cumulativeBidVolume: cumulativeVolume,
+			}
+		} else {
+			cumulativeVolumes[price] = CumulativeVolumeLevel{
+				price:               price,
+				bidVolume:           0,
+				cumulativeBidVolume: cumulativeVolume,
+			}
+		}
+	}
+
+	// Now do the same for the ask prices but reuse the price levels already made
+	cumulativeVolume = 0
+	for price := minPrice; price <= maxPrice; price++ {
+		volume, err := b.sell.GetVolume(price, types.Side_SIDE_SELL)
+
+		// Lookup the existing structure from the map
+		cvl := cumulativeVolumes[price]
+
+		if err == nil {
+			cumulativeVolume += volume
+			cvl.askVolume = volume
+			cvl.cumulativeAskVolume = cumulativeVolume
+		} else {
+			cvl.askVolume = 0
+			cvl.cumulativeAskVolume = cumulativeVolume
+		}
+		cvl.maxTradableAmount = min(cvl.cumulativeAskVolume, cvl.cumulativeBidVolume)
+		cumulativeVolumes[price] = cvl
+	}
+
+	return cumulativeVolumes
+}
+
+// Uncrosses the book to generate the maximum volume set of trades
+func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
+	// Get the uncrossing price and which side has the most volume at that price
+	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
+
+	// If we have no uncrossing price, we have nothing to do
+	if price == 0 && volume == 0 {
+		return nil, nil, nil
+	}
+
+	var allTrades []*types.Trade
+	var allOrders []*types.Order
+
+	// Remove all the orders from that side of the book upto the given volume
+	if uncrossSide == types.Side_SIDE_BUY {
+		// Pull out the trades we want to process
+		uncrossOrders, err := b.buy.ExtractOrders(uncrossSide, price, volume)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Uncross each one
+		for _, order := range uncrossOrders {
+			trades, orders, _, err := b.sell.uncross(order)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			allTrades = append(allTrades, trades...)
+			allOrders = append(allOrders, orders...)
+		}
+	} else {
+		// Pull out the trades we want to process
+		uncrossOrders, err := b.sell.ExtractOrders(uncrossSide, price, volume)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Uncross each one
+		for _, order := range uncrossOrders {
+			trades, orders, _, err := b.buy.uncross(order)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			allTrades = append(allTrades, trades...)
+			allOrders = append(allOrders, orders...)
+		}
+	}
+
+	// Update all the trades to have the correct uncrossing price
+	for index := 0; index < len(allTrades); index++ {
+		allTrades[index].Price = price
+	}
+
+	return allTrades, allOrders, nil
 }
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
@@ -283,10 +505,19 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		b.PrintState("Entry state:")
 	}
 
-	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice, err := b.getOppositeSide(order.Side).uncross(order)
-	if lastTradedPrice != 0 {
-		b.lastTradedPrice = lastTradedPrice
+	var trades []*types.Trade
+	var impactedOrders []*types.Order
+	var lastTradedPrice uint64
+	var err error
+
+	order.BatchID = b.batchID
+
+	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
+		// uncross with opposite
+		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order)
+		if lastTradedPrice != 0 {
+			b.lastTradedPrice = lastTradedPrice
+		}
 	}
 
 	// if state of the book changed show state
@@ -501,6 +732,16 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 		PassiveOrdersAffected: impactedOrders,
 		Trades:                trades,
 	}
+}
+
+func (b *OrderBook) getBestBidPrice() uint64 {
+	price, _ := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	return price
+}
+
+func (b *OrderBook) getBestAskPrice() uint64 {
+	price, _ := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	return price
 }
 
 // PrintState prints the actual state of the book.
