@@ -131,7 +131,13 @@ func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseIn
 		vators = append(vators, v.PubKey.Data)
 	}
 
-	a.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators)
+	if err := a.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
+		a.log.Error("something happened when initializing vega with the genesis block",
+			logging.Error(err))
+		// kill the whole application
+		a.onCriticalError()
+	}
+
 	return types.ResponseInitChain{}
 }
 

@@ -11,7 +11,7 @@ type Handler struct {
 	cfg Config
 
 	onGenesisTimeLoadedCB     []func(time.Time)
-	onGenesisAppStateLoadedCB []func([]byte)
+	onGenesisAppStateLoadedCB []func([]byte) error
 }
 
 func New(log *logging.Logger, cfg Config) *Handler {
@@ -21,7 +21,7 @@ func New(log *logging.Logger, cfg Config) *Handler {
 		log:                       log,
 		cfg:                       cfg,
 		onGenesisTimeLoadedCB:     []func(time.Time){},
-		onGenesisAppStateLoadedCB: []func([]byte){},
+		onGenesisAppStateLoadedCB: [](func([]byte) error){},
 	}
 }
 
@@ -48,7 +48,9 @@ func (h *Handler) OnGenesis(t time.Time, state []byte, validatorsPubkey [][]byte
 	h.log.Debug("vega initial state a genesis",
 		logging.String("state", string(state)))
 	for _, f := range h.onGenesisAppStateLoadedCB {
-		f(state)
+		if err := f(state); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -58,6 +60,6 @@ func (h *Handler) OnGenesisTimeLoaded(f func(time.Time)) {
 	h.onGenesisTimeLoadedCB = append(h.onGenesisTimeLoadedCB, f)
 }
 
-func (h *Handler) OnGenesisAppStateLoaded(f func([]byte)) {
+func (h *Handler) OnGenesisAppStateLoaded(f func([]byte) error) {
 	h.onGenesisAppStateLoadedCB = append(h.onGenesisAppStateLoadedCB, f)
 }

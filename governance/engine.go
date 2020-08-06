@@ -155,18 +155,17 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 }
 
 // InitState load the genesis configuration into the governance engine
-func (e *Engine) InitState(rawState []byte) {
+func (e *Engine) InitState(rawState []byte) error {
 	e.log.Debug("loading genesis configuration")
 	state, err := LoadGenesisState(rawState)
 	if err != nil {
-		// no need to stop, this may not be an error, the network
-		// maybe be bootstrap without the genesis state being customized
 		e.log.Error("unable to load genesis state",
 			logging.Error(err))
-		return
+		return err
 	}
 	params := NetworkParametersFromGenesisState(e.log, *state)
 	e.networkParams = *params
+	return nil
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
