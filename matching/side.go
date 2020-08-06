@@ -134,7 +134,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 
 // ExtractOrders removes the orders from the top of the book until the volume amount is hit
 func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]*types.Order, error) {
-	extractedOrders := make([]*types.Order, 0)
+	extractedOrders := []*types.Order{}
 	var totalVolume uint64
 
 	if side == types.Side_SIDE_BUY {
@@ -143,8 +143,6 @@ func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price >= price && totalVolume+order.Remaining <= volume {
-					// Update the price to the uncrossing price
-					order.Price = price
 					// Remove this order
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
@@ -172,8 +170,6 @@ func (s *OrderBookSide) ExtractOrders(side types.Side, price, volume uint64) ([]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price <= price && totalVolume+order.Remaining <= volume {
-					// Update the price to the uncrossing price
-					order.Price = price
 					// Remove this order
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining

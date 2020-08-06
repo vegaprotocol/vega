@@ -256,8 +256,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 }
 
 func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[uint64]CumulativeVolumeLevel {
-	var cumulativeVolumes map[uint64]CumulativeVolumeLevel
-	cumulativeVolumes = make(map[uint64]CumulativeVolumeLevel)
+	cumulativeVolumes := map[uint64]CumulativeVolumeLevel{}
 
 	// Run through the bid prices and build cumulative volume
 	var cumulativeVolume uint64
