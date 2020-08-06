@@ -115,6 +115,9 @@ func GenConfig(log *logging.Logger, path, passphrase string, rewrite bool) (stri
 		return "", err
 	}
 
+	f.Chmod(0600)
+	f.Close()
+
 	log.Info("faucet configuration generated successfully", logging.String("path", confPath))
 
 	// then we generate the wallet

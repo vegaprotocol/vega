@@ -35,7 +35,7 @@ func (f *faucetCommand) Init(c *Cli) {
 	}
 
 	run.Flags().StringVarP(&f.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	run.Flags().StringVarP(&f.passphrase, "passphrase", "p", "", "Passphrase to access the faucet wallet")
+	run.Flags().StringVarP(&f.passphrase, "passphrase", "p", "", "A file containing the passphrase for the faucet wallet, if empty will prompt for input")
 	f.cmd.AddCommand(run)
 
 	init := &cobra.Command{
@@ -45,7 +45,7 @@ func (f *faucetCommand) Init(c *Cli) {
 	}
 
 	init.Flags().StringVarP(&f.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	init.Flags().StringVarP(&f.passphrase, "passphrase", "p", "", "Passphrase to access the faucet wallet")
+	init.Flags().StringVarP(&f.passphrase, "passphrase", "p", "", "A file containing the passphrase for the faucet wallet, if empty will prompt for input")
 	init.Flags().BoolVarP(&f.force, "force", "f", false, "Erase exiting faucet configuration at the specified path")
 	f.cmd.AddCommand(init)
 
@@ -103,7 +103,20 @@ func (f *faucetCommand) CmdInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
 
-	pubkey, err := faucet.GenConfig(f.log, f.rootPath, f.passphrase, f.force)
+	var (
+		passphrase string
+		err        error
+	)
+	if len(f.passphrase) <= 0 {
+		passphrase, err = getTerminalPassphrase("faucet")
+	} else {
+		passphrase, err = getFilePassphrase(f.passphrase)
+	}
+	if err != nil {
+		return err
+	}
+
+	pubkey, err := faucet.GenConfig(f.log, f.rootPath, passphrase, f.force)
 	if err != nil {
 		return err
 	}
