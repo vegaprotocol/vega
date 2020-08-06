@@ -135,7 +135,7 @@ func (c *codec) validateSigned(payload []byte) error {
 	// FIXME(): for now we just not verify 2 command which are
 	// not require to be signed. This will need to be removed once we have
 	// only signed commadn
-	if cmd != WithdrawCommand && cmd != NotifyTraderAccountCommand {
+	if cmd != WithdrawCommand {
 		// verify the signature
 		if err := verifyBundle(c.log, tx, bundle); err != nil {
 			c.log.Error("error verifying bundle", logging.Error(err))

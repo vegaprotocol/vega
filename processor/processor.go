@@ -534,8 +534,6 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrChainEventFromNonValidator
 		}
 		return nil
-	case blockchain.NotifyTraderAccountCommand:
-		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
