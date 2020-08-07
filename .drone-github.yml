@@ -203,10 +203,10 @@ steps:
         from_secret: DEVNET_DEPLOY_HOSTS
       DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
-      DEVNET_TOPUP_AMOUNT:
-        from_secret: DEVNET_TOPUP_AMOUNT
-      DEVNET_TOPUP_NODE:
-        from_secret: DEVNET_TOPUP_NODE
+      DEVNET_FAUCET_SERVER:
+        from_secret: DEVNET_FAUCET_SERVER
+      DEVNET_VEGA_GRPCNODE:
+        from_secret: DEVNET_VEGA_GRPCNODE
       DEVNET_WALLET_PASSPHRASE:
         from_secret: DEVNET_WALLET_PASSPHRASE
       DEVNET_WALLET_SERVER:
@@ -227,11 +227,11 @@ steps:
       - /usr/local/bin/deploy-trading-core.sh devnet vega
       # Set up wallets, keypairs and free money.
       - /usr/local/bin/init-wallets-tokenbalances.py
+            --faucetserver "$$DEVNET_FAUCET_SERVER"
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
             --walletserver "$$DEVNET_WALLET_SERVER"
             --passphrase "$$DEVNET_WALLET_PASSPHRASE"
-            --veganode "$$DEVNET_TOPUP_NODE"
-            --amount "$$DEVNET_TOPUP_AMOUNT"
+            --veganode "$$DEVNET_VEGA_GRPCNODE"
     depends_on:
       - build-branch
     when:
