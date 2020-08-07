@@ -72,7 +72,7 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 					Symbol:              "VUSD",
 					TotalSupply:         "21000000",
 					Decimals:            5,
-					MaxFaucetAmountMint: "100000000", // 1000VUSD
+					MaxFaucetAmountMint: "500000000", // 1000VUSD
 
 				},
 			},
