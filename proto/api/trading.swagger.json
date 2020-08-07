@@ -1807,7 +1807,7 @@
         },
         "maxFaucetAmountMint": {
           "type": "string",
-          "title": "This maximum amount that can be request by a party through the builtin asset faucet at a time"
+          "title": "This is the maximum amount that can be requested by a party through the builtin asset faucet at a time"
         }
       },
       "title": "A vega internal asset"

@@ -1903,7 +1903,7 @@ A vega internal asset
 | symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
 | totalSupply | [string](#string) |  | The total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
-| maxFaucetAmountMint | [string](#string) |  | This maximum amount that can be request by a party through the builtin asset faucet at a time |
+| maxFaucetAmountMint | [string](#string) |  | This is the maximum amount that can be requested by a party through the builtin asset faucet at a time |
 
 
 

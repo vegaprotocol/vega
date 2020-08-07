@@ -196,7 +196,7 @@ type BuiltinAsset struct {
 	TotalSupply string `protobuf:"bytes,3,opt,name=totalSupply,proto3" json:"totalSupply,omitempty"`
 	// The number of decimal / precision handled by this asset
 	Decimals uint64 `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	// This maximum amount that can be request by a party through the builtin asset faucet at a time
+	// This is the maximum amount that can be requested by a party through the builtin asset faucet at a time
 	MaxFaucetAmountMint  string   `protobuf:"bytes,5,opt,name=maxFaucetAmountMint,proto3" json:"maxFaucetAmountMint,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
