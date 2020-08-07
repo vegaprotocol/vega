@@ -5,6 +5,12 @@ The faucet takes the form of an http server exposing a REST API which triggers n
 
 In order to control exactly who is allowed to broadcast events to the network, the [node configuration](../config/) contains a list of public keys allowed to broadcast chain events. The faucet's keypairs must be on this list before it can start allocating assets.
 
+## Request rate limiting
+To prevent the users to request unlimited amount of funds, the CoolDown field in the configuration allow operator to specify a minimum amount of time between 2 request for funds.
+
+## Spam prevention
+In order to prevent spam from non-validator node, the faucet needs to be connected to a validator node.
+
 ## Configuration
 
 The configuration of the faucet is done through the vega config.toml file.

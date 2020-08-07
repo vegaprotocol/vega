@@ -18,12 +18,11 @@ import (
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc"
-
 	"github.com/cenkalti/backoff"
+	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -38,10 +37,12 @@ var (
 type Faucet struct {
 	*httprouter.Router
 
-	log *logging.Logger
-	cfg Config
-	wal *wallet.Wallet
-	s   *http.Server
+	log   *logging.Logger
+	cfg   Config
+	wal   *wallet.Wallet
+	s     *http.Server
+	rl    *RateLimit
+	cfunc context.CancelFunc
 
 	// node connections stuff
 	clt     api.TradingClient
@@ -60,6 +61,8 @@ type MintResponse struct {
 }
 
 func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Level)
 	wal, err := wallet.ReadWalletFile(cfg.WalletPath, passphrase)
 	if err != nil {
 		return nil, err
@@ -73,6 +76,8 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	client := api.NewTradingClient(conn)
 	clientData := api.NewTradingDataClient(conn)
 
+	ctx, cfunc := context.WithCancel(context.Background())
+
 	f := &Faucet{
 		Router:  httprouter.New(),
 		log:     log,
@@ -81,6 +86,8 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		clt:     client,
 		cltdata: clientData,
 		conn:    conn,
+		cfunc:   cfunc,
+		rl:      NewRateLimit(ctx, cfg),
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
@@ -109,9 +116,12 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset)
-	if err != nil {
+	if err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset); err != nil {
 		writeError(w, newError(err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if err := f.rl.NewRequest(req.Party, req.Asset); err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
 
@@ -206,6 +216,8 @@ func (f *Faucet) Start() error {
 }
 
 func (f *Faucet) Stop() error {
+	// close the rate limit
+	f.cfunc()
 	f.conn.Close()
 	return f.s.Shutdown(context.Background())
 }

@@ -18,7 +18,7 @@ const (
 	namedLogger     = "faucet"
 	defaultWallet   = "faucet-wallet"
 	configFile      = "faucet.toml"
-	defaultCoolDown = 5 * time.Hour
+	defaultCoolDown = 1 * time.Minute
 )
 
 type Config struct {
