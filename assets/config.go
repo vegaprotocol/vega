@@ -46,30 +46,34 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "Ether",
-					Symbol:      "ETH",
-					TotalSupply: "110436690",
-					Decimals:    5,
+					Name:                "Ether",
+					Symbol:              "ETH",
+					TotalSupply:         "110436690",
+					Decimals:            5,
+					MaxFaucetAmountMint: "10000000", // 100ETH
 				},
 			},
 		},
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "Bitcoin",
-					Symbol:      "BTC",
-					TotalSupply: "21000000",
-					Decimals:    5,
+					Name:                "Bitcoin",
+					Symbol:              "BTC",
+					TotalSupply:         "21000000",
+					Decimals:            5,
+					MaxFaucetAmountMint: "1000000", // 10BTC
 				},
 			},
 		},
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VUSD",
-					Symbol:      "VUSD",
-					TotalSupply: "21000000",
-					Decimals:    5,
+					Name:                "VUSD",
+					Symbol:              "VUSD",
+					TotalSupply:         "21000000",
+					Decimals:            5,
+					MaxFaucetAmountMint: "500000000", // 1000VUSD
+
 				},
 			},
 		},
