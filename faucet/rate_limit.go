@@ -36,14 +36,14 @@ func (r *RateLimit) NewRequest(pubkey, asset string) error {
 	}
 	until, ok := assets[asset]
 	if ok {
-		// we already have this asset whitelist,
-		// the trader is trying to get more fuunds while still blacklisted
+		// we already have this asset greylisted,
+		// the trader is trying to get more fuunds while still greylisted
 		// give him a penalty
 		assets[asset] = until.Add(r.cfg.CoolDown.Duration)
-		return fmt.Errorf("you are greylist - your pubkey is now greylisted for an extended period until %v", assets[asset])
+		return fmt.Errorf("you are greylisted - your pubkey is now greylisted for an extended period until %v", assets[asset])
 	}
 
-	// grey list for the minimal duration
+	// greylist for the minimal duration
 	assets[asset] = time.Now().Add(r.cfg.CoolDown.Duration)
 
 	return nil
@@ -67,7 +67,7 @@ func (r *RateLimit) startCleanup(ctx context.Context) {
 						delete(assets, asset)
 					}
 				}
-				// if no assets blacklisted anymore for this pubkey
+				// if no assets greylisted anymore for this pubkey
 				// we remove the pubkey
 				if len(assets) <= 0 {
 					delete(r.requests, pubkey)
