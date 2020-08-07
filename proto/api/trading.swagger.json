@@ -1804,6 +1804,10 @@
           "type": "string",
           "format": "uint64",
           "title": "The number of decimal / precision handled by this asset"
+        },
+        "maxFaucetAmountMint": {
+          "type": "string",
+          "title": "This maximum amount that can be request by a party through the builtin asset faucet at a time"
         }
       },
       "title": "A vega internal asset"

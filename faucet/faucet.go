@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net/http"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
@@ -28,6 +30,11 @@ const (
 	defaultVegaFaucetOwner = "vega-faucet"
 )
 
+var (
+	// ErrNotABuiltinAsset is raised when a party try to top up for a non builtin asset
+	ErrNotABuiltinAsset = errors.New("asset is not a builtin asset")
+)
+
 type Faucet struct {
 	*httprouter.Router
 
@@ -37,8 +44,9 @@ type Faucet struct {
 	s   *http.Server
 
 	// node connections stuff
-	clt  api.TradingClient
-	conn *grpc.ClientConn
+	clt     api.TradingClient
+	cltdata api.TradingDataClient
+	conn    *grpc.ClientConn
 }
 
 type MintRequest struct {
@@ -63,14 +71,16 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	}
 
 	client := api.NewTradingClient(conn)
+	clientData := api.NewTradingDataClient(conn)
 
 	f := &Faucet{
-		Router: httprouter.New(),
-		log:    log,
-		cfg:    cfg,
-		wal:    wal,
-		clt:    client,
-		conn:   conn,
+		Router:  httprouter.New(),
+		log:     log,
+		cfg:     cfg,
+		wal:     wal,
+		clt:     client,
+		cltdata: clientData,
+		conn:    conn,
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
@@ -99,6 +109,12 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
+	amount, err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset)
+	if err != nil {
+		writeError(w, newError("internal error"), http.StatusInternalServerError)
+		return
+	}
+
 	ce := &types.ChainEvent{
 		Nonce: makeNonce(),
 		Event: &types.ChainEvent_Builtin{
@@ -107,7 +123,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 					Deposit: &types.BuiltinAssetDeposit{
 						VegaAssetID: req.Asset,
 						PartyID:     req.Party,
-						Amount:      req.Amount,
+						Amount:      amount,
 					},
 				},
 			},
@@ -156,6 +172,25 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	writeSuccess(w, resp, http.StatusOK)
 }
 
+func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) (uint64, error) {
+	req := &api.AssetByIDRequest{
+		ID: asset,
+	}
+	resp, err := f.cltdata.AssetByID(ctx, req)
+	if err != nil {
+		return 0, err
+	}
+	source := resp.Asset.Source.GetBuiltinAsset()
+	if source != nil {
+		return 0, ErrNotABuiltinAsset
+	}
+	maxAmount, err := strconv.ParseUint(source.MaxFaucetAmountMint, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return min(amount, maxAmount), nil
+}
+
 func (f *Faucet) Start() error {
 	f.s = &http.Server{
 		Addr:    fmt.Sprintf("%s:%v", f.cfg.IP, f.cfg.Port),
@@ -164,7 +199,6 @@ func (f *Faucet) Start() error {
 
 	f.log.Info("starting faucet server", logging.String("address", f.s.Addr))
 	return f.s.ListenAndServe()
-
 }
 
 func (f *Faucet) Stop() error {
@@ -245,4 +279,11 @@ func makeNonce() uint64 {
 	max.SetUint64(^uint64(0))
 	nonce, _ := rand.Int(rand.Reader, max)
 	return nonce.Uint64()
+}
+
+func min(a, b uint64) uint64 {
+	if a > b {
+		return b
+	}
+	return a
 }
