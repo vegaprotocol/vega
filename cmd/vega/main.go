@@ -33,6 +33,10 @@ func main() {
 		Log: log,
 	})
 
+	cli.AddCommand(base, &faucetCommand{
+		log: log,
+	})
+
 	cli.AddCommand(base, &nodeWalletCommand{
 		Log: log,
 	})

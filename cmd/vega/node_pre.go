@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -44,8 +45,8 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/sha3"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -98,7 +99,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// for the user to type his password
 	var nodeWalletPassphrase string
 	if len(l.nodeWalletPassphrase) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase()
+		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
 	} else {
 		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
 	}
@@ -286,43 +287,73 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return err
 	}
 
+	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
+	if err != nil {
+		return err
+	}
+
+	h := func(key []byte) []byte {
+		hasher := sha3.New256()
+		hasher.Write([]byte(key))
+		return hasher.Sum(nil)
+	}
+
 	for _, v := range assetSrcs {
 		v := v
-		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
+		id := hex.EncodeToString(h([]byte(v.String())))
+		err := l.loadAsset(id, v)
 		if err != nil {
-			return fmt.Errorf("error instanciating asset %v\n", err)
+			return err
 		}
+	}
 
-		asset, err := l.assets.Get(aid)
-		if err != nil {
-			return fmt.Errorf("unable to get asset %v\n", err)
-		}
+	return nil
+}
 
-		// just a simple backoff here
-		err = backoff.Retry(
-			func() error {
-				err := asset.Validate()
-				if !asset.IsValid() {
-					return err
-				}
-				return nil
-			},
-			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-		)
-		if err != nil {
-			return fmt.Errorf("unable to instanciate new asset %v", err)
-		}
-		if err := l.assets.Enable(aid); err != nil {
-			return fmt.Errorf("unable to enable asset: %v", err)
-		}
+func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
+	aid, err := l.assets.NewAsset(id, v)
+	if err != nil {
+		return fmt.Errorf("error instanciating asset %v\n", err)
+	}
 
-		assetD := asset.ProtoAsset()
-		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
-			return fmt.Errorf("unable to enable asset in colateral: %v", err)
-		}
+	asset, err := l.assets.Get(aid)
+	if err != nil {
+		return fmt.Errorf("unable to get asset %v\n", err)
+	}
 
-		l.Log.Info("new asset added successfully",
-			logging.String("asset", asset.String()))
+	// just a simple backoff here
+	err = backoff.Retry(
+		func() error {
+			err := asset.Validate()
+			if !asset.IsValid() {
+				return err
+			}
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate new asset %v", err)
+	}
+	if err := l.assets.Enable(aid); err != nil {
+		return fmt.Errorf("unable to enable asset: %v", err)
+	}
+
+	assetD := asset.ProtoAsset()
+	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
+		return fmt.Errorf("unable to enable asset in colateral: %v", err)
+	}
+
+	l.Log.Info("new asset added successfully",
+		logging.String("asset", asset.String()))
+
+	// FIXME: this will be remove once we stop loading market from config
+	// here we replace the mkts assets symbols with ids
+	for _, v := range l.mktscfg {
+		sym := v.TradableInstrument.Instrument.GetFuture().Asset
+		if sym == assetD.Symbol {
+			v.TradableInstrument.Instrument.GetFuture().Asset = assetD.ID
+		}
 	}
 
 	return nil
@@ -456,8 +487,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	return
 }
 
-func getTerminalPassphrase() (string, error) {
-	fmt.Printf("please enter nodewallet passphrase:")
+func getTerminalPassphrase(what string) (string, error) {
+	fmt.Printf("please enter %v passphrase:", what)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
 		return "", err

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -36,7 +37,6 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (bool, error)
 	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 
@@ -138,28 +138,6 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}, nil
 }
 
-func (s *tradingService) NotifyTraderAccount(
-	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
-) (*protoapi.NotifyTraderAccountResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("NotifyTraderAccount", startTime)
-	if req == nil || req.Notif == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-	}
-	if len(req.Notif.TraderID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
-	}
-
-	submitted, err := s.accountService.NotifyTraderAccount(ctx, req.Notif)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	return &protoapi.NotifyTraderAccountResponse{
-		Submitted: submitted,
-	}, nil
-}
-
 func (s *tradingService) Withdraw(
 	ctx context.Context, req *protoapi.WithdrawRequest,
 ) (*protoapi.WithdrawResponse, error) {
@@ -256,12 +234,20 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
+	var ok = true
 	err = s.evtForwarder.Forward(req.Evt, req.PubKey)
 	if err != nil {
-		return nil, apiError(codes.AlreadyExists, err)
+		s.log.Error("unable to forward chain event",
+			logging.String("pubkey", req.PubKey),
+			logging.Error(err))
+		if err != evtforward.ErrEvtAlreadyExist {
+			return nil, apiError(codes.AlreadyExists, err)
+		}
+		ok = false
 	}
+
 	return &protoapi.PropagateChainEventResponse{
-		Success: true,
+		Success: ok,
 	}, nil
 }
 

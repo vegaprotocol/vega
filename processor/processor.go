@@ -57,8 +57,6 @@ type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
-	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
@@ -101,6 +99,7 @@ type Wallet interface {
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
 	Get(assetID string) (*assets.Asset, error)
+	IsEnabled(string) bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
@@ -157,7 +156,8 @@ type Collateral interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
-	DepositBuiltinAsset(*types.BuiltinAssetDeposit) error
+	DepositBuiltinAsset(*types.BuiltinAssetDeposit, uint64) error
+	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
 	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
 }
@@ -370,15 +370,6 @@ func (p *Processor) getOrderAmendment(payload []byte) (*types.OrderAmendment, er
 	return amendment, nil
 }
 
-func (p *Processor) getNotifyTraderAccount(payload []byte) (*types.NotifyTraderAccount, error) {
-	notif := &types.NotifyTraderAccount{}
-	err := proto.Unmarshal(payload, notif)
-	if err != nil {
-		return nil, errors.Wrap(err, "error decoding order to proto")
-	}
-	return notif, nil
-}
-
 func (p *Processor) getWithdraw(payload []byte) (*types.Withdraw, error) {
 	w := &types.Withdraw{}
 	err := proto.Unmarshal(payload, w)
@@ -543,8 +534,6 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrChainEventFromNonValidator
 		}
 		return nil
-	case blockchain.NotifyTraderAccountCommand:
-		return nil
 	}
 	return errors.New("unknown command when validating payload")
 }
@@ -577,7 +566,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		return p.exec.Withdraw(ctx, withdraw)
+		return p.processWithdraw(ctx, withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
@@ -619,12 +608,6 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 			return err
 		}
 		return p.processChainEvent(ctx, ce, pubkey)
-	case blockchain.NotifyTraderAccountCommand:
-		notify, err := p.getNotifyTraderAccount(data)
-		if err != nil {
-			return err
-		}
-		return p.exec.NotifyTraderAccount(ctx, notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)

@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"fmt"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -123,8 +124,9 @@ func createMarket(
 	definition *types.NewMarketConfiguration,
 	parameters *NetworkParameters,
 	currentTime time.Time,
+	assets Assets,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarket(currentTime, definition); err != nil {
+	if perr, err := validateNewMarket(currentTime, definition, assets); err != nil {
 		return nil, perr, err
 	}
 	instrument, err := createInstrument(parameters, definition.Instrument, definition.Metadata)
@@ -164,12 +166,20 @@ func createMarket(
 	return market, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateAsset(asset string) (types.ProposalError, error) {
-	//@TODO: call proper asset validation (once implemented)
+func validateAsset(assetID string, assets Assets) (types.ProposalError, error) {
+	_, err := assets.Get(assetID)
+	if err != nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
+	}
+	if !assets.IsEnabled(assetID) {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
+			fmt.Errorf("assets is not enabled %v", assetID)
+	}
+
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateFuture(currentTime time.Time, future *types.FutureProduct) (types.ProposalError, error) {
+func validateFuture(currentTime time.Time, future *types.FutureProduct, assets Assets) (types.ProposalError, error) {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, errors.Wrap(err, "future product maturity timestamp")
@@ -177,10 +187,10 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct) (types.P
 	if maturity.UnixNano() < currentTime.UnixNano() {
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
-	return validateAsset(future.Asset)
+	return validateAsset(future.Asset, assets)
 }
 
-func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration) (types.ProposalError, error) {
+func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets) (types.ProposalError, error) {
 	if instrument.BaseName == instrument.QuoteName {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, ErrInvalidSecurity
 	}
@@ -189,7 +199,7 @@ func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfi
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
 	case *types.InstrumentConfiguration_Future:
-		return validateFuture(currentTime, product.Future)
+		return validateFuture(currentTime, product.Future, assets)
 	default:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
 	}
@@ -207,8 +217,8 @@ func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalErr
 }
 
 // ValidateNewMarket checks new market proposal terms
-func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration) (types.ProposalError, error) {
-	if perr, err := validateInstrument(currentTime, terms.Instrument); err != nil {
+func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration, assets Assets) (types.ProposalError, error) {
+	if perr, err := validateInstrument(currentTime, terms.Instrument, assets); err != nil {
 		return perr, err
 	}
 	if perr, err := validateTradingMode(terms); err != nil {

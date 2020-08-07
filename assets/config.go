@@ -46,16 +46,6 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VegaToken",
-					Symbol:      "VGT",
-					TotalSupply: "10000000",
-					Decimals:    5,
-				},
-			},
-		},
-		&types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
 					Name:        "Ether",
 					Symbol:      "ETH",
 					TotalSupply: "110436690",
@@ -73,14 +63,32 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 				},
 			},
 		},
-		// this is the VUSD
 		&types.AssetSource{
-			Source: &types.AssetSource_Erc20{
-				Erc20: &types.ERC20{
-					ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					Name:        "VUSD",
+					Symbol:      "VUSD",
+					TotalSupply: "21000000",
+					Decimals:    5,
 				},
 			},
 		},
+		// this is the VUSD5
+		&types.AssetSource{
+			Source: &types.AssetSource_Erc20{
+				Erc20: &types.ERC20{
+					ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
+				},
+			},
+		},
+		// this is the VUSD
+		// &types.AssetSource{
+		// 	Source: &types.AssetSource_Erc20{
+		// 		Erc20: &types.ERC20{
+		// 			ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
+		// 		},
+		// 	},
+		// },
 	}}
 
 	m := jsonpb.Marshaler{

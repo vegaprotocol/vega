@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/banking/mocks"
 	"code.vegaprotocol.io/vega/logging"
@@ -13,6 +15,13 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	testAsset = assets.NewAsset(builtin.New("VGT", &types.BuiltinAsset{
+		Name:   "VEGA TOKEN",
+		Symbol: "VGT",
+	}))
 )
 
 type testEngine struct {
@@ -54,16 +63,17 @@ func testDepositSuccess(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	now := time.Now()
 	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "someasset",
+		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -81,16 +91,17 @@ func testDepositFailure(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	now := time.Now()
 	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "someasset",
+		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -106,10 +117,11 @@ func testDepositError(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	now := time.Now()
 	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "someasset",
+		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
@@ -119,7 +131,7 @@ func testDepositError(t *testing.T) {
 	eng.erc.err = expectError
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.EqualError(t, err, expectError.Error())
 }
 

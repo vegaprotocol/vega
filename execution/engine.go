@@ -44,7 +44,6 @@ type Engine struct {
 	log *logging.Logger
 
 	markets    map[string]*Market
-	party      *Party
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
@@ -76,7 +75,6 @@ func NewEngine(
 		markets:    map[string]*Market{},
 		time:       time,
 		collateral: collateral,
-		party:      NewParty(log, collateral, pmkts, broker),
 		idgen:      NewIDGen(),
 		broker:     broker,
 	}
@@ -117,30 +115,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Position, e.Config.Settlement, e.Config.Fee)
 	}
-}
-
-// NotifyTraderAccount notify the engine to create a new account for a party
-func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
-	return e.party.NotifyTraderAccount(ctx, notify)
-}
-
-// CreateGeneralAccounts creates new general accounts for a party
-func (e *Engine) CreateGeneralAccounts(partyID string) error {
-	ctx := context.TODO() // not sure if this call is used at all
-	_, err := e.party.MakeGeneralAccounts(ctx, partyID)
-	return err
-}
-
-func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
-	err := e.collateral.Withdraw(ctx, w.PartyID, w.Asset, w.Amount)
-	if err != nil {
-		e.log.Error("An error occurred during withdrawal",
-			logging.String("party-id", w.PartyID),
-			logging.Uint64("amount", w.Amount),
-			logging.Error(err),
-		)
-	}
-	return err
 }
 
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
@@ -191,7 +165,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Matching,
 		e.Config.Fee,
 		e.collateral,
-		e.party,
 		marketConfig,
 		now,
 		e.broker,
@@ -209,9 +182,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
-
-	// wire up party engine to new market
-	e.party.addMarket(*mkt.mkt)
 
 	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
 	return nil

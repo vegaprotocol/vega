@@ -24,6 +24,19 @@ const (
 )
 
 var (
+	TokenAssetSource = &types.AssetSource{
+		Source: &types.AssetSource_BuiltinAsset{
+			BuiltinAsset: &types.BuiltinAsset{
+				Name:        "VOTE",
+				Symbol:      "VOTE",
+				TotalSupply: "0",
+				Decimals:    5,
+			},
+		},
+	}
+)
+
+var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
 	// collateral engine have not been initialised properly
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
@@ -69,10 +82,7 @@ type Engine struct {
 
 	idbuf []byte
 
-	// TODO(): this is asset symbol -> asset as of now
-	// so it stay compatible with the current implemenetation which uses
-	// only the symbol to define an asset (e.g: VUSD, BTC, ETH)
-	// a separate issue will need to change that to id -> asset
+	// asset ID to asset
 	enabledAssets map[string]types.Asset
 }
 
@@ -119,19 +129,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 // parties to deposit funds
 // FIXME(): use the ID later on
 func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
-	if e.AssetExists(asset.Symbol) {
+	if e.AssetExists(asset.ID) {
 		return ErrAssetAlreadyEnabled
 	}
-	e.enabledAssets[asset.Symbol] = asset
+	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
-	infraFeeID := e.accountID("", "", asset.Symbol, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	infraFeeID := e.accountID("", "", asset.ID, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
 		infraFeeAcc := &types.Account{
 			Id:       infraFeeID,
-			Asset:    asset.Symbol,
+			Asset:    asset.ID,
 			Owner:    systemOwner,
 			Balance:  0,
 			MarketID: noMarket,
@@ -1210,6 +1220,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
@@ -1345,6 +1356,12 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 	return
 }
 
+func (e *Engine) HasGeneralAccount(party, asset string) bool {
+	_, err := e.GetAccountByID(
+		e.accountID("", party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	return err == nil
+}
+
 // Withdraw will remove the specified amount from the trader
 // general account
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) error {
@@ -1395,10 +1412,20 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	if acc.Asset == TokenAsset {
 		e.totalTokens -= uint64(acc.Balance)
 		e.totalTokens += uint64(balance)
+		e.updateVoteToken(ctx)
 	}
 	acc.Balance = balance
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
+}
+
+func (e *Engine) updateVoteToken(ctx context.Context) {
+	tokAsset := e.enabledAssets[TokenAsset]
+	totalSupplyStr := fmt.Sprintf("%v", e.totalTokens)
+	tokAsset.TotalSupply = totalSupplyStr
+	tokAsset.GetSource().GetBuiltinAsset().TotalSupply = totalSupplyStr
+	e.enabledAssets[TokenAsset] = tokAsset
+	e.broker.Send(events.NewAssetEvent(ctx, tokAsset))
 }
 
 // IncrementBalance will increment the balance of a given account
@@ -1411,6 +1438,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 	acc.Balance += inc
 	if acc.Asset == TokenAsset {
 		e.totalTokens += inc
+		e.updateVoteToken(ctx)
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
@@ -1426,6 +1454,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 	acc.Balance -= dec
 	if acc.Asset == TokenAsset {
 		e.totalTokens -= dec
+		e.updateVoteToken(ctx)
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil

@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 )
@@ -48,7 +49,6 @@ type marketTestSetup struct {
 	market   *proto.Market
 	ctrl     *gomock.Controller
 	core     *execution.Market
-	party    *execution.Party
 	accounts *accStub
 	proposal *ProposalStub
 	votes    *VoteStub
@@ -80,6 +80,16 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		broker,
 		time.Now(),
 	)
+
+	tokAsset := types.Asset{
+		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
+		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
+		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
+		Source:      collateral.TokenAssetSource,
+	}
+	colE.EnableAsset(context.Background(), tokAsset)
 
 	setup := &marketTestSetup{
 		market:     market,
@@ -153,6 +163,16 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 			Symbol: asset,
 		})
 	}
+
+	tokAsset := types.Asset{
+		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
+		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
+		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
+		Source:      collateral.TokenAssetSource,
+	}
+	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
 	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, mkts, execsetup.collateral, execsetup.broker)
 
