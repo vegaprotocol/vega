@@ -109,9 +109,9 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	amount, err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset)
+	err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset)
 	if err != nil {
-		writeError(w, newError("internal error"), http.StatusInternalServerError)
+		writeError(w, newError(err.Error()), http.StatusInternalServerError)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 					Deposit: &types.BuiltinAssetDeposit{
 						VegaAssetID: req.Asset,
 						PartyID:     req.Party,
-						Amount:      amount,
+						Amount:      req.Amount,
 					},
 				},
 			},
@@ -172,23 +172,27 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	writeSuccess(w, resp, http.StatusOK)
 }
 
-func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) (uint64, error) {
+func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) error {
 	req := &api.AssetByIDRequest{
 		ID: asset,
 	}
 	resp, err := f.cltdata.AssetByID(ctx, req)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	source := resp.Asset.Source.GetBuiltinAsset()
 	if source != nil {
-		return 0, ErrNotABuiltinAsset
+		return ErrNotABuiltinAsset
 	}
 	maxAmount, err := strconv.ParseUint(source.MaxFaucetAmountMint, 10, 64)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return min(amount, maxAmount), nil
+	if maxAmount < amount {
+		return fmt.Errorf("amount request exceed maximal amount of %v", maxAmount)
+	}
+
+	return nil
 }
 
 func (f *Faucet) Start() error {
@@ -279,11 +283,4 @@ func makeNonce() uint64 {
 	max.SetUint64(^uint64(0))
 	nonce, _ := rand.Int(rand.Reader, max)
 	return nonce.Uint64()
-}
-
-func min(a, b uint64) uint64 {
-	if a > b {
-		return b
-	}
-	return a
 }
