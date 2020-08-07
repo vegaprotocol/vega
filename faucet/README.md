@@ -59,7 +59,7 @@ POST /api/v1/mint
 ```json
 {
 	"party": "party_pub_key",
-	"amount": "amount_to_be_deposited",
+	"amount": amount_to_be_deposited,
 	"asset": "asset_id"
 }
 ```
