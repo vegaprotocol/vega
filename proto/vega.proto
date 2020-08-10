@@ -227,7 +227,8 @@ message Order {
   // Timestamp for when the order will expire, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`.
   int64 expiresAt = 12;
-  // Reference given for the order, this is typically used to retrieve an order submitted through consensus.
+  // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
+  // set internally by the node to return a unique reference identifier for the order submission.
   // TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
   string reference = 13;
   // If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified.
@@ -424,10 +425,10 @@ message TradeSet {
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle.
 message Candle {
-  // Timestamp for when the candle was last updated, in nanoseconds since the epoch.
+  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 1;
-  // An ISO 8601 datetime with nanosecond precision for when the candle was last updated.
+  // An ISO-8601 datetime with nanosecond precision for when the candle was last updated.
   string datetime = 2;
   // Highest price for trading during the candle interval.
   uint64 high = 3;
@@ -503,49 +504,68 @@ message PositionTrade {
 //
 // Vega domain specific statistics as reported by the node the caller is connected to.
 message Statistics {
+  // Current block height as reported by the Vega blockchain.
   uint64 blockHeight = 1;
+  // Current backlog length (number of transactions) that are waiting to be included in a block.
   uint64 backlogLength = 2;
+  // Total number of connected peers to this node.
   uint64 totalPeers = 3;
-
-  // ISO 8601 datetime, nanosecond precision
+  // Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision.
   string genesisTime = 4;
-
-  // ISO 8601 datetime, nanosecond precision
+  // Current system date and time formatted in ISO-8601 datetime format with nanosecond precision.
   string currentTime = 5;
-
-  // ISO 8601 datetime, nanosecond precision
+  // Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision.
   string vegaTime = 6;
-
+  // Status of the connection to the Vega blockchain.
+  // See [`ChainStatus`](#vega.ChainStatus).
   ChainStatus status = 7;
+  // Transactions per block.
   uint64 txPerBlock = 8;
+  // Average transaction size in bytes.
   uint64 averageTxBytes = 9;
+  // Average orders per block.
   uint64 averageOrdersPerBlock = 10;
+  // Trades emitted per second.
   uint64 tradesPerSecond = 11;
+  // Orders affected per second.
   uint64 ordersPerSecond = 12;
+  // Total markets on this Vega network.
   uint64 totalMarkets = 13;
+  // Total number of order amendments since genesis (on all markets).
   uint64 totalAmendOrder = 16;
+  // Total number of order cancellations since genesis (on all markets).
   uint64 totalCancelOrder = 17;
+  // Total number of order submissions since genesis (on all markets).
   uint64 totalCreateOrder = 18;
+  // Total number of orders affected since genesis (on all markets).
   uint64 totalOrders = 19;
+  // Total number of trades emitted since genesis (on all markets).
   uint64 totalTrades = 20;
+  // Current number of stream subscribers to order data.
   uint32 orderSubscriptions = 21;
+  // Current number of stream subscribers to trade data.
   uint32 tradeSubscriptions = 22;
+  // Current number of stream subscribers to candle-stick data.
   uint32 candleSubscriptions = 23;
+  // Current number of stream subscribers to market depth data.
   uint32 marketDepthSubscriptions = 24;
+  // Current number of stream subscribers to positions data.
   uint32 positionsSubscriptions = 25;
+  // Current number of stream subscribers to account data.
   uint32 accountSubscriptions = 26;
+  // Current number of stream subscribers to market data.
   uint32 marketDataSubscriptions = 27;
+  // The version hash of the Vega node software.
   string appVersionHash = 28;
+  // The version of the Vega node software.
   string appVersion = 29;
+  // The version of the underlying Vega blockchain.
   string chainVersion = 30;
-
-  // nanoseconds
+  // Current block duration, in nanoseconds.
   uint64 blockDuration = 31;
-
-  // ISO 8601 datetime, nanosecond precision
+  // Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision.
   string uptime = 32;
-
-  // Unique ID of the blockchain
+  // Unique identifier for the underlying Vega blockchain.
   string chainID = 33;
 }
 
@@ -565,74 +585,149 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
+// Withdraw
+//
+// Represents a withdrawal of an asset by a party on Vega.
 message Withdraw {
+  // Unique party identifier affecting the withdrawal.
   string partyID = 1;
+  // The total amount withdrawn, the amount is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 amount = 2;
+  // Asset identifier.
   string asset = 3;
 }
 
+// Order Amendment
+//
+// An order amendment is a request to amend or update an existing order on Vega.
 message OrderAmendment {
-  // required to find the order, not being updated
+  // The following three fields are used for lookup of the order only, cannot be amended by this command:
+
+  // Order identifier, this is required to find the order and will not be updated. Required field.
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
+  // Party identifier, this is required to find the order and will not be updated. Required field.
   string partyID = 2 [(validator.field) = {string_not_empty: true}];
+  // Market identifier, this is required to find the order and will not be updated.
   string marketID = 3;
 
-  // these can be amended
+  // The following fields can be altered during this command:
+
+  // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See [`Price`](#vega.Price).
   Price price = 4;
+  // Amend the size for the order by the delta specified.
+  // To reduce the size from the current value set a negative integer value.
+  // To increase the size from the current value, set a positive integer value.
+  // To leave the size unchanged set a value of zero.
   int64 sizeDelta = 5;
+  // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged.
+  // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   Timestamp expiresAt = 6;
+  // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
+  // See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
   Order.TimeInForce timeInForce = 7;
 }
 
+// Order Submission
+//
+// An order submission is a request to submit or create a new order on Vega.
 message OrderSubmission {
+  // Unique identifier for the order (set by the system after consensus).
   string id = 1 [(validator.field) = {string_not_empty: false}];
+  // Market identifier for the order. Required field.
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
+  // Party identifier for the order. Required field.
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
-  uint64 price = 4; // mandatory for Limit orders, not required for Market orders
+  // Price for the order, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  // Required field for Limit orders, however it is not required for market orders.
+  uint64 price = 4;
+  // Size for the order, for example, in a futures market the size equals the number of contracts. Cannot be negative.
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
+  // Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). Required field.
   Side side = 6 [(validator.field) = {is_in_enum: true}];
+  // Time in force indicates how long an order will remain active before it is executed or expires.
+  // See [`Order.TimeInForce`](#vega.Order.TimeInForce). Required field.
   Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
-  int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
+  // Timestamp for when the order will expire, in nanoseconds since the epoch.
+  // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+  // Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`.
+  int64 expiresAt = 8;
+  // Type for the order. See [`Order.Type`](#vega.Order.Type). Required field.
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
+  // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
+  // set internally by the node to return a unique reference identifier for the order submission.
+  // TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
   string reference = 10;
+  // Good for type for this order. Required field.
   Order.GoodFor goodFor = 11 [(validator.field) = {is_in_enum : true}];
 }
 
+
+// Order Cancellation
+//
+// An order cancellation is a request to cancel an existing order on Vega.
 message OrderCancellation {
+  // The following three fields are used for lookup of the order only:
+
+  // Unique identifier for the order (set by the system after consensus). Required field.
   string orderID = 1 [(validator.field) = {string_not_empty: true}];
+  // Market identifier for the order. Required field.
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
+  // Party identifier for the order. Required field.
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
 }
 
+// Node Registration
+//
+// Used to Register a node as a validator during network start-up.
 message NodeRegistration {
+  // Public key, required field.
   bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  // Public key for the blockchain, required field.
   bytes chainPubKey = 2 [(validator.field) = {string_not_empty: true}];
 }
 
+// Node Vote
+//
+// Used when a node votes for validating a given resource exists or is valid.
+// For example, an ERC20 deposit is valid and exists on ethereum.
 message NodeVote {
+  // Public key, required field.
   bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  // Reference, required field.
   string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
 
+// Account type
+//
+// Various collateral/account types as used by Vega.
 enum AccountType {
-  // the default variant for this enum
+  // Default value.
   ACCOUNT_TYPE_UNSPECIFIED = 0;
-  // This account is created to hold the insurance pool funds of a market.
+  // Insurance pool accounts contain insurance pool funds for a market.
   ACCOUNT_TYPE_INSURANCE = 1;
-  // This account is created to hold fund while settlement or mtm occur.
+  // Settlement accounts exist only during settlement or mark-to-market.
   ACCOUNT_TYPE_SETTLEMENT = 2;
-  // A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change
+  // Margin accounts contain margin funds for a party and each party will
+  // have multiple margin accounts, one for each market they have traded in.
+  //
+  // Margin account funds will alter as margin requirements on positions change.
   ACCOUNT_TYPE_MARGIN = 3;
-  // A party will have multiple general accounts, one for each assets they want
-  // to trade with. This is the account where the funds are initially deposited
-  // or withdrawn from. It's also the account where funds are taken to fullfill
-  // margin requirement or fees
+  // General accounts contains general funds for a party. A party will
+  // have multiple general accounts, one for each asset they want
+  // to trade with.
+  //
+  // General accounts are where funds are initially deposited or withdrawn from.
+  // It is also the account where funds are taken to fulfil fees and initial margin requirements.
   ACCOUNT_TYPE_GENERAL = 4;
-  //This account is created to hold fees earned for providing infrastructure
+  // Infrastructure accounts contain fees earned by providing infrastructure on Vega.
   ACCOUNT_TYPE_FEES_INFRASTRUCTURE = 5;
-  // This account is created to hold fees earned for providing liquidity
+  // Liquidity accounts contain fees earned by providing liquidity on Vega markets.
   ACCOUNT_TYPE_FEES_LIQUIDITY = 6;
-  // This account is created to hold fees earned for placing orders that sit on the book
+  // This account is created to hold fees earned by placing orders that sit on the book
+  // and are then matched with an incoming order to create a trade.
+  // These fees reward traders who provide the best priced liquidity that actually allows trading to take place.
   ACCOUNT_TYPE_FEES_MAKER = 7;
 
   // Note: If adding an enum value, add a matching entry in:
@@ -640,107 +735,195 @@ enum AccountType {
   //       - gateway/graphql/schema.graphql (enum AccountType)
 }
 
+// Account
+//
+// Represents an account for an asset on Vega for a particular owner or party.
 message Account {
+  // Unique identifier (used internally by Vega).
   string id = 1;
+  // The party that the account belongs to. Special values include `network`, which represents the network and is
+  // most commonly seen during liquidation of distressed trading positions.
   string owner = 2;
+  // Balance of the asset, the balance is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places. Balances cannot be negative.
   uint64 balance = 3;
+  // Asset identifier for the account.
   string asset = 4;
+  // Market identifier for the account. If [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty.
   string marketID = 5;
+  // The account type related to this account.
   AccountType type = 6;
 }
 
+// Financial Amount
+//
+// Asset value information used within a transfer.
 message FinancialAmount {
+  // A signed integer amount of asset.
   int64 amount = 1;
+  // Asset identifier.
   string asset = 2;
 }
 
+// Transfer Type
+//
+// Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place.
 enum TransferType {
+  // Default value, always invalid.
   TRANSFER_TYPE_UNSPECIFIED = 0;
+  // Loss.
   TRANSFER_TYPE_LOSS = 1;
+  // Win.
   TRANSFER_TYPE_WIN = 2;
+  // Close.
   TRANSFER_TYPE_CLOSE = 3;
+  // Mark to market loss.
   TRANSFER_TYPE_MTM_LOSS = 4;
+  // Mark to market win.
   TRANSFER_TYPE_MTM_WIN = 5;
+  // Margin too low.
   TRANSFER_TYPE_MARGIN_LOW = 6;
+  // Margin too high.
   TRANSFER_TYPE_MARGIN_HIGH = 7;
+  // Margin was confiscated.
   TRANSFER_TYPE_MARGIN_CONFISCATED = 8;
+  // Pay maker fee.
   TRANSFER_TYPE_MAKER_FEE_PAY = 9;
+  // Receive maker fee.
   TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
+  // Pay infrastructure fee.
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
+  // Pay liquidity fee.
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
 }
 
+// Transfer
+//
+// Represents a financial transfer within Vega.
 message Transfer {
+  // Party identifier for the owner of the transfer.
   string owner = 1;
+  // A financial amount (of an asset) to transfer.
   FinancialAmount amount = 2;
+  // The type of transfer, gives the reason for the transfer.
   TransferType type = 3;
+  // A minimum amount.
   int64 minAmount = 4;
 }
 
+// Transfer Request
+//
+// Represents a request to transfer from one set of accounts to another.
 message TransferRequest {
+  // One or more accounts to transfer from.
   repeated Account fromAccount = 1;
+  // One or more accounts to transfer to.
   repeated Account toAccount = 2;
+  // An amount to transfer for the asset.
   uint64 amount = 3;
+  // A minimum amount.
   uint64 minAmount = 4;
+  // Asset identifier.
   string asset = 5;
+  // A reference for auditing purposes.
   string reference = 6;
 }
 
+// Ledger Entry
+//
 message LedgerEntry {
+  // One or more accounts to transfer from.
   string fromAccount = 1;
+  // One or more accounts to transfer to.
   string toAccount = 2;
+  // An amount to transfer.
   uint64 amount = 3;
+  // A reference for auditing purposes.
   string reference = 4;
+  // Type of ledger entry.
   string type = 5;
+  // Timestamp for the time the ledger entry was created, in nanoseconds since the epoch.
+  // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 6;
 }
 
+// Transfer Balance
+//
 message TransferBalance {
+  // The account relating to the transfer
   Account account = 1;
+  // The balance relating to the transfer
   uint64 balance = 2;
 }
 
+// Transfer Response
+//
 message TransferResponse {
+  // One or more ledger entries representing the transfers.
   repeated LedgerEntry transfers = 1;
+  // One or more account balances.
   repeated TransferBalance balances = 2;
 }
 
+// Margin Levels
+//
+// Represents the margin levels for a party on a market at a given time.
 message MarginLevels {
+  // Maintenance margin value.
   uint64 maintenanceMargin = 1;
+  // Search level value.
   uint64 searchLevel = 2;
+  // Initial margin value.
   uint64 initialMargin = 3;
+  // Collateral release level value.
   uint64 collateralReleaseLevel = 4;
+  // Party identifier.
   string partyID = 5;
+  // Market identifier.
   string marketID = 6;
+  // Asset identifier.
   string asset = 7;
+  // Timestamp for the time the ledger entry was created, in nanoseconds since the epoch.
+  // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 8;
 }
 
+// Market Data
+//
+// Represents data generated by a market when open.
 message MarketData {
-  // the mark price (actually an unsgined int)
+  // Mark price, as an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 markPrice = 1;
-  // the highest price level on an order book for buy orders.
+  // Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 bestBidPrice = 2;
-  // the aggregated volume being bid at the best bid price.
+  // Aggregated volume being bid at the best bid price.
   uint64 bestBidVolume = 3;
-  // the lowest price level on an order book for offer orders.
+  // Lowest price level on an order book for offer orders.
   uint64 bestOfferPrice = 4;
-  // the aggregated volume being offered at the best offer price.
+  // Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
+  //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 bestOfferVolume = 5;
-  // the arithmetic average of the best bid price and best offer price.
+  // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
+  //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 midPrice = 6;
-  // market id of the associated mark price
+  // Market identifier for the data.
   string market = 7;
-  // time at which this mark price was relevant
+  // Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
+  // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 8;
-  // the sum of the size of all positions greater than 0.
+  // The sum of the size of all positions greater than 0 on the market.
   uint64 openInterest = 9;
-  // time in seconds until the end of the auction (0 if currently not in auction period)
+  // Time in seconds until the end of the auction (0 if currently not in auction period).
   int64 auctionEnd = 10;
-  // time until next auction (used in FBA's) - currently always 0
+  // Time until next auction (used in FBA's) - currently always 0.
   int64 auctionStart = 11;
 }
 
+// Error Detail
+//
+// Represents Vega domain specific error information over gRPC/Protobuf.
 message ErrorDetail {
   // a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
   int32 code = 1;
@@ -750,23 +933,27 @@ message ErrorDetail {
   string inner = 3;
 }
 
-// A transaction to be sent to vega
+// Transaction
+//
+// Represents a transaction to be sent to Vega.
 message Transaction {
-  // one of all the possible command, proto marshalled
+  // One of the set of Vega commands (proto marshalled).
   bytes inputData = 1;
-  // a random number used to provided uniqueness and prevents
-  // against replay attack
+  // A random number used to provided uniqueness and prevents
+  // against replay attack.
   uint64 nonce = 2;
-  // the sender of the transction
-  // any of the following would be valid
+  // The sender of the transaction.
+  // Any of the following would be valid:
   oneof from {
-    // the address of the sender
+    // The address of the sender.
     bytes address = 1001;
-    // the public key of the sender
+    // The public key of the sender.
     bytes pubKey = 1002;
   }
 }
 
+// Signature
+//
 // A signature to be authenticate a transaction
 // and to be verified by the vega network
 message Signature {
@@ -778,18 +965,20 @@ message Signature {
   uint64 version = 3;
 }
 
-
-// A bundle of a transaction, proto marshalled and it's signature
+// Signed Bundle
+//
+// A bundle of a transaction and it's signature.
 message SignedBundle {
-  // the transaction, proto marshalled
+  // Transaction payload (proto marshalled).
   bytes tx = 1;
-  // the signature authenticating the transaction
+  // The signature authenticating the transaction.
   Signature sig = 2;
 }
 
-
+// Node Signature Kind
+//
 // The kind of the signature created by a node
-// eg: for a new asset whitelisting, withdrawal
+// eg: for a new asset whitelisting, withdrawal.
 enum NodeSignatureKind {
   // represents a unspecified / missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
@@ -799,14 +988,16 @@ enum NodeSignatureKind {
   NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
 }
 
-// A message reprensenting a signature from a validator
+// Node signature
+//
+// A message representing a signature from a validator
 // meant to be used by foreign chain in order to recognise
 // a decision taken by the vega network.
 message NodeSignature {
-  // The ID of the resource being signed
+  // The identifier of the resource being signed.
   string ID = 1;
-  // The signature
+  // The signature.
   bytes sig = 2;
-  // The kind of resource being signed
+  // The kind of resource being signed.
   NodeSignatureKind kind = 3;
 }
