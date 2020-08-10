@@ -93,7 +93,6 @@ type BlockchainClient interface {
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
-	Withdraw(ctx context.Context, w *types.Withdraw) (bool, error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	Health() (*tmctypes.ResultHealth, error)
@@ -107,6 +106,7 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
+	PrepareWithdraw(context.Context, *types.Withdraw) error
 }
 
 // TransferResponseService ...

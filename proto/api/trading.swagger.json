@@ -84,7 +84,7 @@
         ]
       }
     },
-    "/governance/proposals/prepare": {
+    "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
         "operationId": "PrepareProposal",
@@ -923,39 +923,6 @@
         ]
       }
     },
-    "/parties/{withdraw.partyID}/withdrawals": {
-      "post": {
-        "summary": "Request withdrawal",
-        "operationId": "Withdraw",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiWithdrawResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "withdraw.partyID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiWithdrawRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/statistics": {
       "get": {
         "summary": "Get Statistics",
@@ -1522,6 +1489,15 @@
         }
       }
     },
+    "apiPrepareWithdrawResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "apiPropagateChainEventResponse": {
       "type": "object",
       "properties": {
@@ -1610,23 +1586,6 @@
           "type": "string",
           "format": "int64",
           "title": "nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`"
-        }
-      }
-    },
-    "apiWithdrawRequest": {
-      "type": "object",
-      "properties": {
-        "withdraw": {
-          "$ref": "#/definitions/vegaWithdraw"
-        }
-      }
-    },
-    "apiWithdrawResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean"
         }
       }
     },

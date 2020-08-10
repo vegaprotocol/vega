@@ -2,12 +2,22 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+)
+
+var (
+	// ErrMissingPartyID signals that the payload is expected to contain a party id
+	ErrMissingPartyID = errors.New("missing party id")
+	// usually the party specified an amount of 0
+	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
+	// ErrMissingAsset signals that an asset was required but not specified
+	ErrMissingAsset = errors.New("missing asset")
 )
 
 // AccountStore represents a store for the accounts
@@ -20,30 +30,22 @@ type AccountStore interface {
 	Unsubscribe(id uint64) error
 }
 
-// Blockchain represent en abstraction over a chain
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/accounts  Blockchain
-type Blockchain interface {
-	Withdraw(context.Context, *types.Withdraw) (bool, error)
-}
-
 // Svc implements the Account service business logic.
 type Svc struct {
 	Config
 	log           *logging.Logger
 	storage       AccountStore
-	chain         Blockchain
 	subscriberCnt int32
 }
 
 // NewService creates an instance of the accounts service.
-func NewService(log *logging.Logger, conf Config, storage AccountStore, chain Blockchain) *Svc {
+func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 	return &Svc{
 		Config:  conf,
 		log:     log,
 		storage: storage,
-		chain:   chain,
 	}
 }
 
@@ -61,11 +63,17 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-// Withdraw perform a request through he blockchain in order to remove collateral from
-// a trader general account
-// NOTE: this functionality should be removed in the future, or updated when we have test ether wallets.
-func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
-	return s.chain.Withdraw(ctx, w)
+func (s *Svc) PrepareWithdraw(ctx context.Context, w *types.Withdraw) error {
+	if len(w.PartyID) <= 0 {
+		return ErrMissingPartyID
+	}
+	if len(w.Asset) <= 0 {
+		return ErrMissingAsset
+	}
+	if w.Amount == 0 {
+		return ErrInvalidWithdrawAmount
+	}
+	return nil
 }
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {

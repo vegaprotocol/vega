@@ -77,14 +77,16 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 				},
 			},
 		},
+		// FIXME(): enable these assets again when we can supportt higher number
+		// of decimals and we have properly tester erc20 token support.
 		// this is the VUSD5
-		&types.AssetSource{
-			Source: &types.AssetSource_Erc20{
-				Erc20: &types.ERC20{
-					ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
-				},
-			},
-		},
+		// &types.AssetSource{
+		// 	Source: &types.AssetSource_Erc20{
+		// 		Erc20: &types.ERC20{
+		// 			ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
+		// 		},
+		// 	},
+		// },
 		// this is the VUSD
 		// &types.AssetSource{
 		// 	Source: &types.AssetSource_Erc20{
