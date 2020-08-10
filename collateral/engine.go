@@ -27,10 +27,11 @@ var (
 	TokenAssetSource = &types.AssetSource{
 		Source: &types.AssetSource_BuiltinAsset{
 			BuiltinAsset: &types.BuiltinAsset{
-				Name:        "VOTE",
-				Symbol:      "VOTE",
-				TotalSupply: "0",
-				Decimals:    5,
+				Name:                "VOTE",
+				Symbol:              "VOTE",
+				TotalSupply:         "0",
+				Decimals:            5,
+				MaxFaucetAmountMint: "1000",
 			},
 		},
 	}
