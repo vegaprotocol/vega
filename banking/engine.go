@@ -3,6 +3,7 @@ package banking
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -14,6 +15,10 @@ import (
 	"github.com/prometheus/common/log"
 
 	"golang.org/x/crypto/sha3"
+)
+
+var (
+	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -94,8 +99,18 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 	return e.finalizeAssetList(ctx, assetID)
 }
 
-func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, asset string, amount uint64) error {
-	return e.finalizeWithdrawal(ctx, party, asset, amount)
+func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID string, amount uint64) error {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", assetID),
+			logging.Error(err))
+		return err
+	}
+	if !asset.IsBuiltinAsset() {
+		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
+	}
+	return e.finalizeWithdrawal(ctx, party, assetID, amount)
 }
 
 func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64) error {
@@ -107,6 +122,10 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64)
 			logging.Error(err))
 		return err
 	}
+	if !asset.IsBuiltinAsset() {
+		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
+	}
+
 	aa := &assetAction{
 		id:       id(d, nonce),
 		state:    pendingState,
