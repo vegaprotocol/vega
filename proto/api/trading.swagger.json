@@ -1019,18 +1019,6 @@
     }
   },
   "definitions": {
-    "OrderGoodFor": {
-      "type": "string",
-      "enum": [
-        "GOOD_FOR_UNSPECIFIED",
-        "GOOD_FOR_CONTINUOUS",
-        "GOOD_FOR_AUCTION",
-        "GOOD_FOR_AUCTION_AND_CONTINUOUS"
-      ],
-      "default": "GOOD_FOR_UNSPECIFIED",
-      "description": "- GOOD_FOR_UNSPECIFIED: Default value, always invalid\n - GOOD_FOR_CONTINUOUS: Normal trading market\n - GOOD_FOR_AUCTION: Auction\n - GOOD_FOR_AUCTION_AND_CONTINUOUS: used for orders where the initiating party is the network (used for distressed traders)",
-      "title": "Good for\nWhat market state can this order be accepted in"
-    },
     "OrderStatus": {
       "type": "string",
       "enum": [
@@ -1054,10 +1042,12 @@
         "TIF_GTC",
         "TIF_GTT",
         "TIF_IOC",
-        "TIF_FOK"
+        "TIF_FOK",
+        "TIF_GFA",
+        "TIF_GFN"
       ],
       "default": "TIF_UNSPECIFIED",
-      "description": "See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.\n\n - TIF_UNSPECIFIED: Default value, can be valid for an amend\n - TIF_GTC: good til cancelled\n - TIF_GTT: good til time\n - TIF_IOC: immediate or cancel\n - TIF_FOK: fill or kill",
+      "description": "See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.\n\n - TIF_UNSPECIFIED: Default value, can be valid for an amend\n - TIF_GTC: good til cancelled\n - TIF_GTT: good til time\n - TIF_IOC: immediate or cancel\n - TIF_FOK: fill or kill\n - TIF_GFA: good for auction\n - TIF_GFN: good for Normal",
       "title": "Order Time in Force"
     },
     "ProposalState": {
@@ -2797,10 +2787,6 @@
           "type": "string",
           "format": "uint64",
           "title": "used internally, for orders submitted during auctions\nto keep track which auction batch this order falls under (required for fees calculation)"
-        },
-        "goodFor": {
-          "$ref": "#/definitions/OrderGoodFor",
-          "title": "Used to indicate which market state this order is good for"
         }
       }
     },
@@ -2913,9 +2899,6 @@
         },
         "reference": {
           "type": "string"
-        },
-        "goodFor": {
-          "$ref": "#/definitions/OrderGoodFor"
         }
       }
     },

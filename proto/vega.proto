@@ -112,6 +112,12 @@ message Order {
     // fill or kill
     TIF_FOK = 4;
 
+    // good for auction
+    TIF_GFA = 5;
+
+    // good for Normal
+    TIF_GFN = 6;
+
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
     //       - gateway/graphql/schema.graphql (enum OrderTimeInForce)
@@ -169,26 +175,6 @@ message Order {
     //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
-  // Good for
-  // What market state can this order be accepted in
-  enum GoodFor {
-    // Default value, always invalid
-    GOOD_FOR_UNSPECIFIED = 0;
-
-    // Normal trading market
-    GOOD_FOR_CONTINUOUS = 1;
-
-    // Auction
-    GOOD_FOR_AUCTION = 2;
-
-    // used for orders where the initiating party is the network (used for distressed traders)
-    GOOD_FOR_AUCTION_AND_CONTINUOUS = 3;
-
-    // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/helpers_enum.go
-    //       - gateway/graphql/schema.graphql (enum OrderType)
-  }
-
   string id = 1;
   string marketID = 2;
   string partyID = 3;
@@ -217,9 +203,6 @@ message Order {
   // used internally, for orders submitted during auctions
   // to keep track which auction batch this order falls under (required for fees calculation)
   uint64 batchID = 17;
-
-  // Used to indicate which market state this order is good for
-  GoodFor goodFor = 18;
 }
 
 message OrderCancellationConfirmation {
@@ -500,7 +483,6 @@ message OrderSubmission {
   int64 expiresAt = 8; // mandatory for GTT orders, not required for GTC, IOC, FOK
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
   string reference = 10;
-  Order.GoodFor goodFor = 11 [(validator.field) = {is_in_enum : true}];
 }
 
 message OrderCancellation {

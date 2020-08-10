@@ -650,53 +650,6 @@ func (e AccountType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// What market type is the order good for
-type GoodFor string
-
-const (
-	// Continuous trading where orders are processed and potentially matched on arrival
-	GoodForContinuous GoodFor = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the auction period
-	GoodForAuction GoodFor = "AUCTION"
-	// Continuous and auction, the order will work in both market types
-	GoodForAuctionAndContinuous GoodFor = "AUCTION_AND_CONTINUOUS"
-)
-
-var AllGoodFor = []GoodFor{
-	GoodForContinuous,
-	GoodForAuction,
-	GoodForAuctionAndContinuous,
-}
-
-func (e GoodFor) IsValid() bool {
-	switch e {
-	case GoodForContinuous, GoodForAuction, GoodForAuctionAndContinuous:
-		return true
-	}
-	return false
-}
-
-func (e GoodFor) String() string {
-	return string(e)
-}
-
-func (e *GoodFor) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = GoodFor(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid GoodFor", str)
-	}
-	return nil
-}
-
-func (e GoodFor) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // The interval for trade candles when subscribing via VEGA graphql, default is I15M
 type Interval string
 
@@ -1015,6 +968,10 @@ const (
 	// This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
 	// NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
 	OrderTimeInForceGtt OrderTimeInForce = "GTT"
+	// This order is only accepted during an auction period
+	OrderTimeInForceGfa OrderTimeInForce = "GFA"
+	// This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)
+	OrderTimeInForceGfn OrderTimeInForce = "GFN"
 )
 
 var AllOrderTimeInForce = []OrderTimeInForce{
@@ -1022,11 +979,13 @@ var AllOrderTimeInForce = []OrderTimeInForce{
 	OrderTimeInForceIoc,
 	OrderTimeInForceGtc,
 	OrderTimeInForceGtt,
+	OrderTimeInForceGfa,
+	OrderTimeInForceGfn,
 }
 
 func (e OrderTimeInForce) IsValid() bool {
 	switch e {
-	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt:
+	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt, OrderTimeInForceGfa, OrderTimeInForceGfn:
 		return true
 	}
 	return false
