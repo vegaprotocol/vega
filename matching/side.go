@@ -33,8 +33,7 @@ func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
-			if order.GoodFor != types.Order_GOOD_FOR_AUCTION &&
-				order.GoodFor != types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS {
+			if order.TimeInForce == types.Order_TIF_GFN {
 				ordersToCancel = append(ordersToCancel, order)
 			}
 

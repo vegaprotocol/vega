@@ -190,36 +190,6 @@ func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 	}
 }
 
-// convertOrderTypeToProto converts a GraphQL enum to a Proto enum
-func convertGoodForToProto(gf GoodFor) (types.Order_GoodFor, error) {
-	switch gf {
-	case GoodForAuction:
-		return types.Order_GOOD_FOR_AUCTION, nil
-	case GoodForContinuous:
-		return types.Order_GOOD_FOR_CONTINUOUS, nil
-	case GoodForAuctionAndContinuous:
-		return types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS, nil
-	default:
-		err := fmt.Errorf("failed to convert GoodFor from GraphQL to Proto: %v", gf)
-		return types.Order_GOOD_FOR_UNSPECIFIED, err
-	}
-}
-
-// convertGoodForFromProto converts a Proto enum to a GraphQL enum
-func convertGoodForFromProto(gf types.Order_GoodFor) (GoodFor, error) {
-	switch gf {
-	case types.Order_GOOD_FOR_AUCTION:
-		return GoodForAuction, nil
-	case types.Order_GOOD_FOR_AUCTION_AND_CONTINUOUS:
-		return GoodForAuctionAndContinuous, nil
-	case types.Order_GOOD_FOR_CONTINUOUS:
-		return GoodForContinuous, nil
-	default:
-		err := fmt.Errorf("failed to convert GoodFor from Proto to GraphQL: %v", gf)
-		return GoodForContinuous, err
-	}
-}
-
 // convertMarketStateFromProto converts a Proto enum to a GraphQL enum
 func convertMarketStateFromProto(ms types.MarketState) (MarketState, error) {
 	switch ms {
@@ -478,6 +448,10 @@ func convertOrderTimeInForceToProto(x OrderTimeInForce) (types.Order_TimeInForce
 		return types.Order_TIF_GTC, nil
 	case OrderTimeInForceGtt:
 		return types.Order_TIF_GTT, nil
+	case OrderTimeInForceGfa:
+		return types.Order_TIF_GFA, nil
+	case OrderTimeInForceGfn:
+		return types.Order_TIF_GFN, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderTimeInForce from GraphQL to Proto: %v", x)
 		return types.Order_TIF_UNSPECIFIED, err
@@ -495,6 +469,10 @@ func convertOrderTimeInForceFromProto(x types.Order_TimeInForce) (OrderTimeInFor
 		return OrderTimeInForceGtc, nil
 	case types.Order_TIF_GTT:
 		return OrderTimeInForceGtt, nil
+	case types.Order_TIF_GFA:
+		return OrderTimeInForceGfa, nil
+	case types.Order_TIF_GFN:
+		return OrderTimeInForceGfn, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderTimeInForce from Proto to GraphQL: %v", x)
 		return OrderTimeInForceGtc, err
