@@ -354,9 +354,9 @@ func testProcessCommandSuccess(t *testing.T) {
 		blockchain.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		blockchain.AmendOrderCommand: &types.OrderAmendment{
-			PartyID: party,
-		},
+		// blockchain.AmendOrderCommand: &types.OrderAmendment{
+		// 	PartyID: party,
+		// },
 		blockchain.ProposeCommand: &types.Proposal{
 			PartyID: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
@@ -370,7 +370,7 @@ func testProcessCommandSuccess(t *testing.T) {
 	}
 	zero := uint64(0)
 	proc := getTestProcessor(t)
-	proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
+	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
@@ -381,7 +381,7 @@ func testProcessCommandSuccess(t *testing.T) {
 
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
-	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()

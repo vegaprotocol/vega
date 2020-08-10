@@ -559,7 +559,9 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		return p.amendOrder(ctx, order)
+		_ = order
+		return errors.New("not implemented")
+		// return p.amendOrder(ctx, order)
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
