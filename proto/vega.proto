@@ -115,7 +115,7 @@ message Order {
     // good for auction
     TIF_GFA = 5;
 
-    // good for Normal
+    // good for normal
     TIF_GFN = 6;
 
     // Note: If adding an enum value, add a matching entry in:

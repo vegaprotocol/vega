@@ -3837,7 +3837,7 @@ See [What order types are available to trade on Vega?](https://docs.vega.xyz/doc
 | TIF_IOC | 3 | immediate or cancel |
 | TIF_FOK | 4 | fill or kill |
 | TIF_GFA | 5 | good for auction |
-| TIF_GFN | 6 | good for Normal |
+| TIF_GFN | 6 | good for normal |
 
 
 

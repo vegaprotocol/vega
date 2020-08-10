@@ -437,7 +437,7 @@ const (
 	Order_TIF_FOK Order_TimeInForce = 4
 	// good for auction
 	Order_TIF_GFA Order_TimeInForce = 5
-	// good for Normal
+	// good for normal
 	Order_TIF_GFN Order_TimeInForce = 6
 )
 
