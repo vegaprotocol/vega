@@ -92,16 +92,17 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
 	now := time.Now()
-	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now, nil)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "someasset",
+		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(bad)
+	err := eng.DepositBuiltinAsset(bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -113,15 +114,9 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
-	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	bad = &types.BuiltinAssetDeposit{
-		VegaAssetID: "someasset",
-		PartyID:     "someparty",
-		Amount:      42,
-	}
 
 	// call the deposit function
-	err = eng.DepositBuiltinAsset(bad)
+	err = eng.DepositBuiltinAsset(bad, 43)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
