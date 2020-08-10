@@ -77,6 +77,8 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 				},
 			},
 		},
+		// FIXME(): enable these assets again when we can supportt higher number
+		// of decimals and we have properly tester erc20 token support.
 		// this is the VUSD5
 		// &types.AssetSource{
 		// 	Source: &types.AssetSource_Erc20{
