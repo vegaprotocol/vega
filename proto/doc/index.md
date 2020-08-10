@@ -2960,17 +2960,17 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.Account"></a>
 
 ### Account
-
+Represents an account for an asset on Vega for a particular owner or party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| owner | [string](#string) |  |  |
-| balance | [uint64](#uint64) |  |  |
-| asset | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| type | [AccountType](#vega.AccountType) |  |  |
+| id | [string](#string) |  | Unique identifier (used internally by Vega). |
+| owner | [string](#string) |  | The party that the account belongs to. Special values include `network`, which represents the network and is most commonly seen during liquidation of distressed trading positions. |
+| balance | [uint64](#uint64) |  | Balance of the asset, the balance is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. Balances cannot be negative. |
+| asset | [string](#string) |  | Asset identifier for the account. |
+| marketID | [string](#string) |  | Market identifier for the account. If [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty. |
+| type | [AccountType](#vega.AccountType) |  | The account type related to this account. |
 
 
 
@@ -2986,10 +2986,10 @@ to emit an event with the indicative price/volume per market
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  | The market this state is related to |
+| marketID | [string](#string) |  | The market identifier for which this state relates to. |
 | indicativePrice | [uint64](#uint64) |  | The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now. |
 | indicativeVolume | [uint64](#uint64) |  | The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now. |
-| auctionStart | [int64](#int64) |  | The timestamp at which the auction started |
+| auctionStart | [int64](#int64) |  | The timestamp at which the auction started. |
 | auctionEnd | [int64](#int64) |  | The timestamp at which the auction is meant to stop. |
 
 
@@ -3000,19 +3000,20 @@ to emit an event with the indicative price/volume per market
 <a name="vega.Candle"></a>
 
 ### Candle
-
+Represents the high, low, open, and closing prices for an interval of trading,
+referred to commonly as a candlestick or candle.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
-| datetime | [string](#string) |  | ISO 8601 datetime |
-| high | [uint64](#uint64) |  |  |
-| low | [uint64](#uint64) |  |  |
-| open | [uint64](#uint64) |  |  |
-| close | [uint64](#uint64) |  |  |
-| volume | [uint64](#uint64) |  |  |
-| interval | [Interval](#vega.Interval) |  |  |
+| timestamp | [int64](#int64) |  | Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| datetime | [string](#string) |  | An ISO-8601 datetime with nanosecond precision for when the candle was last updated. |
+| high | [uint64](#uint64) |  | Highest price for trading during the candle interval. |
+| low | [uint64](#uint64) |  | Lowest price for trading during the candle interval. |
+| open | [uint64](#uint64) |  | Open trade price. |
+| close | [uint64](#uint64) |  | Closing trade price. |
+| volume | [uint64](#uint64) |  | Total trading volume during the candle interval. |
+| interval | [Interval](#vega.Interval) |  | Time interval for the candle. See [`Interval`](#vega.Interval). |
 
 
 
@@ -3022,7 +3023,7 @@ to emit an event with the indicative price/volume per market
 <a name="vega.ErrorDetail"></a>
 
 ### ErrorDetail
-
+Represents Vega domain specific error information over gRPC/Protobuf.
 
 
 | Field | Type | Label | Description |
@@ -3039,14 +3040,14 @@ to emit an event with the indicative price/volume per market
 <a name="vega.Fee"></a>
 
 ### Fee
-The fees being paid by a party, resulting from a trade
+Represents any fees paid by a party, resulting from a trade.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| makerFee | [uint64](#uint64) |  | A fee being paid to the non-aggressor party of the trade |
-| infrastructureFee | [uint64](#uint64) |  | A fee being paid to maintaining the vega infrastructure |
-| liquidityFee | [uint64](#uint64) |  | A fee being paid to the market makers |
+| makerFee | [uint64](#uint64) |  | Fee amount paid to the non-aggressive party of the trade. |
+| infrastructureFee | [uint64](#uint64) |  | Fee amount paid for maintaining the Vega infrastructure. |
+| liquidityFee | [uint64](#uint64) |  | Fee amount paid to market makers. |
 
 
 
@@ -3056,13 +3057,13 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.FinancialAmount"></a>
 
 ### FinancialAmount
-
+Asset value information used within a transfer.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| amount | [int64](#int64) |  |  |
-| asset | [string](#string) |  |  |
+| amount | [int64](#int64) |  | A signed integer amount of asset. |
+| asset | [string](#string) |  | Asset identifier. |
 
 
 
@@ -3072,17 +3073,17 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.LedgerEntry"></a>
 
 ### LedgerEntry
-
+Represents a ledger entry on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| fromAccount | [string](#string) |  |  |
-| toAccount | [string](#string) |  |  |
-| amount | [uint64](#uint64) |  |  |
-| reference | [string](#string) |  |  |
-| type | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| fromAccount | [string](#string) |  | One or more accounts to transfer from. |
+| toAccount | [string](#string) |  | One or more accounts to transfer to. |
+| amount | [uint64](#uint64) |  | An amount to transfer. |
+| reference | [string](#string) |  | A reference for auditing purposes. |
+| type | [string](#string) |  | Type of ledger entry. |
+| timestamp | [int64](#int64) |  | Timestamp for the time the ledger entry was created, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 
 
 
@@ -3092,19 +3093,19 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.MarginLevels"></a>
 
 ### MarginLevels
-
+Represents the margin levels for a party on a market at a given time.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maintenanceMargin | [uint64](#uint64) |  |  |
-| searchLevel | [uint64](#uint64) |  |  |
-| initialMargin | [uint64](#uint64) |  |  |
-| collateralReleaseLevel | [uint64](#uint64) |  |  |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
+| maintenanceMargin | [uint64](#uint64) |  | Maintenance margin value. |
+| searchLevel | [uint64](#uint64) |  | Search level value. |
+| initialMargin | [uint64](#uint64) |  | Initial margin value. |
+| collateralReleaseLevel | [uint64](#uint64) |  | Collateral release level value. |
+| partyID | [string](#string) |  | Party identifier. |
+| marketID | [string](#string) |  | Market identifier. |
+| asset | [string](#string) |  | Asset identifier. |
+| timestamp | [int64](#int64) |  | Timestamp for the time the ledger entry was created, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 
 
 
@@ -3114,22 +3115,22 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.MarketData"></a>
 
 ### MarketData
-
+Represents data generated by a market when open.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| markPrice | [uint64](#uint64) |  | the mark price (actually an unsgined int) |
-| bestBidPrice | [uint64](#uint64) |  | the highest price level on an order book for buy orders. |
-| bestBidVolume | [uint64](#uint64) |  | the aggregated volume being bid at the best bid price. |
-| bestOfferPrice | [uint64](#uint64) |  | the lowest price level on an order book for offer orders. |
-| bestOfferVolume | [uint64](#uint64) |  | the aggregated volume being offered at the best offer price. |
-| midPrice | [uint64](#uint64) |  | the arithmetic average of the best bid price and best offer price. |
-| market | [string](#string) |  | market id of the associated mark price |
-| timestamp | [int64](#int64) |  | time at which this mark price was relevant |
-| openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
-| auctionEnd | [int64](#int64) |  | time in seconds until the end of the auction (0 if currently not in auction period) |
-| auctionStart | [int64](#int64) |  | time until next auction (used in FBA&#39;s) - currently always 0 |
+| markPrice | [uint64](#uint64) |  | Mark price, as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| bestBidPrice | [uint64](#uint64) |  | Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| bestBidVolume | [uint64](#uint64) |  | Aggregated volume being bid at the best bid price. |
+| bestOfferPrice | [uint64](#uint64) |  | Lowest price level on an order book for offer orders. |
+| bestOfferVolume | [uint64](#uint64) |  | Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly // formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| midPrice | [uint64](#uint64) |  | Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly // formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| market | [string](#string) |  | Market identifier for the data. |
+| timestamp | [int64](#int64) |  | Timestamp at which this mark price was relevant, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| openInterest | [uint64](#uint64) |  | The sum of the size of all positions greater than 0 on the market. |
+| auctionEnd | [int64](#int64) |  | Time in seconds until the end of the auction (0 if currently not in auction period). |
+| auctionStart | [int64](#int64) |  | Time until next auction (used in FBA&#39;s) - currently always 0. |
 
 
 
@@ -3139,14 +3140,14 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.MarketDepth"></a>
 
 ### MarketDepth
-
+Represents market depth or order book data for the specified market on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| buy | [PriceLevel](#vega.PriceLevel) | repeated |  |
-| sell | [PriceLevel](#vega.PriceLevel) | repeated |  |
+| marketID | [string](#string) |  | Market identifier. |
+| buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of price levels for the buy side of the book. |
+| sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of price levels for the sell side of the book. |
 
 
 
@@ -3156,13 +3157,13 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.NodeRegistration"></a>
 
 ### NodeRegistration
-
+Used to Register a node as a validator during network start-up.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pubKey | [bytes](#bytes) |  |  |
-| chainPubKey | [bytes](#bytes) |  |  |
+| pubKey | [bytes](#bytes) |  | Public key, required field. |
+| chainPubKey | [bytes](#bytes) |  | Public key for the blockchain, required field. |
 
 
 
@@ -3172,16 +3173,14 @@ The fees being paid by a party, resulting from a trade
 <a name="vega.NodeSignature"></a>
 
 ### NodeSignature
-A message reprensenting a signature from a validator
-meant to be used by foreign chain in order to recognise
-a decision taken by the vega network.
+Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  | The ID of the resource being signed |
-| sig | [bytes](#bytes) |  | The signature |
-| kind | [NodeSignatureKind](#vega.NodeSignatureKind) |  | The kind of resource being signed |
+| ID | [string](#string) |  | The identifier of the resource being signed. |
+| sig | [bytes](#bytes) |  | The signature. |
+| kind | [NodeSignatureKind](#vega.NodeSignatureKind) |  | The kind of resource being signed. |
 
 
 
@@ -3191,13 +3190,14 @@ a decision taken by the vega network.
 <a name="vega.NodeVote"></a>
 
 ### NodeVote
-
+Used when a node votes for validating a given resource exists or is valid.
+For example, an ERC20 deposit is valid and exists on ethereum.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pubKey | [bytes](#bytes) |  |  |
-| reference | [string](#string) |  |  |
+| pubKey | [bytes](#bytes) |  | Public key, required field. |
+| reference | [string](#string) |  | Reference, required field. |
 
 
 
@@ -3207,28 +3207,28 @@ a decision taken by the vega network.
 <a name="vega.Order"></a>
 
 ### Order
-
+An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| side | [Side](#vega.Side) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
-| remaining | [uint64](#uint64) |  |  |
-| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| type | [Order.Type](#vega.Order.Type) |  |  |
-| createdAt | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
-| status | [Order.Status](#vega.Order.Status) |  | If `status` is `STATUS_REJECTED`, check `reason`. |
-| expiresAt | [int64](#int64) |  |  |
-| reference | [string](#string) |  |  |
-| reason | [OrderError](#vega.OrderError) |  |  |
-| updatedAt | [int64](#int64) |  |  |
-| version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
-| batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
+| id | [string](#string) |  | Unique identifier for the order (set by the system after consensus). |
+| marketID | [string](#string) |  | Market identifier for the order. |
+| partyID | [string](#string) |  | Party identifier for the order. |
+| side | [Side](#vega.Side) |  | Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). |
+| price | [uint64](#uint64) |  | Price for the order, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| size | [uint64](#uint64) |  | Size for the order, for example, in a futures market the size equals the number of contracts. |
+| remaining | [uint64](#uint64) |  | Size remaining, when this reaches 0 then the order is fully filled and status becomes STATUS_FILLED. |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Time in force indicates how long an order will remain active before it is executed or expires. See [`Order.TimeInForce`](#vega.Order.TimeInForce). |
+| type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). |
+| createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| status | [Order.Status](#vega.Order.Status) |  | The current status for the order. See [`Order.Status`](#vega.Order.Status). For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field. |
+| expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
+| reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. TODO(cdm): Section on how order references work on Vega in docs.vega.xyz |
+| reason | [OrderError](#vega.OrderError) |  | If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified. The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors. |
+| updatedAt | [int64](#int64) |  | Timestamp for when the Order was last updated, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| version | [uint64](#uint64) |  | The version for the order, initial value is version 1 and is incremented after each successful amend |
+| batchID | [uint64](#uint64) |  | Batch identifier for the order, used internally for orders submitted during auctions to keep track of the auction batch this order falls under (required for fees calculation). |
 
 
 
@@ -3238,18 +3238,20 @@ a decision taken by the vega network.
 <a name="vega.OrderAmendment"></a>
 
 ### OrderAmendment
+An order amendment is a request to amend or update an existing order on Vega.
 
+The following three fields are used for lookup of the order only, cannot be amended by this command:
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  | required to find the order, not being updated |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| price | [Price](#vega.Price) |  | these can be amended |
-| sizeDelta | [int64](#int64) |  |  |
-| expiresAt | [Timestamp](#vega.Timestamp) |  |  |
-| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| orderID | [string](#string) |  | Order identifier, this is required to find the order and will not be updated. Required field. |
+| partyID | [string](#string) |  | Party identifier, this is required to find the order and will not be updated. Required field. |
+| marketID | [string](#string) |  | Market identifier, this is required to find the order and will not be updated. |
+| price | [Price](#vega.Price) |  | Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See [`Price`](#vega.Price). |
+| sizeDelta | [int64](#int64) |  | Amend the size for the order by the delta specified. To reduce the size from the current value set a negative integer value. To increase the size from the current value, set a positive integer value. To leave the size unchanged set a value of zero. |
+| expiresAt | [Timestamp](#vega.Timestamp) |  | Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged. See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`. |
 
 
 
@@ -3259,14 +3261,16 @@ a decision taken by the vega network.
 <a name="vega.OrderCancellation"></a>
 
 ### OrderCancellation
+An order cancellation is a request to cancel an existing order on Vega.
 
+The following three fields are used for lookup of the order only:
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
+| orderID | [string](#string) |  | Unique identifier for the order (set by the system after consensus). Required field. |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| partyID | [string](#string) |  | Party identifier for the order. Required field. |
 
 
 
@@ -3276,12 +3280,12 @@ a decision taken by the vega network.
 <a name="vega.OrderCancellationConfirmation"></a>
 
 ### OrderCancellationConfirmation
-
+Used when cancelling an Order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [Order](#vega.Order) |  |  |
+| order | [Order](#vega.Order) |  | The order that was cancelled. |
 
 
 
@@ -3291,14 +3295,14 @@ a decision taken by the vega network.
 <a name="vega.OrderConfirmation"></a>
 
 ### OrderConfirmation
-
+Used when confirming an Order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [Order](#vega.Order) |  |  |
-| trades | [Trade](#vega.Trade) | repeated |  |
-| passiveOrdersAffected | [Order](#vega.Order) | repeated |  |
+| order | [Order](#vega.Order) |  | The order that was confirmed. |
+| trades | [Trade](#vega.Trade) | repeated | 0 or more trades that were emitted. |
+| passiveOrdersAffected | [Order](#vega.Order) | repeated | 0 or more passive orders that were affected. |
 
 
 
@@ -3308,21 +3312,21 @@ a decision taken by the vega network.
 <a name="vega.OrderSubmission"></a>
 
 ### OrderSubmission
-
+An order submission is a request to submit or create a new order on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  | mandatory for Limit orders, not required for Market orders |
-| size | [uint64](#uint64) |  |  |
-| side | [Side](#vega.Side) |  |  |
-| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | mandatory for GTT orders, not required for GTC, IOC, FOK |
-| type | [Order.Type](#vega.Order.Type) |  |  |
-| reference | [string](#string) |  |  |
+| id | [string](#string) |  | Unique identifier for the order (set by the system after consensus). |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| partyID | [string](#string) |  | Party identifier for the order. Required field. |
+| price | [uint64](#uint64) |  | Price for the order, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. Required field for Limit orders, however it is not required for market orders. |
+| size | [uint64](#uint64) |  | Size for the order, for example, in a futures market the size equals the number of contracts. Cannot be negative. |
+| side | [Side](#vega.Side) |  | Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). Required field. |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Time in force indicates how long an order will remain active before it is executed or expires. See [`Order.TimeInForce`](#vega.Order.TimeInForce). Required field. |
+| expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
+| type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). Required field. |
+| reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. TODO(cdm): Section on how order references work on Vega in docs.vega.xyz |
 
 
 
@@ -3332,12 +3336,12 @@ a decision taken by the vega network.
 <a name="vega.Party"></a>
 
 ### Party
-
+A party represents an entity who wishes to trade on or query a Vega network.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
+| id | [string](#string) |  | A unique identifier for the party, typically represented by a public key. |
 
 
 
@@ -3347,17 +3351,17 @@ a decision taken by the vega network.
 <a name="vega.Position"></a>
 
 ### Position
-
+Represents position data for a party on the specified market on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| openVolume | [int64](#int64) |  |  |
-| realisedPNL | [int64](#int64) |  |  |
-| unrealisedPNL | [int64](#int64) |  |  |
-| averageEntryPrice | [uint64](#uint64) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
+| partyID | [string](#string) |  | Party identifier. |
+| openVolume | [int64](#int64) |  | Open volume for the position. Value is signed &#43;ve for long and -ve for short. |
+| realisedPNL | [int64](#int64) |  | Realised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. |
+| unrealisedPNL | [int64](#int64) |  | Unrealised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. |
+| averageEntryPrice | [uint64](#uint64) |  | Average entry price for the position, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
 
 
 
@@ -3372,8 +3376,8 @@ a decision taken by the vega network.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| volume | [int64](#int64) |  |  |
-| price | [uint64](#uint64) |  |  |
+| volume | [int64](#int64) |  | Volume for the position trade. Value is signed &#43;ve for long and -ve for short. |
+| price | [uint64](#uint64) |  | Price for the position trade, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
 
 
 
@@ -3388,7 +3392,7 @@ a decision taken by the vega network.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [uint64](#uint64) |  |  |
+| value | [uint64](#uint64) |  | Price value, given as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
 
 
 
@@ -3398,15 +3402,15 @@ a decision taken by the vega network.
 <a name="vega.PriceLevel"></a>
 
 ### PriceLevel
-
+Represents a price level from market depth or order book data.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| price | [uint64](#uint64) |  |  |
-| numberOfOrders | [uint64](#uint64) |  |  |
-| volume | [uint64](#uint64) |  |  |
-| cumulativeVolume | [uint64](#uint64) |  |  |
+| price | [uint64](#uint64) |  | Price for the price level, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| numberOfOrders | [uint64](#uint64) |  | Number of orders at the price level. |
+| volume | [uint64](#uint64) |  | Volume at the price level. |
+| cumulativeVolume | [uint64](#uint64) |  | Cumulative volume at the price level. |
 
 
 
@@ -3416,14 +3420,14 @@ a decision taken by the vega network.
 <a name="vega.RiskFactor"></a>
 
 ### RiskFactor
-
+Risk factors are used to calculate the current risk associated with orders trading on a given market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| market | [string](#string) |  |  |
-| short | [double](#double) |  |  |
-| long | [double](#double) |  |  |
+| market | [string](#string) |  | Market ID that relates to this risk factor. |
+| short | [double](#double) |  | Short Risk factor value. |
+| long | [double](#double) |  | Long Risk factor value. |
 
 
 
@@ -3433,15 +3437,15 @@ a decision taken by the vega network.
 <a name="vega.RiskResult"></a>
 
 ### RiskResult
-
+Risk results are calculated internally by Vega to attempt to maintain safe trading.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| updatedTimestamp | [int64](#int64) |  | timestamp when these risk factors were generated |
-| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market |
-| nextUpdateTimestamp | [int64](#int64) |  | time when risk factors are expected to change (or empty if risk factors are continually updated) |
-| predictedNextRiskFactors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | predicted risk factors at next change (what they&#39;d be if the change occurred now) |
+| updatedTimestamp | [int64](#int64) |  | Timestamp for when risk factors were generated. |
+| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market. |
+| nextUpdateTimestamp | [int64](#int64) |  | Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated). |
+| predictedNextRiskFactors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | Predicted risk factors at next change (what they would be if the change occurred now). |
 
 
 
@@ -3501,13 +3505,13 @@ and to be verified by the vega network
 <a name="vega.SignedBundle"></a>
 
 ### SignedBundle
-A bundle of a transaction, proto marshalled and it&#39;s signature
+A bundle of a transaction and it&#39;s signature.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tx | [bytes](#bytes) |  | the transaction, proto marshalled |
-| sig | [Signature](#vega.Signature) |  | the signature authenticating the transaction |
+| tx | [bytes](#bytes) |  | Transaction payload (proto marshalled). |
+| sig | [Signature](#vega.Signature) |  | The signature authenticating the transaction. |
 
 
 
@@ -3517,42 +3521,42 @@ A bundle of a transaction, proto marshalled and it&#39;s signature
 <a name="vega.Statistics"></a>
 
 ### Statistics
-
+Vega domain specific statistics as reported by the node the caller is connected to.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blockHeight | [uint64](#uint64) |  |  |
-| backlogLength | [uint64](#uint64) |  |  |
-| totalPeers | [uint64](#uint64) |  |  |
-| genesisTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
-| currentTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
-| vegaTime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
-| status | [ChainStatus](#vega.ChainStatus) |  |  |
-| txPerBlock | [uint64](#uint64) |  |  |
-| averageTxBytes | [uint64](#uint64) |  |  |
-| averageOrdersPerBlock | [uint64](#uint64) |  |  |
-| tradesPerSecond | [uint64](#uint64) |  |  |
-| ordersPerSecond | [uint64](#uint64) |  |  |
-| totalMarkets | [uint64](#uint64) |  |  |
-| totalAmendOrder | [uint64](#uint64) |  |  |
-| totalCancelOrder | [uint64](#uint64) |  |  |
-| totalCreateOrder | [uint64](#uint64) |  |  |
-| totalOrders | [uint64](#uint64) |  |  |
-| totalTrades | [uint64](#uint64) |  |  |
-| orderSubscriptions | [uint32](#uint32) |  |  |
-| tradeSubscriptions | [uint32](#uint32) |  |  |
-| candleSubscriptions | [uint32](#uint32) |  |  |
-| marketDepthSubscriptions | [uint32](#uint32) |  |  |
-| positionsSubscriptions | [uint32](#uint32) |  |  |
-| accountSubscriptions | [uint32](#uint32) |  |  |
-| marketDataSubscriptions | [uint32](#uint32) |  |  |
-| appVersionHash | [string](#string) |  |  |
-| appVersion | [string](#string) |  |  |
-| chainVersion | [string](#string) |  |  |
-| blockDuration | [uint64](#uint64) |  | nanoseconds |
-| uptime | [string](#string) |  | ISO 8601 datetime, nanosecond precision |
-| chainID | [string](#string) |  | Unique ID of the blockchain |
+| blockHeight | [uint64](#uint64) |  | Current block height as reported by the Vega blockchain. |
+| backlogLength | [uint64](#uint64) |  | Current backlog length (number of transactions) that are waiting to be included in a block. |
+| totalPeers | [uint64](#uint64) |  | Total number of connected peers to this node. |
+| genesisTime | [string](#string) |  | Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision. |
+| currentTime | [string](#string) |  | Current system date and time formatted in ISO-8601 datetime format with nanosecond precision. |
+| vegaTime | [string](#string) |  | Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision. |
+| status | [ChainStatus](#vega.ChainStatus) |  | Status of the connection to the Vega blockchain. See [`ChainStatus`](#vega.ChainStatus). |
+| txPerBlock | [uint64](#uint64) |  | Transactions per block. |
+| averageTxBytes | [uint64](#uint64) |  | Average transaction size in bytes. |
+| averageOrdersPerBlock | [uint64](#uint64) |  | Average orders per block. |
+| tradesPerSecond | [uint64](#uint64) |  | Trades emitted per second. |
+| ordersPerSecond | [uint64](#uint64) |  | Orders affected per second. |
+| totalMarkets | [uint64](#uint64) |  | Total markets on this Vega network. |
+| totalAmendOrder | [uint64](#uint64) |  | Total number of order amendments since genesis (on all markets). |
+| totalCancelOrder | [uint64](#uint64) |  | Total number of order cancellations since genesis (on all markets). |
+| totalCreateOrder | [uint64](#uint64) |  | Total number of order submissions since genesis (on all markets). |
+| totalOrders | [uint64](#uint64) |  | Total number of orders affected since genesis (on all markets). |
+| totalTrades | [uint64](#uint64) |  | Total number of trades emitted since genesis (on all markets). |
+| orderSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to order data. |
+| tradeSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to trade data. |
+| candleSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to candle-stick data. |
+| marketDepthSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to market depth data. |
+| positionsSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to positions data. |
+| accountSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to account data. |
+| marketDataSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to market data. |
+| appVersionHash | [string](#string) |  | The version hash of the Vega node software. |
+| appVersion | [string](#string) |  | The version of the Vega node software. |
+| chainVersion | [string](#string) |  | The version of the underlying Vega blockchain. |
+| blockDuration | [uint64](#uint64) |  | Current block duration, in nanoseconds. |
+| uptime | [string](#string) |  | Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision. |
+| chainID | [string](#string) |  | Unique identifier for the underlying Vega blockchain. |
 
 
 
@@ -3562,12 +3566,13 @@ A bundle of a transaction, proto marshalled and it&#39;s signature
 <a name="vega.Timestamp"></a>
 
 ### Timestamp
-
+A timestamp in nanoseconds since epoch.
+See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| value | [int64](#int64) |  | Timestamp value. |
 
 
 
@@ -3577,26 +3582,26 @@ A bundle of a transaction, proto marshalled and it&#39;s signature
 <a name="vega.Trade"></a>
 
 ### Trade
-
+A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
-| buyer | [string](#string) |  |  |
-| seller | [string](#string) |  |  |
-| aggressor | [Side](#vega.Side) |  |  |
-| buyOrder | [string](#string) |  |  |
-| sellOrder | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
-| type | [Trade.Type](#vega.Trade.Type) |  |  |
-| buyerFee | [Fee](#vega.Fee) |  |  |
-| sellerFee | [Fee](#vega.Fee) |  |  |
-| buyerAuctionBatch | [uint64](#uint64) |  |  |
-| sellerAuctionBatch | [uint64](#uint64) |  |  |
+| id | [string](#string) |  | Unique identifier for the trade (generated by Vega). |
+| marketID | [string](#string) |  | Market identifier (the market that the trade occurred on). |
+| price | [uint64](#uint64) |  | Price for the trade, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| size | [uint64](#uint64) |  | Size filled for the trade. |
+| buyer | [string](#string) |  | Unique party identifier for the buyer. |
+| seller | [string](#string) |  | Unique party identifier for the seller. |
+| aggressor | [Side](#vega.Side) |  | Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). |
+| buyOrder | [string](#string) |  | Identifier of the order from the buy side. |
+| sellOrder | [string](#string) |  | Identifier of the order from the sell side. |
+| timestamp | [int64](#int64) |  | Timestamp for when the trade occurred, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| type | [Trade.Type](#vega.Trade.Type) |  | Type for the trade. See [`Trade.Type`](#vega.Trade.Type). |
+| buyerFee | [Fee](#vega.Fee) |  | Fee amount charged to the buyer party for the trade. |
+| sellerFee | [Fee](#vega.Fee) |  | Fee amount charged to the seller party for the trade. |
+| buyerAuctionBatch | [uint64](#uint64) |  | Auction batch number that the buy side order was placed in. |
+| sellerAuctionBatch | [uint64](#uint64) |  | Auction batch number that the sell side order was placed in. |
 
 
 
@@ -3606,7 +3611,7 @@ A bundle of a transaction, proto marshalled and it&#39;s signature
 <a name="vega.TradeSet"></a>
 
 ### TradeSet
-
+A set of one or more trades.
 
 
 | Field | Type | Label | Description |
@@ -3621,15 +3626,15 @@ A bundle of a transaction, proto marshalled and it&#39;s signature
 <a name="vega.Transaction"></a>
 
 ### Transaction
-A transaction to be sent to vega
+Represents a transaction to be sent to Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| inputData | [bytes](#bytes) |  | one of all the possible command, proto marshalled |
-| nonce | [uint64](#uint64) |  | a random number used to provided uniqueness and prevents against replay attack |
-| address | [bytes](#bytes) |  | the address of the sender |
-| pubKey | [bytes](#bytes) |  | the public key of the sender |
+| inputData | [bytes](#bytes) |  | One of the set of Vega commands (proto marshalled). |
+| nonce | [uint64](#uint64) |  | A random number used to provided uniqueness and prevents against replay attack. |
+| address | [bytes](#bytes) |  | The address of the sender. |
+| pubKey | [bytes](#bytes) |  | The public key of the sender. |
 
 
 
@@ -3639,15 +3644,15 @@ A transaction to be sent to vega
 <a name="vega.Transfer"></a>
 
 ### Transfer
-
+Represents a financial transfer within Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| owner | [string](#string) |  |  |
-| amount | [FinancialAmount](#vega.FinancialAmount) |  |  |
-| type | [TransferType](#vega.TransferType) |  |  |
-| minAmount | [int64](#int64) |  |  |
+| owner | [string](#string) |  | Party identifier for the owner of the transfer. |
+| amount | [FinancialAmount](#vega.FinancialAmount) |  | A financial amount (of an asset) to transfer. |
+| type | [TransferType](#vega.TransferType) |  | The type of transfer, gives the reason for the transfer. |
+| minAmount | [int64](#int64) |  | A minimum amount. |
 
 
 
@@ -3657,13 +3662,13 @@ A transaction to be sent to vega
 <a name="vega.TransferBalance"></a>
 
 ### TransferBalance
-
+Represents the balance for an account during a transfer.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| account | [Account](#vega.Account) |  |  |
-| balance | [uint64](#uint64) |  |  |
+| account | [Account](#vega.Account) |  | The account relating to the transfer |
+| balance | [uint64](#uint64) |  | The balance relating to the transfer |
 
 
 
@@ -3673,17 +3678,17 @@ A transaction to be sent to vega
 <a name="vega.TransferRequest"></a>
 
 ### TransferRequest
-
+Represents a request to transfer from one set of accounts to another.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| fromAccount | [Account](#vega.Account) | repeated |  |
-| toAccount | [Account](#vega.Account) | repeated |  |
-| amount | [uint64](#uint64) |  |  |
-| minAmount | [uint64](#uint64) |  |  |
-| asset | [string](#string) |  |  |
-| reference | [string](#string) |  |  |
+| fromAccount | [Account](#vega.Account) | repeated | One or more accounts to transfer from. |
+| toAccount | [Account](#vega.Account) | repeated | One or more accounts to transfer to. |
+| amount | [uint64](#uint64) |  | An amount to transfer for the asset. |
+| minAmount | [uint64](#uint64) |  | A minimum amount. |
+| asset | [string](#string) |  | Asset identifier. |
+| reference | [string](#string) |  | A reference for auditing purposes. |
 
 
 
@@ -3693,13 +3698,13 @@ A transaction to be sent to vega
 <a name="vega.TransferResponse"></a>
 
 ### TransferResponse
-
+Represents the response from a transfer.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| transfers | [LedgerEntry](#vega.LedgerEntry) | repeated |  |
-| balances | [TransferBalance](#vega.TransferBalance) | repeated |  |
+| transfers | [LedgerEntry](#vega.LedgerEntry) | repeated | One or more ledger entries representing the transfers. |
+| balances | [TransferBalance](#vega.TransferBalance) | repeated | One or more account balances. |
 
 
 
@@ -3709,14 +3714,14 @@ A transaction to be sent to vega
 <a name="vega.Withdraw"></a>
 
 ### Withdraw
-
+Represents a withdrawal of an asset by a party on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| amount | [uint64](#uint64) |  |  |
-| asset | [string](#string) |  |  |
+| partyID | [string](#string) |  | Unique party identifier affecting the withdrawal. |
+| amount | [uint64](#uint64) |  | The total amount withdrawn, the amount is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| asset | [string](#string) |  | Asset identifier. |
 
 
 
@@ -3728,57 +3733,60 @@ A transaction to be sent to vega
 <a name="vega.AccountType"></a>
 
 ### AccountType
-
+Various collateral/account types as used by Vega.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ACCOUNT_TYPE_UNSPECIFIED | 0 | the default variant for this enum |
-| ACCOUNT_TYPE_INSURANCE | 1 | This account is created to hold the insurance pool funds of a market. |
-| ACCOUNT_TYPE_SETTLEMENT | 2 | This account is created to hold fund while settlement or mtm occur. |
-| ACCOUNT_TYPE_MARGIN | 3 | A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change |
-| ACCOUNT_TYPE_GENERAL | 4 | A party will have multiple general accounts, one for each assets they want to trade with. This is the account where the funds are initially deposited or withdrawn from. It&#39;s also the account where funds are taken to fullfill margin requirement or fees |
-| ACCOUNT_TYPE_FEES_INFRASTRUCTURE | 5 | This account is created to hold fees earned for providing infrastructure |
-| ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | This account is created to hold fees earned for providing liquidity |
-| ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned for placing orders that sit on the book |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 | Default value. |
+| ACCOUNT_TYPE_INSURANCE | 1 | Insurance pool accounts contain insurance pool funds for a market. |
+| ACCOUNT_TYPE_SETTLEMENT | 2 | Settlement accounts exist only during settlement or mark-to-market. |
+| ACCOUNT_TYPE_MARGIN | 3 | Margin accounts contain margin funds for a party and each party will have multiple margin accounts, one for each market they have traded in.
+
+Margin account funds will alter as margin requirements on positions change. |
+| ACCOUNT_TYPE_GENERAL | 4 | General accounts contains general funds for a party. A party will have multiple general accounts, one for each asset they want to trade with.
+
+General accounts are where funds are initially deposited or withdrawn from. It is also the account where funds are taken to fulfil fees and initial margin requirements. |
+| ACCOUNT_TYPE_FEES_INFRASTRUCTURE | 5 | Infrastructure accounts contain fees earned by providing infrastructure on Vega. |
+| ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | Liquidity accounts contain fees earned by providing liquidity on Vega markets. |
+| ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned by placing orders that sit on the book and are then matched with an incoming order to create a trade. These fees reward traders who provide the best priced liquidity that actually allows trading to take place. |
 
 
 
 <a name="vega.ChainStatus"></a>
 
 ### ChainStatus
-
+The Vega blockchain status as reported by the node the caller is connected to.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| CHAIN_STATUS_UNSPECIFIED | 0 |  |
-| CHAIN_STATUS_DISCONNECTED | 1 |  |
-| CHAIN_STATUS_REPLAYING | 2 |  |
-| CHAIN_STATUS_CONNECTED | 3 |  |
+| CHAIN_STATUS_UNSPECIFIED | 0 | Default value, always invalid. |
+| CHAIN_STATUS_DISCONNECTED | 1 | Blockchain is disconnected. |
+| CHAIN_STATUS_REPLAYING | 2 | Blockchain is replaying historic transactions. |
+| CHAIN_STATUS_CONNECTED | 3 | Blockchain is connected and receiving transactions. |
 
 
 
 <a name="vega.Interval"></a>
 
 ### Interval
-
+Represents a set of time intervals that are used when querying for candle-stick data.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| INTERVAL_UNSPECIFIED | 0 | Default value, always invalid |
-| INTERVAL_I1M | 60 | 1 minute |
-| INTERVAL_I5M | 300 | 5 minutes |
-| INTERVAL_I15M | 900 | 15 minutes |
-| INTERVAL_I1H | 3600 | 1 hour |
-| INTERVAL_I6H | 21600 | 6 hours |
-| INTERVAL_I1D | 86400 | 1 day |
+| INTERVAL_UNSPECIFIED | 0 | Default value, always invalid. |
+| INTERVAL_I1M | 60 | 1 minute. |
+| INTERVAL_I5M | 300 | 5 minutes. |
+| INTERVAL_I15M | 900 | 15 minutes. |
+| INTERVAL_I1H | 3600 | 1 hour. |
+| INTERVAL_I6H | 21600 | 6 hours. |
+| INTERVAL_I1D | 86400 | 1 day. |
 
 
 
 <a name="vega.MarketState"></a>
 
 ### MarketState
-Market Status
-What mode is the market currently running in
+What mode is the market currently running, also known as market state.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -3791,8 +3799,7 @@ What mode is the market currently running in
 <a name="vega.NodeSignatureKind"></a>
 
 ### NodeSignatureKind
-The kind of the signature created by a node
-eg: for a new asset whitelisting, withdrawal
+The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -3805,37 +3812,35 @@ eg: for a new asset whitelisting, withdrawal
 <a name="vega.Order.Status"></a>
 
 ### Order.Status
-Order Status
-
-See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
+Status values for an order.
+See resulting status in [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| STATUS_INVALID | 0 | Default value, always invalid |
-| STATUS_ACTIVE | 1 | used for active unfilled or partially filled orders |
-| STATUS_EXPIRED | 2 | used for expired GTT orders |
-| STATUS_CANCELLED | 3 | used for orders cancelled by the party that created the order |
-| STATUS_STOPPED | 4 | used for unfilled FOK or IOC orders, and for orders that were stopped by the network |
-| STATUS_FILLED | 5 | used for closed fully filled orders |
-| STATUS_REJECTED | 6 | used for orders when not enough collateral was available to fill the margin requirements |
-| STATUS_PARTIALLY_FILLED | 7 | used for closed partially filled IOC orders |
+| STATUS_INVALID | 0 | Default value, always invalid. |
+| STATUS_ACTIVE | 1 | Used for active unfilled or partially filled orders. |
+| STATUS_EXPIRED | 2 | Used for expired GTT orders. |
+| STATUS_CANCELLED | 3 | Used for orders cancelled by the party that created the order. |
+| STATUS_STOPPED | 4 | Used for unfilled FOK or IOC orders, and for orders that were stopped by the network. |
+| STATUS_FILLED | 5 | Used for closed fully filled orders. |
+| STATUS_REJECTED | 6 | Used for orders when not enough collateral was available to fill the margin requirements. |
+| STATUS_PARTIALLY_FILLED | 7 | Used for closed partially filled IOC orders. |
 
 
 
 <a name="vega.Order.TimeInForce"></a>
 
 ### Order.TimeInForce
-Order Time in Force
-
-See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
+Time in Force for an order.
+See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| TIF_UNSPECIFIED | 0 | Default value, can be valid for an amend |
-| TIF_GTC | 1 | good til cancelled |
-| TIF_GTT | 2 | good til time |
-| TIF_IOC | 3 | immediate or cancel |
-| TIF_FOK | 4 | fill or kill |
+| TIF_UNSPECIFIED | 0 | Default value for TimeInForce, can be valid for an amend. |
+| TIF_GTC | 1 | Good until cancelled. |
+| TIF_GTT | 2 | Good until specified time. |
+| TIF_IOC | 3 | Immediate or cancel. |
+| TIF_FOK | 4 | Fill or kill. |
 | TIF_GFA | 5 | good for auction |
 | TIF_GFN | 6 | good for normal |
 
@@ -3844,97 +3849,98 @@ See [What order types are available to trade on Vega?](https://docs.vega.xyz/doc
 <a name="vega.Order.Type"></a>
 
 ### Order.Type
-Order Type
+Type values for an order.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
-| TYPE_LIMIT | 1 | used for Limit orders |
-| TYPE_MARKET | 2 | used for Market orders |
-| TYPE_NETWORK | 3 | used for orders where the initiating party is the network (used for distressed traders) |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid. |
+| TYPE_LIMIT | 1 | Used for Limit orders. |
+| TYPE_MARKET | 2 | Used for Market orders. |
+| TYPE_NETWORK | 3 | Used for orders where the initiating party is the network (with distressed traders). |
 
 
 
 <a name="vega.OrderError"></a>
 
 ### OrderError
-Set when an order has an issue
+If there is an issue with an order during it&#39;s life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
+and be given an error code in the `reason` field.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ORDER_ERROR_NONE | 0 | Empty default error |
-| ORDER_ERROR_INVALID_MARKET_ID | 1 | Order was submitted for a market that does not exist |
-| ORDER_ERROR_INVALID_ORDER_ID | 2 | Order was submitted with an invalid ID |
-| ORDER_ERROR_OUT_OF_SEQUENCE | 3 | Order was amended with a sequence number that was not previous version &#43; 1 |
-| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 | Order was amended with an invalid remaining size (e.g. remaining greater than total size) |
-| ORDER_ERROR_TIME_FAILURE | 5 | Node was unable to get Vega (blockchain) time |
-| ORDER_ERROR_REMOVAL_FAILURE | 6 | Failed to remove an order from the book |
-| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid |
-| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 | Order was submitted or amended with an invalid reference field |
-| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 | Order amend was submitted for an order field that cannot not be amended (e.g. order id) |
-| ORDER_ERROR_AMEND_FAILURE | 10 | Amend failure because amend details do not match original order |
-| ORDER_ERROR_NOT_FOUND | 11 | Order not found in the order book or in order store |
-| ORDER_ERROR_INVALID_PARTY_ID | 12 | Order was submitted with an invalid or missing party ID |
-| ORDER_ERROR_MARKET_CLOSED | 13 | Order was submitted for a market that has closed |
-| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 | Order was submitted, but the party did not have enough collateral to cover the order |
-| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 | Order was submitted, but the party did not have an account for this asset |
-| ORDER_ERROR_INTERNAL_ERROR | 16 | Unspecified internal error |
-| ORDER_ERROR_INVALID_SIZE | 17 | Order was submitted with an invalid or missing size (e.g. 0) |
-| ORDER_ERROR_INVALID_PERSISTENCE | 18 | Order was submitted with an invalid persistence for its type |
-| ORDER_ERROR_INVALID_TYPE | 19 | Order was submitted with an invalid type field |
-| ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order for the same party |
-| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order |
-| ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 |  |
+| ORDER_ERROR_NONE | 0 | Default value, no error reported. |
+| ORDER_ERROR_INVALID_MARKET_ID | 1 | Order was submitted for a market that does not exist. |
+| ORDER_ERROR_INVALID_ORDER_ID | 2 | Order was submitted with an invalid identifier. |
+| ORDER_ERROR_OUT_OF_SEQUENCE | 3 | Order was amended with a sequence number that was not previous version &#43; 1. |
+| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 | Order was amended with an invalid remaining size (e.g. remaining greater than total size). |
+| ORDER_ERROR_TIME_FAILURE | 5 | Node was unable to get Vega (blockchain) time. |
+| ORDER_ERROR_REMOVAL_FAILURE | 6 | Failed to remove an order from the book. |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | An order with `TimeInForce.TIF_GTT` was submitted or amended with an expiration that was badly formatted or otherwise invalid. |
+| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 | Order was submitted or amended with an invalid reference field. |
+| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 | Order amend was submitted for an order field that cannot not be amended (e.g. order identifier). |
+| ORDER_ERROR_AMEND_FAILURE | 10 | Amend failure because amend details do not match original order. |
+| ORDER_ERROR_NOT_FOUND | 11 | Order not found in an order book or store. |
+| ORDER_ERROR_INVALID_PARTY_ID | 12 | Order was submitted with an invalid or missing party identifier. |
+| ORDER_ERROR_MARKET_CLOSED | 13 | Order was submitted for a market that has closed. |
+| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 | Order was submitted, but the party did not have enough collateral to cover the order. |
+| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 | Order was submitted, but the party did not have an account for this asset. |
+| ORDER_ERROR_INTERNAL_ERROR | 16 | Unspecified internal error. |
+| ORDER_ERROR_INVALID_SIZE | 17 | Order was submitted with an invalid or missing size (e.g. 0). |
+| ORDER_ERROR_INVALID_PERSISTENCE | 18 | Order was submitted with an invalid persistence for its type. |
+| ORDER_ERROR_INVALID_TYPE | 19 | Order was submitted with an invalid type field. |
+| ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order submitted from the same party. |
+| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order. |
+| ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 | Order was submitted with an incorrect or invalid market type. |
 
 
 
 <a name="vega.Side"></a>
 
 ### Side
-
+A side relates to the direction of an order, to Buy, or Sell.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| SIDE_UNSPECIFIED | 0 | Default value, always invalid |
-| SIDE_BUY | 1 | Buy |
-| SIDE_SELL | 2 | Sell |
+| SIDE_UNSPECIFIED | 0 | Default value, always invalid. |
+| SIDE_BUY | 1 | Buy order. |
+| SIDE_SELL | 2 | Sell order. |
 
 
 
 <a name="vega.Trade.Type"></a>
 
 ### Trade.Type
-
+Type values for a trade.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| TYPE_UNSPECIFIED | 0 | Default value, always invalid |
-| TYPE_DEFAULT | 1 |  |
-| TYPE_NETWORK_CLOSE_OUT_GOOD | 2 |  |
-| TYPE_NETWORK_CLOSE_OUT_BAD | 3 |  |
+| TYPE_UNSPECIFIED | 0 | Default value, always invalid. |
+| TYPE_DEFAULT | 1 | Normal trading between two parties. |
+| TYPE_NETWORK_CLOSE_OUT_GOOD | 2 | Trading initiated by the network with another party on the book, which helps to zero-out the positions of one or more distressed parties. |
+| TYPE_NETWORK_CLOSE_OUT_BAD | 3 | Trading initiated by the network with another party off the book, with a distressed party in order to zero-out the position of the party. todo(cdm): chat with Jeremy on zoom to sanity check/improve. |
 
 
 
 <a name="vega.TransferType"></a>
 
 ### TransferType
-
+Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| TRANSFER_TYPE_UNSPECIFIED | 0 |  |
-| TRANSFER_TYPE_LOSS | 1 |  |
-| TRANSFER_TYPE_WIN | 2 |  |
-| TRANSFER_TYPE_CLOSE | 3 |  |
-| TRANSFER_TYPE_MTM_LOSS | 4 |  |
-| TRANSFER_TYPE_MTM_WIN | 5 |  |
-| TRANSFER_TYPE_MARGIN_LOW | 6 |  |
-| TRANSFER_TYPE_MARGIN_HIGH | 7 |  |
-| TRANSFER_TYPE_MARGIN_CONFISCATED | 8 |  |
-| TRANSFER_TYPE_MAKER_FEE_PAY | 9 |  |
-| TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 |  |
-| TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 |  |
-| TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 |  |
+| TRANSFER_TYPE_UNSPECIFIED | 0 | Default value, always invalid. |
+| TRANSFER_TYPE_LOSS | 1 | Loss. |
+| TRANSFER_TYPE_WIN | 2 | Win. |
+| TRANSFER_TYPE_CLOSE | 3 | Close. |
+| TRANSFER_TYPE_MTM_LOSS | 4 | Mark to market loss. |
+| TRANSFER_TYPE_MTM_WIN | 5 | Mark to market win. |
+| TRANSFER_TYPE_MARGIN_LOW | 6 | Margin too low. |
+| TRANSFER_TYPE_MARGIN_HIGH | 7 | Margin too high. |
+| TRANSFER_TYPE_MARGIN_CONFISCATED | 8 | Margin was confiscated. |
+| TRANSFER_TYPE_MAKER_FEE_PAY | 9 | Pay maker fee. |
+| TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 | Receive maker fee. |
+| TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 | Pay infrastructure fee. |
+| TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
 
 
 

@@ -5,9 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-// Side
-//
-// A side relates to the direction of an order submission, to Buy or Sell.
+// A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
   // Default value, always invalid.
   SIDE_UNSPECIFIED = 0;
@@ -21,8 +19,6 @@ enum Side {
   //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
-// Interval
-//
 // Represents a set of time intervals that are used when querying for candle-stick data.
 enum Interval {
   // Default value, always invalid.
@@ -45,16 +41,12 @@ enum Interval {
   //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
-// Price
-//
 message Price {
   // Price value, given as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 value = 1;
 }
 
-// Timestamp
-//
 // A timestamp in nanoseconds since epoch.
 // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 message Timestamp {
@@ -62,16 +54,12 @@ message Timestamp {
   int64 value = 1;
 }
 
-// Party
-//
 // A party represents an entity who wishes to trade on or query a Vega network.
 message Party {
   // A unique identifier for the party, typically represented by a public key.
   string id = 1 [(validator.field) = {msg_exists : true}];
 }
 
-// Risk Factor
-//
 // Risk factors are used to calculate the current risk associated with orders trading on a given market.
 message RiskFactor {
   // Market ID that relates to this risk factor.
@@ -82,8 +70,6 @@ message RiskFactor {
   double long = 3;
 }
 
-// Risk Result
-//
 // Risk results are calculated internally by Vega to attempt to maintain safe trading.
 message RiskResult {
   // Timestamp for when risk factors were generated.
@@ -96,9 +82,7 @@ message RiskResult {
   map<string, RiskFactor> predictedNextRiskFactors = 4;
 }
 
-// Market Status
-//
-// What mode is the market currently running.
+// What mode is the market currently running, also known as market state.
 enum MarketState {
   // Default value, this is invalid
   MARKET_STATE_UNSPECIFIED = 0;
@@ -112,13 +96,10 @@ enum MarketState {
   //       - gateway/graphql/schema.graphql (enum MarketState)
 }
 
-// Order
-//
 // An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties.
 message Order {
 
   // Time in Force for an order.
-  //
   // See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
   enum TimeInForce {
     // Default value for TimeInForce, can be valid for an amend.
@@ -144,7 +125,6 @@ message Order {
   }
 
   // Type values for an order.
-  //
   enum Type {
     // Default value, always invalid.
     TYPE_UNSPECIFIED = 0;
@@ -161,7 +141,6 @@ message Order {
   }
 
   // Status values for an order.
-  //
   // See resulting status in [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
   enum Status {
     // Default value, always invalid.
@@ -232,16 +211,12 @@ message Order {
   uint64 batchID = 17;
 }
 
-// Order Cancellation Confirmation
-//
 // Used when cancelling an Order.
 message OrderCancellationConfirmation {
   // The order that was cancelled.
   Order order = 1;
 }
 
-// Order Confirmation
-//
 // Used when confirming an Order.
 message OrderConfirmation {
   // The order that was confirmed.
@@ -252,8 +227,6 @@ message OrderConfirmation {
   repeated Order passiveOrdersAffected = 3;
 }
 
-// Auction Indicative State
-//
 // Whenever a change to the book occurs during an auction, this message will be used
 // to emit an event with the indicative price/volume per market
 message AuctionIndicativeState {
@@ -269,8 +242,6 @@ message AuctionIndicativeState {
   int64 auctionEnd = 5;
 }
 
-// Order Error
-//
 // If there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 // and be given an error code in the `reason` field.
 enum OrderError {
@@ -328,8 +299,6 @@ enum OrderError {
   //       - gateway/graphql/schema.graphql (enum RejectionReason)
 }
 
-// Trade
-//
 // A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega.
 message Trade {
 
@@ -387,8 +356,6 @@ message Trade {
   uint64 sellerAuctionBatch = 15;
 }
 
-// Fee
-//
 // Represents any fees paid by a party, resulting from a trade.
 message Fee {
   // Fee amount paid to the non-aggressive party of the trade.
@@ -399,15 +366,11 @@ message Fee {
   uint64 liquidityFee = 3;
 }
 
-// TradeSet
-//
 // A set of one or more trades.
 message TradeSet {
     repeated Trade trades = 1;
 }
 
-// Candle
-//
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle.
 message Candle {
@@ -430,8 +393,6 @@ message Candle {
   Interval interval = 8;
 }
 
-// Price Level
-//
 // Represents a price level from market depth or order book data.
 message PriceLevel {
   // Price for the price level, the price is an integer, for example `123456` is a correctly
@@ -445,8 +406,6 @@ message PriceLevel {
   uint64 cumulativeVolume = 4;
 }
 
-// Market Depth
-//
 // Represents market depth or order book data for the specified market on Vega.
 message MarketDepth {
   // Market identifier.
@@ -457,8 +416,6 @@ message MarketDepth {
   repeated PriceLevel sell = 3;
 }
 
-// Position
-//
 // Represents position data for a party on the specified market on Vega.
 message Position {
   // Market identifier.
@@ -476,8 +433,6 @@ message Position {
   uint64 averageEntryPrice = 6;
 }
 
-// Position Trade
-//
 message PositionTrade {
   // Volume for the position trade. Value is signed +ve for long and -ve for short.
   int64 volume = 1;
@@ -486,8 +441,6 @@ message PositionTrade {
   uint64 price = 2;
 }
 
-// Statistics
-//
 // Vega domain specific statistics as reported by the node the caller is connected to.
 message Statistics {
   // Current block height as reported by the Vega blockchain.
@@ -555,9 +508,7 @@ message Statistics {
   string chainID = 33;
 }
 
-// Blockchain Status
-//
-// The blockchain status as reported by the node the caller is connected to.
+// The Vega blockchain status as reported by the node the caller is connected to.
 enum ChainStatus {
   // Default value, always invalid.
   CHAIN_STATUS_UNSPECIFIED = 0;
@@ -571,8 +522,6 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
-// Withdraw
-//
 // Represents a withdrawal of an asset by a party on Vega.
 message Withdraw {
   // Unique party identifier affecting the withdrawal.
@@ -584,11 +533,9 @@ message Withdraw {
   string asset = 3;
 }
 
-// Order Amendment
-//
 // An order amendment is a request to amend or update an existing order on Vega.
 message OrderAmendment {
-  // The following three fields are used for lookup of the order only, cannot be amended by this command:
+  // The `orderID`, `partyID` and `marketID` fields are used for lookup of the order only and cannot be amended by this command.
 
   // Order identifier, this is required to find the order and will not be updated. Required field.
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
@@ -597,7 +544,7 @@ message OrderAmendment {
   // Market identifier, this is required to find the order and will not be updated.
   string marketID = 3;
 
-  // The following fields can be altered during this command:
+  // All fields below can be altered by this command:
 
   // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See [`Price`](#vega.Price).
   Price price = 4;
@@ -614,8 +561,6 @@ message OrderAmendment {
   Order.TimeInForce timeInForce = 7;
 }
 
-// Order Submission
-//
 // An order submission is a request to submit or create a new order on Vega.
 message OrderSubmission {
   // Unique identifier for the order (set by the system after consensus).
@@ -647,9 +592,6 @@ message OrderSubmission {
   string reference = 10;
 }
 
-
-// Order Cancellation
-//
 // An order cancellation is a request to cancel an existing order on Vega.
 message OrderCancellation {
   // The following three fields are used for lookup of the order only:
@@ -662,8 +604,6 @@ message OrderCancellation {
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
 }
 
-// Node Registration
-//
 // Used to Register a node as a validator during network start-up.
 message NodeRegistration {
   // Public key, required field.
@@ -672,8 +612,6 @@ message NodeRegistration {
   bytes chainPubKey = 2 [(validator.field) = {string_not_empty: true}];
 }
 
-// Node Vote
-//
 // Used when a node votes for validating a given resource exists or is valid.
 // For example, an ERC20 deposit is valid and exists on ethereum.
 message NodeVote {
@@ -683,8 +621,6 @@ message NodeVote {
   string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
 
-// Account type
-//
 // Various collateral/account types as used by Vega.
 enum AccountType {
   // Default value.
@@ -719,13 +655,11 @@ enum AccountType {
   //       - gateway/graphql/schema.graphql (enum AccountType)
 }
 
-// Account
-//
 // Represents an account for an asset on Vega for a particular owner or party.
 message Account {
-  // Unique identifier (used internally by Vega).
+  // Unique account identifier (used internally by Vega).
   string id = 1;
-  // The party that the account belongs to. Special values include `network`, which represents the network and is
+  // The party that the account belongs to. Special values include `network`, which represents the Vega network and is
   // most commonly seen during liquidation of distressed trading positions.
   string owner = 2;
   // Balance of the asset, the balance is an integer, for example `123456` is a correctly
@@ -739,8 +673,6 @@ message Account {
   AccountType type = 6;
 }
 
-// Financial Amount
-//
 // Asset value information used within a transfer.
 message FinancialAmount {
   // A signed integer amount of asset.
@@ -749,8 +681,6 @@ message FinancialAmount {
   string asset = 2;
 }
 
-// Transfer Type
-//
 // Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place.
 enum TransferType {
   // Default value, always invalid.
@@ -781,8 +711,6 @@ enum TransferType {
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
 }
 
-// Transfer
-//
 // Represents a financial transfer within Vega.
 message Transfer {
   // Party identifier for the owner of the transfer.
@@ -795,8 +723,6 @@ message Transfer {
   int64 minAmount = 4;
 }
 
-// Transfer Request
-//
 // Represents a request to transfer from one set of accounts to another.
 message TransferRequest {
   // One or more accounts to transfer from.
@@ -813,8 +739,7 @@ message TransferRequest {
   string reference = 6;
 }
 
-// Ledger Entry
-//
+// Represents a ledger entry on Vega.
 message LedgerEntry {
   // One or more accounts to transfer from.
   string fromAccount = 1;
@@ -831,8 +756,7 @@ message LedgerEntry {
   int64 timestamp = 6;
 }
 
-// Transfer Balance
-//
+// Represents the balance for an account during a transfer.
 message TransferBalance {
   // The account relating to the transfer
   Account account = 1;
@@ -840,8 +764,7 @@ message TransferBalance {
   uint64 balance = 2;
 }
 
-// Transfer Response
-//
+// Represents the response from a transfer.
 message TransferResponse {
   // One or more ledger entries representing the transfers.
   repeated LedgerEntry transfers = 1;
@@ -849,8 +772,6 @@ message TransferResponse {
   repeated TransferBalance balances = 2;
 }
 
-// Margin Levels
-//
 // Represents the margin levels for a party on a market at a given time.
 message MarginLevels {
   // Maintenance margin value.
@@ -872,8 +793,6 @@ message MarginLevels {
   int64 timestamp = 8;
 }
 
-// Market Data
-//
 // Represents data generated by a market when open.
 message MarketData {
   // Mark price, as an integer, for example `123456` is a correctly
@@ -905,8 +824,6 @@ message MarketData {
   int64 auctionStart = 11;
 }
 
-// Error Detail
-//
 // Represents Vega domain specific error information over gRPC/Protobuf.
 message ErrorDetail {
   // a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
@@ -917,8 +834,6 @@ message ErrorDetail {
   string inner = 3;
 }
 
-// Transaction
-//
 // Represents a transaction to be sent to Vega.
 message Transaction {
   // One of the set of Vega commands (proto marshalled).
@@ -936,8 +851,6 @@ message Transaction {
   }
 }
 
-// Signature
-//
 // A signature to be authenticate a transaction
 // and to be verified by the vega network
 message Signature {
@@ -949,8 +862,6 @@ message Signature {
   uint64 version = 3;
 }
 
-// Signed Bundle
-//
 // A bundle of a transaction and it's signature.
 message SignedBundle {
   // Transaction payload (proto marshalled).
@@ -959,10 +870,7 @@ message SignedBundle {
   Signature sig = 2;
 }
 
-// Node Signature Kind
-//
-// The kind of the signature created by a node
-// eg: for a new asset whitelisting, withdrawal.
+// The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
 enum NodeSignatureKind {
   // represents a unspecified / missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
@@ -972,11 +880,7 @@ enum NodeSignatureKind {
   NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
 }
 
-// Node signature
-//
-// A message representing a signature from a validator
-// meant to be used by foreign chain in order to recognise
-// a decision taken by the vega network.
+// Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network.
 message NodeSignature {
   // The identifier of the resource being signed.
   string ID = 1;

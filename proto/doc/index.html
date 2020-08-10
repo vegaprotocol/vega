@@ -7833,7 +7833,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Account">Account</h3>
-        <p></p>
+        <p>Represents an account for an asset on Vega for a particular owner or party.</p>
 
 
           <table class="field-table">
@@ -7846,42 +7846,44 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique identifier (used internally by Vega). </p></td>
                 </tr>
 
                 <tr>
                   <td>owner</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The party that the account belongs to. Special values include <tt>network</tt>, which represents the network and is
+most commonly seen during liquidation of distressed trading positions. </p></td>
                 </tr>
 
                 <tr>
                   <td>balance</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Balance of the asset, the balance is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. Balances cannot be negative. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier for the account. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the account. If <a href="#vega.AccountType"><tt>AccountType</tt></a>.<tt>ACCOUNT_TYPE_GENERAL</tt> this will be empty. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.AccountType">AccountType</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The account type related to this account. </p></td>
                 </tr>
 
             </tbody>
@@ -7905,7 +7907,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The market this state is related to </p></td>
+                  <td><p>The market identifier for which this state relates to. </p></td>
                 </tr>
 
                 <tr>
@@ -7926,7 +7928,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>auctionStart</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>The timestamp at which the auction started </p></td>
+                  <td><p>The timestamp at which the auction started. </p></td>
                 </tr>
 
                 <tr>
@@ -7944,7 +7946,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Candle">Candle</h3>
-        <p></p>
+        <p>Represents the high, low, open, and closing prices for an interval of trading,</p><p>referred to commonly as a candlestick or candle.</p>
 
 
           <table class="field-table">
@@ -7957,56 +7959,57 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
+                  <td><p>Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>datetime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>ISO 8601 datetime </p></td>
+                  <td><p>An ISO-8601 datetime with nanosecond precision for when the candle was last updated. </p></td>
                 </tr>
 
                 <tr>
                   <td>high</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Highest price for trading during the candle interval. </p></td>
                 </tr>
 
                 <tr>
                   <td>low</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Lowest price for trading during the candle interval. </p></td>
                 </tr>
 
                 <tr>
                   <td>open</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Open trade price. </p></td>
                 </tr>
 
                 <tr>
                   <td>close</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Closing trade price. </p></td>
                 </tr>
 
                 <tr>
                   <td>volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total trading volume during the candle interval. </p></td>
                 </tr>
 
                 <tr>
                   <td>interval</td>
                   <td><a href="#vega.Interval">Interval</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Time interval for the candle. See <a href="#vega.Interval"><tt>Interval</tt></a>. </p></td>
                 </tr>
 
             </tbody>
@@ -8017,7 +8020,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.ErrorDetail">ErrorDetail</h3>
-        <p></p>
+        <p>Represents Vega domain specific error information over gRPC/Protobuf.</p>
 
 
           <table class="field-table">
@@ -8055,7 +8058,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Fee">Fee</h3>
-        <p>The fees being paid by a party, resulting from a trade</p>
+        <p>Represents any fees paid by a party, resulting from a trade.</p>
 
 
           <table class="field-table">
@@ -8068,21 +8071,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>makerFee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>A fee being paid to the non-aggressor party of the trade </p></td>
+                  <td><p>Fee amount paid to the non-aggressive party of the trade. </p></td>
                 </tr>
 
                 <tr>
                   <td>infrastructureFee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>A fee being paid to maintaining the vega infrastructure </p></td>
+                  <td><p>Fee amount paid for maintaining the Vega infrastructure. </p></td>
                 </tr>
 
                 <tr>
                   <td>liquidityFee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>A fee being paid to the market makers </p></td>
+                  <td><p>Fee amount paid to market makers. </p></td>
                 </tr>
 
             </tbody>
@@ -8093,7 +8096,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.FinancialAmount">FinancialAmount</h3>
-        <p></p>
+        <p>Asset value information used within a transfer.</p>
 
 
           <table class="field-table">
@@ -8106,14 +8109,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>amount</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A signed integer amount of asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -8124,7 +8127,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.LedgerEntry">LedgerEntry</h3>
-        <p></p>
+        <p>Represents a ledger entry on Vega.</p>
 
 
           <table class="field-table">
@@ -8137,42 +8140,43 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>fromAccount</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>One or more accounts to transfer from. </p></td>
                 </tr>
 
                 <tr>
                   <td>toAccount</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>One or more accounts to transfer to. </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An amount to transfer. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A reference for auditing purposes. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Type of ledger entry. </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp for the time the ledger entry was created, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -8183,7 +8187,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.MarginLevels">MarginLevels</h3>
-        <p></p>
+        <p>Represents the margin levels for a party on a market at a given time.</p>
 
 
           <table class="field-table">
@@ -8196,56 +8200,57 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>maintenanceMargin</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Maintenance margin value. </p></td>
                 </tr>
 
                 <tr>
                   <td>searchLevel</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Search level value. </p></td>
                 </tr>
 
                 <tr>
                   <td>initialMargin</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Initial margin value. </p></td>
                 </tr>
 
                 <tr>
                   <td>collateralReleaseLevel</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Collateral release level value. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp for the time the ledger entry was created, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -8256,7 +8261,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.MarketData">MarketData</h3>
-        <p></p>
+        <p>Represents data generated by a market when open.</p>
 
 
           <table class="field-table">
@@ -8269,77 +8274,82 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>markPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the mark price (actually an unsgined int) </p></td>
+                  <td><p>Mark price, as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestBidPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the highest price level on an order book for buy orders. </p></td>
+                  <td><p>Highest price level on an order book for buy orders, as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestBidVolume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the aggregated volume being bid at the best bid price. </p></td>
+                  <td><p>Aggregated volume being bid at the best bid price. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestOfferPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the lowest price level on an order book for offer orders. </p></td>
+                  <td><p>Lowest price level on an order book for offer orders. </p></td>
                 </tr>
 
                 <tr>
                   <td>bestOfferVolume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the aggregated volume being offered at the best offer price. </p></td>
+                  <td><p>Aggregated volume being offered at the best offer price, as an integer, for example <tt>123456</tt> is a correctly
+ // formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>midPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the arithmetic average of the best bid price and best offer price. </p></td>
+                  <td><p>Arithmetic average of the best bid price and best offer price, as an integer, for example <tt>123456</tt> is a correctly
+ // formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>market</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>market id of the associated mark price </p></td>
+                  <td><p>Market identifier for the data. </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>time at which this mark price was relevant </p></td>
+                  <td><p>Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>openInterest</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the sum of the size of all positions greater than 0. </p></td>
+                  <td><p>The sum of the size of all positions greater than 0 on the market. </p></td>
                 </tr>
 
                 <tr>
                   <td>auctionEnd</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>time in seconds until the end of the auction (0 if currently not in auction period) </p></td>
+                  <td><p>Time in seconds until the end of the auction (0 if currently not in auction period). </p></td>
                 </tr>
 
                 <tr>
                   <td>auctionStart</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>time until next auction (used in FBA&#39;s) - currently always 0 </p></td>
+                  <td><p>Time until next auction (used in FBA&#39;s) - currently always 0. </p></td>
                 </tr>
 
             </tbody>
@@ -8350,7 +8360,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.MarketDepth">MarketDepth</h3>
-        <p></p>
+        <p>Represents market depth or order book data for the specified market on Vega.</p>
 
 
           <table class="field-table">
@@ -8363,21 +8373,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>buy</td>
                   <td><a href="#vega.PriceLevel">PriceLevel</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Collection of price levels for the buy side of the book. </p></td>
                 </tr>
 
                 <tr>
                   <td>sell</td>
                   <td><a href="#vega.PriceLevel">PriceLevel</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Collection of price levels for the sell side of the book. </p></td>
                 </tr>
 
             </tbody>
@@ -8388,7 +8398,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.NodeRegistration">NodeRegistration</h3>
-        <p></p>
+        <p>Used to Register a node as a validator during network start-up.</p>
 
 
           <table class="field-table">
@@ -8401,14 +8411,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>pubKey</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Public key, required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>chainPubKey</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Public key for the blockchain, required field. </p></td>
                 </tr>
 
             </tbody>
@@ -8457,7 +8467,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.NodeSignature">NodeSignature</h3>
-        <p>A message reprensenting a signature from a validator</p><p>meant to be used by foreign chain in order to recognise</p><p>a decision taken by the vega network.</p>
+        <p>Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network.</p>
 
 
           <table class="field-table">
@@ -8470,21 +8480,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The ID of the resource being signed </p></td>
+                  <td><p>The identifier of the resource being signed. </p></td>
                 </tr>
 
                 <tr>
                   <td>sig</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p>The signature </p></td>
+                  <td><p>The signature. </p></td>
                 </tr>
 
                 <tr>
                   <td>kind</td>
                   <td><a href="#vega.NodeSignatureKind">NodeSignatureKind</a></td>
                   <td></td>
-                  <td><p>The kind of resource being signed </p></td>
+                  <td><p>The kind of resource being signed. </p></td>
                 </tr>
 
             </tbody>
@@ -8495,7 +8505,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.NodeVote">NodeVote</h3>
-        <p></p>
+        <p>Used when a node votes for validating a given resource exists or is valid.</p><p>For example, an ERC20 deposit is valid and exists on ethereum.</p>
 
 
           <table class="field-table">
@@ -8508,14 +8518,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>pubKey</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Public key, required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Reference, required field. </p></td>
                 </tr>
 
             </tbody>
@@ -8564,7 +8574,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Order">Order</h3>
-        <p></p>
+        <p>An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties.</p>
 
 
           <table class="field-table">
@@ -8577,121 +8587,129 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique identifier for the order (set by the system after consensus). </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the order. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier for the order. </p></td>
                 </tr>
 
                 <tr>
                   <td>side</td>
                   <td><a href="#vega.Side">Side</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Side for the order, e.g. SIDE_BUY or SIDE_SELL. See <a href="#vega.Side"><tt>Side</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price for the order, the price is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>size</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Size for the order, for example, in a futures market the size equals the number of contracts. </p></td>
                 </tr>
 
                 <tr>
                   <td>remaining</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Size remaining, when this reaches 0 then the order is fully filled and status becomes STATUS_FILLED. </p></td>
                 </tr>
 
                 <tr>
                   <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Time in force indicates how long an order will remain active before it is executed or expires.
+See <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.Order.Type">Order.Type</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Type for the order. See <a href="#vega.Order.Type"><tt>Order.Type</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>createdAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
+                  <td><p>Timestamp for when the order was created at, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>status</td>
                   <td><a href="#vega.Order.Status">Order.Status</a></td>
                   <td></td>
-                  <td><p>If <tt>status</tt> is <tt>STATUS_REJECTED</tt>, check <tt>reason</tt>. </p></td>
+                  <td><p>The current status for the order. See <a href="#vega.Order.Status"><tt>Order.Status</tt></a>.
+For detail on <tt>STATUS_REJECTED</tt> please check the <a href="#vega.OrderError"><tt>OrderError</tt></a> value given in the <tt>reason</tt> field. </p></td>
                 </tr>
 
                 <tr>
                   <td>expiresAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. Valid only for <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce</tt></a><tt>.TIF_GTT</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
+set internally by the node to return a unique reference identifier for the order submission.
+TODO(cdm): Section on how order references work on Vega in docs.vega.xyz </p></td>
                 </tr>
 
                 <tr>
                   <td>reason</td>
                   <td><a href="#vega.OrderError">OrderError</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>If the Order <tt>status</tt> is <tt>STATUS_REJECTED</tt> then an <a href="#vega.OrderError"><tt>OrderError</tt></a> reason will be specified.
+The default for this field is <tt>ORDER_ERROR_NONE</tt> which signifies that there were no errors. </p></td>
                 </tr>
 
                 <tr>
                   <td>updatedAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp for when the Order was last updated, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Versioning support for amends, orders start at version 1 and increment
-after each successful amend </p></td>
+                  <td><p>The version for the order, initial value is version 1 and is incremented after each successful amend </p></td>
                 </tr>
 
                 <tr>
                   <td>batchID</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>used internally, for orders submitted during auctions
-to keep track which auction batch this order falls under (required for fees calculation) </p></td>
+                  <td><p>Batch identifier for the order, used internally for orders submitted during auctions
+to keep track of the auction batch this order falls under (required for fees calculation). </p></td>
                 </tr>
 
             </tbody>
@@ -8702,7 +8720,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.OrderAmendment">OrderAmendment</h3>
-        <p></p>
+        <p>An order amendment is a request to amend or update an existing order on Vega.</p><p>The following three fields are used for lookup of the order only, cannot be amended by this command:</p>
 
 
           <table class="field-table">
@@ -8715,49 +8733,54 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>required to find the order, not being updated </p></td>
+                  <td><p>Order identifier, this is required to find the order and will not be updated. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier, this is required to find the order and will not be updated. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier, this is required to find the order and will not be updated. </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#vega.Price">Price</a></td>
                   <td></td>
-                  <td><p>these can be amended </p></td>
+                  <td><p>Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See <a href="#vega.Price"><tt>Price</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>sizeDelta</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Amend the size for the order by the delta specified.
+To reduce the size from the current value set a negative integer value.
+To increase the size from the current value, set a positive integer value.
+To leave the size unchanged set a value of zero. </p></td>
                 </tr>
 
                 <tr>
                   <td>expiresAt</td>
                   <td><a href="#vega.Timestamp">Timestamp</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
+See <a href="#api.VegaTimeResponse"><tt>TimeInForce</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -8806,7 +8829,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.OrderCancellation">OrderCancellation</h3>
-        <p></p>
+        <p>An order cancellation is a request to cancel an existing order on Vega.</p><p>The following three fields are used for lookup of the order only:</p>
 
 
           <table class="field-table">
@@ -8819,21 +8842,21 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique identifier for the order (set by the system after consensus). Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the order. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier for the order. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -8893,7 +8916,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.OrderCancellationConfirmation">OrderCancellationConfirmation</h3>
-        <p></p>
+        <p>Used when cancelling an Order.</p>
 
 
           <table class="field-table">
@@ -8906,7 +8929,7 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>order</td>
                   <td><a href="#vega.Order">Order</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The order that was cancelled. </p></td>
                 </tr>
 
             </tbody>
@@ -8917,7 +8940,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.OrderConfirmation">OrderConfirmation</h3>
-        <p></p>
+        <p>Used when confirming an Order.</p>
 
 
           <table class="field-table">
@@ -8930,21 +8953,21 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>order</td>
                   <td><a href="#vega.Order">Order</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The order that was confirmed. </p></td>
                 </tr>
 
                 <tr>
                   <td>trades</td>
                   <td><a href="#vega.Trade">Trade</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>0 or more trades that were emitted. </p></td>
                 </tr>
 
                 <tr>
                   <td>passiveOrdersAffected</td>
                   <td><a href="#vega.Order">Order</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>0 or more passive orders that were affected. </p></td>
                 </tr>
 
             </tbody>
@@ -8955,7 +8978,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.OrderSubmission">OrderSubmission</h3>
-        <p></p>
+        <p>An order submission is a request to submit or create a new order on Vega.</p>
 
 
           <table class="field-table">
@@ -8968,70 +8991,77 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique identifier for the order (set by the system after consensus). </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the order. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier for the order. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>mandatory for Limit orders, not required for Market orders </p></td>
+                  <td><p>Price for the order, the price is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places.
+Required field for Limit orders, however it is not required for market orders. </p></td>
                 </tr>
 
                 <tr>
                   <td>size</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Size for the order, for example, in a futures market the size equals the number of contracts. Cannot be negative. </p></td>
                 </tr>
 
                 <tr>
                   <td>side</td>
                   <td><a href="#vega.Side">Side</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Side for the order, e.g. SIDE_BUY or SIDE_SELL. See <a href="#vega.Side"><tt>Side</tt></a>. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>timeInForce</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Time in force indicates how long an order will remain active before it is executed or expires.
+See <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce</tt></a>. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>expiresAt</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>mandatory for GTT orders, not required for GTC, IOC, FOK </p></td>
+                  <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>.
+Required field only for <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce</tt></a><tt>.TIF_GTT</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.Order.Type">Order.Type</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Type for the order. See <a href="#vega.Order.Type"><tt>Order.Type</tt></a>. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
+set internally by the node to return a unique reference identifier for the order submission.
+TODO(cdm): Section on how order references work on Vega in docs.vega.xyz </p></td>
                 </tr>
 
             </tbody>
@@ -9135,7 +9165,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.Party">Party</h3>
-        <p></p>
+        <p>A party represents an entity who wishes to trade on or query a Vega network.</p>
 
 
           <table class="field-table">
@@ -9148,7 +9178,7 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A unique identifier for the party, typically represented by a public key. </p></td>
                 </tr>
 
             </tbody>
@@ -9186,7 +9216,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.Position">Position</h3>
-        <p></p>
+        <p>Represents position data for a party on the specified market on Vega.</p>
 
 
           <table class="field-table">
@@ -9199,42 +9229,43 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>openVolume</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Open volume for the position. Value is signed &#43;ve for long and -ve for short. </p></td>
                 </tr>
 
                 <tr>
                   <td>realisedPNL</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Realised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. </p></td>
                 </tr>
 
                 <tr>
                   <td>unrealisedPNL</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unrealised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. </p></td>
                 </tr>
 
                 <tr>
                   <td>averageEntryPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Average entry price for the position, the price is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
             </tbody>
@@ -9258,14 +9289,15 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>volume</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Volume for the position trade. Value is signed &#43;ve for long and -ve for short. </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price for the position trade, the price is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
             </tbody>
@@ -9289,7 +9321,8 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>value</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price value, given as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
             </tbody>
@@ -9300,7 +9333,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.PriceLevel">PriceLevel</h3>
-        <p></p>
+        <p>Represents a price level from market depth or order book data.</p>
 
 
           <table class="field-table">
@@ -9313,28 +9346,29 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price for the price level, the price is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>numberOfOrders</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Number of orders at the price level. </p></td>
                 </tr>
 
                 <tr>
                   <td>volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Volume at the price level. </p></td>
                 </tr>
 
                 <tr>
                   <td>cumulativeVolume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Cumulative volume at the price level. </p></td>
                 </tr>
 
             </tbody>
@@ -9345,7 +9379,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.RiskFactor">RiskFactor</h3>
-        <p></p>
+        <p>Risk factors are used to calculate the current risk associated with orders trading on a given market.</p>
 
 
           <table class="field-table">
@@ -9358,21 +9392,21 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>market</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market ID that relates to this risk factor. </p></td>
                 </tr>
 
                 <tr>
                   <td>short</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Short Risk factor value. </p></td>
                 </tr>
 
                 <tr>
                   <td>long</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Long Risk factor value. </p></td>
                 </tr>
 
             </tbody>
@@ -9383,7 +9417,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.RiskResult">RiskResult</h3>
-        <p></p>
+        <p>Risk results are calculated internally by Vega to attempt to maintain safe trading.</p>
 
 
           <table class="field-table">
@@ -9396,28 +9430,28 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>updatedTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>timestamp when these risk factors were generated </p></td>
+                  <td><p>Timestamp for when risk factors were generated. </p></td>
                 </tr>
 
                 <tr>
                   <td>riskFactors</td>
                   <td><a href="#vega.RiskResult.RiskFactorsEntry">RiskResult.RiskFactorsEntry</a></td>
                   <td>repeated</td>
-                  <td><p>risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market </p></td>
+                  <td><p>Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market. </p></td>
                 </tr>
 
                 <tr>
                   <td>nextUpdateTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>time when risk factors are expected to change (or empty if risk factors are continually updated) </p></td>
+                  <td><p>Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated). </p></td>
                 </tr>
 
                 <tr>
                   <td>predictedNextRiskFactors</td>
                   <td><a href="#vega.RiskResult.PredictedNextRiskFactorsEntry">RiskResult.PredictedNextRiskFactorsEntry</a></td>
                   <td>repeated</td>
-                  <td><p>predicted risk factors at next change (what they&#39;d be if the change occurred now) </p></td>
+                  <td><p>Predicted risk factors at next change (what they would be if the change occurred now). </p></td>
                 </tr>
 
             </tbody>
@@ -9528,7 +9562,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.SignedBundle">SignedBundle</h3>
-        <p>A bundle of a transaction, proto marshalled and it's signature</p>
+        <p>A bundle of a transaction and it's signature.</p>
 
 
           <table class="field-table">
@@ -9541,14 +9575,14 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>tx</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p>the transaction, proto marshalled </p></td>
+                  <td><p>Transaction payload (proto marshalled). </p></td>
                 </tr>
 
                 <tr>
                   <td>sig</td>
                   <td><a href="#vega.Signature">Signature</a></td>
                   <td></td>
-                  <td><p>the signature authenticating the transaction </p></td>
+                  <td><p>The signature authenticating the transaction. </p></td>
                 </tr>
 
             </tbody>
@@ -9559,7 +9593,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.Statistics">Statistics</h3>
-        <p></p>
+        <p>Vega domain specific statistics as reported by the node the caller is connected to.</p>
 
 
           <table class="field-table">
@@ -9572,217 +9606,218 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>blockHeight</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current block height as reported by the Vega blockchain. </p></td>
                 </tr>
 
                 <tr>
                   <td>backlogLength</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current backlog length (number of transactions) that are waiting to be included in a block. </p></td>
                 </tr>
 
                 <tr>
                   <td>totalPeers</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total number of connected peers to this node. </p></td>
                 </tr>
 
                 <tr>
                   <td>genesisTime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                  <td><p>Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision. </p></td>
                 </tr>
 
                 <tr>
                   <td>currentTime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                  <td><p>Current system date and time formatted in ISO-8601 datetime format with nanosecond precision. </p></td>
                 </tr>
 
                 <tr>
                   <td>vegaTime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                  <td><p>Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision. </p></td>
                 </tr>
 
                 <tr>
                   <td>status</td>
                   <td><a href="#vega.ChainStatus">ChainStatus</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Status of the connection to the Vega blockchain.
+See <a href="#vega.ChainStatus"><tt>ChainStatus</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>txPerBlock</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Transactions per block. </p></td>
                 </tr>
 
                 <tr>
                   <td>averageTxBytes</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Average transaction size in bytes. </p></td>
                 </tr>
 
                 <tr>
                   <td>averageOrdersPerBlock</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Average orders per block. </p></td>
                 </tr>
 
                 <tr>
                   <td>tradesPerSecond</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Trades emitted per second. </p></td>
                 </tr>
 
                 <tr>
                   <td>ordersPerSecond</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Orders affected per second. </p></td>
                 </tr>
 
                 <tr>
                   <td>totalMarkets</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total markets on this Vega network. </p></td>
                 </tr>
 
                 <tr>
                   <td>totalAmendOrder</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total number of order amendments since genesis (on all markets). </p></td>
                 </tr>
 
                 <tr>
                   <td>totalCancelOrder</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total number of order cancellations since genesis (on all markets). </p></td>
                 </tr>
 
                 <tr>
                   <td>totalCreateOrder</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total number of order submissions since genesis (on all markets). </p></td>
                 </tr>
 
                 <tr>
                   <td>totalOrders</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total number of orders affected since genesis (on all markets). </p></td>
                 </tr>
 
                 <tr>
                   <td>totalTrades</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Total number of trades emitted since genesis (on all markets). </p></td>
                 </tr>
 
                 <tr>
                   <td>orderSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to order data. </p></td>
                 </tr>
 
                 <tr>
                   <td>tradeSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to trade data. </p></td>
                 </tr>
 
                 <tr>
                   <td>candleSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to candle-stick data. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketDepthSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to market depth data. </p></td>
                 </tr>
 
                 <tr>
                   <td>positionsSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to positions data. </p></td>
                 </tr>
 
                 <tr>
                   <td>accountSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to account data. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketDataSubscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Current number of stream subscribers to market data. </p></td>
                 </tr>
 
                 <tr>
                   <td>appVersionHash</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The version hash of the Vega node software. </p></td>
                 </tr>
 
                 <tr>
                   <td>appVersion</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The version of the Vega node software. </p></td>
                 </tr>
 
                 <tr>
                   <td>chainVersion</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The version of the underlying Vega blockchain. </p></td>
                 </tr>
 
                 <tr>
                   <td>blockDuration</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>nanoseconds </p></td>
+                  <td><p>Current block duration, in nanoseconds. </p></td>
                 </tr>
 
                 <tr>
                   <td>uptime</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>ISO 8601 datetime, nanosecond precision </p></td>
+                  <td><p>Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision. </p></td>
                 </tr>
 
                 <tr>
                   <td>chainID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Unique ID of the blockchain </p></td>
+                  <td><p>Unique identifier for the underlying Vega blockchain. </p></td>
                 </tr>
 
             </tbody>
@@ -9793,7 +9828,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.Timestamp">Timestamp</h3>
-        <p></p>
+        <p>A timestamp in nanoseconds since epoch.</p><p>See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>.</p>
 
 
           <table class="field-table">
@@ -9806,7 +9841,7 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>value</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp value. </p></td>
                 </tr>
 
             </tbody>
@@ -9817,7 +9852,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.Trade">Trade</h3>
-        <p></p>
+        <p>A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega.</p>
 
 
           <table class="field-table">
@@ -9830,105 +9865,107 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique identifier for the trade (generated by Vega). </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier (the market that the trade occurred on). </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price for the trade, the price is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>size</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Size filled for the trade. </p></td>
                 </tr>
 
                 <tr>
                   <td>buyer</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique party identifier for the buyer. </p></td>
                 </tr>
 
                 <tr>
                   <td>seller</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique party identifier for the seller. </p></td>
                 </tr>
 
                 <tr>
                   <td>aggressor</td>
                   <td><a href="#vega.Side">Side</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL. See <a href="#vega.Side"><tt>Side</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>buyOrder</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Identifier of the order from the buy side. </p></td>
                 </tr>
 
                 <tr>
                   <td>sellOrder</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Identifier of the order from the sell side. </p></td>
                 </tr>
 
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
+                  <td><p>Timestamp for when the trade occurred, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.Trade.Type">Trade.Type</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Type for the trade. See <a href="#vega.Trade.Type"><tt>Trade.Type</tt></a>. </p></td>
                 </tr>
 
                 <tr>
                   <td>buyerFee</td>
                   <td><a href="#vega.Fee">Fee</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Fee amount charged to the buyer party for the trade. </p></td>
                 </tr>
 
                 <tr>
                   <td>sellerFee</td>
                   <td><a href="#vega.Fee">Fee</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Fee amount charged to the seller party for the trade. </p></td>
                 </tr>
 
                 <tr>
                   <td>buyerAuctionBatch</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Auction batch number that the buy side order was placed in. </p></td>
                 </tr>
 
                 <tr>
                   <td>sellerAuctionBatch</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Auction batch number that the sell side order was placed in. </p></td>
                 </tr>
 
             </tbody>
@@ -9939,7 +9976,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.TradeSet">TradeSet</h3>
-        <p></p>
+        <p>A set of one or more trades.</p>
 
 
           <table class="field-table">
@@ -9963,7 +10000,7 @@ to keep track which auction batch this order falls under (required for fees calc
 
 
         <h3 id="vega.Transaction">Transaction</h3>
-        <p>A transaction to be sent to vega</p>
+        <p>Represents a transaction to be sent to Vega.</p>
 
 
           <table class="field-table">
@@ -9976,29 +10013,29 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td>inputData</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p>one of all the possible command, proto marshalled </p></td>
+                  <td><p>One of the set of Vega commands (proto marshalled). </p></td>
                 </tr>
 
                 <tr>
                   <td>nonce</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>a random number used to provided uniqueness and prevents
-against replay attack </p></td>
+                  <td><p>A random number used to provided uniqueness and prevents
+against replay attack. </p></td>
                 </tr>
 
                 <tr>
                   <td>address</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p>the address of the sender </p></td>
+                  <td><p>The address of the sender. </p></td>
                 </tr>
 
                 <tr>
                   <td>pubKey</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p>the public key of the sender </p></td>
+                  <td><p>The public key of the sender. </p></td>
                 </tr>
 
             </tbody>
@@ -10009,7 +10046,7 @@ against replay attack </p></td>
 
 
         <h3 id="vega.Transfer">Transfer</h3>
-        <p></p>
+        <p>Represents a financial transfer within Vega.</p>
 
 
           <table class="field-table">
@@ -10022,28 +10059,28 @@ against replay attack </p></td>
                   <td>owner</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier for the owner of the transfer. </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#vega.FinancialAmount">FinancialAmount</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A financial amount (of an asset) to transfer. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.TransferType">TransferType</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The type of transfer, gives the reason for the transfer. </p></td>
                 </tr>
 
                 <tr>
                   <td>minAmount</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A minimum amount. </p></td>
                 </tr>
 
             </tbody>
@@ -10054,7 +10091,7 @@ against replay attack </p></td>
 
 
         <h3 id="vega.TransferBalance">TransferBalance</h3>
-        <p></p>
+        <p>Represents the balance for an account during a transfer.</p>
 
 
           <table class="field-table">
@@ -10067,14 +10104,14 @@ against replay attack </p></td>
                   <td>account</td>
                   <td><a href="#vega.Account">Account</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The account relating to the transfer </p></td>
                 </tr>
 
                 <tr>
                   <td>balance</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The balance relating to the transfer </p></td>
                 </tr>
 
             </tbody>
@@ -10085,7 +10122,7 @@ against replay attack </p></td>
 
 
         <h3 id="vega.TransferRequest">TransferRequest</h3>
-        <p></p>
+        <p>Represents a request to transfer from one set of accounts to another.</p>
 
 
           <table class="field-table">
@@ -10098,42 +10135,42 @@ against replay attack </p></td>
                   <td>fromAccount</td>
                   <td><a href="#vega.Account">Account</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>One or more accounts to transfer from. </p></td>
                 </tr>
 
                 <tr>
                   <td>toAccount</td>
                   <td><a href="#vega.Account">Account</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>One or more accounts to transfer to. </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An amount to transfer for the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>minAmount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A minimum amount. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A reference for auditing purposes. </p></td>
                 </tr>
 
             </tbody>
@@ -10144,7 +10181,7 @@ against replay attack </p></td>
 
 
         <h3 id="vega.TransferResponse">TransferResponse</h3>
-        <p></p>
+        <p>Represents the response from a transfer.</p>
 
 
           <table class="field-table">
@@ -10157,14 +10194,14 @@ against replay attack </p></td>
                   <td>transfers</td>
                   <td><a href="#vega.LedgerEntry">LedgerEntry</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>One or more ledger entries representing the transfers. </p></td>
                 </tr>
 
                 <tr>
                   <td>balances</td>
                   <td><a href="#vega.TransferBalance">TransferBalance</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>One or more account balances. </p></td>
                 </tr>
 
             </tbody>
@@ -10175,7 +10212,7 @@ against replay attack </p></td>
 
 
         <h3 id="vega.Withdraw">Withdraw</h3>
-        <p></p>
+        <p>Represents a withdrawal of an asset by a party on Vega.</p>
 
 
           <table class="field-table">
@@ -10188,21 +10225,22 @@ against replay attack </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique party identifier affecting the withdrawal. </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The total amount withdrawn, the amount is an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -10215,7 +10253,7 @@ against replay attack </p></td>
 
 
         <h3 id="vega.AccountType">AccountType</h3>
-        <p></p>
+        <p>Various collateral/account types as used by Vega.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10225,59 +10263,66 @@ against replay attack </p></td>
               <tr>
                 <td>ACCOUNT_TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>the default variant for this enum</p></td>
+                <td><p>Default value.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_INSURANCE</td>
                 <td>1</td>
-                <td><p>This account is created to hold the insurance pool funds of a market.</p></td>
+                <td><p>Insurance pool accounts contain insurance pool funds for a market.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_SETTLEMENT</td>
                 <td>2</td>
-                <td><p>This account is created to hold fund while settlement or mtm occur.</p></td>
+                <td><p>Settlement accounts exist only during settlement or mark-to-market.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_MARGIN</td>
                 <td>3</td>
-                <td><p>A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change</p></td>
+                <td><p>Margin accounts contain margin funds for a party and each party will
+have multiple margin accounts, one for each market they have traded in.
+
+Margin account funds will alter as margin requirements on positions change.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_GENERAL</td>
                 <td>4</td>
-                <td><p>A party will have multiple general accounts, one for each assets they want
-to trade with. This is the account where the funds are initially deposited
-or withdrawn from. It&#39;s also the account where funds are taken to fullfill
-margin requirement or fees</p></td>
+                <td><p>General accounts contains general funds for a party. A party will
+have multiple general accounts, one for each asset they want
+to trade with.
+
+General accounts are where funds are initially deposited or withdrawn from.
+It is also the account where funds are taken to fulfil fees and initial margin requirements.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_FEES_INFRASTRUCTURE</td>
                 <td>5</td>
-                <td><p>This account is created to hold fees earned for providing infrastructure</p></td>
+                <td><p>Infrastructure accounts contain fees earned by providing infrastructure on Vega.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_FEES_LIQUIDITY</td>
                 <td>6</td>
-                <td><p>This account is created to hold fees earned for providing liquidity</p></td>
+                <td><p>Liquidity accounts contain fees earned by providing liquidity on Vega markets.</p></td>
               </tr>
 
               <tr>
                 <td>ACCOUNT_TYPE_FEES_MAKER</td>
                 <td>7</td>
-                <td><p>This account is created to hold fees earned for placing orders that sit on the book</p></td>
+                <td><p>This account is created to hold fees earned by placing orders that sit on the book
+and are then matched with an incoming order to create a trade.
+These fees reward traders who provide the best priced liquidity that actually allows trading to take place.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.ChainStatus">ChainStatus</h3>
-        <p></p>
+        <p>The Vega blockchain status as reported by the node the caller is connected to.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10287,32 +10332,32 @@ margin requirement or fees</p></td>
               <tr>
                 <td>CHAIN_STATUS_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>CHAIN_STATUS_DISCONNECTED</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Blockchain is disconnected.</p></td>
               </tr>
 
               <tr>
                 <td>CHAIN_STATUS_REPLAYING</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>Blockchain is replaying historic transactions.</p></td>
               </tr>
 
               <tr>
                 <td>CHAIN_STATUS_CONNECTED</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>Blockchain is connected and receiving transactions.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Interval">Interval</h3>
-        <p></p>
+        <p>Represents a set of time intervals that are used when querying for candle-stick data.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10322,50 +10367,50 @@ margin requirement or fees</p></td>
               <tr>
                 <td>INTERVAL_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Default value, always invalid</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>INTERVAL_I1M</td>
                 <td>60</td>
-                <td><p>1 minute</p></td>
+                <td><p>1 minute.</p></td>
               </tr>
 
               <tr>
                 <td>INTERVAL_I5M</td>
                 <td>300</td>
-                <td><p>5 minutes</p></td>
+                <td><p>5 minutes.</p></td>
               </tr>
 
               <tr>
                 <td>INTERVAL_I15M</td>
                 <td>900</td>
-                <td><p>15 minutes</p></td>
+                <td><p>15 minutes.</p></td>
               </tr>
 
               <tr>
                 <td>INTERVAL_I1H</td>
                 <td>3600</td>
-                <td><p>1 hour</p></td>
+                <td><p>1 hour.</p></td>
               </tr>
 
               <tr>
                 <td>INTERVAL_I6H</td>
                 <td>21600</td>
-                <td><p>6 hours</p></td>
+                <td><p>6 hours.</p></td>
               </tr>
 
               <tr>
                 <td>INTERVAL_I1D</td>
                 <td>86400</td>
-                <td><p>1 day</p></td>
+                <td><p>1 day.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.MarketState">MarketState</h3>
-        <p>Market Status</p><p>What mode is the market currently running in</p>
+        <p>What mode is the market currently running, also known as market state.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10394,7 +10439,7 @@ margin requirement or fees</p></td>
         </table>
 
         <h3 id="vega.NodeSignatureKind">NodeSignatureKind</h3>
-        <p>The kind of the signature created by a node</p><p>eg: for a new asset whitelisting, withdrawal</p>
+        <p>The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10423,7 +10468,7 @@ margin requirement or fees</p></td>
         </table>
 
         <h3 id="vega.Order.Status">Order.Status</h3>
-        <p>Order Status</p><p>See <a href="https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for details.</p>
+        <p>Status values for an order.</p><p>See resulting status in <a href="https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for more detail.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10433,56 +10478,56 @@ margin requirement or fees</p></td>
               <tr>
                 <td>STATUS_INVALID</td>
                 <td>0</td>
-                <td><p>Default value, always invalid</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_ACTIVE</td>
                 <td>1</td>
-                <td><p>used for active unfilled or partially filled orders</p></td>
+                <td><p>Used for active unfilled or partially filled orders.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_EXPIRED</td>
                 <td>2</td>
-                <td><p>used for expired GTT orders</p></td>
+                <td><p>Used for expired GTT orders.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_CANCELLED</td>
                 <td>3</td>
-                <td><p>used for orders cancelled by the party that created the order</p></td>
+                <td><p>Used for orders cancelled by the party that created the order.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_STOPPED</td>
                 <td>4</td>
-                <td><p>used for unfilled FOK or IOC orders, and for orders that were stopped by the network</p></td>
+                <td><p>Used for unfilled FOK or IOC orders, and for orders that were stopped by the network.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_FILLED</td>
                 <td>5</td>
-                <td><p>used for closed fully filled orders</p></td>
+                <td><p>Used for closed fully filled orders.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_REJECTED</td>
                 <td>6</td>
-                <td><p>used for orders when not enough collateral was available to fill the margin requirements</p></td>
+                <td><p>Used for orders when not enough collateral was available to fill the margin requirements.</p></td>
               </tr>
 
               <tr>
                 <td>STATUS_PARTIALLY_FILLED</td>
                 <td>7</td>
-                <td><p>used for closed partially filled IOC orders</p></td>
+                <td><p>Used for closed partially filled IOC orders.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Order.TimeInForce">Order.TimeInForce</h3>
-        <p>Order Time in Force</p><p>See <a href="https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for details.</p>
+        <p>Time in Force for an order.</p><p>See <a href="https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for more detail.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10492,31 +10537,31 @@ margin requirement or fees</p></td>
               <tr>
                 <td>TIF_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Default value, can be valid for an amend</p></td>
+                <td><p>Default value for TimeInForce, can be valid for an amend.</p></td>
               </tr>
 
               <tr>
                 <td>TIF_GTC</td>
                 <td>1</td>
-                <td><p>good til cancelled</p></td>
+                <td><p>Good until cancelled.</p></td>
               </tr>
 
               <tr>
                 <td>TIF_GTT</td>
                 <td>2</td>
-                <td><p>good til time</p></td>
+                <td><p>Good until specified time.</p></td>
               </tr>
 
               <tr>
                 <td>TIF_IOC</td>
                 <td>3</td>
-                <td><p>immediate or cancel</p></td>
+                <td><p>Immediate or cancel.</p></td>
               </tr>
 
               <tr>
                 <td>TIF_FOK</td>
                 <td>4</td>
-                <td><p>fill or kill</p></td>
+                <td><p>Fill or kill.</p></td>
               </tr>
 
               <tr>
@@ -10535,7 +10580,7 @@ margin requirement or fees</p></td>
         </table>
 
         <h3 id="vega.Order.Type">Order.Type</h3>
-        <p>Order Type</p>
+        <p>Type values for an order.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10545,32 +10590,32 @@ margin requirement or fees</p></td>
               <tr>
                 <td>TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Default value, always invalid</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>TYPE_LIMIT</td>
                 <td>1</td>
-                <td><p>used for Limit orders</p></td>
+                <td><p>Used for Limit orders.</p></td>
               </tr>
 
               <tr>
                 <td>TYPE_MARKET</td>
                 <td>2</td>
-                <td><p>used for Market orders</p></td>
+                <td><p>Used for Market orders.</p></td>
               </tr>
 
               <tr>
                 <td>TYPE_NETWORK</td>
                 <td>3</td>
-                <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
+                <td><p>Used for orders where the initiating party is the network (with distressed traders).</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.OrderError">OrderError</h3>
-        <p>Set when an order has an issue</p>
+        <p>If there is an issue with an order during it's life-cycle, it will be marked with <tt>status.ORDER_STATUS_REJECTED</tt></p><p>and be given an error code in the <tt>reason</tt> field.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10580,146 +10625,147 @@ margin requirement or fees</p></td>
               <tr>
                 <td>ORDER_ERROR_NONE</td>
                 <td>0</td>
-                <td><p>Empty default error</p></td>
+                <td><p>Default value, no error reported.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_MARKET_ID</td>
                 <td>1</td>
-                <td><p>Order was submitted for a market that does not exist</p></td>
+                <td><p>Order was submitted for a market that does not exist.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_ORDER_ID</td>
                 <td>2</td>
-                <td><p>Order was submitted with an invalid ID</p></td>
+                <td><p>Order was submitted with an invalid identifier.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_OUT_OF_SEQUENCE</td>
                 <td>3</td>
-                <td><p>Order was amended with a sequence number that was not previous version &#43; 1</p></td>
+                <td><p>Order was amended with a sequence number that was not previous version &#43; 1.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_REMAINING_SIZE</td>
                 <td>4</td>
-                <td><p>Order was amended with an invalid remaining size (e.g. remaining greater than total size)</p></td>
+                <td><p>Order was amended with an invalid remaining size (e.g. remaining greater than total size).</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_TIME_FAILURE</td>
                 <td>5</td>
-                <td><p>Node was unable to get Vega (blockchain) time</p></td>
+                <td><p>Node was unable to get Vega (blockchain) time.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_REMOVAL_FAILURE</td>
                 <td>6</td>
-                <td><p>Failed to remove an order from the book</p></td>
+                <td><p>Failed to remove an order from the book.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_EXPIRATION_DATETIME</td>
                 <td>7</td>
-                <td><p>GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid</p></td>
+                <td><p>An order with <tt>TimeInForce.TIF_GTT</tt> was submitted or amended
+with an expiration that was badly formatted or otherwise invalid.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_ORDER_REFERENCE</td>
                 <td>8</td>
-                <td><p>Order was submitted or amended with an invalid reference field</p></td>
+                <td><p>Order was submitted or amended with an invalid reference field.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_EDIT_NOT_ALLOWED</td>
                 <td>9</td>
-                <td><p>Order amend was submitted for an order field that cannot not be amended (e.g. order id)</p></td>
+                <td><p>Order amend was submitted for an order field that cannot not be amended (e.g. order identifier).</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_AMEND_FAILURE</td>
                 <td>10</td>
-                <td><p>Amend failure because amend details do not match original order</p></td>
+                <td><p>Amend failure because amend details do not match original order.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_NOT_FOUND</td>
                 <td>11</td>
-                <td><p>Order not found in the order book or in order store</p></td>
+                <td><p>Order not found in an order book or store.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_PARTY_ID</td>
                 <td>12</td>
-                <td><p>Order was submitted with an invalid or missing party ID</p></td>
+                <td><p>Order was submitted with an invalid or missing party identifier.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_MARKET_CLOSED</td>
                 <td>13</td>
-                <td><p>Order was submitted for a market that has closed</p></td>
+                <td><p>Order was submitted for a market that has closed.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_MARGIN_CHECK_FAILED</td>
                 <td>14</td>
-                <td><p>Order was submitted, but the party did not have enough collateral to cover the order</p></td>
+                <td><p>Order was submitted, but the party did not have enough collateral to cover the order.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_MISSING_GENERAL_ACCOUNT</td>
                 <td>15</td>
-                <td><p>Order was submitted, but the party did not have an account for this asset</p></td>
+                <td><p>Order was submitted, but the party did not have an account for this asset.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INTERNAL_ERROR</td>
                 <td>16</td>
-                <td><p>Unspecified internal error</p></td>
+                <td><p>Unspecified internal error.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_SIZE</td>
                 <td>17</td>
-                <td><p>Order was submitted with an invalid or missing size (e.g. 0)</p></td>
+                <td><p>Order was submitted with an invalid or missing size (e.g. 0).</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_PERSISTENCE</td>
                 <td>18</td>
-                <td><p>Order was submitted with an invalid persistence for its type</p></td>
+                <td><p>Order was submitted with an invalid persistence for its type.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INVALID_TYPE</td>
                 <td>19</td>
-                <td><p>Order was submitted with an invalid type field</p></td>
+                <td><p>Order was submitted with an invalid type field.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_SELF_TRADING</td>
                 <td>20</td>
-                <td><p>Order was stopped as it would have traded with another order for the same party</p></td>
+                <td><p>Order was stopped as it would have traded with another order submitted from the same party.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES</td>
                 <td>21</td>
-                <td><p>Order was submitted, but the party did not have enough collateral to cover the fees for the order</p></td>
+                <td><p>Order was submitted, but the party did not have enough collateral to cover the fees for the order.</p></td>
               </tr>
 
               <tr>
                 <td>ORDER_ERROR_INCORRECT_MARKET_TYPE</td>
                 <td>22</td>
-                <td><p></p></td>
+                <td><p>Order was submitted with an incorrect or invalid market type.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Side">Side</h3>
-        <p></p>
+        <p>A side relates to the direction of an order, to Buy, or Sell.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10729,26 +10775,26 @@ margin requirement or fees</p></td>
               <tr>
                 <td>SIDE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Default value, always invalid</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>SIDE_BUY</td>
                 <td>1</td>
-                <td><p>Buy</p></td>
+                <td><p>Buy order.</p></td>
               </tr>
 
               <tr>
                 <td>SIDE_SELL</td>
                 <td>2</td>
-                <td><p>Sell</p></td>
+                <td><p>Sell order.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Trade.Type">Trade.Type</h3>
-        <p></p>
+        <p>Type values for a trade.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10758,32 +10804,35 @@ margin requirement or fees</p></td>
               <tr>
                 <td>TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>Default value, always invalid</p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>TYPE_DEFAULT</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Normal trading between two parties.</p></td>
               </tr>
 
               <tr>
                 <td>TYPE_NETWORK_CLOSE_OUT_GOOD</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>Trading initiated by the network with another party on the book,
+which helps to zero-out the positions of one or more distressed parties.</p></td>
               </tr>
 
               <tr>
                 <td>TYPE_NETWORK_CLOSE_OUT_BAD</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>Trading initiated by the network with another party off the book,
+with a distressed party in order to zero-out the position of the party.
+todo(cdm): chat with Jeremy on zoom to sanity check/improve.</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.TransferType">TransferType</h3>
-        <p></p>
+        <p>Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10793,79 +10842,79 @@ margin requirement or fees</p></td>
               <tr>
                 <td>TRANSFER_TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_LOSS</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Loss.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_WIN</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>Win.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_CLOSE</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>Close.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MTM_LOSS</td>
                 <td>4</td>
-                <td><p></p></td>
+                <td><p>Mark to market loss.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MTM_WIN</td>
                 <td>5</td>
-                <td><p></p></td>
+                <td><p>Mark to market win.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MARGIN_LOW</td>
                 <td>6</td>
-                <td><p></p></td>
+                <td><p>Margin too low.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MARGIN_HIGH</td>
                 <td>7</td>
-                <td><p></p></td>
+                <td><p>Margin too high.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MARGIN_CONFISCATED</td>
                 <td>8</td>
-                <td><p></p></td>
+                <td><p>Margin was confiscated.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MAKER_FEE_PAY</td>
                 <td>9</td>
-                <td><p></p></td>
+                <td><p>Pay maker fee.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_MAKER_FEE_RECEIVE</td>
                 <td>10</td>
-                <td><p></p></td>
+                <td><p>Receive maker fee.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY</td>
                 <td>11</td>
-                <td><p></p></td>
+                <td><p>Pay infrastructure fee.</p></td>
               </tr>
 
               <tr>
                 <td>TRANSFER_TYPE_LIQUIDITY_FEE_PAY</td>
                 <td>12</td>
-                <td><p></p></td>
+                <td><p>Pay liquidity fee.</p></td>
               </tr>
 
           </tbody>
