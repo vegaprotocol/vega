@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
+	"github.com/prometheus/common/log"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -59,6 +60,8 @@ type Engine struct {
 	assets    Assets
 	assetActs map[string]*assetAction
 	tsvc      TimeService
+
+	seen map[txRef]struct{}
 }
 
 func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets) (e *Engine) {
@@ -70,6 +73,7 @@ func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeServic
 		assetActs: map[string]*assetAction{},
 		tsvc:      tsvc,
 		assets:    assets,
+		seen:      map[txRef]struct{}{},
 	}
 }
 
@@ -157,11 +161,23 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		}
 		switch state {
 		case okState:
-			if err := e.finalizeAction(ctx, v); err != nil {
-				e.log.Error("unable to finalize action",
-					logging.String("action", v.String()),
-					logging.Error(err))
+			// check if this transaction have been seen before then
+			if _, ok := e.seen[v.ref]; ok {
+				// do nothing of this transaction, just display an error
+				log.Error("chain event reference a transaction already processed",
+					logging.String("asset-class", string(v.ref.asset)),
+					logging.String("tx-hash", v.ref.hash),
+					logging.String("action", v.String()))
+			} else {
+				// first time we seen this transaction, let's add iter
+				e.seen[v.ref] = struct{}{}
+				if err := e.finalizeAction(ctx, v); err != nil {
+					e.log.Error("unable to finalize action",
+						logging.String("action", v.String()),
+						logging.Error(err))
+				}
 			}
+
 		case rejectedState:
 			e.log.Error("network rejected banking action",
 				logging.String("action", v.String()))

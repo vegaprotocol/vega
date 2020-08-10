@@ -13,7 +13,7 @@ require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/ethereum/go-ethereum v1.9.12
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/gofrs/uuid v3.3.0+incompatible // indirect
+	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.4.0
 	github.com/google/btree v1.0.0
