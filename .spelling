@@ -7,11 +7,13 @@ api
 barnabee
 base64
 blockchain
+datestamps
 datetime
 Ed25519
 enum
 enums
 Ethereum
+faucet
 github
 GitLab
 Golang
