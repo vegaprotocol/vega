@@ -177,6 +177,10 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		},
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), f.cfg.Node.Retries),
 	)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusInternalServerError)
+		return
+	}
 
 	resp := MintResponse{ok}
 	writeSuccess(w, resp, http.StatusOK)
@@ -191,7 +195,7 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset stri
 		return err
 	}
 	source := resp.Asset.Source.GetBuiltinAsset()
-	if source != nil {
+	if source == nil {
 		return ErrNotABuiltinAsset
 	}
 	maxAmount, err := strconv.ParseUint(source.MaxFaucetAmountMint, 10, 64)
