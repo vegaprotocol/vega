@@ -132,6 +132,12 @@ message Order {
     // Fill or kill.
     TIF_FOK = 4;
 
+    // good for auction
+    TIF_GFA = 5;
+
+    // good for normal
+    TIF_GFN = 6;
+
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
     //       - gateway/graphql/schema.graphql (enum OrderTimeInForce)
@@ -180,24 +186,6 @@ message Order {
     //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
-  // Good For values for an order.
-  //
-  // Specifies what market state can this order be accepted in.
-  enum GoodFor {
-    // Default value, always invalid.
-    GOOD_FOR_UNSPECIFIED = 0;
-    // Normal trading market.
-    GOOD_FOR_CONTINUOUS = 1;
-    // Auction.
-    GOOD_FOR_AUCTION = 2;
-    // Used for orders where the initiating party is the network (used for distressed traders)
-    GOOD_FOR_AUCTION_AND_CONTINUOUS = 3;
-
-    // Note: If adding an enum value, add a matching entry in:
-    //       - gateway/graphql/helpers_enum.go
-    //       - gateway/graphql/schema.graphql (enum GoodFor)
-  }
-
   // Unique identifier for the order (set by the system after consensus).
   string id = 1;
   // Market identifier for the order.
@@ -242,8 +230,6 @@ message Order {
   // Batch identifier for the order, used internally for orders submitted during auctions
   // to keep track of the auction batch this order falls under (required for fees calculation).
   uint64 batchID = 17;
-  // Used to indicate which market state the order is good for.
-  GoodFor goodFor = 18;
 }
 
 // Order Cancellation Confirmation
@@ -659,8 +645,6 @@ message OrderSubmission {
   // set internally by the node to return a unique reference identifier for the order submission.
   // TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
   string reference = 10;
-  // Good for type for this order. Required field.
-  Order.GoodFor goodFor = 11 [(validator.field) = {is_in_enum : true}];
 }
 
 

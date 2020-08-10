@@ -1059,10 +1059,6 @@
                 </li>
 
                 <li>
-                  <a href="#vega.Order.GoodFor"><span class="badge">E</span>Order.GoodFor</a>
-                </li>
-
-                <li>
                   <a href="#vega.Order.Status"><span class="badge">E</span>Order.Status</a>
                 </li>
 
@@ -8698,13 +8694,6 @@ after each successful amend </p></td>
 to keep track which auction batch this order falls under (required for fees calculation) </p></td>
                 </tr>
 
-                <tr>
-                  <td>goodFor</td>
-                  <td><a href="#vega.Order.GoodFor">Order.GoodFor</a></td>
-                  <td></td>
-                  <td><p>Used to indicate which market state this order is good for </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -9045,13 +9034,6 @@ to keep track which auction batch this order falls under (required for fees calc
                   <td><p> </p></td>
                 </tr>
 
-                <tr>
-                  <td>goodFor</td>
-                  <td><a href="#vega.Order.GoodFor">Order.GoodFor</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-
             </tbody>
           </table>
 
@@ -9136,17 +9118,6 @@ to keep track which auction batch this order falls under (required for fees calc
 
                 <tr>
                   <td>type</td>
-                  <td>
-                    <ul>
-
-                      <li>is_in_enum: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>goodFor</td>
                   <td>
                     <ul>
 
@@ -10451,41 +10422,6 @@ margin requirement or fees</p></td>
           </tbody>
         </table>
 
-        <h3 id="vega.Order.GoodFor">Order.GoodFor</h3>
-        <p>Good for</p><p>What market state can this order be accepted in</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-
-              <tr>
-                <td>GOOD_FOR_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>Default value, always invalid</p></td>
-              </tr>
-
-              <tr>
-                <td>GOOD_FOR_CONTINUOUS</td>
-                <td>1</td>
-                <td><p>Normal trading market</p></td>
-              </tr>
-
-              <tr>
-                <td>GOOD_FOR_AUCTION</td>
-                <td>2</td>
-                <td><p>Auction</p></td>
-              </tr>
-
-              <tr>
-                <td>GOOD_FOR_AUCTION_AND_CONTINUOUS</td>
-                <td>3</td>
-                <td><p>used for orders where the initiating party is the network (used for distressed traders)</p></td>
-              </tr>
-
-          </tbody>
-        </table>
-
         <h3 id="vega.Order.Status">Order.Status</h3>
         <p>Order Status</p><p>See <a href="https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega">What order types are available to trade on Vega?</a> for details.</p>
         <table class="enum-table">
@@ -10581,6 +10517,18 @@ margin requirement or fees</p></td>
                 <td>TIF_FOK</td>
                 <td>4</td>
                 <td><p>fill or kill</p></td>
+              </tr>
+
+              <tr>
+                <td>TIF_GFA</td>
+                <td>5</td>
+                <td><p>good for auction</p></td>
+              </tr>
+
+              <tr>
+                <td>TIF_GFN</td>
+                <td>6</td>
+                <td><p>good for normal</p></td>
               </tr>
 
           </tbody>
