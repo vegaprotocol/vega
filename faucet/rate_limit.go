@@ -12,7 +12,7 @@ type RateLimit struct {
 	// map of pubkeys -> assets id -> time until request can be allowed
 	requests map[string]map[string]time.Time
 
-	mu sync.RWMutex
+	mu sync.Mutex
 }
 
 func NewRateLimit(ctx context.Context, cfg Config) *RateLimit {
@@ -26,8 +26,8 @@ func NewRateLimit(ctx context.Context, cfg Config) *RateLimit {
 
 // NewRequest returns nil if the party can request new funds
 func (r *RateLimit) NewRequest(pubkey, asset string) error {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	assets, ok := r.requests[pubkey]
 	if !ok {
