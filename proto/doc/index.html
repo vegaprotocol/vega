@@ -566,6 +566,14 @@
                   <a href="#api.VegaTimeResponse"><span class="badge">M</span>VegaTimeResponse</a>
                 </li>
 
+                <li>
+                  <a href="#api.WithdrawRequest"><span class="badge">M</span>WithdrawRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.WithdrawResponse"><span class="badge">M</span>WithdrawResponse</a>
+                </li>
+
 
 
 
@@ -1023,6 +1031,10 @@
 
                 <li>
                   <a href="#vega.TransferResponse"><span class="badge">M</span>TransferResponse</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Withdraw"><span class="badge">M</span>Withdraw</a>
                 </li>
 
 
@@ -4491,6 +4503,54 @@ or a specific asset </p></td>
 
 
 
+        <h3 id="api.WithdrawRequest">WithdrawRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>withdraw</td>
+                  <td><a href="#vega.Withdraw">vega.Withdraw</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.WithdrawResponse">WithdrawResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
 
 
 
@@ -4524,6 +4584,13 @@ or a specific asset </p></td>
                 <td><a href="#api.AmendOrderRequest">AmendOrderRequest</a></td>
                 <td><a href="#api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</a></td>
                 <td><p>Amend an Order</p></td>
+              </tr>
+
+              <tr>
+                <td>Withdraw</td>
+                <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
+                <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
+                <td><p>Request withdrawal</p></td>
               </tr>
 
               <tr>
@@ -5063,6 +5130,13 @@ or a specific asset </p></td>
                   <td><p>The number of decimal / precision handled by this asset </p></td>
                 </tr>
 
+                <tr>
+                  <td>maxFaucetAmountMint</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>This is the maximum amount that can be requested by a party through the builtin asset faucet at a time </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -5431,6 +5505,13 @@ or a specific asset </p></td>
                   <td></td>
                   <td><p>The ID of the transaction in which the things happened
 usually a hash </p></td>
+                </tr>
+
+                <tr>
+                  <td>nonce</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Arbitrary one-time integer used to prevent replay attacks </p></td>
                 </tr>
 
                 <tr>
@@ -6959,6 +7040,12 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS</td>
                 <td>15</td>
                 <td><p>the contract address is missing in the ERC20 asset source</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_INVALID_ASSET</td>
+                <td>16</td>
+                <td><p>the asset id refer to no assets in vega</p></td>
               </tr>
 
           </tbody>
@@ -10106,6 +10193,44 @@ against replay attack </p></td>
                   <td>balances</td>
                   <td><a href="#vega.TransferBalance">TransferBalance</a></td>
                   <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Withdraw">Withdraw</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
 

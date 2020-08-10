@@ -48,7 +48,6 @@ func getTestCommander(t *testing.T) *testCommander {
 
 func TestCommand(t *testing.T) {
 	t.Run("Signed command - success", testSignedCommandSuccess)
-	t.Run("Signed command - signature not required", testSignedUnsignedSuccess)
 	t.Run("SetChain - dummy test for completeness", testSetChain)
 }
 
@@ -65,17 +64,6 @@ func testSignedCommandSuccess(t *testing.T) {
 	cmd := blockchain.NodeVoteCommand
 	payload := &types.NodeVote{}
 	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
-	assert.NoError(t, commander.Command(cmd, payload))
-}
-
-func testSignedUnsignedSuccess(t *testing.T) {
-	commander := getTestCommander(t)
-	defer commander.Finish()
-
-	// this command doesn't require a signature, let's sign it anyway
-	cmd := blockchain.NotifyTraderAccountCommand
-	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
-	payload := &types.NotifyTraderAccount{}
 	assert.NoError(t, commander.Command(cmd, payload))
 }
 

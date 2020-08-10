@@ -479,7 +479,7 @@ type ComplexityRoot struct {
 
 type AccountResolver interface {
 	Balance(ctx context.Context, obj *proto.Account) (string, error)
-
+	Asset(ctx context.Context, obj *proto.Account) (*Asset, error)
 	Type(ctx context.Context, obj *proto.Account) (AccountType, error)
 	Market(ctx context.Context, obj *proto.Account) (*Market, error)
 }
@@ -498,7 +498,7 @@ type CandleResolver interface {
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *proto.MarginLevels) (*Market, error)
-
+	Asset(ctx context.Context, obj *proto.MarginLevels) (*Asset, error)
 	Party(ctx context.Context, obj *proto.MarginLevels) (*proto.Party, error)
 	MaintenanceLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	SearchLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
@@ -3013,7 +3013,7 @@ type MarginLevels {
   "market in which the margin is required for this trader"
   market: Market!
   "asset for the current margins"
-  asset: String!
+  asset: Asset!
   "id of the trader for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned int actually)"
@@ -3428,7 +3428,7 @@ type Future {
   maturity: String!
 
   "The name of the asset (string)"
-  asset: String!
+  asset: Asset!
 
   "The oracle used for this product (Oracle union)"
   oracle: Oracle!
@@ -3869,7 +3869,7 @@ type Account {
   "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
   "Asset, the 'currency'"
-  asset: String!
+  asset: Asset!
   "Account type (General, Margin, etc)"
   type: AccountType!
   "Market (only relevant to margin accounts)"
@@ -4149,7 +4149,7 @@ type FutureProduct {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
-  asset: String!
+  asset: Asset!
 }
 
 input InstrumentConfigurationInput {
@@ -5584,13 +5584,13 @@ func (ec *executionContext) _Account_asset(ctx context.Context, field graphql.Co
 		Object:   "Account",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Asset, nil
+		return ec.resolvers.Account().Asset(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5602,9 +5602,9 @@ func (ec *executionContext) _Account_asset(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Asset)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_type(ctx context.Context, field graphql.CollectedField, obj *proto.Account) (ret graphql.Marshaler) {
@@ -6755,9 +6755,9 @@ func (ec *executionContext) _Future_asset(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Asset)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_oracle(ctx context.Context, field graphql.CollectedField, obj *Future) (ret graphql.Marshaler) {
@@ -6857,9 +6857,9 @@ func (ec *executionContext) _FutureProduct_asset(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Asset)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *Instrument) (ret graphql.Marshaler) {
@@ -7581,13 +7581,13 @@ func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graph
 		Object:   "MarginLevels",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Asset, nil
+		return ec.resolvers.MarginLevels().Asset(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7599,9 +7599,9 @@ func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Asset)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -16470,10 +16470,19 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 				return res
 			})
 		case "asset":
-			out.Values[i] = ec._Account_asset(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "type":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -17251,10 +17260,19 @@ func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.Selection
 				return res
 			})
 		case "asset":
-			out.Values[i] = ec._MarginLevels_asset(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevels_asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "party":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

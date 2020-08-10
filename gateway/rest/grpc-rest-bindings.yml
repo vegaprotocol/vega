@@ -30,6 +30,15 @@ http:
     - selector: api.trading_data.MarketAccounts
       get: '/markets/{marketID}/accounts'
 
+    # assets
+    - selector: api.trading_data.Assets
+      get: '/assets'
+    - selector: api.trading_data.AssetByID
+      get: '/assets/{ID}'
+    - selector: api.trading_data.FeeInfrastructureAccounts
+      get: '/assets/{asset}/infrastructureFeeAccount'
+
+
     # MarketData
     - selector: api.trading_data.MarketsData
       get: '/markets-data'
@@ -86,9 +95,6 @@ http:
       body: "*"
 
     # Miscellaneous
-    - selector: api.trading.NotifyTraderAccount
-      post: '/fountain'
-      body: "*"
     - selector: api.trading_data.Statistics
       get: '/statistics'
     - selector: api.trading_data.GetVegaTime

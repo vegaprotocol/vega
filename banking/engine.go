@@ -2,6 +2,7 @@ package banking
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -89,12 +90,24 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 	return e.finalizeAssetList(ctx, assetID)
 }
 
-func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit) error {
+func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, asset string, amount uint64) error {
+	return e.finalizeWithdrawal(ctx, party, asset, amount)
+}
+
+func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
+	asset, err := e.assets.Get(d.VegaAssetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", d.VegaAssetID),
+			logging.Error(err))
+		return err
+	}
 	aa := &assetAction{
-		id:       id(d, now),
+		id:       id(d, nonce),
 		state:    pendingState,
 		builtinD: d,
+		asset:    asset,
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
@@ -104,7 +117,7 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 	now, _ := e.tsvc.GetTimeNow()
 	asset, _ := e.assets.Get(al.VegaAssetID)
 	aa := &assetAction{
-		id:          id(al, now),
+		id:          id(al, uint64(now.UnixNano())),
 		state:       pendingState,
 		erc20AL:     al,
 		asset:       asset,
@@ -117,9 +130,15 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 
 func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
-	asset, _ := e.assets.Get(d.VegaAssetID)
+	asset, err := e.assets.Get(d.VegaAssetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", d.VegaAssetID),
+			logging.Error(err))
+		return err
+	}
 	aa := &assetAction{
-		id:          id(d, now),
+		id:          id(d, uint64(now.UnixNano())),
 		state:       pendingState,
 		erc20D:      d,
 		asset:       asset,
@@ -161,7 +180,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
-	case aa.IsBuiltinAssetDeposit(), aa.IsERC20Deposit():
+	case aa.IsBuiltinAssetDeposit():
+		return e.finalizeDeposit(ctx, aa.deposit)
+	case aa.IsERC20Deposit():
+		// here the event queue send us a 0x... pubkey
+		// we do the slice operation to remove it ([2:]
+		aa.deposit.partyID = aa.deposit.partyID[2:]
 		return e.finalizeDeposit(ctx, aa.deposit)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
@@ -172,6 +196,10 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
 	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
+}
+
+func (e *Engine) finalizeWithdrawal(ctx context.Context, party, asset string, amount uint64) error {
+	return e.col.Withdraw(ctx, party, asset, amount)
 }
 
 func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
@@ -197,8 +225,8 @@ type HasVegaAssetID interface {
 	GetVegaAssetID() string
 }
 
-func id(s fmt.Stringer, now time.Time) string {
+func id(s fmt.Stringer, nonce uint64) string {
 	hasher := sha3.New256()
-	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), now.UnixNano())))
-	return string(hasher.Sum(nil))
+	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), nonce)))
+	return hex.EncodeToString(hasher.Sum(nil))
 }

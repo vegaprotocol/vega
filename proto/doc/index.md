@@ -101,6 +101,8 @@
     - [TradesStream](#api.TradesStream)
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
+    - [WithdrawRequest](#api.WithdrawRequest)
+    - [WithdrawResponse](#api.WithdrawResponse)
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
@@ -214,6 +216,7 @@
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
+    - [Withdraw](#vega.Withdraw)
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
@@ -1729,6 +1732,36 @@ The response for a new event sent to vega
 
 
 
+<a name="api.WithdrawRequest"></a>
+
+### WithdrawRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdraw | [vega.Withdraw](#vega.Withdraw) |  |  |
+
+
+
+
+
+
+<a name="api.WithdrawResponse"></a>
+
+### WithdrawResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| success | [bool](#bool) |  |  |
+
+
+
+
+
+
 
 
 
@@ -1745,6 +1778,7 @@ The response for a new event sent to vega
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
+| Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
@@ -1869,6 +1903,7 @@ A vega internal asset
 | symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
 | totalSupply | [string](#string) |  | The total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
+| maxFaucetAmountMint | [string](#string) |  | This is the maximum amount that can be requested by a party through the builtin asset faucet at a time |
 
 
 
@@ -2064,6 +2099,7 @@ providing information on things happening on other networks
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txID | [string](#string) |  | The ID of the transaction in which the things happened usually a hash |
+| nonce | [uint64](#uint64) |  | Arbitrary one-time integer used to prevent replay attacks |
 | builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  |  |
 | erc20 | [ERC20Event](#vega.ERC20Event) |  |  |
 | btc | [BTCEvent](#vega.BTCEvent) |  |  |
@@ -2552,6 +2588,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
 | PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
+| PROPOSAL_ERROR_INVALID_ASSET | 16 | the asset id refer to no assets in vega |
 
 
 
@@ -3666,6 +3703,23 @@ A transaction to be sent to vega
 | ----- | ---- | ----- | ----------- |
 | transfers | [LedgerEntry](#vega.LedgerEntry) | repeated |  |
 | balances | [TransferBalance](#vega.TransferBalance) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Withdraw"></a>
+
+### Withdraw
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| amount | [uint64](#uint64) |  |  |
+| asset | [string](#string) |  |  |
 
 
 

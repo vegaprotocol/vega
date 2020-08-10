@@ -91,6 +91,11 @@ func (a *Service) Enable(assetID string) error {
 	return ErrAssetInvalid
 }
 
+func (a *Service) IsEnabled(assetID string) bool {
+	_, ok := a.assets[assetID]
+	return ok
+}
+
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error

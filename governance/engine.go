@@ -53,6 +53,7 @@ type Accounts interface {
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
 	Get(assetID string) (*assets.Asset, error)
+	IsEnabled(string) bool
 }
 
 // TimeService ...
@@ -136,7 +137,7 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}()
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime)
+		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime, e.assets)
 		if err != nil {
 			return nil, perr, err
 		}
@@ -314,7 +315,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return validateNewMarket(e.currentTime, change.NewMarket.Changes)
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets)
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
 	}

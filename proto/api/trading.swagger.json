@@ -15,6 +15,75 @@
     "application/json"
   ],
   "paths": {
+    "/assets": {
+      "get": {
+        "summary": "Get the list of all assets in vega",
+        "operationId": "Assets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAssetsResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/assets/{ID}": {
+      "get": {
+        "summary": "Get an asset by its ID",
+        "operationId": "AssetByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAssetByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "ID of the asset to get",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/assets/{asset}/infrastructureFeeAccount": {
+      "get": {
+        "summary": "Get the list of infrastructure fees accounts filter eventually by assets",
+        "operationId": "FeeInfrastructureAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiFeeInfrastructureAccountsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "asset",
+            "description": "an empty string to return all accounts\nan asset ID to return a single infrastructure fee\nfee account for a given asset",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/governance/proposals/prepare": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
@@ -854,6 +923,39 @@
         ]
       }
     },
+    "/parties/{withdraw.partyID}/withdrawals": {
+      "post": {
+        "summary": "Request withdrawal",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdraw.partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
         "summary": "Get Statistics",
@@ -1521,6 +1623,23 @@
         }
       }
     },
+    "apiWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdraw"
+        }
+      }
+    },
+    "apiWithdrawResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -1754,6 +1873,10 @@
           "type": "string",
           "format": "uint64",
           "title": "The number of decimal / precision handled by this asset"
+        },
+        "maxFaucetAmountMint": {
+          "type": "string",
+          "title": "This is the maximum amount that can be requested by a party through the builtin asset faucet at a time"
         }
       },
       "title": "A vega internal asset"
@@ -1851,6 +1974,11 @@
         "txID": {
           "type": "string",
           "title": "The ID of the transaction in which the things happened\nusually a hash"
+        },
+        "nonce": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Arbitrary one-time integer used to prevent replay attacks"
         },
         "builtin": {
           "$ref": "#/definitions/vegaBuiltinAssetEvent"
@@ -2920,10 +3048,11 @@
         "PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE",
         "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
         "PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD",
-        "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS"
+        "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS",
+        "PROPOSAL_ERROR_INVALID_ASSET"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: a field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: the contract address is missing in the ERC20 asset source",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: a field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: the contract address is missing in the ERC20 asset source\n - PROPOSAL_ERROR_INVALID_ASSET: the asset id refer to no assets in vega",
       "title": "A list of possible error which could have happenned\nand the cause for an proposal being rejected of failed"
     },
     "vegaProposalTerms": {
@@ -3351,6 +3480,21 @@
           "type": "string",
           "format": "int64",
           "description": "Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network."
+        }
+      }
+    },
+    "vegaWithdraw": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "asset": {
+          "type": "string"
         }
       }
     }

@@ -143,7 +143,6 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	mktsetup = getMarketTestSetup(mkt)
 	// create the party engine, and add to the test setup
 	// so we can register parties and their account balances
-	mktsetup.party = execution.NewParty(log, mktsetup.colE, []proto.Market{*mkt}, mktsetup.broker)
 	m, err := execution.NewMarket(
 		log,
 		risk.NewDefaultConfig(),
@@ -152,7 +151,6 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		matching.NewDefaultConfig(),
 		fee.NewDefaultConfig(),
 		mktsetup.colE,
-		mktsetup.party, // party-engine here!
 		mkt,
 		time.Now(),
 		mktsetup.broker,
@@ -228,12 +226,9 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 				Balance: generalBal,
 			},
 		}
-		notif := &proto.NotifyTraderAccount{
-			TraderID: row.Cells[0].Value,
-			Amount:   uint64(generalBal),
-		}
+		trader := row.Cells[0].Value
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.party.NotifyTraderAccountWithTopUpAmount(context.Background(), notif, generalBal)
+		_ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
 	}
 	return nil
 }

@@ -24,9 +24,6 @@ service trading {
   // Amend an Order
   rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
 
-  // Request balance increase
-  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
-
   // Request withdrawal
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
 
@@ -74,14 +71,6 @@ message WithdrawRequest {
 
 message WithdrawResponse {
   bool success = 1;
-}
-
-message NotifyTraderAccountRequest {
-  vega.NotifyTraderAccount notif = 1;
-}
-
-message NotifyTraderAccountResponse {
-  bool submitted = 1;
 }
 
 message PrepareSubmitOrderResponse {

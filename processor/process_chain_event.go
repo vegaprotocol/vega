@@ -55,7 +55,7 @@ func (p *Processor) processChainEventBuiltinAsset(ctx context.Context, ce *types
 		if err := p.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
 			return err
 		}
-		return p.banking.DepositBuiltinAsset(act.Deposit)
+		return p.banking.DepositBuiltinAsset(act.Deposit, ce.Nonce)
 	case *types.BuiltinAssetEvent_Withdrawal:
 		if err := p.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err

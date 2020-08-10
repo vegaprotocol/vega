@@ -45,6 +45,8 @@ func testSubmitValidProposal(t *testing.T) {
 	party := eng.makeValidParty("a-valid-party", balance)
 
 	// to check min required level
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(1).Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(balance)
 	// once proposal is validated, it is added to the buffer
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -64,6 +66,9 @@ func testProposalState(t *testing.T) {
 
 	var tokens uint64 = 1000
 	party := eng.makeValidParty("valid-party", tokens)
+
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(1).Return(true)
 
 	unspecified := eng.newOpenProposal(party.Id, time.Now())
 	unspecified.State = types.Proposal_STATE_UNSPECIFIED
@@ -117,6 +122,9 @@ func testProposalDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(1).Return(true)
+
 	var balance uint64 = 1000
 	party := eng.makeValidParty("valid-party", balance)
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(balance)
@@ -150,6 +158,8 @@ func testProposerStake(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	noAccountPartyID := "party"
 
 	notFoundError := errors.New("account not found")
@@ -197,6 +207,8 @@ func testClosingTime(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	party := eng.makeValidParty("a-valid-party", 1)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
@@ -239,6 +251,8 @@ func testEnactmentTime(t *testing.T) {
 
 	party := eng.makeValidParty("a-valid-party", 1)
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
 		assert.True(t, ok)
@@ -288,6 +302,8 @@ func testVoteProposalID(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	voter := eng.makeValidParty("voter", 1)
 
 	err := eng.AddVote(context.Background(), types.Vote{
@@ -351,6 +367,8 @@ func testVoterStake(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(3).Return(uint64(2))
 
 	proposer := eng.makeValidParty("proposer", 1)
@@ -407,6 +425,8 @@ func testVotingDeclinedProposal(t *testing.T) {
 
 	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(2))
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	proposer := eng.makeValidParty("proposer", 1)
 	declined := eng.newOpenProposal(proposer.Id, time.Now())
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -447,6 +467,8 @@ func testVotingPassedProposal(t *testing.T) {
 
 	eng.accs.EXPECT().GetTotalTokens().Times(4).Return(uint64(9))
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	proposer := eng.makeValidParty("proposer", 1)
 	passed := eng.newOpenProposal(proposer.Id, time.Now())
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -516,6 +538,8 @@ func testProposalDeclined(t *testing.T) {
 
 	now := time.Now()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(4).Return(uint64(200))
 	proposer := eng.makeValidParty("proposer", 100)
 	voter := eng.makeValidPartyTimes("voter", 100, 3)
@@ -574,6 +598,8 @@ func testProposalPassed(t *testing.T) {
 
 	now := time.Now()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(4).Return(uint64(100))
 	proposerVoter := eng.makeValidPartyTimes("proposer-and-voter", 100, 3)
 
@@ -629,6 +655,9 @@ func testProposalPassed(t *testing.T) {
 func testMultipleProposalsLifecycle(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
+
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 
 	partyA := "party-A"
 	eng.accs.EXPECT().GetTotalTokens().AnyTimes().Return(uint64(300))

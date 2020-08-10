@@ -18,6 +18,8 @@ var (
 	ErrCommandKindUnknown = errors.New("unknown command kind when validating payload")
 )
 
+// Processor ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_mock.go -package mocks code.vegaprotocol.io/vega/blockchain Processor
 type Processor interface {
 	Process(ctx context.Context, payload []byte, pubkey []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error
@@ -133,7 +135,7 @@ func (c *codec) validateSigned(payload []byte) error {
 	// FIXME(): for now we just not verify 2 command which are
 	// not require to be signed. This will need to be removed once we have
 	// only signed commadn
-	if cmd != WithdrawCommand && cmd != NotifyTraderAccountCommand {
+	if cmd != WithdrawCommand {
 		// verify the signature
 		if err := verifyBundle(c.log, tx, bundle); err != nil {
 			c.log.Error("error verifying bundle", logging.Error(err))

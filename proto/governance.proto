@@ -239,6 +239,8 @@ enum ProposalError {
   PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD = 14;
   // the contract address is missing in the ERC20 asset source
   PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS = 15;
+  // the asset id refer to no assets in vega
+  PROPOSAL_ERROR_INVALID_ASSET = 16;
 }
 
 message Vote {

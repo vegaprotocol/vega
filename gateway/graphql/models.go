@@ -158,7 +158,7 @@ type Future struct {
 	// The maturity date of the product (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// The name of the asset (string)
-	Asset string `json:"asset"`
+	Asset *Asset `json:"asset"`
 	// The oracle used for this product (Oracle union)
 	Oracle Oracle `json:"oracle"`
 }
@@ -169,7 +169,7 @@ type FutureProduct struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
-	Asset string `json:"asset"`
+	Asset *Asset `json:"asset"`
 }
 
 // Future product configuration

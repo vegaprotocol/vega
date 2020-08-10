@@ -78,20 +78,6 @@ func (mr *MockExecutionEngineMockRecorder) Generate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockExecutionEngine)(nil).Generate))
 }
 
-// NotifyTraderAccount mocks base method
-func (m *MockExecutionEngine) NotifyTraderAccount(arg0 context.Context, arg1 *proto.NotifyTraderAccount) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyTraderAccount", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// NotifyTraderAccount indicates an expected call of NotifyTraderAccount
-func (mr *MockExecutionEngineMockRecorder) NotifyTraderAccount(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockExecutionEngine)(nil).NotifyTraderAccount), arg0, arg1)
-}
-
 // SubmitMarket mocks base method
 func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
 	m.ctrl.T.Helper()
@@ -119,18 +105,4 @@ func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *proto.Orde
 func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1)
-}
-
-// Withdraw mocks base method
-func (m *MockExecutionEngine) Withdraw(arg0 context.Context, arg1 *proto.Withdraw) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Withdraw indicates an expected call of Withdraw
-func (mr *MockExecutionEngineMockRecorder) Withdraw(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockExecutionEngine)(nil).Withdraw), arg0, arg1)
 }
