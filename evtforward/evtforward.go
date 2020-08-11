@@ -50,12 +50,13 @@ type EvtForwarder struct {
 	cmd              Commander
 	nodes            []nodeHash
 	self             string
-	mu               sync.RWMutex
 	ackedEvts        map[string]*types.ChainEvent
 	evts             map[string]tsEvt
 	currentTime      time.Time
 	top              ValidatorTopology
 	bcQueueWhitelist map[string]struct{}
+	mu               sync.RWMutex
+	evtsmu           sync.Mutex
 }
 
 type tsEvt struct {
@@ -99,6 +100,8 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
+	e.evtsmu.Lock()
+	defer e.evtsmu.Unlock()
 	key := string(hashKey([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
@@ -123,6 +126,9 @@ func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
 	if _, ok := e.bcQueueWhitelist[pubkey]; !ok {
 		return ErrPubKeyNotWhitelisted
 	}
+
+	e.evtsmu.Lock()
+	defer e.evtsmu.Unlock()
 
 	key := string(hashKey([]byte(evt.String())))
 	_, ok, _ := e.getEvt(key)
@@ -193,6 +199,9 @@ func (e *EvtForwarder) onTick(_ context.Context, t time.Time) {
 	e.mu.RLock()
 	retryRate := e.cfg.RetryRate.Duration
 	e.mu.RUnlock()
+
+	e.evtsmu.Lock()
+	defer e.evtsmu.Unlock()
 
 	// try to send all event that are not acknowledged at the moment
 	for k, evt := range e.evts {
