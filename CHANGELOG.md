@@ -20,7 +20,7 @@ This release contains a lot of groundwork for Fees and Auction mode.
 
 - [#2092](https://github.com/vegaprotocol/vega/issues/2092) 💥 Disable order amends
 - [#2027](https://github.com/vegaprotocol/vega/pull/2027) Add built in asset faucet endpoint
-- [#2075](https://github.com/vegaprotocol/vega/pull/2075), [#2086](https://github.com/vegaprotocol/vega/pull/2086), [#2083](https://github.com/vegaprotocol/vega/pull/2083), [#2078](https://github.com/vegaprotocol/vega/pull/2078) Add time & size limits to faucet requests 
+- [#2075](https://github.com/vegaprotocol/vega/pull/2075), [#2086](https://github.com/vegaprotocol/vega/pull/2086), [#2083](https://github.com/vegaprotocol/vega/pull/2083), [#2078](https://github.com/vegaprotocol/vega/pull/2078) Add time & size limits to faucet requests
 - [#2068](https://github.com/vegaprotocol/vega/pull/2068) Add REST endpoint to fetch governance proposals by Party
 - [#2058](https://github.com/vegaprotocol/vega/pull/2058) Add REST endpoints for fees
 - [#2047](https://github.com/vegaprotocol/vega/pull/2047) Add `prepareWithdraw` endpoint
@@ -40,6 +40,9 @@ This release contains a lot of groundwork for Fees and Auction mode.
 - [#2066](https://github.com/vegaprotocol/vega/pull/2066) Fix validation of proposal timestamps to ensure that datestamps specify events in the correct order
 - [#2043](https://github.com/vegaprotocol/vega/pull/2043) Track Event Queue events to avoid processing events from other chains twice
 ## 0.22.0
+
+### Bugfixes
+- [#2096](https://github.com/vegaprotocol/vega/pull/2096) Fix concurrent map access in event forward
 
 *2020-07-20*
 
