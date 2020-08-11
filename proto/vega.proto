@@ -366,8 +366,8 @@ message Fee {
   uint64 liquidityFee = 3;
 }
 
-// A set of one or more trades.
 message TradeSet {
+  // A set of one or more trades.
     repeated Trade trades = 1;
 }
 
@@ -526,8 +526,7 @@ enum ChainStatus {
 message Withdraw {
   // Unique party identifier affecting the withdrawal.
   string partyID = 1;
-  // The total amount withdrawn, the amount is an integer, for example `123456` is a correctly
-  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  // Total amount to withdraw.
   uint64 amount = 2;
   // Asset identifier.
   string asset = 3;
@@ -826,11 +825,11 @@ message MarketData {
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
 message ErrorDetail {
-  // a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
+  // A Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
   int32 code = 1;
-  // a message that describes the error in more detail, should describe the problem encountered.
+  // A message that describes the error in more detail, should describe the problem encountered.
   string message = 2;
-  // any inner error information that could add more context, or be helpful for error reporting.
+  // Any inner error information that could add more context, or be helpful for error reporting.
   string inner = 3;
 }
 

@@ -1479,8 +1479,8 @@ func (m *Fee) GetLiquidityFee() uint64 {
 	return 0
 }
 
-// A set of one or more trades.
 type TradeSet struct {
+	// A set of one or more trades.
 	Trades               []*Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2206,8 +2206,7 @@ func (m *Statistics) GetChainID() string {
 type Withdraw struct {
 	// Unique party identifier affecting the withdrawal.
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// The total amount withdrawn, the amount is an integer, for example `123456` is a correctly
-	// formatted price of `1.23456` assuming market configured to 5 decimal places.
+	// Total amount to withdraw.
 	Amount uint64 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Asset identifier.
 	Asset                string   `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -2653,9 +2652,9 @@ func (m *NodeVote) GetReference() string {
 
 // Represents an account for an asset on Vega for a particular owner or party.
 type Account struct {
-	// Unique identifier (used internally by Vega).
+	// Unique account identifier (used internally by Vega).
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The party that the account belongs to. Special values include `network`, which represents the network and is
+	// The party that the account belongs to. Special values include `network`, which represents the Vega network and is
 	// most commonly seen during liquidation of distressed trading positions.
 	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Balance of the asset, the balance is an integer, for example `123456` is a correctly
@@ -3373,11 +3372,11 @@ func (m *MarketData) GetAuctionStart() int64 {
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
 type ErrorDetail struct {
-	// a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
+	// A Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
 	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	// a message that describes the error in more detail, should describe the problem encountered.
+	// A message that describes the error in more detail, should describe the problem encountered.
 	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	// any inner error information that could add more context, or be helpful for error reporting.
+	// Any inner error information that could add more context, or be helpful for error reporting.
 	Inner                string   `protobuf:"bytes,3,opt,name=inner,proto3" json:"inner,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

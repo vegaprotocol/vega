@@ -18,91 +18,133 @@ service trading {
   // Prepare a submit order request
   rpc PrepareSubmitOrder(SubmitOrderRequest) returns (PrepareSubmitOrderResponse);
 
-  // Cancel an Order
+  // Prepare a cancel order request
   rpc PrepareCancelOrder(CancelOrderRequest) returns (PrepareCancelOrderResponse);
 
-  // Amend an Order
+  // Prepare an amend order request
   rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
 
-  // Request withdrawal
+  // Request a withdrawal
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 
-
-  // Governance
-
-  // Prepare proposal that can be sent out to the chain (via SubmitTransaction)
+  // Prepare a governance proposal
   rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
 
-  // Prepare a vote to be put on the chain (via SubmitTransaction)
+  // Prepare a governance vote
   rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
 
-  // chain events
+  // Propagate a chain event
   rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
 }
 
-// The request for a new event sent by the blockchain queue to be propagated into vega
+// Request for a new event sent by the blockchain queue to be propagated on Vega.
 message PropagateChainEventRequest {
-  // The event
+
+  // Chain event.
   vega.ChainEvent evt = 1;
+  // Public key.
   string pubKey = 2;
+  // Signature.
   bytes signature = 3;
 }
 
-// The response for a new event sent to vega
+// Response for a new event sent by the blockchain queue to be propagated on Vega.
 message PropagateChainEventResponse {
-  // Did the event get accepted by the node successfully
+
+  // Success will be true if the event was accepted by the node.
+  // Important - success does not mean that the event is confirmed by consensus.
   bool success = 1;
 }
 
+// Request for submitting a transaction on Vega.
 message SubmitTransactionRequest {
+  // This request will take the signed `blob` result from a `prepare` call and submit it for inclusion in a block by the Vega blockchain.
+  // Several commands are available on Vega:
+  // - SubmitOrder, see [PrepareSubmitOrder](#api.trading).
+  // - AmendOrder, see [PrepareAmendOrder](#api.trading).
+  // - CancelOrder, see [PrepareCancelOrder](#api.trading).
+  // - PrepareProposal, see [PrepareProposal](#api.trading).
+  // - PrepareVote, see [PrepareVote](#api.trading).
+  // - Withdraw, see [WithdrawRequest](#api.trading).
+  // All of these can be prepared using this API. Payload data must be signed using Vega Wallet before submitting a transaction.
+
+  // A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain.
   vega.SignedBundle tx = 1;
 }
 
+// Response for submitting a transaction on Vega.
 message SubmitTransactionResponse {
+
+  // Success will be true if the transaction was accepted by the node.
+  // Important - success does not mean that the transaction is confirmed by consensus.
   bool success = 1;
 }
 
+// Request for withdrawing assets on Vega.
 message WithdrawRequest {
+
+  // Withdrawal details.
   vega.Withdraw withdraw = 1;
 }
 
+// Response for withdrawing assets on Vega.
 message WithdrawResponse {
-  bool success = 1;
+
+    // Success will be true if the withdrawal request was accepted by the node.
+    // Important - success does not mean that the withdrawal is confirmed by consensus.
+    bool success = 1;
 }
 
+// Response for preparing an order submission.
 message PrepareSubmitOrderResponse {
+
+  // blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction.
   bytes blob = 1;
+  // Submission identifier (order reference).
   string submitID = 2;
 }
 
+// Response for preparing an order cancellation.
 message PrepareCancelOrderResponse {
+
+  // blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction.
   bytes blob = 1;
 }
 
+// Response for preparing an order amendment.
 message PrepareAmendOrderResponse {
+
+  // blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction.
   bytes blob = 1;
 }
 
+// Request to submit a new order.
 message SubmitOrderRequest {
 
-  // the bulk of the Order, including market, party, price, size, side, time in force, etc.
+  // An order submission.
   vega.OrderSubmission submission = 1;
 }
 
+// Request to cancel an existing order.
 message CancelOrderRequest {
+
+  // An order cancellation.
   vega.OrderCancellation cancellation = 1;
 }
 
+// Request to amend an existing order.
 message AmendOrderRequest {
+
+  // An order amendment.
   vega.OrderAmendment amendment = 1;
 }
 
 service trading_data {
 
-  // Accounts
+  // -- Accounts --
 
   // Get a list of Accounts by Market
   rpc MarketAccounts(MarketAccountsRequest) returns (MarketAccountsResponse);
@@ -113,12 +155,12 @@ service trading_data {
   // Get the list of infrastructure fees accounts filter eventually by assets
  rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
 
-  // Candles
+  // -- Candles --
 
   // Get a list of Candles by Market
   rpc Candles(CandlesRequest) returns (CandlesResponse);
 
-  // Market Data
+  // -- Market Data --
 
   // Get Market Data by MarketID
   rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
@@ -126,7 +168,7 @@ service trading_data {
   // Get a list of Market Data
   rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
 
-  // Markets
+  // -- Markets --
 
   // Get a Market by ID
   rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
@@ -137,7 +179,7 @@ service trading_data {
   // Get a list of Markets
   rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
 
-  // Orders
+  // -- Orders --
 
   // Get an Order by Market and OrderID
   rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
@@ -160,7 +202,7 @@ service trading_data {
   // Get all versions of the order by its orderID
   rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
 
-  // Parties
+  // -- Parties --
 
   // Get Margin Levels by PartyID
   rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
@@ -171,12 +213,12 @@ service trading_data {
   // Get a Party by ID
   rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
 
-  // Positions
+  // -- Positions --
 
   // Get a list of Positions by Party
   rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
 
-  // Trades
+  // -- Trades --
 
   // Get latest Trade
   rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
@@ -190,8 +232,7 @@ service trading_data {
   // Get a list of Trades by Party
   rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
 
-
-  // Governance
+  // -- Governance --
 
   // Get governance data (proposals and votes) for all proposals
   rpc GetProposals(GetProposalsRequest) returns (GetProposalsResponse);
@@ -232,7 +273,7 @@ service trading_data {
   // Subscribe to a stream of proposal votes
   rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
-  // Misc
+  // -- Misc --
 
   // Get Statistics
   rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
@@ -267,432 +308,720 @@ service trading_data {
   // Subscribe to a stream of Transfer Responses
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 
-  // Get an aggregate of signature from all the node of the network
+  // Get an aggregate of signatures from all the nodes of the network.
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
 
-  // Get an asset by its ID
+  // Get an asset by its identifier.
   rpc AssetByID(AssetByIDRequest) returns (AssetByIDResponse);
 
-  // Get the list of all assets in vega
+  // Get a list of all assets on Vega.
   rpc Assets(AssetsRequest) returns (AssetsResponse);
 }
 
-// The request to get the lit of all assets in vega
-message AssetsRequest {}
+// @exclude todo: could be replaced by google.protobuf.Empty, however I do prefer the more verbose AssetRequest message
 
-// The response containing the list of all assets enabled in vega
+// Request for a list of all assets enabled on Vega.
+message AssetsRequest {
+}
+
+// Response for a list of all assets enabled on Vega.
 message AssetsResponse {
-  // The list of assets
+
+  // A list of 0 or more assets.
   repeated vega.Asset assets = 1;
 }
 
-// The request message to get an AssetByID
+// Request for an asset given an asset identifier.
 message AssetByIDRequest {
-  // ID of the asset to get
+
+  // @exclude todo: Missing validator for required.
+  // Asset identifier. Required field.
   string ID = 1;
 }
 
-// The response message to get an AssetByID
+// Response for an asset given an asset identifier.
 message AssetByIDResponse {
-  // The asset corresponding to the requested ID
+
+  // An asset record, if found.
   vega.Asset asset = 1;
 }
 
-// The request message to specify the ID of the resource we want to retrieve
-// the aggregated signatures for
+// Request to specify the identifier of the resource we want to retrieve aggregated signatures for.
 message GetNodeSignaturesAggregateRequest {
-  // The ID of the resource
+
+  // @exclude todo: Missing validator for required.
+  // Resource identifier. Required field.
   string ID = 1;
 }
 
-// The response of the GetNodeSIgnatureAggregate rpc
+// Response to specify the identifier of the resource we want to retrieve aggregated signatures for.
 message GetNodeSignaturesAggregateResponse {
-  // The list of signatures
+
+  // A list of 0 or more signatures.
   repeated vega.NodeSignature signatures = 1;
 }
 
+// Optional proposal state.
 message OptionalProposalState {
+
+  // Proposal state value.
   vega.Proposal.State value = 1;
 }
 
-
+// Request for a list of proposals.
 message GetProposalsRequest {
+
+  // Optional proposal state.
   OptionalProposalState selectInState = 1;
 }
 
+// Response for a list of proposals.
 message GetProposalsResponse {
+
+  // A list of 0 or more governance data.
   repeated vega.GovernanceData data = 1;
 }
 
-
+// Request for a list of proposals for a party.
 message GetProposalsByPartyRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  // Optional proposal state.
   OptionalProposalState selectInState = 2;
 }
 
+// Response for a list of proposals for a party.
 message GetProposalsByPartyResponse {
+
+  // A list of 0 or more governance data.
   repeated vega.GovernanceData data = 1;
 }
 
-
+// Request for a list of votes for a party.
 message GetVotesByPartyRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Response for a list of votes for a party.
 message GetVotesByPartyResponse {
+
+  // A list of 0 or more votes.
   repeated vega.Vote votes = 1;
 }
 
-
+// Request for a list of new market proposals.
 message GetNewMarketProposalsRequest {
+
+  // Optional proposal state.
   OptionalProposalState selectInState = 1;
 }
 
+// Response for a list of new market proposals.
 message GetNewMarketProposalsResponse {
+
+  // A list of 0 or more governance data.
   repeated vega.GovernanceData data = 1;
 }
 
-
+// Request for a list of update market proposals.
 message GetUpdateMarketProposalsRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
+  // Proposal state.
   OptionalProposalState selectInState = 2;
 }
 
+// Response for a list of update market proposals.
 message GetUpdateMarketProposalsResponse {
+
+  // A list of 0 or more governance data.
   repeated vega.GovernanceData data = 1;
 }
 
-
+// Request for a list of network parameter proposals.
 message GetNetworkParametersProposalsRequest {
+
+  // Optional proposal state.
   OptionalProposalState selectInState = 1;
 }
 
+// Response for a list of network parameter proposals.
 message GetNetworkParametersProposalsResponse {
+
+  // A list of 0 or more governance data.
   repeated vega.GovernanceData data = 1;
 }
 
-
+// Request for a list of new asset proposals.
 message GetNewAssetProposalsRequest {
+
+  // Optional proposal state.
   OptionalProposalState selectInState = 1;
 }
 
+// Response for a list of new asset proposals.
 message GetNewAssetProposalsResponse {
+
+  // A list of 0 or more governance data.
   repeated vega.GovernanceData data = 1;
 }
 
-
+// Request for a governance proposal given a proposal identifier.
 message GetProposalByIDRequest {
+
+  // Proposal identifier. Required field.
   string proposalID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Response for a governance proposal given a proposal identifier.
 message GetProposalByIDResponse {
+
+  // Governance data, if found.
   vega.GovernanceData data = 1;
 }
 
-
+// Request for a governance proposal given a proposal reference.
 message GetProposalByReferenceRequest {
+
+  // Proposal reference. Required field.
   string Reference = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Response for a governance proposal given a proposal reference.
 message GetProposalByReferenceResponse {
+
+  // Governance data, if found.
   vega.GovernanceData data = 1;
 }
 
-
+// Request to subscribe to a stream of governance proposals for a party.
 message ObservePartyProposalsRequest {
+
+  // Party identifier. Required field.
   string partyID = 1  [(validator.field) = {string_not_empty : true }];
 }
 
+// Request to subscribe to a stream of governance votes for a proposal.
 message ObserveProposalVotesRequest {
+
+  // Proposal identifier. Required field.
   string proposalID = 1  [(validator.field) = {string_not_empty : true }];
 }
 
+// Request to subscribe to a stream of governance votes for a party.
 message ObservePartyVotesRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
+// Request to subscribe to a stream of MarginLevels data matching the given party identifier.
+// Optionally, the list can be additionally filtered by market.
 message MarginLevelsSubscribeRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
+  // Market identifier.
   string marketID = 2;
 }
 
+// Request for margin levels for a party.
 message MarginLevelsRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
+  // Market identifier.
   string marketID = 2;
 }
 
+// Response for margin levels for a party.
 message MarginLevelsResponse {
+
+  // A list of 0 or more margin levels.
   repeated vega.MarginLevels marginLevels = 1;
 }
 
+// Request to subscribe to a stream of MarketsData.
+// Optionally, the list can be additionally filtered by market.
 message MarketsDataSubscribeRequest {
+
+  // Market identifier.
   string marketID = 1;
 }
 
+// Request for market data for a market.
 message MarketDataByIDRequest {
+
+  // Market identifier.
   string marketID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
+// Response for market data for a market.
 message MarketDataByIDResponse {
+
+  // Market data, if found.
   vega.MarketData marketData = 1;
 }
 
+// Response for market data.
 message MarketsDataResponse {
+
+  // A list of 0 or more market data.
   repeated vega.MarketData marketsData = 1;
 }
 
+// Request for the latest trade that occurred on Vega for a given market.
 message LastTradeRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
+// Response for the latest trade that occurred on Vega for a given market.
 message LastTradeResponse {
+
+  // A trade, if found.
   vega.Trade trade = 1;
 }
 
+// Request for a market given a market identifier.
 message MarketByIDRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
+// Response for a market given a market identifier.
 message MarketByIDResponse {
+
+  // A market, if found.
   vega.Market market = 1;
 }
 
+// Request for a party given a party identifier.
 message PartyByIDRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
+// Response for a party given a party identifier.
 message PartyByIDResponse {
+
+  // A party, if found.
   vega.Party party = 1;
 }
 
+// Response to a request for a list of parties.
 message PartiesResponse {
+
+  // A list of 0 or more parties.
   repeated vega.Party parties = 1;
 }
 
+// Request for a list of trades relating to the given party.
+// Optionally, the list can be additionally filtered for trades by market.
 message TradesByPartyRequest {
+
+  // Party identifier. Required field.
   string partyID = 1;
+  // Market identifier.
   string marketID = 2;
+  // Pagination controls.
   Pagination pagination = 3;
 }
 
+// Response for a list of trades relating to a party.
 message TradesByPartyResponse {
+
+  // A list of 0 or more trades.
   repeated vega.Trade trades = 1;
 }
 
+// Request for a list of trades related to an order.
 message TradesByOrderRequest {
+
+  // Order identifier. Required field.
   string orderID = 1;
 }
 
+// Response for a list of trades related to an order.
 message TradesByOrderResponse {
+
+  // A list of 0 or more trades.
   repeated vega.Trade trades = 1;
 }
 
+// Request to subscribe to a stream of Accounts.
 message AccountsSubscribeRequest {
+
+  // @exclude todo(cdm): describe the combinations of using the fields here...
+
+  // Market identifier.
   string marketID = 1;
+  // Party identifier.
   string partyID = 2;
+  // Asset identifier.
   string asset = 3;
+  // Account type to subscribe to. Required field.
   vega.AccountType type = 4;
 }
 
+// Request to subscribe to a stream of Orders.
 message OrdersSubscribeRequest {
+
+  // @exclude Todo(cdm): check the logic, I think these are filters not required fields...
+
+  // Market identifier.
   string marketID = 1;
+  // Party identifier.
   string partyID = 2;
 }
 
+// Request to subscribe to a stream of Trades.
 message TradesSubscribeRequest {
+
+  // @exclude Todo(cdm): check the logic, I think these are filters not required fields...
+
+  // Market identifier.
   string marketID = 1;
+  // Party identifier.
   string partyID = 2;
 }
 
+// Request to subscribe to a stream of Candles.
 message CandlesSubscribeRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
+  // Time interval for the candles. Required field.
   vega.Interval interval = 2;
 }
 
+// Request to subscribe to a stream of MarketDepth data.
 message MarketDepthSubscribeRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Request to subscribe to a stream of Positions.
 message PositionsSubscribeRequest {
+
+  // Party identifier. Required field.
   string partyID = 1;
 }
 
+// Request for a list of orders for a market.
 message OrdersByMarketRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
+  // Optional pagination controls.
   Pagination pagination = 2;
 }
 
+// Response for a list of orders for a market.
 message OrdersByMarketResponse {
+
+  // A list of 0 or more orders.
   repeated vega.Order orders = 1;
 }
 
+// Request for a list of orders for a party.
 message OrdersByPartyRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
+  // Pagination controls.
   Pagination pagination = 2;
 }
 
+// Response for a list of orders for a party.
 message OrdersByPartyResponse {
+
+  // A list of 0 or more orders.
   repeated vega.Order orders = 1;
 }
 
+// Request for an order on a market given an order identifier.
 message OrderByMarketAndIdRequest {
-  string marketID = 1 [(validator.field) = {string_not_empty : true }];
+
+  // Market identifier. Required field.
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
+  // Order identifier. Required field.
   string orderID = 2 [(validator.field) = {string_not_empty : true}];
 }
 
+// Response for an order on a market given an order identifier.
 message OrderByMarketAndIdResponse {
+
+  // An order, if found.
   vega.Order order = 1;
 }
 
+// Request for an order given an order reference.
 message OrderByReferenceRequest {
-  string reference = 1 [(validator.field) = {string_not_empty : true }];
+
+  // Unique reference. Required field.
+  string reference = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Response for an order given an order reference.
 message OrderByReferenceResponse {
+
+  // An order, if found.
   vega.Order order = 1;
 }
 
+// Response for a list of markets on Vega.
 message MarketsResponse {
 
-  // a list of Markets
+  // A list of 0 or more markets.
   repeated vega.Market markets = 1;
 }
 
+// Request for a list of candles for a market at an interval.
 message CandlesRequest {
+
+  // @exclude todo(cdm): additional helpful information about candles...
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
-
-  // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+  // Timestamp to retrieve candles since, in nanoseconds since the epoch.
+  // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field.
   int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
-
+  // Time interval for the candles. Required field.
   vega.Interval interval = 3;
 }
 
+// Response for a list of candles for a market at an interval.
 message CandlesResponse {
+
+  // A list of 0 or more candles.
   repeated vega.Candle candles = 1;
 }
 
+// Request for the market depth/order book price levels on a market.
+// Optionally, a maximum depth can be set to limit the number of levels returned.
 message MarketDepthRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty: true}];
+  // Max depth limits the number of levels returned. Default is 0, which returns all levels.
   uint64 maxDepth = 2;
 }
 
+// Response for the market depth/order book price levels on a market.
 message MarketDepthResponse {
+
+  // Market identifier.
   string marketID = 1;
+  // Zero or more price levels for the buy side of the market depth data.
   repeated vega.PriceLevel buy = 2;
+  // Zero or more price levels for the sell side of the market depth data.
   repeated vega.PriceLevel sell = 3;
+  // Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
   vega.Trade lastTrade = 4;
 }
 
+// Request for a list of trades on a market.
 message TradesByMarketRequest {
+
+  // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty: true}];
+  // Pagination controls.
   Pagination pagination = 2;
 }
 
+// Response for a list of trades on a market.
 message TradesByMarketResponse {
+
+  // A list of 0 or more trades.
   repeated vega.Trade trades = 1;
 }
 
-message PositionsByPartyRequest{
+// Request for a list of positions for a party.
+// Optionally, if a market identifier is set, the results will be filtered for that market only.
+message PositionsByPartyRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty: true}];
+  // Market identifier.
   string marketID = 2;
 }
 
-message PositionsByPartyResponse{
+// Response for a list of positions for a party.
+message PositionsByPartyResponse {
+
+  // A list of 0 or more positions.
   repeated vega.Position positions = 1;
 }
 
+// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime".
 message VegaTimeResponse {
 
-  // nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+  // Timestamp representation of current VegaTime.
+  // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
   int64 timestamp = 1;
 }
 
+// Pagination controls.
 message Pagination {
+
+  // Skip the number of records specified. Default is 0.
   uint64 skip = 1;
+  // Limit the number of returned records to the value specified. Default is 50.
   uint64 limit = 2;
+  // Descending reverses the order of the records returned.
+  // Default is true, if false the results will be returned in ascending order.
   bool descending = 3;
 }
 
+// A stream of orders.
 message OrdersStream {
+
+  // A list of 0 or more orders.
   repeated vega.Order orders = 1;
 }
 
+// A stream of trades.
 message TradesStream {
+
+  // A list of 0 or more trades.
   repeated vega.Trade trades = 1;
 }
 
+// Request for a list of accounts for a party.
 message PartyAccountsRequest {
+
+  // @exclude todo(cdm): Include in mop up ticket - required fields here and naming....
+
+  // Party identifier.
   string partyID = 1;
+  // Market identifier.
   string marketID = 2;
+  // Account type. Required field.
   vega.AccountType type = 3;
+  // Asset identifier.
   string asset = 4;
 }
 
+// Response for a list of accounts for a party.
 message PartyAccountsResponse {
+
+  // A list of 0 or more accounts.
   repeated vega.Account accounts = 1;
 }
 
+// Request for a list of accounts for a market.
 message MarketAccountsRequest {
+
+  // @exclude todo(cdm): Include in mop up ticket - required fields here and naming....
+
+  // Market identifier.
   string marketID = 1;
+  // Asset identifier.
   string asset = 2;
 }
 
+// Response for a list of accounts for a market.
 message MarketAccountsResponse {
+
+  // A list of 0 or more accounts.
   repeated vega.Account accounts = 1;
 }
 
-// Request for the infrastructure fees accounts
+// Request for a list of infrastructure fee accounts.
 message FeeInfrastructureAccountsRequest {
-  // an empty string to return all accounts
-  // an asset ID to return a single infrastructure fee
-  // fee account for a given asset
+
+  // Asset identifier. Required field.
+  // Set to an empty string to return all accounts.
+  // Set to an asset ID to return a single infrastructure fee account for a given asset.
   string asset = 1;
 }
 
-// Response for the infrastructure fees accounts
+// Response for a list of infrastructure fee accounts.
 message FeeInfrastructureAccountsResponse {
-  // A list of infrastructure fee accounts for all
-  // or a specific asset
+
+  // A list of 0 or more infrastructure fee accounts.
   repeated vega.Account accounts = 1;
 }
 
+// Request to prepare a governance proposal.
 message PrepareProposalRequest {
+
+  // Party identifier. Required field.
   string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  // Unique reference.
   string reference = 2;
+  // Proposal terms. Required field.
   vega.ProposalTerms proposal = 3 [(validator.field) = {msg_exists : true}];
 }
 
+// Response to prepare a governance proposal.
 message PrepareProposalResponse {
+
+  // blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction.
   bytes blob = 1;
+  // A copy of the prepared proposal.
   vega.Proposal pendingProposal = 2;
 }
 
+// Request to prepare a governance vote.
 message PrepareVoteRequest {
+
+  // Vote. Required field.
   vega.Vote vote = 1 [(validator.field) = {msg_exists: true}];
 }
 
+// Response to prepare a governance vote.
 message PrepareVoteResponse {
+
+  // blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction.
   bytes blob = 1;
+  // A copy of the prepared vote.
   vega.Vote vote = 2;
 }
 
+// Request for an order with the specified order identifier.
+// Optionally, return a specific version of the order with the `version` field.
 message OrderByIDRequest {
-  string orderID = 1 [(validator.field) = {msg_exists: true}];
 
-  // version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
+  // Order identifier. Required field.
+  string orderID = 1 [(validator.field) = {msg_exists: true}];
+  // Version of the order.
+  // Set `version` to 0 for most recent version of the order.
+  // Set `1` for original version of the order.
+  // Set `2` for first amendment, `3` for second amendment, etc.
   uint64 version = 2;
 }
 
+//@exclude todo(cdm): Remove this duplicate response and add Order Versions By ID Response
+
+// Request for an order given the specified order reference.
 message OrderByReferenceIDRequest {
+
+  // Reference. Required field.
   string referenceID = 1 [(validator.field) = {msg_exists: true}];
 }
 
+// Request for a list of all versions of an order given the specified order identifier.
 message OrderVersionsByIDRequest {
+
+  // Order identifier. Required field.
   string orderID = 1 [(validator.field) = {msg_exists: true}];
+  // Pagination controls.
   Pagination pagination = 2;
 }
 
-
+// Response to a request for a list of all versions of an order.
 message OrderVersionsResponse {
-  repeated vega.Order orders = 1;
+
+    // A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended).
+    repeated vega.Order orders = 1;
 }

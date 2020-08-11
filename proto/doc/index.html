@@ -1104,7 +1104,7 @@
 
 
         <h3 id="api.AccountsSubscribeRequest">AccountsSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of Accounts.</p>
 
 
           <table class="field-table">
@@ -1117,28 +1117,28 @@
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.AccountType">vega.AccountType</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Account type to subscribe to. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -1149,7 +1149,7 @@
 
 
         <h3 id="api.AmendOrderRequest">AmendOrderRequest</h3>
-        <p></p>
+        <p>Request to amend an existing order.</p>
 
 
           <table class="field-table">
@@ -1162,7 +1162,7 @@
                   <td>amendment</td>
                   <td><a href="#vega.OrderAmendment">vega.OrderAmendment</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An order amendment. </p></td>
                 </tr>
 
             </tbody>
@@ -1173,7 +1173,7 @@
 
 
         <h3 id="api.AssetByIDRequest">AssetByIDRequest</h3>
-        <p>The request message to get an AssetByID</p>
+        <p>Request for an asset given an asset identifier.</p>
 
 
           <table class="field-table">
@@ -1186,7 +1186,7 @@
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>ID of the asset to get </p></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -1197,7 +1197,7 @@
 
 
         <h3 id="api.AssetByIDResponse">AssetByIDResponse</h3>
-        <p>The response message to get an AssetByID</p>
+        <p>Response for an asset given an asset identifier.</p>
 
 
           <table class="field-table">
@@ -1210,7 +1210,7 @@
                   <td>asset</td>
                   <td><a href="#vega.Asset">vega.Asset</a></td>
                   <td></td>
-                  <td><p>The asset corresponding to the requested ID </p></td>
+                  <td><p>An asset record, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -1221,14 +1221,14 @@
 
 
         <h3 id="api.AssetsRequest">AssetsRequest</h3>
-        <p>The request to get the lit of all assets in vega</p>
+        <p>Request for a list of all assets enabled on Vega.</p>
 
 
 
 
 
         <h3 id="api.AssetsResponse">AssetsResponse</h3>
-        <p>The response containing the list of all assets enabled in vega</p>
+        <p>Response for a list of all assets enabled on Vega.</p>
 
 
           <table class="field-table">
@@ -1241,7 +1241,7 @@
                   <td>assets</td>
                   <td><a href="#vega.Asset">vega.Asset</a></td>
                   <td>repeated</td>
-                  <td><p>The list of assets </p></td>
+                  <td><p>A list of 0 or more assets. </p></td>
                 </tr>
 
             </tbody>
@@ -1252,7 +1252,7 @@
 
 
         <h3 id="api.CancelOrderRequest">CancelOrderRequest</h3>
-        <p></p>
+        <p>Request to cancel an existing order.</p>
 
 
           <table class="field-table">
@@ -1265,7 +1265,7 @@
                   <td>cancellation</td>
                   <td><a href="#vega.OrderCancellation">vega.OrderCancellation</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An order cancellation. </p></td>
                 </tr>
 
             </tbody>
@@ -1276,7 +1276,7 @@
 
 
         <h3 id="api.CandlesRequest">CandlesRequest</h3>
-        <p></p>
+        <p>Request for a list of candles for a market at an interval.</p>
 
 
           <table class="field-table">
@@ -1289,21 +1289,22 @@
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>sinceTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>nanoseconds since the epoch. See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
+                  <td><p>Timestamp to retrieve candles since, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>interval</td>
                   <td><a href="#vega.Interval">vega.Interval</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Time interval for the candles. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -1352,7 +1353,7 @@
 
 
         <h3 id="api.CandlesResponse">CandlesResponse</h3>
-        <p></p>
+        <p>Response for a list of candles for a market at an interval.</p>
 
 
           <table class="field-table">
@@ -1365,7 +1366,7 @@
                   <td>candles</td>
                   <td><a href="#vega.Candle">vega.Candle</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more candles. </p></td>
                 </tr>
 
             </tbody>
@@ -1376,7 +1377,7 @@
 
 
         <h3 id="api.CandlesSubscribeRequest">CandlesSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of Candles.</p>
 
 
           <table class="field-table">
@@ -1389,14 +1390,14 @@
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>interval</td>
                   <td><a href="#vega.Interval">vega.Interval</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Time interval for the candles. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -1434,7 +1435,7 @@
 
 
         <h3 id="api.FeeInfrastructureAccountsRequest">FeeInfrastructureAccountsRequest</h3>
-        <p>Request for the infrastructure fees accounts</p>
+        <p>Request for a list of infrastructure fee accounts.</p>
 
 
           <table class="field-table">
@@ -1447,9 +1448,9 @@
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>an empty string to return all accounts
-an asset ID to return a single infrastructure fee
-fee account for a given asset </p></td>
+                  <td><p>Asset identifier. Required field.
+Set to an empty string to return all accounts.
+Set to an asset ID to return a single infrastructure fee account for a given asset. </p></td>
                 </tr>
 
             </tbody>
@@ -1460,7 +1461,7 @@ fee account for a given asset </p></td>
 
 
         <h3 id="api.FeeInfrastructureAccountsResponse">FeeInfrastructureAccountsResponse</h3>
-        <p>Response for the infrastructure fees accounts</p>
+        <p>Response for a list of infrastructure fee accounts.</p>
 
 
           <table class="field-table">
@@ -1473,8 +1474,7 @@ fee account for a given asset </p></td>
                   <td>accounts</td>
                   <td><a href="#vega.Account">vega.Account</a></td>
                   <td>repeated</td>
-                  <td><p>A list of infrastructure fee accounts for all
-or a specific asset </p></td>
+                  <td><p>A list of 0 or more infrastructure fee accounts. </p></td>
                 </tr>
 
             </tbody>
@@ -1485,7 +1485,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNetworkParametersProposalsRequest">GetNetworkParametersProposalsRequest</h3>
-        <p></p>
+        <p>Request for a list of network parameter proposals.</p>
 
 
           <table class="field-table">
@@ -1498,7 +1498,7 @@ or a specific asset </p></td>
                   <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Optional proposal state. </p></td>
                 </tr>
 
             </tbody>
@@ -1509,7 +1509,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNetworkParametersProposalsResponse">GetNetworkParametersProposalsResponse</h3>
-        <p></p>
+        <p>Response for a list of network parameter proposals.</p>
 
 
           <table class="field-table">
@@ -1522,7 +1522,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more governance data. </p></td>
                 </tr>
 
             </tbody>
@@ -1533,7 +1533,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNewAssetProposalsRequest">GetNewAssetProposalsRequest</h3>
-        <p></p>
+        <p>Request for a list of new asset proposals.</p>
 
 
           <table class="field-table">
@@ -1546,7 +1546,7 @@ or a specific asset </p></td>
                   <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Optional proposal state. </p></td>
                 </tr>
 
             </tbody>
@@ -1557,7 +1557,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNewAssetProposalsResponse">GetNewAssetProposalsResponse</h3>
-        <p></p>
+        <p>Response for a list of new asset proposals.</p>
 
 
           <table class="field-table">
@@ -1570,7 +1570,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more governance data. </p></td>
                 </tr>
 
             </tbody>
@@ -1581,7 +1581,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNewMarketProposalsRequest">GetNewMarketProposalsRequest</h3>
-        <p></p>
+        <p>Request for a list of new market proposals.</p>
 
 
           <table class="field-table">
@@ -1594,7 +1594,7 @@ or a specific asset </p></td>
                   <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Optional proposal state. </p></td>
                 </tr>
 
             </tbody>
@@ -1605,7 +1605,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNewMarketProposalsResponse">GetNewMarketProposalsResponse</h3>
-        <p></p>
+        <p>Response for a list of new market proposals.</p>
 
 
           <table class="field-table">
@@ -1618,7 +1618,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more governance data. </p></td>
                 </tr>
 
             </tbody>
@@ -1629,7 +1629,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</h3>
-        <p>The request message to specify the ID of the resource we want to retrieve</p><p>the aggregated signatures for</p>
+        <p>Request to specify the identifier of the resource we want to retrieve aggregated signatures for.</p>
 
 
           <table class="field-table">
@@ -1642,7 +1642,7 @@ or a specific asset </p></td>
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The ID of the resource </p></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -1653,7 +1653,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</h3>
-        <p>The response of the GetNodeSIgnatureAggregate rpc</p>
+        <p>Response to specify the identifier of the resource we want to retrieve aggregated signatures for.</p>
 
 
           <table class="field-table">
@@ -1666,7 +1666,7 @@ or a specific asset </p></td>
                   <td>signatures</td>
                   <td><a href="#vega.NodeSignature">vega.NodeSignature</a></td>
                   <td>repeated</td>
-                  <td><p>The list of signatures </p></td>
+                  <td><p>A list of 0 or more signatures. </p></td>
                 </tr>
 
             </tbody>
@@ -1677,7 +1677,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalByIDRequest">GetProposalByIDRequest</h3>
-        <p></p>
+        <p>Request for a governance proposal given a proposal identifier.</p>
 
 
           <table class="field-table">
@@ -1690,7 +1690,7 @@ or a specific asset </p></td>
                   <td>proposalID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -1728,7 +1728,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalByIDResponse">GetProposalByIDResponse</h3>
-        <p></p>
+        <p>Response for a governance proposal given a proposal identifier.</p>
 
 
           <table class="field-table">
@@ -1741,7 +1741,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Governance data, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -1752,7 +1752,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalByReferenceRequest">GetProposalByReferenceRequest</h3>
-        <p></p>
+        <p>Request for a governance proposal given a proposal reference.</p>
 
 
           <table class="field-table">
@@ -1765,7 +1765,7 @@ or a specific asset </p></td>
                   <td>Reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal reference. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -1803,7 +1803,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalByReferenceResponse">GetProposalByReferenceResponse</h3>
-        <p></p>
+        <p>Response for a governance proposal given a proposal reference.</p>
 
 
           <table class="field-table">
@@ -1816,7 +1816,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Governance data, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -1827,7 +1827,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalsByPartyRequest">GetProposalsByPartyRequest</h3>
-        <p></p>
+        <p>Request for a list of proposals for a party.</p>
 
 
           <table class="field-table">
@@ -1840,14 +1840,14 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Optional proposal state. </p></td>
                 </tr>
 
             </tbody>
@@ -1885,7 +1885,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalsByPartyResponse">GetProposalsByPartyResponse</h3>
-        <p></p>
+        <p>Response for a list of proposals for a party.</p>
 
 
           <table class="field-table">
@@ -1898,7 +1898,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more governance data. </p></td>
                 </tr>
 
             </tbody>
@@ -1909,7 +1909,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalsRequest">GetProposalsRequest</h3>
-        <p></p>
+        <p>Request for a list of proposals.</p>
 
 
           <table class="field-table">
@@ -1922,7 +1922,7 @@ or a specific asset </p></td>
                   <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Optional proposal state. </p></td>
                 </tr>
 
             </tbody>
@@ -1933,7 +1933,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetProposalsResponse">GetProposalsResponse</h3>
-        <p></p>
+        <p>Response for a list of proposals.</p>
 
 
           <table class="field-table">
@@ -1946,7 +1946,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more governance data. </p></td>
                 </tr>
 
             </tbody>
@@ -1957,7 +1957,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetUpdateMarketProposalsRequest">GetUpdateMarketProposalsRequest</h3>
-        <p></p>
+        <p>Request for a list of update market proposals.</p>
 
 
           <table class="field-table">
@@ -1970,14 +1970,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>selectInState</td>
                   <td><a href="#api.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal state. </p></td>
                 </tr>
 
             </tbody>
@@ -2015,7 +2015,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetUpdateMarketProposalsResponse">GetUpdateMarketProposalsResponse</h3>
-        <p></p>
+        <p>Response for a list of update market proposals.</p>
 
 
           <table class="field-table">
@@ -2028,7 +2028,7 @@ or a specific asset </p></td>
                   <td>data</td>
                   <td><a href="#vega.GovernanceData">vega.GovernanceData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more governance data. </p></td>
                 </tr>
 
             </tbody>
@@ -2039,7 +2039,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetVotesByPartyRequest">GetVotesByPartyRequest</h3>
-        <p></p>
+        <p>Request for a list of votes for a party.</p>
 
 
           <table class="field-table">
@@ -2052,7 +2052,7 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2090,7 +2090,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.GetVotesByPartyResponse">GetVotesByPartyResponse</h3>
-        <p></p>
+        <p>Response for a list of votes for a party.</p>
 
 
           <table class="field-table">
@@ -2103,7 +2103,7 @@ or a specific asset </p></td>
                   <td>votes</td>
                   <td><a href="#vega.Vote">vega.Vote</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more votes. </p></td>
                 </tr>
 
             </tbody>
@@ -2114,7 +2114,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.LastTradeRequest">LastTradeRequest</h3>
-        <p></p>
+        <p>Request for the latest trade that occurred on Vega for a given market.</p>
 
 
           <table class="field-table">
@@ -2127,7 +2127,7 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2165,7 +2165,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.LastTradeResponse">LastTradeResponse</h3>
-        <p></p>
+        <p>Response for the latest trade that occurred on Vega for a given market.</p>
 
 
           <table class="field-table">
@@ -2178,7 +2178,7 @@ or a specific asset </p></td>
                   <td>trade</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A trade, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -2189,7 +2189,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarginLevelsRequest">MarginLevelsRequest</h3>
-        <p></p>
+        <p>Request for margin levels for a party.</p>
 
 
           <table class="field-table">
@@ -2202,14 +2202,14 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -2247,7 +2247,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarginLevelsResponse">MarginLevelsResponse</h3>
-        <p></p>
+        <p>Response for margin levels for a party.</p>
 
 
           <table class="field-table">
@@ -2260,7 +2260,7 @@ or a specific asset </p></td>
                   <td>marginLevels</td>
                   <td><a href="#vega.MarginLevels">vega.MarginLevels</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more margin levels. </p></td>
                 </tr>
 
             </tbody>
@@ -2271,7 +2271,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarginLevelsSubscribeRequest">MarginLevelsSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of MarginLevels data matching the given party identifier.</p><p>Optionally, the list can be additionally filtered by market.</p>
 
 
           <table class="field-table">
@@ -2284,14 +2284,14 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -2329,7 +2329,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketAccountsRequest">MarketAccountsRequest</h3>
-        <p></p>
+        <p>Request for a list of accounts for a market.</p>
 
 
           <table class="field-table">
@@ -2342,14 +2342,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -2360,7 +2360,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketAccountsResponse">MarketAccountsResponse</h3>
-        <p></p>
+        <p>Response for a list of accounts for a market.</p>
 
 
           <table class="field-table">
@@ -2373,7 +2373,7 @@ or a specific asset </p></td>
                   <td>accounts</td>
                   <td><a href="#vega.Account">vega.Account</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more accounts. </p></td>
                 </tr>
 
             </tbody>
@@ -2384,7 +2384,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketByIDRequest">MarketByIDRequest</h3>
-        <p></p>
+        <p>Request for a market given a market identifier.</p>
 
 
           <table class="field-table">
@@ -2397,7 +2397,7 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2435,7 +2435,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketByIDResponse">MarketByIDResponse</h3>
-        <p></p>
+        <p>Response for a market given a market identifier.</p>
 
 
           <table class="field-table">
@@ -2448,7 +2448,7 @@ or a specific asset </p></td>
                   <td>market</td>
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A market, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -2459,7 +2459,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketDataByIDRequest">MarketDataByIDRequest</h3>
-        <p></p>
+        <p>Request for market data for a market.</p>
 
 
           <table class="field-table">
@@ -2472,7 +2472,7 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -2510,7 +2510,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketDataByIDResponse">MarketDataByIDResponse</h3>
-        <p></p>
+        <p>Response for market data for a market.</p>
 
 
           <table class="field-table">
@@ -2523,7 +2523,7 @@ or a specific asset </p></td>
                   <td>marketData</td>
                   <td><a href="#vega.MarketData">vega.MarketData</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market data, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -2534,7 +2534,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketDepthRequest">MarketDepthRequest</h3>
-        <p></p>
+        <p>Request for the market depth/order book price levels on a market.</p><p>Optionally, a maximum depth can be set to limit the number of levels returned.</p>
 
 
           <table class="field-table">
@@ -2547,14 +2547,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>maxDepth</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Max depth limits the number of levels returned. Default is 0, which returns all levels. </p></td>
                 </tr>
 
             </tbody>
@@ -2592,7 +2592,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketDepthResponse">MarketDepthResponse</h3>
-        <p></p>
+        <p>Response for the market depth/order book price levels on a market.</p>
 
 
           <table class="field-table">
@@ -2605,28 +2605,28 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>buy</td>
                   <td><a href="#vega.PriceLevel">vega.PriceLevel</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Zero or more price levels for the buy side of the market depth data. </p></td>
                 </tr>
 
                 <tr>
                   <td>sell</td>
                   <td><a href="#vega.PriceLevel">vega.PriceLevel</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Zero or more price levels for the sell side of the market depth data. </p></td>
                 </tr>
 
                 <tr>
                   <td>lastTrade</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Last trade recorded on Vega at the time of retrieving the <tt>MarketDepthResponse</tt>. </p></td>
                 </tr>
 
             </tbody>
@@ -2637,7 +2637,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of MarketDepth data.</p>
 
 
           <table class="field-table">
@@ -2650,7 +2650,7 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2688,7 +2688,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketsDataResponse">MarketsDataResponse</h3>
-        <p></p>
+        <p>Response for market data.</p>
 
 
           <table class="field-table">
@@ -2701,7 +2701,7 @@ or a specific asset </p></td>
                   <td>marketsData</td>
                   <td><a href="#vega.MarketData">vega.MarketData</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more market data. </p></td>
                 </tr>
 
             </tbody>
@@ -2712,7 +2712,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketsDataSubscribeRequest">MarketsDataSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of MarketsData.</p><p>Optionally, the list can be additionally filtered by market.</p>
 
 
           <table class="field-table">
@@ -2725,7 +2725,7 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -2736,7 +2736,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.MarketsResponse">MarketsResponse</h3>
-        <p></p>
+        <p>Response for a list of markets on Vega.</p>
 
 
           <table class="field-table">
@@ -2749,7 +2749,7 @@ or a specific asset </p></td>
                   <td>markets</td>
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
-                  <td><p>a list of Markets </p></td>
+                  <td><p>A list of 0 or more markets. </p></td>
                 </tr>
 
             </tbody>
@@ -2760,7 +2760,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of governance proposals for a party.</p>
 
 
           <table class="field-table">
@@ -2773,7 +2773,7 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2811,7 +2811,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.ObservePartyVotesRequest">ObservePartyVotesRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of governance votes for a party.</p>
 
 
           <table class="field-table">
@@ -2824,7 +2824,7 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2862,7 +2862,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.ObserveProposalVotesRequest">ObserveProposalVotesRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of governance votes for a proposal.</p>
 
 
           <table class="field-table">
@@ -2875,7 +2875,7 @@ or a specific asset </p></td>
                   <td>proposalID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -2913,7 +2913,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OptionalProposalState">OptionalProposalState</h3>
-        <p></p>
+        <p>Optional proposal state.</p>
 
 
           <table class="field-table">
@@ -2926,7 +2926,7 @@ or a specific asset </p></td>
                   <td>value</td>
                   <td><a href="#vega.Proposal.State">vega.Proposal.State</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal state value. </p></td>
                 </tr>
 
             </tbody>
@@ -2937,7 +2937,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderByIDRequest">OrderByIDRequest</h3>
-        <p></p>
+        <p>Request for an order with the specified order identifier.</p><p>Optionally, return a specific version of the order with the <tt>version</tt> field.</p>
 
 
           <table class="field-table">
@@ -2950,14 +2950,17 @@ or a specific asset </p></td>
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Order identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) </p></td>
+                  <td><p>Version of the order.
+Set <tt>version</tt> to 0 for most recent version of the order.
+Set <tt>1</tt> for original version of the order.
+Set <tt>2</tt> for first amendment, <tt>3</tt> for second amendment, etc. </p></td>
                 </tr>
 
             </tbody>
@@ -2995,7 +2998,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderByMarketAndIdRequest">OrderByMarketAndIdRequest</h3>
-        <p></p>
+        <p>Request for an order on a market given an order identifier.</p>
 
 
           <table class="field-table">
@@ -3008,14 +3011,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Order identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -3064,7 +3067,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderByMarketAndIdResponse">OrderByMarketAndIdResponse</h3>
-        <p></p>
+        <p>Response for an order on a market given an order identifier.</p>
 
 
           <table class="field-table">
@@ -3077,7 +3080,7 @@ or a specific asset </p></td>
                   <td>order</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An order, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -3088,7 +3091,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderByReferenceIDRequest">OrderByReferenceIDRequest</h3>
-        <p></p>
+        <p>Request for an order given the specified order reference.</p>
 
 
           <table class="field-table">
@@ -3101,7 +3104,7 @@ or a specific asset </p></td>
                   <td>referenceID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Reference. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -3139,7 +3142,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderByReferenceRequest">OrderByReferenceRequest</h3>
-        <p></p>
+        <p>Request for an order given an order reference.</p>
 
 
           <table class="field-table">
@@ -3152,7 +3155,7 @@ or a specific asset </p></td>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique reference. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -3190,7 +3193,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderByReferenceResponse">OrderByReferenceResponse</h3>
-        <p></p>
+        <p>Response for an order given an order reference.</p>
 
 
           <table class="field-table">
@@ -3203,7 +3206,7 @@ or a specific asset </p></td>
                   <td>order</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An order, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -3214,7 +3217,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderVersionsByIDRequest">OrderVersionsByIDRequest</h3>
-        <p></p>
+        <p>Request for a list of all versions of an order given the specified order identifier.</p>
 
 
           <table class="field-table">
@@ -3227,14 +3230,14 @@ or a specific asset </p></td>
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Order identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>pagination</td>
                   <td><a href="#api.Pagination">Pagination</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Pagination controls. </p></td>
                 </tr>
 
             </tbody>
@@ -3272,7 +3275,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrderVersionsResponse">OrderVersionsResponse</h3>
-        <p></p>
+        <p>Response to a request for a list of all versions of an order.</p>
 
 
           <table class="field-table">
@@ -3285,7 +3288,7 @@ or a specific asset </p></td>
                   <td>orders</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended). </p></td>
                 </tr>
 
             </tbody>
@@ -3296,7 +3299,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrdersByMarketRequest">OrdersByMarketRequest</h3>
-        <p></p>
+        <p>Request for a list of orders for a market.</p>
 
 
           <table class="field-table">
@@ -3309,14 +3312,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>pagination</td>
                   <td><a href="#api.Pagination">Pagination</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Optional pagination controls. </p></td>
                 </tr>
 
             </tbody>
@@ -3354,7 +3357,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrdersByMarketResponse">OrdersByMarketResponse</h3>
-        <p></p>
+        <p>Response for a list of orders for a market.</p>
 
 
           <table class="field-table">
@@ -3367,7 +3370,7 @@ or a specific asset </p></td>
                   <td>orders</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more orders. </p></td>
                 </tr>
 
             </tbody>
@@ -3378,7 +3381,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrdersByPartyRequest">OrdersByPartyRequest</h3>
-        <p></p>
+        <p>Request for a list of orders for a party.</p>
 
 
           <table class="field-table">
@@ -3391,14 +3394,14 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>pagination</td>
                   <td><a href="#api.Pagination">Pagination</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Pagination controls. </p></td>
                 </tr>
 
             </tbody>
@@ -3436,7 +3439,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrdersByPartyResponse">OrdersByPartyResponse</h3>
-        <p></p>
+        <p>Response for a list of orders for a party.</p>
 
 
           <table class="field-table">
@@ -3449,7 +3452,7 @@ or a specific asset </p></td>
                   <td>orders</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more orders. </p></td>
                 </tr>
 
             </tbody>
@@ -3460,7 +3463,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrdersStream">OrdersStream</h3>
-        <p></p>
+        <p>A stream of orders.</p>
 
 
           <table class="field-table">
@@ -3473,7 +3476,7 @@ or a specific asset </p></td>
                   <td>orders</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more orders. </p></td>
                 </tr>
 
             </tbody>
@@ -3484,7 +3487,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.OrdersSubscribeRequest">OrdersSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of Orders.</p>
 
 
           <table class="field-table">
@@ -3497,14 +3500,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -3515,7 +3518,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.Pagination">Pagination</h3>
-        <p></p>
+        <p>Pagination controls.</p>
 
 
           <table class="field-table">
@@ -3528,21 +3531,22 @@ or a specific asset </p></td>
                   <td>skip</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Skip the number of records specified. Default is 0. </p></td>
                 </tr>
 
                 <tr>
                   <td>limit</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Limit the number of returned records to the value specified. Default is 50. </p></td>
                 </tr>
 
                 <tr>
                   <td>descending</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Descending reverses the order of the records returned.
+Default is true, if false the results will be returned in ascending order. </p></td>
                 </tr>
 
             </tbody>
@@ -3553,7 +3557,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PartiesResponse">PartiesResponse</h3>
-        <p></p>
+        <p>Response to a request for a list of parties.</p>
 
 
           <table class="field-table">
@@ -3566,7 +3570,7 @@ or a specific asset </p></td>
                   <td>parties</td>
                   <td><a href="#vega.Party">vega.Party</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more parties. </p></td>
                 </tr>
 
             </tbody>
@@ -3577,7 +3581,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PartyAccountsRequest">PartyAccountsRequest</h3>
-        <p></p>
+        <p>Request for a list of accounts for a party.</p>
 
 
           <table class="field-table">
@@ -3590,28 +3594,28 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.AccountType">vega.AccountType</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Account type. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -3622,7 +3626,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PartyAccountsResponse">PartyAccountsResponse</h3>
-        <p></p>
+        <p>Response for a list of accounts for a party.</p>
 
 
           <table class="field-table">
@@ -3635,7 +3639,7 @@ or a specific asset </p></td>
                   <td>accounts</td>
                   <td><a href="#vega.Account">vega.Account</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more accounts. </p></td>
                 </tr>
 
             </tbody>
@@ -3646,7 +3650,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PartyByIDRequest">PartyByIDRequest</h3>
-        <p></p>
+        <p>Request for a party given a party identifier.</p>
 
 
           <table class="field-table">
@@ -3659,7 +3663,7 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -3697,7 +3701,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PartyByIDResponse">PartyByIDResponse</h3>
-        <p></p>
+        <p>Response for a party given a party identifier.</p>
 
 
           <table class="field-table">
@@ -3710,7 +3714,7 @@ or a specific asset </p></td>
                   <td>party</td>
                   <td><a href="#vega.Party">vega.Party</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A party, if found. </p></td>
                 </tr>
 
             </tbody>
@@ -3721,7 +3725,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PositionsByPartyRequest">PositionsByPartyRequest</h3>
-        <p></p>
+        <p>Request for a list of positions for a party.</p><p>Optionally, if a market identifier is set, the results will be filtered for that market only.</p>
 
 
           <table class="field-table">
@@ -3734,14 +3738,14 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -3779,7 +3783,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PositionsByPartyResponse">PositionsByPartyResponse</h3>
-        <p></p>
+        <p>Response for a list of positions for a party.</p>
 
 
           <table class="field-table">
@@ -3792,7 +3796,7 @@ or a specific asset </p></td>
                   <td>positions</td>
                   <td><a href="#vega.Position">vega.Position</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more positions. </p></td>
                 </tr>
 
             </tbody>
@@ -3803,7 +3807,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PositionsSubscribeRequest">PositionsSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of Positions.</p>
 
 
           <table class="field-table">
@@ -3816,7 +3820,7 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -3827,7 +3831,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</h3>
-        <p></p>
+        <p>Response for preparing an order amendment.</p>
 
 
           <table class="field-table">
@@ -3840,7 +3844,7 @@ or a specific asset </p></td>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction. </p></td>
                 </tr>
 
             </tbody>
@@ -3851,7 +3855,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareCancelOrderResponse">PrepareCancelOrderResponse</h3>
-        <p></p>
+        <p>Response for preparing an order cancellation.</p>
 
 
           <table class="field-table">
@@ -3864,7 +3868,7 @@ or a specific asset </p></td>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction. </p></td>
                 </tr>
 
             </tbody>
@@ -3875,7 +3879,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareProposalRequest">PrepareProposalRequest</h3>
-        <p></p>
+        <p>Request to prepare a governance proposal.</p>
 
 
           <table class="field-table">
@@ -3888,21 +3892,21 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique reference. </p></td>
                 </tr>
 
                 <tr>
                   <td>proposal</td>
                   <td><a href="#vega.ProposalTerms">vega.ProposalTerms</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal terms. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -3951,7 +3955,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareProposalResponse">PrepareProposalResponse</h3>
-        <p></p>
+        <p>Response to prepare a governance proposal.</p>
 
 
           <table class="field-table">
@@ -3964,14 +3968,14 @@ or a specific asset </p></td>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction. </p></td>
                 </tr>
 
                 <tr>
                   <td>pendingProposal</td>
                   <td><a href="#vega.Proposal">vega.Proposal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A copy of the prepared proposal. </p></td>
                 </tr>
 
             </tbody>
@@ -3982,7 +3986,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareSubmitOrderResponse">PrepareSubmitOrderResponse</h3>
-        <p></p>
+        <p>Response for preparing an order submission.</p>
 
 
           <table class="field-table">
@@ -3995,14 +3999,14 @@ or a specific asset </p></td>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction. </p></td>
                 </tr>
 
                 <tr>
                   <td>submitID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Submission identifier (order reference). </p></td>
                 </tr>
 
             </tbody>
@@ -4013,7 +4017,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareVoteRequest">PrepareVoteRequest</h3>
-        <p></p>
+        <p>Request to prepare a governance vote.</p>
 
 
           <table class="field-table">
@@ -4026,7 +4030,7 @@ or a specific asset </p></td>
                   <td>vote</td>
                   <td><a href="#vega.Vote">vega.Vote</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Vote. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -4064,7 +4068,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PrepareVoteResponse">PrepareVoteResponse</h3>
-        <p></p>
+        <p>Response to prepare a governance vote.</p>
 
 
           <table class="field-table">
@@ -4077,14 +4081,14 @@ or a specific asset </p></td>
                   <td>blob</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction. </p></td>
                 </tr>
 
                 <tr>
                   <td>vote</td>
                   <td><a href="#vega.Vote">vega.Vote</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A copy of the prepared vote. </p></td>
                 </tr>
 
             </tbody>
@@ -4095,7 +4099,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PropagateChainEventRequest">PropagateChainEventRequest</h3>
-        <p>The request for a new event sent by the blockchain queue to be propagated into vega</p>
+        <p>Request for a new event sent by the blockchain queue to be propagated on Vega.</p>
 
 
           <table class="field-table">
@@ -4108,21 +4112,21 @@ or a specific asset </p></td>
                   <td>evt</td>
                   <td><a href="#vega.ChainEvent">vega.ChainEvent</a></td>
                   <td></td>
-                  <td><p>The event </p></td>
+                  <td><p>Chain event. </p></td>
                 </tr>
 
                 <tr>
                   <td>pubKey</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Public key. </p></td>
                 </tr>
 
                 <tr>
                   <td>signature</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Signature. </p></td>
                 </tr>
 
             </tbody>
@@ -4133,7 +4137,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.PropagateChainEventResponse">PropagateChainEventResponse</h3>
-        <p>The response for a new event sent to vega</p>
+        <p>Response for a new event sent by the blockchain queue to be propagated on Vega.</p>
 
 
           <table class="field-table">
@@ -4146,7 +4150,8 @@ or a specific asset </p></td>
                   <td>success</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p>Did the event get accepted by the node successfully </p></td>
+                  <td><p>Success will be true if the event was accepted by the node.
+Important - success does not mean that the event is confirmed by consensus. </p></td>
                 </tr>
 
             </tbody>
@@ -4157,7 +4162,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.SubmitOrderRequest">SubmitOrderRequest</h3>
-        <p></p>
+        <p>Request to submit a new order.</p>
 
 
           <table class="field-table">
@@ -4170,7 +4175,7 @@ or a specific asset </p></td>
                   <td>submission</td>
                   <td><a href="#vega.OrderSubmission">vega.OrderSubmission</a></td>
                   <td></td>
-                  <td><p>the bulk of the Order, including market, party, price, size, side, time in force, etc. </p></td>
+                  <td><p>An order submission. </p></td>
                 </tr>
 
             </tbody>
@@ -4181,7 +4186,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.SubmitTransactionRequest">SubmitTransactionRequest</h3>
-        <p></p>
+        <p>Request for submitting a transaction on Vega.</p><p>This request will take the signed <tt>blob</tt> result from a <tt>prepare</tt> call and submit it for inclusion in a block by the Vega blockchain.</p><p>Several commands are available on Vega:</p><p>- SubmitOrder, see <a href="#api.trading">PrepareSubmitOrder</a>.</p><p>- AmendOrder, see <a href="#api.trading">PrepareAmendOrder</a>.</p><p>- CancelOrder, see <a href="#api.trading">PrepareCancelOrder</a>.</p><p>- PrepareProposal, see <a href="#api.trading">PrepareProposal</a>.</p><p>- PrepareVote, see <a href="#api.trading">PrepareVote</a>.</p><p>- Withdraw, see <a href="#api.trading">WithdrawRequest</a>.</p><p>All of these can be prepared using this API. Payload data must be signed using Vega Wallet before submitting a transaction.</p>
 
 
           <table class="field-table">
@@ -4194,7 +4199,7 @@ or a specific asset </p></td>
                   <td>tx</td>
                   <td><a href="#vega.SignedBundle">vega.SignedBundle</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain. </p></td>
                 </tr>
 
             </tbody>
@@ -4205,7 +4210,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.SubmitTransactionResponse">SubmitTransactionResponse</h3>
-        <p></p>
+        <p>Response for submitting a transaction on Vega.</p>
 
 
           <table class="field-table">
@@ -4218,7 +4223,8 @@ or a specific asset </p></td>
                   <td>success</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Success will be true if the transaction was accepted by the node.
+Important - success does not mean that the transaction is confirmed by consensus. </p></td>
                 </tr>
 
             </tbody>
@@ -4229,7 +4235,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesByMarketRequest">TradesByMarketRequest</h3>
-        <p></p>
+        <p>Request for a list of trades on a market.</p>
 
 
           <table class="field-table">
@@ -4242,14 +4248,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>pagination</td>
                   <td><a href="#api.Pagination">Pagination</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Pagination controls. </p></td>
                 </tr>
 
             </tbody>
@@ -4287,7 +4293,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesByMarketResponse">TradesByMarketResponse</h3>
-        <p></p>
+        <p>Response for a list of trades on a market.</p>
 
 
           <table class="field-table">
@@ -4300,7 +4306,7 @@ or a specific asset </p></td>
                   <td>trades</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more trades. </p></td>
                 </tr>
 
             </tbody>
@@ -4311,7 +4317,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesByOrderRequest">TradesByOrderRequest</h3>
-        <p></p>
+        <p>Request for a list of trades related to an order.</p>
 
 
           <table class="field-table">
@@ -4324,7 +4330,7 @@ or a specific asset </p></td>
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Order identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
@@ -4335,7 +4341,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesByOrderResponse">TradesByOrderResponse</h3>
-        <p></p>
+        <p>Response for a list of trades related to an order.</p>
 
 
           <table class="field-table">
@@ -4348,7 +4354,7 @@ or a specific asset </p></td>
                   <td>trades</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more trades. </p></td>
                 </tr>
 
             </tbody>
@@ -4359,7 +4365,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesByPartyRequest">TradesByPartyRequest</h3>
-        <p></p>
+        <p>Request for a list of trades relating to the given party.</p><p>Optionally, the list can be additionally filtered for trades by market.</p>
 
 
           <table class="field-table">
@@ -4372,21 +4378,21 @@ or a specific asset </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>pagination</td>
                   <td><a href="#api.Pagination">Pagination</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Pagination controls. </p></td>
                 </tr>
 
             </tbody>
@@ -4397,7 +4403,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesByPartyResponse">TradesByPartyResponse</h3>
-        <p></p>
+        <p>Response for a list of trades relating to a party.</p>
 
 
           <table class="field-table">
@@ -4410,7 +4416,7 @@ or a specific asset </p></td>
                   <td>trades</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more trades. </p></td>
                 </tr>
 
             </tbody>
@@ -4421,7 +4427,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesStream">TradesStream</h3>
-        <p></p>
+        <p>A stream of trades.</p>
 
 
           <table class="field-table">
@@ -4434,7 +4440,7 @@ or a specific asset </p></td>
                   <td>trades</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more trades. </p></td>
                 </tr>
 
             </tbody>
@@ -4445,7 +4451,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.TradesSubscribeRequest">TradesSubscribeRequest</h3>
-        <p></p>
+        <p>Request to subscribe to a stream of Trades.</p>
 
 
           <table class="field-table">
@@ -4458,14 +4464,14 @@ or a specific asset </p></td>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. </p></td>
                 </tr>
 
             </tbody>
@@ -4476,7 +4482,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.VegaTimeResponse">VegaTimeResponse</h3>
-        <p></p>
+        <p>Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime".</p>
 
 
           <table class="field-table">
@@ -4489,7 +4495,8 @@ or a specific asset </p></td>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>nanoseconds since the epoch, for example <tt>1580473859111222333</tt> corresponds to <tt>2020-01-31T12:30:59.111222333Z</tt> </p></td>
+                  <td><p>Timestamp representation of current VegaTime.
+Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> corresponds to <tt>2020-01-31T12:30:59.111222333Z</tt> </p></td>
                 </tr>
 
             </tbody>
@@ -4500,7 +4507,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.WithdrawRequest">WithdrawRequest</h3>
-        <p></p>
+        <p>Request for withdrawing assets on Vega.</p>
 
 
           <table class="field-table">
@@ -4513,7 +4520,7 @@ or a specific asset </p></td>
                   <td>withdraw</td>
                   <td><a href="#vega.Withdraw">vega.Withdraw</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Withdrawal details. </p></td>
                 </tr>
 
             </tbody>
@@ -4524,7 +4531,7 @@ or a specific asset </p></td>
 
 
         <h3 id="api.WithdrawResponse">WithdrawResponse</h3>
-        <p></p>
+        <p>Response for withdrawing assets on Vega.</p>
 
 
           <table class="field-table">
@@ -4537,7 +4544,8 @@ or a specific asset </p></td>
                   <td>success</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Success will be true if the withdrawal request was accepted by the node.
+Important - success does not mean that the withdrawal is confirmed by consensus. </p></td>
                 </tr>
 
             </tbody>
@@ -4572,21 +4580,21 @@ or a specific asset </p></td>
                 <td>PrepareCancelOrder</td>
                 <td><a href="#api.CancelOrderRequest">CancelOrderRequest</a></td>
                 <td><a href="#api.PrepareCancelOrderResponse">PrepareCancelOrderResponse</a></td>
-                <td><p>Cancel an Order</p></td>
+                <td><p>Prepare a cancel order request</p></td>
               </tr>
 
               <tr>
                 <td>PrepareAmendOrder</td>
                 <td><a href="#api.AmendOrderRequest">AmendOrderRequest</a></td>
                 <td><a href="#api.PrepareAmendOrderResponse">PrepareAmendOrderResponse</a></td>
-                <td><p>Amend an Order</p></td>
+                <td><p>Prepare an amend order request</p></td>
               </tr>
 
               <tr>
                 <td>Withdraw</td>
                 <td><a href="#api.WithdrawRequest">WithdrawRequest</a></td>
                 <td><a href="#api.WithdrawResponse">WithdrawResponse</a></td>
-                <td><p>Request withdrawal</p></td>
+                <td><p>Request a withdrawal</p></td>
               </tr>
 
               <tr>
@@ -4600,21 +4608,21 @@ or a specific asset </p></td>
                 <td>PrepareProposal</td>
                 <td><a href="#api.PrepareProposalRequest">PrepareProposalRequest</a></td>
                 <td><a href="#api.PrepareProposalResponse">PrepareProposalResponse</a></td>
-                <td><p>Prepare proposal that can be sent out to the chain (via SubmitTransaction)</p></td>
+                <td><p>Prepare a governance proposal</p></td>
               </tr>
 
               <tr>
                 <td>PrepareVote</td>
                 <td><a href="#api.PrepareVoteRequest">PrepareVoteRequest</a></td>
                 <td><a href="#api.PrepareVoteResponse">PrepareVoteResponse</a></td>
-                <td><p>Prepare a vote to be put on the chain (via SubmitTransaction)</p></td>
+                <td><p>Prepare a governance vote</p></td>
               </tr>
 
               <tr>
                 <td>PropagateChainEvent</td>
                 <td><a href="#api.PropagateChainEventRequest">PropagateChainEventRequest</a></td>
                 <td><a href="#api.PropagateChainEventResponse">PropagateChainEventResponse</a></td>
-                <td><p>chain events</p></td>
+                <td><p>Propagate a chain event</p></td>
               </tr>
 
           </tbody>
@@ -4969,21 +4977,21 @@ or a specific asset </p></td>
                 <td>GetNodeSignaturesAggregate</td>
                 <td><a href="#api.GetNodeSignaturesAggregateRequest">GetNodeSignaturesAggregateRequest</a></td>
                 <td><a href="#api.GetNodeSignaturesAggregateResponse">GetNodeSignaturesAggregateResponse</a></td>
-                <td><p>Get an aggregate of signature from all the node of the network</p></td>
+                <td><p>Get an aggregate of signatures from all the nodes of the network.</p></td>
               </tr>
 
               <tr>
                 <td>AssetByID</td>
                 <td><a href="#api.AssetByIDRequest">AssetByIDRequest</a></td>
                 <td><a href="#api.AssetByIDResponse">AssetByIDResponse</a></td>
-                <td><p>Get an asset by its ID</p></td>
+                <td><p>Get an asset by its identifier.</p></td>
               </tr>
 
               <tr>
                 <td>Assets</td>
                 <td><a href="#api.AssetsRequest">AssetsRequest</a></td>
                 <td><a href="#api.AssetsResponse">AssetsResponse</a></td>
-                <td><p>Get the list of all assets in vega</p></td>
+                <td><p>Get a list of all assets on Vega.</p></td>
               </tr>
 
           </tbody>
@@ -7846,14 +7854,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Unique identifier (used internally by Vega). </p></td>
+                  <td><p>Unique account identifier (used internally by Vega). </p></td>
                 </tr>
 
                 <tr>
                   <td>owner</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The party that the account belongs to. Special values include <tt>network</tt>, which represents the network and is
+                  <td><p>The party that the account belongs to. Special values include <tt>network</tt>, which represents the Vega network and is
 most commonly seen during liquidation of distressed trading positions. </p></td>
                 </tr>
 
@@ -8033,21 +8041,21 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td>code</td>
                   <td><a href="#int32">int32</a></td>
                   <td></td>
-                  <td><p>a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 </p></td>
+                  <td><p>A Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 </p></td>
                 </tr>
 
                 <tr>
                   <td>message</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>a message that describes the error in more detail, should describe the problem encountered. </p></td>
+                  <td><p>A message that describes the error in more detail, should describe the problem encountered. </p></td>
                 </tr>
 
                 <tr>
                   <td>inner</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>any inner error information that could add more context, or be helpful for error reporting. </p></td>
+                  <td><p>Any inner error information that could add more context, or be helpful for error reporting. </p></td>
                 </tr>
 
             </tbody>
@@ -8720,7 +8728,7 @@ to keep track of the auction batch this order falls under (required for fees cal
 
 
         <h3 id="vega.OrderAmendment">OrderAmendment</h3>
-        <p>An order amendment is a request to amend or update an existing order on Vega.</p><p>The following three fields are used for lookup of the order only, cannot be amended by this command:</p>
+        <p>An order amendment is a request to amend or update an existing order on Vega.</p><p>The <tt>orderID</tt>, <tt>partyID</tt> and <tt>marketID</tt> fields are used for lookup of the order only and cannot be amended by this command.</p>
 
 
           <table class="field-table">
@@ -9976,7 +9984,7 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
 
         <h3 id="vega.TradeSet">TradeSet</h3>
-        <p>A set of one or more trades.</p>
+        <p></p>
 
 
           <table class="field-table">
@@ -9989,7 +9997,7 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td>trades</td>
                   <td><a href="#vega.Trade">Trade</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A set of one or more trades. </p></td>
                 </tr>
 
             </tbody>
@@ -10232,8 +10240,7 @@ against replay attack. </p></td>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The total amount withdrawn, the amount is an integer, for example <tt>123456</tt> is a correctly
-formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
+                  <td><p>Total amount to withdraw. </p></td>
                 </tr>
 
                 <tr>

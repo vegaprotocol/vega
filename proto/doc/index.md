@@ -245,15 +245,15 @@
 <a name="api.AccountsSubscribeRequest"></a>
 
 ### AccountsSubscribeRequest
-
+Request to subscribe to a stream of Accounts.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
+| partyID | [string](#string) |  | Party identifier. |
+| asset | [string](#string) |  | Asset identifier. |
+| type | [vega.AccountType](#vega.AccountType) |  | Account type to subscribe to. Required field. |
 
 
 
@@ -263,12 +263,12 @@
 <a name="api.AmendOrderRequest"></a>
 
 ### AmendOrderRequest
-
+Request to amend an existing order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  |  |
+| amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  | An order amendment. |
 
 
 
@@ -278,12 +278,12 @@
 <a name="api.AssetByIDRequest"></a>
 
 ### AssetByIDRequest
-The request message to get an AssetByID
+Request for an asset given an asset identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  | ID of the asset to get |
+| ID | [string](#string) |  |  |
 
 
 
@@ -293,12 +293,12 @@ The request message to get an AssetByID
 <a name="api.AssetByIDResponse"></a>
 
 ### AssetByIDResponse
-The response message to get an AssetByID
+Response for an asset given an asset identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| asset | [vega.Asset](#vega.Asset) |  | The asset corresponding to the requested ID |
+| asset | [vega.Asset](#vega.Asset) |  | An asset record, if found. |
 
 
 
@@ -308,7 +308,7 @@ The response message to get an AssetByID
 <a name="api.AssetsRequest"></a>
 
 ### AssetsRequest
-The request to get the lit of all assets in vega
+Request for a list of all assets enabled on Vega.
 
 
 
@@ -318,12 +318,12 @@ The request to get the lit of all assets in vega
 <a name="api.AssetsResponse"></a>
 
 ### AssetsResponse
-The response containing the list of all assets enabled in vega
+Response for a list of all assets enabled on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| assets | [vega.Asset](#vega.Asset) | repeated | The list of assets |
+| assets | [vega.Asset](#vega.Asset) | repeated | A list of 0 or more assets. |
 
 
 
@@ -333,12 +333,12 @@ The response containing the list of all assets enabled in vega
 <a name="api.CancelOrderRequest"></a>
 
 ### CancelOrderRequest
-
+Request to cancel an existing order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cancellation | [vega.OrderCancellation](#vega.OrderCancellation) |  |  |
+| cancellation | [vega.OrderCancellation](#vega.OrderCancellation) |  | An order cancellation. |
 
 
 
@@ -348,14 +348,14 @@ The response containing the list of all assets enabled in vega
 <a name="api.CandlesRequest"></a>
 
 ### CandlesRequest
-
+Request for a list of candles for a market at an interval.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| sinceTimestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
-| interval | [vega.Interval](#vega.Interval) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| sinceTimestamp | [int64](#int64) |  | Timestamp to retrieve candles since, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field. |
+| interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
 
 
 
@@ -365,12 +365,12 @@ The response containing the list of all assets enabled in vega
 <a name="api.CandlesResponse"></a>
 
 ### CandlesResponse
-
+Response for a list of candles for a market at an interval.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candles | [vega.Candle](#vega.Candle) | repeated |  |
+| candles | [vega.Candle](#vega.Candle) | repeated | A list of 0 or more candles. |
 
 
 
@@ -380,13 +380,13 @@ The response containing the list of all assets enabled in vega
 <a name="api.CandlesSubscribeRequest"></a>
 
 ### CandlesSubscribeRequest
-
+Request to subscribe to a stream of Candles.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| interval | [vega.Interval](#vega.Interval) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
 
 
 
@@ -396,12 +396,12 @@ The response containing the list of all assets enabled in vega
 <a name="api.FeeInfrastructureAccountsRequest"></a>
 
 ### FeeInfrastructureAccountsRequest
-Request for the infrastructure fees accounts
+Request for a list of infrastructure fee accounts.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| asset | [string](#string) |  | an empty string to return all accounts an asset ID to return a single infrastructure fee fee account for a given asset |
+| asset | [string](#string) |  | Asset identifier. Required field. Set to an empty string to return all accounts. Set to an asset ID to return a single infrastructure fee account for a given asset. |
 
 
 
@@ -411,12 +411,12 @@ Request for the infrastructure fees accounts
 <a name="api.FeeInfrastructureAccountsResponse"></a>
 
 ### FeeInfrastructureAccountsResponse
-Response for the infrastructure fees accounts
+Response for a list of infrastructure fee accounts.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated | A list of infrastructure fee accounts for all or a specific asset |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of 0 or more infrastructure fee accounts. |
 
 
 
@@ -426,12 +426,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNetworkParametersProposalsRequest"></a>
 
 ### GetNetworkParametersProposalsRequest
-
+Request for a list of network parameter proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state. |
 
 
 
@@ -441,12 +441,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNetworkParametersProposalsResponse"></a>
 
 ### GetNetworkParametersProposalsResponse
-
+Response for a list of network parameter proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated | A list of 0 or more governance data. |
 
 
 
@@ -456,12 +456,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNewAssetProposalsRequest"></a>
 
 ### GetNewAssetProposalsRequest
-
+Request for a list of new asset proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state. |
 
 
 
@@ -471,12 +471,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNewAssetProposalsResponse"></a>
 
 ### GetNewAssetProposalsResponse
-
+Response for a list of new asset proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated | A list of 0 or more governance data. |
 
 
 
@@ -486,12 +486,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNewMarketProposalsRequest"></a>
 
 ### GetNewMarketProposalsRequest
-
+Request for a list of new market proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state. |
 
 
 
@@ -501,12 +501,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNewMarketProposalsResponse"></a>
 
 ### GetNewMarketProposalsResponse
-
+Response for a list of new market proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated | A list of 0 or more governance data. |
 
 
 
@@ -516,13 +516,12 @@ Response for the infrastructure fees accounts
 <a name="api.GetNodeSignaturesAggregateRequest"></a>
 
 ### GetNodeSignaturesAggregateRequest
-The request message to specify the ID of the resource we want to retrieve
-the aggregated signatures for
+Request to specify the identifier of the resource we want to retrieve aggregated signatures for.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  | The ID of the resource |
+| ID | [string](#string) |  |  |
 
 
 
@@ -532,12 +531,12 @@ the aggregated signatures for
 <a name="api.GetNodeSignaturesAggregateResponse"></a>
 
 ### GetNodeSignaturesAggregateResponse
-The response of the GetNodeSIgnatureAggregate rpc
+Response to specify the identifier of the resource we want to retrieve aggregated signatures for.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| signatures | [vega.NodeSignature](#vega.NodeSignature) | repeated | The list of signatures |
+| signatures | [vega.NodeSignature](#vega.NodeSignature) | repeated | A list of 0 or more signatures. |
 
 
 
@@ -547,12 +546,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalByIDRequest"></a>
 
 ### GetProposalByIDRequest
-
+Request for a governance proposal given a proposal identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposalID | [string](#string) |  |  |
+| proposalID | [string](#string) |  | Proposal identifier. Required field. |
 
 
 
@@ -562,12 +561,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalByIDResponse"></a>
 
 ### GetProposalByIDResponse
-
+Response for a governance proposal given a proposal identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  | Governance data, if found. |
 
 
 
@@ -577,12 +576,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalByReferenceRequest"></a>
 
 ### GetProposalByReferenceRequest
-
+Request for a governance proposal given a proposal reference.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| Reference | [string](#string) |  |  |
+| Reference | [string](#string) |  | Proposal reference. Required field. |
 
 
 
@@ -592,12 +591,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalByReferenceResponse"></a>
 
 ### GetProposalByReferenceResponse
-
+Response for a governance proposal given a proposal reference.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  | Governance data, if found. |
 
 
 
@@ -607,13 +606,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalsByPartyRequest"></a>
 
 ### GetProposalsByPartyRequest
-
+Request for a list of proposals for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state. |
 
 
 
@@ -623,12 +622,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalsByPartyResponse"></a>
 
 ### GetProposalsByPartyResponse
-
+Response for a list of proposals for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated | A list of 0 or more governance data. |
 
 
 
@@ -638,12 +637,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalsRequest"></a>
 
 ### GetProposalsRequest
-
+Request for a list of proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state. |
 
 
 
@@ -653,12 +652,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetProposalsResponse"></a>
 
 ### GetProposalsResponse
-
+Response for a list of proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated | A list of 0 or more governance data. |
 
 
 
@@ -668,13 +667,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetUpdateMarketProposalsRequest"></a>
 
 ### GetUpdateMarketProposalsRequest
-
+Request for a list of update market proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Proposal state. |
 
 
 
@@ -684,12 +683,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetUpdateMarketProposalsResponse"></a>
 
 ### GetUpdateMarketProposalsResponse
-
+Response for a list of update market proposals.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [vega.GovernanceData](#vega.GovernanceData) | repeated |  |
+| data | [vega.GovernanceData](#vega.GovernanceData) | repeated | A list of 0 or more governance data. |
 
 
 
@@ -699,12 +698,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetVotesByPartyRequest"></a>
 
 ### GetVotesByPartyRequest
-
+Request for a list of votes for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
 
 
 
@@ -714,12 +713,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.GetVotesByPartyResponse"></a>
 
 ### GetVotesByPartyResponse
-
+Response for a list of votes for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| votes | [vega.Vote](#vega.Vote) | repeated |  |
+| votes | [vega.Vote](#vega.Vote) | repeated | A list of 0 or more votes. |
 
 
 
@@ -729,12 +728,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.LastTradeRequest"></a>
 
 ### LastTradeRequest
-
+Request for the latest trade that occurred on Vega for a given market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
 
 
 
@@ -744,12 +743,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.LastTradeResponse"></a>
 
 ### LastTradeResponse
-
+Response for the latest trade that occurred on Vega for a given market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trade | [vega.Trade](#vega.Trade) |  |  |
+| trade | [vega.Trade](#vega.Trade) |  | A trade, if found. |
 
 
 
@@ -759,13 +758,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarginLevelsRequest"></a>
 
 ### MarginLevelsRequest
-
+Request for margin levels for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| marketID | [string](#string) |  | Market identifier. |
 
 
 
@@ -775,12 +774,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarginLevelsResponse"></a>
 
 ### MarginLevelsResponse
-
+Response for margin levels for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marginLevels | [vega.MarginLevels](#vega.MarginLevels) | repeated |  |
+| marginLevels | [vega.MarginLevels](#vega.MarginLevels) | repeated | A list of 0 or more margin levels. |
 
 
 
@@ -790,13 +789,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarginLevelsSubscribeRequest"></a>
 
 ### MarginLevelsSubscribeRequest
-
+Request to subscribe to a stream of MarginLevels data matching the given party identifier.
+Optionally, the list can be additionally filtered by market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| marketID | [string](#string) |  | Market identifier. |
 
 
 
@@ -806,13 +806,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketAccountsRequest"></a>
 
 ### MarketAccountsRequest
-
+Request for a list of accounts for a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
+| asset | [string](#string) |  | Asset identifier. |
 
 
 
@@ -822,12 +822,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketAccountsResponse"></a>
 
 ### MarketAccountsResponse
-
+Response for a list of accounts for a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of 0 or more accounts. |
 
 
 
@@ -837,12 +837,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketByIDRequest"></a>
 
 ### MarketByIDRequest
-
+Request for a market given a market identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
 
 
 
@@ -852,12 +852,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketByIDResponse"></a>
 
 ### MarketByIDResponse
-
+Response for a market given a market identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| market | [vega.Market](#vega.Market) |  |  |
+| market | [vega.Market](#vega.Market) |  | A market, if found. |
 
 
 
@@ -867,12 +867,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketDataByIDRequest"></a>
 
 ### MarketDataByIDRequest
-
+Request for market data for a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
 
 
 
@@ -882,12 +882,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketDataByIDResponse"></a>
 
 ### MarketDataByIDResponse
-
+Response for market data for a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketData | [vega.MarketData](#vega.MarketData) |  |  |
+| marketData | [vega.MarketData](#vega.MarketData) |  | Market data, if found. |
 
 
 
@@ -897,13 +897,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketDepthRequest"></a>
 
 ### MarketDepthRequest
-
+Request for the market depth/order book price levels on a market.
+Optionally, a maximum depth can be set to limit the number of levels returned.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| maxDepth | [uint64](#uint64) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| maxDepth | [uint64](#uint64) |  | Max depth limits the number of levels returned. Default is 0, which returns all levels. |
 
 
 
@@ -913,15 +914,15 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketDepthResponse"></a>
 
 ### MarketDepthResponse
-
+Response for the market depth/order book price levels on a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| buy | [vega.PriceLevel](#vega.PriceLevel) | repeated |  |
-| sell | [vega.PriceLevel](#vega.PriceLevel) | repeated |  |
-| lastTrade | [vega.Trade](#vega.Trade) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
+| buy | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the buy side of the market depth data. |
+| sell | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the sell side of the market depth data. |
+| lastTrade | [vega.Trade](#vega.Trade) |  | Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`. |
 
 
 
@@ -931,12 +932,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketDepthSubscribeRequest"></a>
 
 ### MarketDepthSubscribeRequest
-
+Request to subscribe to a stream of MarketDepth data.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
 
 
 
@@ -946,12 +947,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketsDataResponse"></a>
 
 ### MarketsDataResponse
-
+Response for market data.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketsData | [vega.MarketData](#vega.MarketData) | repeated |  |
+| marketsData | [vega.MarketData](#vega.MarketData) | repeated | A list of 0 or more market data. |
 
 
 
@@ -961,12 +962,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketsDataSubscribeRequest"></a>
 
 ### MarketsDataSubscribeRequest
-
+Request to subscribe to a stream of MarketsData.
+Optionally, the list can be additionally filtered by market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
 
 
 
@@ -976,12 +978,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.MarketsResponse"></a>
 
 ### MarketsResponse
-
+Response for a list of markets on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| markets | [vega.Market](#vega.Market) | repeated | a list of Markets |
+| markets | [vega.Market](#vega.Market) | repeated | A list of 0 or more markets. |
 
 
 
@@ -991,12 +993,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.ObservePartyProposalsRequest"></a>
 
 ### ObservePartyProposalsRequest
-
+Request to subscribe to a stream of governance proposals for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
 
 
 
@@ -1006,12 +1008,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.ObservePartyVotesRequest"></a>
 
 ### ObservePartyVotesRequest
-
+Request to subscribe to a stream of governance votes for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
 
 
 
@@ -1021,12 +1023,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.ObserveProposalVotesRequest"></a>
 
 ### ObserveProposalVotesRequest
-
+Request to subscribe to a stream of governance votes for a proposal.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposalID | [string](#string) |  |  |
+| proposalID | [string](#string) |  | Proposal identifier. Required field. |
 
 
 
@@ -1036,12 +1038,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OptionalProposalState"></a>
 
 ### OptionalProposalState
-
+Optional proposal state.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [vega.Proposal.State](#vega.Proposal.State) |  |  |
+| value | [vega.Proposal.State](#vega.Proposal.State) |  | Proposal state value. |
 
 
 
@@ -1051,13 +1053,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderByIDRequest"></a>
 
 ### OrderByIDRequest
-
+Request for an order with the specified order identifier.
+Optionally, return a specific version of the order with the `version` field.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
-| version | [uint64](#uint64) |  | version of the order (0 for most recent; 1 for original; 2 for first amendment, etc) |
+| orderID | [string](#string) |  | Order identifier. Required field. |
+| version | [uint64](#uint64) |  | Version of the order. Set `version` to 0 for most recent version of the order. Set `1` for original version of the order. Set `2` for first amendment, `3` for second amendment, etc. |
 
 
 
@@ -1067,13 +1070,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderByMarketAndIdRequest"></a>
 
 ### OrderByMarketAndIdRequest
-
+Request for an order on a market given an order identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| orderID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| orderID | [string](#string) |  | Order identifier. Required field. |
 
 
 
@@ -1083,12 +1086,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderByMarketAndIdResponse"></a>
 
 ### OrderByMarketAndIdResponse
-
+Response for an order on a market given an order identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [vega.Order](#vega.Order) |  |  |
+| order | [vega.Order](#vega.Order) |  | An order, if found. |
 
 
 
@@ -1098,12 +1101,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderByReferenceIDRequest"></a>
 
 ### OrderByReferenceIDRequest
-
+Request for an order given the specified order reference.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| referenceID | [string](#string) |  |  |
+| referenceID | [string](#string) |  | Reference. Required field. |
 
 
 
@@ -1113,12 +1116,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderByReferenceRequest"></a>
 
 ### OrderByReferenceRequest
-
+Request for an order given an order reference.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| reference | [string](#string) |  |  |
+| reference | [string](#string) |  | Unique reference. Required field. |
 
 
 
@@ -1128,12 +1131,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderByReferenceResponse"></a>
 
 ### OrderByReferenceResponse
-
+Response for an order given an order reference.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [vega.Order](#vega.Order) |  |  |
+| order | [vega.Order](#vega.Order) |  | An order, if found. |
 
 
 
@@ -1143,13 +1146,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderVersionsByIDRequest"></a>
 
 ### OrderVersionsByIDRequest
-
+Request for a list of all versions of an order given the specified order identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
-| pagination | [Pagination](#api.Pagination) |  |  |
+| orderID | [string](#string) |  | Order identifier. Required field. |
+| pagination | [Pagination](#api.Pagination) |  | Pagination controls. |
 
 
 
@@ -1159,12 +1162,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrderVersionsResponse"></a>
 
 ### OrderVersionsResponse
-
+Response to a request for a list of all versions of an order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orders | [vega.Order](#vega.Order) | repeated |  |
+| orders | [vega.Order](#vega.Order) | repeated | A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended). |
 
 
 
@@ -1174,13 +1177,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrdersByMarketRequest"></a>
 
 ### OrdersByMarketRequest
-
+Request for a list of orders for a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| pagination | [Pagination](#api.Pagination) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| pagination | [Pagination](#api.Pagination) |  | Optional pagination controls. |
 
 
 
@@ -1190,12 +1193,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrdersByMarketResponse"></a>
 
 ### OrdersByMarketResponse
-
+Response for a list of orders for a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orders | [vega.Order](#vega.Order) | repeated |  |
+| orders | [vega.Order](#vega.Order) | repeated | A list of 0 or more orders. |
 
 
 
@@ -1205,13 +1208,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrdersByPartyRequest"></a>
 
 ### OrdersByPartyRequest
-
+Request for a list of orders for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| pagination | [Pagination](#api.Pagination) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| pagination | [Pagination](#api.Pagination) |  | Pagination controls. |
 
 
 
@@ -1221,12 +1224,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrdersByPartyResponse"></a>
 
 ### OrdersByPartyResponse
-
+Response for a list of orders for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orders | [vega.Order](#vega.Order) | repeated |  |
+| orders | [vega.Order](#vega.Order) | repeated | A list of 0 or more orders. |
 
 
 
@@ -1236,12 +1239,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrdersStream"></a>
 
 ### OrdersStream
-
+A stream of orders.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orders | [vega.Order](#vega.Order) | repeated |  |
+| orders | [vega.Order](#vega.Order) | repeated | A list of 0 or more orders. |
 
 
 
@@ -1251,13 +1254,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.OrdersSubscribeRequest"></a>
 
 ### OrdersSubscribeRequest
-
+Request to subscribe to a stream of Orders.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
+| partyID | [string](#string) |  | Party identifier. |
 
 
 
@@ -1267,14 +1270,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.Pagination"></a>
 
 ### Pagination
-
+Pagination controls.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| skip | [uint64](#uint64) |  |  |
-| limit | [uint64](#uint64) |  |  |
-| descending | [bool](#bool) |  |  |
+| skip | [uint64](#uint64) |  | Skip the number of records specified. Default is 0. |
+| limit | [uint64](#uint64) |  | Limit the number of returned records to the value specified. Default is 50. |
+| descending | [bool](#bool) |  | Descending reverses the order of the records returned. Default is true, if false the results will be returned in ascending order. |
 
 
 
@@ -1284,12 +1287,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PartiesResponse"></a>
 
 ### PartiesResponse
-
+Response to a request for a list of parties.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| parties | [vega.Party](#vega.Party) | repeated |  |
+| parties | [vega.Party](#vega.Party) | repeated | A list of 0 or more parties. |
 
 
 
@@ -1299,15 +1302,15 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PartyAccountsRequest"></a>
 
 ### PartyAccountsRequest
-
+Request for a list of accounts for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| type | [vega.AccountType](#vega.AccountType) |  |  |
-| asset | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. |
+| marketID | [string](#string) |  | Market identifier. |
+| type | [vega.AccountType](#vega.AccountType) |  | Account type. Required field. |
+| asset | [string](#string) |  | Asset identifier. |
 
 
 
@@ -1317,12 +1320,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PartyAccountsResponse"></a>
 
 ### PartyAccountsResponse
-
+Response for a list of accounts for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| accounts | [vega.Account](#vega.Account) | repeated |  |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of 0 or more accounts. |
 
 
 
@@ -1332,12 +1335,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PartyByIDRequest"></a>
 
 ### PartyByIDRequest
-
+Request for a party given a party identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
 
 
 
@@ -1347,12 +1350,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PartyByIDResponse"></a>
 
 ### PartyByIDResponse
-
+Response for a party given a party identifier.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| party | [vega.Party](#vega.Party) |  |  |
+| party | [vega.Party](#vega.Party) |  | A party, if found. |
 
 
 
@@ -1362,13 +1365,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PositionsByPartyRequest"></a>
 
 ### PositionsByPartyRequest
-
+Request for a list of positions for a party.
+Optionally, if a market identifier is set, the results will be filtered for that market only.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| marketID | [string](#string) |  | Market identifier. |
 
 
 
@@ -1378,12 +1382,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PositionsByPartyResponse"></a>
 
 ### PositionsByPartyResponse
-
+Response for a list of positions for a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| positions | [vega.Position](#vega.Position) | repeated |  |
+| positions | [vega.Position](#vega.Position) | repeated | A list of 0 or more positions. |
 
 
 
@@ -1393,12 +1397,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PositionsSubscribeRequest"></a>
 
 ### PositionsSubscribeRequest
-
+Request to subscribe to a stream of Positions.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
 
 
 
@@ -1408,12 +1412,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareAmendOrderResponse"></a>
 
 ### PrepareAmendOrderResponse
-
+Response for preparing an order amendment.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blob | [bytes](#bytes) |  |  |
+| blob | [bytes](#bytes) |  | blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction. |
 
 
 
@@ -1423,12 +1427,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareCancelOrderResponse"></a>
 
 ### PrepareCancelOrderResponse
-
+Response for preparing an order cancellation.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blob | [bytes](#bytes) |  |  |
+| blob | [bytes](#bytes) |  | blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction. |
 
 
 
@@ -1438,14 +1442,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareProposalRequest"></a>
 
 ### PrepareProposalRequest
-
+Request to prepare a governance proposal.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| reference | [string](#string) |  |  |
-| proposal | [vega.ProposalTerms](#vega.ProposalTerms) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| reference | [string](#string) |  | Unique reference. |
+| proposal | [vega.ProposalTerms](#vega.ProposalTerms) |  | Proposal terms. Required field. |
 
 
 
@@ -1455,13 +1459,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareProposalResponse"></a>
 
 ### PrepareProposalResponse
-
+Response to prepare a governance proposal.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blob | [bytes](#bytes) |  |  |
-| pendingProposal | [vega.Proposal](#vega.Proposal) |  |  |
+| blob | [bytes](#bytes) |  | blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction. |
+| pendingProposal | [vega.Proposal](#vega.Proposal) |  | A copy of the prepared proposal. |
 
 
 
@@ -1471,13 +1475,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareSubmitOrderResponse"></a>
 
 ### PrepareSubmitOrderResponse
-
+Response for preparing an order submission.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blob | [bytes](#bytes) |  |  |
-| submitID | [string](#string) |  |  |
+| blob | [bytes](#bytes) |  | blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction. |
+| submitID | [string](#string) |  | Submission identifier (order reference). |
 
 
 
@@ -1487,12 +1491,12 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareVoteRequest"></a>
 
 ### PrepareVoteRequest
-
+Request to prepare a governance vote.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vote | [vega.Vote](#vega.Vote) |  |  |
+| vote | [vega.Vote](#vega.Vote) |  | Vote. Required field. |
 
 
 
@@ -1502,13 +1506,13 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PrepareVoteResponse"></a>
 
 ### PrepareVoteResponse
-
+Response to prepare a governance vote.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blob | [bytes](#bytes) |  |  |
-| vote | [vega.Vote](#vega.Vote) |  |  |
+| blob | [bytes](#bytes) |  | blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction. |
+| vote | [vega.Vote](#vega.Vote) |  | A copy of the prepared vote. |
 
 
 
@@ -1518,14 +1522,14 @@ The response of the GetNodeSIgnatureAggregate rpc
 <a name="api.PropagateChainEventRequest"></a>
 
 ### PropagateChainEventRequest
-The request for a new event sent by the blockchain queue to be propagated into vega
+Request for a new event sent by the blockchain queue to be propagated on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| evt | [vega.ChainEvent](#vega.ChainEvent) |  | The event |
-| pubKey | [string](#string) |  |  |
-| signature | [bytes](#bytes) |  |  |
+| evt | [vega.ChainEvent](#vega.ChainEvent) |  | Chain event. |
+| pubKey | [string](#string) |  | Public key. |
+| signature | [bytes](#bytes) |  | Signature. |
 
 
 
@@ -1535,12 +1539,12 @@ The request for a new event sent by the blockchain queue to be propagated into v
 <a name="api.PropagateChainEventResponse"></a>
 
 ### PropagateChainEventResponse
-The response for a new event sent to vega
+Response for a new event sent by the blockchain queue to be propagated on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| success | [bool](#bool) |  | Did the event get accepted by the node successfully |
+| success | [bool](#bool) |  | Success will be true if the event was accepted by the node. Important - success does not mean that the event is confirmed by consensus. |
 
 
 
@@ -1550,12 +1554,12 @@ The response for a new event sent to vega
 <a name="api.SubmitOrderRequest"></a>
 
 ### SubmitOrderRequest
-
+Request to submit a new order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | the bulk of the Order, including market, party, price, size, side, time in force, etc. |
+| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | An order submission. |
 
 
 
@@ -1565,12 +1569,22 @@ The response for a new event sent to vega
 <a name="api.SubmitTransactionRequest"></a>
 
 ### SubmitTransactionRequest
+Request for submitting a transaction on Vega.
 
+This request will take the signed `blob` result from a `prepare` call and submit it for inclusion in a block by the Vega blockchain.
+Several commands are available on Vega:
+- SubmitOrder, see [PrepareSubmitOrder](#api.trading).
+- AmendOrder, see [PrepareAmendOrder](#api.trading).
+- CancelOrder, see [PrepareCancelOrder](#api.trading).
+- PrepareProposal, see [PrepareProposal](#api.trading).
+- PrepareVote, see [PrepareVote](#api.trading).
+- Withdraw, see [WithdrawRequest](#api.trading).
+All of these can be prepared using this API. Payload data must be signed using Vega Wallet before submitting a transaction.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tx | [vega.SignedBundle](#vega.SignedBundle) |  |  |
+| tx | [vega.SignedBundle](#vega.SignedBundle) |  | A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain. |
 
 
 
@@ -1580,12 +1594,12 @@ The response for a new event sent to vega
 <a name="api.SubmitTransactionResponse"></a>
 
 ### SubmitTransactionResponse
-
+Response for submitting a transaction on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| success | [bool](#bool) |  |  |
+| success | [bool](#bool) |  | Success will be true if the transaction was accepted by the node. Important - success does not mean that the transaction is confirmed by consensus. |
 
 
 
@@ -1595,13 +1609,13 @@ The response for a new event sent to vega
 <a name="api.TradesByMarketRequest"></a>
 
 ### TradesByMarketRequest
-
+Request for a list of trades on a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| pagination | [Pagination](#api.Pagination) |  |  |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+| pagination | [Pagination](#api.Pagination) |  | Pagination controls. |
 
 
 
@@ -1611,12 +1625,12 @@ The response for a new event sent to vega
 <a name="api.TradesByMarketResponse"></a>
 
 ### TradesByMarketResponse
-
+Response for a list of trades on a market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trades | [vega.Trade](#vega.Trade) | repeated |  |
+| trades | [vega.Trade](#vega.Trade) | repeated | A list of 0 or more trades. |
 
 
 
@@ -1626,12 +1640,12 @@ The response for a new event sent to vega
 <a name="api.TradesByOrderRequest"></a>
 
 ### TradesByOrderRequest
-
+Request for a list of trades related to an order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
+| orderID | [string](#string) |  | Order identifier. Required field. |
 
 
 
@@ -1641,12 +1655,12 @@ The response for a new event sent to vega
 <a name="api.TradesByOrderResponse"></a>
 
 ### TradesByOrderResponse
-
+Response for a list of trades related to an order.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trades | [vega.Trade](#vega.Trade) | repeated |  |
+| trades | [vega.Trade](#vega.Trade) | repeated | A list of 0 or more trades. |
 
 
 
@@ -1656,14 +1670,15 @@ The response for a new event sent to vega
 <a name="api.TradesByPartyRequest"></a>
 
 ### TradesByPartyRequest
-
+Request for a list of trades relating to the given party.
+Optionally, the list can be additionally filtered for trades by market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| pagination | [Pagination](#api.Pagination) |  |  |
+| partyID | [string](#string) |  | Party identifier. Required field. |
+| marketID | [string](#string) |  | Market identifier. |
+| pagination | [Pagination](#api.Pagination) |  | Pagination controls. |
 
 
 
@@ -1673,12 +1688,12 @@ The response for a new event sent to vega
 <a name="api.TradesByPartyResponse"></a>
 
 ### TradesByPartyResponse
-
+Response for a list of trades relating to a party.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trades | [vega.Trade](#vega.Trade) | repeated |  |
+| trades | [vega.Trade](#vega.Trade) | repeated | A list of 0 or more trades. |
 
 
 
@@ -1688,12 +1703,12 @@ The response for a new event sent to vega
 <a name="api.TradesStream"></a>
 
 ### TradesStream
-
+A stream of trades.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trades | [vega.Trade](#vega.Trade) | repeated |  |
+| trades | [vega.Trade](#vega.Trade) | repeated | A list of 0 or more trades. |
 
 
 
@@ -1703,13 +1718,13 @@ The response for a new event sent to vega
 <a name="api.TradesSubscribeRequest"></a>
 
 ### TradesSubscribeRequest
-
+Request to subscribe to a stream of Trades.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier. |
+| partyID | [string](#string) |  | Party identifier. |
 
 
 
@@ -1719,12 +1734,12 @@ The response for a new event sent to vega
 <a name="api.VegaTimeResponse"></a>
 
 ### VegaTimeResponse
-
+Response for the current consensus coordinated time on the Vega network, referred to as &#34;VegaTime&#34;.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  | nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z` |
+| timestamp | [int64](#int64) |  | Timestamp representation of current VegaTime. Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z` |
 
 
 
@@ -1734,12 +1749,12 @@ The response for a new event sent to vega
 <a name="api.WithdrawRequest"></a>
 
 ### WithdrawRequest
-
+Request for withdrawing assets on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  |  |
+| withdraw | [vega.Withdraw](#vega.Withdraw) |  | Withdrawal details. |
 
 
 
@@ -1749,12 +1764,12 @@ The response for a new event sent to vega
 <a name="api.WithdrawResponse"></a>
 
 ### WithdrawResponse
-
+Response for withdrawing assets on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| success | [bool](#bool) |  |  |
+| success | [bool](#bool) |  | Success will be true if the withdrawal request was accepted by the node. Important - success does not mean that the withdrawal is confirmed by consensus. |
 
 
 
@@ -1775,13 +1790,13 @@ The response for a new event sent to vega
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
-| PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
-| PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
-| Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request withdrawal |
+| PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Prepare a cancel order request |
+| PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Prepare an amend order request |
+| Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request a withdrawal |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
-| PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
-| PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
-| PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | chain events |
+| PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
+| PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
+| PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | Propagate a chain event |
 
 
 <a name="api.trading_data"></a>
@@ -1839,9 +1854,9 @@ The response for a new event sent to vega
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
 | TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
-| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signature from all the node of the network |
-| AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its ID |
-| Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get the list of all assets in vega |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signatures from all the nodes of the network. |
+| AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
+| Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 
 
 
@@ -2965,8 +2980,8 @@ Represents an account for an asset on Vega for a particular owner or party.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | Unique identifier (used internally by Vega). |
-| owner | [string](#string) |  | The party that the account belongs to. Special values include `network`, which represents the network and is most commonly seen during liquidation of distressed trading positions. |
+| id | [string](#string) |  | Unique account identifier (used internally by Vega). |
+| owner | [string](#string) |  | The party that the account belongs to. Special values include `network`, which represents the Vega network and is most commonly seen during liquidation of distressed trading positions. |
 | balance | [uint64](#uint64) |  | Balance of the asset, the balance is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. Balances cannot be negative. |
 | asset | [string](#string) |  | Asset identifier for the account. |
 | marketID | [string](#string) |  | Market identifier for the account. If [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty. |
@@ -3028,9 +3043,9 @@ Represents Vega domain specific error information over gRPC/Protobuf.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| code | [int32](#int32) |  | a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 |
-| message | [string](#string) |  | a message that describes the error in more detail, should describe the problem encountered. |
-| inner | [string](#string) |  | any inner error information that could add more context, or be helpful for error reporting. |
+| code | [int32](#int32) |  | A Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 |
+| message | [string](#string) |  | A message that describes the error in more detail, should describe the problem encountered. |
+| inner | [string](#string) |  | Any inner error information that could add more context, or be helpful for error reporting. |
 
 
 
@@ -3240,7 +3255,7 @@ An order can be submitted, amended and cancelled on Vega in an attempt to make t
 ### OrderAmendment
 An order amendment is a request to amend or update an existing order on Vega.
 
-The following three fields are used for lookup of the order only, cannot be amended by this command:
+The `orderID`, `partyID` and `marketID` fields are used for lookup of the order only and cannot be amended by this command.
 
 
 | Field | Type | Label | Description |
@@ -3611,12 +3626,12 @@ A trade occurs when an aggressive order crosses one or more passive orders on th
 <a name="vega.TradeSet"></a>
 
 ### TradeSet
-A set of one or more trades.
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trades | [Trade](#vega.Trade) | repeated |  |
+| trades | [Trade](#vega.Trade) | repeated | A set of one or more trades. |
 
 
 
@@ -3720,7 +3735,7 @@ Represents a withdrawal of an asset by a party on Vega.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  | Unique party identifier affecting the withdrawal. |
-| amount | [uint64](#uint64) |  | The total amount withdrawn, the amount is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| amount | [uint64](#uint64) |  | Total amount to withdraw. |
 | asset | [string](#string) |  | Asset identifier. |
 
 
