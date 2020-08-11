@@ -263,7 +263,7 @@ steps:
           docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
         fi
       - if test -n "$$DRONE_BRANCH" ; then
-          sanitised_branch="$$(echo -n "$$DRONE_BRANCH" | tr -c 'A-Za-z0-9._' '-')"
+          sanitised_branch="$$(echo -n "$$DRONE_BRANCH" | tr -c 'A-Za-z0-9._' '-')" ;
           docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
           docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
         fi
