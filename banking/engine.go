@@ -3,6 +3,7 @@ package banking
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -11,8 +12,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
+	"github.com/prometheus/common/log"
 
 	"golang.org/x/crypto/sha3"
+)
+
+var (
+	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -59,6 +65,8 @@ type Engine struct {
 	assets    Assets
 	assetActs map[string]*assetAction
 	tsvc      TimeService
+
+	seen map[txRef]struct{}
 }
 
 func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets) (e *Engine) {
@@ -70,6 +78,7 @@ func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeServic
 		assetActs: map[string]*assetAction{},
 		tsvc:      tsvc,
 		assets:    assets,
+		seen:      map[txRef]struct{}{},
 	}
 }
 
@@ -90,8 +99,18 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 	return e.finalizeAssetList(ctx, assetID)
 }
 
-func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, asset string, amount uint64) error {
-	return e.finalizeWithdrawal(ctx, party, asset, amount)
+func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID string, amount uint64) error {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", assetID),
+			logging.Error(err))
+		return err
+	}
+	if !asset.IsBuiltinAsset() {
+		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
+	}
+	return e.finalizeWithdrawal(ctx, party, assetID, amount)
 }
 
 func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64) error {
@@ -103,6 +122,10 @@ func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64)
 			logging.Error(err))
 		return err
 	}
+	if !asset.IsBuiltinAsset() {
+		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
+	}
+
 	aa := &assetAction{
 		id:       id(d, nonce),
 		state:    pendingState,
@@ -157,11 +180,23 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		}
 		switch state {
 		case okState:
-			if err := e.finalizeAction(ctx, v); err != nil {
-				e.log.Error("unable to finalize action",
-					logging.String("action", v.String()),
-					logging.Error(err))
+			// check if this transaction have been seen before then
+			if _, ok := e.seen[v.ref]; ok {
+				// do nothing of this transaction, just display an error
+				log.Error("chain event reference a transaction already processed",
+					logging.String("asset-class", string(v.ref.asset)),
+					logging.String("tx-hash", v.ref.hash),
+					logging.String("action", v.String()))
+			} else {
+				// first time we seen this transaction, let's add iter
+				e.seen[v.ref] = struct{}{}
+				if err := e.finalizeAction(ctx, v); err != nil {
+					e.log.Error("unable to finalize action",
+						logging.String("action", v.String()),
+						logging.Error(err))
+				}
 			}
+
 		case rejectedState:
 			e.log.Error("network rejected banking action",
 				logging.String("action", v.String()))

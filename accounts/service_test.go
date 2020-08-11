@@ -94,9 +94,8 @@ func testGetTraderAccountsErr(t *testing.T) {
 func getTestService(t *testing.T) *tstService {
 	ctrl := gomock.NewController(t)
 	acc := mocks.NewMockAccountStore(ctrl)
-	chain := mocks.NewMockBlockchain(ctrl)
 	conf := accounts.NewDefaultConfig()
-	svc := accounts.NewService(logging.NewTestLogger(), conf, acc, chain)
+	svc := accounts.NewService(logging.NewTestLogger(), conf, acc)
 	return &tstService{
 		Svc:     svc,
 		ctrl:    ctrl,

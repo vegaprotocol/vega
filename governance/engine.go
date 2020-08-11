@@ -34,6 +34,7 @@ var (
 	ErrProposalMinRequiredMajorityStakeInvalid = errors.New("proposal minimum required majority stake is out of bounds [0.5..1]")
 	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
 	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
+	ErrIncompatibleTimestamps                  = errors.New("incompatible timestamps")
 )
 
 // Broker - event bus
@@ -291,6 +292,21 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			logging.Int64("provided", proposal.Terms.EnactmentTimestamp),
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
+	}
+
+	if proposal.Terms.ClosingTimestamp < proposal.Terms.ValidationTimestamp {
+		e.log.Debug("proposal closing time can't be smaller than validation time",
+			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
+			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
+	}
+	if proposal.Terms.EnactmentTimestamp < proposal.Terms.ClosingTimestamp {
+		e.log.Debug("proposal enactment time can't be smaller than closing time",
+			logging.Int64("enactment-time", proposal.Terms.EnactmentTimestamp),
+			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
 	}
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyID)
 	if err != nil {

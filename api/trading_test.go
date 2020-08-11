@@ -180,7 +180,7 @@ func getTestGRPCServer(
 	}
 
 	// Account Service
-	accountService := accounts.NewService(logger, conf.Accounts, accountStore, blockchainClient)
+	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
 
 	// Candle Service
 	candleService, err := candles.NewService(logger, conf.Candles, candleStore)

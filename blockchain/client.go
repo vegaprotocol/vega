@@ -76,49 +76,6 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	return c.sendTx(ctx, bundleBytes)
 }
 
-// Withdraw will send a Withdraw transaction to the blockchain
-func (c *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
-	bytes, err := proto.Marshal(w)
-	if err != nil {
-		return false, err
-	}
-	if len(bytes) == 0 {
-		return false, errors.New("withdraw message empty after marshal")
-	}
-
-	return c.sendCommand(ctx, bytes, WithdrawCommand)
-}
-
-// FIXME(): remove once we have only signed transaction going through the system
-func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {
-	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
-	// It's split on arrival out of consensus along with a byte that represents command e.g. cancel order
-	bytes, err = txEncode(bytes, cmd)
-	if err != nil {
-		return false, err
-	}
-
-	// make it a empty transaction
-	// no nonce or pubkey here
-	tx := &types.Transaction{InputData: bytes}
-	rawTx, err := proto.Marshal(tx)
-	if err != nil {
-		return false, err
-	}
-
-	bundle := &types.SignedBundle{
-		Tx:  rawTx,
-		Sig: &types.Signature{}, // end an empty sig
-	}
-	rawBundle, err := proto.Marshal(bundle)
-	if err != nil {
-		return false, err
-	}
-
-	// Fire off the transaction for consensus
-	return c.sendTx(ctx, rawBundle)
-}
-
 func (c *Client) sendTx(ctx context.Context, bytes []byte) (bool, error) {
 	return c.clt.SendTransaction(ctx, bytes)
 }

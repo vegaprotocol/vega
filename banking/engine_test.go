@@ -55,7 +55,9 @@ func getTestEngine(t *testing.T) *testEngine {
 
 func TestBanking(t *testing.T) {
 	t.Run("test deposit success", testDepositSuccess)
+	t.Run("test deposit success - no tx duplicate", testDepositSuccessNoTxDuplicate)
 	t.Run("test deposit failure", testDepositFailure)
+	t.Run("test deposit failure - not builtin", testDepositFailureNotBuiltin)
 	t.Run("test deposit error - start check fail", testDepositError)
 }
 
@@ -74,6 +76,48 @@ func testDepositSuccess(t *testing.T) {
 
 	// call the deposit function
 	err := eng.DepositBuiltinAsset(bad, 42)
+	assert.NoError(t, err)
+
+	// then we call the callback from the fake erc
+	eng.erc.r.Check()
+	eng.erc.f(eng.erc.r, true)
+
+	// then we call time update, which should call the collateral to
+	// to do the deposit
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
+
+	eng.OnTick(context.Background(), now.Add(1*time.Second))
+}
+
+func testDepositSuccessNoTxDuplicate(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
+	now := time.Now()
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now, nil)
+	bad := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      42,
+	}
+
+	// call the deposit function
+	err := eng.DepositBuiltinAsset(bad, 42)
+	assert.NoError(t, err)
+
+	// then we call the callback from the fake erc
+	eng.erc.r.Check()
+	eng.erc.f(eng.erc.r, true)
+
+	// then we call time update, which should call the collateral to
+	// to do the deposit
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
+
+	eng.OnTick(context.Background(), now.Add(1*time.Second))
+
+	// call the deposit function
+	err = eng.DepositBuiltinAsset(bad, 43)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -129,6 +173,25 @@ func testDepositError(t *testing.T) {
 	// set an error to be return by the fake erc
 	expectError := errors.New("bad bad bad")
 	eng.erc.err = expectError
+
+	// call the deposit function
+	err := eng.DepositBuiltinAsset(bad, 42)
+	assert.EqualError(t, err, expectError.Error())
+}
+
+func testDepositFailureNotBuiltin(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	expectError := errors.New("bad bad bad")
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, expectError)
+	now := time.Now()
+	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	bad := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      42,
+	}
 
 	// call the deposit function
 	err := eng.DepositBuiltinAsset(bad, 42)

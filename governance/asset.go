@@ -32,6 +32,10 @@ func validateBuiltinAssetSource(ba *types.BuiltinAsset) (types.ProposalError, er
 	if err != nil || u == 0 {
 		return types.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, ErrMissingBuiltinAssetField
 	}
+	u, err = strconv.ParseUint(ba.MaxFaucetAmountMint, 10, 64)
+	if err != nil || u == 0 {
+		return types.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, ErrMissingBuiltinAssetField
+	}
 
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

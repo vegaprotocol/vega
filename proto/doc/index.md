@@ -87,6 +87,8 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
+    - [PrepareWithdrawRequest](#api.PrepareWithdrawRequest)
+    - [PrepareWithdrawResponse](#api.PrepareWithdrawResponse)
     - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
     - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
@@ -101,8 +103,6 @@
     - [TradesStream](#api.TradesStream)
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
-    - [WithdrawRequest](#api.WithdrawRequest)
-    - [WithdrawResponse](#api.WithdrawResponse)
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
@@ -1519,6 +1519,36 @@ Response to prepare a governance vote.
 
 
 
+<a name="api.PrepareWithdrawRequest"></a>
+
+### PrepareWithdrawRequest
+Request for preparing a withdrawal.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdraw | [vega.Withdraw](#vega.Withdraw) |  | An asset withdrawal. |
+
+
+
+
+
+
+<a name="api.PrepareWithdrawResponse"></a>
+
+### PrepareWithdrawResponse
+Response for preparing a withdrawal.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  | blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction. |
+
+
+
+
+
+
 <a name="api.PropagateChainEventRequest"></a>
 
 ### PropagateChainEventRequest
@@ -1746,36 +1776,6 @@ Response for the current consensus coordinated time on the Vega network, referre
 
 
 
-<a name="api.WithdrawRequest"></a>
-
-### WithdrawRequest
-Request for withdrawing assets on Vega.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  | Withdrawal details. |
-
-
-
-
-
-
-<a name="api.WithdrawResponse"></a>
-
-### WithdrawResponse
-Response for withdrawing assets on Vega.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| success | [bool](#bool) |  | Success will be true if the withdrawal request was accepted by the node. Important - success does not mean that the withdrawal is confirmed by consensus. |
-
-
-
-
-
-
 
 
 
@@ -1792,7 +1792,7 @@ Response for withdrawing assets on Vega.
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Prepare a cancel order request |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Prepare an amend order request |
-| Withdraw | [WithdrawRequest](#api.WithdrawRequest) | [WithdrawResponse](#api.WithdrawResponse) | Request a withdrawal |
+| PrepareWithdraw | [PrepareWithdrawRequest](#api.PrepareWithdrawRequest) | [PrepareWithdrawResponse](#api.PrepareWithdrawResponse) | Request a withdrawal |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
@@ -2603,6 +2603,7 @@ and the cause for an proposal being rejected of failed
 | PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | the asset id refer to no assets in vega |
+| PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment) |
 
 
 

@@ -25,7 +25,7 @@ service trading {
   rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
 
   // Request a withdrawal
-  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+  rpc PrepareWithdraw(PrepareWithdrawRequest) returns (PrepareWithdrawResponse);
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
@@ -83,19 +83,18 @@ message SubmitTransactionResponse {
   bool success = 1;
 }
 
-// Request for withdrawing assets on Vega.
-message WithdrawRequest {
+// Request for preparing a withdrawal.
+message PrepareWithdrawRequest {
 
-  // Withdrawal details.
+  // An asset withdrawal.
   vega.Withdraw withdraw = 1;
 }
 
-// Response for withdrawing assets on Vega.
-message WithdrawResponse {
+// Response for preparing a withdrawal.
+message PrepareWithdrawResponse {
 
-    // Success will be true if the withdrawal request was accepted by the node.
-    // Important - success does not mean that the withdrawal is confirmed by consensus.
-    bool success = 1;
+  // blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction.
+  bytes blob = 1;
 }
 
 // Response for preparing an order submission.

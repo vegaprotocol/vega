@@ -37,7 +37,7 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	Withdraw(context.Context, *types.Withdraw) (bool, error)
+	PrepareWithdraw(context.Context, *types.Withdraw) error
 }
 
 // GovernanceService ...
@@ -107,20 +107,21 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
-	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	raw, err := proto.Marshal(req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	return &protoapi.PrepareAmendOrderResponse{
-		Blob: raw,
-	}, nil
+	return nil, apiError(codes.Unimplemented, errors.New("not implemented"))
+	// err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	// if err != nil {
+	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	// }
+	// raw, err := proto.Marshal(req.Amendment)
+	// if err != nil {
+	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	// }
+	// if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
+	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	// }
+	// return &protoapi.PrepareAmendOrderResponse{
+	// 	Blob: raw,
+	// }, nil
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
@@ -138,28 +139,24 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}, nil
 }
 
-func (s *tradingService) Withdraw(
-	ctx context.Context, req *protoapi.WithdrawRequest,
-) (*protoapi.WithdrawResponse, error) {
+func (s *tradingService) PrepareWithdraw(
+	ctx context.Context, req *protoapi.PrepareWithdrawRequest,
+) (*protoapi.PrepareWithdrawResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("Withdraw", startTime)
-	if len(req.Withdraw.PartyID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
-	}
-	if len(req.Withdraw.Asset) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingAsset)
-	}
-	if req.Withdraw.Amount == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrInvalidWithdrawAmount)
-	}
-
-	ok, err := s.accountService.Withdraw(ctx, req.Withdraw)
+	err := s.accountService.PrepareWithdraw(ctx, req.Withdraw)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
-
-	return &protoapi.WithdrawResponse{
-		Success: ok,
+	raw, err := proto.Marshal(req.Withdraw)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
+	}
+	if raw, err = txEncode(raw, blockchain.WithdrawCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
+	}
+	return &protoapi.PrepareWithdrawResponse{
+		Blob: raw,
 	}, nil
 }
 
