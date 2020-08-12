@@ -5006,7 +5006,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.Asset">Asset</h3>
-        <p>The vega representation of an external asset</p>
+        <p>The Vega representation of an external asset.</p>
 
 
           <table class="field-table">
@@ -5019,35 +5019,35 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega internal ID of the asset </p></td>
+                  <td><p>Internal identifier of the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The name of the asset (e.g: Great British Pound) </p></td>
+                  <td><p>Name of the asset (e.g: Great British Pound). </p></td>
                 </tr>
 
                 <tr>
                   <td>symbol</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The symbol of the asset (e.g: GBP) </p></td>
+                  <td><p>Symbol of the asset (e.g: GBP). </p></td>
                 </tr>
 
                 <tr>
                   <td>totalSupply</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The total circulating supply for the asset </p></td>
+                  <td><p>Total circulating supply for the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>decimals</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The number of decimal / precision handled by this asset </p></td>
+                  <td><p>Number of decimals / precision handled by this asset. </p></td>
                 </tr>
 
                 <tr>
@@ -5065,7 +5065,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.AssetSource">AssetSource</h3>
-        <p></p>
+        <p>Asset source definition.</p>
 
 
           <table class="field-table">
@@ -5078,14 +5078,14 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>builtinAsset</td>
                   <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A built-in asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>erc20</td>
                   <td><a href="#vega.ERC20">ERC20</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An Ethereum ERC20 asset. </p></td>
                 </tr>
 
             </tbody>
@@ -5096,7 +5096,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BuiltinAsset">BuiltinAsset</h3>
-        <p>A vega internal asset</p>
+        <p>A Vega internal asset.</p>
 
 
           <table class="field-table">
@@ -5109,35 +5109,35 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The name of the asset (e.g: Great British Pound) </p></td>
+                  <td><p>Name of the asset (e.g: Great British Pound). </p></td>
                 </tr>
 
                 <tr>
                   <td>symbol</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The symbol of the asset (e.g: GBP) </p></td>
+                  <td><p>Symbol of the asset (e.g: GBP). </p></td>
                 </tr>
 
                 <tr>
                   <td>totalSupply</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The total circulating supply for the asset </p></td>
+                  <td><p>Total circulating supply for the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>decimals</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The number of decimal / precision handled by this asset </p></td>
+                  <td><p>Number of decimal / precision handled by this asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>maxFaucetAmountMint</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>This is the maximum amount that can be requested by a party through the builtin asset faucet at a time </p></td>
+                  <td><p>Maximum amount that can be requested by a party through the built-in asset faucet at a time. </p></td>
                 </tr>
 
             </tbody>
@@ -5148,7 +5148,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.DevAssets">DevAssets</h3>
-        <p></p>
+        <p>Dev assets are for use in development networks only.</p>
 
 
           <table class="field-table">
@@ -5161,7 +5161,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>sources</td>
                   <td><a href="#vega.AssetSource">AssetSource</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Asset sources for development networks. </p></td>
                 </tr>
 
             </tbody>
@@ -5172,7 +5172,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.ERC20">ERC20</h3>
-        <p>An ERC20 token based asset, living on the ethereum network</p>
+        <p>An ERC20 token based asset, living on the ethereum network.</p>
 
 
           <table class="field-table">
@@ -5210,7 +5210,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.AddValidator">AddValidator</h3>
-        <p>A message to notify a new validator being added to the vega network</p>
+        <p>A message to notify when a new validator is being added to the Vega network.</p>
 
 
           <table class="field-table">
@@ -5223,7 +5223,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>id</td>
                   <td><a href="#vega.Identifier">Identifier</a></td>
                   <td></td>
-                  <td><p>The identifier of this validator </p></td>
+                  <td><p>The identifier of the validator. </p></td>
                 </tr>
 
             </tbody>
@@ -5234,7 +5234,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BTCDeposit">BTCDeposit</h3>
-        <p>A Bitcoin deposit into vega</p>
+        <p>A Bitcoin deposit into Vega.</p>
 
 
           <table class="field-table">
@@ -5247,21 +5247,21 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega network internally ID of the asset </p></td>
+                  <td><p>The Vega network internal identifier of the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>sourceBTCAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The BTC wallet inititing the Deposit </p></td>
+                  <td><p>The BTC wallet initiating the deposit. </p></td>
                 </tr>
 
                 <tr>
                   <td>targetPartyId</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The Vega public key of the target Vega user </p></td>
+                  <td><p>The Vega party identifier (pub-key) which is the target of the deposit. </p></td>
                 </tr>
 
             </tbody>
@@ -5272,7 +5272,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BTCEvent">BTCEvent</h3>
-        <p>An event from Bitcoin</p>
+        <p>An event from the Bitcoin network.</p>
 
 
           <table class="field-table">
@@ -5285,28 +5285,28 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>index</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The index of the transaction </p></td>
+                  <td><p>The index of the transaction. </p></td>
                 </tr>
 
                 <tr>
                   <td>block</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The block in which the transaction happenned </p></td>
+                  <td><p>The block in which the transaction happened. </p></td>
                 </tr>
 
                 <tr>
                   <td>deposit</td>
                   <td><a href="#vega.BTCDeposit">BTCDeposit</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Deposit BTC asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>withdrawal</td>
                   <td><a href="#vega.BTCWithdrawal">BTCWithdrawal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Withdraw BTC asset. </p></td>
                 </tr>
 
             </tbody>
@@ -5317,7 +5317,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BTCWithdrawal">BTCWithdrawal</h3>
-        <p>A Bitcoin withdrawl from vega</p>
+        <p>A Bitcoin withdrawal from Vega.</p>
 
 
           <table class="field-table">
@@ -5330,28 +5330,28 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega network internally ID of the asset </p></td>
+                  <td><p>The vega network internal identifier of the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>sourcePartyId</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The party inititing the withdrawal </p></td>
+                  <td><p>The party identifier (pub-key) initiating the withdrawal. </p></td>
                 </tr>
 
                 <tr>
                   <td>targetBTCAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Target BTC wallet address </p></td>
+                  <td><p>Target Bitcoin wallet address. </p></td>
                 </tr>
 
                 <tr>
                   <td>referenceNonce</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The nonce reference of the transaction </p></td>
+                  <td><p>The nonce reference of the transaction. </p></td>
                 </tr>
 
             </tbody>
@@ -5362,7 +5362,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BitcoinAddress">BitcoinAddress</h3>
-        <p>Wrapper for a Bitcoin address (wallet)</p>
+        <p>Used as a wrapper for a Bitcoin address (wallet).</p>
 
 
           <table class="field-table">
@@ -5375,7 +5375,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>A Bitcoin address </p></td>
+                  <td><p>A Bitcoin address. </p></td>
                 </tr>
 
             </tbody>
@@ -5386,7 +5386,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BuiltinAssetDeposit">BuiltinAssetDeposit</h3>
-        <p>A deposit for an vega builtin asset</p>
+        <p>A deposit for a Vega built-in asset.</p>
 
 
           <table class="field-table">
@@ -5399,21 +5399,21 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>A vega network internal asset ID </p></td>
+                  <td><p>A Vega network internal asset identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>A vega party ID (pubkey) </p></td>
+                  <td><p>A Vega party identifier (pub-key) </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The amount to be deposited </p></td>
+                  <td><p>The amount to be deposited. </p></td>
                 </tr>
 
             </tbody>
@@ -5424,7 +5424,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BuiltinAssetEvent">BuiltinAssetEvent</h3>
-        <p>An event related to a vega builtin asset</p>
+        <p>An event related to a Vega built-in asset.</p>
 
 
           <table class="field-table">
@@ -5437,14 +5437,14 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>deposit</td>
                   <td><a href="#vega.BuiltinAssetDeposit">BuiltinAssetDeposit</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Built-in asset deposit. </p></td>
                 </tr>
 
                 <tr>
                   <td>withdrawal</td>
                   <td><a href="#vega.BuiltinAssetWithdrawal">BuiltinAssetWithdrawal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Built-in asset withdrawal. </p></td>
                 </tr>
 
             </tbody>
@@ -5455,7 +5455,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.BuiltinAssetWithdrawal">BuiltinAssetWithdrawal</h3>
-        <p>A Withdrawal for a vega builtin asset</p>
+        <p>A withdrawal for a Vega built-in asset.</p>
 
 
           <table class="field-table">
@@ -5468,21 +5468,21 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>A vega network internal asset ID </p></td>
+                  <td><p>A Vega network internal asset identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>A vega network party ID (pubkey) </p></td>
+                  <td><p>A Vega network party identifier (pub-key) </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>The amount to be withdrawan </p></td>
+                  <td><p>The amount to be withdrawn. </p></td>
                 </tr>
 
             </tbody>
@@ -5493,7 +5493,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
         <h3 id="vega.ChainEvent">ChainEvent</h3>
-        <p>An event being forwarded to the vega network</p><p>providing information on things happening on other networks</p>
+        <p>An event forwarded to the Vega network to provide information on events happening on other networks.</p>
 
 
           <table class="field-table">
@@ -5506,43 +5506,42 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>txID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The ID of the transaction in which the things happened
-usually a hash </p></td>
+                  <td><p>The identifier of the transaction in which the events happened, usually a hash. </p></td>
                 </tr>
 
                 <tr>
                   <td>nonce</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Arbitrary one-time integer used to prevent replay attacks </p></td>
+                  <td><p>Arbitrary one-time integer used to prevent replay attacks. </p></td>
                 </tr>
 
                 <tr>
                   <td>builtin</td>
                   <td><a href="#vega.BuiltinAssetEvent">BuiltinAssetEvent</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Built-in asset event. </p></td>
                 </tr>
 
                 <tr>
                   <td>erc20</td>
                   <td><a href="#vega.ERC20Event">ERC20Event</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Ethereum ERC20 event. </p></td>
                 </tr>
 
                 <tr>
                   <td>btc</td>
                   <td><a href="#vega.BTCEvent">BTCEvent</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Bitcoin BTC event. </p></td>
                 </tr>
 
                 <tr>
                   <td>validator</td>
                   <td><a href="#vega.ValidatorEvent">ValidatorEvent</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Validator event. </p></td>
                 </tr>
 
             </tbody>
@@ -5553,7 +5552,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.ERC20AssetDelist">ERC20AssetDelist</h3>
-        <p>An asset blacklisting for a erc20 token</p>
+        <p>An asset black-listing for an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -5566,7 +5565,7 @@ usually a hash </p></td>
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega network internally ID of the asset </p></td>
+                  <td><p>The Vega network internal identifier of the asset. </p></td>
                 </tr>
 
             </tbody>
@@ -5577,7 +5576,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.ERC20AssetList">ERC20AssetList</h3>
-        <p>An asset whitelisting for a erc20 token</p>
+        <p>An asset white-listing for an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -5590,7 +5589,7 @@ usually a hash </p></td>
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega network internally ID of the asset </p></td>
+                  <td><p>The Vega network internal identifier of the asset. </p></td>
                 </tr>
 
             </tbody>
@@ -5601,7 +5600,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.ERC20Deposit">ERC20Deposit</h3>
-        <p>An asset deposit for an erc20 token</p>
+        <p>An asset deposit for an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -5614,21 +5613,21 @@ usually a hash </p></td>
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega network internally ID of the asset </p></td>
+                  <td><p>The vega network internal identifier of the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>sourceEthereumAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The ethereum wallet that initiated the deposit </p></td>
+                  <td><p>The Ethereum wallet that initiated the deposit. </p></td>
                 </tr>
 
                 <tr>
                   <td>targetPartyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The Vega public key of the target vega user </p></td>
+                  <td><p>The Vega party identifier (pub-key) which is the target of the deposit. </p></td>
                 </tr>
 
             </tbody>
@@ -5639,7 +5638,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.ERC20Event">ERC20Event</h3>
-        <p>An event related to an erc20 token</p>
+        <p>An event related to an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -5666,28 +5665,28 @@ usually a hash </p></td>
                   <td>assetList</td>
                   <td><a href="#vega.ERC20AssetList">ERC20AssetList</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>List an ERC20 asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>assetDelist</td>
                   <td><a href="#vega.ERC20AssetDelist">ERC20AssetDelist</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>De-list an ERC20 asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>deposit</td>
                   <td><a href="#vega.ERC20Deposit">ERC20Deposit</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Deposit ERC20 asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>withdrawal</td>
                   <td><a href="#vega.ERC20Withdrawal">ERC20Withdrawal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Withdraw ERC20 asset. </p></td>
                 </tr>
 
             </tbody>
@@ -5698,7 +5697,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.ERC20Withdrawal">ERC20Withdrawal</h3>
-        <p>An asset withdrawal for an erc20 token</p>
+        <p>An asset withdrawal for an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -5711,28 +5710,28 @@ usually a hash </p></td>
                   <td>vegaAssetID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The vega network internally ID of the asset </p></td>
+                  <td><p>The Vega network internal identifier of the asset. </p></td>
                 </tr>
 
                 <tr>
                   <td>sourcePartyId</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The party inititing the withdrawal </p></td>
+                  <td><p>The party identifier (pub-key) initiating the withdrawal. </p></td>
                 </tr>
 
                 <tr>
                   <td>targetEthereumAddress</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The target Ethereum wallet address </p></td>
+                  <td><p>The target Ethereum wallet address. </p></td>
                 </tr>
 
                 <tr>
                   <td>referenceNonce</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The reference nonce used for the transaction </p></td>
+                  <td><p>The reference nonce used for the transaction. </p></td>
                 </tr>
 
             </tbody>
@@ -5743,7 +5742,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.EthereumAddress">EthereumAddress</h3>
-        <p>Wrapper for an Ethereum address (wallet/contract)</p>
+        <p>Used as a wrapper for an Ethereum address (wallet/contract).</p>
 
 
           <table class="field-table">
@@ -5756,7 +5755,7 @@ usually a hash </p></td>
                   <td>address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>An Ethereum address </p></td>
+                  <td><p>An Ethereum address. </p></td>
                 </tr>
 
             </tbody>
@@ -5767,7 +5766,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.Identifier">Identifier</h3>
-        <p>A wrapper type on any possible network address supported by vega</p>
+        <p>Used as a wrapper type on any possible network address supported by Vega.</p>
 
 
           <table class="field-table">
@@ -5780,14 +5779,14 @@ usually a hash </p></td>
                   <td>ethereumAddress</td>
                   <td><a href="#vega.EthereumAddress">EthereumAddress</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Ethereum network. </p></td>
                 </tr>
 
                 <tr>
                   <td>bitcoinAddress</td>
                   <td><a href="#vega.BitcoinAddress">BitcoinAddress</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Bitcoin network. </p></td>
                 </tr>
 
             </tbody>
@@ -5798,7 +5797,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.RemoveValidator">RemoveValidator</h3>
-        <p>A message to notify a new validator being removed to the vega network</p>
+        <p>A message to notify when a validator is being removed from the Vega network.</p>
 
 
           <table class="field-table">
@@ -5811,7 +5810,7 @@ usually a hash </p></td>
                   <td>id</td>
                   <td><a href="#vega.Identifier">Identifier</a></td>
                   <td></td>
-                  <td><p>The identifier of this validator </p></td>
+                  <td><p>The identifier of the validator. </p></td>
                 </tr>
 
             </tbody>
@@ -5822,7 +5821,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.ValidatorEvent">ValidatorEvent</h3>
-        <p>An event related to validator management with foreign networks</p>
+        <p>An event related to validator management with foreign networks.</p>
 
 
           <table class="field-table">
@@ -5835,21 +5834,21 @@ usually a hash </p></td>
                   <td>sourceID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The source ID of the event </p></td>
+                  <td><p>The source identifier of the event. </p></td>
                 </tr>
 
                 <tr>
                   <td>add</td>
                   <td><a href="#vega.AddValidator">AddValidator</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Add a new validator. </p></td>
                 </tr>
 
                 <tr>
                   <td>rm</td>
                   <td><a href="#vega.RemoveValidator">RemoveValidator</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Remove an existing validator. </p></td>
                 </tr>
 
             </tbody>
@@ -5874,7 +5873,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.FeeFactorsConfiguration">FeeFactorsConfiguration</h3>
-        <p>FeeFactors set at the network level</p>
+        <p>FeeFactors set at the network level.</p>
 
 
           <table class="field-table">
@@ -5887,21 +5886,21 @@ usually a hash </p></td>
                   <td>infrastructureFee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>the infrastructure fee, needs to be a valid float </p></td>
+                  <td><p>Infrastructure fee, needs to be a valid float. </p></td>
                 </tr>
 
                 <tr>
                   <td>makerFee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>the maker fee, needs to be a valid float </p></td>
+                  <td><p>Maker fee, needs to be a valid float. </p></td>
                 </tr>
 
                 <tr>
                   <td>liquidityFee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>this is the liquidity fee, it needs to be a valid float </p></td>
+                  <td><p>Liquidity fee, it needs to be a valid float. </p></td>
                 </tr>
 
             </tbody>
@@ -5912,7 +5911,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.FutureProduct">FutureProduct</h3>
-        <p>Future product configuration</p>
+        <p>Future product configuration.</p>
 
 
           <table class="field-table">
@@ -5925,14 +5924,14 @@ usually a hash </p></td>
                   <td>maturity</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Future product maturity (ISO8601/RFC3339 timestamp) </p></td>
+                  <td><p>Future product maturity (ISO8601/RFC3339 timestamp). </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Product asset name </p></td>
+                  <td><p>Product asset name. </p></td>
                 </tr>
 
             </tbody>
@@ -5981,7 +5980,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.GovernanceData">GovernanceData</h3>
-        <p></p>
+        <p>Governance data.</p>
 
 
           <table class="field-table">
@@ -5994,7 +5993,7 @@ usually a hash </p></td>
                   <td>proposal</td>
                   <td><a href="#vega.Proposal">Proposal</a></td>
                   <td></td>
-                  <td><p>Proposal </p></td>
+                  <td><p>Proposal. </p></td>
                 </tr>
 
                 <tr>
@@ -6015,14 +6014,14 @@ usually a hash </p></td>
                   <td>yesParty</td>
                   <td><a href="#vega.GovernanceData.YesPartyEntry">GovernanceData.YesPartyEntry</a></td>
                   <td>repeated</td>
-                  <td><p>All latest YES votes by party (guaranteed to be unique) </p></td>
+                  <td><p>All latest YES votes by party (guaranteed to be unique). </p></td>
                 </tr>
 
                 <tr>
                   <td>noParty</td>
                   <td><a href="#vega.GovernanceData.NoPartyEntry">GovernanceData.NoPartyEntry</a></td>
                   <td>repeated</td>
-                  <td><p>All latest NO votes by party (unique) </p></td>
+                  <td><p>All latest NO votes by party (unique). </p></td>
                 </tr>
 
             </tbody>
@@ -6095,7 +6094,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.InstrumentConfiguration">InstrumentConfiguration</h3>
-        <p></p>
+        <p>Instrument configuration.</p>
 
 
           <table class="field-table">
@@ -6108,35 +6107,35 @@ usually a hash </p></td>
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Instrument name </p></td>
+                  <td><p>Instrument name. </p></td>
                 </tr>
 
                 <tr>
                   <td>code</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Instrument code </p></td>
+                  <td><p>Instrument code. </p></td>
                 </tr>
 
                 <tr>
                   <td>baseName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Base security used as the reference </p></td>
+                  <td><p>Base security used as the reference. </p></td>
                 </tr>
 
                 <tr>
                   <td>quoteName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Quote (secondary) security </p></td>
+                  <td><p>Quote (secondary) security. </p></td>
                 </tr>
 
                 <tr>
                   <td>future</td>
                   <td><a href="#vega.FutureProduct">FutureProduct</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Futures. </p></td>
                 </tr>
 
             </tbody>
@@ -6207,7 +6206,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
-        <p></p>
+        <p>Network configuration options.</p>
 
 
           <table class="field-table">
@@ -6283,7 +6282,7 @@ usually a hash </p></td>
                   <td>feeFactorsConfiguration</td>
                   <td><a href="#vega.FeeFactorsConfiguration">FeeFactorsConfiguration</a></td>
                   <td></td>
-                  <td><p>FeeFactors which are not set via proposal </p></td>
+                  <td><p>FeeFactors which are not set via proposal. </p></td>
                 </tr>
 
             </tbody>
@@ -6294,7 +6293,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.NewAsset">NewAsset</h3>
-        <p>To be implemented</p>
+        <p>New asset on Vega.</p>
 
 
           <table class="field-table">
@@ -6307,7 +6306,7 @@ usually a hash </p></td>
                   <td>changes</td>
                   <td><a href="#vega.AssetSource">AssetSource</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset configuration. </p></td>
                 </tr>
 
             </tbody>
@@ -6345,7 +6344,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.NewMarket">NewMarket</h3>
-        <p></p>
+        <p>New market on Vega.</p>
 
 
           <table class="field-table">
@@ -6358,7 +6357,7 @@ usually a hash </p></td>
                   <td>changes</td>
                   <td><a href="#vega.NewMarketConfiguration">NewMarketConfiguration</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Configuration. </p></td>
                 </tr>
 
             </tbody>
@@ -6396,7 +6395,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.NewMarketConfiguration">NewMarketConfiguration</h3>
-        <p></p>
+        <p>Configuration for a new market on Vega.</p>
 
 
           <table class="field-table">
@@ -6409,28 +6408,28 @@ usually a hash </p></td>
                   <td>instrument</td>
                   <td><a href="#vega.InstrumentConfiguration">InstrumentConfiguration</a></td>
                   <td></td>
-                  <td><p>New market instrument configuration </p></td>
+                  <td><p>New market instrument configuration. </p></td>
                 </tr>
 
                 <tr>
                   <td>decimalPlaces</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Decimal places used for the new market </p></td>
+                  <td><p>Decimal places used for the new market. </p></td>
                 </tr>
 
                 <tr>
                   <td>metadata</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>Optional new market meta data, tags </p></td>
+                  <td><p>Optional new market meta data, tags. </p></td>
                 </tr>
 
                 <tr>
                   <td>openingAuctionDuration</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>for now, just specify a time for the opening auction to last </p></td>
+                  <td><p>Time duration for the opening auction to last. </p></td>
                 </tr>
 
                 <tr>
@@ -6451,14 +6450,14 @@ usually a hash </p></td>
                   <td>continuous</td>
                   <td><a href="#vega.ContinuousTrading">ContinuousTrading</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Continuous trading. </p></td>
                 </tr>
 
                 <tr>
                   <td>discrete</td>
                   <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Discrete trading. </p></td>
                 </tr>
 
             </tbody>
@@ -6507,7 +6506,7 @@ usually a hash </p></td>
 
 
         <h3 id="vega.Proposal">Proposal</h3>
-        <p></p>
+        <p>Governance proposal.</p>
 
 
           <table class="field-table">
@@ -6520,7 +6519,7 @@ usually a hash </p></td>
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Proposal unique identifier. </p></td>
+                  <td><p>Unique proposal identifier. </p></td>
                 </tr>
 
                 <tr>
@@ -6534,14 +6533,14 @@ usually a hash </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Proposal author, identifier of the party submitting the proposal. </p></td>
+                  <td><p>Party identifier of the author (the party submitting the proposal). </p></td>
                 </tr>
 
                 <tr>
                   <td>state</td>
                   <td><a href="#vega.Proposal.State">Proposal.State</a></td>
                   <td></td>
-                  <td><p>Proposal state (see Proposal.State definition) </p></td>
+                  <td><p>Proposal state (see Proposal.State definition). </p></td>
                 </tr>
 
                 <tr>
@@ -6562,8 +6561,7 @@ usually a hash </p></td>
                   <td>reason</td>
                   <td><a href="#vega.ProposalError">ProposalError</a></td>
                   <td></td>
-                  <td><p>A reason for the current state of the proposal
-this may be set in case of REJECTED and FAILED status </p></td>
+                  <td><p>A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses. </p></td>
                 </tr>
 
             </tbody>
@@ -6623,7 +6621,7 @@ this may be set in case of REJECTED and FAILED status </p></td>
 
 
         <h3 id="vega.ProposalTerms">ProposalTerms</h3>
-        <p></p>
+        <p>Terms for a governance proposal on Vega.</p>
 
 
           <table class="field-table">
@@ -6652,7 +6650,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>validationTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>TODO: this should be moved into <tt>NewAsset</tt> definition. </p></td>
+                  <td><p>Validation timestamp (Unix time in seconds). </p></td>
                 </tr>
 
                 <tr>
@@ -6729,14 +6727,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.UpdateMarket">UpdateMarket</h3>
-        <p>TODO</p>
+        <p>Update an existing market on Vega.</p>
 
 
 
 
 
         <h3 id="vega.UpdateNetwork">UpdateNetwork</h3>
-        <p></p>
+        <p>Update network configuration on Vega.</p>
 
 
           <table class="field-table">
@@ -6749,7 +6747,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>changes</td>
                   <td><a href="#vega.NetworkConfiguration">NetworkConfiguration</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Configuration. </p></td>
                 </tr>
 
             </tbody>
@@ -6787,7 +6785,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Vote">Vote</h3>
-        <p></p>
+        <p>Governance vote.</p>
 
 
           <table class="field-table">
@@ -6899,7 +6897,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
               <tr>
                 <td>STATE_FAILED</td>
                 <td>1</td>
-                <td><p>Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.</p></td>
+                <td><p>Proposal enactment has failed - even though proposal has passed, its execution could not be performed.</p></td>
               </tr>
 
               <tr>
@@ -6929,20 +6927,20 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
               <tr>
                 <td>STATE_ENACTED</td>
                 <td>6</td>
-                <td><p></p></td>
+                <td><p>Proposal enacted.</p></td>
               </tr>
 
               <tr>
                 <td>STATE_WAITING_FOR_NODE_VOTE</td>
                 <td>7</td>
-                <td><p>waiting for validators validation of the proposal</p></td>
+                <td><p>Waiting for node validation of the proposal</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.ProposalError">ProposalError</h3>
-        <p>A list of possible error which could have happenned</p><p>and the cause for an proposal being rejected of failed</p>
+        <p>A list of possible errors that can cause a proposal to be in state rejected or failed.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -6952,116 +6950,116 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
               <tr>
                 <td>PROPOSAL_ERROR_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p>default value</p></td>
+                <td><p>Default value.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON</td>
                 <td>1</td>
-                <td><p>the specified close time is too early base on network parameters</p></td>
+                <td><p>The specified close time is too early base on network parameters.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE</td>
                 <td>2</td>
-                <td><p>the specified close time is too late based on network parameters</p></td>
+                <td><p>The specified close time is too late based on network parameters.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_ENACT_TIME_TOO_SOON</td>
                 <td>3</td>
-                <td><p>the specified enact time is too early base on network parameters</p></td>
+                <td><p>The specified enact time is too early based on network parameters.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_ENACT_TIME_TOO_LATE</td>
                 <td>4</td>
-                <td><p>the specified enact time is too late based on network parameters</p></td>
+                <td><p>The specified enact time is too late based on network parameters.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_INSUFFICIENT_TOKENS</td>
                 <td>5</td>
-                <td><p>the proposer for this proposal as insufficient token</p></td>
+                <td><p>The proposer for this proposal as insufficient tokens.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY</td>
                 <td>6</td>
-                <td><p>the instrument quote name and base name were the same</p></td>
+                <td><p>The instrument quote name and base name were the same.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_NO_PRODUCT</td>
                 <td>7</td>
-                <td><p>the proposal has not product</p></td>
+                <td><p>The proposal has no product.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_UNSUPPORTED_PRODUCT</td>
                 <td>8</td>
-                <td><p>the specified product is not supported</p></td>
+                <td><p>The specified product is not supported.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP</td>
                 <td>9</td>
-                <td><p>invalid future maturity timestamp (expect RFC3339)</p></td>
+                <td><p>Invalid future maturity timestamp (expect RFC3339).</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED</td>
                 <td>10</td>
-                <td><p>the product maturity is past</p></td>
+                <td><p>The product maturity is past.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_NO_TRADING_MODE</td>
                 <td>11</td>
-                <td><p>the proposal has not trading mode</p></td>
+                <td><p>The proposal has no trading mode.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE</td>
                 <td>12</td>
-                <td><p>the proposal has an unsupported trading mode</p></td>
+                <td><p>The proposal has an unsupported trading mode.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_NODE_VALIDATION_FAILED</td>
                 <td>13</td>
-                <td><p>the proposal failed node validation</p></td>
+                <td><p>The proposal failed node validation.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD</td>
                 <td>14</td>
-                <td><p>a field is missing in a builtin asset source</p></td>
+                <td><p>A field is missing in a builtin asset source.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS</td>
                 <td>15</td>
-                <td><p>the contract address is missing in the ERC20 asset source</p></td>
+                <td><p>The contract address is missing in the ERC20 asset source.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_INVALID_ASSET</td>
                 <td>16</td>
-                <td><p>the asset id refer to no assets in vega</p></td>
+                <td><p>The asset id refer to no assets in vega.</p></td>
               </tr>
 
               <tr>
                 <td>PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS</td>
                 <td>17</td>
-                <td><p>proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment)</p></td>
+                <td><p>Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment).</p></td>
               </tr>
 
           </tbody>
         </table>
 
         <h3 id="vega.Vote.Value">Vote.Value</h3>
-        <p></p>
+        <p>Vote value.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -7102,7 +7100,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.AuctionDuration">AuctionDuration</h3>
-        <p>AuctionDuration can be used to configure 3 auction periods:</p><p>1) duration > 0, volume == 0: The auction will last for at least N seconds</p><p>2) Duration == 0, volume > 0: Auction period will end once we can close with given traded volume</p><p>3) Duration > 0 & volume > 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume</p>
+        <p>An auction duration is used to configure 3 auction periods:</p><p>1. <tt>duration > 0</tt>, <tt>volume == 0</tt>:</p><p>The auction will last for at least N seconds.</p><p>2. <tt>duration == 0</tt>, <tt>volume > 0</tt>:</p><p>The auction will end once we can close with given traded volume.</p><p>3. <tt>duration > 0</tt>, <tt>volume > 0</tt>:</p><p>The auction will take at least N seconds, but can end sooner if we can trade a certain volume.</p>
 
 
           <table class="field-table">
@@ -7115,14 +7113,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>duration</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Duration of the auction in seconds. </p></td>
                 </tr>
 
                 <tr>
                   <td>volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Target uncrossing trading volume. </p></td>
                 </tr>
 
             </tbody>
@@ -7133,7 +7131,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.ContinuousTrading">ContinuousTrading</h3>
-        <p></p>
+        <p>Continuous trading.</p>
 
 
           <table class="field-table">
@@ -7146,7 +7144,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>tickSize</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Tick size. </p></td>
                 </tr>
 
             </tbody>
@@ -7157,7 +7155,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.DiscreteTrading">DiscreteTrading</h3>
-        <p></p>
+        <p>Discrete trading.</p>
 
 
           <table class="field-table">
@@ -7177,7 +7175,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>tickSize</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Tick size. </p></td>
                 </tr>
 
             </tbody>
@@ -7217,7 +7215,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.EthereumEvent">EthereumEvent</h3>
-        <p></p>
+        <p>Ethereum event (for oracles).</p>
 
 
           <table class="field-table">
@@ -7230,21 +7228,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>contractID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Ethereum contract identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>event</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Event. </p></td>
                 </tr>
 
                 <tr>
                   <td>value</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Value. </p></td>
                 </tr>
 
             </tbody>
@@ -7255,7 +7253,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.ExternalRiskModel">ExternalRiskModel</h3>
-        <p></p>
+        <p>Risk model for external modelling.</p><p>Provided by external service via a Unix socket.</p>
 
 
           <table class="field-table">
@@ -7268,21 +7266,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Name. </p></td>
                 </tr>
 
                 <tr>
                   <td>socket</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Local machine socket to connect to. </p></td>
                 </tr>
 
                 <tr>
                   <td>config</td>
                   <td><a href="#vega.ExternalRiskModel.ConfigEntry">ExternalRiskModel.ConfigEntry</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Collection of configuration items. </p></td>
                 </tr>
 
             </tbody>
@@ -7324,7 +7322,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.FeeFactors">FeeFactors</h3>
-        <p></p>
+        <p>Fee factors definition.</p>
 
 
           <table class="field-table">
@@ -7337,21 +7335,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>makerFee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Maker fee. </p></td>
                 </tr>
 
                 <tr>
                   <td>infrastructureFee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Infrastructure fee. </p></td>
                 </tr>
 
                 <tr>
                   <td>liquidityFee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Liquidity fee. </p></td>
                 </tr>
 
             </tbody>
@@ -7362,7 +7360,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Fees">Fees</h3>
-        <p></p>
+        <p>Fees definition.</p>
 
 
           <table class="field-table">
@@ -7375,7 +7373,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>factors</td>
                   <td><a href="#vega.FeeFactors">FeeFactors</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Fee factors. </p></td>
                 </tr>
 
             </tbody>
@@ -7386,7 +7384,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Future">Future</h3>
-        <p></p>
+        <p>Future product definition.</p>
 
 
           <table class="field-table">
@@ -7399,21 +7397,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>maturity</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The maturity for the future. </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The asset for the future. </p></td>
                 </tr>
 
                 <tr>
                   <td>ethereumEvent</td>
                   <td><a href="#vega.EthereumEvent">EthereumEvent</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Ethereum events. </p></td>
                 </tr>
 
             </tbody>
@@ -7424,7 +7422,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Instrument">Instrument</h3>
-        <p></p>
+        <p>Instrument definition.</p>
 
 
           <table class="field-table">
@@ -7437,56 +7435,56 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Instrument identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>code</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Code for the instrument. </p></td>
                 </tr>
 
                 <tr>
                   <td>name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Name of the instrument. </p></td>
                 </tr>
 
                 <tr>
                   <td>baseName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Base name of the instrument. </p></td>
                 </tr>
 
                 <tr>
                   <td>quoteName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Quote name of the instrument. </p></td>
                 </tr>
 
                 <tr>
                   <td>metadata</td>
                   <td><a href="#vega.InstrumentMetadata">InstrumentMetadata</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A collection of instrument meta-data. </p></td>
                 </tr>
 
                 <tr>
                   <td>initialMarkPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>An initial mark price for the instrument. </p></td>
                 </tr>
 
                 <tr>
                   <td>future</td>
                   <td><a href="#vega.Future">Future</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Future. </p></td>
                 </tr>
 
             </tbody>
@@ -7497,7 +7495,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.InstrumentMetadata">InstrumentMetadata</h3>
-        <p></p>
+        <p>Instrument metadata definition.</p>
 
 
           <table class="field-table">
@@ -7510,7 +7508,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>tags</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A list of 0 or more tags. </p></td>
                 </tr>
 
             </tbody>
@@ -7521,7 +7519,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.LogNormalModelParams">LogNormalModelParams</h3>
-        <p></p>
+        <p>Risk model parameters for log normal.</p>
 
 
           <table class="field-table">
@@ -7534,21 +7532,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>mu</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Mu param. </p></td>
                 </tr>
 
                 <tr>
                   <td>r</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>R param. </p></td>
                 </tr>
 
                 <tr>
                   <td>sigma</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Sigma param. </p></td>
                 </tr>
 
             </tbody>
@@ -7559,7 +7557,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.LogNormalRiskModel">LogNormalRiskModel</h3>
-        <p></p>
+        <p>Risk model for log normal.</p>
 
 
           <table class="field-table">
@@ -7572,21 +7570,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>riskAversionParameter</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Risk Aversion Parameter. </p></td>
                 </tr>
 
                 <tr>
                   <td>tau</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Tau. </p></td>
                 </tr>
 
                 <tr>
                   <td>params</td>
                   <td><a href="#vega.LogNormalModelParams">LogNormalModelParams</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Risk model parameters for log normal. </p></td>
                 </tr>
 
             </tbody>
@@ -7597,7 +7595,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.MarginCalculator">MarginCalculator</h3>
-        <p></p>
+        <p>Margin Calculator definition.</p>
 
 
           <table class="field-table">
@@ -7610,7 +7608,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>scalingFactors</td>
                   <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Scaling factors for margin calculation. </p></td>
                 </tr>
 
             </tbody>
@@ -7621,7 +7619,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.Market">Market</h3>
-        <p></p>
+        <p>Market definition.</p>
 
 
           <table class="field-table">
@@ -7634,49 +7632,50 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Unique identifier. </p></td>
                 </tr>
 
                 <tr>
                   <td>tradableInstrument</td>
                   <td><a href="#vega.TradableInstrument">TradableInstrument</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Tradable instrument configuration. </p></td>
                 </tr>
 
                 <tr>
                   <td>decimalPlaces</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
+                  <td><p>Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market.
+For example: <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
                 </tr>
 
                 <tr>
                   <td>fees</td>
                   <td><a href="#vega.Fees">Fees</a></td>
                   <td></td>
-                  <td><p>fees configuration </p></td>
+                  <td><p>Fees configuration. </p></td>
                 </tr>
 
                 <tr>
                   <td>openingAuction</td>
                   <td><a href="#vega.AuctionDuration">AuctionDuration</a></td>
                   <td></td>
-                  <td><p>Specifies how long the opening auction will run (min duration &#43; optionally minimum traded volume) </p></td>
+                  <td><p>Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). </p></td>
                 </tr>
 
                 <tr>
                   <td>continuous</td>
                   <td><a href="#vega.ContinuousTrading">ContinuousTrading</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Continuous. </p></td>
                 </tr>
 
                 <tr>
                   <td>discrete</td>
                   <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Discrete. </p></td>
                 </tr>
 
             </tbody>
@@ -7687,7 +7686,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.ScalingFactors">ScalingFactors</h3>
-        <p></p>
+        <p>Scaling Factors (for use in margin calculation).</p>
 
 
           <table class="field-table">
@@ -7700,21 +7699,21 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>searchLevel</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Search level. </p></td>
                 </tr>
 
                 <tr>
                   <td>initialMargin</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Initial margin level. </p></td>
                 </tr>
 
                 <tr>
                   <td>collateralRelease</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Collateral release level. </p></td>
                 </tr>
 
             </tbody>
@@ -7725,7 +7724,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.SimpleModelParams">SimpleModelParams</h3>
-        <p></p>
+        <p>Risk model parameters for simple modelling.</p>
 
 
           <table class="field-table">
@@ -7738,14 +7737,14 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>factorLong</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Pre-defined risk factor value for long. </p></td>
                 </tr>
 
                 <tr>
                   <td>factorShort</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Pre-defined risk factor value for short. </p></td>
                 </tr>
 
             </tbody>
@@ -7756,7 +7755,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.SimpleRiskModel">SimpleRiskModel</h3>
-        <p></p>
+        <p>Risk model for simple modelling.</p>
 
 
           <table class="field-table">
@@ -7769,7 +7768,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>params</td>
                   <td><a href="#vega.SimpleModelParams">SimpleModelParams</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Risk model params for simple modelling. </p></td>
                 </tr>
 
             </tbody>
@@ -7780,7 +7779,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
         <h3 id="vega.TradableInstrument">TradableInstrument</h3>
-        <p></p>
+        <p>Tradable Instrument definition.</p>
 
 
           <table class="field-table">
@@ -7793,35 +7792,35 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>instrument</td>
                   <td><a href="#vega.Instrument">Instrument</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Instrument details. </p></td>
                 </tr>
 
                 <tr>
                   <td>marginCalculator</td>
                   <td><a href="#vega.MarginCalculator">MarginCalculator</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Margin calculator for the instrument. </p></td>
                 </tr>
 
                 <tr>
                   <td>logNormalRiskModel</td>
                   <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Log normal. </p></td>
                 </tr>
 
                 <tr>
                   <td>externalRiskModel</td>
                   <td><a href="#vega.ExternalRiskModel">ExternalRiskModel</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>External socket. </p></td>
                 </tr>
 
                 <tr>
                   <td>simpleRiskModel</td>
                   <td><a href="#vega.SimpleRiskModel">SimpleRiskModel</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Simple. </p></td>
                 </tr>
 
             </tbody>
@@ -7907,7 +7906,7 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
 
 
         <h3 id="vega.AuctionIndicativeState">AuctionIndicativeState</h3>
-        <p>Whenever a change to the book occurs during an auction, this message will be used</p><p>to emit an event with the indicative price/volume per market</p>
+        <p>AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction.</p>
 
 
           <table class="field-table">
@@ -10627,7 +10626,7 @@ These fees reward traders who provide the best priced liquidity that actually al
         </table>
 
         <h3 id="vega.OrderError">OrderError</h3>
-        <p>If there is an issue with an order during it's life-cycle, it will be marked with <tt>status.ORDER_STATUS_REJECTED</tt></p><p>and be given an error code in the <tt>reason</tt> field.</p>
+        <p>OrderError codes are returned in the <tt><a href="#vega.Order">Order</a>.reason</tt> field.</p><p>If there is an issue with an order during it's life-cycle, it will be marked with <tt>status.ORDER_STATUS_REJECTED</tt>.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10836,8 +10835,7 @@ which helps to zero-out the positions of one or more distressed parties.</p></td
                 <td>TYPE_NETWORK_CLOSE_OUT_BAD</td>
                 <td>3</td>
                 <td><p>Trading initiated by the network with another party off the book,
-with a distressed party in order to zero-out the position of the party.
-todo(cdm): chat with Jeremy on zoom to sanity check/improve.</p></td>
+with a distressed party in order to zero-out the position of the party.</p></td>
               </tr>
 
           </tbody>

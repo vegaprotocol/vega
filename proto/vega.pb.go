@@ -133,8 +133,8 @@ func (MarketState) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{2}
 }
 
-// If there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
-// and be given an error code in the `reason` field.
+// OrderError codes are returned in the `[Order](#vega.Order).reason` field.
+// If there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.
 type OrderError int32
 
 const (
@@ -601,7 +601,6 @@ const (
 	Trade_TYPE_NETWORK_CLOSE_OUT_GOOD Trade_Type = 2
 	// Trading initiated by the network with another party off the book,
 	// with a distressed party in order to zero-out the position of the party.
-	// todo(cdm): chat with Jeremy on zoom to sanity check/improve.
 	Trade_TYPE_NETWORK_CLOSE_OUT_BAD Trade_Type = 3
 )
 
@@ -1173,8 +1172,7 @@ func (m *OrderConfirmation) GetPassiveOrdersAffected() []*Order {
 	return nil
 }
 
-// Whenever a change to the book occurs during an auction, this message will be used
-// to emit an event with the indicative price/volume per market
+// AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction.
 type AuctionIndicativeState struct {
 	// The market identifier for which this state relates to.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`

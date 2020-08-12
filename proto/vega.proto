@@ -227,8 +227,7 @@ message OrderConfirmation {
   repeated Order passiveOrdersAffected = 3;
 }
 
-// Whenever a change to the book occurs during an auction, this message will be used
-// to emit an event with the indicative price/volume per market
+// AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction.
 message AuctionIndicativeState {
   // The market identifier for which this state relates to.
   string marketID = 1;
@@ -242,8 +241,8 @@ message AuctionIndicativeState {
   int64 auctionEnd = 5;
 }
 
-// If there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
-// and be given an error code in the `reason` field.
+// OrderError codes are returned in the `[Order](#vega.Order).reason` field.
+// If there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.
 enum OrderError {
   // Default value, no error reported.
   ORDER_ERROR_NONE = 0;
@@ -314,7 +313,6 @@ message Trade {
     TYPE_NETWORK_CLOSE_OUT_GOOD = 2;
     // Trading initiated by the network with another party off the book,
     // with a distressed party in order to zero-out the position of the party.
-    // todo(cdm): chat with Jeremy on zoom to sanity check/improve.
     TYPE_NETWORK_CLOSE_OUT_BAD = 3;
 
     // Note: If adding an enum value, add a matching entry in:

@@ -33,9 +33,6 @@ func (this *NetworkConfiguration) Validate() error {
 func (this *FeeFactorsConfiguration) Validate() error {
 	return nil
 }
-func (this *UpdateMarket) Validate() error {
-	return nil
-}
 func (this *FutureProduct) Validate() error {
 	if this.Maturity == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Maturity", fmt.Errorf(`value '%v' must not be an empty string`, this.Maturity))
@@ -118,6 +115,9 @@ func (this *NewMarket) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
 		}
 	}
+	return nil
+}
+func (this *UpdateMarket) Validate() error {
 	return nil
 }
 func (this *UpdateNetwork) Validate() error {

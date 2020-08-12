@@ -1872,16 +1872,16 @@ Response for the current consensus coordinated time on the Vega network, referre
 <a name="vega.Asset"></a>
 
 ### Asset
-The vega representation of an external asset
+The Vega representation of an external asset.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  | The vega internal ID of the asset |
-| name | [string](#string) |  | The name of the asset (e.g: Great British Pound) |
-| symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
-| totalSupply | [string](#string) |  | The total circulating supply for the asset |
-| decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
+| ID | [string](#string) |  | Internal identifier of the asset. |
+| name | [string](#string) |  | Name of the asset (e.g: Great British Pound). |
+| symbol | [string](#string) |  | Symbol of the asset (e.g: GBP). |
+| totalSupply | [string](#string) |  | Total circulating supply for the asset. |
+| decimals | [uint64](#uint64) |  | Number of decimals / precision handled by this asset. |
 | source | [AssetSource](#vega.AssetSource) |  | The definition of the external source for this asset |
 
 
@@ -1892,13 +1892,13 @@ The vega representation of an external asset
 <a name="vega.AssetSource"></a>
 
 ### AssetSource
-
+Asset source definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  |  |
-| erc20 | [ERC20](#vega.ERC20) |  |  |
+| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A built-in asset. |
+| erc20 | [ERC20](#vega.ERC20) |  | An Ethereum ERC20 asset. |
 
 
 
@@ -1908,16 +1908,16 @@ The vega representation of an external asset
 <a name="vega.BuiltinAsset"></a>
 
 ### BuiltinAsset
-A vega internal asset
+A Vega internal asset.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | The name of the asset (e.g: Great British Pound) |
-| symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
-| totalSupply | [string](#string) |  | The total circulating supply for the asset |
-| decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
-| maxFaucetAmountMint | [string](#string) |  | This is the maximum amount that can be requested by a party through the builtin asset faucet at a time |
+| name | [string](#string) |  | Name of the asset (e.g: Great British Pound). |
+| symbol | [string](#string) |  | Symbol of the asset (e.g: GBP). |
+| totalSupply | [string](#string) |  | Total circulating supply for the asset. |
+| decimals | [uint64](#uint64) |  | Number of decimal / precision handled by this asset. |
+| maxFaucetAmountMint | [string](#string) |  | Maximum amount that can be requested by a party through the built-in asset faucet at a time. |
 
 
 
@@ -1927,12 +1927,12 @@ A vega internal asset
 <a name="vega.DevAssets"></a>
 
 ### DevAssets
-
+Dev assets are for use in development networks only.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| sources | [AssetSource](#vega.AssetSource) | repeated |  |
+| sources | [AssetSource](#vega.AssetSource) | repeated | Asset sources for development networks. |
 
 
 
@@ -1942,7 +1942,7 @@ A vega internal asset
 <a name="vega.ERC20"></a>
 
 ### ERC20
-An ERC20 token based asset, living on the ethereum network
+An ERC20 token based asset, living on the ethereum network.
 
 
 | Field | Type | Label | Description |
@@ -1973,12 +1973,12 @@ An ERC20 token based asset, living on the ethereum network
 <a name="vega.AddValidator"></a>
 
 ### AddValidator
-A message to notify a new validator being added to the vega network
+A message to notify when a new validator is being added to the Vega network.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [Identifier](#vega.Identifier) |  | The identifier of this validator |
+| id | [Identifier](#vega.Identifier) |  | The identifier of the validator. |
 
 
 
@@ -1988,14 +1988,14 @@ A message to notify a new validator being added to the vega network
 <a name="vega.BTCDeposit"></a>
 
 ### BTCDeposit
-A Bitcoin deposit into vega
+A Bitcoin deposit into Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
-| sourceBTCAddress | [string](#string) |  | The BTC wallet inititing the Deposit |
-| targetPartyId | [string](#string) |  | The Vega public key of the target Vega user |
+| vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
+| sourceBTCAddress | [string](#string) |  | The BTC wallet initiating the deposit. |
+| targetPartyId | [string](#string) |  | The Vega party identifier (pub-key) which is the target of the deposit. |
 
 
 
@@ -2005,15 +2005,15 @@ A Bitcoin deposit into vega
 <a name="vega.BTCEvent"></a>
 
 ### BTCEvent
-An event from Bitcoin
+An event from the Bitcoin network.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| index | [uint64](#uint64) |  | The index of the transaction |
-| block | [uint64](#uint64) |  | The block in which the transaction happenned |
-| deposit | [BTCDeposit](#vega.BTCDeposit) |  |  |
-| withdrawal | [BTCWithdrawal](#vega.BTCWithdrawal) |  |  |
+| index | [uint64](#uint64) |  | The index of the transaction. |
+| block | [uint64](#uint64) |  | The block in which the transaction happened. |
+| deposit | [BTCDeposit](#vega.BTCDeposit) |  | Deposit BTC asset. |
+| withdrawal | [BTCWithdrawal](#vega.BTCWithdrawal) |  | Withdraw BTC asset. |
 
 
 
@@ -2023,15 +2023,15 @@ An event from Bitcoin
 <a name="vega.BTCWithdrawal"></a>
 
 ### BTCWithdrawal
-A Bitcoin withdrawl from vega
+A Bitcoin withdrawal from Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
-| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
-| targetBTCAddress | [string](#string) |  | Target BTC wallet address |
-| referenceNonce | [string](#string) |  | The nonce reference of the transaction |
+| vegaAssetID | [string](#string) |  | The vega network internal identifier of the asset. |
+| sourcePartyId | [string](#string) |  | The party identifier (pub-key) initiating the withdrawal. |
+| targetBTCAddress | [string](#string) |  | Target Bitcoin wallet address. |
+| referenceNonce | [string](#string) |  | The nonce reference of the transaction. |
 
 
 
@@ -2041,12 +2041,12 @@ A Bitcoin withdrawl from vega
 <a name="vega.BitcoinAddress"></a>
 
 ### BitcoinAddress
-Wrapper for a Bitcoin address (wallet)
+Used as a wrapper for a Bitcoin address (wallet).
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| address | [string](#string) |  | A Bitcoin address |
+| address | [string](#string) |  | A Bitcoin address. |
 
 
 
@@ -2056,14 +2056,14 @@ Wrapper for a Bitcoin address (wallet)
 <a name="vega.BuiltinAssetDeposit"></a>
 
 ### BuiltinAssetDeposit
-A deposit for an vega builtin asset
+A deposit for a Vega built-in asset.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | A vega network internal asset ID |
-| partyID | [string](#string) |  | A vega party ID (pubkey) |
-| amount | [uint64](#uint64) |  | The amount to be deposited |
+| vegaAssetID | [string](#string) |  | A Vega network internal asset identifier. |
+| partyID | [string](#string) |  | A Vega party identifier (pub-key) |
+| amount | [uint64](#uint64) |  | The amount to be deposited. |
 
 
 
@@ -2073,13 +2073,13 @@ A deposit for an vega builtin asset
 <a name="vega.BuiltinAssetEvent"></a>
 
 ### BuiltinAssetEvent
-An event related to a vega builtin asset
+An event related to a Vega built-in asset.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| deposit | [BuiltinAssetDeposit](#vega.BuiltinAssetDeposit) |  |  |
-| withdrawal | [BuiltinAssetWithdrawal](#vega.BuiltinAssetWithdrawal) |  |  |
+| deposit | [BuiltinAssetDeposit](#vega.BuiltinAssetDeposit) |  | Built-in asset deposit. |
+| withdrawal | [BuiltinAssetWithdrawal](#vega.BuiltinAssetWithdrawal) |  | Built-in asset withdrawal. |
 
 
 
@@ -2089,14 +2089,14 @@ An event related to a vega builtin asset
 <a name="vega.BuiltinAssetWithdrawal"></a>
 
 ### BuiltinAssetWithdrawal
-A Withdrawal for a vega builtin asset
+A withdrawal for a Vega built-in asset.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | A vega network internal asset ID |
-| partyID | [string](#string) |  | A vega network party ID (pubkey) |
-| amount | [uint64](#uint64) |  | The amount to be withdrawan |
+| vegaAssetID | [string](#string) |  | A Vega network internal asset identifier. |
+| partyID | [string](#string) |  | A Vega network party identifier (pub-key) |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn. |
 
 
 
@@ -2106,18 +2106,17 @@ A Withdrawal for a vega builtin asset
 <a name="vega.ChainEvent"></a>
 
 ### ChainEvent
-An event being forwarded to the vega network
-providing information on things happening on other networks
+An event forwarded to the Vega network to provide information on events happening on other networks.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txID | [string](#string) |  | The ID of the transaction in which the things happened usually a hash |
-| nonce | [uint64](#uint64) |  | Arbitrary one-time integer used to prevent replay attacks |
-| builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  |  |
-| erc20 | [ERC20Event](#vega.ERC20Event) |  |  |
-| btc | [BTCEvent](#vega.BTCEvent) |  |  |
-| validator | [ValidatorEvent](#vega.ValidatorEvent) |  |  |
+| txID | [string](#string) |  | The identifier of the transaction in which the events happened, usually a hash. |
+| nonce | [uint64](#uint64) |  | Arbitrary one-time integer used to prevent replay attacks. |
+| builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  | Built-in asset event. |
+| erc20 | [ERC20Event](#vega.ERC20Event) |  | Ethereum ERC20 event. |
+| btc | [BTCEvent](#vega.BTCEvent) |  | Bitcoin BTC event. |
+| validator | [ValidatorEvent](#vega.ValidatorEvent) |  | Validator event. |
 
 
 
@@ -2127,12 +2126,12 @@ providing information on things happening on other networks
 <a name="vega.ERC20AssetDelist"></a>
 
 ### ERC20AssetDelist
-An asset blacklisting for a erc20 token
+An asset black-listing for an ERC20 token.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
 
 
 
@@ -2142,12 +2141,12 @@ An asset blacklisting for a erc20 token
 <a name="vega.ERC20AssetList"></a>
 
 ### ERC20AssetList
-An asset whitelisting for a erc20 token
+An asset white-listing for an ERC20 token.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
+| vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
 
 
 
@@ -2157,14 +2156,14 @@ An asset whitelisting for a erc20 token
 <a name="vega.ERC20Deposit"></a>
 
 ### ERC20Deposit
-An asset deposit for an erc20 token
+An asset deposit for an ERC20 token.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
-| sourceEthereumAddress | [string](#string) |  | The ethereum wallet that initiated the deposit |
-| targetPartyID | [string](#string) |  | The Vega public key of the target vega user |
+| vegaAssetID | [string](#string) |  | The vega network internal identifier of the asset. |
+| sourceEthereumAddress | [string](#string) |  | The Ethereum wallet that initiated the deposit. |
+| targetPartyID | [string](#string) |  | The Vega party identifier (pub-key) which is the target of the deposit. |
 
 
 
@@ -2174,17 +2173,17 @@ An asset deposit for an erc20 token
 <a name="vega.ERC20Event"></a>
 
 ### ERC20Event
-An event related to an erc20 token
+An event related to an ERC20 token.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | index | [uint64](#uint64) |  | Index of the transaction |
 | block | [uint64](#uint64) |  | The block in which the transaction was added |
-| assetList | [ERC20AssetList](#vega.ERC20AssetList) |  |  |
-| assetDelist | [ERC20AssetDelist](#vega.ERC20AssetDelist) |  |  |
-| deposit | [ERC20Deposit](#vega.ERC20Deposit) |  |  |
-| withdrawal | [ERC20Withdrawal](#vega.ERC20Withdrawal) |  |  |
+| assetList | [ERC20AssetList](#vega.ERC20AssetList) |  | List an ERC20 asset. |
+| assetDelist | [ERC20AssetDelist](#vega.ERC20AssetDelist) |  | De-list an ERC20 asset. |
+| deposit | [ERC20Deposit](#vega.ERC20Deposit) |  | Deposit ERC20 asset. |
+| withdrawal | [ERC20Withdrawal](#vega.ERC20Withdrawal) |  | Withdraw ERC20 asset. |
 
 
 
@@ -2194,15 +2193,15 @@ An event related to an erc20 token
 <a name="vega.ERC20Withdrawal"></a>
 
 ### ERC20Withdrawal
-An asset withdrawal for an erc20 token
+An asset withdrawal for an ERC20 token.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| vegaAssetID | [string](#string) |  | The vega network internally ID of the asset |
-| sourcePartyId | [string](#string) |  | The party inititing the withdrawal |
-| targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address |
-| referenceNonce | [string](#string) |  | The reference nonce used for the transaction |
+| vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
+| sourcePartyId | [string](#string) |  | The party identifier (pub-key) initiating the withdrawal. |
+| targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address. |
+| referenceNonce | [string](#string) |  | The reference nonce used for the transaction. |
 
 
 
@@ -2212,12 +2211,12 @@ An asset withdrawal for an erc20 token
 <a name="vega.EthereumAddress"></a>
 
 ### EthereumAddress
-Wrapper for an Ethereum address (wallet/contract)
+Used as a wrapper for an Ethereum address (wallet/contract).
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| address | [string](#string) |  | An Ethereum address |
+| address | [string](#string) |  | An Ethereum address. |
 
 
 
@@ -2227,13 +2226,13 @@ Wrapper for an Ethereum address (wallet/contract)
 <a name="vega.Identifier"></a>
 
 ### Identifier
-A wrapper type on any possible network address supported by vega
+Used as a wrapper type on any possible network address supported by Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ethereumAddress | [EthereumAddress](#vega.EthereumAddress) |  |  |
-| bitcoinAddress | [BitcoinAddress](#vega.BitcoinAddress) |  |  |
+| ethereumAddress | [EthereumAddress](#vega.EthereumAddress) |  | Ethereum network. |
+| bitcoinAddress | [BitcoinAddress](#vega.BitcoinAddress) |  | Bitcoin network. |
 
 
 
@@ -2243,12 +2242,12 @@ A wrapper type on any possible network address supported by vega
 <a name="vega.RemoveValidator"></a>
 
 ### RemoveValidator
-A message to notify a new validator being removed to the vega network
+A message to notify when a validator is being removed from the Vega network.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [Identifier](#vega.Identifier) |  | The identifier of this validator |
+| id | [Identifier](#vega.Identifier) |  | The identifier of the validator. |
 
 
 
@@ -2258,14 +2257,14 @@ A message to notify a new validator being removed to the vega network
 <a name="vega.ValidatorEvent"></a>
 
 ### ValidatorEvent
-An event related to validator management with foreign networks
+An event related to validator management with foreign networks.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| sourceID | [string](#string) |  | The source ID of the event |
-| add | [AddValidator](#vega.AddValidator) |  |  |
-| rm | [RemoveValidator](#vega.RemoveValidator) |  |  |
+| sourceID | [string](#string) |  | The source identifier of the event. |
+| add | [AddValidator](#vega.AddValidator) |  | Add a new validator. |
+| rm | [RemoveValidator](#vega.RemoveValidator) |  | Remove an existing validator. |
 
 
 
@@ -2291,14 +2290,14 @@ An event related to validator management with foreign networks
 <a name="vega.FeeFactorsConfiguration"></a>
 
 ### FeeFactorsConfiguration
-FeeFactors set at the network level
+FeeFactors set at the network level.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| infrastructureFee | [string](#string) |  | the infrastructure fee, needs to be a valid float |
-| makerFee | [string](#string) |  | the maker fee, needs to be a valid float |
-| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
+| infrastructureFee | [string](#string) |  | Infrastructure fee, needs to be a valid float. |
+| makerFee | [string](#string) |  | Maker fee, needs to be a valid float. |
+| liquidityFee | [string](#string) |  | Liquidity fee, it needs to be a valid float. |
 
 
 
@@ -2308,13 +2307,13 @@ FeeFactors set at the network level
 <a name="vega.FutureProduct"></a>
 
 ### FutureProduct
-Future product configuration
+Future product configuration.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp) |
-| asset | [string](#string) |  | Product asset name |
+| maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp). |
+| asset | [string](#string) |  | Product asset name. |
 
 
 
@@ -2324,16 +2323,16 @@ Future product configuration
 <a name="vega.GovernanceData"></a>
 
 ### GovernanceData
-
+Governance data.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proposal | [Proposal](#vega.Proposal) |  | Proposal |
+| proposal | [Proposal](#vega.Proposal) |  | Proposal. |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
-| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique) |
-| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique) |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique). |
 
 
 
@@ -2375,16 +2374,16 @@ Future product configuration
 <a name="vega.InstrumentConfiguration"></a>
 
 ### InstrumentConfiguration
-
+Instrument configuration.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | Instrument name |
-| code | [string](#string) |  | Instrument code |
-| baseName | [string](#string) |  | Base security used as the reference |
-| quoteName | [string](#string) |  | Quote (secondary) security |
-| future | [FutureProduct](#vega.FutureProduct) |  |  |
+| name | [string](#string) |  | Instrument name. |
+| code | [string](#string) |  | Instrument code. |
+| baseName | [string](#string) |  | Base security used as the reference. |
+| quoteName | [string](#string) |  | Quote (secondary) security. |
+| future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
 
 
 
@@ -2394,7 +2393,7 @@ Future product configuration
 <a name="vega.NetworkConfiguration"></a>
 
 ### NetworkConfiguration
-
+Network configuration options.
 
 
 | Field | Type | Label | Description |
@@ -2408,7 +2407,7 @@ Future product configuration
 | minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
 | marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
-| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal |
+| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal. |
 
 
 
@@ -2418,12 +2417,12 @@ Future product configuration
 <a name="vega.NewAsset"></a>
 
 ### NewAsset
-To be implemented
+New asset on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [AssetSource](#vega.AssetSource) |  |  |
+| changes | [AssetSource](#vega.AssetSource) |  | Asset configuration. |
 
 
 
@@ -2433,12 +2432,12 @@ To be implemented
 <a name="vega.NewMarket"></a>
 
 ### NewMarket
-
+New market on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [NewMarketConfiguration](#vega.NewMarketConfiguration) |  |  |
+| changes | [NewMarketConfiguration](#vega.NewMarketConfiguration) |  | Configuration. |
 
 
 
@@ -2448,19 +2447,19 @@ To be implemented
 <a name="vega.NewMarketConfiguration"></a>
 
 ### NewMarketConfiguration
-
+Configuration for a new market on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
-| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
-| metadata | [string](#string) | repeated | Optional new market meta data, tags |
-| openingAuctionDuration | [int64](#int64) |  | for now, just specify a time for the opening auction to last |
+| instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration. |
+| decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
+| metadata | [string](#string) | repeated | Optional new market meta data, tags. |
+| openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
-| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
-| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
+| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
+| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete trading. |
 
 
 
@@ -2470,18 +2469,18 @@ To be implemented
 <a name="vega.Proposal"></a>
 
 ### Proposal
-
+Governance proposal.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  | Proposal unique identifier. |
+| ID | [string](#string) |  | Unique proposal identifier. |
 | reference | [string](#string) |  | Proposal reference. |
-| partyID | [string](#string) |  | Proposal author, identifier of the party submitting the proposal. |
-| state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition) |
+| partyID | [string](#string) |  | Party identifier of the author (the party submitting the proposal). |
+| state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition). |
 | timestamp | [int64](#int64) |  | Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. |
 | terms | [ProposalTerms](#vega.ProposalTerms) |  | Proposal configuration and the actual change that is meant to be executed when proposal is enacted. |
-| reason | [ProposalError](#vega.ProposalError) |  | A reason for the current state of the proposal this may be set in case of REJECTED and FAILED status |
+| reason | [ProposalError](#vega.ProposalError) |  | A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses. |
 
 
 
@@ -2491,14 +2490,14 @@ To be implemented
 <a name="vega.ProposalTerms"></a>
 
 ### ProposalTerms
-
+Terms for a governance proposal on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | closingTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when voting closes for this proposal. Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters. |
 | enactmentTimestamp | [int64](#int64) |  | Timestamp (Unix time in seconds) when proposal gets enacted (if passed). Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. |
-| validationTimestamp | [int64](#int64) |  | TODO: this should be moved into `NewAsset` definition. |
+| validationTimestamp | [int64](#int64) |  | Validation timestamp (Unix time in seconds). |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
 | updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
@@ -2512,7 +2511,7 @@ To be implemented
 <a name="vega.UpdateMarket"></a>
 
 ### UpdateMarket
-TODO
+Update an existing market on Vega.
 
 
 
@@ -2522,12 +2521,12 @@ TODO
 <a name="vega.UpdateNetwork"></a>
 
 ### UpdateNetwork
-
+Update network configuration on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  |  |
+| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  | Configuration. |
 
 
 
@@ -2537,7 +2536,7 @@ TODO
 <a name="vega.Vote"></a>
 
 ### Vote
-
+Governance vote.
 
 
 | Field | Type | Label | Description |
@@ -2568,49 +2567,48 @@ Proposal can enter Failed state from any other state.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | STATE_UNSPECIFIED | 0 | Default value, always invalid. |
-| STATE_FAILED | 1 | Proposal enactment has failed - even though proposal has passed, its execusion could not be performed. |
+| STATE_FAILED | 1 | Proposal enactment has failed - even though proposal has passed, its execution could not be performed. |
 | STATE_OPEN | 2 | Proposal is open for voting. |
 | STATE_PASSED | 3 | Proposal has gained enough support to be executed. |
 | STATE_REJECTED | 4 | Proposal wasn&#39;t accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements). |
 | STATE_DECLINED | 5 | Proposal didn&#39;t get enough votes (either failing to gain required participation or majority level). |
-| STATE_ENACTED | 6 |  |
-| STATE_WAITING_FOR_NODE_VOTE | 7 | waiting for validators validation of the proposal |
+| STATE_ENACTED | 6 | Proposal enacted. |
+| STATE_WAITING_FOR_NODE_VOTE | 7 | Waiting for node validation of the proposal |
 
 
 
 <a name="vega.ProposalError"></a>
 
 ### ProposalError
-A list of possible error which could have happenned
-and the cause for an proposal being rejected of failed
+A list of possible errors that can cause a proposal to be in state rejected or failed.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| PROPOSAL_ERROR_UNSPECIFIED | 0 | default value |
-| PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON | 1 | the specified close time is too early base on network parameters |
-| PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE | 2 | the specified close time is too late based on network parameters |
-| PROPOSAL_ERROR_ENACT_TIME_TOO_SOON | 3 | the specified enact time is too early base on network parameters |
-| PROPOSAL_ERROR_ENACT_TIME_TOO_LATE | 4 | the specified enact time is too late based on network parameters |
-| PROPOSAL_ERROR_INSUFFICIENT_TOKENS | 5 | the proposer for this proposal as insufficient token |
-| PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY | 6 | the instrument quote name and base name were the same |
-| PROPOSAL_ERROR_NO_PRODUCT | 7 | the proposal has not product |
-| PROPOSAL_ERROR_UNSUPPORTED_PRODUCT | 8 | the specified product is not supported |
-| PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP | 9 | invalid future maturity timestamp (expect RFC3339) |
-| PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED | 10 | the product maturity is past |
-| PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
-| PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
-| PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
-| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
-| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
-| PROPOSAL_ERROR_INVALID_ASSET | 16 | the asset id refer to no assets in vega |
-| PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment) |
+| PROPOSAL_ERROR_UNSPECIFIED | 0 | Default value. |
+| PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON | 1 | The specified close time is too early base on network parameters. |
+| PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE | 2 | The specified close time is too late based on network parameters. |
+| PROPOSAL_ERROR_ENACT_TIME_TOO_SOON | 3 | The specified enact time is too early based on network parameters. |
+| PROPOSAL_ERROR_ENACT_TIME_TOO_LATE | 4 | The specified enact time is too late based on network parameters. |
+| PROPOSAL_ERROR_INSUFFICIENT_TOKENS | 5 | The proposer for this proposal as insufficient tokens. |
+| PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY | 6 | The instrument quote name and base name were the same. |
+| PROPOSAL_ERROR_NO_PRODUCT | 7 | The proposal has no product. |
+| PROPOSAL_ERROR_UNSUPPORTED_PRODUCT | 8 | The specified product is not supported. |
+| PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP | 9 | Invalid future maturity timestamp (expect RFC3339). |
+| PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED | 10 | The product maturity is past. |
+| PROPOSAL_ERROR_NO_TRADING_MODE | 11 | The proposal has no trading mode. |
+| PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | The proposal has an unsupported trading mode. |
+| PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | The proposal failed node validation. |
+| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | A field is missing in a builtin asset source. |
+| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | The contract address is missing in the ERC20 asset source. |
+| PROPOSAL_ERROR_INVALID_ASSET | 16 | The asset id refer to no assets in vega. |
+| PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment). |
 
 
 
 <a name="vega.Vote.Value"></a>
 
 ### Vote.Value
-
+Vote value.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -2637,16 +2635,19 @@ and the cause for an proposal being rejected of failed
 <a name="vega.AuctionDuration"></a>
 
 ### AuctionDuration
-AuctionDuration can be used to configure 3 auction periods:
-1) duration &gt; 0, volume == 0: The auction will last for at least N seconds
-2) Duration == 0, volume &gt; 0: Auction period will end once we can close with given traded volume
-3) Duration &gt; 0 &amp; volume &gt; 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+An auction duration is used to configure 3 auction periods:
+1. `duration &gt; 0`, `volume == 0`:
+  The auction will last for at least N seconds.
+2. `duration == 0`, `volume &gt; 0`:
+  The auction will end once we can close with given traded volume.
+3. `duration &gt; 0`, `volume &gt; 0`:
+  The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| duration | [int64](#int64) |  |  |
-| volume | [uint64](#uint64) |  |  |
+| duration | [int64](#int64) |  | Duration of the auction in seconds. |
+| volume | [uint64](#uint64) |  | Target uncrossing trading volume. |
 
 
 
@@ -2656,12 +2657,12 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.ContinuousTrading"></a>
 
 ### ContinuousTrading
-
+Continuous trading.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tickSize | [string](#string) |  |  |
+| tickSize | [string](#string) |  | Tick size. |
 
 
 
@@ -2671,13 +2672,13 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.DiscreteTrading"></a>
 
 ### DiscreteTrading
-
+Discrete trading.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
-| tickSize | [string](#string) |  |  |
+| tickSize | [string](#string) |  | Tick size. |
 
 
 
@@ -2687,14 +2688,14 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.EthereumEvent"></a>
 
 ### EthereumEvent
-
+Ethereum event (for oracles).
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| contractID | [string](#string) |  |  |
-| event | [string](#string) |  |  |
-| value | [uint64](#uint64) |  |  |
+| contractID | [string](#string) |  | Ethereum contract identifier. |
+| event | [string](#string) |  | Event. |
+| value | [uint64](#uint64) |  | Value. |
 
 
 
@@ -2704,14 +2705,15 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.ExternalRiskModel"></a>
 
 ### ExternalRiskModel
-
+Risk model for external modelling.
+Provided by external service via a Unix socket.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| socket | [string](#string) |  |  |
-| config | [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry) | repeated |  |
+| name | [string](#string) |  | Name. |
+| socket | [string](#string) |  | Local machine socket to connect to. |
+| config | [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry) | repeated | Collection of configuration items. |
 
 
 
@@ -2737,14 +2739,14 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.FeeFactors"></a>
 
 ### FeeFactors
-
+Fee factors definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| makerFee | [string](#string) |  |  |
-| infrastructureFee | [string](#string) |  |  |
-| liquidityFee | [string](#string) |  |  |
+| makerFee | [string](#string) |  | Maker fee. |
+| infrastructureFee | [string](#string) |  | Infrastructure fee. |
+| liquidityFee | [string](#string) |  | Liquidity fee. |
 
 
 
@@ -2754,12 +2756,12 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.Fees"></a>
 
 ### Fees
-
+Fees definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| factors | [FeeFactors](#vega.FeeFactors) |  |  |
+| factors | [FeeFactors](#vega.FeeFactors) |  | Fee factors. |
 
 
 
@@ -2769,14 +2771,14 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.Future"></a>
 
 ### Future
-
+Future product definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maturity | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-| ethereumEvent | [EthereumEvent](#vega.EthereumEvent) |  |  |
+| maturity | [string](#string) |  | The maturity for the future. |
+| asset | [string](#string) |  | The asset for the future. |
+| ethereumEvent | [EthereumEvent](#vega.EthereumEvent) |  | Ethereum events. |
 
 
 
@@ -2786,19 +2788,19 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.Instrument"></a>
 
 ### Instrument
-
+Instrument definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| code | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| baseName | [string](#string) |  |  |
-| quoteName | [string](#string) |  |  |
-| metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  |  |
-| initialMarkPrice | [uint64](#uint64) |  |  |
-| future | [Future](#vega.Future) |  |  |
+| id | [string](#string) |  | Instrument identifier. |
+| code | [string](#string) |  | Code for the instrument. |
+| name | [string](#string) |  | Name of the instrument. |
+| baseName | [string](#string) |  | Base name of the instrument. |
+| quoteName | [string](#string) |  | Quote name of the instrument. |
+| metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  | A collection of instrument meta-data. |
+| initialMarkPrice | [uint64](#uint64) |  | An initial mark price for the instrument. |
+| future | [Future](#vega.Future) |  | Future. |
 
 
 
@@ -2808,12 +2810,12 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.InstrumentMetadata"></a>
 
 ### InstrumentMetadata
-
+Instrument metadata definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tags | [string](#string) | repeated |  |
+| tags | [string](#string) | repeated | A list of 0 or more tags. |
 
 
 
@@ -2823,14 +2825,14 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.LogNormalModelParams"></a>
 
 ### LogNormalModelParams
-
+Risk model parameters for log normal.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| mu | [double](#double) |  |  |
-| r | [double](#double) |  |  |
-| sigma | [double](#double) |  |  |
+| mu | [double](#double) |  | Mu param. |
+| r | [double](#double) |  | R param. |
+| sigma | [double](#double) |  | Sigma param. |
 
 
 
@@ -2840,14 +2842,14 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.LogNormalRiskModel"></a>
 
 ### LogNormalRiskModel
-
+Risk model for log normal.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| riskAversionParameter | [double](#double) |  |  |
-| tau | [double](#double) |  |  |
-| params | [LogNormalModelParams](#vega.LogNormalModelParams) |  |  |
+| riskAversionParameter | [double](#double) |  | Risk Aversion Parameter. |
+| tau | [double](#double) |  | Tau. |
+| params | [LogNormalModelParams](#vega.LogNormalModelParams) |  | Risk model parameters for log normal. |
 
 
 
@@ -2857,12 +2859,12 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.MarginCalculator"></a>
 
 ### MarginCalculator
-
+Margin Calculator definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| scalingFactors | [ScalingFactors](#vega.ScalingFactors) |  |  |
+| scalingFactors | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for margin calculation. |
 
 
 
@@ -2872,18 +2874,18 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.Market"></a>
 
 ### Market
-
+Market definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
-| decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
-| fees | [Fees](#vega.Fees) |  | fees configuration |
-| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Specifies how long the opening auction will run (min duration &#43; optionally minimum traded volume) |
-| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
-| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
+| id | [string](#string) |  | Unique identifier. |
+| tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  | Tradable instrument configuration. |
+| decimalPlaces | [uint64](#uint64) |  | Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market. For example: `realPrice = price / 10^decimalPlaces` |
+| fees | [Fees](#vega.Fees) |  | Fees configuration. |
+| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
+| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
+| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
 
 
 
@@ -2893,14 +2895,14 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.ScalingFactors"></a>
 
 ### ScalingFactors
-
+Scaling Factors (for use in margin calculation).
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| searchLevel | [double](#double) |  |  |
-| initialMargin | [double](#double) |  |  |
-| collateralRelease | [double](#double) |  |  |
+| searchLevel | [double](#double) |  | Search level. |
+| initialMargin | [double](#double) |  | Initial margin level. |
+| collateralRelease | [double](#double) |  | Collateral release level. |
 
 
 
@@ -2910,13 +2912,13 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.SimpleModelParams"></a>
 
 ### SimpleModelParams
-
+Risk model parameters for simple modelling.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| factorLong | [double](#double) |  |  |
-| factorShort | [double](#double) |  |  |
+| factorLong | [double](#double) |  | Pre-defined risk factor value for long. |
+| factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
 
 
 
@@ -2926,12 +2928,12 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.SimpleRiskModel"></a>
 
 ### SimpleRiskModel
-
+Risk model for simple modelling.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| params | [SimpleModelParams](#vega.SimpleModelParams) |  |  |
+| params | [SimpleModelParams](#vega.SimpleModelParams) |  | Risk model params for simple modelling. |
 
 
 
@@ -2941,16 +2943,16 @@ AuctionDuration can be used to configure 3 auction periods:
 <a name="vega.TradableInstrument"></a>
 
 ### TradableInstrument
-
+Tradable Instrument definition.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instrument | [Instrument](#vega.Instrument) |  |  |
-| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
-| logNormalRiskModel | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  |  |
-| externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  |  |
-| simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  |  |
+| instrument | [Instrument](#vega.Instrument) |  | Instrument details. |
+| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  | Margin calculator for the instrument. |
+| logNormalRiskModel | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal. |
+| externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  | External socket. |
+| simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  | Simple. |
 
 
 
@@ -2996,8 +2998,7 @@ Represents an account for an asset on Vega for a particular owner or party.
 <a name="vega.AuctionIndicativeState"></a>
 
 ### AuctionIndicativeState
-Whenever a change to the book occurs during an auction, this message will be used
-to emit an event with the indicative price/volume per market
+AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction.
 
 
 | Field | Type | Label | Description |
@@ -3879,8 +3880,8 @@ Type values for an order.
 <a name="vega.OrderError"></a>
 
 ### OrderError
-If there is an issue with an order during it&#39;s life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
-and be given an error code in the `reason` field.
+OrderError codes are returned in the `[Order](#vega.Order).reason` field.
+If there is an issue with an order during it&#39;s life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -3933,7 +3934,7 @@ Type values for a trade.
 | TYPE_UNSPECIFIED | 0 | Default value, always invalid. |
 | TYPE_DEFAULT | 1 | Normal trading between two parties. |
 | TYPE_NETWORK_CLOSE_OUT_GOOD | 2 | Trading initiated by the network with another party on the book, which helps to zero-out the positions of one or more distressed parties. |
-| TYPE_NETWORK_CLOSE_OUT_BAD | 3 | Trading initiated by the network with another party off the book, with a distressed party in order to zero-out the position of the party. todo(cdm): chat with Jeremy on zoom to sanity check/improve. |
+| TYPE_NETWORK_CLOSE_OUT_BAD | 3 | Trading initiated by the network with another party off the book, with a distressed party in order to zero-out the position of the party. |
 
 
 

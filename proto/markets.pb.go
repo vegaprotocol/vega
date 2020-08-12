@@ -21,12 +21,17 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// AuctionDuration can be used to configure 3 auction periods:
-// 1) duration > 0, volume == 0: The auction will last for at least N seconds
-// 2) Duration == 0, volume > 0: Auction period will end once we can close with given traded volume
-// 3) Duration > 0 & volume > 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+// An auction duration is used to configure 3 auction periods:
+// 1. `duration > 0`, `volume == 0`:
+//   The auction will last for at least N seconds.
+// 2. `duration == 0`, `volume > 0`:
+//   The auction will end once we can close with given traded volume.
+// 3. `duration > 0`, `volume > 0`:
+//   The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 type AuctionDuration struct {
-	Duration             int64    `protobuf:"varint,1,opt,name=duration,proto3" json:"duration,omitempty"`
+	// Duration of the auction in seconds.
+	Duration int64 `protobuf:"varint,1,opt,name=duration,proto3" json:"duration,omitempty"`
+	//Target uncrossing trading volume.
 	Volume               uint64   `protobuf:"varint,2,opt,name=volume,proto3" json:"volume,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -72,7 +77,9 @@ func (m *AuctionDuration) GetVolume() uint64 {
 	return 0
 }
 
+// Continuous trading.
 type ContinuousTrading struct {
+	// Tick size.
 	TickSize             string   `protobuf:"bytes,1,opt,name=tickSize,proto3" json:"tickSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -111,9 +118,11 @@ func (m *ContinuousTrading) GetTickSize() string {
 	return ""
 }
 
+// Discrete trading.
 type DiscreteTrading struct {
 	// Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
-	DurationNs           int64    `protobuf:"varint,1,opt,name=durationNs,proto3" json:"durationNs,omitempty"`
+	DurationNs int64 `protobuf:"varint,1,opt,name=durationNs,proto3" json:"durationNs,omitempty"`
+	// Tick size.
 	TickSize             string   `protobuf:"bytes,2,opt,name=tickSize,proto3" json:"tickSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -159,9 +168,14 @@ func (m *DiscreteTrading) GetTickSize() string {
 	return ""
 }
 
+// Future product definition.
 type Future struct {
+	// The maturity for the future.
 	Maturity string `protobuf:"bytes,1,opt,name=maturity,proto3" json:"maturity,omitempty"`
-	Asset    string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
+	// The asset for the future.
+	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Oracle configuration.
+	//
 	// Types that are valid to be assigned to Oracle:
 	//	*Future_EthereumEvent
 	Oracle               isFuture_Oracle `protobuf_oneof:"oracle"`
@@ -240,9 +254,13 @@ func (*Future) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// Ethereum event (for oracles).
 type EthereumEvent struct {
-	ContractID           string   `protobuf:"bytes,1,opt,name=contractID,proto3" json:"contractID,omitempty"`
-	Event                string   `protobuf:"bytes,2,opt,name=event,proto3" json:"event,omitempty"`
+	// Ethereum contract identifier.
+	ContractID string `protobuf:"bytes,1,opt,name=contractID,proto3" json:"contractID,omitempty"`
+	// Event.
+	Event string `protobuf:"bytes,2,opt,name=event,proto3" json:"event,omitempty"`
+	// Value.
 	Value                uint64   `protobuf:"varint,3,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -295,7 +313,9 @@ func (m *EthereumEvent) GetValue() uint64 {
 	return 0
 }
 
+// Instrument metadata definition.
 type InstrumentMetadata struct {
+	// A list of 0 or more tags.
 	Tags                 []string `protobuf:"bytes,1,rep,name=tags,proto3" json:"tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -334,14 +354,24 @@ func (m *InstrumentMetadata) GetTags() []string {
 	return nil
 }
 
+// Instrument definition.
 type Instrument struct {
-	Id               string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Code             string              `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	Name             string              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	BaseName         string              `protobuf:"bytes,4,opt,name=baseName,proto3" json:"baseName,omitempty"`
-	QuoteName        string              `protobuf:"bytes,5,opt,name=quoteName,proto3" json:"quoteName,omitempty"`
-	Metadata         *InstrumentMetadata `protobuf:"bytes,6,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	InitialMarkPrice uint64              `protobuf:"varint,7,opt,name=initialMarkPrice,proto3" json:"initialMarkPrice,omitempty"`
+	// Instrument identifier.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Code for the instrument.
+	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	// Name of the instrument.
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// Base name of the instrument.
+	BaseName string `protobuf:"bytes,4,opt,name=baseName,proto3" json:"baseName,omitempty"`
+	// Quote name of the instrument.
+	QuoteName string `protobuf:"bytes,5,opt,name=quoteName,proto3" json:"quoteName,omitempty"`
+	// A collection of instrument meta-data.
+	Metadata *InstrumentMetadata `protobuf:"bytes,6,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// An initial mark price for the instrument.
+	InitialMarkPrice uint64 `protobuf:"varint,7,opt,name=initialMarkPrice,proto3" json:"initialMarkPrice,omitempty"`
+	// The product the instrument is composed of.
+	//
 	// Types that are valid to be assigned to Product:
 	//	*Instrument_Future
 	Product              isInstrument_Product `protobuf_oneof:"product"`
@@ -455,13 +485,17 @@ func (*Instrument) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// Risk model for log normal.
 type LogNormalRiskModel struct {
-	RiskAversionParameter float64               `protobuf:"fixed64,1,opt,name=riskAversionParameter,proto3" json:"riskAversionParameter,omitempty"`
-	Tau                   float64               `protobuf:"fixed64,2,opt,name=tau,proto3" json:"tau,omitempty"`
-	Params                *LogNormalModelParams `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
-	XXX_NoUnkeyedLiteral  struct{}              `json:"-"`
-	XXX_unrecognized      []byte                `json:"-"`
-	XXX_sizecache         int32                 `json:"-"`
+	// Risk Aversion Parameter.
+	RiskAversionParameter float64 `protobuf:"fixed64,1,opt,name=riskAversionParameter,proto3" json:"riskAversionParameter,omitempty"`
+	// Tau.
+	Tau float64 `protobuf:"fixed64,2,opt,name=tau,proto3" json:"tau,omitempty"`
+	// Risk model parameters for log normal.
+	Params               *LogNormalModelParams `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
 func (m *LogNormalRiskModel) Reset()         { *m = LogNormalRiskModel{} }
@@ -510,9 +544,13 @@ func (m *LogNormalRiskModel) GetParams() *LogNormalModelParams {
 	return nil
 }
 
+// Risk model parameters for log normal.
 type LogNormalModelParams struct {
-	Mu                   float64  `protobuf:"fixed64,1,opt,name=mu,proto3" json:"mu,omitempty"`
-	R                    float64  `protobuf:"fixed64,2,opt,name=r,proto3" json:"r,omitempty"`
+	// Mu param.
+	Mu float64 `protobuf:"fixed64,1,opt,name=mu,proto3" json:"mu,omitempty"`
+	// R param.
+	R float64 `protobuf:"fixed64,2,opt,name=r,proto3" json:"r,omitempty"`
+	// Sigma param.
 	Sigma                float64  `protobuf:"fixed64,3,opt,name=sigma,proto3" json:"sigma,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -565,7 +603,9 @@ func (m *LogNormalModelParams) GetSigma() float64 {
 	return 0
 }
 
+// Risk model for simple modelling.
 type SimpleRiskModel struct {
+	// Risk model params for simple modelling.
 	Params               *SimpleModelParams `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -604,8 +644,11 @@ func (m *SimpleRiskModel) GetParams() *SimpleModelParams {
 	return nil
 }
 
+// Risk model parameters for simple modelling.
 type SimpleModelParams struct {
-	FactorLong           float64  `protobuf:"fixed64,1,opt,name=factorLong,proto3" json:"factorLong,omitempty"`
+	// Pre-defined risk factor value for long.
+	FactorLong float64 `protobuf:"fixed64,1,opt,name=factorLong,proto3" json:"factorLong,omitempty"`
+	// Pre-defined risk factor value for short.
 	FactorShort          float64  `protobuf:"fixed64,2,opt,name=factorShort,proto3" json:"factorShort,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -651,9 +694,14 @@ func (m *SimpleModelParams) GetFactorShort() float64 {
 	return 0
 }
 
+// Risk model for external modelling.
+// Provided by external service via a Unix socket.
 type ExternalRiskModel struct {
-	Name                 string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Socket               string            `protobuf:"bytes,2,opt,name=socket,proto3" json:"socket,omitempty"`
+	// Name.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Local machine socket to connect to.
+	Socket string `protobuf:"bytes,2,opt,name=socket,proto3" json:"socket,omitempty"`
+	// Collection of configuration items.
 	Config               map[string]string `protobuf:"bytes,3,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -706,9 +754,13 @@ func (m *ExternalRiskModel) GetConfig() map[string]string {
 	return nil
 }
 
+// Scaling Factors (for use in margin calculation).
 type ScalingFactors struct {
-	SearchLevel          float64  `protobuf:"fixed64,1,opt,name=searchLevel,proto3" json:"searchLevel,omitempty"`
-	InitialMargin        float64  `protobuf:"fixed64,2,opt,name=initialMargin,proto3" json:"initialMargin,omitempty"`
+	// Search level.
+	SearchLevel float64 `protobuf:"fixed64,1,opt,name=searchLevel,proto3" json:"searchLevel,omitempty"`
+	// Initial margin level.
+	InitialMargin float64 `protobuf:"fixed64,2,opt,name=initialMargin,proto3" json:"initialMargin,omitempty"`
+	// Collateral release level.
 	CollateralRelease    float64  `protobuf:"fixed64,3,opt,name=collateralRelease,proto3" json:"collateralRelease,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -761,7 +813,9 @@ func (m *ScalingFactors) GetCollateralRelease() float64 {
 	return 0
 }
 
+// Margin Calculator definition.
 type MarginCalculator struct {
+	// Scaling factors for margin calculation.
 	ScalingFactors       *ScalingFactors `protobuf:"bytes,1,opt,name=scalingFactors,proto3" json:"scalingFactors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -800,9 +854,14 @@ func (m *MarginCalculator) GetScalingFactors() *ScalingFactors {
 	return nil
 }
 
+// Tradable Instrument definition.
 type TradableInstrument struct {
-	Instrument       *Instrument       `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
+	// Instrument details.
+	Instrument *Instrument `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
+	// Margin calculator for the instrument.
 	MarginCalculator *MarginCalculator `protobuf:"bytes,2,opt,name=marginCalculator,proto3" json:"marginCalculator,omitempty"`
+	// Risk model for use by the instrument.
+	//
 	// Types that are valid to be assigned to RiskModel:
 	//	*TradableInstrument_LogNormalRiskModel
 	//	*TradableInstrument_ExternalRiskModel
@@ -911,9 +970,13 @@ func (*TradableInstrument) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// Fee factors definition.
 type FeeFactors struct {
-	MakerFee             string   `protobuf:"bytes,1,opt,name=makerFee,proto3" json:"makerFee,omitempty"`
-	InfrastructureFee    string   `protobuf:"bytes,2,opt,name=infrastructureFee,proto3" json:"infrastructureFee,omitempty"`
+	// Maker fee.
+	MakerFee string `protobuf:"bytes,1,opt,name=makerFee,proto3" json:"makerFee,omitempty"`
+	// Infrastructure fee.
+	InfrastructureFee string `protobuf:"bytes,2,opt,name=infrastructureFee,proto3" json:"infrastructureFee,omitempty"`
+	// Liquidity fee.
 	LiquidityFee         string   `protobuf:"bytes,3,opt,name=liquidityFee,proto3" json:"liquidityFee,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -966,7 +1029,9 @@ func (m *FeeFactors) GetLiquidityFee() string {
 	return ""
 }
 
+// Fees definition.
 type Fees struct {
+	// Fee factors.
 	Factors              *FeeFactors `protobuf:"bytes,1,opt,name=factors,proto3" json:"factors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -1005,15 +1070,21 @@ func (m *Fees) GetFactors() *FeeFactors {
 	return nil
 }
 
+// Market definition.
 type Market struct {
-	Id                 string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Unique identifier.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Tradable instrument configuration.
 	TradableInstrument *TradableInstrument `protobuf:"bytes,2,opt,name=tradableInstrument,proto3" json:"tradableInstrument,omitempty"`
-	// the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
+	// Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market.
+	// For example: `realPrice = price / 10^decimalPlaces`
 	DecimalPlaces uint64 `protobuf:"varint,3,opt,name=decimalPlaces,proto3" json:"decimalPlaces,omitempty"`
-	// fees configuration
+	// Fees configuration.
 	Fees *Fees `protobuf:"bytes,4,opt,name=fees,proto3" json:"fees,omitempty"`
-	// Specifies how long the opening auction will run (min duration + optionally minimum traded volume)
+	// Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume).
 	OpeningAuction *AuctionDuration `protobuf:"bytes,5,opt,name=openingAuction,proto3" json:"openingAuction,omitempty"`
+	// Trading mode for the market.
+	//
 	// Types that are valid to be assigned to TradingMode:
 	//	*Market_Continuous
 	//	*Market_Discrete
