@@ -910,7 +910,6 @@ type Order struct {
 	ExpiresAt int64 `protobuf:"varint,12,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
 	// set internally by the node to return a unique reference identifier for the order submission.
-	// TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
 	Reference string `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
 	// If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified.
 	// The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors.
@@ -2386,7 +2385,6 @@ type OrderSubmission struct {
 	Type Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
 	// set internally by the node to return a unique reference identifier for the order submission.
-	// TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
 	Reference            string   `protobuf:"bytes,10,opt,name=reference,proto3" json:"reference,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

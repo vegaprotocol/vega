@@ -283,7 +283,7 @@ Request for an asset given an asset identifier.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
+| ID | [string](#string) |  | Asset identifier. Required field. |
 
 
 
@@ -521,7 +521,7 @@ Request to specify the identifier of the resource we want to retrieve aggregated
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
+| ID | [string](#string) |  | Resource identifier. Required field. |
 
 
 
@@ -1256,6 +1256,12 @@ A stream of orders.
 ### OrdersSubscribeRequest
 Request to subscribe to a stream of Orders.
 
+The fields for market identifier and party identifier are optional filters.
+If omitted all orders, for all parties on all markets will be returned on the stream.
+If market identifier is given, orders from that market will be returned on the stream.
+If party identifier is given, orders from that party will be returned on the stream.
+Both filters can be combined.
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -1749,6 +1755,12 @@ A stream of trades.
 
 ### TradesSubscribeRequest
 Request to subscribe to a stream of Trades.
+
+The fields for market identifier and party identifier are optional filters.
+If omitted all trades, for all parties on all markets will be returned on the stream.
+If market identifier is given, trades from that market will be returned on the stream.
+If party identifier is given, trades from that party will be returned on the stream.
+Both filters can be combined.
 
 
 | Field | Type | Label | Description |
@@ -3241,7 +3253,7 @@ An order can be submitted, amended and cancelled on Vega in an attempt to make t
 | createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | status | [Order.Status](#vega.Order.Status) |  | The current status for the order. See [`Order.Status`](#vega.Order.Status). For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field. |
 | expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
-| reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. TODO(cdm): Section on how order references work on Vega in docs.vega.xyz |
+| reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. |
 | reason | [OrderError](#vega.OrderError) |  | If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified. The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors. |
 | updatedAt | [int64](#int64) |  | Timestamp for when the Order was last updated, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | version | [uint64](#uint64) |  | The version for the order, initial value is version 1 and is incremented after each successful amend |
@@ -3343,7 +3355,7 @@ An order submission is a request to submit or create a new order on Vega.
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Time in force indicates how long an order will remain active before it is executed or expires. See [`Order.TimeInForce`](#vega.Order.TimeInForce). Required field. |
 | expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). Required field. |
-| reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. TODO(cdm): Section on how order references work on Vega in docs.vega.xyz |
+| reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. |
 
 
 

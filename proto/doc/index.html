@@ -1186,11 +1186,38 @@
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -1642,11 +1669,38 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Resource identifier. Required field. </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -3487,7 +3541,7 @@ Set <tt>2</tt> for first amendment, <tt>3</tt> for second amendment, etc. </p></
 
 
         <h3 id="api.OrdersSubscribeRequest">OrdersSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Orders.</p>
+        <p>Request to subscribe to a stream of Orders.</p><p>The fields for market identifier and party identifier are optional filters.</p><p>If omitted all orders, for all parties on all markets will be returned on the stream.</p><p>If market identifier is given, orders from that market will be returned on the stream.</p><p>If party identifier is given, orders from that party will be returned on the stream.</p><p>Both filters can be combined.</p>
 
 
           <table class="field-table">
@@ -4499,7 +4553,7 @@ Important - success does not mean that the transaction is confirmed by consensus
 
 
         <h3 id="api.TradesSubscribeRequest">TradesSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Trades.</p>
+        <p>Request to subscribe to a stream of Trades.</p><p>The fields for market identifier and party identifier are optional filters.</p><p>If omitted all trades, for all parties on all markets will be returned on the stream.</p><p>If market identifier is given, trades from that market will be returned on the stream.</p><p>If party identifier is given, trades from that party will be returned on the stream.</p><p>Both filters can be combined.</p>
 
 
           <table class="field-table">
@@ -8689,8 +8743,7 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
-set internally by the node to return a unique reference identifier for the order submission.
-TODO(cdm): Section on how order references work on Vega in docs.vega.xyz </p></td>
+set internally by the node to return a unique reference identifier for the order submission. </p></td>
                 </tr>
 
                 <tr>
@@ -9072,8 +9125,7 @@ Required field only for <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce<
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
-set internally by the node to return a unique reference identifier for the order submission.
-TODO(cdm): Section on how order references work on Vega in docs.vega.xyz </p></td>
+set internally by the node to return a unique reference identifier for the order submission. </p></td>
                 </tr>
 
             </tbody>
