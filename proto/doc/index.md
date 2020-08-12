@@ -245,7 +245,7 @@
 <a name="api.AccountsSubscribeRequest"></a>
 
 ### AccountsSubscribeRequest
-Request to subscribe to a stream of Accounts.
+Request to subscribe to a stream of (Accounts)[#vega.Account].
 
 
 | Field | Type | Label | Description |
@@ -380,7 +380,7 @@ Response for a list of candles for a market at an interval.
 <a name="api.CandlesSubscribeRequest"></a>
 
 ### CandlesSubscribeRequest
-Request to subscribe to a stream of Candles.
+Request to subscribe to a stream of (Candles)[#vega.Candle].
 
 
 | Field | Type | Label | Description |
@@ -932,7 +932,7 @@ Response for the market depth/order book price levels on a market.
 <a name="api.MarketDepthSubscribeRequest"></a>
 
 ### MarketDepthSubscribeRequest
-Request to subscribe to a stream of MarketDepth data.
+Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
 
 
 | Field | Type | Label | Description |
@@ -1254,7 +1254,7 @@ A stream of orders.
 <a name="api.OrdersSubscribeRequest"></a>
 
 ### OrdersSubscribeRequest
-Request to subscribe to a stream of Orders.
+Request to subscribe to a stream of (Orders)[#vega.Order].
 
 The fields for market identifier and party identifier are optional filters.
 If omitted all orders, for all parties on all markets will be returned on the stream.
@@ -1403,7 +1403,7 @@ Response for a list of positions for a party.
 <a name="api.PositionsSubscribeRequest"></a>
 
 ### PositionsSubscribeRequest
-Request to subscribe to a stream of Positions.
+Request to subscribe to a stream of (Positions)[#vega.Position].
 
 
 | Field | Type | Label | Description |
@@ -1754,7 +1754,7 @@ A stream of trades.
 <a name="api.TradesSubscribeRequest"></a>
 
 ### TradesSubscribeRequest
-Request to subscribe to a stream of Trades.
+Request to subscribe to a stream of (Trades)[#vega.Trade].
 
 The fields for market identifier and party identifier are optional filters.
 If omitted all trades, for all parties on all markets will be returned on the stream.
@@ -2489,7 +2489,7 @@ Governance proposal.
 | ID | [string](#string) |  | Unique proposal identifier. |
 | reference | [string](#string) |  | Proposal reference. |
 | partyID | [string](#string) |  | Party identifier of the author (the party submitting the proposal). |
-| state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition). |
+| state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see (Proposal.State)[#vega.Proposal.State] definition). |
 | timestamp | [int64](#int64) |  | Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. |
 | terms | [ProposalTerms](#vega.ProposalTerms) |  | Proposal configuration and the actual change that is meant to be executed when proposal is enacted. |
 | reason | [ProposalError](#vega.ProposalError) |  | A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses. |

@@ -197,7 +197,7 @@ message Proposal {
   string reference = 2;
   // Party identifier of the author (the party submitting the proposal).
   string partyID = 3 [(validator.field) = {string_not_empty : true}];
-  // Proposal state (see Proposal.State definition).
+  // Proposal state (see (Proposal.State)[#vega.Proposal.State] definition).
   State state = 4 [(validator.field) = {is_in_enum: true}];
   // Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
   int64 timestamp = 5;

@@ -651,7 +651,7 @@ message TradesByOrderResponse {
   repeated vega.Trade trades = 1;
 }
 
-// Request to subscribe to a stream of Accounts.
+// Request to subscribe to a stream of (Accounts)[#vega.Account].
 message AccountsSubscribeRequest {
 
   // Market identifier.
@@ -664,7 +664,7 @@ message AccountsSubscribeRequest {
   vega.AccountType type = 4;
 }
 
-// Request to subscribe to a stream of Orders.
+// Request to subscribe to a stream of (Orders)[#vega.Order].
 message OrdersSubscribeRequest {
   // The fields for market identifier and party identifier are optional filters.
   // If omitted all orders, for all parties on all markets will be returned on the stream.
@@ -678,7 +678,7 @@ message OrdersSubscribeRequest {
   string partyID = 2;
 }
 
-// Request to subscribe to a stream of Trades.
+// Request to subscribe to a stream of (Trades)[#vega.Trade].
 message TradesSubscribeRequest {
   // The fields for market identifier and party identifier are optional filters.
   // If omitted all trades, for all parties on all markets will be returned on the stream.
@@ -692,7 +692,7 @@ message TradesSubscribeRequest {
   string partyID = 2;
 }
 
-// Request to subscribe to a stream of Candles.
+// Request to subscribe to a stream of (Candles)[#vega.Candle].
 message CandlesSubscribeRequest {
 
   // Market identifier. Required field.
@@ -701,14 +701,14 @@ message CandlesSubscribeRequest {
   vega.Interval interval = 2;
 }
 
-// Request to subscribe to a stream of MarketDepth data.
+// Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
 message MarketDepthSubscribeRequest {
 
   // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
-// Request to subscribe to a stream of Positions.
+// Request to subscribe to a stream of (Positions)[#vega.Position].
 message PositionsSubscribeRequest {
 
   // Party identifier. Required field.

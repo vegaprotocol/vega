@@ -1104,7 +1104,7 @@
 
 
         <h3 id="api.AccountsSubscribeRequest">AccountsSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Accounts.</p>
+        <p>Request to subscribe to a stream of (Accounts)[#vega.Account].</p>
 
 
           <table class="field-table">
@@ -1404,7 +1404,7 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
 
         <h3 id="api.CandlesSubscribeRequest">CandlesSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Candles.</p>
+        <p>Request to subscribe to a stream of (Candles)[#vega.Candle].</p>
 
 
           <table class="field-table">
@@ -2691,7 +2691,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
         <h3 id="api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of MarketDepth data.</p>
+        <p>Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.</p>
 
 
           <table class="field-table">
@@ -3541,7 +3541,7 @@ Set <tt>2</tt> for first amendment, <tt>3</tt> for second amendment, etc. </p></
 
 
         <h3 id="api.OrdersSubscribeRequest">OrdersSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Orders.</p><p>The fields for market identifier and party identifier are optional filters.</p><p>If omitted all orders, for all parties on all markets will be returned on the stream.</p><p>If market identifier is given, orders from that market will be returned on the stream.</p><p>If party identifier is given, orders from that party will be returned on the stream.</p><p>Both filters can be combined.</p>
+        <p>Request to subscribe to a stream of (Orders)[#vega.Order].</p><p>The fields for market identifier and party identifier are optional filters.</p><p>If omitted all orders, for all parties on all markets will be returned on the stream.</p><p>If market identifier is given, orders from that market will be returned on the stream.</p><p>If party identifier is given, orders from that party will be returned on the stream.</p><p>Both filters can be combined.</p>
 
 
           <table class="field-table">
@@ -3861,7 +3861,7 @@ Default is true, if false the results will be returned in ascending order. </p><
 
 
         <h3 id="api.PositionsSubscribeRequest">PositionsSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Positions.</p>
+        <p>Request to subscribe to a stream of (Positions)[#vega.Position].</p>
 
 
           <table class="field-table">
@@ -4553,7 +4553,7 @@ Important - success does not mean that the transaction is confirmed by consensus
 
 
         <h3 id="api.TradesSubscribeRequest">TradesSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of Trades.</p><p>The fields for market identifier and party identifier are optional filters.</p><p>If omitted all trades, for all parties on all markets will be returned on the stream.</p><p>If market identifier is given, trades from that market will be returned on the stream.</p><p>If party identifier is given, trades from that party will be returned on the stream.</p><p>Both filters can be combined.</p>
+        <p>Request to subscribe to a stream of (Trades)[#vega.Trade].</p><p>The fields for market identifier and party identifier are optional filters.</p><p>If omitted all trades, for all parties on all markets will be returned on the stream.</p><p>If market identifier is given, trades from that market will be returned on the stream.</p><p>If party identifier is given, trades from that party will be returned on the stream.</p><p>Both filters can be combined.</p>
 
 
           <table class="field-table">
@@ -6594,7 +6594,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td>state</td>
                   <td><a href="#vega.Proposal.State">Proposal.State</a></td>
                   <td></td>
-                  <td><p>Proposal state (see Proposal.State definition). </p></td>
+                  <td><p>Proposal state (see (Proposal.State)[#vega.Proposal.State] definition). </p></td>
                 </tr>
 
                 <tr>

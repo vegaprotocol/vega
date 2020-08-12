@@ -3254,7 +3254,7 @@
         },
         "state": {
           "$ref": "#/definitions/ProposalState",
-          "description": "Proposal state (see Proposal.State definition)."
+          "description": "Proposal state (see (Proposal.State)[#vega.Proposal.State] definition)."
         },
         "timestamp": {
           "type": "string",

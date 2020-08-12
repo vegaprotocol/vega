@@ -2480,7 +2480,7 @@ func (m *TradesByOrderResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
-// Request to subscribe to a stream of Accounts.
+// Request to subscribe to a stream of (Accounts)[#vega.Account].
 type AccountsSubscribeRequest struct {
 	// Market identifier.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
@@ -2548,7 +2548,7 @@ func (m *AccountsSubscribeRequest) GetType() proto1.AccountType {
 	return proto1.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
-// Request to subscribe to a stream of Orders.
+// Request to subscribe to a stream of (Orders)[#vega.Order].
 type OrdersSubscribeRequest struct {
 	// Market identifier.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
@@ -2598,7 +2598,7 @@ func (m *OrdersSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of Trades.
+// Request to subscribe to a stream of (Trades)[#vega.Trade].
 type TradesSubscribeRequest struct {
 	// Market identifier.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
@@ -2648,7 +2648,7 @@ func (m *TradesSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of Candles.
+// Request to subscribe to a stream of (Candles)[#vega.Candle].
 type CandlesSubscribeRequest struct {
 	// Market identifier. Required field.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
@@ -2698,7 +2698,7 @@ func (m *CandlesSubscribeRequest) GetInterval() proto1.Interval {
 	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
-// Request to subscribe to a stream of MarketDepth data.
+// Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
 type MarketDepthSubscribeRequest struct {
 	// Market identifier. Required field.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
@@ -2739,7 +2739,7 @@ func (m *MarketDepthSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of Positions.
+// Request to subscribe to a stream of (Positions)[#vega.Position].
 type PositionsSubscribeRequest struct {
 	// Party identifier. Required field.
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
