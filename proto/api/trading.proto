@@ -317,8 +317,6 @@ service trading_data {
   rpc Assets(AssetsRequest) returns (AssetsResponse);
 }
 
-// @exclude todo: could be replaced by google.protobuf.Empty, however I do prefer the more verbose AssetRequest message
-
 // Request for a list of all assets enabled on Vega.
 message AssetsRequest {
 }
@@ -333,9 +331,8 @@ message AssetsResponse {
 // Request for an asset given an asset identifier.
 message AssetByIDRequest {
 
-  // @exclude todo: Missing validator for required.
   // Asset identifier. Required field.
-  string ID = 1;
+  string ID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 // Response for an asset given an asset identifier.
@@ -348,9 +345,8 @@ message AssetByIDResponse {
 // Request to specify the identifier of the resource we want to retrieve aggregated signatures for.
 message GetNodeSignaturesAggregateRequest {
 
-  // @exclude todo: Missing validator for required.
   // Resource identifier. Required field.
-  string ID = 1;
+  string ID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 // Response to specify the identifier of the resource we want to retrieve aggregated signatures for.
@@ -658,8 +654,6 @@ message TradesByOrderResponse {
 // Request to subscribe to a stream of Accounts.
 message AccountsSubscribeRequest {
 
-  // @exclude todo(cdm): describe the combinations of using the fields here...
-
   // Market identifier.
   string marketID = 1;
   // Party identifier.
@@ -672,8 +666,11 @@ message AccountsSubscribeRequest {
 
 // Request to subscribe to a stream of Orders.
 message OrdersSubscribeRequest {
-
-  // @exclude Todo(cdm): check the logic, I think these are filters not required fields...
+  // The fields for market identifier and party identifier are optional filters.
+  // If omitted all orders, for all parties on all markets will be returned on the stream.
+  // If market identifier is given, orders from that market will be returned on the stream.
+  // If party identifier is given, orders from that party will be returned on the stream.
+  // Both filters can be combined.
 
   // Market identifier.
   string marketID = 1;
@@ -683,8 +680,11 @@ message OrdersSubscribeRequest {
 
 // Request to subscribe to a stream of Trades.
 message TradesSubscribeRequest {
-
-  // @exclude Todo(cdm): check the logic, I think these are filters not required fields...
+  // The fields for market identifier and party identifier are optional filters.
+  // If omitted all trades, for all parties on all markets will be returned on the stream.
+  // If market identifier is given, trades from that market will be returned on the stream.
+  // If party identifier is given, trades from that party will be returned on the stream.
+  // Both filters can be combined.
 
   // Market identifier.
   string marketID = 1;
@@ -786,8 +786,6 @@ message MarketsResponse {
 
 // Request for a list of candles for a market at an interval.
 message CandlesRequest {
-
-  // @exclude todo(cdm): additional helpful information about candles...
 
   // Market identifier. Required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
@@ -898,8 +896,6 @@ message TradesStream {
 // Request for a list of accounts for a party.
 message PartyAccountsRequest {
 
-  // @exclude todo(cdm): Include in mop up ticket - required fields here and naming....
-
   // Party identifier.
   string partyID = 1;
   // Market identifier.
@@ -919,8 +915,6 @@ message PartyAccountsResponse {
 
 // Request for a list of accounts for a market.
 message MarketAccountsRequest {
-
-  // @exclude todo(cdm): Include in mop up ticket - required fields here and naming....
 
   // Market identifier.
   string marketID = 1;
@@ -999,8 +993,6 @@ message OrderByIDRequest {
   // Set `2` for first amendment, `3` for second amendment, etc.
   uint64 version = 2;
 }
-
-//@exclude todo(cdm): Remove this duplicate response and add Order Versions By ID Response
 
 // Request for an order given the specified order reference.
 message OrderByReferenceIDRequest {

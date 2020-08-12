@@ -196,7 +196,6 @@ message Order {
   int64 expiresAt = 12;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
   // set internally by the node to return a unique reference identifier for the order submission.
-  // TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
   string reference = 13;
   // If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified.
   // The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors.
@@ -585,7 +584,6 @@ message OrderSubmission {
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
   // set internally by the node to return a unique reference identifier for the order submission.
-  // TODO(cdm): Section on how order references work on Vega in docs.vega.xyz
   string reference = 10;
 }
 
