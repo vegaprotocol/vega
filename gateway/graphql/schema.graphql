@@ -318,7 +318,7 @@ type Query {
     last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReferenceID(
+  orderByReference(
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
@@ -766,12 +766,6 @@ type Market {
     "Interval of the candles"
     interval: Interval!
   ): [Candle]
-
-  "Query an order by reference for the given market"
-  orderByReference (
-    "reference of the order"
-    reference: String!
-  ): Order!
 
   "marketData for the given market"
   data: MarketData!

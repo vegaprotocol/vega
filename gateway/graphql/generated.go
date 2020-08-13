@@ -194,7 +194,6 @@ type ComplexityRoot struct {
 		Fees               func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
-		OrderByReference   func(childComplexity int, reference string) int
 		Orders             func(childComplexity int, skip *int, first *int, last *int) int
 		TradableInstrument func(childComplexity int) int
 		Trades             func(childComplexity int, skip *int, first *int, last *int) int
@@ -351,7 +350,7 @@ type ComplexityRoot struct {
 		NewMarketProposals         func(childComplexity int, inState *ProposalState) int
 		NodeSignatures             func(childComplexity int, resourceID string) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
-		OrderByReferenceID         func(childComplexity int, referenceID string) int
+		OrderByReference           func(childComplexity int, referenceID string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		Parties                    func(childComplexity int, id *string) int
 		Party                      func(childComplexity int, id string) int
@@ -511,7 +510,6 @@ type MarketResolver interface {
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
-	OrderByReference(ctx context.Context, obj *Market, reference string) (*proto.Order, error)
 	Data(ctx context.Context, obj *Market) (*proto.MarketData, error)
 }
 type MarketDataResolver interface {
@@ -602,7 +600,7 @@ type QueryResolver interface {
 	Statistics(ctx context.Context) (*proto.Statistics, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*proto.Order, error)
-	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
+	OrderByReference(ctx context.Context, referenceID string) (*proto.Order, error)
 	Proposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*proto.GovernanceData, error)
 	NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
@@ -1220,18 +1218,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Name(childComplexity), true
-
-	case "Market.orderByReference":
-		if e.complexity.Market.OrderByReference == nil {
-			break
-		}
-
-		args, err := ec.field_Market_orderByReference_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.OrderByReference(childComplexity, args["reference"].(string)), true
 
 	case "Market.orders":
 		if e.complexity.Market.Orders == nil {
@@ -2031,17 +2017,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.OrderByID(childComplexity, args["orderID"].(string), args["version"].(*int)), true
 
-	case "Query.orderByReferenceID":
-		if e.complexity.Query.OrderByReferenceID == nil {
+	case "Query.orderByReference":
+		if e.complexity.Query.OrderByReference == nil {
 			break
 		}
 
-		args, err := ec.field_Query_orderByReferenceID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_orderByReference_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByReferenceID(childComplexity, args["referenceID"].(string)), true
+		return e.complexity.Query.OrderByReference(childComplexity, args["referenceID"].(string)), true
 
 	case "Query.orderVersions":
 		if e.complexity.Query.OrderVersions == nil {
@@ -3119,7 +3105,7 @@ type Query {
     last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReferenceID(
+  orderByReference(
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
@@ -3567,12 +3553,6 @@ type Market {
     "Interval of the candles"
     interval: Interval!
   ): [Candle]
-
-  "Query an order by reference for the given market"
-  orderByReference (
-    "reference of the order"
-    reference: String!
-  ): Order!
 
   "marketData for the given market"
   data: MarketData!
@@ -4557,20 +4537,6 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Market_orderByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["reference"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["reference"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5135,7 +5101,7 @@ func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_orderByReferenceID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_orderByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -8177,47 +8143,6 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	res := resTmp.([]*proto.Candle)
 	fc.Result = res
 	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Market_orderByReference(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Market",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Market_orderByReference_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().OrderByReference(rctx, obj, args["reference"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.Order)
-	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_data(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
@@ -11448,7 +11373,7 @@ func (ec *executionContext) _Query_orderVersions(ctx context.Context, field grap
 	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_orderByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11464,7 +11389,7 @@ func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_orderByReferenceID_args(ctx, rawArgs)
+	args, err := ec.field_Query_orderByReference_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -11472,7 +11397,7 @@ func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByReferenceID(rctx, args["referenceID"].(string))
+		return ec.resolvers.Query().OrderByReference(rctx, args["referenceID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17407,20 +17332,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				res = ec._Market_candles(ctx, field, obj)
 				return res
 			})
-		case "orderByReference":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_orderByReference(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "data":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -18788,7 +18699,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_orderVersions(ctx, field)
 				return res
 			})
-		case "orderByReferenceID":
+		case "orderByReference":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -18796,7 +18707,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_orderByReferenceID(ctx, field)
+				res = ec._Query_orderByReference(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

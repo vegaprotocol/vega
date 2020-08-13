@@ -153,9 +153,6 @@ service trading_data {
   // Get a specific order by orderID
   rpc OrderByID(OrderByIDRequest) returns (vega.Order);
 
-  // Get a specific order by referenceID
-  rpc OrderByReferenceID(OrderByReferenceIDRequest) returns (vega.Order);
-
   // Get all versions of the order by its orderID
   rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
 
@@ -682,15 +679,10 @@ message OrderByIDRequest {
   uint64 version = 2;
 }
 
-message OrderByReferenceIDRequest {
-  string referenceID = 1 [(validator.field) = {msg_exists: true}];
-}
-
 message OrderVersionsByIDRequest {
   string orderID = 1 [(validator.field) = {msg_exists: true}];
   Pagination pagination = 2;
 }
-
 
 message OrderVersionsResponse {
   repeated vega.Order orders = 1;
