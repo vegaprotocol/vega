@@ -739,9 +739,6 @@ func (this *PrepareVoteResponse) Validate() error {
 func (this *OrderByIDRequest) Validate() error {
 	return nil
 }
-func (this *OrderByReferenceIDRequest) Validate() error {
-	return nil
-}
 func (this *OrderVersionsByIDRequest) Validate() error {
 	if this.Pagination != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {

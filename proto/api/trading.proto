@@ -195,9 +195,6 @@ service trading_data {
   // Get a specific order by orderID
   rpc OrderByID(OrderByIDRequest) returns (vega.Order);
 
-  // Get a specific order by referenceID
-  rpc OrderByReferenceID(OrderByReferenceIDRequest) returns (vega.Order);
-
   // Get all versions of the order by its orderID
   rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
 
@@ -992,13 +989,6 @@ message OrderByIDRequest {
   // Set `1` for original version of the order.
   // Set `2` for first amendment, `3` for second amendment, etc.
   uint64 version = 2;
-}
-
-// Request for an order given the specified order reference.
-message OrderByReferenceIDRequest {
-
-  // Reference. Required field.
-  string referenceID = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Request for a list of all versions of an order given the specified order identifier.

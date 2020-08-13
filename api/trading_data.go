@@ -1408,23 +1408,6 @@ func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 	return nil, ErrOrderNotFound
 }
 
-func (t *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoapi.OrderByReferenceIDRequest) (*types.Order, error) {
-	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("OrderByReferenceID", startTime)
-	if len(in.ReferenceID) == 0 {
-		// Invalid parameter
-		return nil, ErrMissingReferenceIDParameter
-	}
-
-	order, err := t.OrderService.GetByReference(ctx, in.ReferenceID)
-	if err != nil {
-		return nil, err
-	}
-
-	// If we get here we have matched against referenceID and all is good
-	return order, nil
-}
-
 // OrderVersionsByID returns all versions of the order by its orderID
 func (t *tradingDataService) OrderVersionsByID(
 	ctx context.Context,
