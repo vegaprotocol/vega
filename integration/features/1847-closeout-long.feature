@@ -4,7 +4,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r  | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee |
-      | ETH/DEC19 | ETH      | BTC       | BTC   | 100       | simple     | 0.1       | 0.1       | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 0           | continuous   |        0 |                 0 |            0 |
+      | ETH/DEC19 | ETH      | BTC       | BTC   | 100       | simple     | 0.1       | 0.1       | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 0           | continuous   | 0        | 0                 | 0            |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
@@ -54,6 +54,6 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | trader | volume | unrealisedPNL | realisedPNL |
       | tt_4   | 4      | -200          | 0           |
       | tt_5   | 0      | 0             | -100        |
-      | tt_6   | -4     | 200           | -1130       |
+      | tt_6   | -4     | 200           | -30         |
       | tt_10  | 30     | 0             | 0           |
       | tt_11  | -30    | 200           | -70         |
